@@ -1,8 +1,12 @@
-cardano-electionguard
-=====================
+<div align="center">
 
 ![](cardano-electionguard-logo-v2.png)
 
-Work in progress on [the ElectionGuard + Cardano catalyst fund13 project][idea].
+ElectionGuard + Cardano
+=======================
+
+Work in progress on [the Catalyst fund13 project][idea].
+
+<div/>
 
 [idea]: https://cardano.ideascale.com/c/cardano/idea/127656
