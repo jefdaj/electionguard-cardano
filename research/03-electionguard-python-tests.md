@@ -43,6 +43,7 @@ Probably should have expected that from Microsoft...
 #10 writing image sha256:61102dd398ea56f43d0906ed424e14d0b7a64730211ca205905171e1ce9bd4fe done
 #10 naming to docker.io/library/electionguard-python-makefile-docker-env done
 #10 DONE 0.0s
+
 root@29187e5fa3d0:/repo# make | tee -a test.log
 🔧 ENVIRONMENT SETUP
 make install-gmp
@@ -306,7 +307,6 @@ src/electionguard/type.py                        6      0      0      0   100%
 src/electionguard/utils.py                      60      1     18      0    99%
 ------------------------------------------------------------------------------
 TOTAL                                         3284    248   1106    147    90%
-[?2004hroot@d754a710495d:/repo# 
 ```
 
 Apart from the test suite, there are also a couple one-off `make` targets that demonstrate a simple election. They look good too!
@@ -383,7 +383,6 @@ Manifest: /data/out/public_encryption_package/manifest.json
 Guardian records: /data/out/public_encryption_package/guardians
 Guardian private keys: /data/out/test_data_private_guardian_data
 WARNING: The files in /data/out/test_data_private_guardian_data are secret and should be protected securely and not shared.
-[?2004hroot@29187e5fa3d0:/repo# 
 ```
 
 ```bash
