@@ -1,6 +1,6 @@
 <div align="center">
 
-![](cardano-electionguard-logo-v2.png)
+![](.github/electionguard-cardano-logo-v2.png)
 
 ElectionGuard + Cardano
 =======================
