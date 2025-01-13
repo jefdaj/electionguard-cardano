@@ -43,8 +43,11 @@ Probably should have expected that from Microsoft...
 #10 writing image sha256:61102dd398ea56f43d0906ed424e14d0b7a64730211ca205905171e1ce9bd4fe done
 #10 naming to docker.io/library/electionguard-python-makefile-docker-env done
 #10 DONE 0.0s
+```
 
+```bash
 root@29187e5fa3d0:/repo# make | tee -a test.log
+
 🔧 ENVIRONMENT SETUP
 make install-gmp
 make[1]: Entering directory '/repo'
@@ -310,7 +313,7 @@ TOTAL                                         3284    248   1106    147    90%
 ```
 
 Apart from the test suite, there are also a couple one-off `make` targets that demonstrate a simple election. They look good too!
-Note that they also print all the ciphertexts, but I had to omit those lines to avoid breaking Github's markdown rendering.
+Note that they print the ciphertexts, but I had to omit those lines to avoid breaking Github's markdown rendering.
 
 ```bash
 root@29187e5fa3d0:/repo# make eg-setup-simple-election 2>&1 | tee test.log
@@ -386,7 +389,7 @@ WARNING: The files in /data/out/test_data_private_guardian_data are secret and s
 ```
 
 ```bash
-root@29187e5fa3d0:/repo# make eg-e2e-simple-election 2>&1 | tee test.loG
+root@29187e5fa3d0:/repo# make eg-e2e-simple-election 2>&1 | tee test.log
 
 poetry run eg e2e --guardian-count=2 --quorum=2 --manifest=data/election_manifest_simple.json --ballots=data/plaintext_ballots_simple.json --spoil-id=25a7111b-4334-425a-87c1-f7a49f42b3a2 --output-record="./election_record.zip"
 
@@ -661,3 +664,5 @@ election_record
 
 5 directories, 16 files
 ```
+
+Those are what I'll be trying to reconstruct from UTXO + IPFS data in the first version of the Cardano integration.
