@@ -17,3 +17,8 @@ The main difficulty with IPFS is that no one guarantees a given file will be hos
 I don't think solving that should be a focus of the initial demo, but later we'll need to ensure it with some incentives, double checking, or maybe outsourcing it to a protocol like FileCoin?
 
 The simplest check I can think of is just to require that before a ballot moves from the message queue to the election record MPT, it's signed off on by N hosting parties. N can be configurable at the beginning of the election, and the hosting parties could be guardians, maybe with observers as a fallback later.
+
+The only real downside to the sign-off idea is that it would multiply the number of transactions needed for the protocol by `N-1` (because the initial insert can come with one promise of availability).
+
+Each voter who challenges or checks their vote should also be given a copy, of course.
+And if the system ends up needing it, maybe they should be rewarded for having kept it and rescued the beaurocrats!
