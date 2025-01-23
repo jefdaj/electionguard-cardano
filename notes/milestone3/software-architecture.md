@@ -6,7 +6,7 @@ Just some initial ideas...
 
 These images could be arranged into all the things I know I'll want so far.
 
-![](04-software-architecture.svg)
+![](software-architecture.svg)
 
 | Network | Nodes |
 | --- | --- |

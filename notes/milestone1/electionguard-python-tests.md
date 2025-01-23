@@ -1,6 +1,6 @@
 # electionguard-python tests
 
-After ironing out a couple minor kinks in [the dev setup](./02-electionguard-python-dev-setup.md), all of the tests pass! :partying_face:
+After ironing out a couple minor kinks in [the dev setup](./electionguard-python-dev-setup.md), all of the tests pass! :partying_face:
 
 I'm also very pleased with the code quality so far.
 Probably should have expected that from Microsoft...
