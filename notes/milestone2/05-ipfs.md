@@ -24,6 +24,10 @@ Not sure where to get started yet, but worth trying.
 
 Maybe [here](https://github.com/ipfs-examples/helia-101)?
 
+### IPFS Cluster
+
+Ah, this is the one. [The docs](https://ipfscluster.io/documentation/quickstart/) are good and the example runs immediately.
+
 
 ## How to ensure no ballots get lost?
 
