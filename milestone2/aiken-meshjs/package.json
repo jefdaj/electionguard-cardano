@@ -1,16 +1,13 @@
 {
-  "name": "aiken-meshjs",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "hello_world",
+  "version": "0.0.1",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "generate": "npx tsx generate-credentials.ts",
+    "lock": "npx tsx lock.ts"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "jinglescode",
   "dependencies": {
-    "@meshsdk/core": "^1.8.13",
+    "@meshsdk/core": "^1.8.4",
     "tsx": "^4.19.2"
   }
 }
