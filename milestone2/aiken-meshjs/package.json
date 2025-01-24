@@ -8,5 +8,9 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@meshsdk/core": "^1.8.13",
+    "tsx": "^4.19.2"
+  }
 }
