@@ -1,7 +1,6 @@
 {
   inputs = {
     flake-utils.url = "github:numtide/flake-utils";
-    # nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
   };
 
@@ -12,7 +11,8 @@
       in {
         devShell = pkgs.mkShell {
           buildInputs=[
-            pkgs.nodePackages.pnpm
+            pkgs.nodePackages.nodejs
+            pkgs.nodePackages.pnpm # TODO would npm work fine too?
             pkgs.nodePackages.typescript
             pkgs.nodePackages.typescript-language-server
           ];
