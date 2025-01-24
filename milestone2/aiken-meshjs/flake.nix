@@ -9,8 +9,9 @@
     devShells.x86_64-linux.default = self.pkgs.mkShell {
       buildInputs = [
         aiken.packages.x86_64-linux.aiken
-        self.pkgs.nodejs
-        # self.pkgs.nodePackages.typescript
+        self.pkgs.pnpm
+        self.pkgs.nodePackages.typescript
+        self.pkgs.nodePackages.typescript-language-server
       ];
     };
 
