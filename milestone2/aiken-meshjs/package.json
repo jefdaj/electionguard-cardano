@@ -1,0 +1,16 @@
+{
+  "name": "aiken-meshjs",
+  "version": "1.0.0",
+  "description": "An example of an Hello, World! contract using Aiken and [Mesh](https://meshjs.dev/).",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@meshsdk/core": "^1.8.13",
+    "tsx": "^4.19.2"
+  }
+}

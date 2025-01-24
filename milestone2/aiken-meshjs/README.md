@@ -6,6 +6,14 @@ See the [full tutorial on aiken-lang.org](https://aiken-lang.org/example--hello-
 
 ## Setup
 
+### Nix
+
+Do this first and run the other commands in the dev shell:
+
+```
+nix develop
+```
+
 ### Building
 
 ```
