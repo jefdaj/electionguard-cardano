@@ -10,7 +10,8 @@ services:
     ]
     volumes:
       - ./config/network/${NETWORK:-preview}/cardano-node:/config
-      - ./config/network/${NETWORK:-preview}/genesis:/genesis
+      # TODO is this needed?
+      # - ./config/network/${NETWORK:-preview}/genesis:/genesis
       - ./data/node-db:/data
       - ./data/node-ipc:/ipc
     restart: on-failure
