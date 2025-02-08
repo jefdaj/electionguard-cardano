@@ -23,3 +23,5 @@ curl 'http://localhost:1442/matches' | jq > matches.json
 
 Verdict: works very well! Syncs immediately when starting `--since` the
 current slot, which we can do for elections. Provides simple JSON of matches.
+
+TODO any advantage to syncing via Ogmios rather than directly with the node?
