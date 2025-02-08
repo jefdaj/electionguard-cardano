@@ -1,5 +1,3 @@
-version: "3.5"
-
 services:
   cardano-node:
     image: ghcr.io/intersectmbo/cardano-node:10.1.4
@@ -21,6 +19,8 @@ services:
       options:
         max-size: "400k"
         max-file: "20"
+    networks:
+      - shared-net
 
   ogmios:
     image: cardanosolutions/ogmios:latest
@@ -35,3 +35,10 @@ services:
       - ./data/node-ipc:/ipc
     ports:
       - ${OGMIOS_PORT:-1337}:1337
+    networks:
+      - shared-net
+
+# allow communication with other docker-compose networks, for example kupo
+networks:
+  shared-net:
+    driver: bridge
