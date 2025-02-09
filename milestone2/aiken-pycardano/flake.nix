@@ -1,5 +1,5 @@
 {
-  description = "Aiken test env";
+  description = "Aiken + PyCardano env";
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
     aiken.url = "github:aiken-lang/aiken/v1.1.10";
