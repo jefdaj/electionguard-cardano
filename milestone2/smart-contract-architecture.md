@@ -14,3 +14,5 @@ The message queue is for incoming signed ballots, and other messages like final 
 In the future it could also have Benaloh challenge certifications/disputes by voters.
 
 The general fund could expand later into a map holding collateral from various parties.
+
+TODO can the plutus contract do all verification of incoming data itself, then force batchers to include every TX? Or will there eventually need to be a dispute resolution mechanism for that?

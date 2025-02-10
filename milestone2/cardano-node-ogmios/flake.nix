@@ -1,5 +1,5 @@
 {
-  description = "ipfs-cluster test env";
+  description = "cardano node + ogmios test env";
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
   outputs = { self, nixpkgs, ... }: {
     pkgs = nixpkgs.legacyPackages.x86_64-linux;
