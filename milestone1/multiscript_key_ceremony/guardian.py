@@ -3,44 +3,34 @@
 # Based on the functional_key_ceremony integration test.
 # Instead of one script, this has one script per party
 # and they coordinate via a shared folder on the local filesystem.
-
+#
 # This script is written from a guardian's point of view.
-
-# def main(args):
-
-    # public_record_dir = args[0]
-    # n_guardians = int(args[1])
-    # quorum = int(args[2])
-    # current_round = int(args[3])
-
-    # if current_round == 1:
-        # guardian_keys_dir = os.path.join(public_record_dir, 'round_1_guardian_keys')
-        # os.makedirs(guardian_keys_dir, exist_ok=True)
-
-    # elif current_round == 2:
-        # guardian_backups_dir = os.path.join(public_record_dir, 'round_2_guardian_backups')
-        # os.makedirs(guardian_backups_dir, exist_ok=True)
-
-    # elif current_round == 3:
-        # guardian_verifications_dir = os.path.join(public_record_dir, 'round_3_guardian_verifications')
-        # os.makedirs(guardian_verifications_dir, exist_ok=True)
-
-    # else:
-        # raise Exception(f'invalid current_round "{current_round}"')
-
-# if __name__ == '__main__':
-    # main(sys.argv[1:])
-
-# @click.option(
-#     "--public-record-dir",
-#     prompt="Public Record Output Directory",
-#     help="The location of a directory into which will be placed the public record files",
-#     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
-# )
 
 import click
 import json
 from os.path import join
+
+from electionguard.key_ceremony import (
+    ElectionKeyPair,
+    generate_election_key_pair,
+)
+
+def round1(guardian_id, sequence_order, quorum, guardian_keys_dir):
+
+    # TODO how should this be saved to disk for the guardian to access in future rounds?
+    # TODO maybe a PrivateGuardianRecord?
+    election_key_pair: ElectionKeyPair = generate_election_key_pair(guardian_id, sequence_order, quorum)
+    print('generated key pair, but not sure how to save it')
+
+    # with open(guardian_key_pair_path, 'w') as f:
+    #     json.dump(election_key_pair, f)
+    # print(election_key_pair)
+    # key2 = election_key_pair.share()
+    # print(key2)
+
+    # guardian_key_pair_path = join(guardian_keys_dir, guardian_id + '.json')
+    # with open(guardian_key_pair_path, 'w') as f:
+    #     f.write(
 
 @click.command("key-ceremony")
 @click.option(
@@ -93,6 +83,10 @@ def GuardianKeyCeremonyCommand(
     particular guardian.
     """
     print(json.dumps(locals()))
+    if current_round == 1:
+        round1(guardian_id, guardian_sequence_order, quorum, guardian_keys_dir)
+    else:
+        raise Exception(f'Invalid current_round "{current_round}"')
     # with open(join(guardian_keys_dir, 'test_' + str(guardian_sequence_order) + '.txt'), 'w') as f:
     #     f.write('testing')
 

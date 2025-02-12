@@ -43,6 +43,7 @@ for guardian_id, sequence_order in zip(guardian_ids, guardian_sequence_orders):
     # print(guardian_id, sequence_order)
     # self._guardian_generates_keys(guardian_id, sequence_order)
     proc = subprocess.Popen([
+        # TODO docker exec inside each container here?
         "poetry", "run", join(MSKC_SRC, 'guardian.py'), "key-ceremony",
         "--guardian-count"         , str(MSKC_NUMBER_OF_GUARDIANS),
         "--quorum"                 , str(MSKC_QUORUM),
@@ -51,7 +52,12 @@ for guardian_id, sequence_order in zip(guardian_ids, guardian_sequence_orders):
         "--guardian-sequence-order", str(sequence_order),
         "--current-round"          , str(1),
     ], stdout=subprocess.PIPE, text=True)
-    pprint(json.loads(proc.communicate()[0]))
-    # break
+    (stdout, stderr) = proc.communicate()
+    try:
+        pprint(json.loads(stdout))
+    except json.decoder.JSONDecodeError:
+        print(stdout)
+        print(stderr)
+    break
 
 # self.assertEqual(len(self.election_key_pairs), self.NUMBER_OF_GUARDIANS)
