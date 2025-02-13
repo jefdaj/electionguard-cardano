@@ -3,7 +3,6 @@
 # Based on the functional_key_ceremony integration test.
 # Instead of one script, this has one script per party
 # and they coordinate via a shared folder on the local filesystem.
-#
 # This script is written from a guardian's point of view.
 
 import click
@@ -14,54 +13,51 @@ from electionguard.key_ceremony import (
     ElectionKeyPair,
     generate_election_key_pair,
 )
+from electionguard import serialize
 
-def round1(guardian_id, sequence_order, quorum, guardian_keys_dir):
-
-    # TODO how should this be saved to disk for the guardian to access in future rounds?
-    # TODO maybe a PrivateGuardianRecord?
+def round1(guardian_id, sequence_order, quorum, public_records_dir, private_records_dir):
     election_key_pair: ElectionKeyPair = generate_election_key_pair(guardian_id, sequence_order, quorum)
-    print('generated key pair, but not sure how to save it')
-
-    # with open(guardian_key_pair_path, 'w') as f:
-    #     json.dump(election_key_pair, f)
-    # print(election_key_pair)
-    # key2 = election_key_pair.share()
-    # print(key2)
-
-    # guardian_key_pair_path = join(guardian_keys_dir, guardian_id + '.json')
-    # with open(guardian_key_pair_path, 'w') as f:
-    #     f.write(
+    serialize.to_file(election_key_pair.share(), guardian_id, public_records_dir)
+    serialize.to_file(election_key_pair        , guardian_id, private_records_dir)
+    # TODO does each guardian also need to save the others' keys now, or does the public_record suffice?
 
 @click.command("key-ceremony")
 @click.option(
     "--guardian-count",
-    prompt="Number of guardians",
-    help="The number of guardians that will participate in the key ceremony and tally.",
+    prompt="Number of s",
+    help="The number of s that will participate in the key ceremony and tally.",
     type=click.INT,
 )
 @click.option(
     "--quorum",
     prompt="Quorum",
-    help="The minimum number of guardians required to show up to the tally.",
+    help="The minimum number of s required to show up to the tally.",
     type=click.INT,
 )
 @click.option(
-    "--guardian-keys-dir",
-    prompt="Private guardian keys directory",
+    "--public-records-dir",
+    prompt="Public records directory",
+    help="The location of a directory into which will be placed the guardian's public keys "
+    + "This folder should be protected. Existing files will be overwritten.",
+    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+)
+@click.option(
+    "--private-records-dir",
+    prompt="Private records directory",
     help="The location of a directory into which will be placed the guardian's private keys "
     + "This folder should be protected. Existing files will be overwritten.",
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
 @click.option(
     "--guardian-id",
-    prompt="Unique ID for this guardian",
-    help="Unique ID for this guardian in the ceremony",
+    prompt="Unique ID for this ",
+    help="Unique ID for this  in the ceremony",
     type=click.STRING,
 )
 @click.option(
     "--guardian-sequence-order",
-    prompt="Sequence order for this guardian",
-    help="Sequence order for this guardian in the ceremony",
+    prompt="Sequence order for this ",
+    help="Sequence order for this  in the ceremony",
     type=click.INT,
 )
 @click.option(
@@ -73,22 +69,24 @@ def round1(guardian_id, sequence_order, quorum, guardian_keys_dir):
 def GuardianKeyCeremonyCommand(
     guardian_count: int,
     quorum: int,
-    guardian_keys_dir: str,
+    public_records_dir: str,
+    private_records_dir: str,
     guardian_id: str,
     guardian_sequence_order: int,
     current_round: int,
 ) -> None:
     """
     This command runs one round of the key ceremony from the perspective of a
-    particular guardian.
+    particular .
     """
     print(json.dumps(locals()))
     if current_round == 1:
-        round1(guardian_id, guardian_sequence_order, quorum, guardian_keys_dir)
+        round1(guardian_id, guardian_sequence_order, quorum, public_records_dir, private_records_dir)
+    elif current_round == 2:
+        # TODO write this next
+        pass
     else:
         raise Exception(f'Invalid current_round "{current_round}"')
-    # with open(join(guardian_keys_dir, 'test_' + str(guardian_sequence_order) + '.txt'), 'w') as f:
-    #     f.write('testing')
 
 @click.group()
 def cli() -> None:

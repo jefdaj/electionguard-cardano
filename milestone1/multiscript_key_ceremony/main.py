@@ -31,13 +31,14 @@ guardian_ids = [f"guardian_{i}" for i in guardian_sequence_orders]
 # print(guardian_sequence_orders)
 # print(guardian_ids)
 
-# ROUND 1
-election_keypairs_dir = join(MSKC_ROOT, 'public_record')
-guardian_keys_dir     = join(MSKC_ROOT, 'guardian_keys')
-makedirs(guardian_keys_dir, exist_ok=True)
-makedirs(election_keypairs_dir, exist_ok=True)
-# print(election_keypairs_dir)
-# print(guardian_keys_dir)
+### ROUND 1 ###
+
+public_records_dir  = join(MSKC_ROOT, 'public_record')
+private_records_dir = join(MSKC_ROOT, 'private_records')
+makedirs(private_records_dir, exist_ok=True)
+makedirs(public_records_dir, exist_ok=True)
+# print(public_records_dir)
+# print(private_records_dir)
 
 for guardian_id, sequence_order in zip(guardian_ids, guardian_sequence_orders):
     # print(guardian_id, sequence_order)
@@ -47,7 +48,8 @@ for guardian_id, sequence_order in zip(guardian_ids, guardian_sequence_orders):
         "poetry", "run", join(MSKC_SRC, 'guardian.py'), "key-ceremony",
         "--guardian-count"         , str(MSKC_NUMBER_OF_GUARDIANS),
         "--quorum"                 , str(MSKC_QUORUM),
-        "--guardian-keys-dir"      , guardian_keys_dir,
+        "--public-records-dir"     , join(public_records_dir, 'guardians'),
+        "--private-records-dir"    , private_records_dir,
         "--guardian-id"            , guardian_id,
         "--guardian-sequence-order", str(sequence_order),
         "--current-round"          , str(1),
@@ -58,6 +60,6 @@ for guardian_id, sequence_order in zip(guardian_ids, guardian_sequence_orders):
     except json.decoder.JSONDecodeError:
         print(stdout)
         print(stderr)
-    break
+    # break
 
 # self.assertEqual(len(self.election_key_pairs), self.NUMBER_OF_GUARDIANS)
