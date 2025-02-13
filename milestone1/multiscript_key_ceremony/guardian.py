@@ -18,8 +18,13 @@ from electionguard import serialize
 def round1(guardian_id, sequence_order, quorum, public_records_dir, private_records_dir):
     election_key_pair: ElectionKeyPair = generate_election_key_pair(guardian_id, sequence_order, quorum)
     serialize.to_file(election_key_pair.share(), guardian_id, public_records_dir)
-    serialize.to_file(election_key_pair        , guardian_id, private_records_dir)
+    serialize.to_file(election_key_pair, 'election_key_pair', private_records_dir)
     # TODO does each guardian also need to save the others' keys now, or does the public_record suffice?
+
+def round2(guardian_id, sequence_order, private_records_dir):
+    election_key_pair_path = join(private_records_dir, 'election_key_pair.json')
+    election_key_pair = serialize.from_file(ElectionKeyPair, election_key_pair_path)
+    print(election_key_pair)
 
 @click.command("key-ceremony")
 @click.option(
@@ -84,7 +89,7 @@ def GuardianKeyCeremonyCommand(
         round1(guardian_id, guardian_sequence_order, quorum, public_records_dir, private_records_dir)
     elif current_round == 2:
         # TODO write this next
-        pass
+        round2(guardian_id, guardian_sequence_order, private_records_dir)
     else:
         raise Exception(f'Invalid current_round "{current_round}"')
 
