@@ -19,8 +19,8 @@ from os import makedirs
 from os.path import join
 from pprint import pprint
 
-MSKC_NUMBER_OF_GUARDIANS = 5
-MSKC_QUORUM = 3
+MSKC_NUMBER_OF_GUARDIANS = 3
+MSKC_QUORUM = 2
 MSKC_ROOT = '/repo/multiscript_key_ceremony'
 MSKC_SRC = MSKC_ROOT
 
@@ -28,8 +28,6 @@ MSKC_SRC = MSKC_ROOT
 
 guardian_sequence_orders = [*range(1, MSKC_NUMBER_OF_GUARDIANS + 1)]
 guardian_ids = [f"guardian_{i}" for i in guardian_sequence_orders]
-# print(guardian_sequence_orders)
-# print(guardian_ids)
 
 ### ROUND 1 ###
 
@@ -37,8 +35,6 @@ public_records_dir  = join(MSKC_ROOT, 'public_record')
 private_records_dir = join(MSKC_ROOT, 'private_records')
 makedirs(private_records_dir, exist_ok=True)
 makedirs(public_records_dir, exist_ok=True)
-# print(public_records_dir)
-# print(private_records_dir)
 
 for guardian_id, sequence_order in zip(guardian_ids, guardian_sequence_orders):
     # print(guardian_id, sequence_order)
@@ -75,7 +71,7 @@ for guardian_id, sequence_order in zip(guardian_ids, guardian_sequence_orders):
         "--private-records-dir"    , join(private_records_dir, guardian_id),
         "--guardian-id"            , guardian_id,
         "--guardian-sequence-order", str(sequence_order),
-        "--current-round"          , str(2),
+        "--current-round"          , str(2), # TODO is this all that changes each round? make a loop
     ], stdout=subprocess.PIPE, text=True)
     (stdout, stderr) = proc.communicate()
     try:

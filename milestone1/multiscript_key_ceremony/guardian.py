@@ -7,24 +7,52 @@
 
 import click
 import json
-from os.path import join
+
+from typing import Dict
+from pprint import pprint
+
+from os import listdir
+from os.path import join, splitext
 
 from electionguard.key_ceremony import (
     ElectionKeyPair,
     generate_election_key_pair,
 )
 from electionguard import serialize
+from electionguard.guardian import (
+    GuardianRecord,
+    publish_guardian_record
+)
 
 def round1(guardian_id, sequence_order, quorum, public_records_dir, private_records_dir):
-    election_key_pair: ElectionKeyPair = generate_election_key_pair(guardian_id, sequence_order, quorum)
-    serialize.to_file(election_key_pair.share(), guardian_id, public_records_dir)
-    serialize.to_file(election_key_pair, 'election_key_pair', private_records_dir)
-    # TODO does each guardian also need to save the others' keys now, or does the public_record suffice?
 
-def round2(guardian_id, sequence_order, private_records_dir):
+    # generate election key pair
+    # NOTE there will eventually also be separate a Cardano wallet key pair
+    election_key_pair: ElectionKeyPair = generate_election_key_pair(guardian_id, sequence_order, quorum)
+    serialize.to_file(election_key_pair, 'election_key_pair', private_records_dir)
+
+    # share the public key (and other info)
+    public_record: GuardianRecord = publish_guardian_record(election_key_pair.share())
+    serialize.to_file(public_record, guardian_id, public_records_dir)
+
+
+def round2(guardian_id, sequence_order, public_records_dir, private_records_dir):
+
+    # restore own private state
     election_key_pair_path = join(private_records_dir, 'election_key_pair.json')
     election_key_pair = serialize.from_file(ElectionKeyPair, election_key_pair_path)
-    print(election_key_pair)
+
+    # load other guardians' public keys from shared folder
+    # TODO factor out as a funcion
+    other_guardian_records: Dict[str, GuardianRecord] = {}
+    for json_filename in listdir(public_records_dir):
+        other_guardian_id = splitext(json_filename)[0]
+        if other_guardian_id == guardian_id:
+            continue
+        json_path = join(public_records_dir, json_filename)
+        other_guardian_record = serialize.from_file(GuardianRecord, json_path)
+        other_guardian_records[other_guardian_id] = other_guardian_record
+    # pprint(other_guardian_records)
 
 @click.command("key-ceremony")
 @click.option(
@@ -88,8 +116,7 @@ def GuardianKeyCeremonyCommand(
     if current_round == 1:
         round1(guardian_id, guardian_sequence_order, quorum, public_records_dir, private_records_dir)
     elif current_round == 2:
-        # TODO write this next
-        round2(guardian_id, guardian_sequence_order, private_records_dir)
+        round2(guardian_id, guardian_sequence_order, public_records_dir, private_records_dir)
     else:
         raise Exception(f'Invalid current_round "{current_round}"')
 
