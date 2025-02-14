@@ -8,51 +8,76 @@
 import click
 import json
 
-from typing import Dict
-from pprint import pprint
-
-from os import listdir
+from os import listdir, makedirs
 from os.path import join, splitext
+from pprint import pprint
+from typing import List, Dict
 
+from electionguard import serialize
+from electionguard.type import GuardianId
 from electionguard.key_ceremony import (
     ElectionKeyPair,
+    ElectionPublicKey,
     generate_election_key_pair,
-)
-from electionguard import serialize
-from electionguard.guardian import (
-    GuardianRecord,
-    publish_guardian_record
+    generate_election_partial_key_backup,
 )
 
+
 def round1(guardian_id, sequence_order, quorum, public_records_dir, private_records_dir):
+
+    pubkeys_dir = join(public_records_dir, 'guardian_pubkeys')
+    makedirs(pubkeys_dir, exist_ok=True)
 
     # generate election key pair
     # NOTE there will eventually also be separate a Cardano wallet key pair
     election_key_pair: ElectionKeyPair = generate_election_key_pair(guardian_id, sequence_order, quorum)
-    serialize.to_file(election_key_pair, 'election_key_pair', private_records_dir)
+    serialize.to_file(election_key_pair, guardian_id, private_records_dir)
 
     # share the public key (and other info)
-    public_record: GuardianRecord = publish_guardian_record(election_key_pair.share())
-    serialize.to_file(public_record, guardian_id, public_records_dir)
+    # TODO why not publish_guardian_record here? I guess that's later after backups?
+    public_key: ElectionPublicKey = election_key_pair.share()
+    serialize.to_file(public_key, guardian_id, pubkeys_dir)
+
+
+def load_guardian_pubkeys(public_records_dir: str) -> List[ElectionPublicKey]:
+    guardian_pubkeys: List[ElectionPublicKey] = []
+    for json_filename in listdir(public_records_dir):
+        guardian_id: GuardianId = splitext(json_filename)[0]
+        json_path = join(public_records_dir, json_filename)
+        guardian_pubkey = serialize.from_file(ElectionPublicKey, json_path)
+        guardian_pubkeys.append(guardian_pubkey)
+    return guardian_pubkeys
 
 
 def round2(guardian_id, sequence_order, public_records_dir, private_records_dir):
 
+    pubkeys_dir = join(public_records_dir, 'guardian_pubkeys')
+    backups_dir = join(public_records_dir, 'guardian_backups')
+    makedirs(pubkeys_dir, exist_ok=True)
+    makedirs(backups_dir, exist_ok=True)
+
     # restore own private state
-    election_key_pair_path = join(private_records_dir, 'election_key_pair.json')
+    election_key_pair_path = join(private_records_dir, f'{guardian_id}.json')
     election_key_pair = serialize.from_file(ElectionKeyPair, election_key_pair_path)
 
     # load other guardians' public keys from shared folder
-    # TODO factor out as a funcion
-    other_guardian_records: Dict[str, GuardianRecord] = {}
-    for json_filename in listdir(public_records_dir):
-        other_guardian_id = splitext(json_filename)[0]
-        if other_guardian_id == guardian_id:
-            continue
-        json_path = join(public_records_dir, json_filename)
-        other_guardian_record = serialize.from_file(GuardianRecord, json_path)
-        other_guardian_records[other_guardian_id] = other_guardian_record
-    # pprint(other_guardian_records)
+    other_guardian_pubkeys = [
+        k for k in load_guardian_pubkeys(pubkeys_dir)
+        if k.owner_id != guardian_id # remove self
+    ]
+
+    # save partial backups in shared folder, encrypted to each other guardians' pubkeys
+    # NOTE these will be public and on-chain in my version, unless that's bad?
+    for other_guardian_pubkey in other_guardian_pubkeys:
+        backup = generate_election_partial_key_backup(
+            guardian_id,
+            election_key_pair.polynomial,
+            other_guardian_pubkey,
+        )
+        backup_order = other_guardian_pubkey.sequence_order
+        backup_name = f'{guardian_id}_backup_{backup_order}'
+        serialize.to_file(backup, backup_name, backups_dir)
+ 
 
 @click.command("key-ceremony")
 @click.option(
