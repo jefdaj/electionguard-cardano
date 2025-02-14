@@ -29,53 +29,30 @@ MSKC_SRC = MSKC_ROOT
 guardian_sequence_orders = [*range(1, MSKC_NUMBER_OF_GUARDIANS + 1)]
 guardian_ids = [f"guardian_{i}" for i in guardian_sequence_orders]
 
-### ROUND 1 ###
-
 public_records_dir  = join(MSKC_ROOT, 'public_record')
 private_records_dir = join(MSKC_ROOT, 'private_records')
 makedirs(private_records_dir, exist_ok=True)
 makedirs(public_records_dir, exist_ok=True)
 
-for guardian_id, sequence_order in zip(guardian_ids, guardian_sequence_orders):
-    # print(guardian_id, sequence_order)
-    # self._guardian_generates_keys(guardian_id, sequence_order)
-    proc = subprocess.Popen([
-        # TODO docker exec inside each container here?
-        "poetry", "run", join(MSKC_SRC, 'guardian.py'), "key-ceremony",
-        "--guardian-count"         , str(MSKC_NUMBER_OF_GUARDIANS),
-        "--quorum"                 , str(MSKC_QUORUM),
-        "--public-records-dir"     , public_records_dir,
-        "--private-records-dir"    , private_records_dir,
-        "--guardian-id"            , guardian_id,
-        "--guardian-sequence-order", str(sequence_order),
-        "--current-round"          , str(1),
-    ], stdout=subprocess.PIPE, text=True)
-    (stdout, stderr) = proc.communicate()
-    try:
-        pprint(json.loads(stdout))
-    except json.decoder.JSONDecodeError:
-        print(stdout)
-        print(stderr)
+for key_ceremony_round in range(1,3):
 
-### ROUND 2 ###
-
-for guardian_id, sequence_order in zip(guardian_ids, guardian_sequence_orders):
-    # print(guardian_id, sequence_order)
-    # self._guardian_generates_keys(guardian_id, sequence_order)
-    proc = subprocess.Popen([
-        # TODO docker exec inside each container here?
-        "poetry", "run", join(MSKC_SRC, 'guardian.py'), "key-ceremony",
-        "--guardian-count"         , str(MSKC_NUMBER_OF_GUARDIANS),
-        "--quorum"                 , str(MSKC_QUORUM),
-        "--public-records-dir"     , public_records_dir,
-        "--private-records-dir"    , private_records_dir,
-        "--guardian-id"            , guardian_id,
-        "--guardian-sequence-order", str(sequence_order),
-        "--current-round"          , str(2), # TODO is this all that changes each round? make a loop
-    ], stdout=subprocess.PIPE, text=True)
-    (stdout, stderr) = proc.communicate()
-    try:
-        pprint(json.loads(stdout))
-    except json.decoder.JSONDecodeError:
-        print(stdout)
-        print(stderr)
+    for guardian_id, sequence_order in zip(guardian_ids, guardian_sequence_orders):
+        # print(guardian_id, sequence_order)
+        # self._guardian_generates_keys(guardian_id, sequence_order)
+        proc = subprocess.Popen([
+            # TODO docker exec inside each container here?
+            "poetry", "run", join(MSKC_SRC, 'guardian.py'), "key-ceremony",
+            "--guardian-count"         , str(MSKC_NUMBER_OF_GUARDIANS),
+            "--quorum"                 , str(MSKC_QUORUM),
+            "--public-records-dir"     , public_records_dir,
+            "--private-records-dir"    , private_records_dir,
+            "--guardian-id"            , guardian_id,
+            "--guardian-sequence-order", str(sequence_order),
+            "--current-round"          , str(key_ceremony_round),
+        ], stdout=subprocess.PIPE, text=True)
+        (stdout, stderr) = proc.communicate()
+        try:
+            pprint(json.loads(stdout))
+        except json.decoder.JSONDecodeError:
+            print(stdout)
+            print(stderr)
