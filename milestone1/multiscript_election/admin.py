@@ -16,19 +16,24 @@ from datetime import datetime, timedelta
 from electionguard.key_ceremony import (
     combine_election_public_keys,
     ElectionPublicKey,
+    ElectionJointKey,
 )
 from electionguard import serialize
 from electionguard.election import CiphertextElectionContext
+from electionguard.constants import ElectionConstants, get_constants
+from electionguard.utils import get_optional
 
 # TODO use election_builder_step as example instead
 # from electionguard.election_builder import ElectionBuilder
+from electionguard_tools.helpers.election_builder import ElectionBuilder
 
 from electionguard.manifest import Manifest, InternalManifest
 
 from guardian import load_guardian_pubkeys
 
 
-MANIFEST_NAME = '1_manifest'
+MANIFEST_NAME  = '1_manifest'
+JOINT_KEY_NAME = '5_joint_key'
 
 
 @click.command("build-manifest")
@@ -229,8 +234,7 @@ def PublishJointKeyCommand(
     assert election_joint_key is not None
 
     # NOTE we skip 4 to leave room for the challenge step
-    joint_key_name = '5_joint_key'
-    serialize.to_file(election_joint_key, joint_key_name, ceremony_dir)
+    serialize.to_file(election_joint_key, JOINT_KEY_NAME, ceremony_dir)
 
 
 @click.command("build-election")
@@ -262,11 +266,45 @@ def BuildElectionCommand(
     """
     print(json.dumps(locals()))
 
+    # set up dirs
+    election_dir = join(public_records_dir, '3_election')
+    makedirs(election_dir, exist_ok=True)
+
+    # load manifest
     manifest_path = join(public_records_dir, MANIFEST_NAME + '.json')
     manifest = serialize.from_file(Manifest, manifest_path)
-    pprint(manifest)
+    # pprint(manifest)
 
-    # TODO base on election_builder_step.py, NOT the ipynb? or use both
+    # load joint public key
+    ceremony_dir = join(public_records_dir, '2_key_ceremony')
+    joint_key_path = join(ceremony_dir, JOINT_KEY_NAME + '.json')
+    joint_key = serialize.from_file(ElectionJointKey, joint_key_path)
+
+    election_builder = ElectionBuilder(
+        guardian_count,
+        quorum,
+        manifest,
+    )
+
+    # TODO add this using IPFS later
+    # if verification_url is not None:
+    #     election_builder.add_extended_data_field(
+    #         self.VERIFICATION_URL_NAME, verification_url
+    #     )
+
+    # click.echo("Creating context and internal manifest")
+
+    # from electionguard_tools/factories/election_factory
+    election_builder.set_public_key(get_optional(joint_key).joint_public_key)
+    election_builder.set_commitment_hash(get_optional(joint_key).commitment_hash)
+    internal_manifest, context = get_optional(election_builder.build())
+    constants: ElectionConstants = get_constants()
+
+    # TODO combine these into one big json? might need guardian records first?
+    #      see election_factory.py
+    serialize.to_file(internal_manifest, 'internal_manifest', election_dir)
+    serialize.to_file(context, 'context', election_dir)
+    serialize.to_file(constants, 'constants', election_dir)
 
 @click.group()
 def cli() -> None:
