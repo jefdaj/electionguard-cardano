@@ -34,7 +34,7 @@ private_records_dir = join(MSKC_ROOT, 'private_records')
 makedirs(private_records_dir, exist_ok=True)
 makedirs(public_records_dir, exist_ok=True)
 
-for key_ceremony_round in range(1,3):
+for key_ceremony_round in range(1, 4):
 
     for guardian_id, sequence_order in zip(guardian_ids, guardian_sequence_orders):
         # print(guardian_id, sequence_order)

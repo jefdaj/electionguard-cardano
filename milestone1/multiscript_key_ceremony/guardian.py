@@ -18,14 +18,20 @@ from electionguard.type import GuardianId
 from electionguard.key_ceremony import (
     ElectionKeyPair,
     ElectionPublicKey,
+    ElectionPartialKeyBackup,
+    ElectionPartialKeyVerification,
     generate_election_key_pair,
     generate_election_partial_key_backup,
+    verify_election_partial_key_backup,
 )
 
 
 def round1(guardian_id, sequence_order, quorum, public_records_dir, private_records_dir):
+    '''Round 1: create and share pubkeys
+    '''
 
-    pubkeys_dir = join(public_records_dir, 'guardian_pubkeys')
+    # set up dirs
+    pubkeys_dir = join(public_records_dir, '1_guardian_pubkeys')
     makedirs(pubkeys_dir, exist_ok=True)
 
     # generate election key pair
@@ -50,9 +56,12 @@ def load_guardian_pubkeys(public_records_dir: str) -> List[ElectionPublicKey]:
 
 
 def round2(guardian_id, sequence_order, public_records_dir, private_records_dir):
+    '''Round 2: create and share backups
+    '''
 
-    pubkeys_dir = join(public_records_dir, 'guardian_pubkeys')
-    backups_dir = join(public_records_dir, 'guardian_backups')
+    # set up dirs
+    pubkeys_dir = join(public_records_dir, '1_guardian_pubkeys')
+    backups_dir = join(public_records_dir, '2_guardian_backups')
     makedirs(pubkeys_dir, exist_ok=True)
     makedirs(backups_dir, exist_ok=True)
 
@@ -77,7 +86,58 @@ def round2(guardian_id, sequence_order, public_records_dir, private_records_dir)
         backup_order = other_guardian_pubkey.sequence_order
         backup_name = f'{guardian_id}_backup_{backup_order}'
         serialize.to_file(backup, backup_name, backups_dir)
- 
+
+
+def load_designated_backups(backups_dir: str, guardian_id: GuardianId) -> Dict[str, ElectionPartialKeyBackup]:
+    # TODO use own public key to pick them out rather than filename?
+    designated_backups: Dict[str, ElectionPartialKeyBackup] = {}
+    for json_filename in listdir(backups_dir):
+        json_path = join(backups_dir, json_filename)
+        json_name = splitext(json_filename)[0]
+        backup = serialize.from_file(ElectionPartialKeyBackup, json_path)
+        if backup.designated_id == guardian_id:
+            designated_backups[json_name] = backup
+    return designated_backups
+
+
+def round3(guardian_id, sequence_order, public_records_dir, private_records_dir):
+    '''Round 3: verify backups
+    '''
+
+    # set up dirs
+    pubkeys_dir       = join(public_records_dir, '1_guardian_pubkeys')
+    backups_dir       = join(public_records_dir, '2_guardian_backups')
+    verifications_dir = join(public_records_dir, '3_guardian_backup_verifications')
+    makedirs(pubkeys_dir, exist_ok=True)
+    makedirs(backups_dir, exist_ok=True)
+    makedirs(verifications_dir, exist_ok=True)
+
+    # restore own private state
+    election_key_pair_path = join(private_records_dir, f'{guardian_id}.json')
+    election_key_pair = serialize.from_file(ElectionKeyPair, election_key_pair_path)
+    own_public_key = election_key_pair.share()
+
+    # find backup files sent to self, with basenames as keys
+    designated_backups = load_designated_backups(backups_dir, guardian_id)
+
+    # load other guardians' public keys from shared folder
+    other_guardian_pubkeys = {
+        k.owner_id: k for k in load_guardian_pubkeys(pubkeys_dir)
+        if k.owner_id != guardian_id # remove self
+    }
+
+    for (json_name, backup) in designated_backups.items():
+        owner_id = backup.owner_id
+        owner_public_key = other_guardian_pubkeys[owner_id]
+        verification: ElectionPartialKeyVerification = verify_election_partial_key_backup(
+            guardian_id, # mine
+            backup,
+            owner_public_key, # theirs
+            election_key_pair # mine
+        )
+        assert verification.verified == True
+        # these are named identically to the corresponding guardian_backups for now
+        serialize.to_file(verification, json_name, verifications_dir)
 
 @click.command("key-ceremony")
 @click.option(
@@ -142,6 +202,9 @@ def GuardianKeyCeremonyCommand(
         round1(guardian_id, guardian_sequence_order, quorum, public_records_dir, private_records_dir)
     elif current_round == 2:
         round2(guardian_id, guardian_sequence_order, public_records_dir, private_records_dir)
+    elif current_round == 3:
+        round3(guardian_id, guardian_sequence_order, public_records_dir, private_records_dir)
+    # TODO implement round 4 (challenge if necessary)
     else:
         raise Exception(f'Invalid current_round "{current_round}"')
 
