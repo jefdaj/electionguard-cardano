@@ -18,8 +18,18 @@ from electionguard.key_ceremony import (
     ElectionPublicKey,
 )
 from electionguard import serialize
+from electionguard.election import CiphertextElectionContext
+
+# TODO use election_builder_step as example instead
+# from electionguard.election_builder import ElectionBuilder
+
+from electionguard.manifest import Manifest, InternalManifest
 
 from guardian import load_guardian_pubkeys
+
+
+MANIFEST_NAME = '1_manifest'
+
 
 @click.command("build-manifest")
 @click.option(
@@ -135,8 +145,7 @@ def BuildManifestCommand(
         "contact_information": None
     }
 
-    manifest_name = '1_manifest'
-    serialize.to_file(manifest, manifest_name, public_records_dir)
+    serialize.to_file(manifest, MANIFEST_NAME, public_records_dir)
 
 
 @click.command("announce-key-ceremony")
@@ -224,6 +233,41 @@ def PublishJointKeyCommand(
     serialize.to_file(election_joint_key, joint_key_name, ceremony_dir)
 
 
+@click.command("build-election")
+@click.option(
+    "--guardian-count",
+    prompt="Number of s",
+    help="The number of guardians that will participate in the key ceremony and tally.",
+    type=click.INT,
+)
+@click.option(
+    "--quorum",
+    prompt="Quorum",
+    help="The minimum number of guardians required to show up to the tally.",
+    type=click.INT,
+)
+@click.option(
+    "--public-records-dir",
+    prompt="Public records directory",
+    help="The location of a directory into which will be placed all public records. "
+    + "This folder should be protected. Existing files will be overwritten.",
+    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+)
+def BuildElectionCommand(
+    guardian_count: int,
+    quorum: int,
+    public_records_dir: str,
+) -> None:
+    """Build the InternalManifest and CiphertextElectionContext.
+    """
+    print(json.dumps(locals()))
+
+    manifest_path = join(public_records_dir, MANIFEST_NAME + '.json')
+    manifest = serialize.from_file(Manifest, manifest_path)
+    pprint(manifest)
+
+    # TODO base on election_builder_step.py, NOT the ipynb? or use both
+
 @click.group()
 def cli() -> None:
     pass
@@ -231,6 +275,7 @@ def cli() -> None:
 cli.add_command(BuildManifestCommand)
 cli.add_command(AnnounceKeyCeremonyCommand)
 cli.add_command(PublishJointKeyCommand)
+cli.add_command(BuildElectionCommand)
 
 if __name__ == '__main__':
     cli()

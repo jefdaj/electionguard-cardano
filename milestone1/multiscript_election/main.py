@@ -44,7 +44,7 @@ def build_manifest():
         join(MSKC_SRC, 'admin.py'), "build-manifest",
         "--public-records-dir", PUBLIC_RECORDS_DIR,
         "--referendum-question", question,
-    ], stdin=subprocess.PIPE)
+    ])
 
 
 def announce_key_ceremony():
@@ -63,9 +63,14 @@ def publish_joint_key():
     ])
 
 
-def context():
-    pass
-    # TODO write this
+def build_election():
+    run_python_script([
+        join(MSKC_SRC, 'admin.py'), "build-election",
+        "--guardian-count"    , str(MSKC_NUMBER_OF_GUARDIANS),
+         "--quorum"           , str(MSKC_QUORUM),
+        "--public-records-dir", PUBLIC_RECORDS_DIR,
+    ])
+
 
 
 def key_ceremony_round(current_round):
@@ -90,4 +95,4 @@ if __name__ == '__main__':
     key_ceremony_round(3)
     # TODO should there be a "publish final guardian records" step here?
     publish_joint_key()
-    # context()
+    build_election()
