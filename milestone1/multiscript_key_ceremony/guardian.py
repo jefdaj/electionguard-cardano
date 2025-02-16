@@ -107,7 +107,7 @@ def round3(guardian_id, sequence_order, public_records_dir, private_records_dir)
     # set up dirs
     pubkeys_dir       = join(public_records_dir, '1_guardian_pubkeys')
     backups_dir       = join(public_records_dir, '2_guardian_backups')
-    verifications_dir = join(public_records_dir, '3_guardian_backup_verifications')
+    verifications_dir = join(public_records_dir, '3_guardian_verifications')
     makedirs(pubkeys_dir, exist_ok=True)
     makedirs(backups_dir, exist_ok=True)
     makedirs(verifications_dir, exist_ok=True)

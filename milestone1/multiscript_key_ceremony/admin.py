@@ -8,6 +8,7 @@
 import click
 import json
 from pprint import pprint
+from os import makedirs
 from os.path import join
 from typing import List
 from datetime import datetime
@@ -52,6 +53,8 @@ def AnnounceKeyCeremonyCommand(
     """
     print(json.dumps(locals()))
 
+    makedirs(public_records_dir, exist_ok=True)
+
     # based on electionguard-python/src/electionguard_gui/models/key_ceremony_service:create
     announcement = {
         "created_at": datetime.utcnow(),
@@ -69,7 +72,7 @@ def AnnounceKeyCeremonyCommand(
         # "shared_backups": [],
         # "verifications": [],
     }
-    announcement_name = '0_announcement'
+    announcement_name = '0_announce'
     serialize.to_file(announcement, announcement_name, public_records_dir)
 
 
@@ -88,6 +91,9 @@ def PublishJointKeyCommand(
     Could technically be posted on chain by anyone, not just the admin.
     """
     print(json.dumps(locals()))
+
+    # TODO remove? should never be needed
+    makedirs(public_records_dir, exist_ok=True)
 
     pubkeys_dir = join(public_records_dir, '1_guardian_pubkeys')
     guardian_public_keys: List[ElectionPublicKey] = load_guardian_pubkeys(pubkeys_dir)

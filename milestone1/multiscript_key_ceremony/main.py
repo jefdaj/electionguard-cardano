@@ -30,8 +30,6 @@ GUARDIAN_IDS = [f"guardian_{i}" for i in GUARDIAN_SEQUENCE_ORDERS]
 
 PUBLIC_RECORDS_DIR  = join(MSKC_ROOT, 'public_record')
 PRIVATE_RECORDS_DIR = join(MSKC_ROOT, 'private_records')
-makedirs(PRIVATE_RECORDS_DIR, exist_ok=True)
-makedirs(PUBLIC_RECORDS_DIR, exist_ok=True)
 
 
 def run_python_script(args):
