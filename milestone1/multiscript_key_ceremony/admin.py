@@ -53,7 +53,8 @@ def AnnounceKeyCeremonyCommand(
     """
     print(json.dumps(locals()))
 
-    makedirs(public_records_dir, exist_ok=True)
+    ceremony_dir = join(public_records_dir, 'key_ceremony')
+    makedirs(ceremony_dir, exist_ok=True)
 
     # based on electionguard-python/src/electionguard_gui/models/key_ceremony_service:create
     announcement = {
@@ -73,7 +74,7 @@ def AnnounceKeyCeremonyCommand(
         # "verifications": [],
     }
     announcement_name = '0_announce'
-    serialize.to_file(announcement, announcement_name, public_records_dir)
+    serialize.to_file(announcement, announcement_name, ceremony_dir)
 
 
 @click.command("publish-joint-key")
@@ -92,10 +93,10 @@ def PublishJointKeyCommand(
     """
     print(json.dumps(locals()))
 
-    # TODO remove? should never be needed
-    makedirs(public_records_dir, exist_ok=True)
+    ceremony_dir = join(public_records_dir, 'key_ceremony')
+    pubkeys_dir = join(ceremony_dir, '1_pubkeys')
+    makedirs(pubkeys_dir, exist_ok=True)
 
-    pubkeys_dir = join(public_records_dir, '1_guardian_pubkeys')
     guardian_public_keys: List[ElectionPublicKey] = load_guardian_pubkeys(pubkeys_dir)
 
     election_joint_key = combine_election_public_keys(guardian_public_keys)
@@ -103,7 +104,7 @@ def PublishJointKeyCommand(
 
     # NOTE we skip 4 to leave room for the challenge step
     joint_key_name = '5_joint_key'
-    serialize.to_file(election_joint_key, joint_key_name, public_records_dir)
+    serialize.to_file(election_joint_key, joint_key_name, ceremony_dir)
 
 
 @click.group()

@@ -31,7 +31,7 @@ def round1(guardian_id, sequence_order, quorum, public_records_dir, private_reco
     '''
 
     # set up dirs
-    pubkeys_dir = join(public_records_dir, '1_guardian_pubkeys')
+    pubkeys_dir = join(public_records_dir, 'key_ceremony/1_pubkeys')
     makedirs(pubkeys_dir, exist_ok=True)
 
     # generate election key pair
@@ -40,7 +40,7 @@ def round1(guardian_id, sequence_order, quorum, public_records_dir, private_reco
     serialize.to_file(election_key_pair, guardian_id, private_records_dir)
 
     # share the public key (and other info)
-    # TODO why not publish_guardian_record here? I guess that's later after backups?
+    # TODO why not publish_record here? I guess that's later after backups?
     public_key: ElectionPublicKey = election_key_pair.share()
     serialize.to_file(public_key, guardian_id, pubkeys_dir)
 
@@ -60,8 +60,8 @@ def round2(guardian_id, sequence_order, public_records_dir, private_records_dir)
     '''
 
     # set up dirs
-    pubkeys_dir = join(public_records_dir, '1_guardian_pubkeys')
-    backups_dir = join(public_records_dir, '2_guardian_backups')
+    pubkeys_dir = join(public_records_dir, 'key_ceremony/1_pubkeys')
+    backups_dir = join(public_records_dir, 'key_ceremony/2_backups')
     makedirs(pubkeys_dir, exist_ok=True)
     makedirs(backups_dir, exist_ok=True)
 
@@ -77,13 +77,13 @@ def round2(guardian_id, sequence_order, public_records_dir, private_records_dir)
 
     # save partial backups in shared folder, encrypted to each other guardians' pubkeys
     # NOTE these will be public and on-chain in my version, unless that's bad?
-    for other_guardian_pubkey in other_guardian_pubkeys:
+    for other_pubkey in other_guardian_pubkeys:
         backup = generate_election_partial_key_backup(
             guardian_id,
             election_key_pair.polynomial,
-            other_guardian_pubkey,
+            other_pubkey,
         )
-        backup_order = other_guardian_pubkey.sequence_order
+        backup_order = other_pubkey.sequence_order
         backup_name = f'{guardian_id}_backup_{backup_order}'
         serialize.to_file(backup, backup_name, backups_dir)
 
@@ -105,9 +105,9 @@ def round3(guardian_id, sequence_order, public_records_dir, private_records_dir)
     '''
 
     # set up dirs
-    pubkeys_dir       = join(public_records_dir, '1_guardian_pubkeys')
-    backups_dir       = join(public_records_dir, '2_guardian_backups')
-    verifications_dir = join(public_records_dir, '3_guardian_verifications')
+    pubkeys_dir       = join(public_records_dir, 'key_ceremony/1_pubkeys')
+    backups_dir       = join(public_records_dir, 'key_ceremony/2_backups')
+    verifications_dir = join(public_records_dir, 'key_ceremony/3_verifications')
     makedirs(pubkeys_dir, exist_ok=True)
     makedirs(backups_dir, exist_ok=True)
     makedirs(verifications_dir, exist_ok=True)
