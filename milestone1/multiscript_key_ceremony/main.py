@@ -78,7 +78,6 @@ def key_ceremony_round(current_round):
 
 if __name__ == '__main__':
     announce_key_ceremony()
-    # TODO announce attendance step here
     key_ceremony_round(1)
     key_ceremony_round(2)
     key_ceremony_round(3)

@@ -32,13 +32,13 @@ from guardian import load_guardian_pubkeys
 @click.option(
     "--guardian-count",
     prompt="Number of s",
-    help="The number of s that will participate in the key ceremony and tally.",
+    help="The number of guardians that will participate in the key ceremony and tally.",
     type=click.INT,
 )
 @click.option(
     "--quorum",
     prompt="Quorum",
-    help="The minimum number of s required to show up to the tally.",
+    help="The minimum number of guardians required to show up to the tally.",
     type=click.INT,
 )
 def AnnounceKeyCeremonyCommand(
