@@ -20,6 +20,22 @@ from electionguard import serialize
 from guardian import load_guardian_pubkeys
 
 
+@click.command("announce-key-ceremony")
+@click.option(
+    "--public-records-dir",
+    prompt="Public records directory",
+    help="The location of a directory into which will be placed the guardian's public keys "
+    + "This folder should be protected. Existing files will be overwritten.",
+    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+)
+def AnnounceKeyCeremonyCommand(
+    public_records_dir: str,
+) -> None:
+    """Final step in the key ceremony.
+    Could technically be posted on chain by anyone, not just the admin.
+    """
+    print(json.dumps(locals()))
+
 @click.command("publish-joint-key")
 @click.option(
     "--public-records-dir",
@@ -52,6 +68,7 @@ def cli() -> None:
     pass
 
 cli.add_command(PublishJointKeyCommand)
+cli.add_command(AnnounceKeyCeremonyCommand)
 
 if __name__ == '__main__':
     cli()
