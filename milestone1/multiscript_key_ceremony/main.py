@@ -49,6 +49,8 @@ def run_python_script(args):
 def announce_key_ceremony():
     run_python_script([
         join(MSKC_SRC, 'admin.py'), "announce-key-ceremony",
+        "--guardian-count"    , str(MSKC_NUMBER_OF_GUARDIANS),
+         "--quorum"           , str(MSKC_QUORUM),
         "--public-records-dir", PUBLIC_RECORDS_DIR,
     ])
 

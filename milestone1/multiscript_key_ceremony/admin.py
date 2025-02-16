@@ -10,6 +10,7 @@ import json
 from pprint import pprint
 from os.path import join
 from typing import List
+from datetime import datetime
 
 from electionguard.key_ceremony import (
     combine_election_public_keys,
@@ -24,17 +25,53 @@ from guardian import load_guardian_pubkeys
 @click.option(
     "--public-records-dir",
     prompt="Public records directory",
-    help="The location of a directory into which will be placed the guardian's public keys "
+    help="The location of a directory into which will be placed all public records. "
     + "This folder should be protected. Existing files will be overwritten.",
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
+@click.option(
+    "--guardian-count",
+    prompt="Number of s",
+    help="The number of guardians that will participate in the key ceremony and tally.",
+    type=click.INT,
+)
+@click.option(
+    "--quorum",
+    prompt="Quorum",
+    help="The minimum number of guardians required to show up to the tally.",
+    type=click.INT,
+)
 def AnnounceKeyCeremonyCommand(
+    guardian_count: int,
+    quorum: int,
     public_records_dir: str,
 ) -> None:
-    """Final step in the key ceremony.
-    Could technically be posted on chain by anyone, not just the admin.
+    """Announce key ceremony parameters.
+    This is a provisional thing based on the electionguard_gui key_ceremony_service.py;
+    I think eventually what we want is for everything to flow from the manifest instead.
     """
     print(json.dumps(locals()))
+
+    # based on electionguard-python/src/electionguard_gui/models/key_ceremony_service:create
+    announcement = {
+        "created_at": datetime.utcnow(),
+        "guardian_count": guardian_count,
+        "quorum": quorum,
+        # "backups": [],
+        # "completed_at": None,
+        # "created_by": self._auth_service.get_user_id(),
+        # "guardians_joined": [],
+        # "guardians_keys": [],
+        # "joint_key": None,
+        # "key_ceremony_name": key_ceremony_name,
+        # "keys": [],
+        # "other_keys": [],
+        # "shared_backups": [],
+        # "verifications": [],
+    }
+    announcement_name = '0_announcement'
+    serialize.to_file(announcement, announcement_name, public_records_dir)
+
 
 @click.command("publish-joint-key")
 @click.option(

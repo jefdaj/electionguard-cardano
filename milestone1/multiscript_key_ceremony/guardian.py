@@ -143,19 +143,19 @@ def round3(guardian_id, sequence_order, public_records_dir, private_records_dir)
 @click.option(
     "--guardian-count",
     prompt="Number of s",
-    help="The number of s that will participate in the key ceremony and tally.",
+    help="The number of guardians that will participate in the key ceremony and tally.",
     type=click.INT,
 )
 @click.option(
     "--quorum",
     prompt="Quorum",
-    help="The minimum number of s required to show up to the tally.",
+    help="The minimum number of guardians required to show up to the tally.",
     type=click.INT,
 )
 @click.option(
     "--public-records-dir",
     prompt="Public records directory",
-    help="The location of a directory into which will be placed the guardian's public keys "
+    help="The location of a directory into which will be placed all public records. "
     + "This folder should be protected. Existing files will be overwritten.",
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
