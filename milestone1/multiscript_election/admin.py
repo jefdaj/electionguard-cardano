@@ -184,7 +184,7 @@ def AnnounceKeyCeremonyCommand(
     """
     print(json.dumps(locals()))
 
-    ceremony_dir = join(public_records_dir, '2_key_ceremony')
+    ceremony_dir = join(public_records_dir, '2_ceremony')
     makedirs(ceremony_dir, exist_ok=True)
 
     # based on electionguard-python/src/electionguard_gui/models/key_ceremony_service:create
@@ -224,7 +224,7 @@ def PublishJointKeyCommand(
     """
     print(json.dumps(locals()))
 
-    ceremony_dir = join(public_records_dir, '2_key_ceremony')
+    ceremony_dir = join(public_records_dir, '2_ceremony')
     pubkeys_dir = join(ceremony_dir, '1_pubkeys')
     makedirs(pubkeys_dir, exist_ok=True)
 
@@ -276,7 +276,7 @@ def BuildElectionCommand(
     # pprint(manifest)
 
     # load joint public key
-    ceremony_dir = join(public_records_dir, '2_key_ceremony')
+    ceremony_dir = join(public_records_dir, '2_ceremony')
     joint_key_path = join(ceremony_dir, JOINT_KEY_NAME + '.json')
     joint_key = serialize.from_file(ElectionJointKey, joint_key_path)
 
@@ -295,16 +295,25 @@ def BuildElectionCommand(
     # click.echo("Creating context and internal manifest")
 
     # from electionguard_tools/factories/election_factory
-    election_builder.set_public_key(get_optional(joint_key).joint_public_key)
-    election_builder.set_commitment_hash(get_optional(joint_key).commitment_hash)
+    election_builder.set_public_key(
+        get_optional(joint_key).joint_public_key
+    )
+    election_builder.set_commitment_hash(
+        get_optional(joint_key).commitment_hash
+    )
+
+    internal_manifest: InternalManifest
+    context:           CiphertextElectionContext
+    constants:         ElectionConstants
     internal_manifest, context = get_optional(election_builder.build())
-    constants: ElectionConstants = get_constants()
+    constants = get_constants()
 
     # TODO combine these into one big json? might need guardian records first?
     #      see election_factory.py
     serialize.to_file(internal_manifest, 'internal_manifest', election_dir)
     serialize.to_file(context, 'context', election_dir)
     serialize.to_file(constants, 'constants', election_dir)
+
 
 @click.group()
 def cli() -> None:

@@ -56,6 +56,20 @@ def announce_key_ceremony():
     ])
 
 
+def key_ceremony_round(current_round):
+    for guardian_id, sequence_order in zip(GUARDIAN_IDS, GUARDIAN_SEQUENCE_ORDERS):
+        run_python_script([
+            join(MSKC_SRC, 'guardian.py'), "key-ceremony",
+            "--guardian-count"         , str(MSKC_NUMBER_OF_GUARDIANS),
+            "--quorum"                 , str(MSKC_QUORUM),
+            "--public-records-dir"     , PUBLIC_RECORDS_DIR,
+            "--private-records-dir"    , PRIVATE_RECORDS_DIR,
+            "--guardian-id"            , guardian_id,
+            "--guardian-sequence-order", str(sequence_order),
+            "--current-round"          , str(current_round),
+        ])
+
+
 def publish_joint_key():
     run_python_script([
         join(MSKC_SRC, 'admin.py'), "publish-joint-key",
@@ -72,19 +86,11 @@ def build_election():
     ])
 
 
-
-def key_ceremony_round(current_round):
-    for guardian_id, sequence_order in zip(GUARDIAN_IDS, GUARDIAN_SEQUENCE_ORDERS):
-        run_python_script([
-            join(MSKC_SRC, 'guardian.py'), "key-ceremony",
-            "--guardian-count"         , str(MSKC_NUMBER_OF_GUARDIANS),
-            "--quorum"                 , str(MSKC_QUORUM),
-            "--public-records-dir"     , PUBLIC_RECORDS_DIR,
-            "--private-records-dir"    , PRIVATE_RECORDS_DIR,
-            "--guardian-id"            , guardian_id,
-            "--guardian-sequence-order", str(sequence_order),
-            "--current-round"          , str(current_round),
-        ])
+def add_device():
+    run_python_script([
+        join(MSKC_SRC, 'device.py'), "add-device",
+        "--public-records-dir", PUBLIC_RECORDS_DIR,
+    ])
 
 
 if __name__ == '__main__':
@@ -96,3 +102,4 @@ if __name__ == '__main__':
     # TODO should there be a "publish final guardian records" step here?
     publish_joint_key()
     build_election()
+    add_device()

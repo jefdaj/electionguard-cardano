@@ -31,7 +31,7 @@ def round1(guardian_id, sequence_order, quorum, public_records_dir, private_reco
     '''
 
     # set up dirs
-    pubkeys_dir = join(public_records_dir, '2_key_ceremony/1_pubkeys')
+    pubkeys_dir = join(public_records_dir, '2_ceremony/1_pubkeys')
     makedirs(pubkeys_dir, exist_ok=True)
 
     # generate election key pair
@@ -60,8 +60,8 @@ def round2(guardian_id, sequence_order, public_records_dir, private_records_dir)
     '''
 
     # set up dirs
-    pubkeys_dir = join(public_records_dir, '2_key_ceremony/1_pubkeys')
-    backups_dir = join(public_records_dir, '2_key_ceremony/2_backups')
+    pubkeys_dir = join(public_records_dir, '2_ceremony/1_pubkeys')
+    backups_dir = join(public_records_dir, '2_ceremony/2_backups')
     makedirs(pubkeys_dir, exist_ok=True)
     makedirs(backups_dir, exist_ok=True)
 
@@ -105,9 +105,9 @@ def round3(guardian_id, sequence_order, public_records_dir, private_records_dir)
     '''
 
     # set up dirs
-    pubkeys_dir       = join(public_records_dir, '2_key_ceremony/1_pubkeys')
-    backups_dir       = join(public_records_dir, '2_key_ceremony/2_backups')
-    verifications_dir = join(public_records_dir, '2_key_ceremony/3_verifications')
+    pubkeys_dir       = join(public_records_dir, '2_ceremony/1_pubkeys')
+    backups_dir       = join(public_records_dir, '2_ceremony/2_backups')
+    verifications_dir = join(public_records_dir, '2_ceremony/3_verifications')
     makedirs(pubkeys_dir, exist_ok=True)
     makedirs(backups_dir, exist_ok=True)
     makedirs(verifications_dir, exist_ok=True)
