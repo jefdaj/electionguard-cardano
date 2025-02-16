@@ -30,47 +30,14 @@ NIST has led the development of CDFs to support interoperability. The first 4 CD
 *   [Recommendations for Voting System Interoperability](./NIST.GCR.22-034.pdf)
      
 
-**CDF Specification** 
-
-**Reference Implementation** 
-
-**Required in VVSG 2.0** 
-
-[Voter Records Interchange](./NIST.SP.1500-102.pdf)
-
-[https://github.com/usnistgov/VoterRecordsInterchange](https://github.com/usnistgov/VoterRecordsInterchange "https://github.com/usnistgov/VoterRecordsInterchange")(link is external)  
-
-**Yes** 
-
-[Cast Vote Records](NIST.SP.1500-103.pdf)
-
-[https://github.com/usnistgov/CastVoteRecords](https://github.com/usnistgov/CastVoteRecords "https://github.com/usnistgov/CastVoteRecords")(link is external)  
-
-**Yes** 
-
-[Election Results](./NIST.SP.1500-100r2.pdf)
-
-[https://github.com/usnistgov/ElectionResultsReporting](https://github.com/usnistgov/ElectionResultsReporting "https://github.com/usnistgov/ElectionResultsReporting")(link is external)  
-
-**Yes** 
-
-[Election Event Logging](./NIST.SP.1500-101.pdf)
-
-[https://github.com/usnistgov/ElectionEventLogging](https://github.com/usnistgov/ElectionEventLogging "https://github.com/usnistgov/ElectionEventLogging")(link is external)  
-
-**Yes** 
-
-[Ballot Definition Specification](./NIST.SP.1500-20.pdf)
-
-[https://github.com/usnistgov/BallotDefinition](https://github.com/usnistgov/BallotDefinition)(link is external)
-
-**No**
-
-[Micro-CDF Specification](./NIST.SP.1500-19.pdf)
-
-[https://github.com/usnistgov/mcdf](https://github.com/usnistgov/mcdf)(link is external)
-
-**No**
+| CDF Specification | Reference Implementation | Required in VVSG 2.0 |
+| --- | --- | --- |
+| [Voter Records Interchange](./NIST.SP.1500-102.pdf) | [https://github.com/usnistgov/VoterRecordsInterchange](https://github.com/usnistgov/VoterRecordsInterchange "https://github.com/usnistgov/VoterRecordsInterchange") (link is external)   | **Yes**  |
+| [Cast Vote Records](NIST.SP.1500-103.pdf) | [https://github.com/usnistgov/CastVoteRecords](https://github.com/usnistgov/CastVoteRecords "https://github.com/usnistgov/CastVoteRecords") (link is external)   | **Yes**  |
+| [Election Results](./NIST.SP.1500-100r2.pdf) | [https://github.com/usnistgov/ElectionResultsReporting](https://github.com/usnistgov/ElectionResultsReporting "https://github.com/usnistgov/ElectionResultsReporting") (link is external)   | **Yes**  |
+| [Election Event Logging](./NIST.SP.1500-101.pdf) | [https://github.com/usnistgov/ElectionEventLogging](https://github.com/usnistgov/ElectionEventLogging "https://github.com/usnistgov/ElectionEventLogging") (link is external)   | **Yes**  |
+| [Ballot Definition Specification](./NIST.SP.1500-20.pdf) | [https://github.com/usnistgov/BallotDefinition](https://github.com/usnistgov/BallotDefinition) (link is external) | **No** |
+| [Micro-CDF Specification](./NIST.SP.1500-19.pdf) | [https://github.com/usnistgov/mcdf](https://github.com/usnistgov/mcdf) (link is external) | **No** |
 
 Common Data Format Test Method
 ------------------------------
@@ -78,64 +45,25 @@ Common Data Format Test Method
 The CDF test method is a machine-executable method for testing voting CDFs. Its use is intended for voting system manufacturers, voting system test laboratories, and other members of the election community.
 
 *   Find more information about the test method from the CDF test method GitHub site.
-    *   [https://github.com/usnistgov/cdf-test-method](https://github.com/usnistgov/cdf-test-method "https://github.com/usnistgov/cdf-test-method")(link is external)
+    *   [https://github.com/usnistgov/cdf-test-method](https://github.com/usnistgov/cdf-test-method "https://github.com/usnistgov/cdf-test-method") (link is external)
 *   Download the test method from the releases page of the CDF test method GitHub site.
-    *   [https://github.com/usnistgov/cdf-test-method/releases](https://github.com/usnistgov/cdf-test-method/releases "https://github.com/usnistgov/cdf-test-method/releases")(link is external)
+    *   [https://github.com/usnistgov/cdf-test-method/releases](https://github.com/usnistgov/cdf-test-method/releases "https://github.com/usnistgov/cdf-test-method/releases") (link is external)
 
 CDF-Related Publications  
  
 ----------------------------
 
-**Publication**  
-**Date**
+| Publication Date | Publication Type | Title |
+| --- | --- | --- |
+| 2024 | NIST GCR 24-058 | [Implementation Guidance for Common Data Formats](.//NIST.GCR.24-058.pdf) |
+| 2022 | NIST GCR 22-034 | [Recommendations for Voting System Interoperability](./NIST.GCR.22-034.pdf) |
+| 2022 | NIST GCR 22-033 | [Gap Analysis for Key Interoperability Scenarios in Election Technology](./NIST.GCR.22-033.pdf) |
+| 04/2020 | NIST SP 1500-101 | [Election Event Logging Common Data Format Specification](./NIST.SP.1500-101.pdf) |
+| 11/2019 | NIST SP 1500-102 | [Voter Records Interchange Common Data Format Specification](./NIST.SP.1500-102.pdf) |
+| 11/2019 | NIST SP 1500-103 | [Cast Vote Records Common Data Format Specification](./NIST.SP.1500-103.pdf) |
+| 2/2/2016 | NIST SP 1500-100 | [Election Results Common Data Format Specification](./NIST.SP.1500-100r2.pdf) |
 
-**Publication Type**
-
-**Title**
-
-2024
-
-NIST GCR 24-058
-
-[Implementation Guidance for Common Data Formats](.//NIST.GCR.24-058.pdf)
-
-2022
-
-NIST GCR 22-034
-
-[Recommendations for Voting System Interoperability](./NIST.GCR.22-034.pdf)
-
-2022
-
-NIST GCR 22-033
-
-[Gap Analysis for Key Interoperability Scenarios in Election Technology](./NIST.GCR.22-033.pdf)
-
-04/2020
-
-NIST SP 1500-101
-
-[Election Event Logging Common Data Format Specification](./NIST.SP.1500-101.pdf)
-
-11/2019
-
-NIST SP 1500-102
-
-[Voter Records Interchange Common Data Format Specification](./NIST.SP.1500-102.pdf)
-
-11/2019
-
-NIST SP 1500-103
-
-[Cast Vote Records Common Data Format Specification](./NIST.SP.1500-103.pdf)
-
-2/2/2016
-
-NIST SP 1500-100
-
-[Election Results Common Data Format Specification](./NIST.SP.1500-100r2.pdf)
-
-Additional information can be found at the Interoperability GitHub site: [https://github.com/usnistgov/Voting](https://github.com/usnistgov/Voting "https://github.com/usnistgov/Voting")(link is external) 
+Additional information can be found at the Interoperability GitHub site: [https://github.com/usnistgov/Voting](https://github.com/usnistgov/Voting "https://github.com/usnistgov/Voting") (link is external) 
 
 **History** 
 ------------
