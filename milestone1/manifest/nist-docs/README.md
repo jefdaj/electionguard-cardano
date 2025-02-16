@@ -8,13 +8,7 @@ I saved the PDFs locally but left other links as-is.
 Share
 -----
 
-[Facebook](https://www.facebook.com/share.php?u=https://www.nist.gov/itl/voting/interoperability "Facebook")
-
-[Linkedin](https://www.linkedin.com/shareArticle?mini=true&url=https://www.nist.gov/itl/voting/interoperability&source=https://www.nist.gov/itl/voting/interoperability "Linkedin")
-
-[X.com](https://x.com/intent/tweet?url=https://www.nist.gov/itl/voting/interoperability&status=https://www.nist.gov/itl/voting/interoperability "X.com")
-
-[Email](mailto:?subject=NIST.gov&body=Check%20out%20this%20site%20https://www.nist.gov/itl/voting/interoperability "Email")
+[Facebook](https://www.facebook.com/share.php?u=https://www.nist.gov/itl/voting/interoperability "Facebook") [Linkedin](https://www.linkedin.com/shareArticle?mini=true&url=https://www.nist.gov/itl/voting/interoperability&source=https://www.nist.gov/itl/voting/interoperability "Linkedin") [X.com](https://x.com/intent/tweet?url=https://www.nist.gov/itl/voting/interoperability&status=https://www.nist.gov/itl/voting/interoperability "X.com") [Email](mailto:?subject=NIST.gov&body=Check%20out%20this%20site%20https://www.nist.gov/itl/voting/interoperability "Email")
 
 **Overview** 
 -------------
