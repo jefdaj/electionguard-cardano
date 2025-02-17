@@ -106,7 +106,7 @@ def BuildManifestCommand(
             }
         ],
         "contests": [{
-            "object_id": "referendum-question",
+            "object_id": "referendum-question", # TODO is having a number important?
             "sequence_order": 0,
             "electoral_district_id": county_id,
             "vote_variation": "one_of_m",

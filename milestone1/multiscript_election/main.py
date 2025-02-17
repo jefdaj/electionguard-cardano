@@ -61,9 +61,10 @@ def run_python_script(args, **kwargs):
             if len(stderr) > 0:
                 print(stderr)
     except json.decoder.JSONDecodeError:
-        print('error...')
-        print(stdout)
-        print(stderr)
+        msg = stdout
+        if stderr is not None:
+            msg += '\n' + stderr
+        LOG.error(msg)
 
 
 def build_manifest():
@@ -123,6 +124,15 @@ def add_device():
     ])
 
 
+def vote(candidate_id):
+    run_python_script([
+        join(MSKC_SRC, 'device.py'), "vote",
+        "--public-records-dir", PUBLIC_RECORDS_DIR,
+        "--candidate-id", candidate_id,
+        "--spoil", str(False),
+    ])
+
+
 if __name__ == '__main__':
     build_manifest()
     announce_key_ceremony()
@@ -133,3 +143,4 @@ if __name__ == '__main__':
     publish_joint_key()
     build_election()
     add_device()
+    vote(candidate_id="referendum-question-affirmative")
