@@ -25,6 +25,10 @@ from electionguard.key_ceremony import (
     verify_election_partial_key_backup,
 )
 
+# hide INFO dumps of crypto from elgamal.py
+import logging
+logging.getLogger('electionguard').setLevel(logging.WARNING)
+
 
 def round1(guardian_id, sequence_order, quorum, public_records_dir, private_records_dir):
     '''Round 1: create and share pubkeys

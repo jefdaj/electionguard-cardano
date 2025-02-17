@@ -9,6 +9,14 @@ import json
 from os import makedirs
 from os.path import join
 from pprint import pprint
+from pygments import highlight, lexers, formatters
+from electionguard.logs import log_info
+
+
+# NOTE see logs.py for electionguard's separate LOG
+import logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s\n%(message)s\n')
+LOG = logging.getLogger('electionguard-cardano')
 
 
 MSKC_NUMBER_OF_GUARDIANS = 3
@@ -23,15 +31,37 @@ PUBLIC_RECORDS_DIR  = join(MSKC_ROOT, 'public_record')
 PRIVATE_RECORDS_DIR = join(MSKC_ROOT, 'private_records')
 
 
+def print_colorful_json(msg):
+	# based on https://stackoverflow.com/a/32166163
+	msg = msg.replace("'", '"')
+	formatted_json = json.dumps(json.loads(msg), indent=2)
+	colorful_json = highlight(
+		formatted_json,
+		lexers.JsonLexer(),
+		formatters.TerminalFormatter()
+	)
+	print(colorful_json)
+
 def run_python_script(args, **kwargs):
     # TODO docker exec inside each container here?
     args = ["poetry", "run"] + args
     kwargs.update(stdout=subprocess.PIPE, text=True)
+    LOG.info(' '.join(args))
     proc = subprocess.Popen(args, **kwargs)
     (stdout, stderr) = proc.communicate()
+    # expects scripts to print a json dump of some info
+    # for example: print(json.dumps(locals()))
+    # TODO not useful long term?
     try:
-        pprint(json.loads(stdout))
+        stdout = stdout.strip()
+        if len(stdout) > 0:
+            print_colorful_json(stdout)
+        if stderr is not None:
+            stderr = stderr.strip()
+            if len(stderr) > 0:
+                print(stderr)
     except json.decoder.JSONDecodeError:
+        print('error...')
         print(stdout)
         print(stderr)
 

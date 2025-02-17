@@ -54,7 +54,7 @@ def AddDeviceCommand(
     """Add (announce?) an encryption device,
     which will encrypt + publish ballots and do the Benaloh challenge.
     """
-    print(json.dumps(locals()))
+    # print(json.dumps(locals()))
 
     # set up dirs
     ceremony_dir = join(public_records_dir, '2_ceremony')
@@ -72,10 +72,8 @@ def AddDeviceCommand(
     context_path = join(election_dir, 'context.json')
     context = serialize.from_file(CiphertextElectionContext, context_path)
 
-    # raise SystemExit
-
     device = EncryptionDevice(
-        generate_device_uuid(), # device id
+        generate_device_uuid(), # device id (TODO is this deterministic?)
         12345, # session id  (TODO what's this?)
         45678, # launch code (TODO what's this?)
         POLLING_PLACE,
