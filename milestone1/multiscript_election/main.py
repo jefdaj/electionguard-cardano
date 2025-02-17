@@ -148,4 +148,5 @@ if __name__ == '__main__':
     add_device()
     vote(candidate_id="referendum-question-affirmative-selection")
     vote(candidate_id="referendum-question-negative-selection")
-    vote(candidate_id="referendum-question-affirmative-selection")
+    vote(candidate_id="referendum-question-affirmative-selection", spoil=True)
+    vote(candidate_id="referendum-question-negative-selection"   , spoil=True)

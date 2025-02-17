@@ -40,6 +40,9 @@ from electionguard.encrypt import EncryptionMediator
 
 from admin import build_election
 
+from electionguard.data_store import DataStore
+from electionguard.ballot_box import BallotBox, get_ballots
+
 
 MANIFEST_NAME  = '1_manifest'
 JOINT_KEY_NAME = '5_joint_key'
@@ -82,7 +85,6 @@ def load_first_device(devices_dir: str) -> EncryptionDevice:
 def build_ballot(
         internal_manifest: InternalManifest,
         candidate_id: str,
-        spoil: bool
     ) -> PlaintextBallot:
 
     ballot_id = f"ballot-{uuid.uuid1()}"
@@ -170,7 +172,9 @@ def VoteCommand(
 
     # set up dirs
     plaintext_dir = join(private_records_dir, 'plaintext_ballots')
+    spoiled_dir   = join(private_records_dir, 'spoiled_ballot_nonces')
     makedirs(plaintext_dir, exist_ok=True)
+    makedirs(spoiled_dir, exist_ok=True)
 
     ceremony_dir  = join(public_records_dir, '2_ceremony')
     election_dir  = join(public_records_dir, '3_election')
@@ -189,14 +193,10 @@ def VoteCommand(
     joint_key = serialize.from_file(ElectionJointKey, joint_key_path)
 
     # TODO is the underscore thing OK in python?
-    # TODO is there a way to load the internal_manifest rather than rebuilding it?
-    # (_, context, internal_manifest) = load_election_info(election_dir)
     (_, internal_manifest, context) = build_election(guardian_count, quorum, manifest, joint_key)
     device = load_first_device(devices_dir)
 
-    ballot: PlaintextBallot = build_ballot(
-        internal_manifest, candidate_id, spoil
-    )
+    ballot: PlaintextBallot = build_ballot(internal_manifest, candidate_id)
     serialize.to_file(ballot, str(ballot.object_id), plaintext_dir)
 
     encrypter = EncryptionMediator(
@@ -204,7 +204,27 @@ def VoteCommand(
     )
 
     ballot_enc: CiphertextBallot = encrypter.encrypt(ballot)
-    serialize.to_file(ballot_enc, str(ballot.object_id), ballots_dir)
+
+    ballot_store = DataStore()
+    ballot_box = BallotBox(
+        internal_manifest, context, ballot_store
+    )
+
+    submitted_ballot: SubmittedBallot
+    if spoil:
+        submitted_ballot = ballot_box.spoil(ballot_enc)
+        # TODO how is this actually supposed to be done?
+        spoiled_info = {
+            'ballot_id': ballot.object_id,
+            'master_nonce': ballot_enc.nonce, # TODO is this the right nonce?
+        }
+        spoiled_path = join(spoiled_dir, ballot.object_id + '.json')
+        with open(spoiled_path, 'w') as f:
+            json.dump(spoiled_info, f)
+    else:
+        submitted_ballot = ballot_box.cast(ballot_enc)
+
+    serialize.to_file(submitted_ballot, str(ballot.object_id), ballots_dir)
 
 
 @click.group()
