@@ -127,9 +127,11 @@ def add_device():
 def vote(candidate_id):
     run_python_script([
         join(MSKC_SRC, 'device.py'), "vote",
+        "--guardian-count"    , str(MSKC_NUMBER_OF_GUARDIANS),
+         "--quorum"           , str(MSKC_QUORUM),
         "--public-records-dir", PUBLIC_RECORDS_DIR,
-        "--candidate-id", candidate_id,
-        "--spoil", str(False),
+        "--candidate-id"      , candidate_id,
+        "--spoil"             , str(False),
     ])
 
 
