@@ -34,14 +34,11 @@ multiscript_election/
 │   │   ├── guardian_1.json
 │   │   ├── guardian_2.json
 │   │   └── guardian_3.json
-│   ├── plaintext_ballots
-│   │   ├── ballot-fed89c46-ed61-11ef-a311-0242ac110002.json
-│   │   ├── ballot-ff375498-ed61-11ef-b48e-0242ac110002.json
-│   │   ├── ballot-ff9876e2-ed61-11ef-89c5-0242ac110002.json
-│   │   └── ballot-fff9985a-ed61-11ef-8e77-0242ac110002.json
-│   └── spoiled_ballot_nonces
-│       ├── ballot-ff9876e2-ed61-11ef-89c5-0242ac110002.json
-│       └── ballot-fff9985a-ed61-11ef-8e77-0242ac110002.json
+│   └── plaintext_ballots
+│       ├── ballot-ebd5fc18-ed63-11ef-978c-0242ac110002.json
+│       ├── ballot-ec39f9de-ed63-11ef-a185-0242ac110002.json
+│       ├── ballot-ec9c72b2-ed63-11ef-bb4a-0242ac110002.json
+│       └── ballot-ecfdb900-ed63-11ef-9cb5-0242ac110002.json
 └── public_record
     ├── 1_manifest.json
     ├── 2_ceremony
@@ -70,9 +67,12 @@ multiscript_election/
     │   └── context.json
     ├── 4_devices
     │   └── device_2485377892354.json
-    └── 5_ballots
-        ├── ballot-fed89c46-ed61-11ef-a311-0242ac110002.json
-        ├── ballot-ff375498-ed61-11ef-b48e-0242ac110002.json
-        ├── ballot-ff9876e2-ed61-11ef-89c5-0242ac110002.json
-        └── ballot-fff9985a-ed61-11ef-8e77-0242ac110002.json
+    ├── 5_ballots
+    │   ├── ballot-ebd5fc18-ed63-11ef-978c-0242ac110002.json
+    │   ├── ballot-ec39f9de-ed63-11ef-a185-0242ac110002.json
+    │   ├── ballot-ec9c72b2-ed63-11ef-bb4a-0242ac110002.json
+    │   └── ballot-ecfdb900-ed63-11ef-9cb5-0242ac110002.json
+    └── 6_spoiled
+        ├── ballot-ec9c72b2-ed63-11ef-bb4a-0242ac110002.json
+        └── ballot-ecfdb900-ed63-11ef-9cb5-0242ac110002.json
 ```
