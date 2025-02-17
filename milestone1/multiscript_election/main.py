@@ -124,14 +124,14 @@ def add_device():
     ])
 
 
-def vote(candidate_id):
+def vote(candidate_id, spoil=False):
     run_python_script([
         join(MSKC_SRC, 'device.py'), "vote",
         "--guardian-count"    , str(MSKC_NUMBER_OF_GUARDIANS),
-         "--quorum"           , str(MSKC_QUORUM),
+        "--quorum"            , str(MSKC_QUORUM),
         "--public-records-dir", PUBLIC_RECORDS_DIR,
         "--candidate-id"      , candidate_id,
-        "--spoil"             , str(False),
+        "--spoil"             , str(spoil),
     ])
 
 
@@ -145,4 +145,6 @@ if __name__ == '__main__':
     publish_joint_key()
     build_election()
     add_device()
-    vote(candidate_id="referendum-question-affirmative")
+    vote(candidate_id="referendum-question-affirmative-selection")
+    vote(candidate_id="referendum-question-negative-selection")
+    vote(candidate_id="referendum-question-affirmative-selection")

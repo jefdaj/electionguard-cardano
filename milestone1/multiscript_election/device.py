@@ -31,6 +31,8 @@ from electionguard.ballot import (
     BallotBoxState,
     CiphertextBallot,
     PlaintextBallot,
+    PlaintextBallotSelection,
+    PlaintextBallotContest,
     SubmittedBallot,
 )
 from electionguard.encrypt import EncryptionDevice
@@ -84,12 +86,35 @@ def build_ballot(
         candidate_id: str,
         spoil: bool
     ) -> PlaintextBallot:
+
     ballot_id = f"ballot-{uuid.uuid1()}"
     style_id  = 'ballot-style-01'
-    # contests  = internal_manifest.contests
-    contests = internal_manifest.get_contests_for(style_id)
-    # pprint(contests)
+
+    # TODO proper selection from contests
+    candidates = [
+        "referendum-question-affirmative-selection",
+        "referendum-question-negative-selection"
+    ]
+    vote: int = candidates.index(candidate_id)
+    assert vote in [0, 1]
+
+    selections = [
+        PlaintextBallotSelection(
+            vote=vote,
+            is_placeholder_selection=False,
+            object_id=candidate_id # TODO is this right?
+        )
+    ]
+
+    contests = [
+        PlaintextBallotContest(
+            object_id="referendum-question",
+            ballot_selections=selections
+        )
+    ]
+
     ballot = PlaintextBallot(ballot_id, style_id, contests)
+
     return ballot
 
 
@@ -160,12 +185,17 @@ def VoteCommand(
     (_, internal_manifest, context) = build_election(guardian_count, quorum, manifest, joint_key)
     device = load_first_device(devices_dir)
 
-    # TODO this actually belongs in the next step, right?
+    ballot: PlaintextBallot = build_ballot(
+        ballots_dir,
+        internal_manifest,
+        candidate_id,
+        spoil
+    )
+
     encrypter = EncryptionMediator(
         internal_manifest, context, device
     )
 
-    ballot:     PlaintextBallot  = build_ballot(ballots_dir, internal_manifest, candidate_id, spoil)
     ballot_enc: CiphertextBallot = encrypter.encrypt(ballot)
 
     serialize.to_file(ballot_enc, BALLOT_PREFIX + str(ballot.object_id), ballots_dir)
