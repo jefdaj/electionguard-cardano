@@ -25,7 +25,7 @@ Anyway, you run `main.py` like this.
 ./multiscript_election/main.py
 ```
 
-And it should generate these files:
+And it should generate files like these:
 
 ```
 multiscript_election/
