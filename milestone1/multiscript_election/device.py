@@ -45,7 +45,6 @@ MANIFEST_NAME  = '1_manifest'
 JOINT_KEY_NAME = '5_joint_key'
 POLLING_PLACE  = 'electionguard-cardano-polling-place'
 DEVICE_PREFIX  = 'device_'
-BALLOT_PREFIX  = 'ballot_'
 
 
 @click.command("add-device")
@@ -81,7 +80,6 @@ def load_first_device(devices_dir: str) -> EncryptionDevice:
 
 
 def build_ballot(
-        ballots_dir: str,
         internal_manifest: InternalManifest,
         candidate_id: str,
         spoil: bool
@@ -139,6 +137,13 @@ def build_ballot(
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
 @click.option(
+    "--private-records-dir",
+    prompt="Private records directory",
+    help="The location of a directory into which will be placed the guardian's private keys "
+    + "This folder should be protected. Existing files will be overwritten.",
+    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+)
+@click.option(
     "--candidate-id",
     prompt="Candidate ID",
     help="The ID of the candidate to vote for. See manifest.json for valid options.",
@@ -154,6 +159,7 @@ def VoteCommand(
     guardian_count: int,
     quorum: int,
     public_records_dir: str,
+    private_records_dir: str,
     candidate_id: str,
     spoil: bool,
 ) -> None:
@@ -163,10 +169,13 @@ def VoteCommand(
     print(json.dumps(locals()))
 
     # set up dirs
-    ceremony_dir = join(public_records_dir, '2_ceremony')
-    election_dir = join(public_records_dir, '3_election')
-    devices_dir  = join(public_records_dir, '4_devices')
-    ballots_dir  = join(public_records_dir, '5_ballots')
+    plaintext_dir = join(private_records_dir, 'plaintext_ballots')
+    makedirs(plaintext_dir, exist_ok=True)
+
+    ceremony_dir  = join(public_records_dir, '2_ceremony')
+    election_dir  = join(public_records_dir, '3_election')
+    devices_dir   = join(public_records_dir, '4_devices')
+    ballots_dir   = join(public_records_dir, '5_ballots')
     makedirs(ballots_dir, exist_ok=True)
 
     # load manifest
@@ -186,19 +195,16 @@ def VoteCommand(
     device = load_first_device(devices_dir)
 
     ballot: PlaintextBallot = build_ballot(
-        ballots_dir,
-        internal_manifest,
-        candidate_id,
-        spoil
+        internal_manifest, candidate_id, spoil
     )
+    serialize.to_file(ballot, str(ballot.object_id), plaintext_dir)
 
     encrypter = EncryptionMediator(
         internal_manifest, context, device
     )
 
     ballot_enc: CiphertextBallot = encrypter.encrypt(ballot)
-
-    serialize.to_file(ballot_enc, BALLOT_PREFIX + str(ballot.object_id), ballots_dir)
+    serialize.to_file(ballot_enc, str(ballot.object_id), ballots_dir)
 
 
 @click.group()
