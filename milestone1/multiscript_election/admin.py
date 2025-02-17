@@ -58,7 +58,7 @@ def BuildManifestCommand(
     For now it handles only one referendum-style yes or no question,
     provided by the user.
     """
-    print(json.dumps(locals()))
+    # print(json.dumps(locals()))
 
     now = datetime.utcnow()
     county_id = "electionguard-cardano-test-county"
@@ -182,7 +182,7 @@ def AnnounceKeyCeremonyCommand(
     This is a provisional thing based on the electionguard_gui key_ceremony_service.py;
     I think eventually what we want is for everything to flow from the manifest instead.
     """
-    print(json.dumps(locals()))
+    # print(json.dumps(locals()))
 
     ceremony_dir = join(public_records_dir, '2_ceremony')
     makedirs(ceremony_dir, exist_ok=True)
@@ -222,7 +222,7 @@ def PublishJointKeyCommand(
     """Final step in the key ceremony.
     Could technically be posted on chain by anyone, not just the admin.
     """
-    print(json.dumps(locals()))
+    # print(json.dumps(locals()))
 
     ceremony_dir = join(public_records_dir, '2_ceremony')
     pubkeys_dir = join(ceremony_dir, '1_pubkeys')
@@ -264,7 +264,7 @@ def BuildElectionCommand(
 ) -> None:
     """Build the InternalManifest and CiphertextElectionContext.
     """
-    print(json.dumps(locals()))
+    # print(json.dumps(locals()))
 
     # set up dirs
     election_dir = join(public_records_dir, '3_election')

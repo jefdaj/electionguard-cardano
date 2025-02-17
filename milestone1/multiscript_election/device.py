@@ -20,10 +20,11 @@ from electionguard.key_ceremony import (
     ElectionJointKey,
 )
 from electionguard import serialize
-# from electionguard.election import CiphertextElectionContext
+from electionguard.election import CiphertextElectionContext
 # from electionguard.constants import ElectionConstants, get_constants
 # from electionguard.utils import get_optional
-from electionguard.manifest import InternalManifest
+from electionguard.manifest import InternalManifestNoPostInit
+from electionguard.encrypt import EncryptionDevice, contest_from, generate_device_uuid
 
 from electionguard.ballot import (
     BallotBoxState,
@@ -36,6 +37,7 @@ from electionguard.encrypt import EncryptionMediator
 
 
 POLLING_PLACE = 'electionguard-cardano-polling-place'
+DEVICE_PREFIX = 'device_'
 
 
 @click.command("add-device")
@@ -60,17 +62,17 @@ def AddDeviceCommand(
     devices_dir  = join(public_records_dir, '4_devices')
     makedirs(devices_dir, exist_ok=True)
 
-    # load election info
+    # load internal manifest
+    # can the internal manifest not be restored from file because of the hash?
+    # TODO confirm with the ElectionGuard authors, and if so use my fork/patch
     internal_manifest_path = join(election_dir, 'internal_manifest.json')
+    internal_manifest = serialize.from_file(InternalManifestNoPostInit, internal_manifest_path)
 
-    # TODO can the internal manifest not be restored from file because of the hash?
-    # TODO maybe it just needs some advanced dataclass fancy option
-    # TODO or maybe one of the null fields needs to be filled in
-    # TODO worst case, could pickle it or something instead of to/from_file
-    internal_manifest = serialize.from_file(InternalManifest, internal_manifest_path)
+    # load context
+    context_path = join(election_dir, 'context.json')
+    context = serialize.from_file(CiphertextElectionContext, context_path)
 
-    pprint(internal_manifest)
-    raise SystemExit
+    # raise SystemExit
 
     device = EncryptionDevice(
         generate_device_uuid(), # device id
@@ -79,10 +81,12 @@ def AddDeviceCommand(
         POLLING_PLACE,
     )
 
+    serialize.to_file(device, DEVICE_PREFIX + str(device.device_id), devices_dir)
+
+    # TODO this actually belongs in the next step, right?
     encrypter = EncryptionMediator(
         internal_manifest, context, device
     )
-
     # plaintext_ballots: List[PlaintextBallot]
     # ciphertext_ballots: List[CiphertextBallot] = []
 

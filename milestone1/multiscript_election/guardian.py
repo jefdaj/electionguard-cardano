@@ -197,7 +197,7 @@ def GuardianKeyCeremonyCommand(
     This command runs one round of the key ceremony from the perspective of a
     particular .
     """
-    print(json.dumps(locals()))
+    # print(json.dumps(locals()))
     if current_round == 1:
         round1(guardian_id, guardian_sequence_order, quorum, public_records_dir, private_records_dir)
     elif current_round == 2:
