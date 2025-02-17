@@ -1,4 +1,4 @@
-# multistep election
+# multiscript election
 
 This has one script per party and they coordinate via a shared `public_record`
 folder on the local filesystem.
