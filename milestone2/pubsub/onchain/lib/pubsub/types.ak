@@ -16,6 +16,7 @@ pub type PubsubAction {
   // open the channel
   PsFund
   // add (or remove) ADA for publishing fees
+  // TODO is a fund action needed? or can you just always send ADA?
   PsPublish { cids: List<CID> }
   // announce publication of the corresponding files
   PsClose
