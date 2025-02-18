@@ -22,3 +22,4 @@ pub type PubsubAction {
   PsClose
 }
 // close the channel and recover remaining ADA
+// if other assets have been sent, publisher can decide whether to move or leave (burn) them
