@@ -1,12 +1,10 @@
-use cardano/assets.{PolicyId}
-use cardano/transaction.{Transaction, OutputReference}
-use cardano/script_context.{ScriptContext}
 use aiken/collection/list
-
-use pubsub/types.{PubsubDatum, PubsubAction, PsOpen, PsFund, PsPublish, PsClose}
+use cardano/assets.{PolicyId}
+use cardano/script_context.{ScriptContext}
+use cardano/transaction.{OutputReference, Transaction}
+use pubsub/types.{PsClose, PsFund, PsOpen, PsPublish, PubsubAction, PubsubDatum}
 
 validator pubsub {
-
   mint(redeemer: PubsubAction, _policy_id: PolicyId, _self: Transaction) {
     when redeemer is {
       PsOpen -> True
@@ -14,7 +12,12 @@ validator pubsub {
     }
   }
 
-  spend(datum: Option<PubsubDatum>, redeemer: PubsubAction, _utxo: OutputReference, self: Transaction) {
+  spend(
+    datum: Option<PubsubDatum>,
+    redeemer: PubsubAction,
+    _utxo: OutputReference,
+    self: Transaction,
+  ) {
     when redeemer is {
       PsFund -> True
       PsPublish { .. } -> {
