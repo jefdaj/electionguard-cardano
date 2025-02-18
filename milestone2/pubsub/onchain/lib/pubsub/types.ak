@@ -6,6 +6,7 @@ pub type CID =
 
 // IPFS content identifier
 
+// TODO include funds here? or is that handled entirely by Values?
 pub type PubsubDatum {
   publisher: VerificationKeyHash,
 }
