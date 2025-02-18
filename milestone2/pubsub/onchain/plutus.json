@@ -1,0 +1,117 @@
+{
+  "preamble": {
+    "title": "jefdaj/pubsub",
+    "description": "Aiken contracts for project 'jefdaj/pubsub'",
+    "version": "0.0.0",
+    "plutusVersion": "v3",
+    "compiler": {
+      "name": "Aiken",
+      "version": "v1.1.9+2217206"
+    },
+    "license": "Apache-2.0"
+  },
+  "validators": [
+    {
+      "title": "pubsub.pubsub.mint",
+      "redeemer": {
+        "title": "redeemer",
+        "schema": {
+          "$ref": "#/definitions/pubsub~1types~1PubsubAction"
+        }
+      },
+      "compiledCode": "59019901010032323232323225333002323232323232323232533300b3003004132330020071533300c3004300d375400e294458dd7180798069baa0051533300b3002004132332233004009132533300f300600114a22a66601e66e1d20040011533300f30073010375400426644646600200200644a66602c00229404cc894ccc054cdc78010028a51133004004001375c602e00260300026eb0c04cc050c050c050c050c050c050c050c050c044dd50059bae301330113754602660226ea80085854ccc03ccdc3a400c002294458c03cdd500498080009808180880098069baa005162232533300d300500115333010300f37540060042c2a66601a60080022a666020601e6ea800c0085854ccc034cdc3a400800226464a6660246028004264660020020044464a66602a00400e264600460300066eb8c058008c00800858dd6180900098079baa0031533300d3370e90030008a99980818079baa0030021616300d37540046e1d2002370e900018041baa001300a300b0033009002300800230080013004375400229309b2b2b9a5573aaae7955cfaba157441",
+      "hash": "703dc0380c9704b76dce2552166373a3560f282c9da3cab8dfd6ad06"
+    },
+    {
+      "title": "pubsub.pubsub.spend",
+      "datum": {
+        "title": "datum",
+        "schema": {
+          "$ref": "#/definitions/pubsub~1types~1PubsubDatum"
+        }
+      },
+      "redeemer": {
+        "title": "redeemer",
+        "schema": {
+          "$ref": "#/definitions/pubsub~1types~1PubsubAction"
+        }
+      },
+      "compiledCode": "59019901010032323232323225333002323232323232323232533300b3003004132330020071533300c3004300d375400e294458dd7180798069baa0051533300b3002004132332233004009132533300f300600114a22a66601e66e1d20040011533300f30073010375400426644646600200200644a66602c00229404cc894ccc054cdc78010028a51133004004001375c602e00260300026eb0c04cc050c050c050c050c050c050c050c050c044dd50059bae301330113754602660226ea80085854ccc03ccdc3a400c002294458c03cdd500498080009808180880098069baa005162232533300d300500115333010300f37540060042c2a66601a60080022a666020601e6ea800c0085854ccc034cdc3a400800226464a6660246028004264660020020044464a66602a00400e264600460300066eb8c058008c00800858dd6180900098079baa0031533300d3370e90030008a99980818079baa0030021616300d37540046e1d2002370e900018041baa001300a300b0033009002300800230080013004375400229309b2b2b9a5573aaae7955cfaba157441",
+      "hash": "703dc0380c9704b76dce2552166373a3560f282c9da3cab8dfd6ad06"
+    },
+    {
+      "title": "pubsub.pubsub.else",
+      "redeemer": {
+        "schema": {}
+      },
+      "compiledCode": "59019901010032323232323225333002323232323232323232533300b3003004132330020071533300c3004300d375400e294458dd7180798069baa0051533300b3002004132332233004009132533300f300600114a22a66601e66e1d20040011533300f30073010375400426644646600200200644a66602c00229404cc894ccc054cdc78010028a51133004004001375c602e00260300026eb0c04cc050c050c050c050c050c050c050c050c044dd50059bae301330113754602660226ea80085854ccc03ccdc3a400c002294458c03cdd500498080009808180880098069baa005162232533300d300500115333010300f37540060042c2a66601a60080022a666020601e6ea800c0085854ccc034cdc3a400800226464a6660246028004264660020020044464a66602a00400e264600460300066eb8c058008c00800858dd6180900098079baa0031533300d3370e90030008a99980818079baa0030021616300d37540046e1d2002370e900018041baa001300a300b0033009002300800230080013004375400229309b2b2b9a5573aaae7955cfaba157441",
+      "hash": "703dc0380c9704b76dce2552166373a3560f282c9da3cab8dfd6ad06"
+    }
+  ],
+  "definitions": {
+    "CID": {
+      "title": "CID",
+      "dataType": "bytes"
+    },
+    "List$CID": {
+      "dataType": "list",
+      "items": {
+        "$ref": "#/definitions/CID"
+      }
+    },
+    "VerificationKeyHash": {
+      "title": "VerificationKeyHash",
+      "dataType": "bytes"
+    },
+    "pubsub/types/PubsubAction": {
+      "title": "PubsubAction",
+      "anyOf": [
+        {
+          "title": "PsOpen",
+          "dataType": "constructor",
+          "index": 0,
+          "fields": []
+        },
+        {
+          "title": "PsFund",
+          "dataType": "constructor",
+          "index": 1,
+          "fields": []
+        },
+        {
+          "title": "PsPublish",
+          "dataType": "constructor",
+          "index": 2,
+          "fields": [
+            {
+              "title": "cids",
+              "$ref": "#/definitions/List$CID"
+            }
+          ]
+        },
+        {
+          "title": "PsClose",
+          "dataType": "constructor",
+          "index": 3,
+          "fields": []
+        }
+      ]
+    },
+    "pubsub/types/PubsubDatum": {
+      "title": "PubsubDatum",
+      "anyOf": [
+        {
+          "title": "PubsubDatum",
+          "dataType": "constructor",
+          "index": 0,
+          "fields": [
+            {
+              "title": "publisher",
+              "$ref": "#/definitions/VerificationKeyHash"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
