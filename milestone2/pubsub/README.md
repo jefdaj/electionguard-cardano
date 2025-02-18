@@ -1,9 +1,9 @@
 # pubsub
 
 My first attempt at a non-trivial smart contract!
-It'll focus on just distributing an authenticated log of files via IPFS.
-That's a big part of what the ElectionGuard contract will need to do,
-and potentially useful in its own right.
+It'll focus on just distributing an authenticated log of files via Cardano + IPFS.
+That's part of what the ElectionGuard contract will need to do,
+as well as potentially useful on its own.
 
 It will also confirm that TX fees can be funded from a pool in the contract.
 That doesn't matter yet, but I want people to be able to post things for free
@@ -25,21 +25,27 @@ TODO check whether there are any existing Cardano pubsub examples
 ## offchain code
 
 - all apps run in docker containers
-- each role managed by docker compose or arion
-- each participant should have access to a cardano-node-ogmios instance (ogmios optional?)
-- publisher needs an address with initial tADA from the faucet
+- each role managed by docker compose
+- each participant should have network access to a cardano-node-ogmios instance
+- publisher needs an address with tADA from the faucet
 - publisher runs:
-    * ipfs-cluster to pin all CIDs before broadcasting them
+    * ipfs-cluster to pin CIDs when publishing them
     * a Python app to construct and submit TXs via PyCardano, control ipfs-cluster
 - subscribers run:
-    * kubo to scan for CIDs posted
-    * an IPFS node to fetch and pin the CIDs
-    * a Python app to keep a folder in sync with the broadcast
+    * Kupo to scan for published CIDs
+    * an IPFS node (or single-node cluster?) to pin CIDs and fetch files
+    * a Python app to keep a folder in sync with the channel, control IPFS + Kupo
 
 ## versions
 
-- one where it runs locally and they share a node (video, asciinema demo)
-- one using 2 computers and a node each (video)
+- one where it runs locally and they share a node
+- one using 2 computers and a node each
+
+## literature
+
+- blog post
+- asciinema demo of the local version
+- video of the local + 2 computer versions
 
 ## file formats
 
@@ -49,3 +55,10 @@ TODO check whether there are any existing Cardano pubsub examples
 - reusing a path replaces it in the sync folder
 - no way to delete? maybe add that for the folder sync use case
 - publisher's signature and date posted come from TX info, not JSON
+
+## interfaces
+
+- simple Python CLI per role: publisher, subscriber
+- subscriber will need to type in the contract address, time to scan from
+    * can those be combined in one QR code?
+    * default to date I wrote this if none given
