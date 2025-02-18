@@ -9,7 +9,10 @@ It will also confirm that TX fees can be funded from a pool in the contract.
 That doesn't matter yet, but I want people to be able to post things for free
 during an election.
 
-TODO check whether there are any existing Cardano pubsub examples
+## TODO
+
+- check whether there are any existing Cardano pubsub examples
+- should there be a channel NFT, or is that not needed?
 
 ## onchain code
 
