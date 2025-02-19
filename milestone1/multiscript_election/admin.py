@@ -383,8 +383,8 @@ def TallyCommand(
 ) -> None:
     """Tally election results.
     """
-    script = __file__
-    print(json.dumps(locals()))
+    # script = __file__
+    # print(json.dumps(locals()))
 
     # set up dirs
     cast_dir     = join(public_records_dir, '7_cast')
@@ -410,19 +410,13 @@ def TallyCommand(
         context
     )
 
-    # This is custom because I haven't separated the cast and spoiled ballots in 5_ballots,
-    # because they couldn't be done that way on chain.
     cast_ballots    = load_submitted_ballots(cast_dir)
     spoiled_ballots = load_submitted_ballots(spoiled_dir)
-
-    # pprint([b.state for b in spoiled_ballots])
-    # pprint([b.state for b in cast_ballots])
 
     # TODO separate these?
     for cast_ballot in cast_ballots + spoiled_ballots:
         assert(tally.append(cast_ballot, should_validate=True))
 
-    # serialize.to_file(tally, tally_name, public_records_dir)
     # TODO assert these matches the dir counts, and add up to the provisional count
     summary = {
         'n_cast_ballots': tally.cast(),
@@ -431,8 +425,6 @@ def TallyCommand(
     pprint(summary)
 
     serialize.to_file(tally.publish(), tally_name, public_records_dir)
-
-    # pprint(tally)
 
 
 @click.group()
