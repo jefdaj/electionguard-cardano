@@ -35,6 +35,7 @@ def round1(guardian_id, sequence_order, quorum, public_records_dir, private_reco
     '''
 
     # set up dirs
+    # TODO remove once settled into the arion workflow, because each only sees its own dir
     guardians_dir = join(private_records_dir, 'guardian_keys')
     pubkeys_dir   = join(public_records_dir, '2_ceremony/1_pubkeys')
     makedirs(guardians_dir, exist_ok=True)

@@ -23,10 +23,16 @@ def arion_up():
     subprocess.check_call(['arion', 'up', '-d'])
 
 
-def run_script(container, args, **kwargs):
-    # TODO docker exec inside each container here?
-    # TODO copy source code -> /repo when building
-    args = ["docker", "exec", container, "poetry", "run"] + args
+def arion_down():
+    subprocess.check_call(['arion', 'down'])
+
+
+def run_in_container(cfg, mode, container_number, args, **kwargs):
+    # TODO document this
+    container_name = "multicontainer-" + mode + str(container_number) + "-1"
+    script_path = join(cfg.bind_mounts.scripts, mode + '.py')
+    args = ["docker", "exec", container_name,
+            "poetry", "run", script_path] + args
     kwargs.update(stdout=subprocess.PIPE, text=True)
     LOG.info(' '.join(args))
     proc = subprocess.Popen(args, **kwargs)
@@ -53,10 +59,10 @@ def build_manifest(cfg):
     # uncomment for interactive script:
     # question = input('Referendum-style question to be asked: ')
     question = 'Are pineapples still cool?'
-    run_script(
-        "multicontainer-admin1-1",
+    run_in_container(
+        cfg, "admin", 1,
         [
-            '/scripts/admin.py', "build-manifest",
+            "build-manifest",
             "--public-records-dir", cfg.bind_mounts.public,
             "--referendum-question", question,
         ]
@@ -64,83 +70,108 @@ def build_manifest(cfg):
 
 
 def announce_key_ceremony(cfg):
-    run_script([
-        join(cfg.bind_mounts.scripts, 'admin.py'), "announce-key-ceremony",
-        "--guardian-count"    , str(cfg.guardians.count),
-         "--quorum"           , str(cfg.quardians.quorum),
-        "--public-records-dir", cfg.bind_mounts.public,
-    ])
+    run_in_container(
+        cfg, "admin", 1,
+        [
+            "announce-key-ceremony",
+            "--guardian-count"    , str(cfg.guardians.count),
+            "--quorum"            , str(cfg.guardians.quorum),
+            "--public-records-dir", cfg.bind_mounts.public,
+        ]
+    )
 
 
 def key_ceremony_round(cfg, current_round):
     for guardian_id, sequence_order in zip(cfg.guardians.ids, cfg.guardians.sequence_order):
-        run_script([
-            join(cfg.bind_mounts.scripts, 'guardian.py'), "key-ceremony",
-            "--guardian-count"         , str(cfg.guardians.count),
-            "--quorum"                 , str(cfg.quardians.quorum),
-            "--public-records-dir"     , cfg.bind_mounts.public,
-            "--private-records-dir"    , cfg.bind_mounts.private,
-            "--guardian-id"            , guardian_id,
-            "--guardian-sequence-order", str(sequence_order),
-            "--current-round"          , str(current_round),
-        ])
+        run_in_container(
+            cfg, "guardian", sequence_order,
+            [
+                "key-ceremony",
+                "--guardian-count"         , str(cfg.guardians.count),
+                "--quorum"                 , str(cfg.guardians.quorum),
+                "--public-records-dir"     , cfg.bind_mounts.public,
+                "--private-records-dir"    , cfg.bind_mounts.private,
+                "--guardian-id"            , guardian_id,
+                "--guardian-sequence-order", str(sequence_order),
+                "--current-round"          , str(current_round),
+            ]
+        )
 
 
 def publish_joint_key(cfg):
-    run_script([
-        join(cfg.bind_mounts.scripts, 'admin.py'), "publish-joint-key",
-        "--public-records-dir", cfg.bind_mounts.public,
-    ])
+    run_in_container(
+        cfg, "admin", 1,
+        [
+            "publish-joint-key",
+            "--public-records-dir", cfg.bind_mounts.public,
+        ]
+    )
 
 
 def build_election(cfg):
-    run_script([
-        join(cfg.bind_mounts.scripts, 'admin.py'), "build-election",
-        "--guardian-count"    , str(cfg.guardians.count),
-         "--quorum"           , str(cfg.quardians.quorum),
-        "--public-records-dir", cfg.bind_mounts.public,
-    ])
+    run_in_container(
+        cfg, "admin", 1,
+        [
+            "build-election",
+            "--guardian-count"    , str(cfg.guardians.count),
+            "--quorum"           , str(cfg.guardians.quorum),
+            "--public-records-dir", cfg.bind_mounts.public,
+        ]
+    )
 
 
-def add_device(cfg):
-    run_script([
-        join(cfg.bind_mounts.scripts, 'device.py'), "add-device",
-        "--public-records-dir", cfg.bind_mounts.public,
-    ])
+def add_device(cfg, device_number):
+    run_in_container(
+        cfg, "device", device_number,
+        [
+            "add-device",
+            "--device-number"     , str(device_number),
+            "--public-records-dir", cfg.bind_mounts.public,
+        ]
+    )
 
 
 def vote(cfg, candidate_id, spoil=False):
-    run_script([
-        join(cfg.bind_mounts.scripts, 'device.py'), "vote",
-        "--guardian-count"     , str(cfg.guardians.count),
-        "--quorum"             , str(cfg.quardians.quorum),
-        "--public-records-dir" , cfg.bind_mounts.public,
-        "--private-records-dir", cfg.bind_mounts.private,
-        "--candidate-id"       , candidate_id,
-        "--spoil"              , str(spoil),
-    ])
+    run_in_container(
+        cfg, "device", 1, # TODO code for other devices?
+        [
+            "vote",
+            "--guardian-count"     , str(cfg.guardians.count),
+            "--quorum"             , str(cfg.guardians.quorum),
+            "--public-records-dir" , cfg.bind_mounts.public,
+            "--private-records-dir", cfg.bind_mounts.private,
+            "--candidate-id"       , candidate_id,
+            "--spoil"              , str(spoil),
+        ]
+    )
 
 
 def tally(cfg):
-    run_script([
-        join(cfg.bind_mounts.scripts, 'admin.py'), "tally",
-        "--guardian-count"     , str(cfg.guardians.count),
-        "--quorum"             , str(cfg.quardians.quorum),
-        "--public-records-dir" , cfg.bind_mounts.public,
-    ])
+    run_in_container(
+        cfg, "admin", 1,
+        [
+            "tally",
+            "--guardian-count"     , str(cfg.guardians.count),
+            "--quorum"             , str(cfg.guardians.quorum),
+            "--public-records-dir" , cfg.bind_mounts.public,
+        ]
+    )
 
 
 def decrypt_shares(cfg):
     for guardian_id, sequence_order in zip(cfg.guardians.ids, cfg.guardians.sequence_order):
-        run_script([
-            join(cfg.bind_mounts.scripts, 'guardian.py'), "decrypt-share",
-            "--guardian-count"         , str(cfg.guardians.count),
-            "--quorum"                 , str(cfg.quardians.quorum),
-            "--public-records-dir"     , cfg.bind_mounts.public,
-            "--private-records-dir"    , cfg.bind_mounts.private,
-            "--guardian-id"            , guardian_id,
-            "--guardian-sequence-order", str(sequence_order),
-        ])
+        run_in_container(
+            cfg, "guardian", sequence_order,
+            [
+                "decrypt-share",
+                "--guardian-count"         , str(cfg.guardians.count),
+                "--quorum"                 , str(cfg.guardians.quorum),
+                "--public-records-dir"     , cfg.bind_mounts.public,
+                "--private-records-dir"    , cfg.bind_mounts.private,
+                "--guardian-id"            , guardian_id,
+                "--guardian-sequence-order", str(sequence_order),
+            ]
+        )
 
 
 def parse_config(cfg_path):
@@ -154,24 +185,30 @@ def parse_config(cfg_path):
 
 def main(cfg):
     arion_up() # TODO down and up again if needed?
-    build_manifest(cfg)
-    raise SystemExit
-    announce_key_ceremony(cfg)
-    key_ceremony_round(cfg, 1)
-    key_ceremony_round(cfg, 2)
-    key_ceremony_round(cfg, 3)
-    # TODO should there be a "publish final guardian records" step here?
-    publish_joint_key(cfg)
-    build_election(cfg)
-    add_device(cfg)
-    vote(cfg, candidate_id="referendum-question-affirmative-selection")
-    vote(cfg, candidate_id="referendum-question-negative-selection")
-    vote(cfg, candidate_id="referendum-question-affirmative-selection")
-    vote(cfg, candidate_id="referendum-question-affirmative-selection", spoil=True)
-    vote(cfg, candidate_id="referendum-question-negative-selection"   , spoil=True)
-    tally(cfg)
-    # decrypt_shares(cfg)
-    # decrypt_combine()
+    try:
+        build_manifest(cfg)
+        announce_key_ceremony(cfg)
+        key_ceremony_round(cfg, 1)
+        key_ceremony_round(cfg, 2)
+        key_ceremony_round(cfg, 3)
+        # TODO should there be a "publish final guardian records" step here?
+        publish_joint_key(cfg)
+        build_election(cfg)
+        for n in range(1, cfg.votingDevices.count + 1):
+            print("add device", n)
+            add_device(cfg, n)
+        vote(cfg, candidate_id="referendum-question-affirmative-selection")
+        vote(cfg, candidate_id="referendum-question-negative-selection")
+        vote(cfg, candidate_id="referendum-question-affirmative-selection")
+        vote(cfg, candidate_id="referendum-question-affirmative-selection", spoil=True)
+        vote(cfg, candidate_id="referendum-question-negative-selection"   , spoil=True)
+        tally(cfg)
+        # decrypt_shares(cfg)
+        # decrypt_combine()
+    except:
+        pass
+    finally:
+        arion_down()
 
 
 if __name__ == '__main__':

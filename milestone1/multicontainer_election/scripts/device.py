@@ -55,6 +55,12 @@ DEVICE_PREFIX  = 'device_'
 
 @click.command("add-device")
 @click.option(
+    "--device-number",
+    prompt="Device number",
+    help="The number of the device.",
+    type=click.INT,
+)
+@click.option(
     "--public-records-dir",
     prompt="Public records directory",
     help="The location of a directory into which will be placed all public records. "
@@ -62,6 +68,7 @@ DEVICE_PREFIX  = 'device_'
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
 def AddDeviceCommand(
+    device_number: int,
     public_records_dir: str,
 ) -> None:
     """Add (announce?) an encryption device,
@@ -72,8 +79,8 @@ def AddDeviceCommand(
     makedirs(devices_dir, exist_ok=True)
     device = EncryptionDevice(
         generate_device_uuid(), # device id (TODO is this deterministic?)
-        12345, # session id  (TODO what's this?)
-        45678, # launch code (TODO what's this?)
+        device_number * 12345, # session id  (TODO what's this?)
+        device_number * 45678, # launch code (TODO what's this?)
         POLLING_PLACE,
     )
     serialize.to_file(device, DEVICE_PREFIX + str(device.device_id), devices_dir)
