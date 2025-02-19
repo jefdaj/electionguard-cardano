@@ -9,4 +9,4 @@ docs/
 .venv/
 
 # Aiken PyCardano hello-world
-me.*
+keys/
