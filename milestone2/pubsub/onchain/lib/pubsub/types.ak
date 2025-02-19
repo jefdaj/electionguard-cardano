@@ -9,6 +9,7 @@ pub type CID =
 // TODO include funds here? or is that handled entirely by Values?
 pub type PubsubDatum {
   publisher: VerificationKeyHash,
+  // TODO should this also contain the CIDs?
 }
 
 pub type PubsubAction {
