@@ -387,8 +387,10 @@ def TallyCommand(
     # print(json.dumps(locals()))
 
     # set up dirs
-    cast_dir     = join(public_records_dir, '7_cast')
-    spoiled_dir  = join(public_records_dir, '8_spoiled')
+    ballots_dir     = join(public_records_dir, '6_ballots')
+    provisional_dir = join(ballots_dir       , '1_provisional')
+    cast_dir        = join(ballots_dir       , '2_cast')
+    spoiled_dir     = join(ballots_dir       , '3_spoiled')
 
     # load required info
     manifest_path = join(public_records_dir, MANIFEST_NAME + '.json')
@@ -402,7 +404,7 @@ def TallyCommand(
         joint_key
     )
 
-    tally_name = '8_tally'
+    tally_name = '7_tally'
     tally_path = join(public_records_dir, tally_name)
     tally = CiphertextTally(
         tally_name, # TODO is this the object_id? weird

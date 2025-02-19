@@ -174,13 +174,13 @@ def VoteCommand(
     plaintext_dir = join(private_records_dir, 'plaintext_ballots')
     makedirs(plaintext_dir, exist_ok=True)
 
-    ceremony_dir  = join(public_records_dir, '2_ceremony')
-    election_dir  = join(public_records_dir, '4_election')
-    devices_dir   = join(public_records_dir, '5_devices')
-    ballots_dir   = join(public_records_dir, '6_provisional') # TODO better name?
-    cast_dir      = join(public_records_dir, '7_cast')
-    spoiled_dir   = join(public_records_dir, '8_spoiled')
-    makedirs(ballots_dir, exist_ok=True)
+    ceremony_dir    = join(public_records_dir, '2_ceremony')
+    election_dir    = join(public_records_dir, '4_election')
+    devices_dir     = join(public_records_dir, '5_devices')
+    ballots_dir     = join(public_records_dir, '6_ballots')
+    provisional_dir = join(ballots_dir       , '1_provisional')
+    cast_dir        = join(ballots_dir       , '2_cast')
+    spoiled_dir     = join(ballots_dir       , '3_spoiled')
     makedirs(cast_dir   , exist_ok=True)
     makedirs(spoiled_dir, exist_ok=True)
 
@@ -207,7 +207,7 @@ def VoteCommand(
 
     # ballots in progress (not yet cast or spoiled)
     ballot_enc: CiphertextBallot = encrypter.encrypt(ballot)
-    serialize.to_file(ballot_enc, str(ballot.object_id), ballots_dir)
+    serialize.to_file(ballot_enc, str(ballot.object_id), provisional_dir)
 
     # TODO functional method instead? see 3_Cast_and_Spoil.md
     ballot_store = DataStore()
