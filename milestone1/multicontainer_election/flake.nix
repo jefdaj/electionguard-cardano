@@ -13,11 +13,15 @@
     # defaultPackage.x86_64-linux = self.packages.x86_64-linux.hello;
 
     devShells.x86_64-linux.default = self.pkgs.mkShell {
+      # TODO nativeBuildInputs?
       buildInputs = with self.pkgs; [
         arion
         # podman
-        docker
-        docker-compose
+        docker # TODO remove?
+        docker-compose # TODO remove?
+        python3Packages.python
+        python3Packages.python-lsp-server
+        python3Packages.autopep8
       ];
     };
 
