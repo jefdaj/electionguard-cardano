@@ -1,4 +1,30 @@
-# Smart Contract Architecture
+# milestone 2
+
+So far this has been a lot of research into the Cardano ecosystem
+and trying various partial dev stacks.
+
+I'm still doing that, but also starting a small [pubsub/]() project to test the
+components I think I want to use in the main ElectionGuard project.
+
+
+## Partial dev stacks to investigate
+
+These are works in progress under [investigate/]():
+
+- [x] Aiken + Nix
+- [ ] Aiken + Nix + MeshJS
+- [ ] Aiken + Nix + PyCardano
+- [x] Cardano Node + Docker
+- [x] Cardano Node + Docker + Ogmios
+- [ ] IPFS + Docker
+- [x] IPFS cluster + Docker
+- [x] Kupo + Docker
+- [ ] Lucid + Kupmios
+- [ ] MeshJS + Yaci
+- [ ] Typescript + Nix
+
+
+## Smart Contract Architecture
 
 Just some initial ideas.
 
