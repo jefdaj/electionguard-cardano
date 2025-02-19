@@ -18,6 +18,11 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s\n%(message)s\n')
 LOG = logging.getLogger('electionguard-cardano')
 
 
+def arion_up():
+    # NOTE arion loads the cfg separately via Nix
+    subprocess.check_call(['arion', 'up', '-d'])
+
+
 def run_python_script(args, **kwargs):
     # TODO docker exec inside each container here?
     args = ["poetry", "run"] + args
@@ -144,6 +149,7 @@ def parse_config(cfg_path):
 
 
 def main(cfg):
+    arion_up()
     build_manifest(cfg)
     announce_key_ceremony(cfg)
     key_ceremony_round(cfg, 1)

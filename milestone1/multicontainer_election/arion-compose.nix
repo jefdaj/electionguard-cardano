@@ -15,6 +15,12 @@ let
       "${public_dir}:/data/public"
       "${private_dir}/${mode}_${builtins.toString n}:/data/private"
     ];
+
+    # TODO what's the proper way to keep an arion container running?
+    service.command = [ "sh" "-c" ''
+      while true; do sleep 1000; done
+    '' ];
+
   };
 
   mkAttrs = mode: public_dir: private_dir: n: {
