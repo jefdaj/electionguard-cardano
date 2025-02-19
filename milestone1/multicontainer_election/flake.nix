@@ -19,6 +19,9 @@
         # podman
         docker # TODO remove?
         docker-compose # TODO remove?
+        (self.pkgs.python3.withPackages (ps: with ps; [
+          dotmap
+        ]))
         python3Packages.python
         python3Packages.python-lsp-server
         python3Packages.autopep8
