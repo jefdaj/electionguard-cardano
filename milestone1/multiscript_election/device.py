@@ -168,7 +168,7 @@ def VoteCommand(
     """Add (announce?) an encryption device,
     which will encrypt + publish ballots and do the Benaloh challenge.
     """
-    print(json.dumps(locals()))
+    # print(json.dumps(locals()))
 
     # set up dirs
     plaintext_dir = join(private_records_dir, 'plaintext_ballots')
@@ -177,9 +177,11 @@ def VoteCommand(
     ceremony_dir  = join(public_records_dir, '2_ceremony')
     election_dir  = join(public_records_dir, '3_election')
     devices_dir   = join(public_records_dir, '4_devices')
-    ballots_dir   = join(public_records_dir, '5_ballots')
-    spoiled_dir   = join(public_records_dir, '6_spoiled')
+    ballots_dir   = join(public_records_dir, '5_provisional') # TODO better name?
+    cast_dir      = join(public_records_dir, '6_cast')
+    spoiled_dir   = join(public_records_dir, '7_spoiled')
     makedirs(ballots_dir, exist_ok=True)
+    makedirs(cast_dir   , exist_ok=True)
     makedirs(spoiled_dir, exist_ok=True)
 
     # load manifest
@@ -203,8 +205,11 @@ def VoteCommand(
         internal_manifest, context, device
     )
 
+    # ballots in progress (not yet cast or spoiled)
     ballot_enc: CiphertextBallot = encrypter.encrypt(ballot)
+    serialize.to_file(ballot_enc, str(ballot.object_id), ballots_dir)
 
+    # TODO functional method instead? see 3_Cast_and_Spoil.md
     ballot_store = DataStore()
     ballot_box = BallotBox(
         internal_manifest, context, ballot_store
@@ -212,19 +217,14 @@ def VoteCommand(
 
     submitted_ballot: SubmittedBallot
     if spoil:
-        submitted_ballot = ballot_box.spoil(ballot_enc)
-        # TODO how is this actually supposed to be done?
-        spoiled_info = {
-            'ballot_id': ballot.object_id,
-            'master_nonce': ballot_enc.nonce, # TODO is this the right nonce?
-        }
+        ballot_spoiled = ballot_box.spoil(ballot_enc)
         spoiled_path = join(spoiled_dir, ballot.object_id + '.json')
-        with open(spoiled_path, 'w') as f:
-            json.dump(spoiled_info, f)
+        serialize.to_file(ballot_spoiled, str(ballot_spoiled.object_id), spoiled_dir)
     else:
-        submitted_ballot = ballot_box.cast(ballot_enc)
+        ballot_cast = ballot_box.cast(ballot_enc)
+        cast_path = join(cast_dir, ballot.object_id + '.json')
+        serialize.to_file(ballot_cast, str(ballot_cast.object_id), cast_dir)
 
-    serialize.to_file(submitted_ballot, str(ballot.object_id), ballots_dir)
 
 
 @click.group()

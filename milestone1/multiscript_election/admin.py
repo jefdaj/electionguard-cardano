@@ -7,11 +7,11 @@
 
 import click
 import json
-from pprint import pprint
-from os import makedirs
+from os import listdir, makedirs
 from os.path import join
 from typing import List, Tuple
 from datetime import datetime, timedelta
+from pprint import pprint
 
 from electionguard.key_ceremony import (
     combine_election_public_keys,
@@ -22,6 +22,14 @@ from electionguard import serialize
 from electionguard.election import CiphertextElectionContext
 from electionguard.constants import ElectionConstants, get_constants
 from electionguard.utils import get_optional
+from electionguard.tally import (
+    CiphertextTally,
+    PublishedCiphertextTally
+)
+
+from electionguard.ballot import (
+    SubmittedBallot,
+)
 
 # TODO use election_builder_step as example instead
 # from electionguard.election_builder import ElectionBuilder
@@ -336,6 +344,99 @@ def BuildElectionCommand(
     # serialize.to_file(internal_manifest, 'internal_manifest', election_dir)
 
 
+def load_submitted_ballots(submitted_ballots_dir: str) -> List[SubmittedBallot]:
+    # NOTE this works for cast and/or spoiled ballots
+    ballot_paths = [
+        join(submitted_ballots_dir, n)
+        for n in listdir(submitted_ballots_dir)
+    ]
+    submitted_ballots = [
+        serialize.from_file(SubmittedBallot, p)
+        for p in ballot_paths
+    ]
+    return submitted_ballots
+
+
+@click.command("tally")
+@click.option(
+    "--public-records-dir",
+    prompt="Public records directory",
+    help="The location of a directory into which will be placed all public records. "
+    + "This folder should be protected. Existing files will be overwritten.",
+    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+)
+@click.option(
+    "--guardian-count",
+    prompt="Number of s",
+    help="The number of guardians that will participate in the key ceremony and tally.",
+    type=click.INT,
+)
+@click.option(
+    "--quorum",
+    prompt="Quorum",
+    help="The minimum number of guardians required to show up to the tally.",
+    type=click.INT,
+)
+def TallyCommand(
+    guardian_count: int,
+    quorum: int,
+    public_records_dir: str,
+) -> None:
+    """Tally election results.
+    """
+    script = __file__
+    print(json.dumps(locals()))
+
+    # set up dirs
+    ceremony_dir = join(public_records_dir, '2_ceremony')
+    cast_dir     = join(public_records_dir, '6_cast')
+    spoiled_dir  = join(public_records_dir, '7_spoiled')
+
+    # load required info
+    manifest_path = join(public_records_dir, MANIFEST_NAME + '.json')
+    manifest = serialize.from_file(Manifest, manifest_path)
+    joint_key_path = join(ceremony_dir, JOINT_KEY_NAME + '.json')
+    joint_key = serialize.from_file(ElectionJointKey, joint_key_path)
+    (constants, internal_manifest, context) = build_election(
+        guardian_count,
+        quorum,
+        manifest,
+        joint_key
+    )
+
+    tally_name = '8_tally'
+    tally_path = join(public_records_dir, tally_name)
+    tally = CiphertextTally(
+        tally_name, # TODO is this the object_id? weird
+        internal_manifest,
+        context
+    )
+
+    # This is custom because I haven't separated the cast and spoiled ballots in 5_ballots,
+    # because they couldn't be done that way on chain.
+    cast_ballots    = load_submitted_ballots(cast_dir)
+    spoiled_ballots = load_submitted_ballots(spoiled_dir)
+
+    # pprint([b.state for b in spoiled_ballots])
+    # pprint([b.state for b in cast_ballots])
+
+    # TODO separate these?
+    for cast_ballot in cast_ballots + spoiled_ballots:
+        assert(tally.append(cast_ballot, should_validate=True))
+
+    # serialize.to_file(tally, tally_name, public_records_dir)
+    # TODO assert these matches the dir counts, and add up to the provisional count
+    summary = {
+        'n_cast_ballots': tally.cast(),
+        'n_spoiled_ballots': tally.spoiled(),
+    }
+    pprint(summary)
+
+    serialize.to_file(tally.publish(), tally_name, public_records_dir)
+
+    # pprint(tally)
+
+
 @click.group()
 def cli() -> None:
     pass
@@ -344,6 +445,7 @@ cli.add_command(BuildManifestCommand)
 cli.add_command(AnnounceKeyCeremonyCommand)
 cli.add_command(PublishJointKeyCommand)
 cli.add_command(BuildElectionCommand)
+cli.add_command(TallyCommand)
 
 if __name__ == '__main__':
     cli()

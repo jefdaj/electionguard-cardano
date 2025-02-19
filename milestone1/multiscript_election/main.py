@@ -136,6 +136,16 @@ def vote(candidate_id, spoil=False):
     ])
 
 
+def tally():
+    run_python_script([
+        join(MSKC_SRC, 'admin.py'), "tally",
+        "--guardian-count"     , str(MSKC_NUMBER_OF_GUARDIANS),
+        "--quorum"             , str(MSKC_QUORUM),
+        "--public-records-dir" , PUBLIC_RECORDS_DIR,
+    ])
+
+
+
 if __name__ == '__main__':
     build_manifest()
     announce_key_ceremony()
@@ -150,3 +160,4 @@ if __name__ == '__main__':
     vote(candidate_id="referendum-question-negative-selection")
     vote(candidate_id="referendum-question-affirmative-selection", spoil=True)
     vote(candidate_id="referendum-question-negative-selection"   , spoil=True)
+    tally()
