@@ -172,15 +172,15 @@ def VoteCommand(
 
     # set up dirs
     plaintext_dir = join(private_records_dir, 'plaintext_ballots')
-    spoiled_dir   = join(private_records_dir, 'spoiled_ballot_nonces')
     makedirs(plaintext_dir, exist_ok=True)
-    makedirs(spoiled_dir, exist_ok=True)
 
     ceremony_dir  = join(public_records_dir, '2_ceremony')
     election_dir  = join(public_records_dir, '3_election')
     devices_dir   = join(public_records_dir, '4_devices')
     ballots_dir   = join(public_records_dir, '5_ballots')
+    spoiled_dir   = join(public_records_dir, '6_spoiled')
     makedirs(ballots_dir, exist_ok=True)
+    makedirs(spoiled_dir, exist_ok=True)
 
     # load manifest
     # TODO factor out into a function in admin.py
