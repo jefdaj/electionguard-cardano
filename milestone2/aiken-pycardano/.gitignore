@@ -10,3 +10,6 @@ docs/
 
 # Aiken PyCardano hello-world
 keys/
+
+# Nix
+result*
