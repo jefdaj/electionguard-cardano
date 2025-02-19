@@ -1,4 +1,15 @@
-.venv/
+# Aiken compilation artifacts
+artifacts/
+# Aiken's project working directory
 build/
+# Aiken's default documentation export
+docs/
+
+# Python
+.venv/
+
+# Aiken PyCardano hello-world
 keys/
+
+# Nix
 result*
