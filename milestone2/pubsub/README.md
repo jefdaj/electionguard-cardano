@@ -9,10 +9,12 @@ It will also confirm that TX fees can be funded from a pool in the contract.
 That doesn't matter yet, but I want people to be able to post things for free
 during an election.
 
+
 ## TODO
 
 - check whether there are any existing Cardano pubsub examples
 - should there be a channel NFT, or is that not needed?
+
 
 ## onchain code
 
@@ -24,6 +26,7 @@ during an election.
 - phase 3: close channel and get remaining tADA back
 - write in Aiken
 - consider writing in Opshin too for comparison
+
 
 ## offchain code
 
@@ -39,16 +42,19 @@ during an election.
     * an IPFS node (or single-node cluster?) to pin CIDs and fetch files
     * a Python app to keep a folder in sync with the channel, control IPFS + Kupo
 
+
 ## versions
 
 - one where it runs locally and they share a node
 - one using 2 computers and a node each
+
 
 ## literature
 
 - blog post
 - asciinema demo of the local version
 - video of the local + 2 computer versions
+
 
 ## file formats
 
@@ -59,9 +65,23 @@ during an election.
 - no way to delete? maybe add that for the folder sync use case
 - publisher's signature and date posted come from TX info, not JSON
 
+
 ## interfaces
 
 - simple Python CLI per role: publisher, subscriber
 - subscriber will need to type in the contract address, time to scan from
     * can those be combined in one QR code?
     * default to date I wrote this if none given
+
+
+## Mint TXs with IPFS links
+
+I was about to try to query Kupo for NFTs, get their IPFS CIDs, and pin them.
+But then I realized I don't actually need to be minting NFTs; a simpler custom
+metadata would work unless/until I end up wanting actual NFTs.  That means I
+need to start minting my own things though, rather than querying existing NFT
+collections...
+
+TODO:
+
+- Should I follow [the CIP-10 metadata registry testnet](https://github.com/input-output-hk/metadata-registry-testnet) format?
