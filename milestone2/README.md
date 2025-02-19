@@ -7,7 +7,7 @@ I'm still doing that, but also starting a small [pubsub/]() project to test the
 components I think I want to use in the main ElectionGuard project.
 
 
-## Partial dev stacks to investigate
+## Investigate partial dev stacks
 
 These are works in progress under [investigate/]():
 
