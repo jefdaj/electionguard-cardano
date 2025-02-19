@@ -45,7 +45,7 @@ from electionguard.ballot_box import BallotBox, get_ballots
 
 
 MANIFEST_NAME  = '1_manifest'
-JOINT_KEY_NAME = '5_joint_key'
+JOINT_KEY_NAME = '3_jointkey'
 POLLING_PLACE  = 'electionguard-cardano-polling-place'
 DEVICE_PREFIX  = 'device_'
 
@@ -65,7 +65,7 @@ def AddDeviceCommand(
     which will encrypt + publish ballots and do the Benaloh challenge.
     """
     # print(json.dumps(locals()))
-    devices_dir  = join(public_records_dir, '4_devices')
+    devices_dir  = join(public_records_dir, '5_devices')
     makedirs(devices_dir, exist_ok=True)
     device = EncryptionDevice(
         generate_device_uuid(), # device id (TODO is this deterministic?)
@@ -175,11 +175,11 @@ def VoteCommand(
     makedirs(plaintext_dir, exist_ok=True)
 
     ceremony_dir  = join(public_records_dir, '2_ceremony')
-    election_dir  = join(public_records_dir, '3_election')
-    devices_dir   = join(public_records_dir, '4_devices')
-    ballots_dir   = join(public_records_dir, '5_provisional') # TODO better name?
-    cast_dir      = join(public_records_dir, '6_cast')
-    spoiled_dir   = join(public_records_dir, '7_spoiled')
+    election_dir  = join(public_records_dir, '4_election')
+    devices_dir   = join(public_records_dir, '5_devices')
+    ballots_dir   = join(public_records_dir, '6_provisional') # TODO better name?
+    cast_dir      = join(public_records_dir, '7_cast')
+    spoiled_dir   = join(public_records_dir, '8_spoiled')
     makedirs(ballots_dir, exist_ok=True)
     makedirs(cast_dir   , exist_ok=True)
     makedirs(spoiled_dir, exist_ok=True)
@@ -191,7 +191,7 @@ def VoteCommand(
 
     # load joint public key
     # TODO factor out into a function in admin.py
-    joint_key_path = join(ceremony_dir, JOINT_KEY_NAME + '.json')
+    joint_key_path = join(public_records_dir, JOINT_KEY_NAME + '.json')
     joint_key = serialize.from_file(ElectionJointKey, joint_key_path)
 
     # TODO is the underscore thing OK in python?
