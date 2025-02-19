@@ -14,6 +14,7 @@ Current status as of 2024-02-19:
 
 - Milestone 1:
   * Have [electionguard-python passing its tests](./milestone1/electionguard-python-tests.md)
+  * Partially archived [the NIST election format docs site](./milestone1/nist-docs)
   * Working on the [local election script](./milestone1/multiscript_election) (output 1.1)
 
 - Milestone 2:
