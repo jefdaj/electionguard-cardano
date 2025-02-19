@@ -40,6 +40,7 @@ services:
       - shared-net
 
 # allow communication with other docker-compose networks, for example kupo
+# TODO would just using the ipc socket work across networks instead?
 networks:
   shared-net:
     driver: bridge

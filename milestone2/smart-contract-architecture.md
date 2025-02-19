@@ -16,3 +16,5 @@ In the future it could also have Benaloh challenge certifications/disputes by vo
 The general fund could expand later into a map holding collateral from various parties.
 
 See `electionguard_gui/models/key_ceremony_states.py` for a state machine starting point.
+
+TODO can the plutus contract do all verification of incoming data itself, then force batchers to include every TX? Or will there eventually need to be a dispute resolution mechanism for that?
