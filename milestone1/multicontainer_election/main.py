@@ -9,8 +9,8 @@ import json
 from os import makedirs
 from os.path import join
 from pprint import pprint
-from pygments import highlight, lexers, formatters
-from electionguard.logs import log_info
+# from pygments import highlight, lexers, formatters
+# from electionguard.logs import log_info
 
 
 # NOTE see logs.py for electionguard's separate LOG
@@ -31,16 +31,16 @@ PUBLIC_RECORDS_DIR  = join(MSKC_ROOT, 'public_record')
 PRIVATE_RECORDS_DIR = join(MSKC_ROOT, 'private_records')
 
 
-def print_colorful_json(msg):
-	# based on https://stackoverflow.com/a/32166163
-	msg = msg.replace("'", '"')
-	formatted_json = json.dumps(json.loads(msg), indent=2)
-	colorful_json = highlight(
-		formatted_json,
-		lexers.JsonLexer(),
-		formatters.TerminalFormatter()
-	)
-	print(colorful_json)
+# def print_colorful_json(msg):
+# 	# based on https://stackoverflow.com/a/32166163
+# 	msg = msg.replace("'", '"')
+# 	formatted_json = json.dumps(json.loads(msg), indent=2)
+# 	colorful_json = highlight(
+# 		formatted_json,
+# 		lexers.JsonLexer(),
+# 		formatters.TerminalFormatter()
+# 	)
+# 	print(colorful_json)
 
 def run_python_script(args, **kwargs):
     # TODO docker exec inside each container here?
@@ -55,7 +55,7 @@ def run_python_script(args, **kwargs):
     try:
         stdout = stdout.strip()
         if len(stdout) > 0:
-            print_colorful_json(stdout)
+            pprint(json.loads(stdout))
         if stderr is not None:
             stderr = stderr.strip()
             if len(stderr) > 0:
@@ -158,7 +158,12 @@ def decrypt_shares():
         ])
 
 
-if __name__ == '__main__':
+def parse_config(cfg_path):
+    with open(cfg_path, 'r') as f:
+        return json.load(f)
+
+
+def main(cfg):
     build_manifest()
     announce_key_ceremony()
     key_ceremony_round(1)
@@ -176,3 +181,12 @@ if __name__ == '__main__':
     tally()
     decrypt_shares()
     # decrypt_combine()
+
+
+if __name__ == '__main__':
+    import sys
+    cfg_path = sys.argv[1]
+    cfg = parse_config(cfg_path)
+    pprint(cfg)
+    raise SystemExit
+    main(cfg)
