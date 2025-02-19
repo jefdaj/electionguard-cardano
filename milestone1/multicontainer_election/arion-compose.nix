@@ -2,7 +2,7 @@
 
 let
 
-  testConfig = builtins.fromJSON (builtins.readFile ./test-config.json);
+  multicontainerConfig = builtins.fromJSON (builtins.readFile ./multicontainer.json);
 
   mkContainer = mode: port:
   {
@@ -29,10 +29,18 @@ let
   # make the entire services attrset
   # the start ports are arbitrary
   mkServices = cfg:
-    builtins.listToAttrs (mkAttrsList "guardian" cfg.guardianStartPort cfg.nGuardians) //
-    builtins.listToAttrs (mkAttrsList "mediator" cfg.mediatorStartPort cfg.nMediators);
+    builtins.listToAttrs (mkAttrsList
+      "guardian"
+      cfg.guardians.startPort
+      cfg.guardians.count
+    ) //
+    builtins.listToAttrs (mkAttrsList
+      "votingDevice"
+      cfg.votingDevices.startPort
+      cfg.votingDevices.count
+    );
 
 in {
-  config.project.name = "electionguard-web-api-test";
-  config.services = mkServices testConfig;
+  config.project.name = "multicontainer";
+  config.services = mkServices multicontainerConfig;
 }
