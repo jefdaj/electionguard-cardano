@@ -1,8 +1,8 @@
 {
-  "dirs": {
-    "scripts": "./scripts",
-    "public": "./data/public",
-    "private": "./data/private"
+  "bind_mounts": {
+    "scripts": "/scripts",
+    "public": "/data/public",
+    "private": "/data/private"
   },
   "guardians": {"count": 3, "quorum": 2},
   "votingDevices": {"count": 1},

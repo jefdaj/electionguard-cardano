@@ -9,9 +9,9 @@ let
 
   mkContainer = mode: public_dir: private_dir: n:
   {
-    service.image = "electionguard-python-makefile-docker-env"; # TODO hash?
+    service.image = "electionguard-env"; # TODO hash?
     service.volumes = [
-      "./scripts/${mode}.py:/repo/${mode}.py"
+      "./scripts/:/scripts/"
       "${public_dir}:/data/public"
       "${private_dir}/${mode}_${builtins.toString n}:/data/private"
     ];
