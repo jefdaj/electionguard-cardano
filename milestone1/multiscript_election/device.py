@@ -28,7 +28,6 @@ from electionguard.manifest import Manifest, InternalManifest
 from electionguard.encrypt import EncryptionDevice, contest_from, generate_device_uuid
 
 from electionguard.ballot import (
-    BallotBoxState,
     CiphertextBallot,
     PlaintextBallot,
     PlaintextBallotSelection,
@@ -41,7 +40,11 @@ from electionguard.encrypt import EncryptionMediator
 from admin import build_election
 
 from electionguard.data_store import DataStore
-from electionguard.ballot_box import BallotBox, get_ballots
+from electionguard.ballot_box import (
+    BallotBox,
+    BallotBoxState,
+    submit_ballot_to_box
+)
 
 
 MANIFEST_NAME  = '1_manifest'
@@ -174,13 +177,13 @@ def VoteCommand(
     plaintext_dir = join(private_records_dir, 'plaintext_ballots')
     makedirs(plaintext_dir, exist_ok=True)
 
-    ceremony_dir    = join(public_records_dir, '2_ceremony')
-    election_dir    = join(public_records_dir, '4_election')
-    devices_dir     = join(public_records_dir, '5_devices')
-    ballots_dir     = join(public_records_dir, '6_ballots')
-    provisional_dir = join(ballots_dir       , '1_provisional')
-    cast_dir        = join(ballots_dir       , '2_cast')
-    spoiled_dir     = join(ballots_dir       , '3_spoiled')
+    ceremony_dir  = join(public_records_dir, '2_ceremony')
+    election_dir  = join(public_records_dir, '4_election')
+    devices_dir   = join(public_records_dir, '5_devices')
+    ballots_dir   = join(public_records_dir, '6_ballots')
+    submitted_dir = join(ballots_dir       , '1_submitted')
+    cast_dir      = join(ballots_dir       , '2_cast')
+    spoiled_dir   = join(ballots_dir       , '3_spoiled')
     makedirs(cast_dir   , exist_ok=True)
     makedirs(spoiled_dir, exist_ok=True)
 
@@ -205,23 +208,42 @@ def VoteCommand(
         internal_manifest, context, device
     )
 
+    # neither of these will be used again after this step
+    store1 = DataStore() # for submitted ballots
+    store2 = DataStore() # for cast + spoiled ballots
+
     # ballots in progress (not yet cast or spoiled)
+    # WARNING don't publish the _enc version because it includes nonces
     ballot_enc: CiphertextBallot = encrypter.encrypt(ballot)
-    serialize.to_file(ballot_enc, str(ballot.object_id), provisional_dir)
-
-    # TODO functional method instead? see 3_Cast_and_Spoil.md
-    ballot_store = DataStore()
-    ballot_box = BallotBox(
-        internal_manifest, context, ballot_store
+    ballot_submitted: SubmittedBallot = submit_ballot_to_box(
+        ballot_enc,
+        BallotBoxState.UNKNOWN,
+        internal_manifest,
+        context,
+        store1
     )
+    assert ballot_submitted.nonce is None
+    serialize.to_file(ballot_submitted, str(ballot.object_id), submitted_dir)
 
-    submitted_ballot: SubmittedBallot
     if spoil:
-        ballot_spoiled = ballot_box.spoil(ballot_enc)
+        ballot_spoiled: SubmittedBallot = submit_ballot_to_box(
+            ballot_enc,
+            BallotBoxState.SPOILED,
+            internal_manifest,
+            context,
+            store2
+        )
         spoiled_path = join(spoiled_dir, ballot.object_id + '.json')
         serialize.to_file(ballot_spoiled, str(ballot_spoiled.object_id), spoiled_dir)
+
     else:
-        ballot_cast = ballot_box.cast(ballot_enc)
+        ballot_cast: SubmittedBallot = submit_ballot_to_box(
+            ballot_enc,
+            BallotBoxState.CAST,
+            internal_manifest,
+            context,
+            store2
+        )
         cast_path = join(cast_dir, ballot.object_id + '.json')
         serialize.to_file(ballot_cast, str(ballot_cast.object_id), cast_dir)
 

@@ -387,10 +387,9 @@ def TallyCommand(
     # print(json.dumps(locals()))
 
     # set up dirs
-    ballots_dir     = join(public_records_dir, '6_ballots')
-    provisional_dir = join(ballots_dir       , '1_provisional')
-    cast_dir        = join(ballots_dir       , '2_cast')
-    spoiled_dir     = join(ballots_dir       , '3_spoiled')
+    ballots_dir = join(public_records_dir, '6_ballots')
+    cast_dir    = join(ballots_dir       , '2_cast')
+    spoiled_dir = join(ballots_dir       , '3_spoiled')
 
     # load required info
     manifest_path = join(public_records_dir, MANIFEST_NAME + '.json')
@@ -419,7 +418,7 @@ def TallyCommand(
     for cast_ballot in cast_ballots + spoiled_ballots:
         assert(tally.append(cast_ballot, should_validate=True))
 
-    # TODO assert these matches the dir counts, and add up to the provisional count
+    # TODO assert these matches the dir counts, and add up to the submitted count
     summary = {
         'n_cast_ballots': tally.cast(),
         'n_spoiled_ballots': tally.spoiled(),
