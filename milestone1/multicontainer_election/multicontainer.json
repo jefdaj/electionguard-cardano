@@ -1,6 +1,6 @@
 {
-  "guardians": {"count": 3, "quorum": 2, "startPort": 6000},
-  "votingDevices": {"count": 1, "startPort": 7000},
+  "guardians": {"count": 3, "quorum": 2},
+  "votingDevices": {"count": 1},
   "votes": [
     {"candidate_id": "referendum-question-affirmative-selection", "spoil": true},
     {"candidate_id": "referendum-question-affirmative-selection", "spoil": false},

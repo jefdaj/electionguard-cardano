@@ -1,44 +1,34 @@
 { pkgs, ...}:
 
+# TODO get them not to exit immediately
+# TODO rename makefile image -> something cleaner
+
 let
 
   multicontainerConfig = builtins.fromJSON (builtins.readFile ./multicontainer.json);
 
-  mkContainer = mode: port:
+  mkContainer = mode: public_dir: private_dir: n:
   {
-    service.image = "electionguard/electionguard-web-api:1.0.4"; # latest
-    service.environment.API_MODE = mode;
-    service.environment.PORT = port;
-    service.ports  = [
-      # host:container
-      (builtins.toString port + ":" + builtins.toString port)
+    service.image = "electionguard-python-makefile-docker-env"; # TODO hash?
+    service.volumes = [
+      "./scripts/${mode}.py:/repo/${mode}.py"
+      "${public_dir}:/data/public"
+      "${private_dir}/${mode}_${builtins.toString n}:/data/private"
     ];
-    # service.expose = [ ( builtins.toString port) ];
-    # service.volumes = [ "${toString ./.}/postgres-data:/var/lib/postgresql/data" ];
   };
 
-  # make a single-vm attrset suitable for merging into the main services attrset
-  mkAttrs = mode: startPort: n: {
+  mkAttrs = mode: public_dir: private_dir: n: {
     name = mode + builtins.toString n;
-    value = mkContainer mode (startPort + n);
+    value = mkContainer mode public_dir private_dir n;
   };
 
-  # make a list of vm attrsets with the same mode, suitable for merging into the main services attrset
-  mkAttrsList = mode: startPort: nVms: map (mkAttrs mode startPort) (pkgs.lib.range 1 nVms);
+  mkAttrsList = mode: nVms:
+    map (mkAttrs mode "./data/public" "./data/private") (pkgs.lib.range 1 nVms);
 
-  # make the entire services attrset
-  # the start ports are arbitrary
   mkServices = cfg:
-    builtins.listToAttrs (mkAttrsList
-      "guardian"
-      cfg.guardians.startPort
-      cfg.guardians.count
-    ) //
-    builtins.listToAttrs (mkAttrsList
-      "votingDevice"
-      cfg.votingDevices.startPort
-      cfg.votingDevices.count
-    );
+    builtins.listToAttrs (mkAttrsList "admin" 1) //
+    builtins.listToAttrs (mkAttrsList "device" cfg.votingDevices.count) //
+    builtins.listToAttrs (mkAttrsList "guardian" cfg.guardians.count);
 
 in {
   config.project.name = "multicontainer";
