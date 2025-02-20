@@ -4,7 +4,7 @@
 
 let
 
-  multicontainerConfig = builtins.fromJSON (builtins.readFile ./multicontainer.json);
+  electionConfig = builtins.fromJSON (builtins.readFile ./election.json);
 
   mkContainer = mode: public_dir: private_dir: n:
   {
@@ -36,6 +36,6 @@ let
     builtins.listToAttrs (mkAttrsList "guardian" cfg.guardians.count);
 
 in {
-  config.project.name = multicontainerConfig.project_name;
-  config.services = mkServices multicontainerConfig;
+  config.project.name = electionConfig.project_name;
+  config.services = mkServices electionConfig;
 }

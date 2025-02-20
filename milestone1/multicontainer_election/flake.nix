@@ -20,6 +20,7 @@
         docker # TODO remove?
         docker-compose # TODO remove?
         (self.pkgs.python3.withPackages (ps: with ps; [
+          click
           dotmap
           pygments
         ]))

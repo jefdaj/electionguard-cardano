@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 
-# This is the main orchestration script. For now it will expect to run from
-# /repo inside the electionguard-python-makefile-docker-env container.
-
 import subprocess
 import json
+import click
 
 from os import makedirs
 from os.path import join
@@ -31,12 +29,24 @@ def print_colorful_json(msg):
 	print(colorful_json)
 
 
-def arion_up():
-    # NOTE arion loads the cfg separately via Nix
+# TODO write this as a decorator so it can print the name of the step too?
+def explain(cfg):
+    if cfg.pause_to_explain:
+        print()
+        while True:
+            msg = input('# ')
+            if len(msg) == 0:
+                break
+
+
+def arion_up(cfg):
+    # NOTE arion also loads cfg separately via Nix
+    explain(cfg)
     subprocess.check_call(['arion', 'up', '-d'])
 
 
-def arion_down():
+def arion_down(cfg):
+    explain(cfg)
     subprocess.check_call(['arion', 'down'])
 
 
@@ -72,6 +82,7 @@ def run_in_container(cfg, mode, container_number, args, **kwargs):
 def build_manifest(cfg):
     # uncomment for interactive script:
     # question = input('Referendum-style question to be asked: ')
+    explain(cfg)
     question = 'Are pineapples still cool?'
     run_in_container(
         cfg, "admin", 1,
@@ -84,6 +95,8 @@ def build_manifest(cfg):
 
 
 def announce_key_ceremony(cfg):
+    # TODO remove this step?
+    explain(cfg)
     run_in_container(
         cfg, "admin", 1,
         [
@@ -96,6 +109,7 @@ def announce_key_ceremony(cfg):
 
 
 def key_ceremony_round(cfg, current_round):
+    explain(cfg)
     for guardian_id, sequence_order in zip(cfg.guardians.ids, cfg.guardians.sequence_order):
         run_in_container(
             cfg, "guardian", sequence_order,
@@ -113,6 +127,7 @@ def key_ceremony_round(cfg, current_round):
 
 
 def publish_joint_key(cfg):
+    explain(cfg)
     run_in_container(
         cfg, "admin", 1,
         [
@@ -123,6 +138,7 @@ def publish_joint_key(cfg):
 
 
 def build_election(cfg):
+    explain(cfg)
     run_in_container(
         cfg, "admin", 1,
         [
@@ -135,6 +151,7 @@ def build_election(cfg):
 
 
 def add_device(cfg, device_number):
+    explain(cfg)
     run_in_container(
         cfg, "device", device_number,
         [
@@ -160,7 +177,17 @@ def vote(cfg, candidate_id, spoil=False):
     )
 
 
+def vote_all(cfg):
+    explain(cfg)
+    vote(cfg, candidate_id="referendum-question-affirmative-selection")
+    vote(cfg, candidate_id="referendum-question-negative-selection")
+    vote(cfg, candidate_id="referendum-question-affirmative-selection")
+    vote(cfg, candidate_id="referendum-question-affirmative-selection", spoil=True)
+    vote(cfg, candidate_id="referendum-question-negative-selection"   , spoil=True)
+
+
 def tally(cfg):
+    explain(cfg)
     run_in_container(
         cfg, "admin", 1,
         [
@@ -173,6 +200,7 @@ def tally(cfg):
 
 
 def decrypt_shares(cfg):
+    explain(cfg)
     for guardian_id, sequence_order in zip(cfg.guardians.ids, cfg.guardians.sequence_order):
         run_in_container(
             cfg, "guardian", sequence_order,
@@ -188,17 +216,18 @@ def decrypt_shares(cfg):
         )
 
 
-def parse_config(cfg_path):
+def parse_config(cfg_path, pause_to_explain):
     with open(cfg_path, 'r') as f:
         js = json.load(f)
     cfg = DotMap(js)
+    cfg.pause_to_explain = pause_to_explain
     cfg.guardians.sequence_order = [*range(1, cfg.guardians.count + 1)]
     cfg.guardians.ids = [f"guardian_{i}" for i in cfg.guardians.sequence_order]
     return cfg
 
 
-def main(cfg):
-    arion_up() # TODO down and up again if needed?
+def election(cfg):
+    arion_up(cfg) # TODO down and up again if needed?
     build_manifest(cfg)
     announce_key_ceremony(cfg)
     key_ceremony_round(cfg, 1)
@@ -209,17 +238,35 @@ def main(cfg):
     build_election(cfg)
     for n in range(1, cfg.votingDevices.count + 1):
         add_device(cfg, n)
-    vote(cfg, candidate_id="referendum-question-affirmative-selection")
-    vote(cfg, candidate_id="referendum-question-negative-selection")
-    vote(cfg, candidate_id="referendum-question-affirmative-selection")
-    vote(cfg, candidate_id="referendum-question-affirmative-selection", spoil=True)
-    vote(cfg, candidate_id="referendum-question-negative-selection"   , spoil=True)
+    vote_all(cfg)
     tally(cfg)
     # decrypt_shares(cfg)
     # decrypt_combine()
-    arion_down()
+    arion_down(cfg)
 
+
+@click.command("election")
+@click.option(
+    "--pause-to-explain",
+    prompt="Pause so you can explain before each step?",
+    help="Pauses the script while you type something before each step.",
+    type=click.BOOL,
+    # TODO default to false
+)
+def ElectionCommand(
+    pause_to_explain: bool
+) -> None:
+    """Run an election with some options in a JSON config file.
+    """
+    cfg = parse_config('election.json', pause_to_explain)
+    election(cfg)
+
+
+@click.group()
+def cli() -> None:
+    pass
+
+cli.add_command(ElectionCommand)
 
 if __name__ == '__main__':
-    cfg = parse_config('multicontainer.json')
-    main(cfg)
+    cli()
