@@ -1,14 +1,15 @@
 { pkgs, ...}:
 
-# TODO include code to build electionguard-env from source
-
 let
 
   electionConfig = builtins.fromJSON (builtins.readFile ./election.json);
 
   mkContainer = mode: public_dir: private_dir: n:
   {
-    service.image = "electionguard-env"; # TODO hash?
+
+    # TODO publish my electionguard-python image and pin it here
+    service.image = "electionguard-python";
+
     service.volumes = [
       "./scripts/:/scripts/"
       "${public_dir}:/data/public"

@@ -1,21 +1,23 @@
 #!/usr/bin/env python3
 
-import subprocess
-import json
 import click
+import json
+import subprocess
 
+from click_default_group import DefaultGroup
+from dotmap import DotMap
 from os import makedirs
 from os.path import join
 from pprint import pprint
-from dotmap import DotMap
 from pygments import highlight, lexers, formatters
 
-
-# NOTE see logs.py for electionguard's separate LOG
+# see logs.py for electionguard's separate LOG
 import logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s\n%(message)s\n')
 LOG = logging.getLogger('electionguard-cardano')
 
+
+### utilities ###
 
 def print_colorful_json(msg):
 	# based on https://stackoverflow.com/a/32166163
@@ -28,30 +30,16 @@ def print_colorful_json(msg):
 	)
 	print(colorful_json)
 
-
-# TODO write this as a decorator so it can print the name of the step too?
-def explain(cfg):
-    if cfg.pause_to_explain:
-        print()
-        while True:
-            msg = input('# ')
-            if len(msg) == 0:
-                break
-
-
-def arion_up(cfg):
-    # NOTE arion also loads cfg separately via Nix
-    explain(cfg)
-    subprocess.check_call(['arion', 'up', '-d'])
-
-
-def arion_down(cfg):
-    explain(cfg)
-    subprocess.check_call(['arion', 'down'])
-
+def parse_config(cfg_path, pause_to_explain):
+    with open(cfg_path, 'r') as f:
+        js = json.load(f)
+    cfg = DotMap(js)
+    cfg.pause_to_explain = pause_to_explain
+    cfg.guardians.sequence_order = [*range(1, cfg.guardians.count + 1)]
+    cfg.guardians.ids = [f"guardian_{i}" for i in cfg.guardians.sequence_order]
+    return cfg
 
 def run_in_container(cfg, mode, container_number, args, **kwargs):
-    # TODO document this
     container_name = cfg.project_name + "-" + mode + str(container_number) + "-1"
     script_path = join(cfg.bind_mounts.scripts, mode + '.py')
     # TODO python don't write bytecode (here or in the image?)
@@ -78,11 +66,37 @@ def run_in_container(cfg, mode, container_number, args, **kwargs):
             msg += '\n' + stderr
         LOG.error(msg)
 
+def explain_step(fn):
+    def decorated_fn(cfg, *args, **kwargs):
+        header = f'### {fn.__name__} ###'
+        print('\n' + header)
+        if cfg.pause_to_explain:
+            print('#  ')
+            while True:
+                if len(input('#  ').strip()) == 0:
+                    print('#' * len(header) + '\n')
+                    break
+        else:
+            print()
+        return fn(cfg, *args, **kwargs)
+    return decorated_fn
 
+@explain_step
+def arion_up(cfg):
+    # arion also loads cfg separately via Nix
+    subprocess.check_call(['arion', 'up', '-d'])
+
+@explain_step
+def arion_down(cfg):
+    subprocess.check_call(['arion', 'down'])
+
+
+### election ###
+
+@explain_step
 def build_manifest(cfg):
     # uncomment for interactive script:
     # question = input('Referendum-style question to be asked: ')
-    explain(cfg)
     question = 'Are pineapples still cool?'
     run_in_container(
         cfg, "admin", 1,
@@ -93,10 +107,9 @@ def build_manifest(cfg):
         ]
     )
 
-
+@explain_step
 def announce_key_ceremony(cfg):
     # TODO remove this step?
-    explain(cfg)
     run_in_container(
         cfg, "admin", 1,
         [
@@ -107,9 +120,8 @@ def announce_key_ceremony(cfg):
         ]
     )
 
-
+@explain_step
 def key_ceremony_round(cfg, current_round):
-    explain(cfg)
     for guardian_id, sequence_order in zip(cfg.guardians.ids, cfg.guardians.sequence_order):
         run_in_container(
             cfg, "guardian", sequence_order,
@@ -125,9 +137,8 @@ def key_ceremony_round(cfg, current_round):
             ]
         )
 
-
+@explain_step
 def publish_joint_key(cfg):
-    explain(cfg)
     run_in_container(
         cfg, "admin", 1,
         [
@@ -136,9 +147,8 @@ def publish_joint_key(cfg):
         ]
     )
 
-
+@explain_step
 def build_election(cfg):
-    explain(cfg)
     run_in_container(
         cfg, "admin", 1,
         [
@@ -149,9 +159,8 @@ def build_election(cfg):
         ]
     )
 
-
+@explain_step
 def add_device(cfg, device_number):
-    explain(cfg)
     run_in_container(
         cfg, "device", device_number,
         [
@@ -160,7 +169,6 @@ def add_device(cfg, device_number):
             "--public-records-dir", cfg.bind_mounts.public,
         ]
     )
-
 
 def vote(cfg, candidate_id, spoil=False):
     run_in_container(
@@ -176,18 +184,17 @@ def vote(cfg, candidate_id, spoil=False):
         ]
     )
 
-
+# TODO split into sections so the cast and spoil can be explained separately?
+@explain_step
 def vote_all(cfg):
-    explain(cfg)
     vote(cfg, candidate_id="referendum-question-affirmative-selection")
     vote(cfg, candidate_id="referendum-question-negative-selection")
     vote(cfg, candidate_id="referendum-question-affirmative-selection")
     vote(cfg, candidate_id="referendum-question-affirmative-selection", spoil=True)
     vote(cfg, candidate_id="referendum-question-negative-selection"   , spoil=True)
 
-
+@explain_step
 def tally(cfg):
-    explain(cfg)
     run_in_container(
         cfg, "admin", 1,
         [
@@ -198,9 +205,8 @@ def tally(cfg):
         ]
     )
 
-
+@explain_step
 def decrypt_shares(cfg):
-    explain(cfg)
     for guardian_id, sequence_order in zip(cfg.guardians.ids, cfg.guardians.sequence_order):
         run_in_container(
             cfg, "guardian", sequence_order,
@@ -215,24 +221,11 @@ def decrypt_shares(cfg):
             ]
         )
 
-
-def parse_config(cfg_path, pause_to_explain):
-    with open(cfg_path, 'r') as f:
-        js = json.load(f)
-    cfg = DotMap(js)
-    cfg.pause_to_explain = pause_to_explain
-    cfg.guardians.sequence_order = [*range(1, cfg.guardians.count + 1)]
-    cfg.guardians.ids = [f"guardian_{i}" for i in cfg.guardians.sequence_order]
-    return cfg
-
-
 def election(cfg):
-    arion_up(cfg) # TODO down and up again if needed?
     build_manifest(cfg)
     announce_key_ceremony(cfg)
-    key_ceremony_round(cfg, 1)
-    key_ceremony_round(cfg, 2)
-    key_ceremony_round(cfg, 3)
+    for n in range(1, 4):
+        key_ceremony_round(cfg, n)
     # TODO should there be a "publish final guardian records" step here?
     publish_joint_key(cfg)
     build_election(cfg)
@@ -242,16 +235,18 @@ def election(cfg):
     tally(cfg)
     # decrypt_shares(cfg)
     # decrypt_combine()
-    arion_down(cfg)
 
+
+### cli ###
 
 @click.command("election")
 @click.option(
     "--pause-to-explain",
-    prompt="Pause so you can explain before each step?",
-    help="Pauses the script while you type something before each step.",
+    help="Pauses the script while you type comments before each important step.",
     type=click.BOOL,
-    # TODO default to false
+    is_flag=True,
+    default=False,
+    show_default=True
 )
 def ElectionCommand(
     pause_to_explain: bool
@@ -259,10 +254,15 @@ def ElectionCommand(
     """Run an election with some options in a JSON config file.
     """
     cfg = parse_config('election.json', pause_to_explain)
-    election(cfg)
+    try:
+        arion_up(cfg) # TODO down and up again if needed?
+        election(cfg)
+    except Exception as e:
+        pprint(e) # TODO recover?
+    finally:
+        arion_down(cfg)
 
-
-@click.group()
+@click.group(cls=DefaultGroup, default='election', default_if_no_args=True)
 def cli() -> None:
     pass
 
