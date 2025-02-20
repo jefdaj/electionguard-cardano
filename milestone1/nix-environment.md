@@ -2,6 +2,8 @@
 
 This is the cleanest, easiest way I can think of for now to make everything Nix-based and reproducible.
 
+The [multicontainer demo](./multicontainer_election/) currently does everything except the Tmux session.
+
 1. Overall `flake.nix` (use `nix develop` to get a dev shell)
 2. Custom JSON config file with parameters: N guardians, quorum, votes, ...
 3. Main Python script runs in dev shell and:
