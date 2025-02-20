@@ -1,4 +1,5 @@
 {
+  "project_name": "electionguard",
   "bind_mounts": {
     "scripts": "/scripts",
     "public": "/data/public",

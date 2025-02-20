@@ -1,7 +1,6 @@
 { pkgs, ...}:
 
-# TODO get them not to exit immediately
-# TODO rename makefile image -> something cleaner
+# TODO include code to build electionguard-env from source
 
 let
 
@@ -37,6 +36,6 @@ let
     builtins.listToAttrs (mkAttrsList "guardian" cfg.guardians.count);
 
 in {
-  config.project.name = "multicontainer";
+  config.project.name = multicontainerConfig.project_name;
   config.services = mkServices multicontainerConfig;
 }

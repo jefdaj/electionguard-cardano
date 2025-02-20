@@ -10,12 +10,25 @@ from os import makedirs
 from os.path import join
 from pprint import pprint
 from dotmap import DotMap
+from pygments import highlight, lexers, formatters
 
 
 # NOTE see logs.py for electionguard's separate LOG
 import logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s\n%(message)s\n')
 LOG = logging.getLogger('electionguard-cardano')
+
+
+def print_colorful_json(msg):
+	# based on https://stackoverflow.com/a/32166163
+	msg = msg.replace("'", '"')
+	formatted_json = json.dumps(json.loads(msg), indent=2)
+	colorful_json = highlight(
+		formatted_json,
+		lexers.JsonLexer(),
+		formatters.TerminalFormatter()
+	)
+	print(colorful_json)
 
 
 def arion_up():
@@ -29,8 +42,9 @@ def arion_down():
 
 def run_in_container(cfg, mode, container_number, args, **kwargs):
     # TODO document this
-    container_name = "multicontainer-" + mode + str(container_number) + "-1"
+    container_name = cfg.project_name + "-" + mode + str(container_number) + "-1"
     script_path = join(cfg.bind_mounts.scripts, mode + '.py')
+    # TODO python don't write bytecode (here or in the image?)
     args = ["docker", "exec", container_name,
             "poetry", "run", script_path] + args
     kwargs.update(stdout=subprocess.PIPE, text=True)
@@ -43,7 +57,7 @@ def run_in_container(cfg, mode, container_number, args, **kwargs):
     try:
         stdout = stdout.strip()
         if len(stdout) > 0:
-            pprint(json.loads(stdout))
+            print_colorful_json(stdout)
         if stderr is not None:
             stderr = stderr.strip()
             if len(stderr) > 0:
