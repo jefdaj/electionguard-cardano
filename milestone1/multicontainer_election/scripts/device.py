@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-# Based on ???
 # Instead of one script, this has one script per party and they coordinate via
 # a shared folder on the local filesystem.  This script is written from the
 # encryption device's point of view.
@@ -13,17 +12,15 @@ from os import makedirs, listdir
 from os.path import join
 from typing import List, Tuple
 
-# from datetime import datetime, timedelta
-
 from electionguard.key_ceremony import (
     # combine_election_public_keys,
     # ElectionPublicKey,
     ElectionJointKey,
 )
+
 from electionguard import serialize
 from electionguard.election import CiphertextElectionContext
 from electionguard.constants import ElectionConstants
-# from electionguard.utils import get_optional
 from electionguard.manifest import Manifest, InternalManifest
 from electionguard.encrypt import EncryptionDevice, contest_from, generate_device_uuid
 
@@ -34,6 +31,7 @@ from electionguard.ballot import (
     PlaintextBallotContest,
     SubmittedBallot,
 )
+
 from electionguard.encrypt import EncryptionDevice
 from electionguard.encrypt import EncryptionMediator
 
@@ -233,6 +231,8 @@ def VoteCommand(
     serialize.to_file(ballot_submitted, str(ballot.object_id), submitted_dir)
 
     if spoil:
+        # TODO is this not working? why don't spoiled ballots contain nonces?
+        # TODO if needed, just save ballot_enc versions instead?
         ballot_spoiled: SubmittedBallot = submit_ballot_to_box(
             ballot_enc,
             BallotBoxState.SPOILED,
