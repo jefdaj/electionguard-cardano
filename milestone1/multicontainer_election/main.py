@@ -185,30 +185,25 @@ def parse_config(cfg_path):
 
 def main(cfg):
     arion_up() # TODO down and up again if needed?
-    try:
-        build_manifest(cfg)
-        announce_key_ceremony(cfg)
-        key_ceremony_round(cfg, 1)
-        key_ceremony_round(cfg, 2)
-        key_ceremony_round(cfg, 3)
-        # TODO should there be a "publish final guardian records" step here?
-        publish_joint_key(cfg)
-        build_election(cfg)
-        for n in range(1, cfg.votingDevices.count + 1):
-            print("add device", n)
-            add_device(cfg, n)
-        vote(cfg, candidate_id="referendum-question-affirmative-selection")
-        vote(cfg, candidate_id="referendum-question-negative-selection")
-        vote(cfg, candidate_id="referendum-question-affirmative-selection")
-        vote(cfg, candidate_id="referendum-question-affirmative-selection", spoil=True)
-        vote(cfg, candidate_id="referendum-question-negative-selection"   , spoil=True)
-        tally(cfg)
-        # decrypt_shares(cfg)
-        # decrypt_combine()
-    except:
-        pass
-    finally:
-        arion_down()
+    build_manifest(cfg)
+    announce_key_ceremony(cfg)
+    key_ceremony_round(cfg, 1)
+    key_ceremony_round(cfg, 2)
+    key_ceremony_round(cfg, 3)
+    # TODO should there be a "publish final guardian records" step here?
+    publish_joint_key(cfg)
+    build_election(cfg)
+    for n in range(1, cfg.votingDevices.count + 1):
+        add_device(cfg, n)
+    vote(cfg, candidate_id="referendum-question-affirmative-selection")
+    vote(cfg, candidate_id="referendum-question-negative-selection")
+    vote(cfg, candidate_id="referendum-question-affirmative-selection")
+    vote(cfg, candidate_id="referendum-question-affirmative-selection", spoil=True)
+    vote(cfg, candidate_id="referendum-question-negative-selection"   , spoil=True)
+    tally(cfg)
+    # decrypt_shares(cfg)
+    # decrypt_combine()
+    arion_down()
 
 
 if __name__ == '__main__':

@@ -30,21 +30,21 @@ import logging
 logging.getLogger('electionguard').setLevel(logging.WARNING)
 
 
+ELECTION_KEY_PAIR_NAME = 'election_key_pair'
+
+
 def round1(guardian_id, sequence_order, quorum, public_records_dir, private_records_dir):
     '''Round 1: create and share pubkeys
     '''
 
     # set up dirs
-    # TODO remove once settled into the arion workflow, because each only sees its own dir
-    guardians_dir = join(private_records_dir, 'guardian_keys')
     pubkeys_dir   = join(public_records_dir, '2_ceremony/1_pubkeys')
-    makedirs(guardians_dir, exist_ok=True)
     makedirs(pubkeys_dir  , exist_ok=True)
 
     # generate election key pair
     # NOTE there will eventually also be separate a Cardano wallet key pair
     election_key_pair: ElectionKeyPair = generate_election_key_pair(guardian_id, sequence_order, quorum)
-    serialize.to_file(election_key_pair, guardian_id, guardians_dir)
+    serialize.to_file(election_key_pair, ELECTION_KEY_PAIR_NAME, private_records_dir)
 
     # share the public key (and other info)
     # TODO why not publish_record here? I guess that's later after backups?
@@ -73,8 +73,7 @@ def round2(guardian_id, sequence_order, public_records_dir, private_records_dir)
     makedirs(backups_dir, exist_ok=True)
 
     # restore own private state
-    guardians_dir = join(private_records_dir, 'guardian_keys')
-    election_key_pair_path = join(guardians_dir, f'{guardian_id}.json')
+    election_key_pair_path = join(private_records_dir, ELECTION_KEY_PAIR_NAME + '.json')
     election_key_pair = serialize.from_file(ElectionKeyPair, election_key_pair_path)
 
     # load other guardians' public keys from shared folder
@@ -113,7 +112,6 @@ def round3(guardian_id, sequence_order, public_records_dir, private_records_dir)
     '''
 
     # set up dirs
-    guardians_dir     = join(private_records_dir, 'guardian_keys')
     pubkeys_dir       = join(public_records_dir, '2_ceremony/1_pubkeys')
     backups_dir       = join(public_records_dir, '2_ceremony/2_backups')
     verifications_dir = join(public_records_dir, '2_ceremony/3_verifications')
@@ -122,7 +120,7 @@ def round3(guardian_id, sequence_order, public_records_dir, private_records_dir)
     makedirs(verifications_dir, exist_ok=True)
 
     # restore own private state
-    election_key_pair_path = join(guardians_dir, f'{guardian_id}.json')
+    election_key_pair_path = join(private_records_dir, ELECTION_KEY_PAIR_NAME + '.json')
     election_key_pair = serialize.from_file(ElectionKeyPair, election_key_pair_path)
     own_public_key = election_key_pair.share()
 

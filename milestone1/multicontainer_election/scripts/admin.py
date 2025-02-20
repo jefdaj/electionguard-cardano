@@ -192,6 +192,8 @@ def AnnounceKeyCeremonyCommand(
     """
     # print(json.dumps(locals()))
 
+    # TODO remove this entire step? not sure it adds anything
+
     ceremony_dir = join(public_records_dir, '2_ceremony')
     makedirs(ceremony_dir, exist_ok=True)
 
