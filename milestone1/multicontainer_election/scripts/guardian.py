@@ -24,6 +24,12 @@ from electionguard.key_ceremony import (
     generate_election_partial_key_backup,
     verify_election_partial_key_backup,
 )
+from electionguard.decryption import (
+    compute_decryption_share,
+    compute_decryption_share_for_ballot,
+)
+from electionguard.election import CiphertextElectionContext
+from electionguard.tally import CiphertextTally
 
 # hide INFO dumps of crypto from elgamal.py
 import logging
@@ -215,11 +221,68 @@ def GuardianKeyCeremonyCommand(
     else:
         raise Exception(f'Invalid current_round "{current_round}"')
 
+@click.command("decrypt-shares")
+@click.option(
+    "--public-records-dir",
+    prompt="Public records directory",
+    help="The location of a directory into which will be placed all public records. "
+    + "This folder should be protected. Existing files will be overwritten.",
+    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+)
+@click.option(
+    "--private-records-dir",
+    prompt="Private records directory",
+    help="The location of a directory into which will be placed the guardian's private keys "
+    + "This folder should be protected. Existing files will be overwritten.",
+    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+)
+@click.option(
+    "--guardian-id",
+    prompt="Unique ID for this ",
+    help="Unique ID for this  in the ceremony",
+    type=click.STRING,
+)
+def DecryptSharesCommand(
+    public_records_dir: str,
+    private_records_dir: str,
+    guardian_id: str,
+) -> None:
+    """
+    Compute guardian decryption shares for the tally + all spoiled ballots.
+    """
+    # print(json.dumps(locals()))
+
+    # set up dirs
+    # pubkeys_dir = join(public_records_dir, '2_ceremony/1_pubkeys')
+    # backups_dir = join(public_records_dir, '2_ceremony/2_backups')
+    setup_dir     = join(public_records_dir, '3_setup')
+    # makedirs(pubkeys_dir, exist_ok=True)
+    # makedirs(backups_dir, exist_ok=True)
+
+    # restore own private state
+    election_key_pair_path = join(private_records_dir, ELECTION_KEY_PAIR_NAME + '.json')
+    election_key_pair = serialize.from_file(ElectionKeyPair, election_key_pair_path)
+
+    # restore context
+    # TODO uh oh, also can't be deserialized and has to be rebuilt like internal_manifest?
+    context_path = join(setup_dir, 'context.json')
+    context = serialize.from_file(CiphertextElectionContext, context_path)
+    pprint(context)
+
+    # restore tally
+    tally_path = join(public_records_dir, '6_tally.json')
+    context = serialize.from_file(CiphertextTally, tally_path)
+    pprint(tally)
+
+    raise SystemExit
+
+
 @click.group()
 def cli() -> None:
     pass
 
 cli.add_command(GuardianKeyCeremonyCommand)
+cli.add_command(DecryptSharesCommand)
 
 if __name__ == '__main__':
     cli()
