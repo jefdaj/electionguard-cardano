@@ -8,9 +8,9 @@ from click_default_group import DefaultGroup
 from dotmap import DotMap
 from os import makedirs
 from os.path import join
+from shutil import rmtree
 from pprint import pprint
 from pygments import highlight, lexers, formatters
-from time import sleep
 
 # see logs.py for electionguard's separate LOG
 import logging
@@ -82,11 +82,17 @@ def explain_step(fn):
         return fn(cfg, *args, **kwargs)
     return decorated_fn
 
+def arion_cleanup(cfg):
+    # in case a previous run failed
+    # TODO can the rm be safer?
+    subprocess.check_call(['arion', 'down'])
+    rmtree('./data', ignore_errors=True)
+
 @explain_step
 def arion_up(cfg):
     # arion also loads cfg separately via Nix
+    arion_cleanup(cfg)
     subprocess.check_call(['arion', 'up', '-d'])
-    sleep(3) # TODO does this prevent occasional missing bind mount dirs?
 
 @explain_step
 def arion_down(cfg):

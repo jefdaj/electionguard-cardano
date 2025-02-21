@@ -11,6 +11,8 @@ from pprint import pprint
 from os import makedirs, listdir
 from os.path import join
 from typing import List, Tuple
+from datetime import datetime
+from dataclasses import dataclass
 
 from electionguard.key_ceremony import (
     # combine_election_public_keys,
@@ -126,6 +128,14 @@ def build_ballot(
     return ballot
 
 
+# TODO what should this inherit from... ElectionObjectBase? CryptoHashCheckable?
+@dataclass
+class CastBallotNotice(object):
+    ballot_id: str
+    cast_at: datetime
+
+
+
 @click.command("vote")
 @click.option(
     "--guardian-count",
@@ -218,8 +228,10 @@ def VoteCommand(
     store2 = DataStore() # for cast + spoiled ballots
 
     # ballots in progress (not yet cast or spoiled)
-    # WARNING don't publish the _enc version because it includes nonces
+    # This is also used below as the "spoiled" ballot, because it includes nonces.
     ballot_enc: CiphertextBallot = encrypter.encrypt(ballot)
+
+    # This is the same as the cast version; no need to include the files twice.
     ballot_submitted: SubmittedBallot = submit_ballot_to_box(
         ballot_enc,
         BallotBoxState.UNKNOWN,
@@ -231,28 +243,51 @@ def VoteCommand(
     serialize.to_file(ballot_submitted, str(ballot.object_id), submitted_dir)
 
     if spoil:
-        # TODO is this not working? why don't spoiled ballots contain nonces?
-        # TODO if needed, just save ballot_enc versions instead?
-        ballot_spoiled: SubmittedBallot = submit_ballot_to_box(
-            ballot_enc,
-            BallotBoxState.SPOILED,
-            internal_manifest,
-            context,
-            store2
-        )
+
+        # I think this is how the authors intended for ballots to be spoiled,
+        # but it doesn't work for our purposes because they don't include the nonces!
+        # They just mark the state as SPOILED but otherwise it stays the same.
+        # ballot_spoiled: SubmittedBallot = submit_ballot_to_box(
+        #     ballot_enc,
+        #     BallotBoxState.SPOILED,
+        #     internal_manifest,
+        #     context,
+        #     store2
+        # )
+
+        # Instead, I think we either need to publish the entire ciphertext or
+        # just the master nonce. Doing the ciphertext for now.
+        # TODO which would make more sense? ask around
+        # TODO if using the nonce, which one specifically? nonce_seed?
+        ballot_spoiled = ballot_enc
+        ballot_spoiled.state = BallotBoxState.SPOILED
+
         spoiled_path = join(spoiled_dir, ballot.object_id + '.json')
         serialize.to_file(ballot_spoiled, str(ballot_spoiled.object_id), spoiled_dir)
 
     else:
-        ballot_cast: SubmittedBallot = submit_ballot_to_box(
-            ballot_enc,
-            BallotBoxState.CAST,
-            internal_manifest,
-            context,
-            store2
+
+        # I think this is how the authors intended for ballots to be cast,
+        # but I don't see any point including the whole ballot again just to
+        # change the state from UNKNOWN -> CAST.
+        # ballot_cast: SubmittedBallot = submit_ballot_to_box(
+        #     ballot_enc,
+        #     BallotBoxState.CAST,
+        #     internal_manifest,
+        #     context,
+        #     store2
+        # )
+
+        # Instead, we just save a placeholder json file that says "cast" and
+        # would be signed by the device on chain. And eventually maybe the
+        # voter's phone app too!
+        cast_notice = CastBallotNotice(
+            ballot_id=ballot_enc.object_id,
+            cast_at=datetime.utcnow()
         )
+
         cast_path = join(cast_dir, ballot.object_id + '.json')
-        serialize.to_file(ballot_cast, str(ballot_cast.object_id), cast_dir)
+        serialize.to_file(cast_notice, str(cast_notice.ballot_id), cast_dir)
 
 
 
