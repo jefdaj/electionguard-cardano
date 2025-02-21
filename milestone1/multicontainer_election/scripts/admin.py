@@ -37,6 +37,8 @@ from electionguard_tools.helpers.election_builder import ElectionBuilder
 
 from electionguard.manifest import Manifest, InternalManifest
 
+from electionguard.ballot_box import BallotBoxState
+
 from guardian import load_guardian_pubkeys
 
 
@@ -357,10 +359,6 @@ def BuildElectionCommand(
 
 def load_submitted_ballots(submitted_ballot_paths: List[str]) -> List[SubmittedBallot]:
     # NOTE this works for cast and/or spoiled ballots
-    # ballot_paths = [
-    #     join(submitted_ballots_dir, n)
-    #     for n in listdir(submitted_ballots_dir)
-    # ]
     submitted_ballots = [
         serialize.from_file(SubmittedBallot, p)
         for p in submitted_ballot_paths
@@ -371,14 +369,22 @@ def load_submitted_ballots(submitted_ballot_paths: List[str]) -> List[SubmittedB
 def load_cast_ballots(submitted_dir: str, cast_dir: str) -> List[SubmittedBallot]:
     cast_names = listdir(cast_dir)
     cast_paths = [join(submitted_dir, n) for n in cast_names]
-    return load_submitted_ballots(cast_paths)
+    cast_ballots = load_submitted_ballots(cast_paths)
+    # TODO is this right? it seems too easy but passes the validation
+    for b in cast_ballots:
+        b.state = BallotBoxState.CAST
+    return cast_ballots
 
 
-# TODO unify with load_cast_ballots? if they end up being the same
+# TODO if the code ends up the same, unify this with load_cast_ballots
 def load_spoiled_ballots(submitted_dir: str, spoiled_dir: str) -> List[SubmittedBallot]:
     spoiled_names = listdir(spoiled_dir)
     spoiled_paths = [join(submitted_dir, n) for n in spoiled_names]
-    return load_submitted_ballots(spoiled_paths)
+    spoiled_ballots = load_submitted_ballots(spoiled_paths)
+    # TODO is this right? it seems too easy but passes the validation
+    for b in spoiled_ballots:
+        b.state = BallotBoxState.SPOILED
+    return spoiled_ballots
 
 
 @click.command("tally")
