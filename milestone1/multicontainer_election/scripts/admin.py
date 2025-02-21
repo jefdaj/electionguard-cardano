@@ -355,17 +355,30 @@ def BuildElectionCommand(
     # serialize.to_file(internal_manifest, 'internal_manifest', setup_dir)
 
 
-def load_submitted_ballots(submitted_ballots_dir: str) -> List[SubmittedBallot]:
+def load_submitted_ballots(submitted_ballot_paths: List[str]) -> List[SubmittedBallot]:
     # NOTE this works for cast and/or spoiled ballots
-    ballot_paths = [
-        join(submitted_ballots_dir, n)
-        for n in listdir(submitted_ballots_dir)
-    ]
+    # ballot_paths = [
+    #     join(submitted_ballots_dir, n)
+    #     for n in listdir(submitted_ballots_dir)
+    # ]
     submitted_ballots = [
         serialize.from_file(SubmittedBallot, p)
-        for p in ballot_paths
+        for p in submitted_ballot_paths
     ]
     return submitted_ballots
+
+
+def load_cast_ballots(submitted_dir: str, cast_dir: str) -> List[SubmittedBallot]:
+    cast_names = listdir(cast_dir)
+    cast_paths = [join(submitted_dir, n) for n in cast_names]
+    return load_submitted_ballots(cast_paths)
+
+
+# TODO unify with load_cast_ballots? if they end up being the same
+def load_spoiled_ballots(submitted_dir: str, spoiled_dir: str) -> List[SubmittedBallot]:
+    spoiled_names = listdir(spoiled_dir)
+    spoiled_paths = [join(submitted_dir, n) for n in spoiled_names]
+    return load_submitted_ballots(spoiled_paths)
 
 
 @click.command("tally")
@@ -399,11 +412,12 @@ def TallyCommand(
     # print(json.dumps(locals()))
 
     # set up dirs
-    announce_dir = join(public_records_dir, '1_announce')
-    setup_dir    = join(public_records_dir, '3_setup')
-    ballots_dir  = join(public_records_dir, '5_ballots')
-    cast_dir     = join(ballots_dir       , '2_cast')
-    spoiled_dir  = join(ballots_dir       , '3_spoiled')
+    announce_dir  = join(public_records_dir, '1_announce')
+    setup_dir     = join(public_records_dir, '3_setup')
+    ballots_dir   = join(public_records_dir, '5_ballots')
+    submitted_dir = join(ballots_dir       , '1_submitted')
+    cast_dir      = join(ballots_dir       , '2_cast')
+    spoiled_dir   = join(ballots_dir       , '3_spoiled')
 
     # load required info
     manifest_path = join(announce_dir, MANIFEST_NAME + '.json')
@@ -425,8 +439,8 @@ def TallyCommand(
         context
     )
 
-    cast_ballots    = load_submitted_ballots(cast_dir)
-    spoiled_ballots = load_submitted_ballots(spoiled_dir)
+    cast_ballots    = load_cast_ballots(submitted_dir, cast_dir)
+    spoiled_ballots = load_spoiled_ballots(submitted_dir, spoiled_dir)
 
     # TODO separate these?
     for cast_ballot in cast_ballots + spoiled_ballots:
