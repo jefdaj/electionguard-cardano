@@ -41,7 +41,7 @@ from guardian import load_guardian_pubkeys
 
 
 MANIFEST_NAME  = '1_manifest'
-JOINT_KEY_NAME = '3_jointkey'
+JOINT_KEY_NAME = '4_jointkey'
 
 
 @click.command("build-manifest")
@@ -244,7 +244,7 @@ def PublishJointKeyCommand(
     assert election_joint_key is not None
 
     # NOTE we skip 4 to leave room for the challenge step
-    serialize.to_file(election_joint_key, JOINT_KEY_NAME, public_records_dir)
+    serialize.to_file(election_joint_key, JOINT_KEY_NAME, ceremony_dir)
 
 
 def build_election(
@@ -319,7 +319,8 @@ def BuildElectionCommand(
     # print(json.dumps(locals()))
 
     # set up dirs
-    election_dir = join(public_records_dir, '4_election')
+    ceremony_dir = join(public_records_dir, '2_ceremony')
+    election_dir = join(public_records_dir, '3_election')
     makedirs(election_dir, exist_ok=True)
 
     # load manifest
@@ -328,7 +329,7 @@ def BuildElectionCommand(
     # pprint(manifest)
 
     # load joint public key
-    joint_key_path = join(public_records_dir, JOINT_KEY_NAME + '.json')
+    joint_key_path = join(ceremony_dir, JOINT_KEY_NAME + '.json')
     joint_key = serialize.from_file(ElectionJointKey, joint_key_path)
 
     (constants, internal_manifest, context) = build_election(
@@ -389,14 +390,15 @@ def TallyCommand(
     # print(json.dumps(locals()))
 
     # set up dirs
-    ballots_dir = join(public_records_dir, '6_ballots')
-    cast_dir    = join(ballots_dir       , '2_cast')
-    spoiled_dir = join(ballots_dir       , '3_spoiled')
+    ceremony_dir = join(public_records_dir, '2_ceremony')
+    ballots_dir  = join(public_records_dir, '5_ballots')
+    cast_dir     = join(ballots_dir       , '2_cast')
+    spoiled_dir  = join(ballots_dir       , '3_spoiled')
 
     # load required info
     manifest_path = join(public_records_dir, MANIFEST_NAME + '.json')
     manifest = serialize.from_file(Manifest, manifest_path)
-    joint_key_path = join(public_records_dir, JOINT_KEY_NAME + '.json')
+    joint_key_path = join(ceremony_dir, JOINT_KEY_NAME + '.json')
     joint_key = serialize.from_file(ElectionJointKey, joint_key_path)
     (constants, internal_manifest, context) = build_election(
         guardian_count,
@@ -405,7 +407,7 @@ def TallyCommand(
         joint_key
     )
 
-    tally_name = '7_tally'
+    tally_name = '6_tally'
     tally_path = join(public_records_dir, tally_name)
     tally = CiphertextTally(
         tally_name, # TODO is this the object_id? weird

@@ -46,7 +46,7 @@ from electionguard.ballot_box import (
 
 
 MANIFEST_NAME  = '1_manifest'
-JOINT_KEY_NAME = '3_jointkey'
+JOINT_KEY_NAME = '4_jointkey'
 POLLING_PLACE  = 'electionguard-cardano-polling-place'
 DEVICE_PREFIX  = 'device_'
 
@@ -73,7 +73,7 @@ def AddDeviceCommand(
     which will encrypt + publish ballots and do the Benaloh challenge.
     """
     # print(json.dumps(locals()))
-    devices_dir  = join(public_records_dir, '5_devices')
+    devices_dir  = join(public_records_dir, '4_devices')
     makedirs(devices_dir, exist_ok=True)
     device = EncryptionDevice(
         generate_device_uuid(), # device id (TODO is this deterministic?)
@@ -183,9 +183,9 @@ def VoteCommand(
     makedirs(plaintext_dir, exist_ok=True)
 
     ceremony_dir  = join(public_records_dir, '2_ceremony')
-    election_dir  = join(public_records_dir, '4_election')
-    devices_dir   = join(public_records_dir, '5_devices')
-    ballots_dir   = join(public_records_dir, '6_ballots')
+    election_dir  = join(public_records_dir, '3_election')
+    devices_dir   = join(public_records_dir, '4_devices')
+    ballots_dir   = join(public_records_dir, '5_ballots')
     submitted_dir = join(ballots_dir       , '1_submitted')
     cast_dir      = join(ballots_dir       , '2_cast')
     spoiled_dir   = join(ballots_dir       , '3_spoiled')
@@ -199,7 +199,7 @@ def VoteCommand(
 
     # load joint public key
     # TODO factor out into a function in admin.py
-    joint_key_path = join(public_records_dir, JOINT_KEY_NAME + '.json')
+    joint_key_path = join(ceremony_dir, JOINT_KEY_NAME + '.json')
     joint_key = serialize.from_file(ElectionJointKey, joint_key_path)
 
     # TODO is the underscore thing OK in python?
