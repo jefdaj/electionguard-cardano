@@ -46,7 +46,7 @@ from electionguard.ballot_box import (
 
 
 MANIFEST_NAME  = '1_manifest'
-JOINT_KEY_NAME = '4_jointkey'
+JOINT_KEY_NAME = 'jointkey'
 POLLING_PLACE  = 'electionguard-cardano-polling-place'
 DEVICE_PREFIX  = 'device_'
 
@@ -182,8 +182,8 @@ def VoteCommand(
     plaintext_dir = join(private_records_dir, 'plaintext_ballots')
     makedirs(plaintext_dir, exist_ok=True)
 
-    ceremony_dir  = join(public_records_dir, '2_ceremony')
-    election_dir  = join(public_records_dir, '3_election')
+    announce_dir  = join(public_records_dir, '1_announce')
+    setup_dir     = join(public_records_dir, '3_setup')
     devices_dir   = join(public_records_dir, '4_devices')
     ballots_dir   = join(public_records_dir, '5_ballots')
     submitted_dir = join(ballots_dir       , '1_submitted')
@@ -194,12 +194,12 @@ def VoteCommand(
 
     # load manifest
     # TODO factor out into a function in admin.py
-    manifest_path = join(public_records_dir, MANIFEST_NAME + '.json')
+    manifest_path = join(announce_dir, MANIFEST_NAME + '.json')
     manifest = serialize.from_file(Manifest, manifest_path)
 
     # load joint public key
     # TODO factor out into a function in admin.py
-    joint_key_path = join(ceremony_dir, JOINT_KEY_NAME + '.json')
+    joint_key_path = join(setup_dir, JOINT_KEY_NAME + '.json')
     joint_key = serialize.from_file(ElectionJointKey, joint_key_path)
 
     # TODO is the underscore thing OK in python?

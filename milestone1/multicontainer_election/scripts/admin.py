@@ -41,7 +41,7 @@ from guardian import load_guardian_pubkeys
 
 
 MANIFEST_NAME  = '1_manifest'
-JOINT_KEY_NAME = '4_jointkey'
+JOINT_KEY_NAME = 'jointkey'
 
 
 @click.command("build-manifest")
@@ -67,6 +67,11 @@ def BuildManifestCommand(
     provided by the user.
     """
     # print(json.dumps(locals()))
+
+    # set up dirs
+    announce_dir = join(public_records_dir, '1_announce')
+    makedirs(public_records_dir, exist_ok=True)
+    makedirs(announce_dir, exist_ok=True)
 
     now = datetime.utcnow()
     county_id = "electionguard-cardano-test-county"
@@ -158,9 +163,10 @@ def BuildManifestCommand(
         "contact_information": None
     }
 
-    serialize.to_file(manifest, MANIFEST_NAME, public_records_dir)
+    serialize.to_file(manifest, MANIFEST_NAME, announce_dir)
 
 
+# TODO combine this step with the manifest above into "announce"?
 @click.command("announce-key-ceremony")
 @click.option(
     "--public-records-dir",
@@ -193,9 +199,10 @@ def AnnounceKeyCeremonyCommand(
     # print(json.dumps(locals()))
 
     # TODO remove this entire step? not sure it adds anything
+    # TODO wait actually the n guardians and quorum aren't in the manifest
 
-    ceremony_dir = join(public_records_dir, '2_ceremony')
-    makedirs(ceremony_dir, exist_ok=True)
+    announce_dir = join(public_records_dir, '1_announce')
+    makedirs(announce_dir, exist_ok=True)
 
     # based on electionguard-python/src/electionguard_gui/models/key_ceremony_service:create
     announcement = {
@@ -214,8 +221,8 @@ def AnnounceKeyCeremonyCommand(
         # "shared_backups": [],
         # "verifications": [],
     }
-    announcement_name = '0_announce'
-    serialize.to_file(announcement, announcement_name, ceremony_dir)
+    announcement_name = '2_ceremony'
+    serialize.to_file(announcement, announcement_name, announce_dir)
 
 
 @click.command("publish-joint-key")
@@ -235,8 +242,10 @@ def PublishJointKeyCommand(
     # print(json.dumps(locals()))
 
     ceremony_dir = join(public_records_dir, '2_ceremony')
-    pubkeys_dir = join(ceremony_dir, '1_pubkeys')
+    setup_dir    = join(public_records_dir, '3_setup')
+    pubkeys_dir  = join(ceremony_dir, '1_pubkeys')
     makedirs(pubkeys_dir, exist_ok=True)
+    makedirs(setup_dir, exist_ok=True)
 
     guardian_public_keys: List[ElectionPublicKey] = load_guardian_pubkeys(pubkeys_dir)
 
@@ -244,7 +253,7 @@ def PublishJointKeyCommand(
     assert election_joint_key is not None
 
     # NOTE we skip 4 to leave room for the challenge step
-    serialize.to_file(election_joint_key, JOINT_KEY_NAME, ceremony_dir)
+    serialize.to_file(election_joint_key, JOINT_KEY_NAME, setup_dir)
 
 
 def build_election(
@@ -319,17 +328,17 @@ def BuildElectionCommand(
     # print(json.dumps(locals()))
 
     # set up dirs
-    ceremony_dir = join(public_records_dir, '2_ceremony')
-    election_dir = join(public_records_dir, '3_election')
-    makedirs(election_dir, exist_ok=True)
+    announce_dir = join(public_records_dir, '1_announce')
+    setup_dir    = join(public_records_dir, '3_setup')
+    makedirs(setup_dir, exist_ok=True)
 
     # load manifest
-    manifest_path = join(public_records_dir, MANIFEST_NAME + '.json')
+    manifest_path = join(announce_dir, MANIFEST_NAME + '.json')
     manifest = serialize.from_file(Manifest, manifest_path)
     # pprint(manifest)
 
     # load joint public key
-    joint_key_path = join(ceremony_dir, JOINT_KEY_NAME + '.json')
+    joint_key_path = join(setup_dir, JOINT_KEY_NAME + '.json')
     joint_key = serialize.from_file(ElectionJointKey, joint_key_path)
 
     (constants, internal_manifest, context) = build_election(
@@ -339,11 +348,11 @@ def BuildElectionCommand(
         joint_key
     )
 
-    serialize.to_file(constants, 'constants', election_dir)
-    serialize.to_file(context  , 'context'  , election_dir)
+    serialize.to_file(constants, 'constants', setup_dir)
+    serialize.to_file(context  , 'context'  , setup_dir)
 
     # TODO any reason to save this when it can't be reloaded?
-    # serialize.to_file(internal_manifest, 'internal_manifest', election_dir)
+    # serialize.to_file(internal_manifest, 'internal_manifest', setup_dir)
 
 
 def load_submitted_ballots(submitted_ballots_dir: str) -> List[SubmittedBallot]:
@@ -390,15 +399,16 @@ def TallyCommand(
     # print(json.dumps(locals()))
 
     # set up dirs
-    ceremony_dir = join(public_records_dir, '2_ceremony')
+    announce_dir = join(public_records_dir, '1_announce')
+    setup_dir    = join(public_records_dir, '3_setup')
     ballots_dir  = join(public_records_dir, '5_ballots')
     cast_dir     = join(ballots_dir       , '2_cast')
     spoiled_dir  = join(ballots_dir       , '3_spoiled')
 
     # load required info
-    manifest_path = join(public_records_dir, MANIFEST_NAME + '.json')
+    manifest_path = join(announce_dir, MANIFEST_NAME + '.json')
     manifest = serialize.from_file(Manifest, manifest_path)
-    joint_key_path = join(ceremony_dir, JOINT_KEY_NAME + '.json')
+    joint_key_path = join(setup_dir, JOINT_KEY_NAME + '.json')
     joint_key = serialize.from_file(ElectionJointKey, joint_key_path)
     (constants, internal_manifest, context) = build_election(
         guardian_count,

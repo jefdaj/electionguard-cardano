@@ -10,6 +10,7 @@ from os import makedirs
 from os.path import join
 from pprint import pprint
 from pygments import highlight, lexers, formatters
+from time import sleep
 
 # see logs.py for electionguard's separate LOG
 import logging
@@ -85,6 +86,7 @@ def explain_step(fn):
 def arion_up(cfg):
     # arion also loads cfg separately via Nix
     subprocess.check_call(['arion', 'up', '-d'])
+    sleep(3) # TODO does this prevent occasional missing bind mount dirs?
 
 @explain_step
 def arion_down(cfg):
@@ -109,7 +111,7 @@ def build_manifest(cfg):
 
 @explain_step
 def announce_key_ceremony(cfg):
-    # TODO remove this step?
+    # TODO rethink where this step fits?
     run_in_container(
         cfg, "admin", 1,
         [
