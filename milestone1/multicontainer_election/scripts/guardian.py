@@ -37,7 +37,10 @@ from electionguard.decryption import (
     compute_decryption_share_for_ballot,
 )
 from electionguard.election import CiphertextElectionContext
-from electionguard.tally import CiphertextTally
+from electionguard.tally import (
+    CiphertextTally,
+    PublishedCiphertextTally,
+)
 from electionguard.manifest import Manifest, InternalManifest
 from electionguard.key_ceremony import (
     ElectionJointKey
@@ -232,10 +235,24 @@ def GuardianKeyCeremonyCommand(
     help="Unique ID for this guardian",
     type=click.STRING,
 )
+@click.option(
+    "--guardian-count",
+    prompt="Number of guardians",
+    help="The number of guardians that will participate in the key ceremony and tally.",
+    type=click.INT,
+)
+@click.option(
+    "--quorum",
+    prompt="Quorum",
+    help="The minimum number of guardians required to show up to the tally.",
+    type=click.INT,
+)
 def DecryptSharesCommand(
     public_records_dir: str,
     private_records_dir: str,
     guardian_id: str,
+    guardian_count: int,
+    quorum: int,
 ) -> None:
     """
     Compute guardian decryption shares for the tally + all spoiled ballots.
@@ -254,6 +271,7 @@ def DecryptSharesCommand(
     # TODO make a function
     election_key_pair_path = join(private_records_dir, ELECTION_KEY_PAIR_NAME + '.json')
     election_key_pair = serialize.from_file(ElectionKeyPair, election_key_pair_path)
+    print('election_key_pair:'); pprint(election_key_pair)
 
     # load required info
     # TODO make a function if it turns out to be the proper way
@@ -267,17 +285,18 @@ def DecryptSharesCommand(
         manifest,
         joint_key
     )
+    print('context:'); pprint(context)
 
     # restore context
     # TODO uh oh, also can't be deserialized and has to be rebuilt like internal_manifest?
     # context_path = join(setup_dir, 'context.json')
     # context = serialize.from_file(CiphertextElectionContext, context_path)
-    pprint(context)
 
     # restore tally
+    # aha, you can deserialize these! you just need the Published version
     tally_path = join(public_records_dir, '6_tally.json')
-    context = serialize.from_file(CiphertextTally, tally_path)
-    pprint(tally)
+    tally = serialize.from_file(PublishedCiphertextTally, tally_path)
+    print('tally:'); pprint(tally)
 
     raise SystemExit
 
