@@ -48,7 +48,8 @@ from electionguard.manifest import Manifest, InternalManifest
 from electionguard.ballot_box import BallotBoxState
 
 from electionguard.decrypt_with_shares import (
-    decrypt_tally
+    decrypt_ballot,
+    decrypt_tally,
 )
 
 
@@ -435,6 +436,8 @@ def DecryptResultsCommand(
     announce_dir  = join(public_records_dir, '1_announce')
     setup_dir     = join(public_records_dir, '3_election')
     ballots_dir   = join(public_records_dir, '5_ballots')
+    submitted_dir = join(ballots_dir       , '1_submitted')
+    cast_dir      = join(ballots_dir       , '2_cast')
     spoiled_dir   = join(ballots_dir       , '3_spoiled')
     decrypt_dir   = join(public_records_dir, '7_decrypt')
     shares_dir    = join(decrypt_dir       , '1_shares')
@@ -456,42 +459,47 @@ def DecryptResultsCommand(
         manifest,
         joint_key
     )
+
+    # load and decrypt tally
     tally_path = join(public_records_dir, '6_tally.json')
     tally_enc = serialize.from_file(PublishedCiphertextTally, tally_path)
-
-    # decrypt tally
     tally_prefix = join(tally_dir, 'tally')
     tally_shares: Dict[GuardianId, DecryptionShare] \
         = load_guardian_decryption_shares(tally_prefix, guardian_count)
-    tally_results = decrypt_tally(
+    tally_result = decrypt_tally(
         tally_enc,
         tally_shares,
         context.crypto_extended_base_hash,
         manifest
     )
-    serialize.to_file(tally_results, '1_tally', results_dir)
+    assert tally_result is not None
+    serialize.to_file(tally_result, '1_tally', results_dir)
+    print('decrypted tally')
 
-    # TODO gather spoiled ballots
+    # load spoiled ballots
+    spoiled_ballots: List[SubmittedBallot] = load_spoiled_ballots(submitted_dir, spoiled_dir)
 
-    # gather spoiled ballot shares
-    spoiled_names = [splitext(n)[0] for n in listdir(spoiled_dir)]
-    spoiled_prefixes = [join(spoiled_shares_dir, n) for n in spoiled_names]
+    # load spoiled ballot shares
+    spoiled_ids = [b.object_id for b in spoiled_ballots]
+    spoiled_prefixes = [join(spoiled_shares_dir, i) for i in spoiled_ids]
     spoiled_shares: Dict[str, Dict[GuardianId, DecryptionShare]] = {}
-    for (name, prefix) in zip(spoiled_names, spoiled_prefixes):
+    for (bid, prefix) in zip(spoiled_ids, spoiled_prefixes):
         shares = load_guardian_decryption_shares(prefix, guardian_count)
-        spoiled_shares[name] = shares
+        spoiled_shares[bid] = shares
 
     # decrypt spoiled ballots
-    for name in spoiled_names:
-        spoiled_result = decrypt_tally(
-            tally_enc,
-            tally_shares,
+    for spoiled_ballot in spoiled_ballots:
+        ballot_id = spoiled_ballot.object_id
+        shares: Dict[GuardianId, DecryptionShare] = spoiled_shares[ballot_id]
+        spoiled_result = decrypt_ballot(
+            spoiled_ballot,
+            shares,
             context.crypto_extended_base_hash,
             manifest
         )
-        serialize.to_file(tally_results, '1_tally', results_dir)
-
-       
+        assert spoiled_result is not None
+        serialize.to_file(spoiled_result, ballot_id, spoiled_results_dir)
+        print(f'decrypted {ballot_id}')
 
 
 @click.group()
