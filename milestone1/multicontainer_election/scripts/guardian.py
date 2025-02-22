@@ -269,6 +269,14 @@ def DecryptSharesCommand(
     submitted_dir = join(ballots_dir       , '1_submitted')
     cast_dir      = join(ballots_dir       , '2_cast')
     spoiled_dir   = join(ballots_dir       , '3_spoiled')
+    decrypt_dir   = join(public_records_dir, '7_decrypt')
+    shares_dir    = join(decrypt_dir       , '1_shares')
+    tally_dir     = join(shares_dir        , '1_tally')
+    spoiled_shares_dir   = join(shares_dir, '2_spoiled')
+    makedirs(decrypt_dir, exist_ok=True)
+    makedirs(shares_dir , exist_ok=True)
+    makedirs(tally_dir  , exist_ok=True)
+    makedirs(spoiled_shares_dir, exist_ok=True)
 
     # restore own private state
     # TODO make a function
@@ -298,21 +306,21 @@ def DecryptSharesCommand(
     details = CeremonyDetails(guardian_count, quorum) # TODO load from file
     guardian = Guardian(election_key_pair, details)
 
-    # compute_tally_share
+    # compute tally share
     tally_share = guardian.compute_tally_share(tally, context)
-    print(f'decrypted {guardian_id} share of election tally')
+    print(f'computed {guardian_id} decryption share of election tally')
     assert tally_share is not None
-    # print('tally share:'); pprint(tally_share)
+    tally_share_name = f'tally_{guardian_id}'
+    serialize.to_file(tally_share, tally_share_name, tally_dir)
 
-    # TODO compute_ballot_shares
-    # TODO have to check whether any are None?
+    # compute ballot shares
     spoiled_ballots = load_spoiled_ballots(submitted_dir, spoiled_dir)
     ballot_shares = guardian.compute_ballot_shares(spoiled_ballots, context)
     for (ballot_id, ballot_share) in ballot_shares.items():
-        print(f'decrypted {guardian_id} share of {ballot_id}')
+        print(f'computed {guardian_id} decryption share of {ballot_id}')
         assert ballot_share is not None
-
-    raise SystemExit
+        ballot_share_name = f'{ballot_id}_{guardian_id}'
+        serialize.to_file(ballot_share, ballot_share_name, spoiled_shares_dir)
 
 
 @click.group()
