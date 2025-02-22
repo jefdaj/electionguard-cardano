@@ -91,7 +91,7 @@ def arion_cleanup(cfg):
 @explain_step
 def arion_up(cfg):
     # arion also loads cfg separately via Nix
-    # arion_cleanup(cfg)
+    arion_cleanup(cfg)
     subprocess.check_call(['arion', 'up', '-d'])
 
 @explain_step
@@ -252,19 +252,19 @@ def summary(cfg):
 
 
 def election(cfg):
-#     build_manifest(cfg)
-#     announce_key_ceremony(cfg)
-#     for n in range(1, 4):
-#         key_ceremony_round(cfg, n)
-#     # TODO should there be a "publish final guardian records" step here?
-#     publish_joint_key(cfg)
-#     build_election(cfg)
-#     for n in range(1, cfg.votingDevices.count + 1):
-#         add_device(cfg, n)
-#     vote_all(cfg)
-#     tally(cfg)
-#     decrypt_shares(cfg)
-#     decrypt_results(cfg)
+    build_manifest(cfg)
+    announce_key_ceremony(cfg)
+    for n in range(1, 4):
+        key_ceremony_round(cfg, n)
+    # TODO should there be a "publish final guardian records" step here?
+    publish_joint_key(cfg)
+    build_election(cfg)
+    for n in range(1, cfg.votingDevices.count + 1):
+        add_device(cfg, n)
+    vote_all(cfg)
+    tally(cfg)
+    decrypt_shares(cfg)
+    decrypt_results(cfg)
     summary(cfg)
 
 
