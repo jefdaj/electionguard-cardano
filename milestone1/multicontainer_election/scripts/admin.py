@@ -8,6 +8,7 @@
 from utils import (
     build_election,
     load_cast_ballots,
+    load_guardian_decryption_shares,
     load_guardian_pubkeys,
     load_spoiled_ballots,
 )
@@ -15,7 +16,7 @@ from utils import (
 import click
 import json
 from os import listdir, makedirs
-from os.path import join
+from os.path import join, splitext
 from typing import List, Tuple
 from datetime import datetime, timedelta
 from pprint import pprint
@@ -46,6 +47,9 @@ from electionguard.manifest import Manifest, InternalManifest
 
 from electionguard.ballot_box import BallotBoxState
 
+from electionguard.decrypt_with_shares import (
+    decrypt_tally
+)
 
 
 MANIFEST_NAME  = '1_manifest'
@@ -396,6 +400,100 @@ def TallyCommand(
     serialize.to_file(tally.publish(), tally_name, public_records_dir)
 
 
+# TODO utility functions for these repeated click options
+@click.command("decrypt-results")
+@click.option(
+    "--public-records-dir",
+    prompt="Public records directory",
+    help="The location of a directory into which will be placed all public records. "
+    + "This folder should be protected. Existing files will be overwritten.",
+    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+)
+@click.option(
+    "--guardian-count",
+    prompt="Number of guardians",
+    help="The number of guardians that will participate in the key ceremony and tally.",
+    type=click.INT,
+)
+@click.option(
+    "--quorum",
+    prompt="Quorum",
+    help="The minimum number of guardians required to show up to the tally.",
+    type=click.INT,
+)
+def DecryptResultsCommand(
+    public_records_dir: str,
+    guardian_count: int,
+    quorum: int,
+) -> None:
+    """
+    Combine guardian decryption shares into final results: tally + spoiled ballots.
+    """
+    # print(json.dumps(locals()))
+
+    # set up dirs
+    announce_dir  = join(public_records_dir, '1_announce')
+    setup_dir     = join(public_records_dir, '3_election')
+    ballots_dir   = join(public_records_dir, '5_ballots')
+    spoiled_dir   = join(ballots_dir       , '3_spoiled')
+    decrypt_dir   = join(public_records_dir, '7_decrypt')
+    shares_dir    = join(decrypt_dir       , '1_shares')
+    tally_dir     = join(shares_dir        , '1_tally')
+    results_dir   = join(decrypt_dir, '2_results')
+    spoiled_shares_dir  = join(shares_dir , '2_spoiled')
+    spoiled_results_dir = join(results_dir, '2_spoiled')
+    makedirs(spoiled_results_dir, exist_ok=True)
+
+    # load required info
+    # TODO make a function if it turns out to be the proper way
+    manifest_path = join(announce_dir, MANIFEST_NAME + '.json')
+    manifest = serialize.from_file(Manifest, manifest_path)
+    joint_key_path = join(setup_dir, JOINT_KEY_NAME + '.json')
+    joint_key = serialize.from_file(ElectionJointKey, joint_key_path)
+    (constants, _, context) = build_election(
+        guardian_count,
+        quorum,
+        manifest,
+        joint_key
+    )
+    tally_path = join(public_records_dir, '6_tally.json')
+    tally_enc = serialize.from_file(PublishedCiphertextTally, tally_path)
+
+    # decrypt tally
+    tally_prefix = join(tally_dir, 'tally')
+    tally_shares: Dict[GuardianId, DecryptionShare] \
+        = load_guardian_decryption_shares(tally_prefix, guardian_count)
+    tally_results = decrypt_tally(
+        tally_enc,
+        tally_shares,
+        context.crypto_extended_base_hash,
+        manifest
+    )
+    serialize.to_file(tally_results, '1_tally', results_dir)
+
+    # TODO gather spoiled ballots
+
+    # gather spoiled ballot shares
+    spoiled_names = [splitext(n)[0] for n in listdir(spoiled_dir)]
+    spoiled_prefixes = [join(spoiled_shares_dir, n) for n in spoiled_names]
+    spoiled_shares: Dict[str, Dict[GuardianId, DecryptionShare]] = {}
+    for (name, prefix) in zip(spoiled_names, spoiled_prefixes):
+        shares = load_guardian_decryption_shares(prefix, guardian_count)
+        spoiled_shares[name] = shares
+
+    # decrypt spoiled ballots
+    for name in spoiled_names:
+        spoiled_result = decrypt_tally(
+            tally_enc,
+            tally_shares,
+            context.crypto_extended_base_hash,
+            manifest
+        )
+        serialize.to_file(tally_results, '1_tally', results_dir)
+
+       
+
+
 @click.group()
 def cli() -> None:
     pass
@@ -405,6 +503,7 @@ cli.add_command(AnnounceKeyCeremonyCommand)
 cli.add_command(PublishJointKeyCommand)
 cli.add_command(BuildElectionCommand)
 cli.add_command(TallyCommand)
+cli.add_command(DecryptResultsCommand)
 
 if __name__ == '__main__':
     cli()

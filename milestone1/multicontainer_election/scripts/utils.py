@@ -1,4 +1,5 @@
 # TODO make an object (DotMap?) describing all the file paths here
+# TODO functions for repeated click options
 
 # TODO remove unused imports
 from electionguard import serialize
@@ -7,6 +8,7 @@ from electionguard.ballot_box import (BallotBoxState)
 from electionguard.constants import ElectionConstants, get_constants
 from electionguard.data_store import DataStore
 from electionguard.decryption import (compute_decryption_share,compute_decryption_share_for_ballot)
+from electionguard.decryption_share import DecryptionShare
 from electionguard.election import CiphertextElectionContext
 from electionguard.encrypt import EncryptionDevice, EncryptionMediator, contest_from, generate_device_uuid
 from electionguard.key_ceremony import (ElectionJointKey,ElectionKeyPair,ElectionPublicKey,ElectionPartialKeyBackup,ElectionPartialKeyVerification,combine_election_public_keys, generate_election_key_pair,generate_election_partial_key_backup,verify_election_partial_key_backup)
@@ -162,3 +164,15 @@ def load_designated_backups(backups_dir: str, guardian_id: GuardianId) -> Dict[s
         if backup.designated_id == guardian_id:
             designated_backups[json_name] = backup
     return designated_backups
+
+def load_guardian_decryption_shares(
+        path_prefix: str,
+        guardian_count: int
+    ) -> Dict[GuardianId, DecryptionShare]:
+    shares = {}
+    for n in range(1, guardian_count + 1):
+        guardian_id = f'guardian_{n}'
+        share_path = f'{path_prefix}_{guardian_id}.json'
+        share = serialize.from_file(DecryptionShare, share_path)
+        shares[guardian_id] = share
+    return shares

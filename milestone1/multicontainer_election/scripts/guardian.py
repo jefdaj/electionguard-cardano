@@ -49,6 +49,10 @@ from electionguard.key_ceremony import (
     ElectionJointKey
 )
 
+from electionguard.decrypt_with_shares import (
+    decrypt_tally
+)
+
 
 ELECTION_KEY_PAIR_NAME = 'election_key_pair'
 MANIFEST_NAME  = '1_manifest'
@@ -244,18 +248,10 @@ def GuardianKeyCeremonyCommand(
     help="The number of guardians that will participate in the key ceremony and tally.",
     type=click.INT,
 )
-@click.option(
-    "--quorum",
-    prompt="Quorum",
-    help="The minimum number of guardians required to show up to the tally.",
-    type=click.INT,
-)
 def DecryptSharesCommand(
     public_records_dir: str,
     private_records_dir: str,
-    guardian_id: str,
     guardian_count: int,
-    quorum: int,
 ) -> None:
     """
     Compute guardian decryption shares for the tally + all spoiled ballots.
@@ -265,24 +261,13 @@ def DecryptSharesCommand(
     # set up dirs
     announce_dir  = join(public_records_dir, '1_announce')
     setup_dir     = join(public_records_dir, '3_election')
-    ballots_dir   = join(public_records_dir, '5_ballots')
-    submitted_dir = join(ballots_dir       , '1_submitted')
-    cast_dir      = join(ballots_dir       , '2_cast')
-    spoiled_dir   = join(ballots_dir       , '3_spoiled')
     decrypt_dir   = join(public_records_dir, '7_decrypt')
     shares_dir    = join(decrypt_dir       , '1_shares')
     tally_dir     = join(shares_dir        , '1_tally')
-    spoiled_shares_dir   = join(shares_dir, '2_spoiled')
-    makedirs(decrypt_dir, exist_ok=True)
-    makedirs(shares_dir , exist_ok=True)
-    makedirs(tally_dir  , exist_ok=True)
-    makedirs(spoiled_shares_dir, exist_ok=True)
-
-    # restore own private state
-    # TODO make a function
-    election_key_pair_path = join(private_records_dir, ELECTION_KEY_PAIR_NAME + '.json')
-    election_key_pair = serialize.from_file(ElectionKeyPair, election_key_pair_path)
-    # print('election_key_pair:'); pprint(election_key_pair)
+    results_dir   = join(decrypt_dir, '2_results')
+    spoiled_shares_dir  = join(shares_dir , '2_spoiled')
+    spoiled_results_dir = join(results_dir, '2_spoiled')
+    makedirs(spoiled_results_dir, exist_ok=True)
 
     # load required info
     # TODO make a function if it turns out to be the proper way
@@ -290,37 +275,25 @@ def DecryptSharesCommand(
     manifest = serialize.from_file(Manifest, manifest_path)
     joint_key_path = join(setup_dir, JOINT_KEY_NAME + '.json')
     joint_key = serialize.from_file(ElectionJointKey, joint_key_path)
-    (constants, internal_manifest, context) = build_election(
+    (constants, _, context) = build_election(
         guardian_count,
         quorum,
         manifest,
         joint_key
     )
-
-    # restore tally
-    # aha, you can deserialize these! you just need the Published version
     tally_path = join(public_records_dir, '6_tally.json')
-    tally = serialize.from_file(PublishedCiphertextTally, tally_path)
+    tally_enc = serialize.from_file(PublishedCiphertextTally, tally_path)
 
-    # create guardian object
-    details = CeremonyDetails(guardian_count, quorum) # TODO load from file
-    guardian = Guardian(election_key_pair, details)
-
-    # compute tally share
-    tally_share = guardian.compute_tally_share(tally, context)
-    print(f'computed {guardian_id} decryption share of election tally')
-    assert tally_share is not None
-    tally_share_name = f'tally_{guardian_id}'
-    serialize.to_file(tally_share, tally_share_name, tally_dir)
-
-    # compute ballot shares
-    spoiled_ballots = load_spoiled_ballots(submitted_dir, spoiled_dir)
-    ballot_shares = guardian.compute_ballot_shares(spoiled_ballots, context)
-    for (ballot_id, ballot_share) in ballot_shares.items():
-        print(f'computed {guardian_id} decryption share of {ballot_id}')
-        assert ballot_share is not None
-        ballot_share_name = f'{ballot_id}_{guardian_id}'
-        serialize.to_file(ballot_share, ballot_share_name, spoiled_shares_dir)
+    # decrypt tally
+    tally_shares: Dict[GuardianId, DecryptionShare] = {}
+    # TODO fill in shares
+    tally_results = decrypt_tally(
+        tally_enc,
+        tally_shares,
+        context.crypto_extended_base_hash,
+        manifest
+    )
+    serialize.to_file(tally_results, '1_tally.json', results_dir)
 
 
 @click.group()
