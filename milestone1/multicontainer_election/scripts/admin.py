@@ -389,16 +389,12 @@ def TallyCommand(
     cast_ballots    = load_cast_ballots(submitted_dir, cast_dir)
     spoiled_ballots = load_spoiled_ballots(submitted_dir, spoiled_dir)
 
-    # TODO separate these?
-    for cast_ballot in cast_ballots + spoiled_ballots:
-        assert(tally.append(cast_ballot, should_validate=True))
+    for ballot in cast_ballots + spoiled_ballots:
+        assert(tally.append(ballot, should_validate=True))
 
-    # TODO assert these matches the dir counts, and add up to the submitted count
-    summary = {
-        'n_cast_ballots': tally.cast(),
-        'n_spoiled_ballots': tally.spoiled(),
-    }
-    pprint(summary)
+    assert tally.cast() == len(cast_ballots)
+    assert tally.spoiled() == len(spoiled_ballots)
+    assert tally.cast() + tally.spoiled() == len(listdir(submitted_dir))
 
     serialize.to_file(tally.publish(), tally_name, public_records_dir)
 
