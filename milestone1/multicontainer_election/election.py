@@ -192,7 +192,6 @@ def vote(cfg, candidate_id, spoil=False):
         ]
     )
 
-# TODO split into sections so the cast and spoil can be explained separately?
 @explain_step
 def vote_all(cfg):
     for vote_json in cfg.votes:

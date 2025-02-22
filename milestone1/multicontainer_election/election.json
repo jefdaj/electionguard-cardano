@@ -8,11 +8,26 @@
   "guardians": {"count": 3, "quorum": 2},
   "votingDevices": {"count": 2},
   "votes": [
-    {"candidate_id": "referendum-question-affirmative-selection", "spoil": true},
+    {"candidate_id": "referendum-question-affirmative-selection", "spoil": false},
+    {"candidate_id": "referendum-question-affirmative-selection", "spoil": false},
+    {"candidate_id": "referendum-question-affirmative-selection", "spoil": false},
+    {"candidate_id": "referendum-question-affirmative-selection", "spoil": false},
+    {"candidate_id": "referendum-question-affirmative-selection", "spoil": false},
+    {"candidate_id": "referendum-question-affirmative-selection", "spoil": false},
+    {"candidate_id": "referendum-question-affirmative-selection", "spoil": false},
     {"candidate_id": "referendum-question-affirmative-selection", "spoil": false},
     {"candidate_id": "referendum-question-affirmative-selection", "spoil": false},
     {"candidate_id": "referendum-question-affirmative-selection", "spoil": false},
     {"candidate_id": "referendum-question-negative-selection"   , "spoil": false},
+    {"candidate_id": "referendum-question-negative-selection"   , "spoil": false},
+    {"candidate_id": "referendum-question-negative-selection"   , "spoil": false},
+    {"candidate_id": "referendum-question-negative-selection"   , "spoil": false},
+    {"candidate_id": "referendum-question-negative-selection"   , "spoil": false},
+    {"candidate_id": "referendum-question-negative-selection"   , "spoil": false},
+    {"candidate_id": "referendum-question-affirmative-selection", "spoil": true},
+    {"candidate_id": "referendum-question-affirmative-selection", "spoil": true},
+    {"candidate_id": "referendum-question-affirmative-selection", "spoil": true},
+    {"candidate_id": "referendum-question-negative-selection"   , "spoil": true},
     {"candidate_id": "referendum-question-negative-selection"   , "spoil": true}
   ]
 }

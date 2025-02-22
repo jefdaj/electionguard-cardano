@@ -120,7 +120,7 @@ def BuildManifestCommand(
             {
                 "object_id": "referendum-question-affirmative",
                 "name": {
-                    "text": []
+                    "text": [{"value": "Yes", "language": "en"}]
                 },
                 "party_id": None,
                 "image_uri": None,
@@ -129,7 +129,7 @@ def BuildManifestCommand(
             {
                 "object_id": "referendum-question-negative",
                 "name": {
-                    "text": []
+                    "text": [{"value": "No", "language": "en"}]
                 },
                 "party_id": None,
                 "image_uri": None,
