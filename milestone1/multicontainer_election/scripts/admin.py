@@ -464,47 +464,47 @@ def DecryptResultsCommand(
         joint_key
     )
 
-#     I'm not sure whether this works. It writes files, but they aren't the expected format :(
-#     # load and decrypt tally
-#     tally_path = join(public_records_dir, '6_tally.json')
-#     tally_enc = serialize.from_file(PublishedCiphertextTally, tally_path)
-#     tally_prefix = join(tally_dir, 'tally')
-#     tally_shares: Dict[GuardianId, DecryptionShare] \
-#         = load_guardian_decryption_shares(tally_prefix, guardian_count)
-#     tally_result = decrypt_tally(
-#         tally_enc,
-#         tally_shares,
-#         context.crypto_extended_base_hash,
-#         manifest
-#     )
-#     assert tally_result is not None
-#     serialize.to_file(tally_result, '1_tally', results_dir)
-#     print('decrypted tally')
-# 
-#     # load spoiled ballots
-#     spoiled_ballots: List[SubmittedBallot] = load_spoiled_ballots(submitted_dir, spoiled_dir)
-# 
-#     # load spoiled ballot shares
-#     spoiled_ids = [b.object_id for b in spoiled_ballots]
-#     spoiled_prefixes = [join(spoiled_shares_dir, i) for i in spoiled_ids]
-#     spoiled_shares: Dict[str, Dict[GuardianId, DecryptionShare]] = {}
-#     for (bid, prefix) in zip(spoiled_ids, spoiled_prefixes):
-#         shares = load_guardian_decryption_shares(prefix, guardian_count)
-#         spoiled_shares[bid] = shares
-# 
-#     # decrypt spoiled ballots
-#     for spoiled_ballot in spoiled_ballots:
-#         ballot_id = spoiled_ballot.object_id
-#         shares: Dict[GuardianId, DecryptionShare] = spoiled_shares[ballot_id]
-#         spoiled_result = decrypt_ballot(
-#             spoiled_ballot,
-#             shares,
-#             context.crypto_extended_base_hash,
-#             manifest
-#         )
-#         assert spoiled_result is not None
-#         serialize.to_file(spoiled_result, ballot_id, spoiled_results_dir)
-#         print(f'decrypted {ballot_id}')
+    # I'm not sure whether this works. It writes files, but they aren't the expected format :(
+    # load and decrypt tally
+    tally_path = join(public_records_dir, '6_tally.json')
+    tally_enc = serialize.from_file(PublishedCiphertextTally, tally_path)
+    tally_prefix = join(tally_dir, 'tally')
+    tally_shares: Dict[GuardianId, DecryptionShare] \
+        = load_guardian_decryption_shares(tally_prefix, guardian_count)
+    tally_result = decrypt_tally(
+        tally_enc,
+        tally_shares,
+        context.crypto_extended_base_hash,
+        manifest
+    )
+    assert tally_result is not None
+    serialize.to_file(tally_result, '1_tally', results_dir)
+    print('decrypted tally')
+
+    # load spoiled ballots
+    spoiled_ballots: List[SubmittedBallot] = load_spoiled_ballots(submitted_dir, spoiled_dir)
+
+    # load spoiled ballot shares
+    spoiled_ids = [b.object_id for b in spoiled_ballots]
+    spoiled_prefixes = [join(spoiled_shares_dir, i) for i in spoiled_ids]
+    spoiled_shares: Dict[str, Dict[GuardianId, DecryptionShare]] = {}
+    for (bid, prefix) in zip(spoiled_ids, spoiled_prefixes):
+        shares = load_guardian_decryption_shares(prefix, guardian_count)
+        spoiled_shares[bid] = shares
+
+    # decrypt spoiled ballots
+    for spoiled_ballot in spoiled_ballots:
+        ballot_id = spoiled_ballot.object_id
+        shares: Dict[GuardianId, DecryptionShare] = spoiled_shares[ballot_id]
+        spoiled_result = decrypt_ballot(
+            spoiled_ballot,
+            shares,
+            context.crypto_extended_base_hash,
+            manifest
+        )
+        assert spoiled_result is not None
+        serialize.to_file(spoiled_result, ballot_id, spoiled_results_dir)
+        print(f'decrypted {ballot_id}')
 
 
     # trying another version based on the test_end_to_end_election.py
@@ -548,10 +548,12 @@ def DecryptResultsCommand(
 
     # decrypt tally
     # TODO hm, this looks the same as before! maybe it was right?
-    tally_result = mediator.get_plaintext_tally(tally_enc, manifest)
+    tally_result_v2 = mediator.get_plaintext_tally(tally_enc, manifest)
     assert tally_result is not None
-    serialize.to_file(tally_result, '1_tally', results_dir)
-    print('decrypted tally')
+    serialize.to_file(tally_result_v2, '1_tally_v2', results_dir)
+    print('decrypted tally the other way')
+
+    assert tally_result == tally_result_v2
 
     # decrypt ballots
     # ballot_results = get_optional(mediator.get_plaintext_ballots(
