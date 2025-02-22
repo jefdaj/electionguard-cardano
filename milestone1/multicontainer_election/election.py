@@ -8,7 +8,6 @@ from click_default_group import DefaultGroup
 from dotmap import DotMap
 from os import makedirs
 from os.path import join
-from shutil import rmtree
 from pprint import pprint
 from pygments import highlight, lexers, formatters
 
@@ -84,14 +83,14 @@ def explain_step(fn):
 
 def arion_cleanup(cfg):
     # in case a previous run failed
-    # TODO can the rm be safer?
+    # TODO can the rm be safer? shutil.rmtree fails (needs sudo)?
     subprocess.check_call(['arion', 'down'])
-    rmtree('./data', ignore_errors=True)
+    subprocess.check_call(['sudo', 'rm', '-rf', './data'])
 
 @explain_step
 def arion_up(cfg):
     # arion also loads cfg separately via Nix
-    # arion_cleanup(cfg)
+    arion_cleanup(cfg)
     subprocess.check_call(['arion', 'up', '-d'])
 
 @explain_step
@@ -227,18 +226,18 @@ def decrypt_shares(cfg):
         )
 
 def election(cfg):
-    # build_manifest(cfg)
-    # announce_key_ceremony(cfg)
-    # for n in range(1, 4):
-    #     key_ceremony_round(cfg, n)
-    # # TODO should there be a "publish final guardian records" step here?
-    # publish_joint_key(cfg)
-    # build_election(cfg)
-    # for n in range(1, cfg.votingDevices.count + 1):
-    #     add_device(cfg, n)
-    # vote_all(cfg)
-    # tally(cfg)
-    decrypt_shares(cfg)
+    build_manifest(cfg)
+    announce_key_ceremony(cfg)
+    for n in range(1, 4):
+        key_ceremony_round(cfg, n)
+    # TODO should there be a "publish final guardian records" step here?
+    publish_joint_key(cfg)
+    build_election(cfg)
+    for n in range(1, cfg.votingDevices.count + 1):
+        add_device(cfg, n)
+    vote_all(cfg)
+    tally(cfg)
+    # decrypt_shares(cfg)
     # decrypt_combine()
 
 

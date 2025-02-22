@@ -46,6 +46,13 @@ from electionguard.ballot_box import (
     submit_ballot_to_box
 )
 
+from utils import (
+    build_ballot,
+    build_election,
+    load_designated_backups,
+    load_first_device,
+)
+
 
 MANIFEST_NAME  = '1_manifest'
 JOINT_KEY_NAME = 'jointkey'
@@ -85,47 +92,6 @@ def AddDeviceCommand(
     )
     serialize.to_file(device, DEVICE_PREFIX + str(device.device_id), devices_dir)
 
-
-def load_first_device(devices_dir: str) -> EncryptionDevice:
-    device_path = join(devices_dir, listdir(devices_dir)[0])
-    device = serialize.from_file(EncryptionDevice, device_path)
-    return device
-
-
-def build_ballot(
-        internal_manifest: InternalManifest,
-        candidate_id: str,
-    ) -> PlaintextBallot:
-
-    ballot_id = f"ballot-{uuid.uuid1()}"
-    style_id  = 'ballot-style-01'
-
-    # TODO proper selection from contests
-    candidates = [
-        "referendum-question-affirmative-selection",
-        "referendum-question-negative-selection"
-    ]
-    vote: int = candidates.index(candidate_id)
-    assert vote in [0, 1]
-
-    selections = [
-        PlaintextBallotSelection(
-            vote=vote,
-            is_placeholder_selection=False,
-            object_id=candidate_id # TODO is this right?
-        )
-    ]
-
-    contests = [
-        PlaintextBallotContest(
-            object_id="referendum-question",
-            ballot_selections=selections
-        )
-    ]
-
-    ballot = PlaintextBallot(ballot_id, style_id, contests)
-
-    return ballot
 
 
 # TODO what should this inherit from... ElectionObjectBase? CryptoHashCheckable?

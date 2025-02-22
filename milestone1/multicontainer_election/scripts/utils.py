@@ -1,0 +1,165 @@
+# TODO make an object (DotMap?) describing all the file paths here
+# TODO 3_setup -> 3_election
+
+# TODO remove unused imports
+from electionguard import serialize
+from electionguard.ballot import (PlaintextBallot,PlaintextBallotSelection,PlaintextBallotContest,SubmittedBallot)
+from electionguard.ballot_box import (BallotBoxState)
+from electionguard.constants import ElectionConstants, get_constants
+from electionguard.data_store import DataStore
+from electionguard.decryption import (compute_decryption_share,compute_decryption_share_for_ballot)
+from electionguard.election import CiphertextElectionContext
+from electionguard.encrypt import EncryptionDevice, EncryptionMediator, contest_from, generate_device_uuid
+from electionguard.key_ceremony import (ElectionJointKey,ElectionKeyPair,ElectionPublicKey,ElectionPartialKeyBackup,ElectionPartialKeyVerification,combine_election_public_keys, generate_election_key_pair,generate_election_partial_key_backup,verify_election_partial_key_backup)
+from electionguard.manifest import Manifest, InternalManifest
+from electionguard.tally import (CiphertextTally,PublishedCiphertextTally)
+from electionguard.type import GuardianId
+from electionguard.utils import get_optional
+from electionguard_tools.helpers.election_builder import ElectionBuilder
+from os import makedirs, listdir
+from os.path import join, splitext
+from pprint import pprint
+from typing import Dict, List, Tuple
+import json
+import uuid
+
+
+# hide INFO dumps of crypto from elgamal.py
+import logging
+logging.getLogger('electionguard').setLevel(logging.WARNING)
+
+
+def build_election(
+            guardian_count: int,
+            quorum: int,
+            manifest: Manifest,
+            joint_key: ElectionJointKey
+        ) -> Tuple[
+            ElectionConstants,
+            InternalManifest,
+            CiphertextElectionContext
+        ]:
+
+    election_builder = ElectionBuilder(
+        guardian_count,
+        quorum,
+        manifest,
+    )
+
+    # TODO add this using IPFS later
+    # if verification_url is not None:
+    #     election_builder.add_extended_data_field(
+    #         self.VERIFICATION_URL_NAME, verification_url
+    #     )
+
+    # click.echo("Creating context and internal manifest")
+
+    # from electionguard_tools/factories/election_factory
+    election_builder.set_public_key(
+        get_optional(joint_key).joint_public_key
+    )
+    election_builder.set_commitment_hash(
+        get_optional(joint_key).commitment_hash
+    )
+
+    internal_manifest: InternalManifest
+    context:           CiphertextElectionContext
+    constants:         ElectionConstants
+    internal_manifest, context = get_optional(election_builder.build())
+    constants = get_constants()
+
+    return (constants, internal_manifest, context)
+
+
+def load_submitted_ballots(submitted_ballot_paths: List[str]) -> List[SubmittedBallot]:
+    # NOTE this works for cast and/or spoiled ballots
+    submitted_ballots = [
+        serialize.from_file(SubmittedBallot, p)
+        for p in submitted_ballot_paths
+    ]
+    return submitted_ballots
+
+
+def load_cast_ballots(submitted_dir: str, cast_dir: str) -> List[SubmittedBallot]:
+    cast_names = listdir(cast_dir)
+    cast_paths = [join(submitted_dir, n) for n in cast_names]
+    cast_ballots = load_submitted_ballots(cast_paths)
+    # TODO is this right? it seems too easy but passes the validation
+    for b in cast_ballots:
+        b.state = BallotBoxState.CAST
+    return cast_ballots
+
+
+# TODO if the code ends up the same, unify this with load_cast_ballots
+def load_spoiled_ballots(submitted_dir: str, spoiled_dir: str) -> List[SubmittedBallot]:
+    spoiled_names = listdir(spoiled_dir)
+    spoiled_paths = [join(submitted_dir, n) for n in spoiled_names]
+    spoiled_ballots = load_submitted_ballots(spoiled_paths)
+    # TODO is this right? it seems too easy but passes the validation
+    for b in spoiled_ballots:
+        b.state = BallotBoxState.SPOILED
+    return spoiled_ballots
+
+
+def load_first_device(devices_dir: str) -> EncryptionDevice:
+    device_path = join(devices_dir, listdir(devices_dir)[0])
+    device = serialize.from_file(EncryptionDevice, device_path)
+    return device
+
+
+def build_ballot(
+        internal_manifest: InternalManifest,
+        candidate_id: str,
+    ) -> PlaintextBallot:
+
+    ballot_id = f"ballot-{uuid.uuid1()}"
+    style_id  = 'ballot-style-01'
+
+    # TODO proper selection from contests
+    candidates = [
+        "referendum-question-affirmative-selection",
+        "referendum-question-negative-selection"
+    ]
+    vote: int = candidates.index(candidate_id)
+    assert vote in [0, 1]
+
+    selections = [
+        PlaintextBallotSelection(
+            vote=vote,
+            is_placeholder_selection=False,
+            object_id=candidate_id # TODO is this right?
+        )
+    ]
+
+    contests = [
+        PlaintextBallotContest(
+            object_id="referendum-question",
+            ballot_selections=selections
+        )
+    ]
+
+    ballot = PlaintextBallot(ballot_id, style_id, contests)
+
+    return ballot
+
+
+def load_guardian_pubkeys(public_records_dir: str) -> List[ElectionPublicKey]:
+    guardian_pubkeys: List[ElectionPublicKey] = []
+    for json_filename in listdir(public_records_dir):
+        guardian_id: GuardianId = splitext(json_filename)[0]
+        json_path = join(public_records_dir, json_filename)
+        guardian_pubkey = serialize.from_file(ElectionPublicKey, json_path)
+        guardian_pubkeys.append(guardian_pubkey)
+    return guardian_pubkeys
+
+
+def load_designated_backups(backups_dir: str, guardian_id: GuardianId) -> Dict[str, ElectionPartialKeyBackup]:
+    # TODO use own public key to pick them out rather than filename?
+    designated_backups: Dict[str, ElectionPartialKeyBackup] = {}
+    for json_filename in listdir(backups_dir):
+        json_path = join(backups_dir, json_filename)
+        json_name = splitext(json_filename)[0]
+        backup = serialize.from_file(ElectionPartialKeyBackup, json_path)
+        if backup.designated_id == guardian_id:
+            designated_backups[json_name] = backup
+    return designated_backups

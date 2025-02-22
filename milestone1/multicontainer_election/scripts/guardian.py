@@ -5,6 +5,14 @@
 # and they coordinate via a shared folder on the local filesystem.
 # This script is written from a guardian's point of view.
 
+
+from utils import (
+    build_election,
+    load_designated_backups,
+    load_guardian_pubkeys,
+)
+
+
 import click
 import json
 
@@ -30,13 +38,15 @@ from electionguard.decryption import (
 )
 from electionguard.election import CiphertextElectionContext
 from electionguard.tally import CiphertextTally
-
-# hide INFO dumps of crypto from elgamal.py
-import logging
-logging.getLogger('electionguard').setLevel(logging.WARNING)
+from electionguard.manifest import Manifest, InternalManifest
+from electionguard.key_ceremony import (
+    ElectionJointKey
+)
 
 
 ELECTION_KEY_PAIR_NAME = 'election_key_pair'
+MANIFEST_NAME  = '1_manifest'
+JOINT_KEY_NAME = 'jointkey'
 
 
 def round1(guardian_id, sequence_order, quorum, public_records_dir, private_records_dir):
@@ -57,15 +67,6 @@ def round1(guardian_id, sequence_order, quorum, public_records_dir, private_reco
     public_key: ElectionPublicKey = election_key_pair.share()
     serialize.to_file(public_key, guardian_id, pubkeys_dir)
 
-
-def load_guardian_pubkeys(public_records_dir: str) -> List[ElectionPublicKey]:
-    guardian_pubkeys: List[ElectionPublicKey] = []
-    for json_filename in listdir(public_records_dir):
-        guardian_id: GuardianId = splitext(json_filename)[0]
-        json_path = join(public_records_dir, json_filename)
-        guardian_pubkey = serialize.from_file(ElectionPublicKey, json_path)
-        guardian_pubkeys.append(guardian_pubkey)
-    return guardian_pubkeys
 
 
 def round2(guardian_id, sequence_order, public_records_dir, private_records_dir):
@@ -100,17 +101,6 @@ def round2(guardian_id, sequence_order, public_records_dir, private_records_dir)
         backup_name = f'{guardian_id}_backup_{backup_order}'
         serialize.to_file(backup, backup_name, backups_dir)
 
-
-def load_designated_backups(backups_dir: str, guardian_id: GuardianId) -> Dict[str, ElectionPartialKeyBackup]:
-    # TODO use own public key to pick them out rather than filename?
-    designated_backups: Dict[str, ElectionPartialKeyBackup] = {}
-    for json_filename in listdir(backups_dir):
-        json_path = join(backups_dir, json_filename)
-        json_name = splitext(json_filename)[0]
-        backup = serialize.from_file(ElectionPartialKeyBackup, json_path)
-        if backup.designated_id == guardian_id:
-            designated_backups[json_name] = backup
-    return designated_backups
 
 
 def round3(guardian_id, sequence_order, public_records_dir, private_records_dir):
@@ -238,8 +228,8 @@ def GuardianKeyCeremonyCommand(
 )
 @click.option(
     "--guardian-id",
-    prompt="Unique ID for this ",
-    help="Unique ID for this  in the ceremony",
+    prompt="Unique ID for this guardian",
+    help="Unique ID for this guardian",
     type=click.STRING,
 )
 def DecryptSharesCommand(
@@ -253,20 +243,35 @@ def DecryptSharesCommand(
     # print(json.dumps(locals()))
 
     # set up dirs
-    # pubkeys_dir = join(public_records_dir, '2_ceremony/1_pubkeys')
-    # backups_dir = join(public_records_dir, '2_ceremony/2_backups')
+    announce_dir  = join(public_records_dir, '1_announce')
     setup_dir     = join(public_records_dir, '3_setup')
-    # makedirs(pubkeys_dir, exist_ok=True)
-    # makedirs(backups_dir, exist_ok=True)
+    ballots_dir   = join(public_records_dir, '5_ballots')
+    submitted_dir = join(ballots_dir       , '1_submitted')
+    cast_dir      = join(ballots_dir       , '2_cast')
+    spoiled_dir   = join(ballots_dir       , '3_spoiled')
 
     # restore own private state
+    # TODO make a function
     election_key_pair_path = join(private_records_dir, ELECTION_KEY_PAIR_NAME + '.json')
     election_key_pair = serialize.from_file(ElectionKeyPair, election_key_pair_path)
 
+    # load required info
+    # TODO make a function if it turns out to be the proper way
+    manifest_path = join(announce_dir, MANIFEST_NAME + '.json')
+    manifest = serialize.from_file(Manifest, manifest_path)
+    joint_key_path = join(setup_dir, JOINT_KEY_NAME + '.json')
+    joint_key = serialize.from_file(ElectionJointKey, joint_key_path)
+    (constants, internal_manifest, context) = build_election(
+        guardian_count,
+        quorum,
+        manifest,
+        joint_key
+    )
+
     # restore context
     # TODO uh oh, also can't be deserialized and has to be rebuilt like internal_manifest?
-    context_path = join(setup_dir, 'context.json')
-    context = serialize.from_file(CiphertextElectionContext, context_path)
+    # context_path = join(setup_dir, 'context.json')
+    # context = serialize.from_file(CiphertextElectionContext, context_path)
     pprint(context)
 
     # restore tally

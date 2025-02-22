@@ -5,6 +5,13 @@
 # and they coordinate via a shared folder on the local filesystem.
 # This script is written from the election admin's point of view.
 
+from utils import (
+    build_election,
+    load_cast_ballots,
+    load_guardian_pubkeys,
+    load_spoiled_ballots,
+)
+
 import click
 import json
 from os import listdir, makedirs
@@ -39,7 +46,6 @@ from electionguard.manifest import Manifest, InternalManifest
 
 from electionguard.ballot_box import BallotBoxState
 
-from guardian import load_guardian_pubkeys
 
 
 MANIFEST_NAME  = '1_manifest'
@@ -258,48 +264,6 @@ def PublishJointKeyCommand(
     serialize.to_file(election_joint_key, JOINT_KEY_NAME, setup_dir)
 
 
-def build_election(
-            guardian_count: int,
-            quorum: int,
-            manifest: Manifest,
-            joint_key: ElectionJointKey
-        ) -> Tuple[
-            ElectionConstants,
-            InternalManifest,
-            CiphertextElectionContext
-        ]:
-
-    election_builder = ElectionBuilder(
-        guardian_count,
-        quorum,
-        manifest,
-    )
-
-    # TODO add this using IPFS later
-    # if verification_url is not None:
-    #     election_builder.add_extended_data_field(
-    #         self.VERIFICATION_URL_NAME, verification_url
-    #     )
-
-    # click.echo("Creating context and internal manifest")
-
-    # from electionguard_tools/factories/election_factory
-    election_builder.set_public_key(
-        get_optional(joint_key).joint_public_key
-    )
-    election_builder.set_commitment_hash(
-        get_optional(joint_key).commitment_hash
-    )
-
-    internal_manifest: InternalManifest
-    context:           CiphertextElectionContext
-    constants:         ElectionConstants
-    internal_manifest, context = get_optional(election_builder.build())
-    constants = get_constants()
-
-    return (constants, internal_manifest, context)
-
-
 @click.command("build-election")
 @click.option(
     "--guardian-count",
@@ -355,36 +319,6 @@ def BuildElectionCommand(
 
     # TODO any reason to save this when it can't be reloaded?
     # serialize.to_file(internal_manifest, 'internal_manifest', setup_dir)
-
-
-def load_submitted_ballots(submitted_ballot_paths: List[str]) -> List[SubmittedBallot]:
-    # NOTE this works for cast and/or spoiled ballots
-    submitted_ballots = [
-        serialize.from_file(SubmittedBallot, p)
-        for p in submitted_ballot_paths
-    ]
-    return submitted_ballots
-
-
-def load_cast_ballots(submitted_dir: str, cast_dir: str) -> List[SubmittedBallot]:
-    cast_names = listdir(cast_dir)
-    cast_paths = [join(submitted_dir, n) for n in cast_names]
-    cast_ballots = load_submitted_ballots(cast_paths)
-    # TODO is this right? it seems too easy but passes the validation
-    for b in cast_ballots:
-        b.state = BallotBoxState.CAST
-    return cast_ballots
-
-
-# TODO if the code ends up the same, unify this with load_cast_ballots
-def load_spoiled_ballots(submitted_dir: str, spoiled_dir: str) -> List[SubmittedBallot]:
-    spoiled_names = listdir(spoiled_dir)
-    spoiled_paths = [join(submitted_dir, n) for n in spoiled_names]
-    spoiled_ballots = load_submitted_ballots(spoiled_paths)
-    # TODO is this right? it seems too easy but passes the validation
-    for b in spoiled_ballots:
-        b.state = BallotBoxState.SPOILED
-    return spoiled_ballots
 
 
 @click.command("tally")
