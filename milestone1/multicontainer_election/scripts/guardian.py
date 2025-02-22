@@ -315,7 +315,8 @@ def DecryptSharesCommand(
 
     # compute ballot shares
     spoiled_ballots = load_spoiled_ballots(submitted_dir, spoiled_dir)
-    ballot_shares = guardian.compute_ballot_shares(spoiled_ballots, context)
+    ballot_shares: Dict[BallotId, Optional[DecryptionShare]] \
+        = guardian.compute_ballot_shares(spoiled_ballots, context)
     for (ballot_id, ballot_share) in ballot_shares.items():
         print(f'computed {guardian_id} decryption share of {ballot_id}')
         assert ballot_share is not None

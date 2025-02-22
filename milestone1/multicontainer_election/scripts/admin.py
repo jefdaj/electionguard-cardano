@@ -522,7 +522,7 @@ def DecryptResultsCommand(
     # load spoiled ballot shares
     spoiled_ids = [b.object_id for b in spoiled_ballots]
     spoiled_prefixes = [join(spoiled_shares_dir, i) for i in spoiled_ids]
-    spoiled_shares: Dict[str, Dict[GuardianId, DecryptionShare]] = {}
+    spoiled_shares: Dict[BallotId, Dict[GuardianId, DecryptionShare]] = {}
     for (bid, prefix) in zip(spoiled_ids, spoiled_prefixes):
         shares = load_guardian_decryption_shares(prefix, guardian_count)
         assert len(shares) == guardian_count
@@ -531,17 +531,33 @@ def DecryptResultsCommand(
     # load guardian pubkeys
     guardian_pubkeys = load_guardian_pubkeys(pubkeys_dir)
 
+    # load tally + ballot shares
     for guardian_pubkey in guardian_pubkeys:
         guardian_id = guardian_pubkey.owner_id
         tally_share = tally_shares[guardian_id]
-        ballot_shares = [ss[guardian_id] for ss in spoiled_shares.values()]
+        ballot_shares: Dict[BallotId, Optional[DecryptionShare]] = {}
+        for (ballot_id, shares) in spoiled_shares.items():
+            ballot_shares[ballot_id] = shares[guardian_id]
         # pprint(ballot_shares)
         mediator.announce(
             guardian_pubkey, 
             get_optional(tally_share),
             ballot_shares
         )
-        print('ok?')
+    assert len(mediator.get_available_guardians()) == guardian_count
+
+    # decrypt tally
+    # TODO hm, this looks the same as before! maybe it was right?
+    tally_result = mediator.get_plaintext_tally(tally_enc, manifest)
+    assert tally_result is not None
+    serialize.to_file(tally_result, '1_tally', results_dir)
+    print('decrypted tally')
+
+    # decrypt ballots
+    # ballot_results = get_optional(mediator.get_plaintext_ballots(
+    #     submitted_ballots,
+    #     manifest
+    # ))
 
 
 @click.group()

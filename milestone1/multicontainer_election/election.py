@@ -253,7 +253,7 @@ def election(cfg):
 #         add_device(cfg, n)
 #     vote_all(cfg)
 #     tally(cfg)
-#     decrypt_shares(cfg)
+    decrypt_shares(cfg)
     decrypt_results(cfg)
 
 
