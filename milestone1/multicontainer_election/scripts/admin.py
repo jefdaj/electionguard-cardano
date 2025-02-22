@@ -118,7 +118,16 @@ def BuildManifestCommand(
         }],
         "candidates": [
             {
-                "object_id": "referendum-question-affirmative",
+                "object_id": "referendum-pineapple-dummy",
+                "name": {
+                    "text": [{"value": "Dummy", "language": "en"}]
+                },
+                "party_id": None,
+                "image_uri": None,
+                "is_write_in": None
+            },
+            {
+                "object_id": "referendum-pineapple-affirmative",
                 "name": {
                     "text": [{"value": "Yes", "language": "en"}]
                 },
@@ -127,17 +136,26 @@ def BuildManifestCommand(
                 "is_write_in": None
             },
             {
-                "object_id": "referendum-question-negative",
+                "object_id": "referendum-pineapple-negative",
                 "name": {
                     "text": [{"value": "No", "language": "en"}]
                 },
                 "party_id": None,
                 "image_uri": None,
                 "is_write_in": None
-            }
+            },
+            {
+                "object_id": "referendum-pineapple-unsure",
+                "name": {
+                    "text": [{"value": "Unsure", "language": "en"}]
+                },
+                "party_id": None,
+                "image_uri": None,
+                "is_write_in": None
+            },
         ],
         "contests": [{
-            "object_id": "referendum-question", # TODO is having a number important?
+            "object_id": "referendum-pineapple", # TODO is having a number important?
             "sequence_order": 0,
             "electoral_district_id": county_id,
             "vote_variation": "one_of_m",
@@ -146,15 +164,25 @@ def BuildManifestCommand(
             "name": contest_name,
             "ballot_selections": [
                 {
-                    "object_id": "referendum-question-affirmative-selection",
+                    "object_id": "referendum-pineapple-dummy-selection",
                     "sequence_order": 0,
-                    "candidate_id": "referendum-question-affirmative"
+                    "candidate_id": "referendum-pineapple-dummy"
                 },
                 {
-                    "object_id": "referendum-question-negative-selection",
+                    "object_id": "referendum-pineapple-affirmative-selection",
                     "sequence_order": 1,
-                    "candidate_id": "referendum-question-negative"
-                }
+                    "candidate_id": "referendum-pineapple-affirmative"
+                },
+                {
+                    "object_id": "referendum-pineapple-negative-selection",
+                    "sequence_order": 2,
+                    "candidate_id": "referendum-pineapple-negative"
+                },
+                {
+                    "object_id": "referendum-pineapple-unsure-selection",
+                    "sequence_order": 3,
+                    "candidate_id": "referendum-pineapple-unsure"
+                },
             ],
             "ballot_title": None,
             "ballot_subtitle": None

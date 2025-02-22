@@ -118,8 +118,8 @@ def build_ballot(
 
     # TODO proper selection from contests
     candidates = [
-        "referendum-question-affirmative-selection",
-        "referendum-question-negative-selection"
+        "referendum-pineapple-affirmative-selection",
+        "referendum-pineapple-negative-selection"
     ]
     vote: int = candidates.index(candidate_id)
     assert vote in [0, 1]
@@ -134,7 +134,7 @@ def build_ballot(
 
     contests = [
         PlaintextBallotContest(
-            object_id="referendum-question",
+            object_id="referendum-pineapple",
             ballot_selections=selections
         )
     ]
