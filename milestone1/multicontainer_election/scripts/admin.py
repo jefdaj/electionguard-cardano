@@ -250,7 +250,7 @@ def PublishJointKeyCommand(
     # print(json.dumps(locals()))
 
     ceremony_dir = join(public_records_dir, '2_ceremony')
-    setup_dir    = join(public_records_dir, '3_setup')
+    setup_dir    = join(public_records_dir, '3_election')
     pubkeys_dir  = join(ceremony_dir, '1_pubkeys')
     makedirs(pubkeys_dir, exist_ok=True)
     makedirs(setup_dir, exist_ok=True)
@@ -295,7 +295,7 @@ def BuildElectionCommand(
 
     # set up dirs
     announce_dir = join(public_records_dir, '1_announce')
-    setup_dir    = join(public_records_dir, '3_setup')
+    setup_dir    = join(public_records_dir, '3_election')
     makedirs(setup_dir, exist_ok=True)
 
     # load manifest
@@ -353,7 +353,7 @@ def TallyCommand(
 
     # set up dirs
     announce_dir  = join(public_records_dir, '1_announce')
-    setup_dir     = join(public_records_dir, '3_setup')
+    setup_dir     = join(public_records_dir, '3_election')
     ballots_dir   = join(public_records_dir, '5_ballots')
     submitted_dir = join(ballots_dir       , '1_submitted')
     cast_dir      = join(ballots_dir       , '2_cast')

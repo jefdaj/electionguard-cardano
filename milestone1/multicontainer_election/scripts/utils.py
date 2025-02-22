@@ -1,5 +1,4 @@
 # TODO make an object (DotMap?) describing all the file paths here
-# TODO 3_setup -> 3_election
 
 # TODO remove unused imports
 from electionguard import serialize

@@ -159,7 +159,7 @@ def VoteCommand(
     makedirs(plaintext_dir, exist_ok=True)
 
     announce_dir  = join(public_records_dir, '1_announce')
-    setup_dir     = join(public_records_dir, '3_setup')
+    setup_dir     = join(public_records_dir, '3_election')
     devices_dir   = join(public_records_dir, '4_devices')
     ballots_dir   = join(public_records_dir, '5_ballots')
     submitted_dir = join(ballots_dir       , '1_submitted')

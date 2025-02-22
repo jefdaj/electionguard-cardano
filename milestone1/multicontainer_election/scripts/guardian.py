@@ -244,7 +244,7 @@ def DecryptSharesCommand(
 
     # set up dirs
     announce_dir  = join(public_records_dir, '1_announce')
-    setup_dir     = join(public_records_dir, '3_setup')
+    setup_dir     = join(public_records_dir, '3_election')
     ballots_dir   = join(public_records_dir, '5_ballots')
     submitted_dir = join(ballots_dir       , '1_submitted')
     cast_dir      = join(ballots_dir       , '2_cast')
