@@ -54,6 +54,9 @@ from electionguard.decrypt_with_shares import (
 
 from electionguard.decryption_mediator import DecryptionMediator
 
+from electionguard_cli.cli_steps.cli_step_base import CliStepBase
+from electionguard.tally import PlaintextTally
+
 
 MANIFEST_NAME  = '1_manifest'
 JOINT_KEY_NAME = 'jointkey'
@@ -544,6 +547,7 @@ def DecryptResultsCommand(
 
     # decrypt tally
     # TODO hm, this looks the same as before! maybe it was right?
+    # TODO remove v2 as soon as you're sure
     tally_result_v2 = mediator.get_plaintext_tally(tally_enc, manifest)
     assert tally_result is not None
     serialize.to_file(tally_result_v2, '1_tally_v2', results_dir)
@@ -558,6 +562,80 @@ def DecryptResultsCommand(
     # ))
 
 
+@click.command("summary")
+@click.option(
+    "--public-records-dir",
+    prompt="Public records directory",
+    help="The location of a directory into which will be placed all public records. "
+    + "This folder should be protected. Existing files will be overwritten.",
+    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+)
+def SummaryCommand(
+    public_records_dir: str,
+) -> None:
+    """
+    Save and print a human-readable summary of the election.
+    This isn't part of the ElectionGuard protocol; I just thought it would be helpful.
+    """
+
+    # set up dirs
+    announce_dir = join(public_records_dir, '1_announce')
+    decrypt_dir   = join(public_records_dir, '7_decrypt')
+    results_dir   = join(decrypt_dir, '2_results')
+    spoiled_results_dir = join(results_dir, '2_spoiled')
+
+    # load required info
+    # TODO make a function if it turns out to be the proper way
+    manifest_path = join(announce_dir, MANIFEST_NAME + '.json')
+    manifest = serialize.from_file(Manifest, manifest_path)
+    # joint_key_path = join(setup_dir, JOINT_KEY_NAME + '.json')
+    # joint_key = serialize.from_file(ElectionJointKey, joint_key_path)
+    # (constants, _, context) = build_election(
+        # guardian_count,
+        # quorum,
+        # manifest,
+        # joint_key
+    # )
+    tally_result_path = join(results_dir, '1_tally.json')
+    plaintext_tally = serialize.from_file(PlaintextTally, tally_result_path)
+
+    # based on print_results_step in electionguard_cli
+
+    csb = CliStepBase() # TODO call this "printer" or "formatter"?
+    selection_names = manifest.get_selection_names("en")
+    contest_names = manifest.get_contest_names()
+
+    # spoiled ballots
+    spoiled_paths: Dict[BallotId, str] = {
+        splitext(n)[0]: join(spoiled_results_dir, n)
+        for n in listdir(spoiled_results_dir)
+    }
+    plaintext_spoiled_ballots: Dict[BallotId, PlaintextTally] = {
+        bid: serialize.from_file(PlaintextTally, p)
+        for (bid, p) in spoiled_paths.items()
+    }
+    ballot_ids = plaintext_spoiled_ballots.keys()
+    for ballot_id in ballot_ids:
+        csb.print_header(f"Spoiled ballot '{ballot_id}'")
+        spoiled_ballot = plaintext_spoiled_ballots[ballot_id]
+        for contest in spoiled_ballot.contests.values():
+            contest_name = contest_names.get(contest.object_id)
+            csb.print_section(contest_name)
+            for selection in contest.selections.values():
+                name = selection_names[selection.object_id]
+                csb.print_value(f"  {name}", selection.tally)
+
+    # main tally
+    csb.print_header("Decrypted tally")
+    for tally_contest in plaintext_tally.contests.values():
+        contest_name = contest_names.get(tally_contest.object_id)
+        csb.print_section(contest_name)
+        for selection in tally_contest.selections.values():
+            name = selection_names[selection.object_id]
+            csb.print_value(f"  {name}", selection.tally)
+
+
+
 @click.group()
 def cli() -> None:
     pass
@@ -568,6 +646,7 @@ cli.add_command(PublishJointKeyCommand)
 cli.add_command(BuildElectionCommand)
 cli.add_command(TallyCommand)
 cli.add_command(DecryptResultsCommand)
+cli.add_command(SummaryCommand)
 
 if __name__ == '__main__':
     cli()
