@@ -195,11 +195,8 @@ def vote(cfg, candidate_id, spoil=False):
 # TODO split into sections so the cast and spoil can be explained separately?
 @explain_step
 def vote_all(cfg):
-    vote(cfg, candidate_id="referendum-question-affirmative-selection")
-    vote(cfg, candidate_id="referendum-question-negative-selection")
-    vote(cfg, candidate_id="referendum-question-affirmative-selection")
-    vote(cfg, candidate_id="referendum-question-affirmative-selection", spoil=True)
-    vote(cfg, candidate_id="referendum-question-negative-selection"   , spoil=True)
+    for vote_json in cfg.votes:
+        vote(cfg, vote_json.candidate_id, spoil=vote_json.spoil)
 
 @explain_step
 def tally(cfg):
