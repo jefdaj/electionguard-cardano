@@ -10,6 +10,7 @@ from utils import (
     build_election,
     load_designated_backups,
     load_guardian_pubkeys,
+    load_spoiled_ballots,
 )
 
 
@@ -21,9 +22,11 @@ from os.path import join, splitext
 from pprint import pprint
 from typing import List, Dict
 
+from electionguard.guardian import Guardian
 from electionguard import serialize
 from electionguard.type import GuardianId
 from electionguard.key_ceremony import (
+    CeremonyDetails,
     ElectionKeyPair,
     ElectionPublicKey,
     ElectionPartialKeyBackup,
@@ -271,7 +274,7 @@ def DecryptSharesCommand(
     # TODO make a function
     election_key_pair_path = join(private_records_dir, ELECTION_KEY_PAIR_NAME + '.json')
     election_key_pair = serialize.from_file(ElectionKeyPair, election_key_pair_path)
-    print('election_key_pair:'); pprint(election_key_pair)
+    # print('election_key_pair:'); pprint(election_key_pair)
 
     # load required info
     # TODO make a function if it turns out to be the proper way
@@ -285,18 +288,29 @@ def DecryptSharesCommand(
         manifest,
         joint_key
     )
-    print('context:'); pprint(context)
-
-    # restore context
-    # TODO uh oh, also can't be deserialized and has to be rebuilt like internal_manifest?
-    # context_path = join(setup_dir, 'context.json')
-    # context = serialize.from_file(CiphertextElectionContext, context_path)
 
     # restore tally
     # aha, you can deserialize these! you just need the Published version
     tally_path = join(public_records_dir, '6_tally.json')
     tally = serialize.from_file(PublishedCiphertextTally, tally_path)
-    print('tally:'); pprint(tally)
+
+    # create guardian object
+    details = CeremonyDetails(guardian_count, quorum) # TODO load from file
+    guardian = Guardian(election_key_pair, details)
+
+    # compute_tally_share
+    tally_share = guardian.compute_tally_share(tally, context)
+    print(f'decrypted {guardian_id} share of election tally')
+    assert tally_share is not None
+    # print('tally share:'); pprint(tally_share)
+
+    # TODO compute_ballot_shares
+    # TODO have to check whether any are None?
+    spoiled_ballots = load_spoiled_ballots(submitted_dir, spoiled_dir)
+    ballot_shares = guardian.compute_ballot_shares(spoiled_ballots, context)
+    for (ballot_id, ballot_share) in ballot_shares.items():
+        print(f'decrypted {guardian_id} share of {ballot_id}')
+        assert ballot_share is not None
 
     raise SystemExit
 

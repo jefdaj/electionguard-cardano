@@ -11,6 +11,7 @@ from os.path import join
 from pprint import pprint
 from pygments import highlight, lexers, formatters
 
+
 # see logs.py for electionguard's separate LOG
 import logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s\n%(message)s\n')
