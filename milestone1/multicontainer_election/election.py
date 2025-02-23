@@ -138,8 +138,6 @@ def key_ceremony_round(cfg, ceremony_round):
             cfg, "guardian", sequence_order,
             [
                 "key-ceremony",
-                # "--guardian-count"         , str(cfg.election.guardians.count),
-                # "--guardian-quorum"                 , str(cfg.election.guardians.quorum),
                 "--public-dir"     , cfg.arion.bind_mounts.public,
                 "--private-dir"    , cfg.arion.bind_mounts.private,
                 "--guardian-id"            , guardian_id,
@@ -164,8 +162,6 @@ def build_election(cfg):
         cfg, "admin", 1,
         [
             "build-election",
-            "--guardian-count"    , str(cfg.election.guardians.count),
-            "--guardian-quorum"           , str(cfg.election.guardians.quorum),
             "--public-dir", cfg.arion.bind_mounts.public,
         ]
     )
@@ -186,8 +182,6 @@ def vote(cfg, candidate_name, spoil=False):
         cfg, "device", 1, # TODO code for other devices?
         [
             "vote",
-            "--guardian-count"     , str(cfg.election.guardians.count),
-            "--guardian-quorum"             , str(cfg.election.guardians.quorum),
             "--public-dir" , cfg.arion.bind_mounts.public,
             "--private-dir", cfg.arion.bind_mounts.private,
             "--candidate-name"     , candidate_name,
@@ -211,8 +205,6 @@ def tally(cfg):
         cfg, "admin", 1,
         [
             "tally",
-            "--guardian-count"     , str(cfg.election.guardians.count),
-            "--guardian-quorum"             , str(cfg.election.guardians.quorum),
             "--public-dir" , cfg.arion.bind_mounts.public,
         ]
     )
@@ -229,8 +221,6 @@ def decrypt_shares(cfg):
                 "--public-dir" , cfg.arion.bind_mounts.public,
                 "--private-dir", cfg.arion.bind_mounts.private,
                 "--guardian-id"        , guardian_id,
-                "--guardian-count"     , str(cfg.election.guardians.count),
-                "--guardian-quorum"             , str(cfg.election.guardians.quorum),
             ]
         )
 
@@ -240,8 +230,6 @@ def decrypt_results(cfg):
         cfg, "admin", 1,
         [
             "decrypt-results",
-            "--guardian-count"     , str(cfg.election.guardians.count),
-            "--guardian-quorum"             , str(cfg.election.guardians.quorum),
             "--public-dir" , cfg.arion.bind_mounts.public,
         ]
     )

@@ -11,7 +11,7 @@ from electionguard.decryption import (compute_decryption_share,compute_decryptio
 from electionguard.decryption_share import DecryptionShare
 from electionguard.election import CiphertextElectionContext
 from electionguard.encrypt import EncryptionDevice, EncryptionMediator, contest_from, generate_device_uuid
-from electionguard.key_ceremony import (ElectionJointKey,ElectionKeyPair,ElectionPublicKey,ElectionPartialKeyBackup,ElectionPartialKeyVerification,combine_election_public_keys, generate_election_key_pair,generate_election_partial_key_backup,verify_election_partial_key_backup)
+from electionguard.key_ceremony import (CeremonyDetails, ElectionJointKey,ElectionKeyPair,ElectionPublicKey,ElectionPartialKeyBackup,ElectionPartialKeyVerification,combine_election_public_keys, generate_election_key_pair,generate_election_partial_key_backup,verify_election_partial_key_backup)
 from electionguard.manifest import Manifest, InternalManifest, Language
 from electionguard.tally import (CiphertextTally,PublishedCiphertextTally)
 from electionguard.type import GuardianId
@@ -31,8 +31,7 @@ logging.getLogger('electionguard').setLevel(logging.WARNING)
 
 
 def build_election(
-            guardian_count: int,
-            guardian_quorum: int,
+            details: CeremonyDetails,
             manifest: Manifest,
             joint_key: ElectionJointKey
         ) -> Tuple[
@@ -42,8 +41,8 @@ def build_election(
         ]:
 
     election_builder = ElectionBuilder(
-        guardian_count,
-        guardian_quorum,
+        details.number_of_guardians,
+        details.quorum,
         manifest,
     )
 

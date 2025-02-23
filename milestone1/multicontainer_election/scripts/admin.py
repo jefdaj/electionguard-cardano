@@ -295,18 +295,6 @@ def PublishJointKeyCommand(
 
 @click.command("build-election")
 @click.option(
-    "--guardian-count",
-    prompt="Number of s",
-    help="The number of guardians that will participate in the key ceremony and tally.",
-    type=click.INT,
-)
-@click.option(
-    "--guardian-quorum",
-    prompt="Quorum",
-    help="The minimum number of guardians required to show up to the tally.",
-    type=click.INT,
-)
-@click.option(
     "--public-dir",
     prompt="Public records directory",
     help="The location of a directory into which will be placed all public records. "
@@ -314,8 +302,6 @@ def PublishJointKeyCommand(
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
 def BuildElectionCommand(
-    guardian_count: int,
-    guardian_quorum: int,
     public_dir: str,
 ) -> None:
     """Build the InternalManifest and CiphertextElectionContext.
@@ -332,13 +318,16 @@ def BuildElectionCommand(
     manifest = serialize.from_file(Manifest, manifest_path)
     # pprint(manifest)
 
+    # load ceremony details
+    details_path = join(announce_dir, '2_ceremony.json')
+    details = serialize.from_file(CeremonyDetails, details_path)
+
     # load joint public key
     joint_key_path = join(setup_dir, JOINT_KEY_NAME + '.json')
     joint_key = serialize.from_file(ElectionJointKey, joint_key_path)
 
     (constants, internal_manifest, context) = build_election(
-        guardian_count,
-        guardian_quorum,
+        details,
         manifest,
         joint_key
     )
@@ -358,21 +347,7 @@ def BuildElectionCommand(
     + "This folder should be protected. Existing files will be overwritten.",
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
-@click.option(
-    "--guardian-count",
-    prompt="Number of s",
-    help="The number of guardians that will participate in the key ceremony and tally.",
-    type=click.INT,
-)
-@click.option(
-    "--guardian-quorum",
-    prompt="Quorum",
-    help="The minimum number of guardians required to show up to the tally.",
-    type=click.INT,
-)
 def TallyCommand(
-    guardian_count: int,
-    guardian_quorum: int,
     public_dir: str,
 ) -> None:
     """Tally election results.
@@ -393,9 +368,10 @@ def TallyCommand(
     manifest = serialize.from_file(Manifest, manifest_path)
     joint_key_path = join(setup_dir, JOINT_KEY_NAME + '.json')
     joint_key = serialize.from_file(ElectionJointKey, joint_key_path)
+    details_path = join(announce_dir, '2_ceremony.json')
+    details = serialize.from_file(CeremonyDetails, details_path)
     (constants, internal_manifest, context) = build_election(
-        guardian_count,
-        guardian_quorum,
+        details,
         manifest,
         joint_key
     )
@@ -430,22 +406,8 @@ def TallyCommand(
     + "This folder should be protected. Existing files will be overwritten.",
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
-@click.option(
-    "--guardian-count",
-    prompt="Number of guardians",
-    help="The number of guardians that will participate in the key ceremony and tally.",
-    type=click.INT,
-)
-@click.option(
-    "--guardian-quorum",
-    prompt="Quorum",
-    help="The minimum number of guardians required to show up to the tally.",
-    type=click.INT,
-)
 def DecryptResultsCommand(
     public_dir: str,
-    guardian_count: int,
-    guardian_quorum: int,
 ) -> None:
     """
     Combine guardian decryption shares into final results: tally + spoiled ballots.
@@ -475,9 +437,10 @@ def DecryptResultsCommand(
     manifest = serialize.from_file(Manifest, manifest_path)
     joint_key_path = join(setup_dir, JOINT_KEY_NAME + '.json')
     joint_key = serialize.from_file(ElectionJointKey, joint_key_path)
+    details_path = join(announce_dir, '2_ceremony.json')
+    details = serialize.from_file(CeremonyDetails, details_path)
     (constants, _, context) = build_election(
-        guardian_count,
-        guardian_quorum,
+        details,
         manifest,
         joint_key
     )
@@ -487,7 +450,7 @@ def DecryptResultsCommand(
     tally_enc = serialize.from_file(PublishedCiphertextTally, tally_path)
     tally_prefix = join(tally_dir, 'tally')
     tally_shares: Dict[GuardianId, DecryptionShare] \
-        = load_guardian_decryption_shares(tally_prefix, guardian_count)
+        = load_guardian_decryption_shares(tally_prefix, details.number_of_guardians)
     tally_result = decrypt_tally(
         tally_enc,
         tally_shares,
@@ -506,7 +469,7 @@ def DecryptResultsCommand(
     spoiled_prefixes = [join(spoiled_shares_dir, i) for i in spoiled_ids]
     spoiled_shares: Dict[str, Dict[GuardianId, DecryptionShare]] = {}
     for (bid, prefix) in zip(spoiled_ids, spoiled_prefixes):
-        shares = load_guardian_decryption_shares(prefix, guardian_count)
+        shares = load_guardian_decryption_shares(prefix, details.number_of_guardians)
         spoiled_shares[bid] = shares
 
     # decrypt spoiled ballots

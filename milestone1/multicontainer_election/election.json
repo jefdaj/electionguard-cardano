@@ -13,8 +13,8 @@
     "question": "Are pineapples cool?"
   },
   "votes": {
-    "Yes":    {"cast": 12, "spoil":4},
-    "No":     {"cast":  8, "spoil":3},
-    "Unsure": {"cast":  9, "spoil":6}
+    "Yes":    {"cast": 3, "spoil":1},
+    "No":     {"cast": 2, "spoil":2},
+    "Unsure": {"cast": 1, "spoil":3}
   }
 }

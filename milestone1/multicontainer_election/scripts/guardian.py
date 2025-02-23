@@ -64,14 +64,13 @@ def round1(guardian_id, sequence_order, public_dir, private_dir):
     pubkeys_dir   = join(public_dir, '2_ceremony/1_pubkeys')
     makedirs(pubkeys_dir  , exist_ok=True)
 
-    # load quorum
+    # load ceremony details
     details_path = join(announce_dir, '2_ceremony.json')
     details = serialize.from_file(CeremonyDetails, details_path)
-    guardian_quorum = details.quorum
 
     # generate election key pair
     # NOTE there will eventually also be separate a Cardano wallet key pair
-    election_key_pair: ElectionKeyPair = generate_election_key_pair(guardian_id, sequence_order, guardian_quorum)
+    election_key_pair: ElectionKeyPair = generate_election_key_pair(guardian_id, sequence_order, details.quorum)
     serialize.to_file(election_key_pair, ELECTION_KEY_PAIR_NAME, private_dir)
 
     # share the public key (and other info)
@@ -230,24 +229,10 @@ def GuardianKeyCeremonyCommand(
     help="Unique ID for this guardian",
     type=click.STRING,
 )
-@click.option(
-    "--guardian-count",
-    prompt="Number of guardians",
-    help="The number of guardians that will participate in the key ceremony and tally.",
-    type=click.INT,
-)
-@click.option(
-    "--guardian-quorum",
-    prompt="Quorum",
-    help="The minimum number of guardians required to show up to the tally.",
-    type=click.INT,
-)
 def DecryptSharesCommand(
     public_dir: str,
     private_dir: str,
     guardian_id: str,
-    guardian_count: int,
-    guardian_quorum: int,
 ) -> None:
     """
     Compute guardian decryption shares for the tally + all spoiled ballots.
@@ -282,9 +267,10 @@ def DecryptSharesCommand(
     manifest = serialize.from_file(Manifest, manifest_path)
     joint_key_path = join(setup_dir, JOINT_KEY_NAME + '.json')
     joint_key = serialize.from_file(ElectionJointKey, joint_key_path)
+    details_path = join(announce_dir, '2_ceremony.json')
+    details = serialize.from_file(CeremonyDetails, details_path)
     (constants, internal_manifest, context) = build_election(
-        guardian_count,
-        guardian_quorum,
+        details,
         manifest,
         joint_key
     )
@@ -295,7 +281,6 @@ def DecryptSharesCommand(
     tally = serialize.from_file(PublishedCiphertextTally, tally_path)
 
     # create guardian object
-    details = CeremonyDetails(guardian_count, guardian_quorum) # TODO load from file
     guardian = Guardian(election_key_pair, details)
 
     # compute tally share
