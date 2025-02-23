@@ -51,7 +51,7 @@ from utils import (
     build_ballot,
     build_election,
     load_designated_backups,
-    load_first_device,
+    load_device_by_number,
 )
 
 
@@ -119,6 +119,12 @@ class CastBallotNotice(object):
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
 @click.option(
+    "--device-number",
+    prompt="Device number",
+    help="The number of the device.",
+    type=click.INT,
+)
+@click.option(
     "--candidate",
     prompt="Candidate name",
     help="The ID of the candidate (or answer!) to vote for. See manifest.json for valid options.",
@@ -133,6 +139,7 @@ class CastBallotNotice(object):
 def VoteCommand(
     public_dir: str,
     private_dir: str,
+    device_number: int,
     candidate: str,
     spoil: bool,
 ) -> None:
@@ -171,7 +178,7 @@ def VoteCommand(
 
     # TODO is the underscore thing OK in python?
     (_, internal_manifest, context) = build_election(details, manifest, joint_key)
-    device = load_first_device(devices_dir)
+    device = load_device_by_number(devices_dir, device_number)
 
     ballot: PlaintextBallot = build_ballot(manifest, candidate)
     serialize.to_file(ballot, str(ballot.object_id), plaintext_dir)

@@ -101,8 +101,11 @@ def load_spoiled_ballots(submitted_dir: str, spoiled_dir: str) -> List[Submitted
     return spoiled_ballots
 
 
-def load_first_device(devices_dir: str) -> EncryptionDevice:
-    device_path = join(devices_dir, listdir(devices_dir)[0])
+def load_device_by_number(devices_dir: str, device_number: int) -> EncryptionDevice:
+    # TODO keep track of their IDs instead?
+    i = device_number - 1
+    device_path = join(devices_dir, sorted(listdir(devices_dir))[i])
+    print(device_path)
     device = serialize.from_file(EncryptionDevice, device_path)
     return device
 
