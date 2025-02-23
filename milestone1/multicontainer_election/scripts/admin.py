@@ -118,15 +118,6 @@ def BuildManifestCommand(
         }],
         "candidates": [
             {
-                "object_id": "referendum-pineapple-dummy",
-                "name": {
-                    "text": [{"value": "Dummy", "language": "en"}]
-                },
-                "party_id": None,
-                "image_uri": None,
-                "is_write_in": None
-            },
-            {
                 "object_id": "referendum-pineapple-affirmative",
                 "name": {
                     "text": [{"value": "Yes", "language": "en"}]
@@ -163,11 +154,6 @@ def BuildManifestCommand(
             "votes_allowed": 1,
             "name": contest_name,
             "ballot_selections": [
-                {
-                    "object_id": "referendum-pineapple-dummy-selection",
-                    "sequence_order": 0,
-                    "candidate_id": "referendum-pineapple-dummy"
-                },
                 {
                     "object_id": "referendum-pineapple-affirmative-selection",
                     "sequence_order": 1,
@@ -555,18 +541,11 @@ def SummaryCommand(
     results_dir   = join(decrypt_dir, '2_results')
     spoiled_results_dir = join(results_dir, '2_spoiled')
 
-    # load required info
-    # TODO make a function if it turns out to be the proper way
+    # load manifest
     manifest_path = join(announce_dir, MANIFEST_NAME + '.json')
     manifest = serialize.from_file(Manifest, manifest_path)
-    # joint_key_path = join(setup_dir, JOINT_KEY_NAME + '.json')
-    # joint_key = serialize.from_file(ElectionJointKey, joint_key_path)
-    # (constants, _, context) = build_election(
-        # guardian_count,
-        # quorum,
-        # manifest,
-        # joint_key
-    # )
+
+    # load tally
     tally_result_path = join(results_dir, '1_tally.json')
     plaintext_tally = serialize.from_file(PlaintextTally, tally_result_path)
 

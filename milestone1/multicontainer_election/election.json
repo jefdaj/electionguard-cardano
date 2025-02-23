@@ -21,8 +21,6 @@
     {"candidate_id": "referendum-pineapple-affirmative-selection", "spoil": true},
     {"candidate_id": "referendum-pineapple-affirmative-selection", "spoil": true},
     {"candidate_id": "referendum-pineapple-affirmative-selection", "spoil": true},
-    {"candidate_id": "referendum-pineapple-dummy-selection"      , "spoil": false},
-    {"candidate_id": "referendum-pineapple-dummy-selection"      , "spoil": true},
     {"candidate_id": "referendum-pineapple-negative-selection"   , "spoil": false},
     {"candidate_id": "referendum-pineapple-negative-selection"   , "spoil": false},
     {"candidate_id": "referendum-pineapple-negative-selection"   , "spoil": false},
