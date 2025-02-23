@@ -130,7 +130,7 @@ def announce_key_ceremony(cfg):
     )
 
 @explain_step
-def key_ceremony_round(cfg, current_round):
+def key_ceremony_round(cfg, ceremony_round):
     # TODO should only need to pass the id; the rest can come from public announcement
     for guardian_id, sequence_order in \
             zip(cfg.election.guardians.ids, cfg.election.guardians.sequence_order):
@@ -144,7 +144,7 @@ def key_ceremony_round(cfg, current_round):
                 "--private-dir"    , cfg.arion.bind_mounts.private,
                 "--guardian-id"            , guardian_id,
                 "--guardian-sequence-order", str(sequence_order),
-                "--current-round"          , str(current_round),
+                "--ceremony-round"          , str(ceremony_round),
             ]
         )
 

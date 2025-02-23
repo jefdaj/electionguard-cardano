@@ -188,7 +188,7 @@ def round3(guardian_id, sequence_order, public_dir, private_dir):
     type=click.INT,
 )
 @click.option(
-    "--current-round",
+    "--ceremony-round",
     prompt="Current key ceremony round",
     help="Current key ceremony round",
     type=click.INT,
@@ -200,22 +200,22 @@ def GuardianKeyCeremonyCommand(
     private_dir: str,
     guardian_id: str,
     guardian_sequence_order: int,
-    current_round: int,
+    ceremony_round: int,
 ) -> None:
     """
     This command runs one round of the key ceremony from the perspective of a
     particular .
     """
     # print(json.dumps(locals()))
-    if current_round == 1:
+    if ceremony_round == 1:
         round1(guardian_id, guardian_sequence_order, guardian_quorum, public_dir, private_dir)
-    elif current_round == 2:
+    elif ceremony_round == 2:
         round2(guardian_id, guardian_sequence_order, public_dir, private_dir)
-    elif current_round == 3:
+    elif ceremony_round == 3:
         round3(guardian_id, guardian_sequence_order, public_dir, private_dir)
     # TODO implement round 4 (challenge if necessary)
     else:
-        raise Exception(f'Invalid current_round "{current_round}"')
+        raise Exception(f'Invalid ceremony_round "{ceremony_round}"')
 
 @click.command("decrypt-shares")
 @click.option(
