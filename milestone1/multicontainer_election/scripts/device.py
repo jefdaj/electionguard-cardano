@@ -52,13 +52,14 @@ from utils import (
     build_election,
     load_designated_backups,
     load_device_by_number,
+    to_public_record,
 )
 
 
 MANIFEST_NAME  = '1_manifest'
-JOINT_KEY_NAME = 'jointkey'
+JOINT_KEY_NAME = 'joint_key'
 POLLING_PLACE  = 'electionguard-cardano-polling-place'
-DEVICE_PREFIX  = 'device_'
+# DEVICE_PREFIX  = 'device_'
 
 
 @click.command("add-device")
@@ -91,8 +92,7 @@ def AddDeviceCommand(
         device_number * 45678, # launch code (TODO what's this?)
         POLLING_PLACE,
     )
-    serialize.to_file(device, DEVICE_PREFIX + str(device.device_id), devices_dir)
-
+    to_public_record(public_dir, 'device', device)
 
 
 # TODO what should this inherit from... ElectionObjectBase? CryptoHashCheckable?

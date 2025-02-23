@@ -205,6 +205,7 @@ PUBLIC_RECORDS = {
     'guardian_pubkey': (ElectionPublicKey, '2_ceremony/1_pubkeys', '{guardian_id}'),
     'guardian_backup': (ElectionPartialKeyBackup, '2_ceremony/2_backups', '{guardian_id}_backup_{backup_order}'),
     'guardian_verification': (ElectionPartialKeyVerification, '2_ceremony/3_verifications', '{json_name}'),
+    'device': (EncryptionDevice, '4_devices', 'device_{obj.device_id}'),
 }
 
 def to_private_record(private_dir: str, record_type: str, **fmtargs):
@@ -216,6 +217,7 @@ def to_public_record(public_dir: str, record_type: str, obj, **fmtargs):
     (rtype, dname, fstr) = PUBLIC_RECORDS[record_type]
     dpath = join(public_dir, dname)
     makedirs(dpath, exist_ok=True)
+    fmtargs.update(locals()) # so we can use the obj's own fields too
     fname = fstr.format(**fmtargs)
     serialize.to_file(obj, fname, dpath)
 
