@@ -600,7 +600,7 @@ def SummaryCommand(
         contest_name = contest_names.get(tally_contest.object_id)
         contest_summary = {
             'question': contest_name,
-            'answers': {},
+            'votes': {},
         }
         csb.print_section(contest_name)
         values = list(tally_contest.selections.values())
@@ -608,7 +608,7 @@ def SummaryCommand(
         for selection in values:
             name = selection_names[selection.object_id]
             csb.print_value(f"  {name}", selection.tally)
-            contest_summary['answers'][name] = selection.tally
+            contest_summary['votes'][name] = selection.tally
         summary['tally of cast ballots'].append(contest_summary)
 
     serialize.to_file(summary, '8_summary', public_records_dir)

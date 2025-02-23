@@ -9,8 +9,8 @@
   "votingDevices": {"count": 2},
   "question": "Are pineapples cool?",
   "votes": {
-    "Yes":    {"cast": 6, "spoil":4},
-    "No":     {"cast": 4, "spoil":3},
-    "Unsure": {"cast": 3, "spoil":6}
+    "Yes":    {"cast": 12, "spoil":4},
+    "No":     {"cast":  8, "spoil":3},
+    "Unsure": {"cast":  9, "spoil":6}
   }
 }
