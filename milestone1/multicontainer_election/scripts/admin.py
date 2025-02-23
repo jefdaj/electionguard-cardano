@@ -12,6 +12,7 @@ from utils import (
     load_guardian_pubkeys,
     load_spoiled_ballots,
     to_public_record,
+    from_public_record,
 )
 
 import click
@@ -309,23 +310,9 @@ def BuildElectionCommand(
     """
     # print(json.dumps(locals()))
 
-    # set up dirs
-    announce_dir = join(public_dir, '1_announce')
-    setup_dir    = join(public_dir, '3_election')
-    makedirs(setup_dir, exist_ok=True)
-
-    # load manifest
-    manifest_path = join(announce_dir, MANIFEST_NAME + '.json')
-    manifest = serialize.from_file(Manifest, manifest_path)
-    # pprint(manifest)
-
-    # load ceremony details
-    details_path = join(announce_dir, '2_ceremony.json')
-    details = serialize.from_file(CeremonyDetails, details_path)
-
-    # load joint public key
-    joint_key_path = join(setup_dir, JOINT_KEY_NAME + '.json')
-    joint_key = serialize.from_file(ElectionJointKey, joint_key_path)
+    manifest  = from_public_record(public_dir, 'manifest')
+    details   = from_public_record(public_dir, 'ceremony_details')
+    joint_key = from_public_record(public_dir, 'joint_key')
 
     (constants, internal_manifest, context) = build_election(
         details,

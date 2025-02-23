@@ -213,16 +213,20 @@ def to_private_record(private_dir: str, record_type: str, **fmtargs):
     # TODO makedirs
     # TODO serialize.to_file
 
+def from_private_record(private_dir: str, record_type: str, **fmtargs):
+    pass
+
 def to_public_record(public_dir: str, record_type: str, obj, **fmtargs):
-    (rtype, dname, fstr) = PUBLIC_RECORDS[record_type]
+    (_, dname, fstr) = PUBLIC_RECORDS[record_type]
     dpath = join(public_dir, dname)
     makedirs(dpath, exist_ok=True)
     fmtargs.update(locals()) # so we can use the obj's own fields too
     fname = fstr.format(**fmtargs)
     serialize.to_file(obj, fname, dpath)
 
-def from_private_record(private_dir: str, record_type: str, **fmtargs):
-    pass
-
 def from_public_record(public_dir: str, record_type: str, **fmtargs):
-    pass
+    (rtype, dname, fstr) = PUBLIC_RECORDS[record_type]
+    dpath = join(public_dir, dname)
+    fname = fstr.format(**fmtargs) + '.json'
+    fpath = join(dpath, fname)
+    return serialize.from_file(rtype, fpath)
