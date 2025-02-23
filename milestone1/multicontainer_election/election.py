@@ -123,9 +123,9 @@ def announce_key_ceremony(cfg):
         cfg, "admin", 1,
         [
             "announce-key-ceremony",
+            "--public-dir", cfg.arion.bind_mounts.public,
             "--guardian-count"    , str(cfg.election.guardians.count),
             "--guardian-quorum"            , str(cfg.election.guardians.quorum),
-            "--public-dir", cfg.arion.bind_mounts.public,
         ]
     )
 
@@ -140,9 +140,9 @@ def key_ceremony_round(cfg, ceremony_round):
                 "key-ceremony",
                 "--public-dir"     , cfg.arion.bind_mounts.public,
                 "--private-dir"    , cfg.arion.bind_mounts.private,
+                "--ceremony-round"          , str(ceremony_round),
                 "--guardian-id"            , guardian_id,
                 "--guardian-sequence-order", str(sequence_order),
-                "--ceremony-round"          , str(ceremony_round),
             ]
         )
 
@@ -166,16 +166,20 @@ def build_election(cfg):
         ]
     )
 
-@explain_step
 def add_device(cfg, device_number):
     run_in_container(
         cfg, "device", device_number,
         [
             "add-device",
-            "--device-number"     , str(device_number),
             "--public-dir", cfg.arion.bind_mounts.public,
+            "--device-number"     , str(device_number),
         ]
     )
+
+@explain_step
+def add_devices(cfg):
+    for n in range(1, cfg.election.votingDevices.count + 1):
+        add_device(cfg, n)
 
 def vote(cfg, candidate, spoil=False):
     run_in_container(
@@ -253,8 +257,7 @@ def election(cfg):
     # TODO should there be a "publish final guardian records" step here?
     publish_joint_key(cfg)
     build_election(cfg)
-    for n in range(1, cfg.election.votingDevices.count + 1):
-        add_device(cfg, n)
+    add_devices(cfg)
     vote_all(cfg)
     tally(cfg)
     decrypt_shares(cfg)
