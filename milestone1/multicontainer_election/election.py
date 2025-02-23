@@ -177,14 +177,14 @@ def add_device(cfg, device_number):
         ]
     )
 
-def vote(cfg, candidate_name, spoil=False):
+def vote(cfg, candidate, spoil=False):
     run_in_container(
         cfg, "device", 1, # TODO code for other devices?
         [
             "vote",
             "--public-dir" , cfg.arion.bind_mounts.public,
             "--private-dir", cfg.arion.bind_mounts.private,
-            "--candidate-name"     , candidate_name,
+            "--candidate"     , candidate,
             "--spoil"              , str(spoil),
         ]
     )
