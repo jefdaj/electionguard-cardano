@@ -350,8 +350,8 @@ def TallyCommand(
     # load required info
     manifest  = from_public_record(public_dir, 'manifest')
     joint_key = from_public_record(public_dir, 'joint_key')
-    details_path = join(announce_dir, '2_ceremony.json')
-    details = serialize.from_file(CeremonyDetails, details_path)
+    details   = from_public_record(public_dir, 'ceremony_details')
+
     (constants, internal_manifest, context) = build_election(
         details,
         manifest,
@@ -417,8 +417,8 @@ def DecryptResultsCommand(
     # TODO make a function if it turns out to be the proper way
     manifest  = from_public_record(public_dir, 'manifest')
     joint_key = from_public_record(public_dir, 'joint_key')
-    details_path = join(announce_dir, '2_ceremony.json')
-    details = serialize.from_file(CeremonyDetails, details_path)
+    details   = from_public_record(public_dir, 'ceremony_details')
+
     (constants, _, context) = build_election(
         details,
         manifest,

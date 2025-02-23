@@ -12,6 +12,7 @@ from utils import (
     load_guardian_pubkeys,
     load_spoiled_ballots,
     to_public_record,
+    from_public_record,
 )
 
 
@@ -65,9 +66,7 @@ def round1(guardian_id, sequence_order, public_dir, private_dir):
     pubkeys_dir   = join(public_dir, '2_ceremony/1_pubkeys')
     makedirs(pubkeys_dir  , exist_ok=True)
 
-    # load ceremony details
-    details_path = join(announce_dir, '2_ceremony.json')
-    details = serialize.from_file(CeremonyDetails, details_path)
+    details   = from_public_record(public_dir, 'ceremony_details')
 
     # generate election key pair
     # NOTE there will eventually also be separate a Cardano wallet key pair
@@ -268,13 +267,10 @@ def DecryptSharesCommand(
     # print('election_key_pair:'); pprint(election_key_pair)
 
     # load required info
-    # TODO make a function if it turns out to be the proper way
-    manifest_path = join(announce_dir, MANIFEST_NAME + '.json')
-    manifest = serialize.from_file(Manifest, manifest_path)
-    joint_key_path = join(setup_dir, JOINT_KEY_NAME + '.json')
-    joint_key = serialize.from_file(ElectionJointKey, joint_key_path)
-    details_path = join(announce_dir, '2_ceremony.json')
-    details = serialize.from_file(CeremonyDetails, details_path)
+    manifest  = from_public_record(public_dir, 'manifest')
+    joint_key = from_public_record(public_dir, 'joint_key')
+    details   = from_public_record(public_dir, 'ceremony_details')
+
     (constants, internal_manifest, context) = build_election(
         details,
         manifest,

@@ -53,6 +53,7 @@ from utils import (
     load_designated_backups,
     load_device_by_number,
     to_public_record,
+    from_public_record,
 )
 
 
@@ -162,19 +163,9 @@ def VoteCommand(
     makedirs(cast_dir   , exist_ok=True)
     makedirs(spoiled_dir, exist_ok=True)
 
-    # load manifest
-    # TODO factor out into a function in admin.py
-    manifest_path = join(announce_dir, MANIFEST_NAME + '.json')
-    manifest = serialize.from_file(Manifest, manifest_path)
-
-    # load joint public key
-    # TODO factor out into a function in admin.py
-    joint_key_path = join(setup_dir, JOINT_KEY_NAME + '.json')
-    joint_key = serialize.from_file(ElectionJointKey, joint_key_path)
-
-    # load ceremony details
-    details_path = join(announce_dir, '2_ceremony.json')
-    details = serialize.from_file(CeremonyDetails, details_path)
+    manifest  = from_public_record(public_dir, 'manifest')
+    joint_key = from_public_record(public_dir, 'joint_key')
+    details   = from_public_record(public_dir, 'ceremony_details')
 
     # TODO is the underscore thing OK in python?
     (_, internal_manifest, context) = build_election(details, manifest, joint_key)
