@@ -130,9 +130,9 @@ class CastBallotNotice(object):
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
 @click.option(
-    "--candidate-id",
-    prompt="Candidate ID",
-    help="The ID of the candidate to vote for. See manifest.json for valid options.",
+    "--candidate-name",
+    prompt="Candidate name",
+    help="The ID of the candidate (or answer!) to vote for. See manifest.json for valid options.",
     type=click.STRING,
 )
 @click.option(
@@ -146,7 +146,7 @@ def VoteCommand(
     quorum: int,
     public_records_dir: str,
     private_records_dir: str,
-    candidate_id: str,
+    candidate_name: str,
     spoil: bool,
 ) -> None:
     """Add (announce?) an encryption device,
@@ -182,7 +182,7 @@ def VoteCommand(
     (_, internal_manifest, context) = build_election(guardian_count, quorum, manifest, joint_key)
     device = load_first_device(devices_dir)
 
-    ballot: PlaintextBallot = build_ballot(internal_manifest, candidate_id)
+    ballot: PlaintextBallot = build_ballot(manifest, candidate_name)
     serialize.to_file(ballot, str(ballot.object_id), plaintext_dir)
 
     encrypter = EncryptionMediator(

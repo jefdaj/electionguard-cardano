@@ -12,7 +12,7 @@ from electionguard.decryption_share import DecryptionShare
 from electionguard.election import CiphertextElectionContext
 from electionguard.encrypt import EncryptionDevice, EncryptionMediator, contest_from, generate_device_uuid
 from electionguard.key_ceremony import (ElectionJointKey,ElectionKeyPair,ElectionPublicKey,ElectionPartialKeyBackup,ElectionPartialKeyVerification,combine_election_public_keys, generate_election_key_pair,generate_election_partial_key_backup,verify_election_partial_key_backup)
-from electionguard.manifest import Manifest, InternalManifest
+from electionguard.manifest import Manifest, InternalManifest, Language
 from electionguard.tally import (CiphertextTally,PublishedCiphertextTally)
 from electionguard.type import GuardianId
 from electionguard.utils import get_optional
@@ -20,7 +20,7 @@ from electionguard_tools.helpers.election_builder import ElectionBuilder
 from os import makedirs, listdir
 from os.path import join, splitext
 from pprint import pprint
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 import json
 import uuid
 
@@ -108,13 +108,26 @@ def load_first_device(devices_dir: str) -> EncryptionDevice:
     return device
 
 
+# TODO name something clearer in the context of referendum questions?
+def find_candidate_id(manifest: Manifest, candidate_name: str) -> Optional[str]:
+    candidate_name_en = Language(language='en', value=candidate_name)
+    for candidate in manifest.candidates:
+        for name_variant in candidate.name.text:
+            if name_variant == candidate_name_en:
+                return candidate.object_id
+    return None
+
+
 def build_ballot(
-        internal_manifest: InternalManifest,
-        candidate_id: str,
+        manifest: Manifest,
+        candidate_name: str,
     ) -> PlaintextBallot:
 
     ballot_id = f"ballot-{uuid.uuid1()}"
     style_id  = 'ballot-style-01'
+
+    candidate_id = find_candidate_id(manifest, candidate_name)
+    selection_id = f'{candidate_id}-selection' # TODO clean this up!
 
     # TODO any reason to include the non-chosen selections too here?
     #      the example data sometimes does
@@ -122,7 +135,7 @@ def build_ballot(
         PlaintextBallotSelection(
             vote=1,
             is_placeholder_selection=False,
-            object_id=candidate_id
+            object_id=selection_id
         )
     ]
 

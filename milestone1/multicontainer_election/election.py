@@ -105,13 +105,12 @@ def arion_down(cfg):
 def build_manifest(cfg):
     # uncomment for interactive script:
     # question = input('Referendum-style question to be asked: ')
-    question = 'Are pineapples cool?'
     run_in_container(
         cfg, "admin", 1,
         [
             "build-manifest",
             "--public-records-dir", cfg.bind_mounts.public,
-            "--referendum-question", question,
+            "--referendum-question", cfg.question,
         ]
     )
 
@@ -178,7 +177,7 @@ def add_device(cfg, device_number):
         ]
     )
 
-def vote(cfg, candidate_id, spoil=False):
+def vote(cfg, candidate_name, spoil=False):
     run_in_container(
         cfg, "device", 1, # TODO code for other devices?
         [
@@ -187,15 +186,19 @@ def vote(cfg, candidate_id, spoil=False):
             "--quorum"             , str(cfg.guardians.quorum),
             "--public-records-dir" , cfg.bind_mounts.public,
             "--private-records-dir", cfg.bind_mounts.private,
-            "--candidate-id"       , candidate_id,
+            "--candidate-name"     , candidate_name,
             "--spoil"              , str(spoil),
         ]
     )
 
 @explain_step
 def vote_all(cfg):
-    for vote_json in cfg.votes:
-        vote(cfg, vote_json.candidate_id, spoil=vote_json.spoil)
+    votes = dict(cfg.votes)
+    for candidate_name in votes:
+        for n in range(votes[candidate_name].cast):
+            vote(cfg, candidate_name)
+        for n in range(votes[candidate_name].spoil):
+            vote(cfg, candidate_name, spoil=True)
 
 @explain_step
 def tally(cfg):
