@@ -555,6 +555,12 @@ def SummaryCommand(
     selection_names = manifest.get_selection_names("en")
     contest_names = manifest.get_contest_names()
 
+    # summary json in my own temporary format
+    summary = {
+        'tally of cast ballots': [],
+        'individual spoiled ballots': {},
+    }
+
     # spoiled ballots
     spoiled_paths: Dict[BallotId, str] = {
         splitext(n)[0]: join(spoiled_results_dir, n)
@@ -569,6 +575,7 @@ def SummaryCommand(
         short_id = ballot_id[ballot_id.find('-')+1:]
         csb.print_header(f"Spoiled ballot '{short_id}'")
         spoiled_ballot = plaintext_spoiled_ballots[ballot_id]
+        ballot_summary = []
         for contest in spoiled_ballot.contests.values():
             question = contest_names.get(contest.object_id)
             selected = [
@@ -582,17 +589,29 @@ def SummaryCommand(
             except IndexError:
                 answer = 'No answer' # TODO is this allowed?
             csb.print_section(f'{question} {answer}')
+            contest_summary = {question: answer}
+            ballot_summary.append(contest_summary)
+        summary['individual spoiled ballots'][short_id] = ballot_summary
 
     # main tally
     csb.print_header("Final tally of all cast ballots")
+    contest_summaries = []
     for tally_contest in plaintext_tally.contests.values():
         contest_name = contest_names.get(tally_contest.object_id)
+        contest_summary = {
+            'question': contest_name,
+            'answers': {},
+        }
         csb.print_section(contest_name)
         values = list(tally_contest.selections.values())
         values.sort(key=lambda v: v.tally, reverse=True)
         for selection in values:
             name = selection_names[selection.object_id]
             csb.print_value(f"  {name}", selection.tally)
+            contest_summary['answers'][name] = selection.tally
+        summary['tally of cast ballots'].append(contest_summary)
+
+    serialize.to_file(summary, '3_summary', decrypt_dir)
 
 
 @click.group()
