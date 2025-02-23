@@ -105,7 +105,7 @@ def arion_down(cfg):
 def build_manifest(cfg):
     # uncomment for interactive script:
     # question = input('Referendum-style question to be asked: ')
-    question = 'Are pineapples still cool?'
+    question = 'Are pineapples cool?'
     run_in_container(
         cfg, "admin", 1,
         [
