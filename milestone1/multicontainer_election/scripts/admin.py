@@ -459,7 +459,7 @@ def DecryptResultsCommand(
     decrypt_dir   = join(public_records_dir, '7_decrypt')
     shares_dir    = join(decrypt_dir       , '1_shares')
     tally_dir     = join(shares_dir        , '1_tally')
-    results_dir   = join(decrypt_dir, '2_results')
+    results_dir   = join(decrypt_dir, '2_final')
     spoiled_shares_dir  = join(shares_dir , '2_spoiled')
     spoiled_results_dir = join(results_dir, '2_spoiled')
     makedirs(spoiled_results_dir, exist_ok=True)
@@ -538,7 +538,7 @@ def SummaryCommand(
     # set up dirs
     announce_dir = join(public_records_dir, '1_announce')
     decrypt_dir   = join(public_records_dir, '7_decrypt')
-    results_dir   = join(decrypt_dir, '2_results')
+    results_dir   = join(decrypt_dir, '2_final')
     spoiled_results_dir = join(results_dir, '2_spoiled')
 
     # load manifest
