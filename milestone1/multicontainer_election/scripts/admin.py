@@ -214,14 +214,14 @@ def BuildManifestCommand(
     type=click.INT,
 )
 @click.option(
-    "--quorum",
+    "--guardian-quorum",
     prompt="Quorum",
     help="The minimum number of guardians required to show up to the tally.",
     type=click.INT,
 )
 def AnnounceKeyCeremonyCommand(
     guardian_count: int,
-    quorum: int,
+    guardian_quorum: int,
     public_dir: str,
 ) -> None:
     """Announce key ceremony parameters.
@@ -240,7 +240,7 @@ def AnnounceKeyCeremonyCommand(
     announcement = {
         "created_at": datetime.utcnow(),
         "guardian_count": guardian_count,
-        "quorum": quorum,
+        "quorum": guardian_quorum,
         # "backups": [],
         # "completed_at": None,
         # "created_by": self._auth_service.get_user_id(),
@@ -296,7 +296,7 @@ def PublishJointKeyCommand(
     type=click.INT,
 )
 @click.option(
-    "--quorum",
+    "--guardian-quorum",
     prompt="Quorum",
     help="The minimum number of guardians required to show up to the tally.",
     type=click.INT,
@@ -310,7 +310,7 @@ def PublishJointKeyCommand(
 )
 def BuildElectionCommand(
     guardian_count: int,
-    quorum: int,
+    guardian_quorum: int,
     public_dir: str,
 ) -> None:
     """Build the InternalManifest and CiphertextElectionContext.
@@ -333,7 +333,7 @@ def BuildElectionCommand(
 
     (constants, internal_manifest, context) = build_election(
         guardian_count,
-        quorum,
+        guardian_quorum,
         manifest,
         joint_key
     )
@@ -360,14 +360,14 @@ def BuildElectionCommand(
     type=click.INT,
 )
 @click.option(
-    "--quorum",
+    "--guardian-quorum",
     prompt="Quorum",
     help="The minimum number of guardians required to show up to the tally.",
     type=click.INT,
 )
 def TallyCommand(
     guardian_count: int,
-    quorum: int,
+    guardian_quorum: int,
     public_dir: str,
 ) -> None:
     """Tally election results.
@@ -390,7 +390,7 @@ def TallyCommand(
     joint_key = serialize.from_file(ElectionJointKey, joint_key_path)
     (constants, internal_manifest, context) = build_election(
         guardian_count,
-        quorum,
+        guardian_quorum,
         manifest,
         joint_key
     )
@@ -432,7 +432,7 @@ def TallyCommand(
     type=click.INT,
 )
 @click.option(
-    "--quorum",
+    "--guardian-quorum",
     prompt="Quorum",
     help="The minimum number of guardians required to show up to the tally.",
     type=click.INT,
@@ -440,7 +440,7 @@ def TallyCommand(
 def DecryptResultsCommand(
     public_dir: str,
     guardian_count: int,
-    quorum: int,
+    guardian_quorum: int,
 ) -> None:
     """
     Combine guardian decryption shares into final results: tally + spoiled ballots.
@@ -472,7 +472,7 @@ def DecryptResultsCommand(
     joint_key = serialize.from_file(ElectionJointKey, joint_key_path)
     (constants, _, context) = build_election(
         guardian_count,
-        quorum,
+        guardian_quorum,
         manifest,
         joint_key
     )

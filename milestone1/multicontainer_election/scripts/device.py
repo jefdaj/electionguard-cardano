@@ -110,7 +110,7 @@ class CastBallotNotice(object):
     type=click.INT,
 )
 @click.option(
-    "--quorum",
+    "--guardian-quorum",
     prompt="Quorum",
     help="The minimum number of guardians required to show up to the tally.",
     type=click.INT,
@@ -143,7 +143,7 @@ class CastBallotNotice(object):
 )
 def VoteCommand(
     guardian_count: int,
-    quorum: int,
+    guardian_quorum: int,
     public_dir: str,
     private_dir: str,
     candidate_name: str,
@@ -179,7 +179,7 @@ def VoteCommand(
     joint_key = serialize.from_file(ElectionJointKey, joint_key_path)
 
     # TODO is the underscore thing OK in python?
-    (_, internal_manifest, context) = build_election(guardian_count, quorum, manifest, joint_key)
+    (_, internal_manifest, context) = build_election(guardian_count, guardian_quorum, manifest, joint_key)
     device = load_first_device(devices_dir)
 
     ballot: PlaintextBallot = build_ballot(manifest, candidate_name)

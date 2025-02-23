@@ -124,20 +124,22 @@ def announce_key_ceremony(cfg):
         [
             "announce-key-ceremony",
             "--guardian-count"    , str(cfg.election.guardians.count),
-            "--quorum"            , str(cfg.election.guardians.quorum),
+            "--guardian-quorum"            , str(cfg.election.guardians.quorum),
             "--public-dir", cfg.arion.bind_mounts.public,
         ]
     )
 
 @explain_step
 def key_ceremony_round(cfg, current_round):
-    for guardian_id, sequence_order in zip(cfg.election.guardians.ids, cfg.election.guardians.sequence_order):
+    # TODO should only need to pass the id; the rest can come from public announcement
+    for guardian_id, sequence_order in \
+            zip(cfg.election.guardians.ids, cfg.election.guardians.sequence_order):
         run_in_container(
             cfg, "guardian", sequence_order,
             [
                 "key-ceremony",
                 "--guardian-count"         , str(cfg.election.guardians.count),
-                "--quorum"                 , str(cfg.election.guardians.quorum),
+                "--guardian-quorum"                 , str(cfg.election.guardians.quorum),
                 "--public-dir"     , cfg.arion.bind_mounts.public,
                 "--private-dir"    , cfg.arion.bind_mounts.private,
                 "--guardian-id"            , guardian_id,
@@ -163,7 +165,7 @@ def build_election(cfg):
         [
             "build-election",
             "--guardian-count"    , str(cfg.election.guardians.count),
-            "--quorum"           , str(cfg.election.guardians.quorum),
+            "--guardian-quorum"           , str(cfg.election.guardians.quorum),
             "--public-dir", cfg.arion.bind_mounts.public,
         ]
     )
@@ -185,7 +187,7 @@ def vote(cfg, candidate_name, spoil=False):
         [
             "vote",
             "--guardian-count"     , str(cfg.election.guardians.count),
-            "--quorum"             , str(cfg.election.guardians.quorum),
+            "--guardian-quorum"             , str(cfg.election.guardians.quorum),
             "--public-dir" , cfg.arion.bind_mounts.public,
             "--private-dir", cfg.arion.bind_mounts.private,
             "--candidate-name"     , candidate_name,
@@ -210,23 +212,25 @@ def tally(cfg):
         [
             "tally",
             "--guardian-count"     , str(cfg.election.guardians.count),
-            "--quorum"             , str(cfg.election.guardians.quorum),
+            "--guardian-quorum"             , str(cfg.election.guardians.quorum),
             "--public-dir" , cfg.arion.bind_mounts.public,
         ]
     )
 
 @explain_step
 def decrypt_shares(cfg):
-    for guardian_id, sequence_order in zip(cfg.election.guardians.ids, cfg.election.guardians.sequence_order):
+    # TODO should only need to pass the id; the rest can come from public announcement
+    for (guardian_id, sequence_order) in \
+            zip(cfg.election.guardians.ids, cfg.election.guardians.sequence_order):
         run_in_container(
             cfg, "guardian", sequence_order,
             [
                 "decrypt-shares",
                 "--public-dir" , cfg.arion.bind_mounts.public,
-                "--private-dir", cfg.election.bind_mounts.private,
+                "--private-dir", cfg.arion.bind_mounts.private,
                 "--guardian-id"        , guardian_id,
                 "--guardian-count"     , str(cfg.election.guardians.count),
-                "--quorum"             , str(cfg.election.guardians.quorum),
+                "--guardian-quorum"             , str(cfg.election.guardians.quorum),
             ]
         )
 
@@ -237,7 +241,7 @@ def decrypt_results(cfg):
         [
             "decrypt-results",
             "--guardian-count"     , str(cfg.election.guardians.count),
-            "--quorum"             , str(cfg.election.guardians.quorum),
+            "--guardian-quorum"             , str(cfg.election.guardians.quorum),
             "--public-dir" , cfg.arion.bind_mounts.public,
         ]
     )

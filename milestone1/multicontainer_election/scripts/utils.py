@@ -32,7 +32,7 @@ logging.getLogger('electionguard').setLevel(logging.WARNING)
 
 def build_election(
             guardian_count: int,
-            quorum: int,
+            guardian_quorum: int,
             manifest: Manifest,
             joint_key: ElectionJointKey
         ) -> Tuple[
@@ -43,7 +43,7 @@ def build_election(
 
     election_builder = ElectionBuilder(
         guardian_count,
-        quorum,
+        guardian_quorum,
         manifest,
     )
 

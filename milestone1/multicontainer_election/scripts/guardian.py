@@ -55,7 +55,7 @@ MANIFEST_NAME  = '1_manifest'
 JOINT_KEY_NAME = 'jointkey'
 
 
-def round1(guardian_id, sequence_order, quorum, public_dir, private_dir):
+def round1(guardian_id, sequence_order, guardian_quorum, public_dir, private_dir):
     '''Round 1: create and share pubkeys
     '''
 
@@ -65,7 +65,7 @@ def round1(guardian_id, sequence_order, quorum, public_dir, private_dir):
 
     # generate election key pair
     # NOTE there will eventually also be separate a Cardano wallet key pair
-    election_key_pair: ElectionKeyPair = generate_election_key_pair(guardian_id, sequence_order, quorum)
+    election_key_pair: ElectionKeyPair = generate_election_key_pair(guardian_id, sequence_order, guardian_quorum)
     serialize.to_file(election_key_pair, ELECTION_KEY_PAIR_NAME, private_dir)
 
     # share the public key (and other info)
@@ -156,7 +156,7 @@ def round3(guardian_id, sequence_order, public_dir, private_dir):
     type=click.INT,
 )
 @click.option(
-    "--quorum",
+    "--guardian-quorum",
     prompt="Quorum",
     help="The minimum number of guardians required to show up to the tally.",
     type=click.INT,
@@ -195,7 +195,7 @@ def round3(guardian_id, sequence_order, public_dir, private_dir):
 )
 def GuardianKeyCeremonyCommand(
     guardian_count: int,
-    quorum: int,
+    guardian_quorum: int,
     public_dir: str,
     private_dir: str,
     guardian_id: str,
@@ -208,7 +208,7 @@ def GuardianKeyCeremonyCommand(
     """
     # print(json.dumps(locals()))
     if current_round == 1:
-        round1(guardian_id, guardian_sequence_order, quorum, public_dir, private_dir)
+        round1(guardian_id, guardian_sequence_order, guardian_quorum, public_dir, private_dir)
     elif current_round == 2:
         round2(guardian_id, guardian_sequence_order, public_dir, private_dir)
     elif current_round == 3:
@@ -245,7 +245,7 @@ def GuardianKeyCeremonyCommand(
     type=click.INT,
 )
 @click.option(
-    "--quorum",
+    "--guardian-quorum",
     prompt="Quorum",
     help="The minimum number of guardians required to show up to the tally.",
     type=click.INT,
@@ -255,7 +255,7 @@ def DecryptSharesCommand(
     private_dir: str,
     guardian_id: str,
     guardian_count: int,
-    quorum: int,
+    guardian_quorum: int,
 ) -> None:
     """
     Compute guardian decryption shares for the tally + all spoiled ballots.
@@ -292,7 +292,7 @@ def DecryptSharesCommand(
     joint_key = serialize.from_file(ElectionJointKey, joint_key_path)
     (constants, internal_manifest, context) = build_election(
         guardian_count,
-        quorum,
+        guardian_quorum,
         manifest,
         joint_key
     )
@@ -303,7 +303,7 @@ def DecryptSharesCommand(
     tally = serialize.from_file(PublishedCiphertextTally, tally_path)
 
     # create guardian object
-    details = CeremonyDetails(guardian_count, quorum) # TODO load from file
+    details = CeremonyDetails(guardian_count, guardian_quorum) # TODO load from file
     guardian = Guardian(election_key_pair, details)
 
     # compute tally share
