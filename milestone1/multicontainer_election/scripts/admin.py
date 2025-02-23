@@ -25,6 +25,7 @@ from electionguard.key_ceremony import (
     combine_election_public_keys,
     ElectionPublicKey,
     ElectionJointKey,
+    CeremonyDetails,
 )
 from electionguard import serialize
 from electionguard.election import CiphertextElectionContext
@@ -237,24 +238,28 @@ def AnnounceKeyCeremonyCommand(
     makedirs(announce_dir, exist_ok=True)
 
     # based on electionguard-python/src/electionguard_gui/models/key_ceremony_service:create
-    announcement = {
-        "created_at": datetime.utcnow(),
-        "guardian_count": guardian_count,
-        "quorum": guardian_quorum,
-        # "backups": [],
-        # "completed_at": None,
-        # "created_by": self._auth_service.get_user_id(),
-        # "guardians_joined": [],
-        # "guardians_keys": [],
-        # "joint_key": None,
-        # "key_ceremony_name": key_ceremony_name,
-        # "keys": [],
-        # "other_keys": [],
-        # "shared_backups": [],
-        # "verifications": [],
-    }
-    announcement_name = '2_ceremony'
-    serialize.to_file(announcement, announcement_name, announce_dir)
+    # announcement = {
+    #     "created_at": datetime.utcnow(),
+    #     "guardian_count": guardian_count,
+    #     "quorum": guardian_quorum, # TODO guardian_quorum here too for consistency?
+    #     # "backups": [],
+    #     # "completed_at": None,
+    #     # "created_by": self._auth_service.get_user_id(),
+    #     # "guardians_joined": [],
+    #     # "guardians_keys": [],
+    #     # "joint_key": None,
+    #     # "key_ceremony_name": key_ceremony_name,
+    #     # "keys": [],
+    #     # "other_keys": [],
+    #     # "shared_backups": [],
+    #     # "verifications": [],
+    # }
+    # announcement_name = '2_ceremony'
+    # serialize.to_file(announcement, announcement_name, announce_dir)
+
+    details_name = '2_ceremony'
+    details = CeremonyDetails(guardian_count, guardian_quorum)
+    serialize.to_file(details, details_name, announce_dir)
 
 
 @click.command("publish-joint-key")

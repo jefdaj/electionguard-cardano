@@ -55,13 +55,19 @@ MANIFEST_NAME  = '1_manifest'
 JOINT_KEY_NAME = 'jointkey'
 
 
-def round1(guardian_id, sequence_order, guardian_quorum, public_dir, private_dir):
+def round1(guardian_id, sequence_order, public_dir, private_dir):
     '''Round 1: create and share pubkeys
     '''
 
     # set up dirs
+    announce_dir  = join(public_dir, '1_announce')
     pubkeys_dir   = join(public_dir, '2_ceremony/1_pubkeys')
     makedirs(pubkeys_dir  , exist_ok=True)
+
+    # load quorum
+    details_path = join(announce_dir, '2_ceremony.json')
+    details = serialize.from_file(CeremonyDetails, details_path)
+    guardian_quorum = details.quorum
 
     # generate election key pair
     # NOTE there will eventually also be separate a Cardano wallet key pair
@@ -150,18 +156,6 @@ def round3(guardian_id, sequence_order, public_dir, private_dir):
 
 @click.command("key-ceremony")
 @click.option(
-    "--guardian-count",
-    prompt="Number of s",
-    help="The number of guardians that will participate in the key ceremony and tally.",
-    type=click.INT,
-)
-@click.option(
-    "--guardian-quorum",
-    prompt="Quorum",
-    help="The minimum number of guardians required to show up to the tally.",
-    type=click.INT,
-)
-@click.option(
     "--public-dir",
     prompt="Public records directory",
     help="The location of a directory into which will be placed all public records. "
@@ -194,8 +188,6 @@ def round3(guardian_id, sequence_order, public_dir, private_dir):
     type=click.INT,
 )
 def GuardianKeyCeremonyCommand(
-    guardian_count: int,
-    guardian_quorum: int,
     public_dir: str,
     private_dir: str,
     guardian_id: str,
@@ -208,7 +200,7 @@ def GuardianKeyCeremonyCommand(
     """
     # print(json.dumps(locals()))
     if ceremony_round == 1:
-        round1(guardian_id, guardian_sequence_order, guardian_quorum, public_dir, private_dir)
+        round1(guardian_id, guardian_sequence_order, public_dir, private_dir)
     elif ceremony_round == 2:
         round2(guardian_id, guardian_sequence_order, public_dir, private_dir)
     elif ceremony_round == 3:

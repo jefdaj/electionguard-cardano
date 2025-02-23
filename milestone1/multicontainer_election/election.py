@@ -138,8 +138,8 @@ def key_ceremony_round(cfg, ceremony_round):
             cfg, "guardian", sequence_order,
             [
                 "key-ceremony",
-                "--guardian-count"         , str(cfg.election.guardians.count),
-                "--guardian-quorum"                 , str(cfg.election.guardians.quorum),
+                # "--guardian-count"         , str(cfg.election.guardians.count),
+                # "--guardian-quorum"                 , str(cfg.election.guardians.quorum),
                 "--public-dir"     , cfg.arion.bind_mounts.public,
                 "--private-dir"    , cfg.arion.bind_mounts.private,
                 "--guardian-id"            , guardian_id,
