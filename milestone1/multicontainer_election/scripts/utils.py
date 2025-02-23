@@ -116,19 +116,13 @@ def build_ballot(
     ballot_id = f"ballot-{uuid.uuid1()}"
     style_id  = 'ballot-style-01'
 
-    # TODO proper selection from contests
-    candidates = [
-        "referendum-pineapple-affirmative-selection",
-        "referendum-pineapple-negative-selection"
-    ]
-    vote: int = candidates.index(candidate_id)
-    assert vote in [0, 1]
-
+    # TODO any reason to include the non-chosen selections too here?
+    #      the example data sometimes does
     selections = [
         PlaintextBallotSelection(
-            vote=vote,
+            vote=1,
             is_placeholder_selection=False,
-            object_id=candidate_id # TODO is this right?
+            object_id=candidate_id
         )
     ]
 
