@@ -611,7 +611,7 @@ def SummaryCommand(
             contest_summary['answers'][name] = selection.tally
         summary['tally of cast ballots'].append(contest_summary)
 
-    serialize.to_file(summary, '3_summary', decrypt_dir)
+    serialize.to_file(summary, '8_summary', public_records_dir)
 
 
 @click.group()
