@@ -414,7 +414,6 @@ def DecryptResultsCommand(
     makedirs(spoiled_results_dir, exist_ok=True)
 
     # load required info
-    # TODO make a function if it turns out to be the proper way
     manifest  = from_public_record(public_dir, 'manifest')
     joint_key = from_public_record(public_dir, 'joint_key')
     details   = from_public_record(public_dir, 'ceremony_details')

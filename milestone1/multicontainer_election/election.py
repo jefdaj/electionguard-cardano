@@ -10,6 +10,7 @@ from os import makedirs
 from os.path import join
 from pprint import pprint
 from pygments import highlight, lexers, formatters
+from typing import Optional
 
 
 # see logs.py for electionguard's separate LOG
@@ -84,6 +85,10 @@ def explain_step(fn):
         return fn(cfg, *args, **kwargs)
     return decorated_fn
 
+def run_single_step(cfg, fn_name):
+    fn = globals()[fn_name]
+    fn(cfg)
+
 def arion_cleanup(cfg):
     # in case a previous run failed
     # TODO can Docker or Arion do this rm step more safely?
@@ -126,7 +131,6 @@ def announce_key_ceremony(cfg):
         ]
     )
 
-@explain_step
 def key_ceremony_round(cfg, ceremony_round):
     for guardian_id, sequence_order in \
             zip(cfg.election.guardians.ids, cfg.election.guardians.sequence_order):
@@ -141,6 +145,19 @@ def key_ceremony_round(cfg, ceremony_round):
                 "--guardian-sequence-order", str(sequence_order),
             ]
         )
+
+@explain_step
+def key_ceremony_round1(cfg):
+    key_ceremony_round(cfg, 1)
+
+
+@explain_step
+def key_ceremony_round2(cfg):
+    key_ceremony_round(cfg, 2)
+
+@explain_step
+def key_ceremony_round3(cfg):
+    key_ceremony_round(cfg, 3)
 
 @explain_step
 def publish_joint_key(cfg):
@@ -257,9 +274,9 @@ def summary(cfg):
 def election(cfg):
     build_manifest(cfg)
     announce_key_ceremony(cfg)
-    for n in range(1, 4):
-        key_ceremony_round(cfg, n)
-    # TODO should there be a "publish final guardian records" step here?
+    key_ceremony_round1(cfg)
+    key_ceremony_round2(cfg)
+    key_ceremony_round3(cfg)
     publish_joint_key(cfg)
     build_election(cfg)
     add_devices(cfg)
@@ -281,20 +298,30 @@ def election(cfg):
     default=False,
     show_default=True
 )
+@click.option(
+    "--single-step",
+    help="Run just one step for easier debugging.",
+    prompt="Single step to run",
+    type=click.STRING,
+)
 def ElectionCommand(
-    pause_to_explain: bool
+    pause_to_explain: bool,
+    single_step: Optional[str]
 ) -> None:
     """Run an election with some options in a JSON config file.
     """
     cfg = parse_config('election.json', pause_to_explain)
-    try:
-        arion_up(cfg) # TODO down and up again if needed?
-        election(cfg)
-    except Exception as e:
-        pprint(e) # TODO recover?
-        LOG.error('Election failed :(')
-    finally:
-        arion_down(cfg)
+    if single_step:
+        run_single_step(cfg, single_step)
+    else:
+        try:
+            arion_up(cfg) # TODO down and up again if needed?
+            election(cfg)
+        except Exception as e:
+            pprint(e) # TODO recover?
+            LOG.error('Election failed :(')
+        finally:
+            arion_down(cfg)
 
 @click.group(cls=DefaultGroup, default='election', default_if_no_args=True)
 def cli() -> None:

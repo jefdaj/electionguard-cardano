@@ -105,7 +105,7 @@ def load_device_by_number(devices_dir: str, device_number: int) -> EncryptionDev
     # TODO keep track of their IDs instead?
     i = device_number - 1
     device_path = join(devices_dir, sorted(listdir(devices_dir))[i])
-    print(device_path)
+    # print(device_path)
     device = serialize.from_file(EncryptionDevice, device_path)
     return device
 
