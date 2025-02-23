@@ -288,11 +288,11 @@ def PublishJointKeyCommand(
 
     guardian_public_keys: List[ElectionPublicKey] = load_guardian_pubkeys(pubkeys_dir)
 
-    election_joint_key = combine_election_public_keys(guardian_public_keys)
-    assert election_joint_key is not None
+    joint_key = combine_election_public_keys(guardian_public_keys)
+    assert joint_key is not None
 
     # NOTE we skip 4 to leave room for the challenge step
-    to_public_record(public_dir, 'joint_key', election_joint_key)
+    to_public_record(public_dir, 'joint_key', joint_key)
 
 
 @click.command("build-election")
@@ -308,7 +308,6 @@ def BuildElectionCommand(
 ) -> None:
     """Build the InternalManifest and CiphertextElectionContext.
     """
-    # print(json.dumps(locals()))
 
     manifest  = from_public_record(public_dir, 'manifest')
     details   = from_public_record(public_dir, 'ceremony_details')
@@ -322,9 +321,6 @@ def BuildElectionCommand(
 
     to_public_record(public_dir, 'constants', constants)
     to_public_record(public_dir, 'context', context)
-
-    # TODO any reason to save this when it can't be reloaded?
-    # serialize.to_file(internal_manifest, 'internal_manifest', setup_dir)
 
 
 @click.command("tally")
@@ -352,10 +348,8 @@ def TallyCommand(
     spoiled_dir   = join(ballots_dir       , '3_spoiled')
 
     # load required info
-    manifest_path = join(announce_dir, MANIFEST_NAME + '.json')
-    manifest = serialize.from_file(Manifest, manifest_path)
-    joint_key_path = join(setup_dir, JOINT_KEY_NAME + '.json')
-    joint_key = serialize.from_file(ElectionJointKey, joint_key_path)
+    manifest  = from_public_record(public_dir, 'manifest')
+    joint_key = from_public_record(public_dir, 'joint_key')
     details_path = join(announce_dir, '2_ceremony.json')
     details = serialize.from_file(CeremonyDetails, details_path)
     (constants, internal_manifest, context) = build_election(
@@ -421,10 +415,8 @@ def DecryptResultsCommand(
 
     # load required info
     # TODO make a function if it turns out to be the proper way
-    manifest_path = join(announce_dir, MANIFEST_NAME + '.json')
-    manifest = serialize.from_file(Manifest, manifest_path)
-    joint_key_path = join(setup_dir, JOINT_KEY_NAME + '.json')
-    joint_key = serialize.from_file(ElectionJointKey, joint_key_path)
+    manifest  = from_public_record(public_dir, 'manifest')
+    joint_key = from_public_record(public_dir, 'joint_key')
     details_path = join(announce_dir, '2_ceremony.json')
     details = serialize.from_file(CeremonyDetails, details_path)
     (constants, _, context) = build_election(
@@ -497,9 +489,7 @@ def SummaryCommand(
     results_dir   = join(decrypt_dir, '2_final')
     spoiled_results_dir = join(results_dir, '2_spoiled')
 
-    # load manifest
-    manifest_path = join(announce_dir, MANIFEST_NAME + '.json')
-    manifest = serialize.from_file(Manifest, manifest_path)
+    manifest  = from_public_record(public_dir, 'manifest')
 
     # load tally
     tally_result_path = join(results_dir, '1_tally.json')

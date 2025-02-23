@@ -53,7 +53,7 @@ from electionguard.key_ceremony import (
 
 ELECTION_KEY_PAIR_NAME = 'election_key_pair'
 MANIFEST_NAME  = '1_manifest'
-JOINT_KEY_NAME = 'jointkey'
+JOINT_KEY_NAME = 'joint_key'
 
 
 def round1(guardian_id, sequence_order, public_dir, private_dir):
