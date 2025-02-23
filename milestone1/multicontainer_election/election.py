@@ -86,7 +86,7 @@ def explain_step(fn):
 
 def arion_cleanup(cfg):
     # in case a previous run failed
-    # TODO can the rm be safer? shutil.rmtree fails (needs sudo)?
+    # TODO can Docker or Arion do this rm step more safely?
     subprocess.check_call(['arion', 'down'])
     subprocess.check_call(['sudo', 'rm', '-rf', './data'])
 
@@ -105,8 +105,6 @@ def arion_down(cfg):
 
 @explain_step
 def build_manifest(cfg):
-    # uncomment for interactive script:
-    # question = input('Referendum-style question to be asked: ')
     run_in_container(
         cfg, "admin", 1,
         [
@@ -118,30 +116,28 @@ def build_manifest(cfg):
 
 @explain_step
 def announce_key_ceremony(cfg):
-    # TODO rethink where this step fits?
     run_in_container(
         cfg, "admin", 1,
         [
             "announce-key-ceremony",
             "--public-dir", cfg.arion.bind_mounts.public,
-            "--guardian-count"    , str(cfg.election.guardians.count),
-            "--guardian-quorum"            , str(cfg.election.guardians.quorum),
+            "--guardian-count", str(cfg.election.guardians.count),
+            "--guardian-quorum", str(cfg.election.guardians.quorum),
         ]
     )
 
 @explain_step
 def key_ceremony_round(cfg, ceremony_round):
-    # TODO should only need to pass the id; the rest can come from public announcement
     for guardian_id, sequence_order in \
             zip(cfg.election.guardians.ids, cfg.election.guardians.sequence_order):
         run_in_container(
             cfg, "guardian", sequence_order,
             [
                 "key-ceremony",
-                "--public-dir"     , cfg.arion.bind_mounts.public,
-                "--private-dir"    , cfg.arion.bind_mounts.private,
-                "--ceremony-round"          , str(ceremony_round),
-                "--guardian-id"            , guardian_id,
+                "--public-dir", cfg.arion.bind_mounts.public,
+                "--private-dir", cfg.arion.bind_mounts.private,
+                "--ceremony-round", str(ceremony_round),
+                "--guardian-id", guardian_id,
                 "--guardian-sequence-order", str(sequence_order),
             ]
         )
@@ -172,7 +168,7 @@ def add_device(cfg, device_number):
         [
             "add-device",
             "--public-dir", cfg.arion.bind_mounts.public,
-            "--device-number"     , str(device_number),
+            "--device-number", str(device_number),
         ]
     )
 
@@ -186,10 +182,10 @@ def vote(cfg, candidate, spoil=False):
         cfg, "device", 1, # TODO code for other devices?
         [
             "vote",
-            "--public-dir" , cfg.arion.bind_mounts.public,
+            "--public-dir", cfg.arion.bind_mounts.public,
             "--private-dir", cfg.arion.bind_mounts.private,
-            "--candidate"     , candidate,
-            "--spoil"              , str(spoil),
+            "--candidate", candidate,
+            "--spoil", str(spoil),
         ]
     )
 
@@ -209,22 +205,20 @@ def tally(cfg):
         cfg, "admin", 1,
         [
             "tally",
-            "--public-dir" , cfg.arion.bind_mounts.public,
+            "--public-dir", cfg.arion.bind_mounts.public,
         ]
     )
 
 @explain_step
 def decrypt_shares(cfg):
-    # TODO should only need to pass the id; the rest can come from public announcement
-    for (guardian_id, sequence_order) in \
-            zip(cfg.election.guardians.ids, cfg.election.guardians.sequence_order):
+    for guardian_id in cfg.election.guardians.ids:
         run_in_container(
             cfg, "guardian", sequence_order,
             [
                 "decrypt-shares",
-                "--public-dir" , cfg.arion.bind_mounts.public,
+                "--public-dir", cfg.arion.bind_mounts.public,
                 "--private-dir", cfg.arion.bind_mounts.private,
-                "--guardian-id"        , guardian_id,
+                "--guardian-id", guardian_id,
             ]
         )
 
@@ -234,7 +228,7 @@ def decrypt_results(cfg):
         cfg, "admin", 1,
         [
             "decrypt-results",
-            "--public-dir" , cfg.arion.bind_mounts.public,
+            "--public-dir", cfg.arion.bind_mounts.public,
         ]
     )
 
