@@ -55,18 +55,18 @@ MANIFEST_NAME  = '1_manifest'
 JOINT_KEY_NAME = 'jointkey'
 
 
-def round1(guardian_id, sequence_order, quorum, public_records_dir, private_records_dir):
+def round1(guardian_id, sequence_order, quorum, public_dir, private_dir):
     '''Round 1: create and share pubkeys
     '''
 
     # set up dirs
-    pubkeys_dir   = join(public_records_dir, '2_ceremony/1_pubkeys')
+    pubkeys_dir   = join(public_dir, '2_ceremony/1_pubkeys')
     makedirs(pubkeys_dir  , exist_ok=True)
 
     # generate election key pair
     # NOTE there will eventually also be separate a Cardano wallet key pair
     election_key_pair: ElectionKeyPair = generate_election_key_pair(guardian_id, sequence_order, quorum)
-    serialize.to_file(election_key_pair, ELECTION_KEY_PAIR_NAME, private_records_dir)
+    serialize.to_file(election_key_pair, ELECTION_KEY_PAIR_NAME, private_dir)
 
     # share the public key (and other info)
     # TODO why not publish_record here? I guess that's later after backups?
@@ -75,18 +75,18 @@ def round1(guardian_id, sequence_order, quorum, public_records_dir, private_reco
 
 
 
-def round2(guardian_id, sequence_order, public_records_dir, private_records_dir):
+def round2(guardian_id, sequence_order, public_dir, private_dir):
     '''Round 2: create and share backups
     '''
 
     # set up dirs
-    pubkeys_dir = join(public_records_dir, '2_ceremony/1_pubkeys')
-    backups_dir = join(public_records_dir, '2_ceremony/2_backups')
+    pubkeys_dir = join(public_dir, '2_ceremony/1_pubkeys')
+    backups_dir = join(public_dir, '2_ceremony/2_backups')
     makedirs(pubkeys_dir, exist_ok=True)
     makedirs(backups_dir, exist_ok=True)
 
     # restore own private state
-    election_key_pair_path = join(private_records_dir, ELECTION_KEY_PAIR_NAME + '.json')
+    election_key_pair_path = join(private_dir, ELECTION_KEY_PAIR_NAME + '.json')
     election_key_pair = serialize.from_file(ElectionKeyPair, election_key_pair_path)
 
     # load other guardians' public keys from shared folder
@@ -109,20 +109,20 @@ def round2(guardian_id, sequence_order, public_records_dir, private_records_dir)
 
 
 
-def round3(guardian_id, sequence_order, public_records_dir, private_records_dir):
+def round3(guardian_id, sequence_order, public_dir, private_dir):
     '''Round 3: verify backups
     '''
 
     # set up dirs
-    pubkeys_dir       = join(public_records_dir, '2_ceremony/1_pubkeys')
-    backups_dir       = join(public_records_dir, '2_ceremony/2_backups')
-    verifications_dir = join(public_records_dir, '2_ceremony/3_verifications')
+    pubkeys_dir       = join(public_dir, '2_ceremony/1_pubkeys')
+    backups_dir       = join(public_dir, '2_ceremony/2_backups')
+    verifications_dir = join(public_dir, '2_ceremony/3_verifications')
     makedirs(pubkeys_dir, exist_ok=True)
     makedirs(backups_dir, exist_ok=True)
     makedirs(verifications_dir, exist_ok=True)
 
     # restore own private state
-    election_key_pair_path = join(private_records_dir, ELECTION_KEY_PAIR_NAME + '.json')
+    election_key_pair_path = join(private_dir, ELECTION_KEY_PAIR_NAME + '.json')
     election_key_pair = serialize.from_file(ElectionKeyPair, election_key_pair_path)
     own_public_key = election_key_pair.share()
 
@@ -162,14 +162,14 @@ def round3(guardian_id, sequence_order, public_records_dir, private_records_dir)
     type=click.INT,
 )
 @click.option(
-    "--public-records-dir",
+    "--public-dir",
     prompt="Public records directory",
     help="The location of a directory into which will be placed all public records. "
     + "This folder should be protected. Existing files will be overwritten.",
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
 @click.option(
-    "--private-records-dir",
+    "--private-dir",
     prompt="Private records directory",
     help="The location of a directory into which will be placed the guardian's private keys "
     + "This folder should be protected. Existing files will be overwritten.",
@@ -196,8 +196,8 @@ def round3(guardian_id, sequence_order, public_records_dir, private_records_dir)
 def GuardianKeyCeremonyCommand(
     guardian_count: int,
     quorum: int,
-    public_records_dir: str,
-    private_records_dir: str,
+    public_dir: str,
+    private_dir: str,
     guardian_id: str,
     guardian_sequence_order: int,
     current_round: int,
@@ -208,25 +208,25 @@ def GuardianKeyCeremonyCommand(
     """
     # print(json.dumps(locals()))
     if current_round == 1:
-        round1(guardian_id, guardian_sequence_order, quorum, public_records_dir, private_records_dir)
+        round1(guardian_id, guardian_sequence_order, quorum, public_dir, private_dir)
     elif current_round == 2:
-        round2(guardian_id, guardian_sequence_order, public_records_dir, private_records_dir)
+        round2(guardian_id, guardian_sequence_order, public_dir, private_dir)
     elif current_round == 3:
-        round3(guardian_id, guardian_sequence_order, public_records_dir, private_records_dir)
+        round3(guardian_id, guardian_sequence_order, public_dir, private_dir)
     # TODO implement round 4 (challenge if necessary)
     else:
         raise Exception(f'Invalid current_round "{current_round}"')
 
 @click.command("decrypt-shares")
 @click.option(
-    "--public-records-dir",
+    "--public-dir",
     prompt="Public records directory",
     help="The location of a directory into which will be placed all public records. "
     + "This folder should be protected. Existing files will be overwritten.",
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
 @click.option(
-    "--private-records-dir",
+    "--private-dir",
     prompt="Private records directory",
     help="The location of a directory into which will be placed the guardian's private keys "
     + "This folder should be protected. Existing files will be overwritten.",
@@ -251,8 +251,8 @@ def GuardianKeyCeremonyCommand(
     type=click.INT,
 )
 def DecryptSharesCommand(
-    public_records_dir: str,
-    private_records_dir: str,
+    public_dir: str,
+    private_dir: str,
     guardian_id: str,
     guardian_count: int,
     quorum: int,
@@ -263,13 +263,13 @@ def DecryptSharesCommand(
     # print(json.dumps(locals()))
 
     # set up dirs
-    announce_dir  = join(public_records_dir, '1_announce')
-    setup_dir     = join(public_records_dir, '3_election')
-    ballots_dir   = join(public_records_dir, '5_ballots')
+    announce_dir  = join(public_dir, '1_announce')
+    setup_dir     = join(public_dir, '3_election')
+    ballots_dir   = join(public_dir, '5_ballots')
     submitted_dir = join(ballots_dir       , '1_submitted')
     cast_dir      = join(ballots_dir       , '2_cast')
     spoiled_dir   = join(ballots_dir       , '3_spoiled')
-    decrypt_dir   = join(public_records_dir, '7_decrypt')
+    decrypt_dir   = join(public_dir, '7_decrypt')
     shares_dir    = join(decrypt_dir       , '1_shares')
     tally_dir     = join(shares_dir        , '1_tally')
     spoiled_shares_dir   = join(shares_dir, '2_spoiled')
@@ -280,7 +280,7 @@ def DecryptSharesCommand(
 
     # restore own private state
     # TODO make a function
-    election_key_pair_path = join(private_records_dir, ELECTION_KEY_PAIR_NAME + '.json')
+    election_key_pair_path = join(private_dir, ELECTION_KEY_PAIR_NAME + '.json')
     election_key_pair = serialize.from_file(ElectionKeyPair, election_key_pair_path)
     # print('election_key_pair:'); pprint(election_key_pair)
 
@@ -299,7 +299,7 @@ def DecryptSharesCommand(
 
     # restore tally
     # aha, you can deserialize these! you just need the Published version
-    tally_path = join(public_records_dir, '6_tally.json')
+    tally_path = join(public_dir, '6_tally.json')
     tally = serialize.from_file(PublishedCiphertextTally, tally_path)
 
     # create guardian object

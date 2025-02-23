@@ -68,7 +68,7 @@ DEVICE_PREFIX  = 'device_'
     type=click.INT,
 )
 @click.option(
-    "--public-records-dir",
+    "--public-dir",
     prompt="Public records directory",
     help="The location of a directory into which will be placed all public records. "
     + "This folder should be protected. Existing files will be overwritten.",
@@ -76,13 +76,13 @@ DEVICE_PREFIX  = 'device_'
 )
 def AddDeviceCommand(
     device_number: int,
-    public_records_dir: str,
+    public_dir: str,
 ) -> None:
     """Add (announce?) an encryption device,
     which will encrypt + publish ballots and do the Benaloh challenge.
     """
     # print(json.dumps(locals()))
-    devices_dir  = join(public_records_dir, '4_devices')
+    devices_dir  = join(public_dir, '4_devices')
     makedirs(devices_dir, exist_ok=True)
     device = EncryptionDevice(
         generate_device_uuid(), # device id (TODO is this deterministic?)
@@ -116,14 +116,14 @@ class CastBallotNotice(object):
     type=click.INT,
 )
 @click.option(
-    "--public-records-dir",
+    "--public-dir",
     prompt="Public records directory",
     help="The location of a directory into which will be placed all public records. "
     + "This folder should be protected. Existing files will be overwritten.",
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
 @click.option(
-    "--private-records-dir",
+    "--private-dir",
     prompt="Private records directory",
     help="The location of a directory into which will be placed the guardian's private keys "
     + "This folder should be protected. Existing files will be overwritten.",
@@ -144,8 +144,8 @@ class CastBallotNotice(object):
 def VoteCommand(
     guardian_count: int,
     quorum: int,
-    public_records_dir: str,
-    private_records_dir: str,
+    public_dir: str,
+    private_dir: str,
     candidate_name: str,
     spoil: bool,
 ) -> None:
@@ -155,13 +155,13 @@ def VoteCommand(
     # print(json.dumps(locals()))
 
     # set up dirs
-    plaintext_dir = join(private_records_dir, 'plaintext_ballots')
+    plaintext_dir = join(private_dir, 'plaintext_ballots')
     makedirs(plaintext_dir, exist_ok=True)
 
-    announce_dir  = join(public_records_dir, '1_announce')
-    setup_dir     = join(public_records_dir, '3_election')
-    devices_dir   = join(public_records_dir, '4_devices')
-    ballots_dir   = join(public_records_dir, '5_ballots')
+    announce_dir  = join(public_dir, '1_announce')
+    setup_dir     = join(public_dir, '3_election')
+    devices_dir   = join(public_dir, '4_devices')
+    ballots_dir   = join(public_dir, '5_ballots')
     submitted_dir = join(ballots_dir       , '1_submitted')
     cast_dir      = join(ballots_dir       , '2_cast')
     spoiled_dir   = join(ballots_dir       , '3_spoiled')

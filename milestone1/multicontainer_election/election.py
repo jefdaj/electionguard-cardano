@@ -109,7 +109,7 @@ def build_manifest(cfg):
         cfg, "admin", 1,
         [
             "build-manifest",
-            "--public-records-dir", cfg.bind_mounts.public,
+            "--public-dir", cfg.bind_mounts.public,
             "--referendum-question", cfg.question,
         ]
     )
@@ -123,7 +123,7 @@ def announce_key_ceremony(cfg):
             "announce-key-ceremony",
             "--guardian-count"    , str(cfg.guardians.count),
             "--quorum"            , str(cfg.guardians.quorum),
-            "--public-records-dir", cfg.bind_mounts.public,
+            "--public-dir", cfg.bind_mounts.public,
         ]
     )
 
@@ -136,8 +136,8 @@ def key_ceremony_round(cfg, current_round):
                 "key-ceremony",
                 "--guardian-count"         , str(cfg.guardians.count),
                 "--quorum"                 , str(cfg.guardians.quorum),
-                "--public-records-dir"     , cfg.bind_mounts.public,
-                "--private-records-dir"    , cfg.bind_mounts.private,
+                "--public-dir"     , cfg.bind_mounts.public,
+                "--private-dir"    , cfg.bind_mounts.private,
                 "--guardian-id"            , guardian_id,
                 "--guardian-sequence-order", str(sequence_order),
                 "--current-round"          , str(current_round),
@@ -150,7 +150,7 @@ def publish_joint_key(cfg):
         cfg, "admin", 1,
         [
             "publish-joint-key",
-            "--public-records-dir", cfg.bind_mounts.public,
+            "--public-dir", cfg.bind_mounts.public,
         ]
     )
 
@@ -162,7 +162,7 @@ def build_election(cfg):
             "build-election",
             "--guardian-count"    , str(cfg.guardians.count),
             "--quorum"           , str(cfg.guardians.quorum),
-            "--public-records-dir", cfg.bind_mounts.public,
+            "--public-dir", cfg.bind_mounts.public,
         ]
     )
 
@@ -173,7 +173,7 @@ def add_device(cfg, device_number):
         [
             "add-device",
             "--device-number"     , str(device_number),
-            "--public-records-dir", cfg.bind_mounts.public,
+            "--public-dir", cfg.bind_mounts.public,
         ]
     )
 
@@ -184,8 +184,8 @@ def vote(cfg, candidate_name, spoil=False):
             "vote",
             "--guardian-count"     , str(cfg.guardians.count),
             "--quorum"             , str(cfg.guardians.quorum),
-            "--public-records-dir" , cfg.bind_mounts.public,
-            "--private-records-dir", cfg.bind_mounts.private,
+            "--public-dir" , cfg.bind_mounts.public,
+            "--private-dir", cfg.bind_mounts.private,
             "--candidate-name"     , candidate_name,
             "--spoil"              , str(spoil),
         ]
@@ -208,7 +208,7 @@ def tally(cfg):
             "tally",
             "--guardian-count"     , str(cfg.guardians.count),
             "--quorum"             , str(cfg.guardians.quorum),
-            "--public-records-dir" , cfg.bind_mounts.public,
+            "--public-dir" , cfg.bind_mounts.public,
         ]
     )
 
@@ -219,8 +219,8 @@ def decrypt_shares(cfg):
             cfg, "guardian", sequence_order,
             [
                 "decrypt-shares",
-                "--public-records-dir" , cfg.bind_mounts.public,
-                "--private-records-dir", cfg.bind_mounts.private,
+                "--public-dir" , cfg.bind_mounts.public,
+                "--private-dir", cfg.bind_mounts.private,
                 "--guardian-id"        , guardian_id,
                 "--guardian-count"     , str(cfg.guardians.count),
                 "--quorum"             , str(cfg.guardians.quorum),
@@ -235,7 +235,7 @@ def decrypt_results(cfg):
             "decrypt-results",
             "--guardian-count"     , str(cfg.guardians.count),
             "--quorum"             , str(cfg.guardians.quorum),
-            "--public-records-dir" , cfg.bind_mounts.public,
+            "--public-dir" , cfg.bind_mounts.public,
         ]
     )
 
@@ -245,7 +245,7 @@ def summary(cfg):
         cfg, "admin", 1,
         [
             "summary",
-            "--public-records-dir", cfg.bind_mounts.public,
+            "--public-dir", cfg.bind_mounts.public,
         ]
     )
 

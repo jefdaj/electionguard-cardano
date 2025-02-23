@@ -64,7 +64,7 @@ JOINT_KEY_NAME = 'jointkey'
 
 @click.command("build-manifest")
 @click.option(
-    "--public-records-dir",
+    "--public-dir",
     prompt="Public records directory",
     help="The location of a directory into which will be placed all public records. "
     + "This folder should be protected. Existing files will be overwritten.",
@@ -77,7 +77,7 @@ JOINT_KEY_NAME = 'jointkey'
     type=click.STRING,
 )
 def BuildManifestCommand(
-    public_records_dir: str,
+    public_dir: str,
     referendum_question: str
 ) -> None:
     """Build a minimal valid manifest.
@@ -87,8 +87,8 @@ def BuildManifestCommand(
     # print(json.dumps(locals()))
 
     # set up dirs
-    announce_dir = join(public_records_dir, '1_announce')
-    makedirs(public_records_dir, exist_ok=True)
+    announce_dir = join(public_dir, '1_announce')
+    makedirs(public_dir, exist_ok=True)
     makedirs(announce_dir, exist_ok=True)
 
     now = datetime.utcnow()
@@ -201,7 +201,7 @@ def BuildManifestCommand(
 # TODO combine this step with the manifest above into "announce"?
 @click.command("announce-key-ceremony")
 @click.option(
-    "--public-records-dir",
+    "--public-dir",
     prompt="Public records directory",
     help="The location of a directory into which will be placed all public records. "
     + "This folder should be protected. Existing files will be overwritten.",
@@ -222,7 +222,7 @@ def BuildManifestCommand(
 def AnnounceKeyCeremonyCommand(
     guardian_count: int,
     quorum: int,
-    public_records_dir: str,
+    public_dir: str,
 ) -> None:
     """Announce key ceremony parameters.
     This is a provisional thing based on the electionguard_gui key_ceremony_service.py;
@@ -233,7 +233,7 @@ def AnnounceKeyCeremonyCommand(
     # TODO remove this entire step? not sure it adds anything
     # TODO wait actually the n guardians and quorum aren't in the manifest
 
-    announce_dir = join(public_records_dir, '1_announce')
+    announce_dir = join(public_dir, '1_announce')
     makedirs(announce_dir, exist_ok=True)
 
     # based on electionguard-python/src/electionguard_gui/models/key_ceremony_service:create
@@ -259,22 +259,22 @@ def AnnounceKeyCeremonyCommand(
 
 @click.command("publish-joint-key")
 @click.option(
-    "--public-records-dir",
+    "--public-dir",
     prompt="Public records directory",
     help="The location of a directory into which will be placed the guardian's public keys "
     + "This folder should be protected. Existing files will be overwritten.",
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
 def PublishJointKeyCommand(
-    public_records_dir: str,
+    public_dir: str,
 ) -> None:
     """Final step in the key ceremony.
     Could technically be posted on chain by anyone, not just the admin.
     """
     # print(json.dumps(locals()))
 
-    ceremony_dir = join(public_records_dir, '2_ceremony')
-    setup_dir    = join(public_records_dir, '3_election')
+    ceremony_dir = join(public_dir, '2_ceremony')
+    setup_dir    = join(public_dir, '3_election')
     pubkeys_dir  = join(ceremony_dir, '1_pubkeys')
     makedirs(pubkeys_dir, exist_ok=True)
     makedirs(setup_dir, exist_ok=True)
@@ -302,7 +302,7 @@ def PublishJointKeyCommand(
     type=click.INT,
 )
 @click.option(
-    "--public-records-dir",
+    "--public-dir",
     prompt="Public records directory",
     help="The location of a directory into which will be placed all public records. "
     + "This folder should be protected. Existing files will be overwritten.",
@@ -311,15 +311,15 @@ def PublishJointKeyCommand(
 def BuildElectionCommand(
     guardian_count: int,
     quorum: int,
-    public_records_dir: str,
+    public_dir: str,
 ) -> None:
     """Build the InternalManifest and CiphertextElectionContext.
     """
     # print(json.dumps(locals()))
 
     # set up dirs
-    announce_dir = join(public_records_dir, '1_announce')
-    setup_dir    = join(public_records_dir, '3_election')
+    announce_dir = join(public_dir, '1_announce')
+    setup_dir    = join(public_dir, '3_election')
     makedirs(setup_dir, exist_ok=True)
 
     # load manifest
@@ -347,7 +347,7 @@ def BuildElectionCommand(
 
 @click.command("tally")
 @click.option(
-    "--public-records-dir",
+    "--public-dir",
     prompt="Public records directory",
     help="The location of a directory into which will be placed all public records. "
     + "This folder should be protected. Existing files will be overwritten.",
@@ -368,7 +368,7 @@ def BuildElectionCommand(
 def TallyCommand(
     guardian_count: int,
     quorum: int,
-    public_records_dir: str,
+    public_dir: str,
 ) -> None:
     """Tally election results.
     """
@@ -376,9 +376,9 @@ def TallyCommand(
     # print(json.dumps(locals()))
 
     # set up dirs
-    announce_dir  = join(public_records_dir, '1_announce')
-    setup_dir     = join(public_records_dir, '3_election')
-    ballots_dir   = join(public_records_dir, '5_ballots')
+    announce_dir  = join(public_dir, '1_announce')
+    setup_dir     = join(public_dir, '3_election')
+    ballots_dir   = join(public_dir, '5_ballots')
     submitted_dir = join(ballots_dir       , '1_submitted')
     cast_dir      = join(ballots_dir       , '2_cast')
     spoiled_dir   = join(ballots_dir       , '3_spoiled')
@@ -396,7 +396,7 @@ def TallyCommand(
     )
 
     tally_name = '6_tally'
-    tally_path = join(public_records_dir, tally_name)
+    tally_path = join(public_dir, tally_name)
     tally = CiphertextTally(
         tally_name, # TODO is this the object_id? weird
         internal_manifest,
@@ -413,13 +413,13 @@ def TallyCommand(
     assert tally.spoiled() == len(spoiled_ballots)
     assert tally.cast() + tally.spoiled() == len(listdir(submitted_dir))
 
-    serialize.to_file(tally.publish(), tally_name, public_records_dir)
+    serialize.to_file(tally.publish(), tally_name, public_dir)
 
 
 # TODO utility functions for these repeated click options
 @click.command("decrypt-results")
 @click.option(
-    "--public-records-dir",
+    "--public-dir",
     prompt="Public records directory",
     help="The location of a directory into which will be placed all public records. "
     + "This folder should be protected. Existing files will be overwritten.",
@@ -438,7 +438,7 @@ def TallyCommand(
     type=click.INT,
 )
 def DecryptResultsCommand(
-    public_records_dir: str,
+    public_dir: str,
     guardian_count: int,
     quorum: int,
 ) -> None:
@@ -448,15 +448,15 @@ def DecryptResultsCommand(
     # print(json.dumps(locals()))
 
     # set up dirs
-    ceremony_dir = join(public_records_dir, '2_ceremony')
+    ceremony_dir = join(public_dir, '2_ceremony')
     pubkeys_dir  = join(ceremony_dir, '1_pubkeys')
-    announce_dir  = join(public_records_dir, '1_announce')
-    setup_dir     = join(public_records_dir, '3_election')
-    ballots_dir   = join(public_records_dir, '5_ballots')
+    announce_dir  = join(public_dir, '1_announce')
+    setup_dir     = join(public_dir, '3_election')
+    ballots_dir   = join(public_dir, '5_ballots')
     submitted_dir = join(ballots_dir       , '1_submitted')
     cast_dir      = join(ballots_dir       , '2_cast')
     spoiled_dir   = join(ballots_dir       , '3_spoiled')
-    decrypt_dir   = join(public_records_dir, '7_decrypt')
+    decrypt_dir   = join(public_dir, '7_decrypt')
     shares_dir    = join(decrypt_dir       , '1_shares')
     tally_dir     = join(shares_dir        , '1_tally')
     results_dir   = join(decrypt_dir, '2_final')
@@ -478,7 +478,7 @@ def DecryptResultsCommand(
     )
 
     # load and decrypt tally
-    tally_path = join(public_records_dir, '6_tally.json')
+    tally_path = join(public_dir, '6_tally.json')
     tally_enc = serialize.from_file(PublishedCiphertextTally, tally_path)
     tally_prefix = join(tally_dir, 'tally')
     tally_shares: Dict[GuardianId, DecryptionShare] \
@@ -521,14 +521,14 @@ def DecryptResultsCommand(
 
 @click.command("summary")
 @click.option(
-    "--public-records-dir",
+    "--public-dir",
     prompt="Public records directory",
     help="The location of a directory into which will be placed all public records. "
     + "This folder should be protected. Existing files will be overwritten.",
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
 def SummaryCommand(
-    public_records_dir: str,
+    public_dir: str,
 ) -> None:
     """
     Save and print a human-readable summary of the election.
@@ -536,8 +536,8 @@ def SummaryCommand(
     """
 
     # set up dirs
-    announce_dir = join(public_records_dir, '1_announce')
-    decrypt_dir   = join(public_records_dir, '7_decrypt')
+    announce_dir = join(public_dir, '1_announce')
+    decrypt_dir   = join(public_dir, '7_decrypt')
     results_dir   = join(decrypt_dir, '2_final')
     spoiled_results_dir = join(results_dir, '2_spoiled')
 
@@ -611,7 +611,7 @@ def SummaryCommand(
             contest_summary['votes'][name] = selection.tally
         summary['tally of cast ballots'].append(contest_summary)
 
-    serialize.to_file(summary, '8_summary', public_records_dir)
+    serialize.to_file(summary, '8_summary', public_dir)
 
 
 @click.group()

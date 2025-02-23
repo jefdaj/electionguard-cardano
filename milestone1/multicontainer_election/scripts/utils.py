@@ -151,11 +151,11 @@ def build_ballot(
     return ballot
 
 
-def load_guardian_pubkeys(public_records_dir: str) -> List[ElectionPublicKey]:
+def load_guardian_pubkeys(public_dir: str) -> List[ElectionPublicKey]:
     guardian_pubkeys: List[ElectionPublicKey] = []
-    for json_filename in listdir(public_records_dir):
+    for json_filename in listdir(public_dir):
         guardian_id: GuardianId = splitext(json_filename)[0]
-        json_path = join(public_records_dir, json_filename)
+        json_path = join(public_dir, json_filename)
         guardian_pubkey = serialize.from_file(ElectionPublicKey, json_path)
         guardian_pubkeys.append(guardian_pubkey)
     return guardian_pubkeys
