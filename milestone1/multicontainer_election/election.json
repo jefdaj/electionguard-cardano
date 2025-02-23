@@ -1,13 +1,17 @@
 {
-  "project_name": "election",
-  "bind_mounts": {
-    "scripts": "/scripts",
-    "public": "/data/public",
-    "private": "/data/private"
+  "arion": {
+    "project_name": "election",
+    "bind_mounts": {
+      "scripts": "/scripts",
+      "public": "/data/public",
+      "private": "/data/private"
+    }
   },
-  "guardians": {"count": 3, "quorum": 2},
-  "votingDevices": {"count": 2},
-  "question": "Are pineapples cool?",
+  "election": {
+    "guardians": {"count": 3, "quorum": 2},
+    "votingDevices": {"count": 2},
+    "question": "Are pineapples cool?"
+  },
   "votes": {
     "Yes":    {"cast": 12, "spoil":4},
     "No":     {"cast":  8, "spoil":3},

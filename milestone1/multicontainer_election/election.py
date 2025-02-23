@@ -36,13 +36,15 @@ def parse_config(cfg_path, pause_to_explain):
         js = json.load(f)
     cfg = DotMap(js)
     cfg.pause_to_explain = pause_to_explain
-    cfg.guardians.sequence_order = [*range(1, cfg.guardians.count + 1)]
-    cfg.guardians.ids = [f"guardian_{i}" for i in cfg.guardians.sequence_order]
+    cfg.votes = dict(cfg.votes) # TODO is this the simplest way to enable iteration?
+    ecfg = cfg.election
+    ecfg.guardians.sequence_order = [*range(1, ecfg.guardians.count + 1)]
+    ecfg.guardians.ids = [f"guardian_{i}" for i in ecfg.guardians.sequence_order]
     return cfg
 
 def run_in_container(cfg, mode, container_number, args, **kwargs):
-    container_name = cfg.project_name + "-" + mode + str(container_number) + "-1"
-    script_path = join(cfg.bind_mounts.scripts, mode + '.py')
+    container_name = cfg.arion.project_name + "-" + mode + str(container_number) + "-1"
+    script_path = join(cfg.arion.bind_mounts.scripts, mode + '.py')
     # TODO python don't write bytecode (here or in the image?)
     args = ["docker", "exec", container_name,
             "poetry", "run", script_path] + args
@@ -109,8 +111,8 @@ def build_manifest(cfg):
         cfg, "admin", 1,
         [
             "build-manifest",
-            "--public-dir", cfg.bind_mounts.public,
-            "--referendum-question", cfg.question,
+            "--public-dir", cfg.arion.bind_mounts.public,
+            "--referendum-question", cfg.election.question,
         ]
     )
 
@@ -121,23 +123,23 @@ def announce_key_ceremony(cfg):
         cfg, "admin", 1,
         [
             "announce-key-ceremony",
-            "--guardian-count"    , str(cfg.guardians.count),
-            "--quorum"            , str(cfg.guardians.quorum),
-            "--public-dir", cfg.bind_mounts.public,
+            "--guardian-count"    , str(cfg.election.guardians.count),
+            "--quorum"            , str(cfg.election.guardians.quorum),
+            "--public-dir", cfg.arion.bind_mounts.public,
         ]
     )
 
 @explain_step
 def key_ceremony_round(cfg, current_round):
-    for guardian_id, sequence_order in zip(cfg.guardians.ids, cfg.guardians.sequence_order):
+    for guardian_id, sequence_order in zip(cfg.election.guardians.ids, cfg.election.guardians.sequence_order):
         run_in_container(
             cfg, "guardian", sequence_order,
             [
                 "key-ceremony",
-                "--guardian-count"         , str(cfg.guardians.count),
-                "--quorum"                 , str(cfg.guardians.quorum),
-                "--public-dir"     , cfg.bind_mounts.public,
-                "--private-dir"    , cfg.bind_mounts.private,
+                "--guardian-count"         , str(cfg.election.guardians.count),
+                "--quorum"                 , str(cfg.election.guardians.quorum),
+                "--public-dir"     , cfg.arion.bind_mounts.public,
+                "--private-dir"    , cfg.arion.bind_mounts.private,
                 "--guardian-id"            , guardian_id,
                 "--guardian-sequence-order", str(sequence_order),
                 "--current-round"          , str(current_round),
@@ -150,7 +152,7 @@ def publish_joint_key(cfg):
         cfg, "admin", 1,
         [
             "publish-joint-key",
-            "--public-dir", cfg.bind_mounts.public,
+            "--public-dir", cfg.arion.bind_mounts.public,
         ]
     )
 
@@ -160,9 +162,9 @@ def build_election(cfg):
         cfg, "admin", 1,
         [
             "build-election",
-            "--guardian-count"    , str(cfg.guardians.count),
-            "--quorum"           , str(cfg.guardians.quorum),
-            "--public-dir", cfg.bind_mounts.public,
+            "--guardian-count"    , str(cfg.election.guardians.count),
+            "--quorum"           , str(cfg.election.guardians.quorum),
+            "--public-dir", cfg.arion.bind_mounts.public,
         ]
     )
 
@@ -173,7 +175,7 @@ def add_device(cfg, device_number):
         [
             "add-device",
             "--device-number"     , str(device_number),
-            "--public-dir", cfg.bind_mounts.public,
+            "--public-dir", cfg.arion.bind_mounts.public,
         ]
     )
 
@@ -182,10 +184,10 @@ def vote(cfg, candidate_name, spoil=False):
         cfg, "device", 1, # TODO code for other devices?
         [
             "vote",
-            "--guardian-count"     , str(cfg.guardians.count),
-            "--quorum"             , str(cfg.guardians.quorum),
-            "--public-dir" , cfg.bind_mounts.public,
-            "--private-dir", cfg.bind_mounts.private,
+            "--guardian-count"     , str(cfg.election.guardians.count),
+            "--quorum"             , str(cfg.election.guardians.quorum),
+            "--public-dir" , cfg.arion.bind_mounts.public,
+            "--private-dir", cfg.arion.bind_mounts.private,
             "--candidate-name"     , candidate_name,
             "--spoil"              , str(spoil),
         ]
@@ -193,12 +195,13 @@ def vote(cfg, candidate_name, spoil=False):
 
 @explain_step
 def vote_all(cfg):
-    votes = dict(cfg.votes)
-    for candidate_name in votes:
-        for n in range(votes[candidate_name].cast):
-            vote(cfg, candidate_name)
-        for n in range(votes[candidate_name].spoil):
-            vote(cfg, candidate_name, spoil=True)
+    # remember a "candidate" might also be an answer to a referendum question!
+    # TODO have they come up with a better name for that in the 2.0 spec?
+    for (candidate, n_votes) in cfg.votes.items():
+        for _ in range(n_votes.spoil):
+            vote(cfg, candidate, spoil=True)
+        for _ in range(n_votes.cast):
+            vote(cfg, candidate)
 
 @explain_step
 def tally(cfg):
@@ -206,24 +209,24 @@ def tally(cfg):
         cfg, "admin", 1,
         [
             "tally",
-            "--guardian-count"     , str(cfg.guardians.count),
-            "--quorum"             , str(cfg.guardians.quorum),
-            "--public-dir" , cfg.bind_mounts.public,
+            "--guardian-count"     , str(cfg.election.guardians.count),
+            "--quorum"             , str(cfg.election.guardians.quorum),
+            "--public-dir" , cfg.arion.bind_mounts.public,
         ]
     )
 
 @explain_step
 def decrypt_shares(cfg):
-    for guardian_id, sequence_order in zip(cfg.guardians.ids, cfg.guardians.sequence_order):
+    for guardian_id, sequence_order in zip(cfg.election.guardians.ids, cfg.election.guardians.sequence_order):
         run_in_container(
             cfg, "guardian", sequence_order,
             [
                 "decrypt-shares",
-                "--public-dir" , cfg.bind_mounts.public,
-                "--private-dir", cfg.bind_mounts.private,
+                "--public-dir" , cfg.arion.bind_mounts.public,
+                "--private-dir", cfg.election.bind_mounts.private,
                 "--guardian-id"        , guardian_id,
-                "--guardian-count"     , str(cfg.guardians.count),
-                "--quorum"             , str(cfg.guardians.quorum),
+                "--guardian-count"     , str(cfg.election.guardians.count),
+                "--quorum"             , str(cfg.election.guardians.quorum),
             ]
         )
 
@@ -233,9 +236,9 @@ def decrypt_results(cfg):
         cfg, "admin", 1,
         [
             "decrypt-results",
-            "--guardian-count"     , str(cfg.guardians.count),
-            "--quorum"             , str(cfg.guardians.quorum),
-            "--public-dir" , cfg.bind_mounts.public,
+            "--guardian-count"     , str(cfg.election.guardians.count),
+            "--quorum"             , str(cfg.election.guardians.quorum),
+            "--public-dir" , cfg.arion.bind_mounts.public,
         ]
     )
 
@@ -245,7 +248,7 @@ def summary(cfg):
         cfg, "admin", 1,
         [
             "summary",
-            "--public-dir", cfg.bind_mounts.public,
+            "--public-dir", cfg.arion.bind_mounts.public,
         ]
     )
 
@@ -258,7 +261,7 @@ def election(cfg):
     # TODO should there be a "publish final guardian records" step here?
     publish_joint_key(cfg)
     build_election(cfg)
-    for n in range(1, cfg.votingDevices.count + 1):
+    for n in range(1, cfg.election.votingDevices.count + 1):
         add_device(cfg, n)
     vote_all(cfg)
     tally(cfg)
@@ -289,6 +292,7 @@ def ElectionCommand(
         election(cfg)
     except Exception as e:
         pprint(e) # TODO recover?
+        LOG.error('Election failed :(')
     finally:
         arion_down(cfg)
 

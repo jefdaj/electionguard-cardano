@@ -2,17 +2,20 @@
 
 let
 
-  electionConfig = builtins.fromJSON (builtins.readFile ./election.json);
+  projectConfig = builtins.fromJSON (builtins.readFile ./election.json);
 
-  mkContainer = mode: public_dir: private_dir: n:
+  mkContainer = mode: scripts_dir: public_dir: private_dir: n:
   {
 
     # TODO publish my electionguard-python image and pin it here
     service.image = "electionguard-python";
 
     service.volumes = [
-      "./scripts/:/scripts/"
+      "${scripts_dir}:/scripts/"
       "${public_dir}:/data/public"
+
+      # each container only has access to its own private subdir
+      # TODO is it confusing that they're each mounted to the same path?
       "${private_dir}/${mode}_${builtins.toString n}:/data/private"
     ];
 
@@ -23,20 +26,21 @@ let
 
   };
 
-  mkAttrs = mode: public_dir: private_dir: n: {
+  mkAttrs = mode: scripts_dir: public_dir: private_dir: n: {
     name = mode + builtins.toString n;
-    value = mkContainer mode public_dir private_dir n;
+    value = mkContainer mode scripts_dir public_dir private_dir n;
   };
 
+  # TODO pull host bind_mount paths from projectConfig too?
   mkAttrsList = mode: nVms:
-    map (mkAttrs mode "./data/public" "./data/private") (pkgs.lib.range 1 nVms);
+    map (mkAttrs mode "./scripts" "./data/public" "./data/private") (pkgs.lib.range 1 nVms);
 
   mkServices = cfg:
     builtins.listToAttrs (mkAttrsList "admin" 1) //
-    builtins.listToAttrs (mkAttrsList "device" cfg.votingDevices.count) //
-    builtins.listToAttrs (mkAttrsList "guardian" cfg.guardians.count);
+    builtins.listToAttrs (mkAttrsList "device" cfg.election.votingDevices.count) //
+    builtins.listToAttrs (mkAttrsList "guardian" cfg.election.guardians.count);
 
 in {
-  config.project.name = electionConfig.project_name;
-  config.services = mkServices electionConfig;
+  config.project.name = projectConfig.arion.project_name;
+  config.services = mkServices projectConfig;
 }
