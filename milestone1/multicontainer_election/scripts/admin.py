@@ -566,24 +566,33 @@ def SummaryCommand(
     }
     ballot_ids = plaintext_spoiled_ballots.keys()
     for ballot_id in ballot_ids:
-        csb.print_header(f"Spoiled ballot '{ballot_id}'")
+        short_id = ballot_id[ballot_id.find('-')+1:]
+        csb.print_header(f"Spoiled ballot '{short_id}'")
         spoiled_ballot = plaintext_spoiled_ballots[ballot_id]
         for contest in spoiled_ballot.contests.values():
-            contest_name = contest_names.get(contest.object_id)
-            csb.print_section(contest_name)
-            for selection in contest.selections.values():
-                name = selection_names[selection.object_id]
-                csb.print_value(f"  {name}", selection.tally)
+            question = contest_names.get(contest.object_id)
+            selected = [
+                selection_names[selection.object_id]
+                for selection in contest.selections.values()
+                if selection.tally > 0
+            ]
+            assert len(selected) < 2 # for a one of m contest
+            try:
+                answer = selected[0]
+            except IndexError:
+                answer = 'No answer' # TODO is this allowed?
+            csb.print_section(f'{question} {answer}')
 
     # main tally
-    csb.print_header("Decrypted tally")
+    csb.print_header("Final tally of all cast ballots")
     for tally_contest in plaintext_tally.contests.values():
         contest_name = contest_names.get(tally_contest.object_id)
         csb.print_section(contest_name)
-        for selection in tally_contest.selections.values():
+        values = list(tally_contest.selections.values())
+        values.sort(key=lambda v: v.tally, reverse=True)
+        for selection in values:
             name = selection_names[selection.object_id]
             csb.print_value(f"  {name}", selection.tally)
-
 
 
 @click.group()
