@@ -13,7 +13,7 @@ from electionguard.election import CiphertextElectionContext
 from electionguard.encrypt import EncryptionDevice, EncryptionMediator, contest_from, generate_device_uuid
 from electionguard.key_ceremony import (CeremonyDetails, ElectionJointKey,ElectionKeyPair,ElectionPublicKey,ElectionPartialKeyBackup,ElectionPartialKeyVerification,combine_election_public_keys, generate_election_key_pair,generate_election_partial_key_backup,verify_election_partial_key_backup)
 from electionguard.manifest import Manifest, InternalManifest, Language
-from electionguard.tally import (CiphertextTally,PublishedCiphertextTally)
+from electionguard.tally import (CiphertextTally,PublishedCiphertextTally,PlaintextTally)
 from electionguard.type import GuardianId
 from electionguard.utils import get_optional
 from electionguard_tools.helpers.election_builder import ElectionBuilder
@@ -187,15 +187,18 @@ def load_guardian_decryption_shares(
     return shares
 
 
+### paths ###
+#
 # prevents having to write out and create the data dirs multiple times
 # dict of informal type str -> (actual type, dirname, basename format str)
+#
+#############
+
 PRIVATE_RECORDS = {
     'election_key_pair': (ElectionKeyPair, '.', 'election_key_pair'),
     'plaintext_ballot': (PlaintextBallot, 'plaintext_ballots', '{ballot_id}'),
 }
 
-# prevents having to write out and create the data dirs multiple times
-# dict of informal type str -> (actual type, dirname, basename format str)
 PUBLIC_RECORDS = {
     'manifest': (Manifest, '1_announce', '1_manifest'),
     'ceremony_details': (CeremonyDetails, '1_announce', '2_ceremony'),
@@ -206,6 +209,8 @@ PUBLIC_RECORDS = {
     'guardian_backup': (ElectionPartialKeyBackup, '2_ceremony/2_backups', '{guardian_id}_backup_{backup_order}'),
     'guardian_verification': (ElectionPartialKeyVerification, '2_ceremony/3_verifications', '{json_name}'),
     'device': (EncryptionDevice, '4_devices', 'device_{obj.device_id}'),
+    'ciphertext_tally': (CiphertextTally, '.', '6_tally'),
+    'plaintext_tally': (PlaintextTally, '7_decrypt/2_final', '1_tally'),
 }
 
 def to_private_record(private_dir: str, record_type: str, **fmtargs):

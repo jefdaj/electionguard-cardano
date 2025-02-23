@@ -376,7 +376,7 @@ def TallyCommand(
     assert tally.spoiled() == len(spoiled_ballots)
     assert tally.cast() + tally.spoiled() == len(listdir(submitted_dir))
 
-    serialize.to_file(tally.publish(), tally_name, public_dir)
+    to_public_record(public_dir, 'ciphertext_tally', tally.publish())
 
 
 # TODO utility functions for these repeated click options
@@ -438,7 +438,7 @@ def DecryptResultsCommand(
         manifest
     )
     assert tally_result is not None
-    serialize.to_file(tally_result, '1_tally', results_dir)
+    to_public_record(public_dir, 'plaintext_tally', tally_result)
     print('decrypted tally')
 
     # load spoiled ballots
