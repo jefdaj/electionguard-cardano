@@ -11,6 +11,7 @@ from utils import (
     load_designated_backups,
     load_guardian_pubkeys,
     load_spoiled_ballots,
+    to_public_record,
 )
 
 
@@ -76,7 +77,8 @@ def round1(guardian_id, sequence_order, public_dir, private_dir):
     # share the public key (and other info)
     # TODO why not publish_record here? I guess that's later after backups?
     public_key: ElectionPublicKey = election_key_pair.share()
-    serialize.to_file(public_key, guardian_id, pubkeys_dir)
+    # serialize.to_file(public_key, guardian_id, pubkeys_dir)
+    to_public_record(public_dir, 'guardian_pubkey', public_key, guardian_id=guardian_id)
 
 
 
@@ -109,8 +111,12 @@ def round2(guardian_id, sequence_order, public_dir, private_dir):
             other_pubkey,
         )
         backup_order = other_pubkey.sequence_order
-        backup_name = f'{guardian_id}_backup_{backup_order}'
-        serialize.to_file(backup, backup_name, backups_dir)
+        # backup_name = f'{guardian_id}_backup_{backup_order}'
+        # serialize.to_file(backup, backup_name, backups_dir)
+        to_public_record(
+            public_dir, 'guardian_backup', backup,
+            guardian_id=guardian_id, backup_order=backup_order
+        )
 
 
 
@@ -151,7 +157,7 @@ def round3(guardian_id, sequence_order, public_dir, private_dir):
         )
         assert verification.verified == True
         # these are named identically to the corresponding guardian_backups for now
-        serialize.to_file(verification, json_name, verifications_dir)
+        to_public_record(public_dir, 'guardian_verification', verification, json_name=json_name)
 
 @click.command("key-ceremony")
 @click.option(

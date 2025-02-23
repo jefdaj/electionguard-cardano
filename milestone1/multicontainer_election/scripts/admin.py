@@ -11,6 +11,7 @@ from utils import (
     load_guardian_decryption_shares,
     load_guardian_pubkeys,
     load_spoiled_ballots,
+    to_public_record,
 )
 
 import click
@@ -60,7 +61,7 @@ from electionguard.tally import PlaintextTally
 
 
 MANIFEST_NAME  = '1_manifest'
-JOINT_KEY_NAME = 'jointkey'
+JOINT_KEY_NAME = 'joint_key'
 
 
 @click.command("build-manifest")
@@ -196,7 +197,7 @@ def BuildManifestCommand(
         "contact_information": None
     }
 
-    serialize.to_file(manifest, MANIFEST_NAME, announce_dir)
+    to_public_record(public_dir, 'manifest', manifest)
 
 
 # TODO combine this step with the manifest above into "announce"?
@@ -259,7 +260,7 @@ def AnnounceKeyCeremonyCommand(
 
     details_name = '2_ceremony'
     details = CeremonyDetails(guardian_count, guardian_quorum)
-    serialize.to_file(details, details_name, announce_dir)
+    to_public_record(public_dir, 'ceremony_details', details)
 
 
 @click.command("publish-joint-key")
@@ -290,7 +291,7 @@ def PublishJointKeyCommand(
     assert election_joint_key is not None
 
     # NOTE we skip 4 to leave room for the challenge step
-    serialize.to_file(election_joint_key, JOINT_KEY_NAME, setup_dir)
+    to_public_record(public_dir, 'joint_key', election_joint_key)
 
 
 @click.command("build-election")
@@ -332,8 +333,8 @@ def BuildElectionCommand(
         joint_key
     )
 
-    serialize.to_file(constants, 'constants', setup_dir)
-    serialize.to_file(context  , 'context'  , setup_dir)
+    to_public_record(public_dir, 'constants', constants)
+    to_public_record(public_dir, 'context', context)
 
     # TODO any reason to save this when it can't be reloaded?
     # serialize.to_file(internal_manifest, 'internal_manifest', setup_dir)

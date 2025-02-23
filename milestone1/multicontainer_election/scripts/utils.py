@@ -185,3 +185,42 @@ def load_guardian_decryption_shares(
         share = serialize.from_file(DecryptionShare, share_path)
         shares[guardian_id] = share
     return shares
+
+
+# prevents having to write out and create the data dirs multiple times
+# dict of informal type str -> (actual type, dirname, basename format str)
+PRIVATE_RECORDS = {
+    'election_key_pair': (ElectionKeyPair, '.', 'election_key_pair'),
+    'plaintext_ballot': (PlaintextBallot, 'plaintext_ballots', '{ballot_id}'),
+}
+
+# prevents having to write out and create the data dirs multiple times
+# dict of informal type str -> (actual type, dirname, basename format str)
+PUBLIC_RECORDS = {
+    'manifest': (Manifest, '1_announce', '1_manifest'),
+    'ceremony_details': (CeremonyDetails, '1_announce', '2_ceremony'),
+    'joint_key': (ElectionJointKey, '3_election', 'joint_key'),
+    'constants': (ElectionConstants, '3_election', 'constants'),
+    'context': (CiphertextElectionContext, '3_election', 'context'),
+    'guardian_pubkey': (ElectionPublicKey, '2_ceremony/1_pubkeys', '{guardian_id}'),
+    'guardian_backup': (ElectionPartialKeyBackup, '2_ceremony/2_backups', '{guardian_id}_backup_{backup_order}'),
+    'guardian_verification': (ElectionPartialKeyVerification, '2_ceremony/3_verifications', '{json_name}'),
+}
+
+def to_private_record(private_dir: str, record_type: str, **fmtargs):
+    pass
+    # TODO makedirs
+    # TODO serialize.to_file
+
+def to_public_record(public_dir: str, record_type: str, obj, **fmtargs):
+    (rtype, dname, fstr) = PUBLIC_RECORDS[record_type]
+    dpath = join(public_dir, dname)
+    makedirs(dpath, exist_ok=True)
+    fname = fstr.format(**fmtargs)
+    serialize.to_file(obj, fname, dpath)
+
+def from_private_record(private_dir: str, record_type: str, **fmtargs):
+    pass
+
+def from_public_record(public_dir: str, record_type: str, **fmtargs):
+    pass
