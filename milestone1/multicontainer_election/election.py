@@ -301,8 +301,8 @@ def election(cfg):
 @click.option(
     "--single-step",
     help="Run just one step for easier debugging.",
-    prompt="Single step to run",
     type=click.STRING,
+    # TODO is removing prompt how you make it optional?
 )
 def ElectionCommand(
     pause_to_explain: bool,

@@ -211,6 +211,10 @@ PUBLIC_RECORDS = {
     'device': (EncryptionDevice, '4_devices', 'device_{obj.device_id}'),
     'ciphertext_tally': (CiphertextTally, '.', '6_tally'),
     'plaintext_tally': (PlaintextTally, '7_decrypt/2_final', '1_tally'),
+    'tally_share': (DecryptionShare, '7_decrypt/1_shares/1_tally', 'tally_{guardian_id}'),
+    'spoiled_share': (DecryptionShare, '7_decrypt/1_shares/2_spoiled', '{spoiled_id}_{guardian_id}'),
+    'spoiled_result': (PlaintextTally, '7_decrypt/2_final/2_spoiled', '{ballot_id}'),
+    'summary': (dict, '.', '8_summary'),
 }
 
 def to_private_record(private_dir: str, record_type: str, **fmtargs):

@@ -257,7 +257,6 @@ def AnnounceKeyCeremonyCommand(
     #     # "verifications": [],
     # }
     # announcement_name = '2_ceremony'
-    # serialize.to_file(announcement, announcement_name, announce_dir)
 
     details_name = '2_ceremony'
     details = CeremonyDetails(guardian_count, guardian_quorum)
@@ -462,7 +461,7 @@ def DecryptResultsCommand(
             manifest
         )
         assert spoiled_result is not None
-        serialize.to_file(spoiled_result, ballot_id, spoiled_results_dir)
+        to_public_record(public_dir, 'spoiled_result', spoiled_result, ballot_id=ballot_id)
         print(f'decrypted {ballot_id}')
 
 
@@ -556,7 +555,7 @@ def SummaryCommand(
             contest_summary['votes'][name] = selection.tally
         summary['tally of cast ballots'].append(contest_summary)
 
-    serialize.to_file(summary, '8_summary', public_dir)
+    to_public_record(public_dir, 'summary', summary)
 
 
 @click.group()

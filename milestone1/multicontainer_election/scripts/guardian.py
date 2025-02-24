@@ -76,7 +76,6 @@ def round1(guardian_id, sequence_order, public_dir, private_dir):
     # share the public key (and other info)
     # TODO why not publish_record here? I guess that's later after backups?
     public_key: ElectionPublicKey = election_key_pair.share()
-    # serialize.to_file(public_key, guardian_id, pubkeys_dir)
     to_public_record(public_dir, 'guardian_pubkey', public_key, guardian_id=guardian_id)
 
 
@@ -110,8 +109,6 @@ def round2(guardian_id, sequence_order, public_dir, private_dir):
             other_pubkey,
         )
         backup_order = other_pubkey.sequence_order
-        # backup_name = f'{guardian_id}_backup_{backup_order}'
-        # serialize.to_file(backup, backup_name, backups_dir)
         to_public_record(
             public_dir, 'guardian_backup', backup,
             guardian_id=guardian_id, backup_order=backup_order
@@ -289,18 +286,19 @@ def DecryptSharesCommand(
     tally_share = guardian.compute_tally_share(tally, context)
     print(f'computed {guardian_id} decryption share of election tally')
     assert tally_share is not None
-    tally_share_name = f'tally_{guardian_id}'
-    serialize.to_file(tally_share, tally_share_name, tally_dir)
+    to_public_record(public_dir, 'tally_share', tally_share, guardian_id=guardian_id)
 
     # compute ballot shares
     spoiled_ballots = load_spoiled_ballots(submitted_dir, spoiled_dir)
-    ballot_shares: Dict[BallotId, Optional[DecryptionShare]] \
+    spoiled_shares: Dict[BallotId, Optional[DecryptionShare]] \
         = guardian.compute_ballot_shares(spoiled_ballots, context)
-    for (ballot_id, ballot_share) in ballot_shares.items():
-        print(f'computed {guardian_id} decryption share of {ballot_id}')
-        assert ballot_share is not None
-        ballot_share_name = f'{ballot_id}_{guardian_id}'
-        serialize.to_file(ballot_share, ballot_share_name, spoiled_shares_dir)
+    for (spoiled_id, spoiled_share) in spoiled_shares.items():
+        print(f'computed {guardian_id} decryption share of {spoiled_id}')
+        assert spoiled_share is not None
+        to_public_record(
+            public_dir, 'spoiled_share', spoiled_share,
+            spoiled_id=spoiled_id, guardian_id=guardian_id
+        )
 
 
 @click.group()
