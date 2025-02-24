@@ -53,43 +53,31 @@ from electionguard.key_ceremony import (
 )
 
 
-ELECTION_KEY_PAIR_NAME = 'election_key_pair'
-MANIFEST_NAME  = '1_manifest'
-JOINT_KEY_NAME = 'joint_key'
-
-
 def round1(guardian_id, sequence_order, public_dir, private_dir):
     '''Round 1: create and share pubkeys
     '''
 
-    # set up dirs
-    announce_dir  = join(public_dir, '1_announce')
-    pubkeys_dir   = join(public_dir, '2_ceremony/1_pubkeys')
-    makedirs(pubkeys_dir  , exist_ok=True)
-
-    details   = from_public_record(public_dir, 'ceremony_details')
+    details = from_public_record(public_dir, 'ceremony_details')
 
     # generate election key pair
-    # NOTE there will eventually also be separate a Cardano wallet key pair
-    election_key_pair: ElectionKeyPair = generate_election_key_pair(guardian_id, sequence_order, details.quorum)
+    # there will eventually also be separate a Cardano wallet key pair
+    election_key_pair: ElectionKeyPair = generate_election_key_pair(
+        guardian_id, sequence_order, details.quorum
+    )
     to_private_record(private_dir, 'election_key_pair', election_key_pair)
 
     # share the public key (and other info)
     # TODO why not publish_record here? I guess that's later after backups?
     public_key: ElectionPublicKey = election_key_pair.share()
-    to_public_record(public_dir, 'guardian_pubkey', public_key, guardian_id=guardian_id)
-
+    to_public_record(
+        public_dir, 'guardian_pubkey', public_key,
+        guardian_id=guardian_id
+    )
 
 
 def round2(guardian_id, sequence_order, public_dir, private_dir):
     '''Round 2: create and share backups
     '''
-
-    # set up dirs
-    pubkeys_dir = join(public_dir, '2_ceremony/1_pubkeys')
-    backups_dir = join(public_dir, '2_ceremony/2_backups')
-    makedirs(pubkeys_dir, exist_ok=True)
-    makedirs(backups_dir, exist_ok=True)
 
     election_key_pair = from_private_record(private_dir, 'election_key_pair')
 
@@ -99,8 +87,9 @@ def round2(guardian_id, sequence_order, public_dir, private_dir):
         if k.owner_id != guardian_id # remove self
     ]
 
-    # save partial backups in shared folder, encrypted to each other guardians' pubkeys
-    # NOTE these will be public and on-chain in my version, unless that's bad?
+    # save partial backups in shared folder,
+    # encrypted to each other guardians' pubkeys
+    # these will go on-chain in my version
     for other_pubkey in other_guardian_pubkeys:
         backup = generate_election_partial_key_backup(
             guardian_id,
@@ -114,18 +103,9 @@ def round2(guardian_id, sequence_order, public_dir, private_dir):
         )
 
 
-
 def round3(guardian_id, sequence_order, public_dir, private_dir):
     '''Round 3: verify backups
     '''
-
-    # set up dirs
-    pubkeys_dir       = join(public_dir, '2_ceremony/1_pubkeys')
-    backups_dir       = join(public_dir, '2_ceremony/2_backups')
-    verifications_dir = join(public_dir, '2_ceremony/3_verifications')
-    makedirs(pubkeys_dir, exist_ok=True)
-    makedirs(backups_dir, exist_ok=True)
-    makedirs(verifications_dir, exist_ok=True)
 
     # restore own private state
     election_key_pair = from_private_record(private_dir, 'election_key_pair')
@@ -140,24 +120,23 @@ def round3(guardian_id, sequence_order, public_dir, private_dir):
         if k.owner_id != guardian_id # remove self
     }
 
-    # for (json_name, backup) in designated_backups.items():
     for (owner_id, backup) in designated_backups.items():
         owner_public_key = other_guardian_pubkeys[owner_id]
-        verification: ElectionPartialKeyVerification = verify_election_partial_key_backup(
-            guardian_id, # mine
-            backup,
-            owner_public_key, # theirs
-            election_key_pair # mine
-        )
+        verification: ElectionPartialKeyVerification = \
+            verify_election_partial_key_backup(
+                guardian_id, # mine
+                backup,
+                owner_public_key, # theirs
+                election_key_pair # mine
+            )
         assert verification.verified == True
         # these are named identically to the corresponding guardian_backups for now
         guardian_number = int(guardian_id.split('_')[-1])
         to_public_record(
             public_dir, 'guardian_verification', verification,
-            # json_name=json_name
-            guardian_id=owner_id,
-            backup_order=guardian_number
+            guardian_id=owner_id, backup_order=guardian_number
         )
+
 
 @click.command("key-ceremony")
 @click.option(
@@ -203,16 +182,22 @@ def GuardianKeyCeremonyCommand(
     This command runs one round of the key ceremony from the perspective of a
     particular .
     """
+
     # print(json.dumps(locals()))
+
     if ceremony_round == 1:
         round1(guardian_id, guardian_sequence_order, public_dir, private_dir)
+
     elif ceremony_round == 2:
         round2(guardian_id, guardian_sequence_order, public_dir, private_dir)
+
     elif ceremony_round == 3:
         round3(guardian_id, guardian_sequence_order, public_dir, private_dir)
+
     # TODO implement round 4 (challenge if necessary)
     else:
         raise Exception(f'Invalid ceremony_round "{ceremony_round}"')
+
 
 @click.command("decrypt-shares")
 @click.option(
@@ -241,39 +226,19 @@ def DecryptSharesCommand(
     guardian_id: str,
 ) -> None:
     """
-    Compute guardian decryption shares for the tally + all spoiled ballots.
+    Compute guardian decryption shares for the tally + each spoiled ballot.
     """
+
     # print(json.dumps(locals()))
 
-    # set up dirs
-    announce_dir  = join(public_dir, '1_announce')
-    setup_dir     = join(public_dir, '3_election')
-    ballots_dir   = join(public_dir, '5_ballots')
-    submitted_dir = join(ballots_dir       , '1_submitted')
-    cast_dir      = join(ballots_dir       , '2_cast')
-    spoiled_dir   = join(ballots_dir       , '3_spoiled')
-    decrypt_dir   = join(public_dir, '7_decrypt')
-    shares_dir    = join(decrypt_dir       , '1_shares')
-    tally_dir     = join(shares_dir        , '1_tally')
-    spoiled_shares_dir   = join(shares_dir, '2_spoiled')
-    makedirs(decrypt_dir, exist_ok=True)
-    makedirs(shares_dir , exist_ok=True)
-    makedirs(tally_dir  , exist_ok=True)
-    makedirs(spoiled_shares_dir, exist_ok=True)
-
+    # restore own private state
     election_key_pair = from_private_record(private_dir, 'election_key_pair')
 
-    # load required info
+    # load public info
+    details   = from_public_record(public_dir, 'ceremony_details')
     manifest  = from_public_record(public_dir, 'manifest')
     joint_key = from_public_record(public_dir, 'joint_key')
-    details   = from_public_record(public_dir, 'ceremony_details')
-
-    (constants, internal_manifest, context) = build_election(
-        details,
-        manifest,
-        joint_key
-    )
-
+    (_, _, context) = build_election(details, manifest, joint_key)
     tally = from_public_record(public_dir, 'ciphertext_tally')
 
     # create guardian object
@@ -283,7 +248,10 @@ def DecryptSharesCommand(
     tally_share = guardian.compute_tally_share(tally, context)
     print(f'computed {guardian_id} decryption share of election tally')
     assert tally_share is not None
-    to_public_record(public_dir, 'tally_share', tally_share, guardian_id=guardian_id)
+    to_public_record(
+        public_dir, 'tally_share', tally_share,
+        guardian_id=guardian_id
+    )
 
     # compute ballot shares
     spoiled_ballots = load_spoiled_ballots(public_dir)
