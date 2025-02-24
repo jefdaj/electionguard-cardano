@@ -50,7 +50,6 @@ from utils import (
     build_ballot,
     build_election,
     load_designated_backups,
-    load_device_by_number,
     to_public_record,
     to_private_record,
     from_public_record,
@@ -93,7 +92,7 @@ def AddDeviceCommand(
         device_number * 45678, # launch code (TODO what's this?)
         POLLING_PLACE,
     )
-    to_public_record(public_dir, 'device', device)
+    to_public_record(public_dir, 'device', device, device_number=device_number)
 
 
 # TODO what should this inherit from... ElectionObjectBase? CryptoHashCheckable?
@@ -169,7 +168,7 @@ def VoteCommand(
 
     # TODO is the underscore thing OK in python?
     (_, internal_manifest, context) = build_election(details, manifest, joint_key)
-    device = load_device_by_number(devices_dir, device_number)
+    device = from_public_record(public_dir, 'device', device_number=device_number)
 
     ballot: PlaintextBallot = build_ballot(manifest, candidate)
     to_private_record(private_dir, 'plaintext_ballot', ballot)

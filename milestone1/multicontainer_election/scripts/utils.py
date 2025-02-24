@@ -92,16 +92,6 @@ def load_cast_ballots(public_dir: str, cast_dir: str) -> List[SubmittedBallot]:
 def load_spoiled_ballots(public_dir: str, spoiled_dir: str) -> List[SubmittedBallot]:
     return load_submitted_ballots(public_dir, spoiled_dir, BallotBoxState.SPOILED)
 
-
-def load_device_by_number(devices_dir: str, device_number: int) -> EncryptionDevice:
-    # TODO how to fit these into the standard PUBLIC_RECORDS map below?
-    i = device_number - 1
-    device_path = join(devices_dir, sorted(listdir(devices_dir))[i])
-    # print(device_path)
-    device = serialize.from_file(EncryptionDevice, device_path)
-    return device
-
-
 # TODO name something clearer in the context of referendum questions?
 def find_candidate_id(manifest: Manifest, candidate_name: str) -> Optional[str]:
     candidate_name_en = Language(language='en', value=candidate_name)
@@ -203,7 +193,7 @@ PUBLIC_RECORDS = {
     'guardian_pubkey': (ElectionPublicKey, '2_ceremony/1_pubkeys', '{guardian_id}'),
     'guardian_backup': (ElectionPartialKeyBackup, '2_ceremony/2_backups', '{guardian_id}_backup_{backup_order}'),
     'guardian_verification': (ElectionPartialKeyVerification, '2_ceremony/3_verifications', '{json_name}'),
-    'device': (EncryptionDevice, '4_devices', 'device_{obj.device_id}'),
+    'device': (EncryptionDevice, '4_devices', 'device_{device_number}'),
     'ciphertext_tally': (PublishedCiphertextTally, '.', '6_tally'),
     'plaintext_tally': (PlaintextTally, '7_decrypt/2_final', '1_tally'),
     'tally_share': (DecryptionShare, '7_decrypt/1_shares/1_tally', 'tally_{guardian_id}'),
