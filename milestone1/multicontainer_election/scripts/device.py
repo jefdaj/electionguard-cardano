@@ -195,7 +195,7 @@ def VoteCommand(
         store1
     )
     assert ballot_submitted.nonce is None
-    serialize.to_file(ballot_submitted, str(ballot.object_id), submitted_dir)
+    to_public_record(public_dir, 'ballot_submitted', ballot_submitted)
 
     if spoil:
 

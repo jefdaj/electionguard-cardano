@@ -213,7 +213,8 @@ PUBLIC_RECORDS = {
     'plaintext_tally': (PlaintextTally, '7_decrypt/2_final', '1_tally'),
     'tally_share': (DecryptionShare, '7_decrypt/1_shares/1_tally', 'tally_{guardian_id}'),
     'spoiled_share': (DecryptionShare, '7_decrypt/1_shares/2_spoiled', '{spoiled_id}_{guardian_id}'),
-    'spoiled_result': (PlaintextTally, '7_decrypt/2_final/2_spoiled', '{ballot_id}'),
+    'spoiled_result': (PlaintextTally, '7_decrypt/2_final/2_spoiled', '{obj.object_id}'),
+    'ballot_submitted': (PlaintextBallot, '5_ballots/1_submitted', '{obj.object_id}'),
     'summary': (dict, '.', '8_summary'),
 }
 
@@ -229,7 +230,7 @@ def to_public_record(public_dir: str, record_type: str, obj, **fmtargs):
     (_, dname, fstr) = PUBLIC_RECORDS[record_type]
     dpath = join(public_dir, dname)
     makedirs(dpath, exist_ok=True)
-    fmtargs.update(locals()) # so we can use the obj's own fields too
+    fmtargs['obj'] = obj # so we can use its fields too
     fname = fstr.format(**fmtargs)
     serialize.to_file(obj, fname, dpath)
 
