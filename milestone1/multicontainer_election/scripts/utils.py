@@ -94,7 +94,7 @@ def load_spoiled_ballots(public_dir: str, spoiled_dir: str) -> List[SubmittedBal
 
 
 def load_device_by_number(devices_dir: str, device_number: int) -> EncryptionDevice:
-    # TODO keep track of their IDs instead?
+    # TODO how to fit these into the standard PUBLIC_RECORDS map below?
     i = device_number - 1
     device_path = join(devices_dir, sorted(listdir(devices_dir))[i])
     # print(device_path)
@@ -150,6 +150,7 @@ def load_guardian_pubkeys(public_dir: str) -> List[ElectionPublicKey]:
     for json_filename in listdir(public_dir):
         guardian_id: GuardianId = splitext(json_filename)[0]
         json_path = join(public_dir, json_filename)
+        # TODO how to fit these into the standard PUBLIC_RECORDS map below?
         guardian_pubkey = serialize.from_file(ElectionPublicKey, json_path)
         guardian_pubkeys.append(guardian_pubkey)
     return guardian_pubkeys
@@ -161,6 +162,7 @@ def load_designated_backups(backups_dir: str, guardian_id: GuardianId) -> Dict[s
     for json_filename in listdir(backups_dir):
         json_path = join(backups_dir, json_filename)
         json_name = splitext(json_filename)[0]
+        # TODO how to fit these into the standard PUBLIC_RECORDS map below?
         backup = serialize.from_file(ElectionPartialKeyBackup, json_path)
         if backup.designated_id == guardian_id:
             designated_backups[json_name] = backup
@@ -174,6 +176,7 @@ def load_guardian_decryption_shares(
     for n in range(1, guardian_count + 1):
         guardian_id = f'guardian_{n}'
         share_path = f'{path_prefix}_{guardian_id}.json'
+        # TODO how to fit these into the standard PUBLIC_RECORDS map below?
         share = serialize.from_file(DecryptionShare, share_path)
         shares[guardian_id] = share
     return shares
