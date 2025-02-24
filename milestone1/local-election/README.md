@@ -82,7 +82,7 @@ It should look something like this.
 TODO can that be done without root?
 
 The rest of the generated data should look something like this.
-In [milestone 3](../../milestone3) I plan to post
+In [milestone 2](../../milestone2) I plan to post
 everything under `data/public` to Cardano + IPFS.
 Numbered files/folders will correspond to steps in the smart contract
 state machine.
