@@ -21,7 +21,6 @@ from electionguard.key_ceremony import (
     CeremonyDetails,
 )
 
-from electionguard import serialize
 from electionguard.election import CiphertextElectionContext
 from electionguard.constants import ElectionConstants
 from electionguard.manifest import Manifest, InternalManifest
@@ -53,6 +52,7 @@ from utils import (
     load_designated_backups,
     load_device_by_number,
     to_public_record,
+    to_private_record,
     from_public_record,
 )
 
@@ -172,7 +172,7 @@ def VoteCommand(
     device = load_device_by_number(devices_dir, device_number)
 
     ballot: PlaintextBallot = build_ballot(manifest, candidate)
-    serialize.to_file(ballot, str(ballot.object_id), plaintext_dir)
+    to_private_record(private_dir, 'plaintext_ballot', ballot)
 
     encrypter = EncryptionMediator(
         internal_manifest, context, device

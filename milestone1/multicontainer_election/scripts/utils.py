@@ -196,7 +196,7 @@ def load_guardian_decryption_shares(
 
 PRIVATE_RECORDS = {
     'election_key_pair': (ElectionKeyPair, '.', 'election_key_pair'),
-    'plaintext_ballot': (PlaintextBallot, 'plaintext_ballots', '{ballot_id}'),
+    'plaintext_ballot': (PlaintextBallot, 'plaintext_ballots', '{obj.object_id}'),
 }
 
 PUBLIC_RECORDS = {

@@ -12,7 +12,9 @@ from utils import (
     load_guardian_pubkeys,
     load_spoiled_ballots,
     to_public_record,
+    to_private_record,
     from_public_record,
+    from_private_record,
 )
 
 
@@ -25,7 +27,6 @@ from pprint import pprint
 from typing import List, Dict
 
 from electionguard.guardian import Guardian
-from electionguard import serialize
 from electionguard.type import GuardianId
 from electionguard.key_ceremony import (
     CeremonyDetails,
@@ -71,7 +72,7 @@ def round1(guardian_id, sequence_order, public_dir, private_dir):
     # generate election key pair
     # NOTE there will eventually also be separate a Cardano wallet key pair
     election_key_pair: ElectionKeyPair = generate_election_key_pair(guardian_id, sequence_order, details.quorum)
-    serialize.to_file(election_key_pair, ELECTION_KEY_PAIR_NAME, private_dir)
+    to_private_record(private_dir, 'election_key_pair', election_key_pair)
 
     # share the public key (and other info)
     # TODO why not publish_record here? I guess that's later after backups?
@@ -90,9 +91,7 @@ def round2(guardian_id, sequence_order, public_dir, private_dir):
     makedirs(pubkeys_dir, exist_ok=True)
     makedirs(backups_dir, exist_ok=True)
 
-    # restore own private state
-    election_key_pair_path = join(private_dir, ELECTION_KEY_PAIR_NAME + '.json')
-    election_key_pair = serialize.from_file(ElectionKeyPair, election_key_pair_path)
+    election_key_pair = from_private_record(private_dir, 'election_key_pair')
 
     # load other guardians' public keys from shared folder
     other_guardian_pubkeys = [
@@ -129,8 +128,7 @@ def round3(guardian_id, sequence_order, public_dir, private_dir):
     makedirs(verifications_dir, exist_ok=True)
 
     # restore own private state
-    election_key_pair_path = join(private_dir, ELECTION_KEY_PAIR_NAME + '.json')
-    election_key_pair = serialize.from_file(ElectionKeyPair, election_key_pair_path)
+    election_key_pair = from_private_record(private_dir, 'election_key_pair')
     own_public_key = election_key_pair.share()
 
     # find backup files sent to self, with basenames as keys
@@ -257,11 +255,7 @@ def DecryptSharesCommand(
     makedirs(tally_dir  , exist_ok=True)
     makedirs(spoiled_shares_dir, exist_ok=True)
 
-    # restore own private state
-    # TODO make a function
-    election_key_pair_path = join(private_dir, ELECTION_KEY_PAIR_NAME + '.json')
-    election_key_pair = serialize.from_file(ElectionKeyPair, election_key_pair_path)
-    # print('election_key_pair:'); pprint(election_key_pair)
+    election_key_pair = from_private_record(private_dir, 'election_key_pair')
 
     # load required info
     manifest  = from_public_record(public_dir, 'manifest')
