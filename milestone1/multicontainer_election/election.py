@@ -7,7 +7,7 @@ import subprocess
 from click_default_group import DefaultGroup
 from dotmap import DotMap
 from os import makedirs
-from os.path import join
+from os.path import join, exists
 from pprint import pprint
 from pygments import highlight, lexers, formatters
 from typing import Optional
@@ -93,7 +93,9 @@ def arion_cleanup(cfg):
     # in case a previous run failed
     # TODO can Docker or Arion do this rm step more safely?
     subprocess.check_call(['arion', 'down'])
-    subprocess.check_call(['sudo', 'rm', '-rf', './data'])
+    data_dir = './data'
+    if exists(data_dir):
+        subprocess.check_call(['sudo', 'rm', '-rf', data_dir])
 
 @explain_step
 def setup(cfg):
