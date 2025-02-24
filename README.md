@@ -8,7 +8,7 @@ ElectionGuard + Cardano
 
 Work in progress on [the Catalyst fund13 project](https://milestones.projectcatalyst.io/projects/1300090).
 
-Current status as of 2024-02-20:
+Current status as of 2024-02-25:
 
 - All Milestones (1, 2, and 3) approved
 
@@ -17,7 +17,8 @@ Current status as of 2024-02-20:
   * Cleaned up [my electionguard fork](https://github.com/jefdaj/electionguard-python), but haven't published the Docker image yet
   * Partially archived [the NIST election format docs site](./milestone1/nist-docs)
   * The [Nix environment](./milestone1/nix-environment.md) works
-  * Working on the [local election script](./milestone1/multicontainer_election) (output 1.1)
+  * The [local election script](./milestone1/local-election) (output 1.1) works
+  * Next step is to demo + explain the local election script
 
 - Milestone 2:
   * [Cardano node + Ogmios](./milestone2/investigate/cardano-node-ogmios/) works
