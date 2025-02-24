@@ -29,7 +29,6 @@ from electionguard.key_ceremony import (
     ElectionJointKey,
     CeremonyDetails,
 )
-from electionguard import serialize
 from electionguard.election import CiphertextElectionContext
 from electionguard.constants import ElectionConstants, get_constants
 from electionguard.utils import get_optional
@@ -425,7 +424,7 @@ def DecryptResultsCommand(
 
     # load and decrypt tally
     tally_path = join(public_dir, '6_tally.json')
-    tally_enc = serialize.from_file(PublishedCiphertextTally, tally_path)
+    tally_enc = from_public_record(public_dir, 'ciphertext_tally')
     tally_prefix = join(tally_dir, 'tally')
     tally_shares: Dict[GuardianId, DecryptionShare] \
         = load_guardian_decryption_shares(tally_prefix, details.number_of_guardians)
@@ -491,7 +490,7 @@ def SummaryCommand(
 
     # load tally
     tally_result_path = join(results_dir, '1_tally.json')
-    plaintext_tally = serialize.from_file(PlaintextTally, tally_result_path)
+    plaintext_tally = from_public_record(public_dir, 'plaintext_tally')
 
     # based on print_results_step in electionguard_cli
 
@@ -511,7 +510,7 @@ def SummaryCommand(
         for n in listdir(spoiled_results_dir)
     }
     plaintext_spoiled_ballots: Dict[BallotId, PlaintextTally] = {
-        bid: serialize.from_file(PlaintextTally, p)
+        bid: from_public_record(public_dir, 'spoiled_result', ballot_id=bid)
         for (bid, p) in spoiled_paths.items()
     }
     ballot_ids = plaintext_spoiled_ballots.keys()

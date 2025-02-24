@@ -209,7 +209,7 @@ PUBLIC_RECORDS = {
     'guardian_backup': (ElectionPartialKeyBackup, '2_ceremony/2_backups', '{guardian_id}_backup_{backup_order}'),
     'guardian_verification': (ElectionPartialKeyVerification, '2_ceremony/3_verifications', '{json_name}'),
     'device': (EncryptionDevice, '4_devices', 'device_{obj.device_id}'),
-    'ciphertext_tally': (CiphertextTally, '.', '6_tally'),
+    'ciphertext_tally': (PublishedCiphertextTally, '.', '6_tally'),
     'plaintext_tally': (PlaintextTally, '7_decrypt/2_final', '1_tally'),
     'tally_share': (DecryptionShare, '7_decrypt/1_shares/1_tally', 'tally_{guardian_id}'),
     'spoiled_share': (DecryptionShare, '7_decrypt/1_shares/2_spoiled', '{spoiled_id}_{guardian_id}'),

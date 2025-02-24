@@ -274,10 +274,7 @@ def DecryptSharesCommand(
         joint_key
     )
 
-    # restore tally
-    # aha, you can deserialize these! you just need the Published version
-    tally_path = join(public_dir, '6_tally.json')
-    tally = serialize.from_file(PublishedCiphertextTally, tally_path)
+    tally = from_public_record(public_dir, 'ciphertext_tally')
 
     # create guardian object
     guardian = Guardian(election_key_pair, details)
