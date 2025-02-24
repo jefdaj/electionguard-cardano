@@ -464,11 +464,14 @@ def SummaryCommand(
     selection_names = manifest.get_selection_names("en")
     contest_names   = manifest.get_contest_names()
 
+    spoiled_header = 'Individual spoiled ballots'
+    csb.print_header(spoiled_header)
+    print()
     spoiled_summaries = {}
     for spoiled_result in spoiled_results:
         ballot_id = spoiled_result.object_id
         short_id  = ballot_id[ballot_id.find('-')+1:]
-        csb.print_header(f"Spoiled ballot '{short_id}'")
+        print(short_id)
         ballot_summary = []
         for contest in spoiled_result.contests.values():
             question = contest_names.get(contest.object_id)
@@ -482,13 +485,15 @@ def SummaryCommand(
                 answer = selected[0]
             except IndexError:
                 answer = 'No answer' # TODO is this allowed?
-            csb.print_section(f'{question} {answer}')
+            print(f'  {question} {answer}')
             contest_summary = {question: answer}
             ballot_summary.append(contest_summary)
         spoiled_summaries[short_id] = ballot_summary
+        print()
 
     # main tally
-    csb.print_header("Final tally of all cast ballots")
+    tally_header = "Tally of all cast ballots"
+    csb.print_header(tally_header)
     tally_summary = []
     contest_summaries = []
     for tally_contest in tally_result.contests.values():
@@ -509,8 +514,8 @@ def SummaryCommand(
     # save summary json
     # no particular format, except it must be a json-serializable dict
     summary = {
-        'tally of cast ballots'     : tally_summary
-        'individual spoiled ballots': spoiled_summaries
+        tally_header  : tally_summary,
+        spoiled_header: spoiled_summaries,
     }
     to_public_record(public_dir, 'summary', summary)
 
