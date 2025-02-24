@@ -9,7 +9,7 @@
   },
   "election": {
     "guardians": {"count": 3, "quorum": 2},
-    "votingDevices": {"count": 3},
+    "devices": {"count": 4},
     "question": "Are pineapples cool?"
   },
   "votes": {

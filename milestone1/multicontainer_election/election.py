@@ -191,7 +191,7 @@ def add_device(cfg, device_number):
 
 @explain_step
 def add_devices(cfg):
-    for n in range(1, cfg.election.votingDevices.count + 1):
+    for n in range(1, cfg.election.devices.count + 1):
         add_device(cfg, n)
 
 def vote(cfg, device_number, candidate, spoil=False):
@@ -217,12 +217,12 @@ def vote_all(cfg):
 
         for _ in range(n_votes.spoil):
             # hack to iterate over devices, just to show there can be more than one
-            device_number = votes_so_far % cfg.election.votingDevices.count + 1
+            device_number = votes_so_far % cfg.election.devices.count + 1
             vote(cfg, device_number, candidate, spoil=True)
             votes_so_far += 1
 
         for _ in range(n_votes.cast):
-            device_number = votes_so_far % cfg.election.votingDevices.count + 1
+            device_number = votes_so_far % cfg.election.devices.count + 1
             vote(cfg, device_number, candidate)
             votes_so_far += 1
 

@@ -37,7 +37,7 @@ let
 
   mkServices = cfg:
     builtins.listToAttrs (mkAttrsList "admin" 1) //
-    builtins.listToAttrs (mkAttrsList "device" cfg.election.votingDevices.count) //
+    builtins.listToAttrs (mkAttrsList "device" cfg.election.devices.count) //
     builtins.listToAttrs (mkAttrsList "guardian" cfg.election.guardians.count);
 
 in {
