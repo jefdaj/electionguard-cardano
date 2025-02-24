@@ -86,11 +86,24 @@ def load_submitted_ballots(
         b.state = state
     return ballots
 
-def load_cast_ballots(public_dir: str, cast_dir: str) -> List[SubmittedBallot]:
+def load_cast_ballots(public_dir: str) -> List[SubmittedBallot]:
+    cast_dir = join(public_dir, PUBLIC_RECORDS['cast_notice'][1])
     return load_submitted_ballots(public_dir, cast_dir, BallotBoxState.CAST)
 
-def load_spoiled_ballots(public_dir: str, spoiled_dir: str) -> List[SubmittedBallot]:
+def load_spoiled_ballots(public_dir: str) -> List[SubmittedBallot]:
+    spoiled_dir = join(public_dir, PUBLIC_RECORDS['ballot_spoiled'][1])
     return load_submitted_ballots(public_dir, spoiled_dir, BallotBoxState.SPOILED)
+
+
+def load_spoiled_results(public_dir: str) -> List[PlaintextTally]:
+    spoiled_dir = join(public_dir, PUBLIC_RECORDS['spoiled_result'][1])
+    spoiled_ids = [splitext(n)[0] for n in listdir(spoiled_dir)]
+    spoiled_results = [
+        from_public_record(public_dir, 'spoiled_result', ballot_id=i)
+        for i in spoiled_ids
+    ]
+    return spoiled_results
+
 
 # TODO name something clearer in the context of referendum questions?
 def find_candidate_id(manifest: Manifest, candidate_name: str) -> Optional[str]:
@@ -235,7 +248,7 @@ PUBLIC_RECORDS = {
     'guardian_backup': (ElectionPartialKeyBackup, '2_ceremony/2_backups', '{guardian_id}_backup_{backup_order}'),
     'guardian_verification': (ElectionPartialKeyVerification, '2_ceremony/3_verifications', '{guardian_id}_backup_{backup_order}'),
     'device': (EncryptionDevice, '4_devices', 'device_{device_number}'),
-    'ciphertext_tally': (PublishedCiphertextTally, '.', '6_tally'),
+    'ciphertext_tally': (PublishedCiphertextTally, '.', '5_tally'),
     'plaintext_tally': (PlaintextTally, '7_decrypt/2_final', '1_tally'),
     'tally_share': (DecryptionShare, '7_decrypt/1_shares/1_tally', 'tally_{guardian_id}'),
     'spoiled_share': (DecryptionShare, '7_decrypt/1_shares/2_spoiled', '{spoiled_id}_{guardian_id}'),

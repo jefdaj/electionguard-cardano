@@ -286,7 +286,7 @@ def DecryptSharesCommand(
     to_public_record(public_dir, 'tally_share', tally_share, guardian_id=guardian_id)
 
     # compute ballot shares
-    spoiled_ballots = load_spoiled_ballots(public_dir, spoiled_dir)
+    spoiled_ballots = load_spoiled_ballots(public_dir)
     spoiled_shares: Dict[BallotId, Optional[DecryptionShare]] \
         = guardian.compute_ballot_shares(spoiled_ballots, context)
     for (spoiled_id, spoiled_share) in spoiled_shares.items():

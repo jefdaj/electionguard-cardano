@@ -10,6 +10,7 @@ from utils import (
     load_cast_ballots,
     load_tally_shares,
     load_spoiled_shares,
+    load_spoiled_results,
     load_guardian_pubkeys,
     load_spoiled_ballots,
     to_public_record,
@@ -88,11 +89,6 @@ def BuildManifestCommand(
     provided by the user.
     """
     # print(json.dumps(locals()))
-
-    # set up dirs
-    announce_dir = join(public_dir, '1_announce')
-    makedirs(public_dir, exist_ok=True)
-    makedirs(announce_dir, exist_ok=True)
 
     now = datetime.utcnow()
     county_id = "electionguard-cardano-test-county"
@@ -236,9 +232,6 @@ def AnnounceKeyCeremonyCommand(
     # TODO remove this entire step? not sure it adds anything
     # TODO wait actually the n guardians and quorum aren't in the manifest
 
-    announce_dir = join(public_dir, '1_announce')
-    makedirs(announce_dir, exist_ok=True)
-
     # based on electionguard-python/src/electionguard_gui/models/key_ceremony_service:create
     # announcement = {
     #     "created_at": datetime.utcnow(),
@@ -338,14 +331,6 @@ def TallyCommand(
     # script = __file__
     # print(json.dumps(locals()))
 
-    # set up dirs
-    announce_dir  = join(public_dir, '1_announce')
-    setup_dir     = join(public_dir, '3_election')
-    ballots_dir   = join(public_dir, '5_ballots')
-    submitted_dir = join(ballots_dir       , '1_submitted')
-    cast_dir      = join(ballots_dir       , '2_cast')
-    spoiled_dir   = join(ballots_dir       , '3_spoiled')
-
     # load required info
     manifest  = from_public_record(public_dir, 'manifest')
     joint_key = from_public_record(public_dir, 'joint_key')
@@ -365,15 +350,14 @@ def TallyCommand(
         context
     )
 
-    cast_ballots    = load_cast_ballots(public_dir, cast_dir)
-    spoiled_ballots = load_spoiled_ballots(public_dir, spoiled_dir)
+    cast_ballots    = load_cast_ballots(public_dir)
+    spoiled_ballots = load_spoiled_ballots(public_dir)
 
     for ballot in cast_ballots + spoiled_ballots:
         assert(tally.append(ballot, should_validate=True))
 
     assert tally.cast() == len(cast_ballots)
     assert tally.spoiled() == len(spoiled_ballots)
-    assert tally.cast() + tally.spoiled() == len(listdir(submitted_dir))
 
     to_public_record(public_dir, 'ciphertext_tally', tally.publish())
 
@@ -394,23 +378,6 @@ def DecryptResultsCommand(
     Combine guardian decryption shares into final results: tally + spoiled ballots.
     """
     # print(json.dumps(locals()))
-
-    # set up dirs
-    ceremony_dir = join(public_dir, '2_ceremony')
-    pubkeys_dir  = join(ceremony_dir, '1_pubkeys')
-    announce_dir  = join(public_dir, '1_announce')
-    setup_dir     = join(public_dir, '3_election')
-    ballots_dir   = join(public_dir, '5_ballots')
-    submitted_dir = join(ballots_dir       , '1_submitted')
-    cast_dir      = join(ballots_dir       , '2_cast')
-    spoiled_dir   = join(ballots_dir       , '3_spoiled')
-    decrypt_dir   = join(public_dir, '7_decrypt')
-    shares_dir    = join(decrypt_dir       , '1_shares')
-    tally_dir     = join(shares_dir        , '1_tally')
-    results_dir   = join(decrypt_dir, '2_final')
-    spoiled_shares_dir  = join(shares_dir , '2_spoiled')
-    spoiled_results_dir = join(results_dir, '2_spoiled')
-    makedirs(spoiled_results_dir, exist_ok=True)
 
     # load required info
     manifest  = from_public_record(public_dir, 'manifest')
@@ -440,7 +407,7 @@ def DecryptResultsCommand(
     print('decrypted tally')
 
     # load spoiled ballots
-    spoiled_ballots: List[SubmittedBallot] = load_spoiled_ballots(public_dir, spoiled_dir)
+    spoiled_ballots: List[SubmittedBallot] = load_spoiled_ballots(public_dir)
 
     # load spoiled ballot shares
     spoiled_ids = [b.object_id for b in spoiled_ballots]
@@ -484,50 +451,26 @@ def SummaryCommand(
     public_dir: str,
 ) -> None:
     """
-    Save and print a human-readable summary of the election.
-    This isn't part of the ElectionGuard protocol; I just thought it would be helpful.
+    Save and print a human-readable summary of the decrypted results.
+    Roughly based on print_results_step in the electionguard_cli.
     """
 
-    # set up dirs
-    announce_dir = join(public_dir, '1_announce')
-    decrypt_dir   = join(public_dir, '7_decrypt')
-    results_dir   = join(decrypt_dir, '2_final')
-    spoiled_results_dir = join(results_dir, '2_spoiled')
+    csb = CliStepBase() # prints in electionguard_cli style
 
-    manifest  = from_public_record(public_dir, 'manifest')
+    manifest        = from_public_record(public_dir, 'manifest')
+    tally_result    = from_public_record(public_dir, 'plaintext_tally')
+    spoiled_results = load_spoiled_results(public_dir)
 
-    # load tally
-    tally_result_path = join(results_dir, '1_tally.json')
-    plaintext_tally = from_public_record(public_dir, 'plaintext_tally')
-
-    # based on print_results_step in electionguard_cli
-
-    csb = CliStepBase() # TODO call this "printer" or "formatter"?
     selection_names = manifest.get_selection_names("en")
-    contest_names = manifest.get_contest_names()
+    contest_names   = manifest.get_contest_names()
 
-    # summary json in my own temporary format
-    summary = {
-        'tally of cast ballots': [],
-        'individual spoiled ballots': {},
-    }
-
-    # spoiled ballots
-    spoiled_paths: Dict[BallotId, str] = {
-        splitext(n)[0]: join(spoiled_results_dir, n)
-        for n in listdir(spoiled_results_dir)
-    }
-    plaintext_spoiled_ballots: Dict[BallotId, PlaintextTally] = {
-        bid: from_public_record(public_dir, 'spoiled_result', ballot_id=bid)
-        for (bid, p) in spoiled_paths.items()
-    }
-    ballot_ids = plaintext_spoiled_ballots.keys()
-    for ballot_id in ballot_ids:
-        short_id = ballot_id[ballot_id.find('-')+1:]
+    spoiled_summaries = {}
+    for spoiled_result in spoiled_results:
+        ballot_id = spoiled_result.object_id
+        short_id  = ballot_id[ballot_id.find('-')+1:]
         csb.print_header(f"Spoiled ballot '{short_id}'")
-        spoiled_ballot = plaintext_spoiled_ballots[ballot_id]
         ballot_summary = []
-        for contest in spoiled_ballot.contests.values():
+        for contest in spoiled_result.contests.values():
             question = contest_names.get(contest.object_id)
             selected = [
                 selection_names[selection.object_id]
@@ -542,12 +485,13 @@ def SummaryCommand(
             csb.print_section(f'{question} {answer}')
             contest_summary = {question: answer}
             ballot_summary.append(contest_summary)
-        summary['individual spoiled ballots'][short_id] = ballot_summary
+        spoiled_summaries[short_id] = ballot_summary
 
     # main tally
     csb.print_header("Final tally of all cast ballots")
+    tally_summary = []
     contest_summaries = []
-    for tally_contest in plaintext_tally.contests.values():
+    for tally_contest in tally_result.contests.values():
         contest_name = contest_names.get(tally_contest.object_id)
         contest_summary = {
             'question': contest_name,
@@ -560,8 +504,14 @@ def SummaryCommand(
             name = selection_names[selection.object_id]
             csb.print_value(f"  {name}", selection.tally)
             contest_summary['votes'][name] = selection.tally
-        summary['tally of cast ballots'].append(contest_summary)
+        tally_summary.append(contest_summary)
 
+    # save summary json
+    # no particular format, except it must be a json-serializable dict
+    summary = {
+        'tally of cast ballots'     : tally_summary
+        'individual spoiled ballots': spoiled_summaries
+    }
     to_public_record(public_dir, 'summary', summary)
 
 
