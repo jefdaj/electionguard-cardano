@@ -28,6 +28,54 @@ time ./election.py
 You can edit [election.json](./election.json),
 re-run [election.py](./election.py) with no arguments,
 and check that the final `data/public/8_summary.json` matches.
+It should look something like this.
+
+```json
+{
+  "Tally of all cast ballots": [
+    {
+      "question": "Are pineapples cool?",
+      "votes": {
+        "Yes": 3,
+        "No": 2,
+        "Unsure": 1
+      }
+    }
+  ],
+  "Individual spoiled ballots": {
+    "5f1a6d80-f2d7-11ef-96d6-0242ac140006": [
+      {
+        "Are pineapples cool?": "Yes"
+      }
+    ],
+    "6188eea2-f2d7-11ef-864c-0242ac140009": [
+      {
+        "Are pineapples cool?": "No"
+      }
+    ],
+    "6380c932-f2d7-11ef-8f89-0242ac140009": [
+      {
+        "Are pineapples cool?": "Unsure"
+      }
+    ],
+    "610d704c-f2d7-11ef-9ed9-0242ac140006": [
+      {
+        "Are pineapples cool?": "No"
+      }
+    ],
+    "63feb02c-f2d7-11ef-ab97-0242ac140002": [
+      {
+        "Are pineapples cool?": "Unsure"
+      }
+    ],
+    "62ffd0d4-f2d7-11ef-9ab5-0242ac140006": [
+      {
+        "Are pineapples cool?": "Unsure"
+      }
+    ]
+  }
+}
+```
 
 (When it asks for your password, that's to delete `./data`)
 
