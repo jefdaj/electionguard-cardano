@@ -12,13 +12,17 @@ The `data` directory is cleared when starting an election.
 Each container can access its own private state in `data/private/<container>`,
 and they communicate by saving and loading files in `data/public`.
 
+[Asciinema demo here](https://asciinema.org/a/lloCjFW2LvnqdqKEbQGdySsRC).
+Best viewed fullscreen.
+It goes fast, but you can pause and scan back and forth as needed.
+
 
 ## Run an election!
 
 Assuming you have Docker and Nix installed,
 and Nix flakes enabled, this should work:
 
-TODO publish electionguard-python docker image!
+TODO publish electionguard-python docker image
 
 ```bash
 nix develop
