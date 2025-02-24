@@ -460,7 +460,10 @@ def DecryptResultsCommand(
             manifest
         )
         assert spoiled_result is not None
-        to_public_record(public_dir, 'spoiled_result', spoiled_result)
+        to_public_record(
+            public_dir, 'spoiled_result', spoiled_result,
+            ballot_id=spoiled_result.object_id
+        )
         print(f'decrypted {ballot_id}')
 
 

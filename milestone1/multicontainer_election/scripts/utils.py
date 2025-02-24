@@ -213,32 +213,38 @@ PUBLIC_RECORDS = {
     'plaintext_tally': (PlaintextTally, '7_decrypt/2_final', '1_tally'),
     'tally_share': (DecryptionShare, '7_decrypt/1_shares/1_tally', 'tally_{guardian_id}'),
     'spoiled_share': (DecryptionShare, '7_decrypt/1_shares/2_spoiled', '{spoiled_id}_{guardian_id}'),
-    'spoiled_result': (PlaintextTally, '7_decrypt/2_final/2_spoiled', '{obj.object_id}'),
+    'spoiled_result': (PlaintextTally, '7_decrypt/2_final/2_spoiled', '{ballot_id}'),
     'ballot_submitted': (PlaintextBallot, '5_ballots/1_submitted', '{obj.object_id}'),
     'cast_notice': (dict, '5_ballots/2_cast', '{obj.ballot_id}'),
     'ballot_spoiled': (CiphertextBallot, '5_ballots/3_spoiled', '{obj.object_id}'),
     'summary': (dict, '.', '8_summary'),
 }
 
-def to_private_record(private_dir: str, record_type: str, **fmtargs):
-    pass
-    # TODO makedirs
-    # TODO serialize.to_file
-
-def from_private_record(private_dir: str, record_type: str, **fmtargs):
-    pass
-
-def to_public_record(public_dir: str, record_type: str, obj, **fmtargs):
-    (_, dname, fstr) = PUBLIC_RECORDS[record_type]
+# you probably want the public or private versions below
+def to_record(records_map, public_dir: str, record_type: str, obj, **fmtargs):
+    (_, dname, fstr) = records_map[record_type]
     dpath = join(public_dir, dname)
     makedirs(dpath, exist_ok=True)
     fmtargs['obj'] = obj # so we can use its fields too
     fname = fstr.format(**fmtargs)
     serialize.to_file(obj, fname, dpath)
 
-def from_public_record(public_dir: str, record_type: str, **fmtargs):
-    (rtype, dname, fstr) = PUBLIC_RECORDS[record_type]
+# you probably want the public or private versions below
+def from_record(records_map, public_dir: str, record_type: str, **fmtargs):
+    (rtype, dname, fstr) = records_map[record_type]
     dpath = join(public_dir, dname)
     fname = fstr.format(**fmtargs) + '.json'
     fpath = join(dpath, fname)
     return serialize.from_file(rtype, fpath)
+
+def to_public_record(public_dir: str, record_type: str, obj, **fmtargs):
+    return to_record(PUBLIC_RECORDS, public_dir, record_type, obj, **fmtargs)
+
+def to_private_record(private_dir: str, record_type: str, obj, **fmtargs):
+    return to_record(PRIVATE_RECORDS, private_dir, record_type, obj, **fmtargs)
+
+def from_public_record(public_dir: str, record_type: str, **fmtargs):
+    return from_record(PUBLIC_RECORDS, public_dir, record_type, **fmtargs)
+
+def from_private_record(private_dir: str, record_type: str, **fmtargs):
+    return from_record(PRIVATE_RECORDS, private_dir, record_type, **fmtargs)
