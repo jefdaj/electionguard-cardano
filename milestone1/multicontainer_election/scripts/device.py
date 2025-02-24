@@ -195,7 +195,10 @@ def VoteCommand(
         store1
     )
     assert ballot_submitted.nonce is None
-    to_public_record(public_dir, 'ballot_submitted', ballot_submitted)
+    to_public_record(
+        public_dir, 'ballot_submitted', ballot_submitted,
+        ballot_id=ballot_submitted.object_id
+    )
 
     if spoil:
 

@@ -70,35 +70,27 @@ def build_election(
 
     return (constants, internal_manifest, context)
 
-
-def load_submitted_ballots(submitted_ballot_paths: List[str]) -> List[SubmittedBallot]:
-    # NOTE this works for cast and/or spoiled ballots
-    submitted_ballots = [
-        serialize.from_file(SubmittedBallot, p)
-        for p in submitted_ballot_paths
+# you probably want the cast or spoiled versions below
+def load_submitted_ballots(
+        public_dir: str,
+        id_list_dir: str,
+        state: BallotBoxState
+        ) -> List[SubmittedBallot]:
+    ballot_ids = [splitext(n)[0] for n in listdir(id_list_dir)]
+    ballots = [
+        from_public_record(public_dir, 'ballot_submitted', ballot_id=bid)
+        for bid in ballot_ids
     ]
-    return submitted_ballots
+    # TODO is this right? seems too simple and hacky
+    for b in ballots:
+        b.state = state
+    return ballots
 
+def load_cast_ballots(public_dir: str, cast_dir: str) -> List[SubmittedBallot]:
+    return load_submitted_ballots(public_dir, cast_dir, BallotBoxState.CAST)
 
-def load_cast_ballots(submitted_dir: str, cast_dir: str) -> List[SubmittedBallot]:
-    cast_names = listdir(cast_dir)
-    cast_paths = [join(submitted_dir, n) for n in cast_names]
-    cast_ballots = load_submitted_ballots(cast_paths)
-    # TODO is this right? it seems too easy but passes the validation
-    for b in cast_ballots:
-        b.state = BallotBoxState.CAST
-    return cast_ballots
-
-
-# TODO if the code ends up the same, unify this with load_cast_ballots
-def load_spoiled_ballots(submitted_dir: str, spoiled_dir: str) -> List[SubmittedBallot]:
-    spoiled_names = listdir(spoiled_dir)
-    spoiled_paths = [join(submitted_dir, n) for n in spoiled_names]
-    spoiled_ballots = load_submitted_ballots(spoiled_paths)
-    # TODO is this right? it seems too easy but passes the validation
-    for b in spoiled_ballots:
-        b.state = BallotBoxState.SPOILED
-    return spoiled_ballots
+def load_spoiled_ballots(public_dir: str, spoiled_dir: str) -> List[SubmittedBallot]:
+    return load_submitted_ballots(public_dir, spoiled_dir, BallotBoxState.SPOILED)
 
 
 def load_device_by_number(devices_dir: str, device_number: int) -> EncryptionDevice:
@@ -214,7 +206,7 @@ PUBLIC_RECORDS = {
     'tally_share': (DecryptionShare, '7_decrypt/1_shares/1_tally', 'tally_{guardian_id}'),
     'spoiled_share': (DecryptionShare, '7_decrypt/1_shares/2_spoiled', '{spoiled_id}_{guardian_id}'),
     'spoiled_result': (PlaintextTally, '7_decrypt/2_final/2_spoiled', '{ballot_id}'),
-    'ballot_submitted': (PlaintextBallot, '5_ballots/1_submitted', '{obj.object_id}'),
+    'ballot_submitted': (CiphertextBallot, '5_ballots/1_submitted', '{ballot_id}'),
     'cast_notice': (dict, '5_ballots/2_cast', '{obj.ballot_id}'),
     'ballot_spoiled': (CiphertextBallot, '5_ballots/3_spoiled', '{obj.object_id}'),
     'summary': (dict, '.', '8_summary'),

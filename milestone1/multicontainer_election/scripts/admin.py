@@ -364,8 +364,8 @@ def TallyCommand(
         context
     )
 
-    cast_ballots    = load_cast_ballots(submitted_dir, cast_dir)
-    spoiled_ballots = load_spoiled_ballots(submitted_dir, spoiled_dir)
+    cast_ballots    = load_cast_ballots(public_dir, cast_dir)
+    spoiled_ballots = load_spoiled_ballots(public_dir, spoiled_dir)
 
     for ballot in cast_ballots + spoiled_ballots:
         assert(tally.append(ballot, should_validate=True))
@@ -439,7 +439,7 @@ def DecryptResultsCommand(
     print('decrypted tally')
 
     # load spoiled ballots
-    spoiled_ballots: List[SubmittedBallot] = load_spoiled_ballots(submitted_dir, spoiled_dir)
+    spoiled_ballots: List[SubmittedBallot] = load_spoiled_ballots(public_dir, spoiled_dir)
 
     # load spoiled ballot shares
     spoiled_ids = [b.object_id for b in spoiled_ballots]
