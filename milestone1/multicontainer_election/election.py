@@ -316,10 +316,10 @@ def ElectionCommand(
         run_single_step(cfg, single_step)
     else:
         try:
-            setup(cfg) # TODO down and up again if needed?
+            setup(cfg)
             election(cfg)
         except Exception as e:
-            pprint(e) # TODO recover?
+            pprint(e)
             LOG.error('Election failed :(')
         finally:
             teardown(cfg)
