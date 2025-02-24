@@ -12,3 +12,12 @@ time ./election.py
 nix develop
 ./election.py --pause-to-explain
 ```
+
+```bash
+# another way to step through
+# good for debugging
+nix develop
+./election.py --single-step arion_up
+./election.py --single-step build_manifest
+./election.py --single-step ...
+```
