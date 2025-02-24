@@ -3,13 +3,13 @@
 So far this has been a lot of research into the Cardano ecosystem
 and trying various partial dev stacks.
 
-I'm still doing that, but also starting a small [pubsub/]() project to test the
+I'm still doing that, but also starting a small [pubsub](./pubsub/) project to test the
 components I think I want to use in the main ElectionGuard project.
 
 
 ## Investigate partial dev stacks
 
-These are works in progress under [investigate/]():
+These are works in progress under [investigate](./investigate/):
 
 - [x] Aiken + Nix
 - [ ] Aiken + Nix + MeshJS
