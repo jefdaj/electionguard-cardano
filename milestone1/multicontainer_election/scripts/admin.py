@@ -8,7 +8,8 @@
 from utils import (
     build_election,
     load_cast_ballots,
-    load_guardian_decryption_shares,
+    load_tally_shares,
+    load_spoiled_shares,
     load_guardian_pubkeys,
     load_spoiled_ballots,
     to_public_record,
@@ -284,7 +285,7 @@ def PublishJointKeyCommand(
     makedirs(pubkeys_dir, exist_ok=True)
     makedirs(setup_dir, exist_ok=True)
 
-    guardian_public_keys: List[ElectionPublicKey] = load_guardian_pubkeys(pubkeys_dir)
+    guardian_public_keys: List[ElectionPublicKey] = load_guardian_pubkeys(public_dir)
 
     joint_key = combine_election_public_keys(guardian_public_keys)
     assert joint_key is not None
@@ -425,9 +426,9 @@ def DecryptResultsCommand(
     # load and decrypt tally
     tally_path = join(public_dir, '6_tally.json')
     tally_enc = from_public_record(public_dir, 'ciphertext_tally')
-    tally_prefix = join(tally_dir, 'tally')
+    # tally_prefix = join(tally_dir, 'tally')
     tally_shares: Dict[GuardianId, DecryptionShare] \
-        = load_guardian_decryption_shares(tally_prefix, details.number_of_guardians)
+        = load_tally_shares(public_dir, details.number_of_guardians)
     tally_result = decrypt_tally(
         tally_enc,
         tally_shares,
@@ -443,11 +444,15 @@ def DecryptResultsCommand(
 
     # load spoiled ballot shares
     spoiled_ids = [b.object_id for b in spoiled_ballots]
-    spoiled_prefixes = [join(spoiled_shares_dir, i) for i in spoiled_ids]
+    # spoiled_prefixes = [join(spoiled_shares_dir, i) for i in spoiled_ids]
     spoiled_shares: Dict[str, Dict[GuardianId, DecryptionShare]] = {}
-    for (bid, prefix) in zip(spoiled_ids, spoiled_prefixes):
-        shares = load_guardian_decryption_shares(prefix, details.number_of_guardians)
-        spoiled_shares[bid] = shares
+    # for (bid, prefix) in zip(spoiled_ids, spoiled_prefixes):
+    for spoiled_id in spoiled_ids:
+        shares = load_spoiled_shares(
+            public_dir, details.number_of_guardians,
+            spoiled_id=spoiled_id
+            )
+        spoiled_shares[spoiled_id] = shares
 
     # decrypt spoiled ballots
     for spoiled_ballot in spoiled_ballots:

@@ -177,18 +177,40 @@ def load_designated_backups(
     assert len(designated_backups) > 0
     return designated_backups
 
-def load_guardian_decryption_shares(
-        path_prefix: str,
-        guardian_count: int
+# you probably want the tally or spoiled ballot specific versions below
+def load_decryption_shares(
+        share_type: str,
+        public_dir: str,
+        guardian_count: int,
+        **fmtargs
     ) -> Dict[GuardianId, DecryptionShare]:
     shares = {}
+    # we assume they're sequential, but not necessarily all present
+    # TODO should the earlier fns work that way too?
     for n in range(1, guardian_count + 1):
         guardian_id = f'guardian_{n}'
-        share_path = f'{path_prefix}_{guardian_id}.json'
-        # TODO how to fit these into the standard PUBLIC_RECORDS map below?
-        share = serialize.from_file(DecryptionShare, share_path)
-        shares[guardian_id] = share
+        try:
+            share = from_public_record(
+                public_dir, share_type,
+                guardian_id=guardian_id,
+                **fmtargs
+            )
+            shares[guardian_id] = share
+        except FileNotFoundError:
+            print(f'WARNING {guardian_id} tally share missing')
+    assert len(shares) > 0
     return shares
+
+def load_tally_shares(public_dir, guardian_count):
+    return load_decryption_shares(
+        'tally_share', public_dir, guardian_count
+    )
+
+def load_spoiled_shares(public_dir, guardian_count, spoiled_id):
+    return load_decryption_shares(
+        'spoiled_share', public_dir, guardian_count,
+        spoiled_id=spoiled_id
+    )
 
 
 ### paths ###
