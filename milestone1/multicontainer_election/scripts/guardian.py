@@ -132,7 +132,7 @@ def round3(guardian_id, sequence_order, public_dir, private_dir):
     own_public_key = election_key_pair.share()
 
     # find backup files sent to self, with basenames as keys
-    designated_backups = load_designated_backups(backups_dir, guardian_id)
+    designated_backups = load_designated_backups(public_dir, guardian_id)
 
     # load other guardians' public keys from shared folder
     other_guardian_pubkeys = {
@@ -140,8 +140,8 @@ def round3(guardian_id, sequence_order, public_dir, private_dir):
         if k.owner_id != guardian_id # remove self
     }
 
-    for (json_name, backup) in designated_backups.items():
-        owner_id = backup.owner_id
+    # for (json_name, backup) in designated_backups.items():
+    for (owner_id, backup) in designated_backups.items():
         owner_public_key = other_guardian_pubkeys[owner_id]
         verification: ElectionPartialKeyVerification = verify_election_partial_key_backup(
             guardian_id, # mine
@@ -151,7 +151,13 @@ def round3(guardian_id, sequence_order, public_dir, private_dir):
         )
         assert verification.verified == True
         # these are named identically to the corresponding guardian_backups for now
-        to_public_record(public_dir, 'guardian_verification', verification, json_name=json_name)
+        guardian_number = int(guardian_id.split('_')[-1])
+        to_public_record(
+            public_dir, 'guardian_verification', verification,
+            # json_name=json_name
+            guardian_id=owner_id,
+            backup_order=guardian_number
+        )
 
 @click.command("key-ceremony")
 @click.option(

@@ -154,16 +154,27 @@ def load_guardian_pubkeys(public_dir: str) -> List[ElectionPublicKey]:
     return guardian_pubkeys
 
 
-def load_designated_backups(backups_dir: str, guardian_id: GuardianId) -> Dict[str, ElectionPartialKeyBackup]:
-    # TODO use own public key to pick them out rather than filename?
+def load_designated_backups(
+        public_dir: str,
+        guardian_id: GuardianId) -> Dict[str, ElectionPartialKeyBackup]:
+    # same as above: assume they're named sequentially
     designated_backups: Dict[str, ElectionPartialKeyBackup] = {}
-    for json_filename in listdir(backups_dir):
-        json_path = join(backups_dir, json_filename)
-        json_name = splitext(json_filename)[0]
-        # TODO how to fit these into the standard PUBLIC_RECORDS map below?
-        backup = serialize.from_file(ElectionPartialKeyBackup, json_path)
-        if backup.designated_id == guardian_id:
-            designated_backups[json_name] = backup
+    guardian_number = int(guardian_id.split('_')[-1])
+    backup_order = 0
+    while True:
+        backup_order += 1
+        if backup_order == guardian_number:
+            continue # skip self
+        try:
+            backup = from_public_record(
+                public_dir, 'guardian_backup',
+                guardian_id=f'guardian_{backup_order}',
+                backup_order=guardian_number
+            )
+            designated_backups[backup.owner_id] = backup
+        except FileNotFoundError:
+            break
+    assert len(designated_backups) > 0
     return designated_backups
 
 def load_guardian_decryption_shares(
@@ -200,7 +211,7 @@ PUBLIC_RECORDS = {
     'context': (CiphertextElectionContext, '3_election', 'context'),
     'guardian_pubkey': (ElectionPublicKey, '2_ceremony/1_pubkeys', '{guardian_id}'),
     'guardian_backup': (ElectionPartialKeyBackup, '2_ceremony/2_backups', '{guardian_id}_backup_{backup_order}'),
-    'guardian_verification': (ElectionPartialKeyVerification, '2_ceremony/3_verifications', '{json_name}'),
+    'guardian_verification': (ElectionPartialKeyVerification, '2_ceremony/3_verifications', '{guardian_id}_backup_{backup_order}'),
     'device': (EncryptionDevice, '4_devices', 'device_{device_number}'),
     'ciphertext_tally': (PublishedCiphertextTally, '.', '6_tally'),
     'plaintext_tally': (PlaintextTally, '7_decrypt/2_final', '1_tally'),
