@@ -96,13 +96,13 @@ def arion_cleanup(cfg):
     subprocess.check_call(['sudo', 'rm', '-rf', './data'])
 
 @explain_step
-def arion_up(cfg):
+def setup(cfg):
     # arion also loads cfg separately via Nix
     arion_cleanup(cfg)
     subprocess.check_call(['arion', 'up', '-d'])
 
 @explain_step
-def arion_down(cfg):
+def teardown(cfg):
     subprocess.check_call(['arion', 'down'])
 
 
@@ -270,7 +270,6 @@ def summary(cfg):
         ]
     )
 
-
 def election(cfg):
     build_manifest(cfg)
     announce_key_ceremony(cfg)
@@ -315,13 +314,13 @@ def ElectionCommand(
         run_single_step(cfg, single_step)
     else:
         try:
-            arion_up(cfg) # TODO down and up again if needed?
+            setup(cfg) # TODO down and up again if needed?
             election(cfg)
         except Exception as e:
             pprint(e) # TODO recover?
             LOG.error('Election failed :(')
         finally:
-            arion_down(cfg)
+            teardown(cfg)
 
 @click.group(cls=DefaultGroup, default='election', default_if_no_args=True)
 def cli() -> None:

@@ -17,7 +17,8 @@ nix develop
 # another way to step through
 # good for debugging
 nix develop
-./election.py --single-step arion_up
+./election.py --single-step setup
 ./election.py --single-step build_manifest
 ./election.py --single-step ...
+./election.py --single-step teardown
 ```
