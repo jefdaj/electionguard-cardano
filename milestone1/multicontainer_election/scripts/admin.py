@@ -62,10 +62,6 @@ from electionguard_cli.cli_steps.cli_step_base import CliStepBase
 from electionguard.tally import PlaintextTally
 
 
-MANIFEST_NAME  = '1_manifest'
-JOINT_KEY_NAME = 'joint_key'
-
-
 @click.command("build-manifest")
 @click.option(
     "--public-dir",
@@ -88,6 +84,7 @@ def BuildManifestCommand(
     For now it handles only one referendum-style yes or no question,
     provided by the user.
     """
+
     # print(json.dumps(locals()))
 
     now = datetime.utcnow()
@@ -224,34 +221,12 @@ def AnnounceKeyCeremonyCommand(
     public_dir: str,
 ) -> None:
     """Announce key ceremony parameters.
-    This is a provisional thing based on the electionguard_gui key_ceremony_service.py;
-    I think eventually what we want is for everything to flow from the manifest instead.
+    This is provisional based on the electionguard_gui key_ceremony_service.py;
+    I'm not sure whether it's the right approach yet.
     """
+
     # print(json.dumps(locals()))
 
-    # TODO remove this entire step? not sure it adds anything
-    # TODO wait actually the n guardians and quorum aren't in the manifest
-
-    # based on electionguard-python/src/electionguard_gui/models/key_ceremony_service:create
-    # announcement = {
-    #     "created_at": datetime.utcnow(),
-    #     "guardian_count": guardian_count,
-    #     "quorum": guardian_quorum, # TODO guardian_quorum here too for consistency?
-    #     # "backups": [],
-    #     # "completed_at": None,
-    #     # "created_by": self._auth_service.get_user_id(),
-    #     # "guardians_joined": [],
-    #     # "guardians_keys": [],
-    #     # "joint_key": None,
-    #     # "key_ceremony_name": key_ceremony_name,
-    #     # "keys": [],
-    #     # "other_keys": [],
-    #     # "shared_backups": [],
-    #     # "verifications": [],
-    # }
-    # announcement_name = '2_ceremony'
-
-    details_name = '2_ceremony'
     details = CeremonyDetails(guardian_count, guardian_quorum)
     to_public_record(public_dir, 'ceremony_details', details)
 
@@ -270,20 +245,12 @@ def PublishJointKeyCommand(
     """Final step in the key ceremony.
     Could technically be posted on chain by anyone, not just the admin.
     """
+
     # print(json.dumps(locals()))
 
-    ceremony_dir = join(public_dir, '2_ceremony')
-    setup_dir    = join(public_dir, '3_election')
-    pubkeys_dir  = join(ceremony_dir, '1_pubkeys')
-    makedirs(pubkeys_dir, exist_ok=True)
-    makedirs(setup_dir, exist_ok=True)
-
     guardian_public_keys: List[ElectionPublicKey] = load_guardian_pubkeys(public_dir)
-
     joint_key = combine_election_public_keys(guardian_public_keys)
     assert joint_key is not None
-
-    # NOTE we skip 4 to leave room for the challenge step
     to_public_record(public_dir, 'joint_key', joint_key)
 
 
@@ -328,24 +295,19 @@ def TallyCommand(
 ) -> None:
     """Tally election results.
     """
+
     # script = __file__
     # print(json.dumps(locals()))
 
-    # load required info
+    details   = from_public_record(public_dir, 'ceremony_details')
     manifest  = from_public_record(public_dir, 'manifest')
     joint_key = from_public_record(public_dir, 'joint_key')
-    details   = from_public_record(public_dir, 'ceremony_details')
-
-    (constants, internal_manifest, context) = build_election(
-        details,
-        manifest,
-        joint_key
+    (_, internal_manifest, context) = build_election(
+        details, manifest, joint_key
     )
 
-    tally_name = '6_tally'
-    tally_path = join(public_dir, tally_name)
     tally = CiphertextTally(
-        tally_name, # TODO is this the object_id? weird
+        'ciphertext-tally', # TODO best practices for this object_id?
         internal_manifest,
         context
     )
@@ -356,7 +318,7 @@ def TallyCommand(
     for ballot in cast_ballots + spoiled_ballots:
         assert(tally.append(ballot, should_validate=True))
 
-    assert tally.cast() == len(cast_ballots)
+    assert tally.cast()    == len(cast_ballots)
     assert tally.spoiled() == len(spoiled_ballots)
 
     to_public_record(public_dir, 'ciphertext_tally', tally.publish())
@@ -377,6 +339,7 @@ def DecryptResultsCommand(
     """
     Combine guardian decryption shares into final results: tally + spoiled ballots.
     """
+
     # print(json.dumps(locals()))
 
     # load required info
@@ -491,7 +454,6 @@ def SummaryCommand(
         spoiled_summaries[short_id] = ballot_summary
         print()
 
-    # main tally
     tally_header = "Tally of all cast ballots"
     csb.print_header(tally_header)
     tally_summary = []
