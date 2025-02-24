@@ -217,8 +217,7 @@ def VoteCommand(
         ballot_spoiled = ballot_enc
         ballot_spoiled.state = BallotBoxState.SPOILED
 
-        spoiled_path = join(spoiled_dir, ballot.object_id + '.json')
-        serialize.to_file(ballot_spoiled, str(ballot_spoiled.object_id), spoiled_dir)
+        to_public_record(public_dir, 'ballot_spoiled', ballot_spoiled)
 
     else:
 
@@ -242,7 +241,7 @@ def VoteCommand(
         )
 
         cast_path = join(cast_dir, ballot.object_id + '.json')
-        serialize.to_file(cast_notice, str(cast_notice.ballot_id), cast_dir)
+        to_public_record(public_dir, 'cast_notice', cast_notice)
 
 
 

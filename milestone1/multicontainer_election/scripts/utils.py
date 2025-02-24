@@ -3,7 +3,7 @@
 
 # TODO remove unused imports
 from electionguard import serialize
-from electionguard.ballot import (PlaintextBallot,PlaintextBallotSelection,PlaintextBallotContest,SubmittedBallot)
+from electionguard.ballot import (PlaintextBallot,PlaintextBallotSelection,PlaintextBallotContest,SubmittedBallot,CiphertextBallot)
 from electionguard.ballot_box import (BallotBoxState)
 from electionguard.constants import ElectionConstants, get_constants
 from electionguard.data_store import DataStore
@@ -215,6 +215,8 @@ PUBLIC_RECORDS = {
     'spoiled_share': (DecryptionShare, '7_decrypt/1_shares/2_spoiled', '{spoiled_id}_{guardian_id}'),
     'spoiled_result': (PlaintextTally, '7_decrypt/2_final/2_spoiled', '{obj.object_id}'),
     'ballot_submitted': (PlaintextBallot, '5_ballots/1_submitted', '{obj.object_id}'),
+    'cast_notice': (dict, '5_ballots/2_cast', '{obj.ballot_id}'),
+    'ballot_spoiled': (CiphertextBallot, '5_ballots/3_spoiled', '{obj.object_id}'),
     'summary': (dict, '.', '8_summary'),
 }
 
