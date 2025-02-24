@@ -85,8 +85,6 @@ def BuildManifestCommand(
     provided by the user.
     """
 
-    # print(json.dumps(locals()))
-
     now = datetime.utcnow()
     county_id = "electionguard-cardano-test-county"
     contest_name = referendum_question
@@ -142,7 +140,7 @@ def BuildManifestCommand(
             },
         ],
         "contests": [{
-            "object_id": "referendum-pineapple", # TODO is having a number important?
+            "object_id": "referendum-pineapple",
             "sequence_order": 0,
             "electoral_district_id": county_id,
             "vote_variation": "one_of_m",
@@ -150,6 +148,7 @@ def BuildManifestCommand(
             "votes_allowed": 1,
             "name": contest_name,
             "ballot_selections": [
+                # TODO should sequence_order start from 0?
                 {
                     "object_id": "referendum-pineapple-affirmative-selection",
                     "sequence_order": 1,
@@ -224,8 +223,6 @@ def AnnounceKeyCeremonyCommand(
     This is provisional based on the electionguard_gui key_ceremony_service.py;
     I'm not sure whether it's the right approach yet.
     """
-
-    # print(json.dumps(locals()))
 
     details = CeremonyDetails(guardian_count, guardian_quorum)
     to_public_record(public_dir, 'ceremony_details', details)
@@ -340,8 +337,6 @@ def DecryptResultsCommand(
     Combine guardian decryption shares into final results: tally + spoiled ballots.
     """
 
-    # print(json.dumps(locals()))
-
     # load required info
     manifest  = from_public_record(public_dir, 'manifest')
     joint_key = from_public_record(public_dir, 'joint_key')
@@ -356,7 +351,6 @@ def DecryptResultsCommand(
     # load and decrypt tally
     tally_path = join(public_dir, '6_tally.json')
     tally_enc = from_public_record(public_dir, 'ciphertext_tally')
-    # tally_prefix = join(tally_dir, 'tally')
     tally_shares: Dict[GuardianId, DecryptionShare] \
         = load_tally_shares(public_dir, details.number_of_guardians)
     tally_result = decrypt_tally(
@@ -374,9 +368,7 @@ def DecryptResultsCommand(
 
     # load spoiled ballot shares
     spoiled_ids = [b.object_id for b in spoiled_ballots]
-    # spoiled_prefixes = [join(spoiled_shares_dir, i) for i in spoiled_ids]
     spoiled_shares: Dict[str, Dict[GuardianId, DecryptionShare]] = {}
-    # for (bid, prefix) in zip(spoiled_ids, spoiled_prefixes):
     for spoiled_id in spoiled_ids:
         shares = load_spoiled_shares(
             public_dir, details.number_of_guardians,
