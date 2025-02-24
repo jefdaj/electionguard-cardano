@@ -15,7 +15,7 @@ from typing import Optional
 
 # see logs.py for electionguard's separate LOG
 import logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s\n%(message)s\n')
+logging.basicConfig(level=logging.DEBUG, format='%(message)s\n')
 LOG = logging.getLogger('electionguard-cardano')
 
 
