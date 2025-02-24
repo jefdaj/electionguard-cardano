@@ -136,13 +136,21 @@ def build_ballot(
 
 
 def load_guardian_pubkeys(public_dir: str) -> List[ElectionPublicKey]:
+    # for now, we just assume they're named sequentially
+    # TODO come up with a cleaner way
     guardian_pubkeys: List[ElectionPublicKey] = []
-    for json_filename in listdir(public_dir):
-        guardian_id: GuardianId = splitext(json_filename)[0]
-        json_path = join(public_dir, json_filename)
-        # TODO how to fit these into the standard PUBLIC_RECORDS map below?
-        guardian_pubkey = serialize.from_file(ElectionPublicKey, json_path)
-        guardian_pubkeys.append(guardian_pubkey)
+    guardian_number = 0
+    while True:
+        guardian_number += 1
+        try:
+            pubkey = from_public_record(
+                public_dir, 'guardian_pubkey',
+                guardian_id=f'guardian_{guardian_number}'
+            )
+            guardian_pubkeys.append(pubkey)
+        except FileNotFoundError:
+            break
+    assert len(guardian_pubkeys) > 0
     return guardian_pubkeys
 
 

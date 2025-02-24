@@ -95,7 +95,7 @@ def round2(guardian_id, sequence_order, public_dir, private_dir):
 
     # load other guardians' public keys from shared folder
     other_guardian_pubkeys = [
-        k for k in load_guardian_pubkeys(pubkeys_dir)
+        k for k in load_guardian_pubkeys(public_dir)
         if k.owner_id != guardian_id # remove self
     ]
 
@@ -136,7 +136,7 @@ def round3(guardian_id, sequence_order, public_dir, private_dir):
 
     # load other guardians' public keys from shared folder
     other_guardian_pubkeys = {
-        k.owner_id: k for k in load_guardian_pubkeys(pubkeys_dir)
+        k.owner_id: k for k in load_guardian_pubkeys(public_dir)
         if k.owner_id != guardian_id # remove self
     }
 
