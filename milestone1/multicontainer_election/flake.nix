@@ -8,6 +8,7 @@
 
         arion
         jq
+        time
         tree
 
         # python
