@@ -83,15 +83,16 @@ def AddDeviceCommand(
     """Add (announce?) an encryption device,
     which will encrypt + publish ballots and do the Benaloh challenge.
     """
+
     # print(json.dumps(locals()))
-    devices_dir  = join(public_dir, '4_devices')
-    makedirs(devices_dir, exist_ok=True)
+
     device = EncryptionDevice(
         generate_device_uuid(), # device id (TODO is this deterministic?)
         device_number * 12345, # session id  (TODO what's this?)
         device_number * 45678, # launch code (TODO what's this?)
         POLLING_PLACE,
     )
+
     to_public_record(public_dir, 'device', device, device_number=device_number)
 
 
@@ -146,21 +147,8 @@ def VoteCommand(
     """Add (announce?) an encryption device,
     which will encrypt + publish ballots and do the Benaloh challenge.
     """
+
     # print(json.dumps(locals()))
-
-    # set up dirs
-    plaintext_dir = join(private_dir, 'plaintext_ballots')
-    makedirs(plaintext_dir, exist_ok=True)
-
-    announce_dir  = join(public_dir, '1_announce')
-    setup_dir     = join(public_dir, '3_election')
-    devices_dir   = join(public_dir, '4_devices')
-    ballots_dir   = join(public_dir, '5_ballots')
-    submitted_dir = join(ballots_dir       , '1_submitted')
-    cast_dir      = join(ballots_dir       , '2_cast')
-    spoiled_dir   = join(ballots_dir       , '3_spoiled')
-    makedirs(cast_dir   , exist_ok=True)
-    makedirs(spoiled_dir, exist_ok=True)
 
     manifest  = from_public_record(public_dir, 'manifest')
     joint_key = from_public_record(public_dir, 'joint_key')
@@ -203,7 +191,8 @@ def VoteCommand(
 
         # I think this is how the authors intended for ballots to be spoiled,
         # but it doesn't work for our purposes because they don't include the nonces!
-        # They just mark the state as SPOILED but otherwise it stays the same.
+        # They just mark the state as SPOILED but otherwise it stays cast.
+        # TODO is this what they meant by not having implemented decryption by nonce?
         # ballot_spoiled: SubmittedBallot = submit_ballot_to_box(
         #     ballot_enc,
         #     BallotBoxState.SPOILED,
@@ -225,7 +214,7 @@ def VoteCommand(
 
         # I think this is how the authors intended for ballots to be cast,
         # but I don't see any point including the whole ballot again just to
-        # change the state from UNKNOWN -> CAST.
+        # change the state from UNKNOWN -> CAST. It seems confusing.
         # ballot_cast: SubmittedBallot = submit_ballot_to_box(
         #     ballot_enc,
         #     BallotBoxState.CAST,
@@ -234,7 +223,7 @@ def VoteCommand(
         #     store2
         # )
 
-        # Instead, we just save a placeholder json file that says "cast" and
+        # Instead, we save a placeholder json file that says "cast" and
         # would be signed by the device on chain. And eventually maybe the
         # voter's phone app too!
         cast_notice = CastBallotNotice(
@@ -242,9 +231,7 @@ def VoteCommand(
             cast_at=datetime.utcnow()
         )
 
-        cast_path = join(cast_dir, ballot.object_id + '.json')
         to_public_record(public_dir, 'cast_notice', cast_notice)
-
 
 
 @click.group()
