@@ -1,9 +1,26 @@
-# Multi-container election demo
+Multi-container election demo
+=============================
+
+
+This simulates an election locally using Docker containers.
+
+The main script [election.py]() reads [election.json](),
+spins up the containers using Arion,
+and runs `docker exec` commands telling them what to do at each step.
+
+The `data` directory is cleared when starting an election.
+Each container can access its own private state in `data/private/<container>`,
+and they communicate by saving and loading files in `data/public`.
+
 
 ## Run an election!
 
+Assuming you have Docker and Nix installed,
+and Nix flakes enabled, this should work:
+
+TODO publish electionguard-python docker image!
+
 ```bash
-# run the whole process
 nix develop
 time ./election.py
 ```
@@ -12,7 +29,15 @@ You can edit [election.json](),
 re-run [election.py]() with no arguments,
 and check that the final `data/public/8_summary.json` matches.
 
-The rest of the generated data should look something like this:
+(When it asks for your password, that's to delete `./data`)
+
+TODO can that be done without root?
+
+The rest of the generated data should look something like this.
+In [milestone 3](../../milestone3) I plan to post
+everything under `data/public` to Cardano + IPFS.
+Numbered files/folders there will correspond to steps in the smart contract
+state machine.
 
 ```
 data
@@ -144,7 +169,8 @@ data
 32 directories, 93 files
 ```
 
-## Dev setup
+
+## Dev options
 
 ```bash
 # run one step at a time
