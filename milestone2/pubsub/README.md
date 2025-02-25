@@ -5,24 +5,22 @@ It'll focus on just distributing an authenticated log of files via Cardano + IPF
 That's part of what the ElectionGuard contract will need to do,
 as well as potentially useful on its own.
 
-It will also confirm that TX fees can be funded from a pool in the contract.
-That doesn't matter yet, but I want people to be able to post things for free
-during an election.
-
 
 ## TODO
 
-- check whether there are any existing Cardano pubsub examples
-- should there be a channel NFT, or is that not needed?
+- [ ] are there any existing Cardano pubsub examples?
+- [ ] should there be a channel NFT?
+- [ ] is sending money to the validator an action, or separate?
+- [ ] can tx fees can be funded from a pool in the contract?
 
 
 ## onchain code
 
 - only one "publisher" role
-- phase 1: open channel (contract), fund it with tADA
+- phase 1: open channel (publish validator), fund it with tADA
 - phase 2: post one (many?) IPFS CIDs in a TX
     * repeat as needed
-    * should also be able to top up the tAADA as needed
+    * should also be able to top up the tADA as needed
 - phase 3: close channel and get remaining tADA back
 - write in Aiken
 - consider writing in Opshin too for comparison
@@ -31,7 +29,7 @@ during an election.
 ## offchain code
 
 - all apps run in docker containers
-- each role managed by docker compose
+- containers are managed by one docker/arion-compose per role
 - each participant should have network access to a cardano-node-ogmios instance
 - publisher needs an address with tADA from the faucet
 - publisher runs:
