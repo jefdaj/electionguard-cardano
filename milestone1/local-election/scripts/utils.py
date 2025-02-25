@@ -32,36 +32,116 @@ logging.getLogger('electionguard').setLevel(logging.WARNING)
 
 ### path maps ###
 #
-#  Single source of truth for where to load and save each artifact.
+#  Single source of truth for how to load and save each artifact.
 #  Prevents having to write out and create the data dirs multiple times.
-#  Maps are dicts of informal type -> (actual type, dirname, basename format str)
+#  Maps are dicts of informal type -> (actual type, relative dir path, basename format str)
 #
 #################
 
 PRIVATE_RECORDS = {
-    'election_key_pair': (ElectionKeyPair, '.', 'election_key_pair'),
-    'plaintext_ballot': (PlaintextBallot, 'plaintext_ballots', '{obj.object_id}'),
+    'election_key_pair': (
+        ElectionKeyPair,
+        '.',
+        'election_key_pair'
+    ),
+    'plaintext_ballot': (
+        PlaintextBallot,
+        'plaintext_ballots',
+        '{obj.object_id}'
+    ),
 }
 
 PUBLIC_RECORDS = {
-    'manifest': (Manifest, '1_config/1_announce', '1_manifest'),
-    'ceremony_details': (CeremonyDetails, '1_config/1_announce', '2_ceremony'),
-    'guardian_pubkey': (ElectionPublicKey, '1_config/2_ceremony/1_pubkeys', '{guardian_id}'),
-    'guardian_backup': (ElectionPartialKeyBackup, '1_config/2_ceremony/2_backups', '{guardian_id}_backup_{backup_order}'),
-    'guardian_verification': (ElectionPartialKeyVerification, '1_config/2_ceremony/3_verifications', '{guardian_id}_backup_{backup_order}'),
-    'joint_key': (ElectionJointKey, '1_config/3_election', 'joint_key'),
-    'constants': (ElectionConstants, '1_config/3_election', 'constants'),
-    'context': (CiphertextElectionContext, '1_config/3_election', 'context'),
-    'device': (EncryptionDevice, '1_config/4_devices', 'device_{device_number}'),
-    'ballot_submitted': (CiphertextBallot, '2_ballots/1_submitted', '{ballot_id}'),
-    'cast_notice': (dict, '2_ballots/2_cast', '{obj.ballot_id}'),
-    'ballot_spoiled': (CiphertextBallot, '2_ballots/3_spoiled', '{obj.object_id}'),
-    'ciphertext_tally': (PublishedCiphertextTally, '3_results', '1_tally'),
-    'tally_share': (DecryptionShare, '3_results/2_decrypt/1_shares/1_tally', 'tally_{guardian_id}'),
-    'spoiled_share': (DecryptionShare, '3_results/2_decrypt/1_shares/2_spoiled', '{spoiled_id}_{guardian_id}'),
-    'plaintext_tally': (PlaintextTally, '3_results/2_decrypt/2_combined', '1_tally'),
-    'spoiled_result': (PlaintextTally, '3_results/2_decrypt/2_combined/2_spoiled', '{ballot_id}'),
-    'summary': (dict, '.', '3_results/3_summary'),
+    'manifest': (
+        Manifest,
+        '1_config/1_announce',
+        '1_manifest'
+    ),
+    'ceremony_details': (
+        CeremonyDetails,
+        '1_config/1_announce',
+        '2_ceremony'
+    ),
+    'guardian_pubkey': (
+        ElectionPublicKey,
+        '1_config/2_ceremony/1_pubkeys',
+        '{guardian_id}'
+    ),
+    'guardian_backup': (
+        ElectionPartialKeyBackup,
+        '1_config/2_ceremony/2_backups',
+        '{guardian_id}_backup_{backup_order}'
+    ),
+    'guardian_verification': (
+        ElectionPartialKeyVerification,
+        '1_config/2_ceremony/3_verifications',
+        '{guardian_id}_backup_{backup_order}'
+    ),
+    'joint_key': (
+        ElectionJointKey,
+        '1_config/3_election',
+        'joint_key'
+    ),
+    'constants': (
+        ElectionConstants,
+        '1_config/3_election',
+        'constants'
+    ),
+    'context': (
+        CiphertextElectionContext,
+        '1_config/3_election',
+        'context'
+    ),
+    'device': (
+        EncryptionDevice,
+        '1_config/4_devices',
+        'device_{device_number}'
+    ),
+    'ballot_submitted': (
+        CiphertextBallot,
+        '2_ballots/1_submitted',
+        '{ballot_id}'
+    ),
+    'cast_notice': (
+        dict,
+        '2_ballots/2_cast',
+        '{obj.ballot_id}'
+    ),
+    'ballot_spoiled': (
+        CiphertextBallot,
+        '2_ballots/3_spoiled',
+        '{obj.object_id}'
+    ),
+    'ciphertext_tally': (
+        PublishedCiphertextTally,
+        '3_results',
+        '1_tally'
+    ),
+    'tally_share': (
+        DecryptionShare,
+        '3_results/2_decrypt/1_shares/1_tally',
+        'tally_{guardian_id}'
+    ),
+    'spoiled_share': (
+        DecryptionShare,
+        '3_results/2_decrypt/1_shares/2_spoiled',
+        '{spoiled_id}_{guardian_id}'
+    ),
+    'plaintext_tally': (
+        PlaintextTally,
+        '3_results/2_decrypt/2_combined',
+        '1_tally'
+    ),
+    'spoiled_result': (
+        PlaintextTally,
+        '3_results/2_decrypt/2_combined/2_spoiled',
+        '{ballot_id}'
+    ),
+    'summary': (
+        dict,
+        '.',
+        '3_results/3_summary'
+    ),
 }
 
 # you probably want the public or private versions below
