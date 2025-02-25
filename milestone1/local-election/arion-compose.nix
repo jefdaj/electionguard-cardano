@@ -7,8 +7,7 @@ let
   mkContainer = mode: scripts_dir: public_dir: private_dir: n:
   {
 
-    # TODO publish my electionguard-python image and pin it here
-    service.image = "electionguard-python";
+    service.image = "ghcr.io/jefdaj/electionguard-python:1.4.0";
 
     service.volumes = [
       "${scripts_dir}:/scripts/"

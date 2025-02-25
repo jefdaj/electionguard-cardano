@@ -14,7 +14,8 @@ Current status as of 2024-02-25:
 
 - Milestone 1:
   * Have [electionguard-python passing its tests](./milestone1/electionguard-python-tests.md)
-  * Cleaned up [my electionguard fork](https://github.com/jefdaj/electionguard-python), but haven't published the Docker image yet
+  * Cleaned up [my fork](https://github.com/jefdaj/electionguard-python)
+    and pushed [a Docker image](https://ghcr.io/jefdaj/electionguard-python)
   * Partially archived [the NIST election format docs site](./milestone1/nist-docs)
   * The [Nix environment](./milestone1/nix-environment.md) works
   * The [local election script](./milestone1/local-election) (output 1.1) works

@@ -22,8 +22,6 @@ It goes fast, but you can pause and scan back and forth as needed.
 Assuming you have Docker and Nix installed,
 and Nix flakes enabled, this should work:
 
-TODO publish electionguard-python docker image
-
 ```bash
 nix develop
 time ./election.py
