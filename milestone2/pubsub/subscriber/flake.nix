@@ -27,6 +27,7 @@
           devShell = pkgs.mkShell {
             nativeBuildInputs = with pkgs; [
 
+              file
               jq
               time
               tree
