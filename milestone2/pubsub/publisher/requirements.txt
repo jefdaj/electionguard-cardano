@@ -1,0 +1,5 @@
+click
+click-default-group
+dotmap
+pycardano
+pygments

@@ -27,10 +27,18 @@
           # `nix develop`
           devShell = pkgs.mkShell {
             nativeBuildInputs = with pkgs; [
+
+              arion
+              jq
+              time
+              tree
+
               aiken.packages.x86_64-linux.aiken
+
               python3Packages.python
               python3Packages.python-lsp-server
               python3Packages.autopep8
+
             ];
 
             shellHook = ''

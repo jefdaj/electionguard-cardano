@@ -25,12 +25,25 @@ as well as potentially useful on its own.
 - write in Aiken
 - consider writing in Opshin too for comparison
 
+Opening a channel should mean both minting a channel NFT and funding it with
+some tADA.
+
+Posting files takes the channel NFT + old datum + tADA fund as input, returns
+the NFT + remaining tADA + a new datum as outputs. The new datum will have a
+list of the new CIDs. I don't think there's any need to keep old CIDs in the
+current state, because Kupo or other indexers will be able to read the whole
+history.
+
+Topping up can be done just by sending tADA to the contract with no action?
+
+Closing a channel should mean getting any remaining tADA back and burning the
+NFT.
 
 ## offchain code
 
 - all apps run in docker containers
-- containers are managed by one docker/arion-compose per role
-- each participant should have network access to a cardano-node-ogmios instance
+- containers are managed by one top level arion-compose file
+- each participant should have network access to a shared cardano-node-ogmios instance
 - publisher needs an address with tADA from the faucet
 - publisher runs:
     * ipfs-cluster to pin CIDs when publishing them
@@ -39,6 +52,7 @@ as well as potentially useful on its own.
     * Kupo to scan for published CIDs
     * an IPFS node (or single-node cluster?) to pin CIDs and fetch files
     * a Python app to keep a folder in sync with the channel, control IPFS + Kupo
+- TODO should the ipfs-cluster also be shared for now?
 
 
 ## versions

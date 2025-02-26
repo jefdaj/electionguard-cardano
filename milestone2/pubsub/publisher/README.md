@@ -4,12 +4,20 @@
 
 ```bash
 nix develop
-pip install pycardano
+pip install -r requirements.txt
+```
+
+## Generate keys
+
+```bash
+nix develop
 
 # safe to re-run, but only needs to be done once
 # then send tADA from faucet -> keys/me.addr
 ./generate-credentials.py
 ```
+
+## Aiken
 
 Write validators in the `validators` folder, and supporting functions in the `lib` folder using `.ak` as a file extension.
 
@@ -37,7 +45,7 @@ network_id = 41
 
 Or, alternatively, write conditional environment modules under `env`.
 
-## Testing
+### Testing
 
 You can write tests in any module using the `test` keyword. For example:
 
@@ -61,7 +69,7 @@ To run only tests matching the string `foo`, do:
 aiken check -m foo
 ```
 
-## Documentation
+### Documentation
 
 If you're writing a library, you might want to generate an HTML documentation for it.
 
@@ -71,6 +79,6 @@ Use:
 aiken docs
 ```
 
-## Resources
+### Resources
 
 Find more on the [Aiken's user manual](https://aiken-lang.org).
