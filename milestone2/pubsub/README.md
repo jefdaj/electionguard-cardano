@@ -5,6 +5,30 @@ It'll focus on just distributing an authenticated log of files via Cardano + IPF
 That's part of what the ElectionGuard contract will need to do,
 as well as potentially useful on its own.
 
+## Usage
+
+```bash
+# startup
+nix develop
+arion up -d
+```
+
+
+```bash
+# logs
+nix develop
+arion logs --follow
+```
+
+```bash
+# ipfs
+
+# apis are on ports 5001, 5002, ...
+curl -X POST http://127.0.0.1:5001/api/v0/swarm/peers
+
+# http is on ports 8081, 8082, ...
+curl "http://127.0.0.1:8081/ipfs/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi" > cat.jpg
+```
 
 ## TODO
 
