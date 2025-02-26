@@ -42,11 +42,42 @@ nix develop
 pip install -r requirements.txt
 ```
 
-```python
-# test script:
-# 1. paste a cid
-# 2. it should show up under ./data
-./ipfs-download.py
+
+## IPFS via Python
+
+```bash
+cd publisher
+nix develop
+
+$ # create unique file
+$ echo "testing..." > test.txt
+$ date >> test.txt
+$ cat test.txt
+testing...
+Wed Feb 26 12:31:34 PM PST 2025
+
+$ # upload it
+$ ./ipfs-upload.py
+file to upload: test.txt
+QmXE3aHQnrBxSarXZLBXAQwgHFC2iKfyftYMjjwUyp2qFh test.txt
+file to upload: ^C
+ok, done
+```
+
+```bash
+cd subscriber
+nix develop
+
+$ # download it from other ipfs instance
+$ ./ipfs-download.py
+Next CID to download: QmXE3aHQnrBxSarXZLBXAQwgHFC2iKfyftYMjjwUyp2qFh
+Next CID to download: ^C
+ok, done
+
+$ cat data/QmXE3aHQnrBxSarXZLBXAQwgHFC2iKfyftYMjjwUyp2qFh 
+testing...
+Wed Feb 26 12:31:34 PM PST 2025
+
 ```
 
 
