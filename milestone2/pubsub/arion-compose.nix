@@ -21,18 +21,19 @@ in {
         "${NODE_CONFIG}/network/preview/cardano-node:/config"
         "${NODE_DATA}/node-db:/data"
         "${NODE_DATA}/node-ipc:/ipc"
-
-        # - ./config/network/${NETWORK:-preview}/cardano-node:/config
-        # - ./data/node-db:/data
-        # - ./data/node-ipc:/ipc
         # # TODO is this needed?
         # # - ./config/network/${NETWORK:-preview}/genesis:/genesis
       ];
-
-      # restart: on-failure
       service.restart = "on-failure";
 
-      # TODO
+      # TODO figure this out
+      # service.logging = {
+      #   driver = "json-file";
+      #   options = {
+      #     max-size = "400k";
+      #     max-file = "20";
+      #   };
+      # };
       # logging:
         # driver: "json-file"
         # options:
@@ -55,18 +56,12 @@ in {
       service.volumes = [
         "${NODE_CONFIG}/network/preview:/config"
         "${NODE_DATA}/node-ipc:/ipc"
-        # - ./config/network/${NETWORK:-preview}:/config
-        # - ./data/node-ipc:/ipc
       ];
       service.ports = [
         # host:container
         "1337:1337"
-        # - ${OGMIOS_PORT:-1337}:1337
       ];
-
-      # restart: on-failure
       service.restart = "on-failure";
-
     };
 
     # publisher = {
@@ -88,45 +83,3 @@ in {
 
   };
 }
-
-#   projectConfig = builtins.fromJSON (builtins.readFile ./election.json);
-# 
-#   mkContainer = mode: scripts_dir: public_dir: private_dir: n:
-#   {
-# 
-#     service.image = "ghcr.io/jefdaj/electionguard-python:1.4.0";
-# 
-#     service.volumes = [
-#       "${scripts_dir}:/scripts/"
-#       "${public_dir}:/data/public"
-# 
-#       # each container only has access to its own private subdir
-#       # TODO is it confusing that they're each mounted to the same path?
-#       "${private_dir}/${mode}_${builtins.toString n}:/data/private"
-#     ];
-# 
-#     # TODO what's the proper way to keep an arion container running?
-#     service.command = [ "sh" "-c" ''
-#       while true; do sleep 1000; done
-#     '' ];
-# 
-#   };
-# 
-#   mkAttrs = mode: scripts_dir: public_dir: private_dir: n: {
-#     name = mode + builtins.toString n;
-#     value = mkContainer mode scripts_dir public_dir private_dir n;
-#   };
-# 
-#   # TODO pull host bind_mount paths from projectConfig too?
-#   mkAttrsList = mode: nVms:
-#     map (mkAttrs mode "./scripts" "./data/public" "./data/private") (pkgs.lib.range 1 nVms);
-# 
-#   mkServices = cfg:
-#     builtins.listToAttrs (mkAttrsList "admin" 1) //
-#     builtins.listToAttrs (mkAttrsList "device" cfg.election.devices.count) //
-#     builtins.listToAttrs (mkAttrsList "guardian" cfg.election.guardians.count);
-# 
-# in {
-#   config.project.name = projectConfig.arion.project_name;
-#   config.services = mkServices projectConfig;
-# }
