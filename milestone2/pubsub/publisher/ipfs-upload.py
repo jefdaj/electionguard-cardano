@@ -11,9 +11,6 @@ from os.path import basename
 # TODO load a common config json there and in python
 IPFS_HTTP_PORT = 5001
 
-IPFS_DATA_DIR = './data'
-makedirs(IPFS_DATA_DIR, exist_ok=True)
-
 
 async def add_files(files: list):
     client = aioipfs.AsyncIPFS(maddr=f'/ip4/127.0.0.1/tcp/{IPFS_HTTP_PORT}')
