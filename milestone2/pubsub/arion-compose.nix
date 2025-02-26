@@ -1,6 +1,7 @@
 { pkgs, ...}:
 
 let
+  NODE_DATA = "../investigate/cardano-node-ogmios/data";
 
 in {
   config.project.name = "pubsub";
@@ -9,16 +10,16 @@ in {
     cardano-node = {
       service.image = "ghcr.io/intersectmbo/cardano-node:10.1.4";
       service.command = [
-        "run",
-        "--config", "/config/config.json",
-        "--database-path", "/data/db",
-        "--socket-path", "/ipc/node.socket",
-        "--topology", "/config/topology.json"
+        "run"
+        "--config" "/config/config.json"
+        "--database-path" "/data/db"
+        "--socket-path" "/ipc/node.socket"
+        "--topology" "/config/topology.json"
        ];
       service.volumes = [
         "./node/config/network/preview/cardano-node:/config"
-        "./node/data/node-db:/data"
-        "./node/data/node-ipc:/ipc"
+        "${NODE_DATA}/node-db:/data"
+        "${NODE_DATA}/node-ipc:/ipc"
 
         # - ./config/network/${NETWORK:-preview}/cardano-node:/config
         # - ./data/node-db:/data
@@ -46,13 +47,13 @@ in {
       service.image = "76902d6a9306";
 
       service.command = [
-        "--host", "0.0.0.0",
-        "--node-socket", "/ipc/node.socket",
-        "--node-config", "/config/cardano-node/config.json"
+        "--host" "0.0.0.0"
+        "--node-socket" "/ipc/node.socket"
+        "--node-config" "/config/cardano-node/config.json"
       ];
       service.volumes = [
         "./node/config/network/preview:/config"
-        "./node/data/node-ipc:/ipc"
+        "${NODE_DATA}/node-ipc:/ipc"
         # - ./config/network/${NETWORK:-preview}:/config
         # - ./data/node-ipc:/ipc
       ];
@@ -64,6 +65,7 @@ in {
 
       # restart: on-failure
       service.restart = "on-failure";
+
     };
 
     # publisher = {
