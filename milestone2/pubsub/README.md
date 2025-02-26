@@ -5,20 +5,22 @@ It'll focus on just distributing an authenticated log of files via Cardano + IPF
 That's part of what the ElectionGuard contract will need to do,
 as well as potentially useful on its own.
 
-## Usage
+## Setup
 
 ```bash
-# startup
+# start everything
 nix develop
 arion up -d
 ```
 
 
 ```bash
-# logs
+# tail logs
 nix develop
 arion logs --follow
 ```
+
+## IPFS
 
 ```bash
 # ipfs
@@ -30,12 +32,34 @@ curl -X POST http://127.0.0.1:5001/api/v0/swarm/peers
 curl "http://127.0.0.1:8081/ipfs/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi" > cat.jpg
 ```
 
+The officially recommended
+[ipfs-http-client](https://github.com/ipfs-shipyard/py-ipfs-http-client) is
+abandoned, but [aioipfs](https://gitlab.com/cipres/aioipfs) works great!
+
+```bash
+cd publisher # or subscriber
+nix develop
+pip install -r requirements.txt
+```
+
+```python
+# test script:
+# 1. paste a cid
+# 2. it should show up under ./data
+./get_cids_stdin.py
+```
+
+
 ## TODO
 
 - [ ] are there any existing Cardano pubsub examples?
 - [ ] should there be a channel NFT?
 - [ ] is sending money to the validator an action, or separate?
 - [ ] can tx fees can be funded from a pool in the contract?
+- [ ] consider switching json encoder to [orjson](https://github.com/ijl/orjson)
+- [ ] look into unixfs, dag, car stuff to sync directories
+- [ ] look into the ipfs pubsub feature
+- [ ] consider [ipfs-car-decoder](https://github.com/kralverde/py-ipfs-car-decoder/) for future voter verification app
 
 
 ## onchain code

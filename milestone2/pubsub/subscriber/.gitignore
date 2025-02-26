@@ -3,3 +3,6 @@
 
 # Nix
 result*
+
+# ipfs data
+data/

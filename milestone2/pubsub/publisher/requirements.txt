@@ -1,5 +1,6 @@
 click
 click-default-group
 dotmap
+ipfshttpclient
 pycardano
 pygments

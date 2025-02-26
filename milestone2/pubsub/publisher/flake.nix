@@ -37,6 +37,7 @@
               aiken.packages.x86_64-linux.aiken
 
               python3Packages.python
+              python3Packages.distutils # needed for aioipfs
               python3Packages.python-lsp-server
               python3Packages.autopep8
 
