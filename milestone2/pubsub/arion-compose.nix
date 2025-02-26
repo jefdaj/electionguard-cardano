@@ -27,8 +27,10 @@ in {
         # # - ./config/network/${NETWORK:-preview}/genesis:/genesis
       ];
 
-      # TODO
       # restart: on-failure
+      service.restart = "on-failure";
+
+      # TODO
       # logging:
         # driver: "json-file"
         # options:
@@ -55,15 +57,29 @@ in {
         # - ./data/node-ipc:/ipc
       ];
       service.ports = [
+        # host:container
         "1337:1337"
         # - ${OGMIOS_PORT:-1337}:1337
       ];
 
-      # TODO
       # restart: on-failure
+      service.restart = "on-failure";
     };
 
-    # publisher = {};
+    # publisher = {
+    #   image.contents = [
+    #     # TODO nix packages here
+    #   ];
+    #   service.useHostStore = true;
+    #   service.command = [
+    #     # TODO args here
+    #   ];
+    #   service.ports = [
+    #     # TODO ipfs port?
+    #   ];
+    #   service.stop_signal = "SIGINT";
+    #   # service.environment.XXX = ...
+    # };
 
     # subscriber = {};
 
