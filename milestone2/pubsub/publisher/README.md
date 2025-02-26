@@ -1,5 +1,13 @@
 # pubsub
 
+## PyCardano setup
+
+```bash
+nix develop
+pip install pycardano
+./generate-credentials.py # only need to run once
+```
+
 Write validators in the `validators` folder, and supporting functions in the `lib` folder using `.ak` as a file extension.
 
 ```aiken
@@ -10,13 +18,13 @@ validator my_first_validator {
 }
 ```
 
-## Building
+### Building
 
 ```sh
 aiken build
 ```
 
-## Configuring
+### Configuring
 
 **aiken.toml**
 ```toml

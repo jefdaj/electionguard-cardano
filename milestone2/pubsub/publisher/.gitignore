@@ -4,3 +4,12 @@ artifacts/
 build/
 # Aiken's default documentation export
 docs/
+
+# Python
+.venv/
+
+# wallet keys holding tADA from faucet
+keys/
+
+# Nix
+result*
