@@ -1,7 +1,8 @@
 { pkgs, ...}:
 
 let
-  NODE_DATA = "../investigate/cardano-node-ogmios/data";
+  NODE_CONFIG = "../investigate/cardano-node-ogmios/config";
+  NODE_DATA   = "../investigate/cardano-node-ogmios/data";
 
 in {
   config.project.name = "pubsub";
@@ -17,7 +18,7 @@ in {
         "--topology" "/config/topology.json"
        ];
       service.volumes = [
-        "./node/config/network/preview/cardano-node:/config"
+        "${NODE_CONFIG}/network/preview/cardano-node:/config"
         "${NODE_DATA}/node-db:/data"
         "${NODE_DATA}/node-ipc:/ipc"
 
@@ -52,7 +53,7 @@ in {
         "--node-config" "/config/cardano-node/config.json"
       ];
       service.volumes = [
-        "./node/config/network/preview:/config"
+        "${NODE_CONFIG}/network/preview:/config"
         "${NODE_DATA}/node-ipc:/ipc"
         # - ./config/network/${NETWORK:-preview}:/config
         # - ./data/node-ipc:/ipc
