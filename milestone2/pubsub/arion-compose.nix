@@ -4,7 +4,70 @@ let
 
 in {
   config.project.name = "pubsub";
-  config.services = {};
+  config.services = {
+
+    cardano-node = {
+      service.image = "ghcr.io/intersectmbo/cardano-node:10.1.4";
+      service.command = [
+        "run",
+        "--config", "/config/config.json",
+        "--database-path", "/data/db",
+        "--socket-path", "/ipc/node.socket",
+        "--topology", "/config/topology.json"
+       ];
+      service.volumes = [
+        "./node/config/network/preview/cardano-node:/config"
+        "./node/data/node-db:/data"
+        "./node/data/node-ipc:/ipc"
+
+        # - ./config/network/${NETWORK:-preview}/cardano-node:/config
+        # - ./data/node-db:/data
+        # - ./data/node-ipc:/ipc
+        # # TODO is this needed?
+        # # - ./config/network/${NETWORK:-preview}/genesis:/genesis
+      ];
+
+      # TODO
+      # restart: on-failure
+      # logging:
+        # driver: "json-file"
+        # options:
+          # max-size: "400k"
+          # max-file: "20"
+
+    };
+
+    ogmios = {
+
+      # TODO pin to a named version
+      # service.image = "cardanosolutions/ogmios:latest";
+      service.image = "76902d6a9306";
+
+      service.command = [
+        "--host", "0.0.0.0",
+        "--node-socket", "/ipc/node.socket",
+        "--node-config", "/config/cardano-node/config.json"
+      ];
+      service.volumes = [
+        "./node/config/network/preview:/config"
+        "./node/data/node-ipc:/ipc"
+        # - ./config/network/${NETWORK:-preview}:/config
+        # - ./data/node-ipc:/ipc
+      ];
+      service.ports = [
+        "1337:1337"
+        # - ${OGMIOS_PORT:-1337}:1337
+      ];
+
+      # TODO
+      # restart: on-failure
+    };
+
+    # publisher = {};
+
+    # subscriber = {};
+
+  };
 }
 
 #   projectConfig = builtins.fromJSON (builtins.readFile ./election.json);
