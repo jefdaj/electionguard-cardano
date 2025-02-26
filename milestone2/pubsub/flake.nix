@@ -7,12 +7,13 @@
       buildInputs = with self.pkgs; [
 
         arion
+        file
         jq
         time
         tree
 
-        ipfs-cluster
-        graphviz # for ipfs-cluster-ctl health graph
+        # ipfs-cluster
+        # graphviz # for ipfs-cluster-ctl health graph
 
       ];
     };
