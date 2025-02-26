@@ -5,7 +5,10 @@
 ```bash
 nix develop
 pip install pycardano
-./generate-credentials.py # only need to run once
+
+# safe to re-run, but only needs to be done once
+# then send tADA from faucet -> keys/me.addr
+./generate-credentials.py
 ```
 
 Write validators in the `validators` folder, and supporting functions in the `lib` folder using `.ak` as a file extension.
