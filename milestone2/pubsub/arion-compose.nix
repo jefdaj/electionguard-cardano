@@ -5,11 +5,27 @@ let
   NODE_DATA   = "../investigate/cardano-node-ogmios/data";
   TMP_DATA    = "/tmp/pubsub";
 
+  mkIpfsService = nameSuffix: portSuffix: rec {
+    # TODO pin named version
+    # service.image = "ipfs/kubo:release";
+    service.name = "ipfs-" + nameSuffix;
+    service.image = "e58cd5ca3066";
+    service.ports = [
+      # host:container
+      "${builtins.toString (4000 + portSuffix)}:4001" # ipfs swarm
+      "${builtins.toString (5000 + portSuffix)}:5001" # ipfs api
+      "${builtins.toString (8080 + portSuffix)}:8080" # ipfs gateway
+    ];
+    service.volumes = [
+      "${TMP_DATA}/${service.name}:/data/ipfs"
+    ];
+  };
+
 in {
   config.project.name = "pubsub";
   config.services = {
 
-    cardano-node = {
+    node = {
       service.image = "ghcr.io/intersectmbo/cardano-node:10.1.4";
       service.command = [
         "run"
@@ -65,19 +81,9 @@ in {
       service.restart = "on-failure";
     };
 
-    publisher-ipfs = {
-      # TODO pin named version
-      # service.image = "ipfs/kubo:release";
-      service.image = "e58cd5ca3066";
-      service.ports = [
-        "4001:4001" # ipfs swarm
-        "5001:5001" # ipfs api
-        "8080:8080" # ipfs gateway
-      ];
-      service.volumes = [
-        "${TMP_DATA}/publisher-ipfs:/data/ipfs"
-      ];
-    };
+    ipfs-pub  = mkIpfsService "pub"  1;
+    ipfs-sub1 = mkIpfsService "sub1" 2;
+    ipfs-sub2 = mkIpfsService "sub2" 3;
 
     # publisher = {
     #   image.contents = [
