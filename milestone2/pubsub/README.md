@@ -46,7 +46,7 @@ pip install -r requirements.txt
 # test script:
 # 1. paste a cid
 # 2. it should show up under ./data
-./get_cids_stdin.py
+./ipfs-download.py
 ```
 
 

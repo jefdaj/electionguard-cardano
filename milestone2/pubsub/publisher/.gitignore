@@ -13,3 +13,6 @@ keys/
 
 # Nix
 result*
+
+# ipfs data
+data/

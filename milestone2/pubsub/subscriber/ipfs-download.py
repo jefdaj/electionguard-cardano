@@ -5,12 +5,16 @@ import asyncio
 import aioipfs
 from os import makedirs
 
-DATA_DIR = './data'
-makedirs(DATA_DIR, exist_ok=True)
+# see arion-compose.nix for ports
+# TODO load a common config json there and in python
+IPFS_HTTP_PORT = 5002
+
+IPFS_DATA_DIR = './data'
+makedirs(IPFS_DATA_DIR, exist_ok=True)
 
 async def get(cid: str):
-    client = aioipfs.AsyncIPFS(maddr='/ip4/127.0.0.1/tcp/5001')
-    await client.get(cid, dstdir=DATA_DIR)
+    client = aioipfs.AsyncIPFS(maddr=f'/ip4/127.0.0.1/tcp/{IPFS_HTTP_PORT}')
+    await client.get(cid, dstdir=IPFS_DATA_DIR)
     await client.close()
 
 if __name__ == '__main__':
