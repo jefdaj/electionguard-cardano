@@ -29,6 +29,7 @@
             nativeBuildInputs = with pkgs; [
 
               arion
+              file
               jq
               time
               tree
