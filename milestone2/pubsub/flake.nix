@@ -11,6 +11,9 @@
         time
         tree
 
+        ipfs-cluster
+        graphviz # for ipfs-cluster-ctl health graph
+
       ];
     };
   };

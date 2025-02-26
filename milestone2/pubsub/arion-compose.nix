@@ -3,6 +3,7 @@
 let
   NODE_CONFIG = "../investigate/cardano-node-ogmios/config";
   NODE_DATA   = "../investigate/cardano-node-ogmios/data";
+  TMP_DATA    = "/tmp/pubsub";
 
 in {
   config.project.name = "pubsub";
@@ -62,6 +63,20 @@ in {
         "1337:1337"
       ];
       service.restart = "on-failure";
+    };
+
+    publisher-ipfs = {
+      # TODO pin named version
+      # service.image = "ipfs/kubo:release";
+      service.image = "e58cd5ca3066";
+      service.ports = [
+        "4001:4001" # ipfs swarm
+        "5001:5001" # ipfs api
+        "8080:8080" # ipfs gateway
+      ];
+      service.volumes = [
+        "${TMP_DATA}/publisher-ipfs:/data/ipfs"
+      ];
     };
 
     # publisher = {
