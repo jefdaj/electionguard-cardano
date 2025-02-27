@@ -9,6 +9,7 @@
 , base58
 , gitignore-parser
 , py-multibase
+, py-multiaddr
 }:
 
 
@@ -37,7 +38,7 @@ buildPythonPackage rec {
     # these would need packaging
     gitignore-parser
     py-multibase
-    # multiaddr
+    py-multiaddr
     # "py-multiformats-cid"
   ];
 }
