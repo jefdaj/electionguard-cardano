@@ -19,6 +19,31 @@
         pname = "aiken + python dev environment";
         pkgs = nixpkgs.legacyPackages."${system}";
         venvDir = ".venv";
+
+        # TODO clean this up if it works
+        pytest-runner = pkgs.python3Packages.callPackage ./pytest-runner.nix {};
+        py-multiaddr  = pkgs.python3Packages.callPackage ./py-multiaddr.nix {
+          inherit pytest-runner;
+        };
+        py-multibase  = pkgs.python3Packages.callPackage ./py-multibase.nix {
+          inherit pytest-runner;
+        };
+        py-multiformats-cid = pkgs.python3Packages.callPackage ./py-multiformats-cid.nix {
+          inherit pytest-runner;
+        };
+        aioipfs = pkgs.python3Packages.callPackage ./aioipfs.nix {
+          inherit py-multibase py-multiaddr py-multiformats-cid;
+        };
+	# TODO only use this for build but not dev shell?
+	pyPython = python3.withPackages (ps: with ps; [
+	  aioipfs
+	  click
+	  click-default-group
+	  dotmap
+	  pygments
+	]);
+
+
       in
         rec {
           inherit pname;
@@ -32,10 +57,10 @@
               time
               tree
 
-              python3Packages.python
-              python3Packages.distutils # needed for aioipfs
               python3Packages.python-lsp-server
               python3Packages.autopep8
+              python3Packages.python
+              python3Packages.distutils # needed for aioipfs
 
             ];
 
@@ -61,6 +86,23 @@
                 source "${venvDir}/bin/activate"
               '';
           };
+
+          # `nix build`
+          defaultPackage = pkgs.stdenv.mkDerivation rec {
+            name = "subscriber-ipfs-download-${version}";
+            version = "0.1";
+            nativeBuildInputs = with pkgs; [
+              myPython
+            ];
+
+            src = ./.;
+            installPhase = ''
+              mkdir -p $out/bin
+              # TODO install this in bin properly with wrapper next
+              cp ipfs-download.py 
+            '';
+          };
+
         }
     );
 }
