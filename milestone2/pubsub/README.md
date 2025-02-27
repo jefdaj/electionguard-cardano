@@ -46,8 +46,8 @@ pip install -r requirements.txt
 ## IPFS via Python
 
 ```bash
-cd publisher
-nix develop
+$ cd publisher
+$ nix develop
 
 $ # upload a json file, embedding the public path in it
 $ ./ipfs-upload.py
@@ -60,8 +60,8 @@ ok, done
 ```
 
 ```bash
-cd subscriber
-nix develop
+$ cd subscriber
+$ nix develop
 
 $ # download it from other ipfs instance
 $ ./ipfs-download.py
