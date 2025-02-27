@@ -10,6 +10,7 @@
 , gitignore-parser
 , py-multibase
 , py-multiaddr
+, py-multiformats-cid
 }:
 
 
@@ -39,7 +40,7 @@ buildPythonPackage rec {
     gitignore-parser
     py-multibase
     py-multiaddr
-    # "py-multiformats-cid"
+    py-multiformats-cid
   ];
   pythonRelaxDeps = [
     "gitignore-parser"

@@ -7,8 +7,11 @@ let
   py-multibase  = pkgs.python3Packages.callPackage ./py-multibase.nix {
     inherit pytest-runner;
   };
+  py-multiformats-cid = pkgs.python3Packages.callPackage ./py-multiformats-cid.nix {
+    inherit pytest-runner;
+  };
   aioipfs = pkgs.python3Packages.callPackage ./aioipfs.nix {
-    inherit py-multibase py-multiaddr;
+    inherit py-multibase py-multiaddr py-multiformats-cid;
   };
 
 in
