@@ -1,8 +1,9 @@
 with import <nixpkgs> {};
 let
-  # works:
-  # pkgs.python3Packages.callPackage pytest-runner {}
-  pytest-runner = import ./pytest-runner.nix;
+  pytest-runner = pkgs.python3Packages.callPackage ./pytest-runner.nix {};
+  py-multibase  = pkgs.python3Packages.callPackage ./py-multibase.nix {
+    inherit pytest-runner;
+  };
 
 in
-  pkgs.python3Packages.callPackage pytest-runner {}
+  py-multibase
