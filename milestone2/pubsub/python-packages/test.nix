@@ -3,25 +3,24 @@
 with import <nixpkgs> {};
 let
   pytest-runner = pkgs.python3Packages.callPackage ./pytest-runner.nix {};
-  py-multiaddr  = pkgs.python3Packages.callPackage ./py-multiaddr.nix {
-    inherit pytest-runner;
-  };
-  py-multibase  = pkgs.python3Packages.callPackage ./py-multibase.nix {
-    inherit pytest-runner;
-  };
   py-multiformats-cid = pkgs.python3Packages.callPackage ./py-multiformats-cid.nix {
     inherit pytest-runner;
   };
   aioipfs = pkgs.python3Packages.callPackage ./aioipfs.nix {
-    inherit py-multibase py-multiaddr py-multiformats-cid;
+    inherit py-multiformats-cid;
   };
 
 in
   pkgs.python3.withPackages (ps: with ps; [
-    # varint
-    pytest-runner
+
+    # from nixpkgs
     py-multiaddr
+    py-multihash
     py-multibase
-    py-multiformats-cid
+
+    # packaged here
     aioipfs
+    py-multiformats-cid
+    pytest-runner # TODO is there still a version in nixpkgs somewhere?
+
   ])

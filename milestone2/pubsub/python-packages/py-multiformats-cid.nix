@@ -4,6 +4,7 @@
 , fetchFromGitHub
 , pytest
 , pytest-runner
+, base58
 }:
 
 
@@ -21,6 +22,9 @@ buildPythonPackage rec {
   nativeCheckInputs = [
     pytest
     pytest-runner
+  ];
+  nativeBuildInputs = [
+    base58
   ];
 
   # build-system = [
