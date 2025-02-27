@@ -19,7 +19,7 @@
             packageOverrides = pyself: pysuper: {
 
               # TODO it is there, but we need to mark it OK to distribute or something?
-              # pytestrunner = pyself.callPackage ./python-packages/pytest-runner.nix       {};
+              pytest-runner = pyself.callPackage ./python-packages/pytest-runner.nix       {};
               # pytestrunner = pysuper.pytestrunner.override {
               #   dontDistribute = false;
               # };
