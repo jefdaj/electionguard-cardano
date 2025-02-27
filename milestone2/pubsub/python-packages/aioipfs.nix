@@ -41,4 +41,7 @@ buildPythonPackage rec {
     py-multiaddr
     # "py-multiformats-cid"
   ];
+  pythonRelaxDeps = [
+    "gitignore-parser"
+  ];
 }
