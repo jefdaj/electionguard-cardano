@@ -19,7 +19,10 @@
             packageOverrides = pyself: pysuper: {
 
               # TODO it is there, but we need to mark it OK to distribute or something?
-              pytest-runner       = pyself.callPackage ./python-packages/pytest-runner.nix       {};
+              # pytestrunner = pyself.callPackage ./python-packages/pytest-runner.nix       {};
+              # pytestrunner = pysuper.pytestrunner.override {
+              #   dontDistribute = false;
+              # };
 
               py-multiformats-cid = pyself.callPackage ./python-packages/py-multiformats-cid.nix {};
               aioipfs             = pyself.callPackage ./python-packages/aioipfs.nix             {};
@@ -70,7 +73,7 @@
           name = "ipfs-download";
           version = "0.1";
           pyproject = false;
-          nativeBuildInputs = myPyPackageList pkgs.python312;
+          nativeBuildInputs = myPyPackageList pkgs.python312.pkgs;
           src = ./subscriber/ipfs-download.py;
           dontUnpack = true;
           installPhase = ''
