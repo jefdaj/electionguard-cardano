@@ -7,6 +7,11 @@
 , fetchFromGitHub
 , pytest
 , pytest-runner
+, varint
+, base58
+, netaddr
+, py-cid
+, py-multicodec
 }:
 
 buildPythonPackage rec {
@@ -19,6 +24,13 @@ buildPythonPackage rec {
     rev = "e01dbd38f2c0464c0f78b556691d655265018cce";
     sha256 = "WuPAMp6b9XG3xMCANI9sd3M3iZRWwaxoICSV2o4zt9o=";
   };
+  nativeBuildInputs = [
+    varint
+    base58
+    netaddr
+    py-cid
+    py-multicodec
+  ];
   nativeCheckInputs = [
     pytest
     pytest-runner

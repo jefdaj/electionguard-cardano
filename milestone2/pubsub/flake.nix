@@ -15,18 +15,18 @@
         venvDir = ".venv";
 
         # TODO clean this up if it works
-        pytest-runner = pkgs.python3Packages.callPackage
-          ./python-packages/pytest-runner.nix {};
-        py-multiaddr = pkgs.python3Packages.callPackage
-          ./python-packages/py-multiaddr.nix { inherit pytest-runner; };
-        py-multibase = pkgs.python3Packages.callPackage
-          ./python-packages/py-multibase.nix { inherit pytest-runner; };
-        py-multiformats-cid = pkgs.python3Packages.callPackage
-          ./python-packages/py-multiformats-cid.nix { inherit pytest-runner; };
-        aioipfs = pkgs.python3Packages.callPackage
-          ./python-packages/aioipfs.nix {
-            inherit py-multibase py-multiaddr py-multiformats-cid;
-          };
+        # pytest-runner = pkgs.python3Packages.callPackage
+        #   ./python-packages/pytest-runner.nix {};
+        # py-multiaddr = pkgs.python3Packages.callPackage
+        #   ./python-packages/py-multiaddr.nix { inherit pytest-runner; };
+        # py-multibase = pkgs.python3Packages.callPackage
+        #   ./python-packages/py-multibase.nix { inherit pytest-runner; };
+        # py-multiformats-cid = pkgs.python3Packages.callPackage
+        #   ./python-packages/py-multiformats-cid.nix { inherit pytest-runner; };
+        # aioipfs = pkgs.python3Packages.callPackage
+        #   ./python-packages/aioipfs.nix {
+        #     inherit py-multibase py-multiaddr py-multiformats-cid;
+        #   };
 	# TODO only use this for build but not dev shell?
         # myPython = pkgs.python3.withPackages (ps: with ps; [
         #   aioipfs
@@ -35,6 +35,17 @@
         #   dotmap
         #   pygments
         # ]);
+
+        # TODO which python version to use?
+        myPython312 = pkgs.python312.override {
+          packageOverrides = pyself: pysuper: {
+            pytest-runner       = pyself.callPackage ./python-packages/pytest-runner.nix       {};
+            py-multiaddr        = pyself.callPackage ./python-packages/py-multiaddr.nix        {};
+            py-multibase        = pyself.callPackage ./python-packages/py-multibase.nix        {};
+            py-multiformats-cid = pyself.callPackage ./python-packages/py-multiformats-cid.nix {};
+            aioipfs             = pyself.callPackage ./python-packages/aioipfs.nix             {};
+          };
+        };
 
       in
         rec {
@@ -59,10 +70,13 @@
               aiken.packages.x86_64-linux.aiken
 
               # for publisher and subscriber python scripts
-              python3Packages.python
-              python3Packages.distutils # needed for aioipfs in dev shell
-              python3Packages.python-lsp-server
-              python3Packages.autopep8
+              # python3Packages.python
+              # python3Packages.distutils # needed for aioipfs in dev shell
+              # python3Packages.python-lsp-server
+              # python3Packages.autopep8
+              (myPython312.withPackages (ps: with ps; [
+                aioipfs
+              ]))
 
             ];
         };
@@ -73,17 +87,20 @@
           version = "0.1";
           pyproject = false;
           # TODO pass these the python used here
-          propogatedBuildInputs = with pkgs.python3Packages; [
-	    aioipfs
-	    click
-	    click-default-group
-	    dotmap
-	    pygments
+          nativeBuildInputs = with pkgs.python3Packages; [
+            # (pkgs.python3.withPackages (ps: with ps; [
+            #   aioipfs
+            #   click
+            #   click-default-group
+            #   dotmap
+            #   pygments
+            # ]))
+            myPython312
           ];
-          script = ./subscriber/ipfs-download.py;
+          src = ./subscriber/ipfs-download.py;
           dontUnpack = true;
           installPhase = ''
-            install -Dm755 "${script}" $out/bin/subscriber-main.py
+            install -Dm755 "${src}" $out/bin/ipfs-download.py
           '';
         };
       }

@@ -1,3 +1,5 @@
+# TODO remove once these all work in flake.nix
+
 with import <nixpkgs> {};
 let
   pytest-runner = pkgs.python3Packages.callPackage ./pytest-runner.nix {};

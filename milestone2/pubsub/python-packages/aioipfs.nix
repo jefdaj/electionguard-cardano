@@ -3,6 +3,7 @@
 { buildPythonPackage
 , fetchFromGitHub
 , setuptools
+, distutils
 , aiohttp
 , aiofiles
 , async-timeout
@@ -30,16 +31,14 @@ buildPythonPackage rec {
     setuptools
   ];
   dependencies = [
-    # these work
-    aiohttp
     aiofiles
+    aiohttp
     async-timeout
     base58
-
-    # these would need packaging
+    distutils
     gitignore-parser
-    py-multibase
     py-multiaddr
+    py-multibase
     py-multiformats-cid
   ];
   pythonRelaxDeps = [

@@ -7,6 +7,9 @@
 , fetchFromGitHub
 , pytest
 , pytest-runner
+, python-baseconv
+, six
+, morphys
 }:
 
 buildPythonPackage rec {
@@ -19,6 +22,11 @@ buildPythonPackage rec {
     rev = "a49fe7d7651d90f6b572cfa83481e11bef08aa34";
     sha256 = "0+d2+DlDjrGktRV7shfMF3/dCGJsm9RNBDdybvXmLvA=";
   };
+  nativeBuildInputs = [
+    python-baseconv
+    six
+    morphys
+  ];
   nativeCheckInputs = [
     pytest
     pytest-runner
