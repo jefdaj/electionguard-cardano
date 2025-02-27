@@ -3,9 +3,8 @@
 #   inherit pytest-runner;
 # };
 
-
-{ fetchFromGitHub
-, buildPythonPackage
+{ buildPythonPackage
+, fetchFromGitHub
 , pytest
 , pytest-runner
 }:
@@ -14,7 +13,7 @@ buildPythonPackage rec {
   name = "py-multibase";
   version = "1.0.3";
   src = fetchFromGitHub {
-    owner = "PancakesArchitect";
+    owner = "multiformats";
     repo = name;
     # last before project was archived
     rev = "a49fe7d7651d90f6b572cfa83481e11bef08aa34";

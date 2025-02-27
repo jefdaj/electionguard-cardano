@@ -1,10 +1,20 @@
-with import <nixpkgs> {};
+# usage:
+
+{ buildPythonPackage
+, fetchFromGitHub
+, setuptools
+, aiohttp
+, aiofiles
+, async-timeout
+, base58
+, gitignore-parser
+, py-multibase
+}:
 
 
-pkgs.python3Packages.buildPythonPackage rec {
+buildPythonPackage rec {
   name = "aioipfs";
   version = "0.7.1";
-
   src = fetchFromGitHub {
     owner = "PancakesArchitect";
     repo = name;
@@ -13,12 +23,11 @@ pkgs.python3Packages.buildPythonPackage rec {
     # comment out and try to build to find proper updated value
     sha256 = "uPYBTsGAnOqZ1OJnf954YlcNk8MIH3h1+TRCIA+0vU4=";
   };
-
   pyproject = true;
-  build-system = with python3Packages; [
+  build-system = [
     setuptools
   ];
-  dependencies = with python3Packages; [
+  dependencies = [
     # these work
     aiohttp
     aiofiles
@@ -27,8 +36,8 @@ pkgs.python3Packages.buildPythonPackage rec {
 
     # these would need packaging
     gitignore-parser
+    py-multibase
     # multiaddr
-    # "py-multibase"
     # "py-multiformats-cid"
   ];
 }
