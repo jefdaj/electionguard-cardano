@@ -28,13 +28,13 @@
             inherit py-multibase py-multiaddr py-multiformats-cid;
           };
 	# TODO only use this for build but not dev shell?
-	myPython = pkgs.python3.withPackages (ps: with ps; [
-	  aioipfs
-	  click
-	  click-default-group
-	  dotmap
-	  pygments
-	]);
+        # myPython = pkgs.python3.withPackages (ps: with ps; [
+        #   aioipfs
+        #   click
+        #   click-default-group
+        #   dotmap
+        #   pygments
+        # ]);
 
       in
         rec {
@@ -67,18 +67,23 @@
             ];
         };
 
-        defaultPackage = pkgs.stdenv.mkDerivation rec {
-          name = "subscriber-ipfs-download-${version}";
+        # https://stackoverflow.com/a/78450917
+        defaultPackage = pkgs.python3Packages.buildPythonPackage rec {
+          name = "subscriber-main";
           version = "0.1";
-          nativeBuildInputs = with pkgs; [
-            myPython
+          pyproject = false;
+          # TODO pass these the python used here
+          propogatedBuildInputs = with pkgs.python3Packages; [
+	    aioipfs
+	    click
+	    click-default-group
+	    dotmap
+	    pygments
           ];
-
-          src = ./subscriber;
+          script = ./subscriber/ipfs-download.py;
+          dontUnpack = true;
           installPhase = ''
-            mkdir -p $out/bin
-            # TODO install this in bin properly with wrapper next
-            install -m755 ipfs-download.py $out/bin/ipfs-download.py
+            install -Dm755 "${script}" $out/bin/subscriber-main.py
           '';
         };
       }
