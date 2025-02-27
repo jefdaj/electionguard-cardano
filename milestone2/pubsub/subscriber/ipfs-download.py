@@ -1,17 +1,38 @@
 #!/usr/bin/env python3
 
-import json
-import sys
 import asyncio
-import aioipfs
+import json
+import os
+import sys
+import time
+
+from os.path import join, dirname, exists
 from tempfile import TemporaryDirectory
-from os import makedirs
-from os.path import join, dirname
+import aioipfs
 
 
-# TODO get these from arion var
-IPFS_HTTP_PORT = 5002
-SYNC_DIR = './data'
+# these come from arion-compose.nix
+IPFS_HTTP_PORT = int(os.environ['IPFS_HTTP_PORT'])
+IPFS_DATA_DIR = os.environ['IPFS_DATA_DIR']
+
+
+def watch_file_for_cids(path: str):
+    # quick hack to test the downloader before the cardano stuff exists
+    # watches for changes to ${IPFS_DATA_DIR}/new_cids.txt and yields them
+    prev_mtime = 0
+    while True:
+        time.sleep(5)
+        if not exists(path):
+            continue
+        cur_mtime = os.stat(path).st_mtime
+        if cur_mtime == prev_mtime:
+            continue
+        with open(path, 'r') as f:
+            for line in f.readlines():
+                cid = line.strip()
+                if len(cid) > 0:
+                    yield cid
+        prev_mtime = cur_mtime
 
 
 async def get(cid: str, dstdir: str):
@@ -28,8 +49,8 @@ async def get_json(cid: str):
         with open(get_path, 'r') as f:
             js = json.load(f)
     # TODO extend protocol to include the extension and allow non-json files?
-    out_path = join(SYNC_DIR, js['path'] + '.json')
-    makedirs(dirname(out_path), exist_ok=True)
+    out_path = join(IPFS_DATA_DIR, js['path'] + '.json')
+    os.makedirs(dirname(out_path), exist_ok=True)
     with open(out_path, 'w') as f:
         json.dump(js['content'], f)
     print(f'wrote {cid} to {out_path}')
@@ -37,15 +58,11 @@ async def get_json(cid: str):
 
 if __name__ == '__main__':
     loop = asyncio.new_event_loop()
-    while True:
-        try:
-            cid = input('Next CID to download: ').strip()
-            if len(cid) == 0:
-                continue
+    new_cids_path = join(IPFS_DATA_DIR, 'new_cids.txt')
+    try:
+        for cid in watch_file_for_cids(new_cids_path):
             loop.run_until_complete(
                 get_json(cid)
             )
-        except KeyboardInterrupt:
-            print()
-            print('ok, done')
-            break
+    except KeyboardInterrupt:
+        pass
