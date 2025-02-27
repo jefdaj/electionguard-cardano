@@ -49,19 +49,14 @@ pip install -r requirements.txt
 cd publisher
 nix develop
 
-$ # create unique file
-$ echo "testing..." > test.txt
-$ date >> test.txt
-$ cat test.txt
-testing...
-Wed Feb 26 12:31:34 PM PST 2025
-
-$ # upload it
+$ # upload a json file, embedding the public path in it
 $ ./ipfs-upload.py
-file to upload: test.txt
-QmXE3aHQnrBxSarXZLBXAQwgHFC2iKfyftYMjjwUyp2qFh test.txt
-file to upload: ^C
+Actual path to a JSON file to upload: ../../../milestone1/local-election/data/public/1_config/1_announce/1_manifest.json
+Path to put in IPFS JSON data: 1_config/1_announce/1_manifest
+QmZ4EzZfUvrHDtZFw7HC2zcX9HGKpwHrZYzgTPbGigdGqj
+Actual path to a JSON file to upload: ^C
 ok, done
+
 ```
 
 ```bash
@@ -70,14 +65,22 @@ nix develop
 
 $ # download it from other ipfs instance
 $ ./ipfs-download.py
-Next CID to download: QmXE3aHQnrBxSarXZLBXAQwgHFC2iKfyftYMjjwUyp2qFh
+Next CID to download: QmZ4EzZfUvrHDtZFw7HC2zcX9HGKpwHrZYzgTPbGigdGqj
+wrote QmZ4EzZfUvrHDtZFw7HC2zcX9HGKpwHrZYzgTPbGigdGqj to ./data/1_config/1_announce/1_manifest.json
 Next CID to download: ^C
 ok, done
 
-$ cat data/QmXE3aHQnrBxSarXZLBXAQwgHFC2iKfyftYMjjwUyp2qFh 
-testing...
-Wed Feb 26 12:31:34 PM PST 2025
-
+$ cat ./data/1_config/1_announce/1_manifest.json | jq | head
+{
+  "election_scope_id": "electionguard-cardano-test-manifest",
+  "spec_version": "1.0",
+  "type": "general",
+  "start_date": "2025-02-25T15:20:54.121535",
+  "end_date": "2025-02-28T03:20:54.121535",
+  "geopolitical_units": [
+    {
+      "object_id": "electionguard-cardano-test-county",
+      "name": "ElectionGuard + Cardano Test County",
 ```
 
 
