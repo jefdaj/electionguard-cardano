@@ -17,4 +17,11 @@ let
   };
 
 in
-  aioipfs
+  pkgs.python3.withPackages (ps: with ps; [
+    # varint
+    pytest-runner
+    py-multiaddr
+    py-multibase
+    py-multiformats-cid
+    aioipfs
+  ])

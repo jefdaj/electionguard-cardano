@@ -25,7 +25,7 @@ buildPythonPackage rec {
     sha256 = "WuPAMp6b9XG3xMCANI9sd3M3iZRWwaxoICSV2o4zt9o=";
   };
   nativeBuildInputs = [
-    varint
+    varint # TODO why isn't this able to be imported? diff buildInputs needed?
     base58
     netaddr
     py-cid
