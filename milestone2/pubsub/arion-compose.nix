@@ -1,31 +1,17 @@
 { pkgs, ...}:
 
 let
+
+  # re-use node data
   NODE_CONFIG = "../investigate/cardano-node-ogmios/config";
   NODE_DATA   = "../investigate/cardano-node-ogmios/data";
-  TMP_DATA    = "/tmp/pubsub";
 
-  mkIpfsService = nameSuffix: portSuffix: rec {
-    # TODO pin named version
-    # service.image = "ipfs/kubo:release";
-    service.name = "ipfs-" + nameSuffix;
-    service.image = "e58cd5ca3066";
-    service.ports = [
-      # host:container
-      "${builtins.toString (4000 + portSuffix)}:4001" # ipfs swarm
-      "${builtins.toString (5000 + portSuffix)}:5001" # ipfs api
-      "${builtins.toString (8080 + portSuffix)}:8080" # ipfs gateway
-    ];
-    service.volumes = [
-      "${TMP_DATA}/${service.name}:/data/ipfs"
-    ];
-  };
+  # but the rest be wiped and regenerated whenever
+  # data dirs go in here by name: pub1-ipfs, sub1-ipfs, ...
+  TMP_DATA = "/tmp/pubsub";
 
-in {
-  config.project.name = "pubsub";
-  config.services = {
-
-    node = {
+  shared = {
+    shared-node = {
       service.image = "ghcr.io/intersectmbo/cardano-node:10.1.4";
       service.command = [
         "run"
@@ -42,7 +28,6 @@ in {
         # # - ./config/network/${NETWORK:-preview}/genesis:/genesis
       ];
       service.restart = "on-failure";
-
       # TODO figure this out
       # service.logging = {
       #   driver = "json-file";
@@ -56,15 +41,11 @@ in {
         # options:
           # max-size: "400k"
           # max-file: "20"
-
     };
-
-    ogmios = {
-
+    shared-ogmios = {
       # TODO pin to a named version
       # service.image = "cardanosolutions/ogmios:latest";
       service.image = "76902d6a9306";
-
       service.command = [
         "--host" "0.0.0.0"
         "--node-socket" "/ipc/node.socket"
@@ -80,11 +61,45 @@ in {
       ];
       service.restart = "on-failure";
     };
+  };
 
-    ipfs-pub  = mkIpfsService "pub"  1;
-    ipfs-sub1 = mkIpfsService "sub1" 2;
-    ipfs-sub2 = mkIpfsService "sub2" 3;
+  mkIpfsService = namePrefix: portSuffix: rec {
+    # TODO pin named version
+    # service.image = "ipfs/kubo:release";
+    service.name = namePrefix + "-ipfs";
+    service.image = "e58cd5ca3066";
+    service.ports = [
+      # host:container
+      "${builtins.toString (4000 + portSuffix)}:4001" # ipfs swarm
+      "${builtins.toString (5000 + portSuffix)}:5001" # ipfs api
+      "${builtins.toString (8080 + portSuffix)}:8080" # ipfs gateway
+    ];
+    service.volumes = [
+      "${TMP_DATA}/${service.name}:/data/ipfs"
+    ];
+  };
 
+  mkPublisher = n: portSuffix:
+    let pubName = "pub" + builtins.toString n;
+    in {
+      "${pubName}-ipfs" = mkIpfsService pubName portSuffix;
+    };
+
+  mkSubscriber = n: portSuffix:
+    let subName = "sub" + builtins.toString n;
+    in {
+      "${subName}-ipfs" = mkIpfsService subName portSuffix;
+    };
+
+in {
+  config.project.name = "pubsub";
+  config.services =
+    shared //
+    mkPublisher  1 1 //
+    mkSubscriber 1 2 //
+    mkSubscriber 2 3;
+
+  # {
     # publisher = {
     #   image.contents = [
     #     # TODO nix packages here
@@ -99,8 +114,6 @@ in {
     #   service.stop_signal = "SIGINT";
     #   # service.environment.XXX = ...
     # };
-
     # subscriber = {};
-
-  };
+  # };
 }
