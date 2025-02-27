@@ -17,13 +17,8 @@
         myPython312Overlay = self: super: {
           python312 = super.python312.override {
             packageOverrides = pyself: pysuper: {
-
-              # TODO it is there, but we need to mark it OK to distribute or something?
-              pytest-runner = pyself.callPackage ./python-packages/pytest-runner.nix       {};
-              # pytestrunner = pysuper.pytestrunner.override {
-              #   dontDistribute = false;
-              # };
-
+              # TODO it there a way to re-enable the pytest-runner in nixpkgs?
+              pytest-runner       = pyself.callPackage ./python-packages/pytest-runner.nix       {};
               py-multiformats-cid = pyself.callPackage ./python-packages/py-multiformats-cid.nix {};
               aioipfs             = pyself.callPackage ./python-packages/aioipfs.nix             {};
             };
@@ -69,6 +64,8 @@
         };
 
         # https://stackoverflow.com/a/78450917
+        # TODO buildPythonApplication?
+        # TODO bug in aioipfs? try earlier commits/version tags if there are any
         defaultPackage = pkgs.python312.pkgs.buildPythonPackage rec {
           name = "ipfs-download";
           version = "0.1";
