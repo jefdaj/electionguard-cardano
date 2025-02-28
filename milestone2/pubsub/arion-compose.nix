@@ -15,7 +15,7 @@ let
   TMP_DATA = "/tmp/pubsub";
 
   # temporary workaround to test IPFS sync before smart contracts are written
-  SHARED_CIDS_FILE = "${TMP_DATA}/new_cids.txt";
+  SHARED_CIDS_DIR = "${TMP_DATA}/new_cids";
 
   shared = {
     shared-node = {
@@ -86,11 +86,29 @@ let
     ];
   };
 
-  # mkPublisher = n: portSuffix:
-  #   let pubName = "pub" + builtins.toString n;
-  #   in {
-  #     "${pubName}-ipfs" = mkIpfsService pubName portSuffix;
-  #   };
+  mkPublisher = n: portSuffix:
+    let
+      pubName = "pub" + builtins.toString n;
+    in {
+      "${pubName}-ipfs" = mkIpfsService pubName portSuffix;
+      "${pubName}-publish" = {
+        image.enableRecommendedContents = true; # sh, env, misc lightweight files
+        service.useHostStore = true;
+        service.stop_signal = "SIGINT";
+        service.environment.IPFS_HTTP_PORT = builtins.toString (5000 + portSuffix);
+        service.environment.IPFS_DATA_DIR  = "/data";
+        image.contents = [
+          flake.packages.x86_64-linux.publisher
+        ];
+        service.volumes = [
+          "${SHARED_CIDS_DIR}:/new_cids"
+        ];
+        service.command = [
+          "publish.py"
+          "/new_cids/new_cids.txt"
+        ];
+      };
+     };
 
   mkSubscriber = n: portSuffix:
     let
@@ -109,11 +127,11 @@ let
         ];
         service.volumes = [
           "${subData}:/data"
-          "${SHARED_CIDS_FILE}:/new_cids.txt"
+          "${SHARED_CIDS_DIR}:/new_cids"
         ];
         service.command = [
           "subscribe.py"
-          "/new_cids.txt"
+          "/new_cids/new_cids.txt"
         ];
       };
      };
@@ -121,26 +139,8 @@ let
 in {
   config.project.name = "pubsub";
   config.services =
-    shared //
-    # mkPublisher  1 1 //
+    # shared //
+    mkPublisher  1 1 //
     mkSubscriber 1 2 //
     mkSubscriber 2 3;
-
-  # {
-    # publisher = {
-    #   image.contents = [
-    #     # TODO nix packages here
-    #   ];
-    #   service.useHostStore = true;
-    #   service.command = [
-    #     # TODO args here
-    #   ];
-    #   service.ports = [
-    #     # TODO ipfs port?
-    #   ];
-    #   service.stop_signal = "SIGINT";
-    #   # service.environment.XXX = ...
-    # };
-    # subscriber = {};
-  # };
 }

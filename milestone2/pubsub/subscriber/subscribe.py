@@ -19,9 +19,9 @@ IPFS_DATA_DIR = os.environ['IPFS_DATA_DIR']
 os.makedirs(IPFS_DATA_DIR, exist_ok=True)
 
 
-def watch_file_for_cids(path: str):
+def yield_cids_from_file(path: str):
     # quick hack to test the downloader before the cardano stuff exists
-    # watches for changes to ${IPFS_DATA_DIR}/new_cids.txt and yields them
+    # watches for changes to new_cids.txt and yields them
     prev_mtime = 0
     while True:
         time.sleep(5)
@@ -66,7 +66,7 @@ if __name__ == '__main__':
     new_cids_path = sys.argv[1]
     loop = asyncio.new_event_loop()
     try:
-        for cid in watch_file_for_cids(new_cids_path):
+        for cid in yield_cids_from_file(new_cids_path):
             loop.run_until_complete(
                 get_json(cid)
             )
