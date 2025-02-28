@@ -29,7 +29,16 @@
         tree
       ];
 
-      pyPkgList = ps: with ps; [
+      pubPyPkgList = ps: with ps; [
+        aioipfs
+        click
+        click-default-group
+        dotmap
+        pygments
+        pycardano
+      ];
+
+      subPyPkgList = ps: with ps; [
         aioipfs
         click
         click-default-group
@@ -62,8 +71,8 @@
 
           # `nix build .#publisher` (or subscriber etc)
           packages.x86_64-linux = rec {
-            publisher  = singleScriptPyPkg ./publisher/publish.py    "0.1" pyPkgList;
-            subscriber = singleScriptPyPkg ./subscriber/subscribe.py "0.1" pyPkgList;
+            publisher  = singleScriptPyPkg ./publisher/publish.py    "0.1" pubPyPkgList;
+            subscriber = singleScriptPyPkg ./subscriber/subscribe.py "0.1" subPyPkgList;
             # default = subscriberDownload;
           };
 
@@ -83,7 +92,7 @@
             # `nix develop .#publisher`
             publisher = pkgs.mkShell {
               nativeBuildInputs = (devPkgList pkgs) ++ [
-                (pkgs.python312.withPackages pyPkgList)
+                (pkgs.python312.withPackages pubPyPkgList)
               ];
               shellHook = ''
                 echo "running devShells.x86_64-linux.publisher shellHook"
@@ -97,7 +106,7 @@
             # `nix develop .#subscriber`
             subscriber = pkgs.mkShell {
               nativeBuildInputs = devPkgList pkgs ++ (with pkgs; [
-                (pkgs.python312.withPackages pyPkgList)
+                (pkgs.python312.withPackages subPyPkgList)
               ]);
               shellHook = ''
                 echo "running devShells.x86_64-linux.subscriber shellHook"
