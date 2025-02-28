@@ -14,29 +14,29 @@
         venvDir = ".venv";
 
         # TODO put this back? it works just as well and overrides system-wide
-        # py312Overlay = self: super: {
-        #   python312 = super.python312.override {
-        #     packageOverrides = pyself: pysuper: {
-        #       # TODO it there a way to re-enable the pytest-runner in nixpkgs?
-        #       pytest-runner       = pyself.callPackage ./python-packages/pytest-runner.nix       {};
-        #       py-multiformats-cid = pyself.callPackage ./python-packages/py-multiformats-cid.nix {};
-        #       aioipfs             = pyself.callPackage ./python-packages/aioipfs.nix             {};
-        #     };
-        #   };
-        # };
-        # pkgs = nixpkgs.legacyPackages."${system}".extend py312Overlay;
-
-        # TODO remove? the overlay above seems to work the same
-        pkgs = nixpkgs.legacyPackages."${system}";
-        myPython = pkgs.python312.override {
-          # self = python; # TODO what's this?
-          packageOverrides = pyself: pysuper: {
-            # TODO it there a way to re-enable the pytest-runner in nixpkgs?
-            pytest-runner       = pyself.callPackage ./python-packages/pytest-runner.nix       {};
-            py-multiformats-cid = pyself.callPackage ./python-packages/py-multiformats-cid.nix {};
-            aioipfs             = pyself.callPackage ./python-packages/aioipfs.nix             {};
+        py312Overlay = self: super: {
+          python312 = super.python312.override {
+            packageOverrides = pyself: pysuper: {
+              # TODO it there a way to re-enable the pytest-runner in nixpkgs?
+              pytest-runner       = pyself.callPackage ./python-packages/pytest-runner.nix       {};
+              py-multiformats-cid = pyself.callPackage ./python-packages/py-multiformats-cid.nix {};
+              aioipfs             = pyself.callPackage ./python-packages/aioipfs.nix             {};
+            };
           };
         };
+        pkgs = nixpkgs.legacyPackages."${system}".extend py312Overlay;
+
+        # TODO remove? the overlay above seems to work the same
+        # pkgs = nixpkgs.legacyPackages."${system}";
+        # myPython = pkgs.python312.override {
+        #   # self = python; # TODO what's this?
+        #   packageOverrides = pyself: pysuper: {
+        #     # TODO it there a way to re-enable the pytest-runner in nixpkgs?
+        #     pytest-runner       = pyself.callPackage ./python-packages/pytest-runner.nix       {};
+        #     py-multiformats-cid = pyself.callPackage ./python-packages/py-multiformats-cid.nix {};
+        #     aioipfs             = pyself.callPackage ./python-packages/aioipfs.nix             {};
+        #   };
+        # };
 
         myPyPkgList = ps: with ps; [
           aioipfs
@@ -69,17 +69,17 @@
               aiken.packages.x86_64-linux.aiken
 
               # for publisher and subscriber python scripts
-              (myPython.withPackages myPyPkgList)
+              (pkgs.python312.withPackages myPyPkgList)
 
             ];
         };
 
         # https://stackoverflow.com/a/78450917
-        defaultPackage = myPython.pkgs.buildPythonApplication rec {
+        defaultPackage = pkgs.python312.pkgs.buildPythonApplication rec {
           name = "ipfs-download-${version}";
           version = "0.1";
           pyproject = false;
-          propagatedBuildInputs = myPyPkgList myPython.pkgs;
+          propagatedBuildInputs = myPyPkgList pkgs.python312.pkgs;
           src = ./subscriber/ipfs-download.py;
           dontUnpack = true;
           installPhase = ''
