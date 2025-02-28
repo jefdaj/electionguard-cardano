@@ -10,8 +10,8 @@
   outputs = { self, nixpkgs, aiken, flake-utils }:
     flake-utils.lib.eachDefaultSystem (
       system: let
-        pname = "aiken + python dev environment";
-        venvDir = ".venv";
+        # pname = "aiken + python dev environment"; # TODO what's this for?
+        # venvDir = ".venv";
 
         pkgs = nixpkgs.legacyPackages."${system}".extend py312Overlay;
 
@@ -33,10 +33,24 @@
           dotmap
           pygments
         ];
+        
+        # based on https://stackoverflow.com/a/78450917
+        singleScriptPyPkg = script: pyDeps:
+          pkgs.python312.pkgs.buildPythonApplication rec {
+            name = "ipfs-download-${version}";
+            version = "0.1";
+            pyproject = false;
+            propagatedBuildInputs = pyDeps pkgs.python312.pkgs;
+            src = script;
+            dontUnpack = true;
+            installPhase = ''
+              install -Dm755 "${src}" "$out/bin/${builtins.baseNameOf script}"
+            '';
+          };
 
       in
-        rec {
-          inherit pname;
+        {
+          # inherit pname;
 
           # dev shell usage:
           # nix develop
@@ -45,7 +59,7 @@
           # source .venv/bin/activate
           # pip install -r requirements.txt
 
-          devShell = pkgs.mkShell {
+          devShells.default = pkgs.mkShell {
             nativeBuildInputs = with pkgs; [
 
               arion
@@ -60,20 +74,14 @@
               (pkgs.python312.withPackages myPyPkgList)
 
             ];
-        };
+          };
 
-        # https://stackoverflow.com/a/78450917
-        defaultPackage = pkgs.python312.pkgs.buildPythonApplication rec {
-          name = "ipfs-download-${version}";
-          version = "0.1";
-          pyproject = false;
-          propagatedBuildInputs = myPyPkgList pkgs.python312.pkgs;
-          src = ./subscriber/ipfs-download.py;
-          dontUnpack = true;
-          installPhase = ''
-            install -Dm755 "${src}" "$out/bin/ipfs-download"
-          '';
-        };
+          packages = rec {
+            publisherUpload    = singleScriptPyPkg ./publisher/ipfs-upload.py    myPyPkgList;
+            subscriberDownload = singleScriptPyPkg ./subscriber/ipfs-download.py myPyPkgList;
+            # default = subscriberDownload;
+          };
+
       }
 
     );
