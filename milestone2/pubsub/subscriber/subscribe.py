@@ -27,6 +27,7 @@ def watch_file_for_cids(path: str):
         time.sleep(5)
         if not exists(path):
             # touch it
+            # TODO remove?
             with open(path, 'w') as f:
                 f.write()
         cur_mtime = os.stat(path).st_mtime
@@ -62,8 +63,8 @@ async def get_json(cid: str):
 
 
 if __name__ == '__main__':
+    new_cids_path = sys.argv[1]
     loop = asyncio.new_event_loop()
-    new_cids_path = join(IPFS_DATA_DIR, 'new_cids.txt')
     try:
         for cid in watch_file_for_cids(new_cids_path):
             loop.run_until_complete(

@@ -14,6 +14,9 @@ let
   # data dirs go in here by name: pub1-ipfs, sub1-ipfs, ...
   TMP_DATA = "/tmp/pubsub";
 
+  # temporary workaround to test IPFS sync before smart contracts are written
+  SHARED_CIDS_FILE = "${TMP_DATA}/new_cids.txt";
+
   shared = {
     shared-node = {
       service.image = "ghcr.io/intersectmbo/cardano-node:10.1.4";
@@ -106,9 +109,11 @@ let
         ];
         service.volumes = [
           "${subData}:/data"
+          "${SHARED_CIDS_FILE}:/new_cids.txt"
         ];
         service.command = [
-          "subscribe.py" # TODO is that right? start simpler with sh if needed
+          "subscribe.py"
+          "/new_cids.txt"
         ];
       };
      };
