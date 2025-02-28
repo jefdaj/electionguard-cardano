@@ -60,6 +60,13 @@
           # TODO ask around, read the source code, figure out how this works
           inherit pkgs;
 
+          # `nix build .#publisher` (or subscriber etc)
+          packages.x86_64-linux = rec {
+            publisher  = singleScriptPyPkg ./publisher/publish.py    "0.1" pyPkgList;
+            subscriber = singleScriptPyPkg ./subscriber/subscribe.py "0.1" pyPkgList;
+            # default = subscriberDownload;
+          };
+
           devShells.x86_64-linux = {
 
             # `nix develop .#aiken`
@@ -111,13 +118,5 @@
             };
 
           };
-
-          # `nix build .#publisher` (or subscriber etc)
-          packages.x86_64-linux = rec {
-            publisher  = singleScriptPyPkg ./publisher/publish.py    "0.1" pyPkgList;
-            subscriber = singleScriptPyPkg ./subscriber/subscribe.py "0.1" pyPkgList;
-            # default = subscriberDownload;
-          };
-
       };
 }
