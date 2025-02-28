@@ -4,16 +4,17 @@
   inputs = {
     nixpkgs.url     = "github:NixOS/nixpkgs/nixos-24.11";
     aiken.url       = "github:aiken-lang/aiken/v1.1.10";
-    flake-utils.url = "github:numtide/flake-utils";
+    # flake-utils.url = "github:numtide/flake-utils";
   };
 
   outputs = { self, nixpkgs, aiken, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (
-      system: let
+    let
+    # flake-utils.lib.eachDefaultSystem (
+      # system: let
         # pname = "aiken + python dev environment"; # TODO what's this for?
         # venvDir = ".venv";
 
-        pkgs = nixpkgs.legacyPackages."${system}".extend py312Overlay;
+        pkgs = nixpkgs.legacyPackages.x86_64-linux.extend py312Overlay;
 
         py312Overlay = self: super: {
           python312 = super.python312.override {
@@ -59,6 +60,11 @@
           # source .venv/bin/activate
           # pip install -r requirements.txt
 
+          # This needs to be one of the outputs. It's expected in arion-pkgs.nix,
+          # and I think also by the internal workings of Arion.
+          inherit pkgs;
+
+          # TODO split into separate devShells for publisher, subscriber, aiken?
           devShells.default = pkgs.mkShell {
             nativeBuildInputs = with pkgs; [
 
@@ -76,13 +82,12 @@
             ];
           };
 
+          # TODO rename publish.py and subscribe.py for simplicity
           packages = rec {
             publisherUpload    = singleScriptPyPkg ./publisher/ipfs-upload.py    myPyPkgList;
             subscriberDownload = singleScriptPyPkg ./subscriber/ipfs-download.py myPyPkgList;
             # default = subscriberDownload;
           };
 
-      }
-
-    );
+      };
 }
