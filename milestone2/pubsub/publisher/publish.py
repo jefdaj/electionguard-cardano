@@ -4,6 +4,9 @@ import json
 import sys
 import asyncio
 import aioipfs
+import time
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 from os import makedirs
 from os.path import basename
 # from pprint import pprint
@@ -56,23 +59,64 @@ async def upload_and_announce_json(actual_path: str, virtual_path: str, new_cids
     await client.close()
 
 
+class UploadNewFiles(FileSystemEventHandler):
+    def __init__(self, loop, upload_dir, new_cids_path, *args, **kwargs):
+        super(UploadNewFiles, self).__init__(*args, **kwargs)
+        self.loop = loop
+        self.upload_dir = upload_dir
+        self.new_cids_path = new_cids_path
+
+    def upload(self, path: str):
+        print('upload:', locals())
+        return
+        # actual_path = 
+        # virtual_path = 
+        self.loop.run_until_complete(
+            upload_and_announce_json(actual_path, virtual_path, self.new_cids_path)
+        )
+
+    def on_created(self, event):
+        print(f'File {event.src_path} has been created')
+        self.upload(event.src_path)
+
+    def on_modified(self, event):
+        print(f'File {event.src_path} has been modified')
+        self.upload(event.src_path)
+
+
 if __name__ == '__main__':
-    new_cids_path = sys.argv[1]
+    upload_dir    = sys.argv[1]
+    new_cids_path = sys.argv[2]
     loop = asyncio.new_event_loop()
-    while True:
-        try:
-            actual_path  = input('Actual path to a JSON file to upload: ').strip()
-            if len(actual_path) == 0:
-                print(f'invalid actual path "{actual_path}"')
-                continue
-            virtual_path = input('Path to put in IPFS JSON data: ').strip()
-            if len(virtual_path) == 0:
-                print(f'invalid virtual path "{virtual_path}"')
-                continue
-            loop.run_until_complete(
-                upload_and_announce_json(actual_path, virtual_path, new_cids_path)
-            )
-        except KeyboardInterrupt:
-            print()
-            print('ok, done')
-            break
+    observer = Observer()
+    uploader = UploadNewFiles(loop, upload_dir, new_cids_path)
+    observer.schedule(
+        uploader,
+        path=upload_dir,
+        recursive=True
+    )
+    observer.start()
+    try:
+        while True:
+            time.sleep(5)
+    except KeyboardInterrupt:
+        observer.stop()
+    observer.join()
+
+    # while True:
+    #     try:
+    #         actual_path  = input('Actual path to a JSON file to upload: ').strip()
+    #         if len(actual_path) == 0:
+    #             print(f'invalid actual path "{actual_path}"')
+    #             continue
+    #         virtual_path = input('Path to put in IPFS JSON data: ').strip()
+    #         if len(virtual_path) == 0:
+    #             print(f'invalid virtual path "{virtual_path}"')
+    #             continue
+    #         loop.run_until_complete(
+    #             upload_and_announce_json(actual_path, virtual_path, new_cids_path)
+    #         )
+    #     except KeyboardInterrupt:
+    #         print()
+    #         print('ok, done')
+    #         break

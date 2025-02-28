@@ -36,6 +36,7 @@
         dotmap
         pygments
         pycardano
+        watchdog
       ];
 
       subPyPkgList = ps: with ps; [

@@ -89,6 +89,7 @@ let
   mkPublisher = n: portSuffix:
     let
       pubName = "pub" + builtins.toString n;
+      pubData = "${TMP_DATA}/${pubName}-publish";
     in {
       "${pubName}-ipfs" = mkIpfsService pubName portSuffix;
       "${pubName}-publish" = {
@@ -96,15 +97,16 @@ let
         service.useHostStore = true;
         service.stop_signal = "SIGINT";
         service.environment.IPFS_HTTP_PORT = builtins.toString (5000 + portSuffix);
-        service.environment.IPFS_DATA_DIR  = "/data";
         image.contents = [
           flake.packages.x86_64-linux.publisher
         ];
         service.volumes = [
           "${SHARED_CIDS_DIR}:/new_cids"
+          "${pubData}:/upload"
         ];
         service.command = [
           "publish.py"
+          "/upload"
           "/new_cids/new_cids.txt"
         ];
       };
