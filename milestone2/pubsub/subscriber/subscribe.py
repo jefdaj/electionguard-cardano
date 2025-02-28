@@ -29,7 +29,7 @@ def yield_cids_from_file(path: str):
             # touch it
             # TODO remove?
             with open(path, 'w') as f:
-                f.write()
+                f.write('')
         cur_mtime = os.stat(path).st_mtime
         if cur_mtime == prev_mtime:
             continue

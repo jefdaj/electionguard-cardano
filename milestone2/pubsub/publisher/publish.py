@@ -5,10 +5,9 @@ import sys
 import asyncio
 import aioipfs
 import time
+import os
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from os import makedirs
-from os.path import basename
 # from pprint import pprint
 from typing import List
 
@@ -67,21 +66,33 @@ class UploadNewFiles(FileSystemEventHandler):
         self.new_cids_path = new_cids_path
 
     def upload(self, path: str):
+        virtual_path = os.path.splitext(
+            os.path.relpath(path, self.upload_dir)
+        )[0]
         print('upload:', locals())
-        return
-        # actual_path = 
-        # virtual_path = 
-        self.loop.run_until_complete(
-            upload_and_announce_json(actual_path, virtual_path, self.new_cids_path)
-        )
+        try:
+            self.loop.run_until_complete(
+                upload_and_announce_json(
+                    path, virtual_path, self.new_cids_path
+                )
+            )
+        except Exception as e:
+            print(e)
+            raise
 
     def on_created(self, event):
-        print(f'File {event.src_path} has been created')
-        self.upload(event.src_path)
+        path = event.src_path
+        if not os.path.isfile(path)
+            return
+        print(f'File {path} has been created')
+        self.upload(path)
 
     def on_modified(self, event):
-        print(f'File {event.src_path} has been modified')
-        self.upload(event.src_path)
+        path = event.src_path
+        if not os.path.isfile(path)
+            return
+        print(f'File {path} has been modified')
+        self.upload(path)
 
 
 if __name__ == '__main__':
@@ -90,33 +101,11 @@ if __name__ == '__main__':
     loop = asyncio.new_event_loop()
     observer = Observer()
     uploader = UploadNewFiles(loop, upload_dir, new_cids_path)
-    observer.schedule(
-        uploader,
-        path=upload_dir,
-        recursive=True
-    )
+    observer.schedule(uploader, path=upload_dir, recursive=True)
     observer.start()
     try:
         while True:
-            time.sleep(5)
-    except KeyboardInterrupt:
+            time.sleep(1)
+    except: # TODO sigint?
         observer.stop()
     observer.join()
-
-    # while True:
-    #     try:
-    #         actual_path  = input('Actual path to a JSON file to upload: ').strip()
-    #         if len(actual_path) == 0:
-    #             print(f'invalid actual path "{actual_path}"')
-    #             continue
-    #         virtual_path = input('Path to put in IPFS JSON data: ').strip()
-    #         if len(virtual_path) == 0:
-    #             print(f'invalid virtual path "{virtual_path}"')
-    #             continue
-    #         loop.run_until_complete(
-    #             upload_and_announce_json(actual_path, virtual_path, new_cids_path)
-    #         )
-    #     except KeyboardInterrupt:
-    #         print()
-    #         print('ok, done')
-    #         break
