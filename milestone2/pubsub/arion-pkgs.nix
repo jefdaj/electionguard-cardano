@@ -10,4 +10,5 @@ let
     sha256 = narHash;
   };
 in
+  # TODO does this not allow outputs from the flake itself by default? ask around
   flake.pkgs

@@ -66,7 +66,7 @@ let
   mkIpfsService = namePrefix: portSuffix: rec {
     # TODO pin named version
     # service.image = "ipfs/kubo:release";
-    service.name = namePrefix + "-ipfs";
+    service.name = namePrefix + "-ipfs"; # TODO overridden by top attr name?
     service.image = "e58cd5ca3066";
     service.ports = [
       # host:container
@@ -79,25 +79,38 @@ let
     ];
   };
 
-  mkPublisher = n: portSuffix:
-    let pubName = "pub" + builtins.toString n;
-    in {
-      "${pubName}-ipfs" = mkIpfsService pubName portSuffix;
-    };
+  # mkPublisher = n: portSuffix:
+  #   let pubName = "pub" + builtins.toString n;
+  #   in {
+  #     "${pubName}-ipfs" = mkIpfsService pubName portSuffix;
+  #   };
 
   mkSubscriber = n: portSuffix:
     let subName = "sub" + builtins.toString n;
     in {
       "${subName}-ipfs" = mkIpfsService subName portSuffix;
-    };
+      "${subName}-download" = {
+        image.enableRecommendedContents = true; # TODO what's this again?
+        service.useHostStore = true;
+        service.stop_signal = "SIGINT";
+        service.environment.IPFS_HTTP_PORT = builtins.toString (5000 + portSuffix);
+        service.environment.IPFS_DATA_DIR  = "${TMP_DATA}/${subName}-download";
+        image.contents = [
+          subscriberDownload
+        ];
+        service.command = [
+          "ipfs-download.py"
+        ];
+      };
+     };
 
 in {
   config.project.name = "pubsub";
   config.services =
     shared //
-    mkPublisher  1 1 //
+    # mkPublisher  1 1 //
     mkSubscriber 1 2 //
-    mkSubscriber 2 3;
+    # mkSubscriber 2 3;
 
   # {
     # publisher = {
