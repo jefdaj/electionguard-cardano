@@ -73,12 +73,11 @@
           packages.x86_64-linux = rec {
             publisher  = singleScriptPyPkg ./publisher/publish.py    "0.1" pubPyPkgList;
             subscriber = singleScriptPyPkg ./subscriber/subscribe.py "0.1" subPyPkgList;
-            # default = subscriberDownload;
           };
 
+          # `nix develop .#aiken` (or publisher, subscriber, etc)
           devShells.x86_64-linux = {
 
-            # `nix develop .#aiken`
             aiken = pkgs.mkShell {
               nativeBuildInputs = devPkgList pkgs ++ (with pkgs; [
                 aiken.packages.x86_64-linux.aiken
@@ -89,7 +88,6 @@
               '';
             };
 
-            # `nix develop .#publisher`
             publisher = pkgs.mkShell {
               nativeBuildInputs = (devPkgList pkgs) ++ [
                 (pkgs.python312.withPackages pubPyPkgList)
@@ -103,7 +101,6 @@
               '';
             };
 
-            # `nix develop .#subscriber`
             subscriber = pkgs.mkShell {
               nativeBuildInputs = devPkgList pkgs ++ (with pkgs; [
                 (pkgs.python312.withPackages subPyPkgList)
