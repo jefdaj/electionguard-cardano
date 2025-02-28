@@ -13,18 +13,30 @@
         pname = "aiken + python dev environment";
         venvDir = ".venv";
 
-        py312Overlay = self: super: {
-          python312 = super.python312.override {
-            packageOverrides = pyself: pysuper: {
-              # TODO it there a way to re-enable the pytest-runner in nixpkgs?
-              pytest-runner       = pyself.callPackage ./python-packages/pytest-runner.nix       {};
-              py-multiformats-cid = pyself.callPackage ./python-packages/py-multiformats-cid.nix {};
-              aioipfs             = pyself.callPackage ./python-packages/aioipfs.nix             {};
-            };
+        # TODO put this back? it works just as well and overrides system-wide
+        # py312Overlay = self: super: {
+        #   python312 = super.python312.override {
+        #     packageOverrides = pyself: pysuper: {
+        #       # TODO it there a way to re-enable the pytest-runner in nixpkgs?
+        #       pytest-runner       = pyself.callPackage ./python-packages/pytest-runner.nix       {};
+        #       py-multiformats-cid = pyself.callPackage ./python-packages/py-multiformats-cid.nix {};
+        #       aioipfs             = pyself.callPackage ./python-packages/aioipfs.nix             {};
+        #     };
+        #   };
+        # };
+        # pkgs = nixpkgs.legacyPackages."${system}".extend py312Overlay;
+
+        # TODO remove? the overlay above seems to work the same
+        pkgs = nixpkgs.legacyPackages."${system}";
+        myPython = pkgs.python312.override {
+          # self = python; # TODO what's this?
+          packageOverrides = pyself: pysuper: {
+            # TODO it there a way to re-enable the pytest-runner in nixpkgs?
+            pytest-runner       = pyself.callPackage ./python-packages/pytest-runner.nix       {};
+            py-multiformats-cid = pyself.callPackage ./python-packages/py-multiformats-cid.nix {};
+            aioipfs             = pyself.callPackage ./python-packages/aioipfs.nix             {};
           };
         };
-
-        pkgs = nixpkgs.legacyPackages."${system}".extend py312Overlay;
 
         myPyPkgList = ps: with ps; [
           aioipfs
@@ -57,25 +69,34 @@
               aiken.packages.x86_64-linux.aiken
 
               # for publisher and subscriber python scripts
-              (python312.withPackages myPyPkgList)
+              (myPython.withPackages myPyPkgList)
 
             ];
         };
 
         # https://stackoverflow.com/a/78450917
-        # TODO why isn't the overridden python getting in here?
-        defaultPackage = pkgs.python312.pkgs.buildPythonPackage rec {
+        # TODO why isn't the overridden python getting in when using this?
+        # not a big deal because mkDerivation works, but weird
+        # defaultPackage = myPython.pkgs.buildPythonPackage rec {
+
+        defaultPackage = pkgs.stdenv.mkDerivation rec {
           name = "ipfs-download-${version}";
           version = "0.1";
-          pyproject = false;
+
+          # from buildPythonPackage/Application version
+          # pyproject = false;
+          # nativeBuildInputs = myPyPkgList myPython.pkgs;
+
+          buildInputs = [
+              (myPython.withPackages myPyPkgList)
+          ];
+
+          # https://stackoverflow.com/a/43837692
           src = ./subscriber/ipfs-download.py;
           dontUnpack = true;
           installPhase = ''
             install -Dm755 "${src}" "$out/bin/ipfs-download"
           '';
-          nativeBuildInputs = with pkgs.python312.pkgs; [
-            aioipfs
-          ];
         };
       }
 
