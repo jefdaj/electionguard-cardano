@@ -90,7 +90,9 @@ let
   #   };
 
   mkSubscriber = n: portSuffix:
-    let subName = "sub" + builtins.toString n;
+    let
+      subName = "sub" + builtins.toString n;
+      subData = "${TMP_DATA}/${subName}-subscribe";
     in {
       "${subName}-ipfs" = mkIpfsService subName portSuffix;
       "${subName}-subscribe" = {
@@ -98,9 +100,12 @@ let
         service.useHostStore = true;
         service.stop_signal = "SIGINT";
         service.environment.IPFS_HTTP_PORT = builtins.toString (5000 + portSuffix);
-        service.environment.IPFS_DATA_DIR  = "${TMP_DATA}/${subName}-subscribe";
+        service.environment.IPFS_DATA_DIR  = "/data";
         image.contents = [
           flake.packages.x86_64-linux.subscriber
+        ];
+        service.volumes = [
+          "${subData}:/data"
         ];
         service.command = [
           "subscribe.py" # TODO is that right? start simpler with sh if needed
@@ -113,8 +118,8 @@ in {
   config.services =
     shared //
     # mkPublisher  1 1 //
-    mkSubscriber 1 2; # //
-    # mkSubscriber 2 3;
+    mkSubscriber 1 2 //
+    mkSubscriber 2 3;
 
   # {
     # publisher = {

@@ -15,6 +15,9 @@ import aioipfs
 IPFS_HTTP_PORT = int(os.environ['IPFS_HTTP_PORT'])
 IPFS_DATA_DIR = os.environ['IPFS_DATA_DIR']
 
+# TODO if you make this a bind mount it'll appear automatically, right?
+os.makedirs(IPFS_DATA_DIR, exist_ok=True)
+
 
 def watch_file_for_cids(path: str):
     # quick hack to test the downloader before the cardano stuff exists
@@ -23,7 +26,9 @@ def watch_file_for_cids(path: str):
     while True:
         time.sleep(5)
         if not exists(path):
-            continue
+            # touch it
+            with open(path, 'w') as f:
+                f.write()
         cur_mtime = os.stat(path).st_mtime
         if cur_mtime == prev_mtime:
             continue
