@@ -90,7 +90,7 @@ let
     in {
       "${subName}-ipfs" = mkIpfsService subName portSuffix;
       "${subName}-download" = {
-        image.enableRecommendedContents = true; # TODO what's this again?
+        image.enableRecommendedContents = true; # sh, env, misc lightweight files
         service.useHostStore = true;
         service.stop_signal = "SIGINT";
         service.environment.IPFS_HTTP_PORT = builtins.toString (5000 + portSuffix);
