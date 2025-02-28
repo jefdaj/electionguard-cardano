@@ -13,7 +13,8 @@
         pname = "aiken + python dev environment";
         venvDir = ".venv";
 
-        # TODO put this back? it works just as well and overrides system-wide
+        pkgs = nixpkgs.legacyPackages."${system}".extend py312Overlay;
+
         py312Overlay = self: super: {
           python312 = super.python312.override {
             packageOverrides = pyself: pysuper: {
@@ -24,19 +25,6 @@
             };
           };
         };
-        pkgs = nixpkgs.legacyPackages."${system}".extend py312Overlay;
-
-        # TODO remove? the overlay above seems to work the same
-        # pkgs = nixpkgs.legacyPackages."${system}";
-        # myPython = pkgs.python312.override {
-        #   # self = python; # TODO what's this?
-        #   packageOverrides = pyself: pysuper: {
-        #     # TODO it there a way to re-enable the pytest-runner in nixpkgs?
-        #     pytest-runner       = pyself.callPackage ./python-packages/pytest-runner.nix       {};
-        #     py-multiformats-cid = pyself.callPackage ./python-packages/py-multiformats-cid.nix {};
-        #     aioipfs             = pyself.callPackage ./python-packages/aioipfs.nix             {};
-        #   };
-        # };
 
         myPyPkgList = ps: with ps; [
           aioipfs
