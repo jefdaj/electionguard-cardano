@@ -1,14 +1,16 @@
+# based on code in https://github.com/hercules-ci/arion/issues/247
+
 let
-  flake = if builtins ? getFlake
-    then (builtins.getFlake (toString ./.)).pkgs
-    else (import flake-compat { src = ./.; }).defaultNix;
-  # NB: this is lazy
-  lock = builtins.fromJSON (builtins.readFile ./flake.lock);
-  inherit (lock.nodes.flake-compat.locked) owner repo rev narHash;
-  flake-compat = builtins.fetchTarball {
-    url = "https://github.com/${owner}/${repo}/archive/${rev}.tar.gz";
-    sha256 = narHash;
-  };
+  flakeOutputs = builtins.getFlake (toString ./.);
+  inherit (flakeOutputs) inputs pkgs packages devShells;
+
 in
-  # TODO does this not allow outputs from the flake itself by default? ask around
-  flake.pkgs
+  {
+
+    # bits i wanna pass to my containers
+    inherit inputs pkgs packages devShells;
+
+    # stuff arion wants to see me return
+    inherit (pkgs) lib writeText nix nixos path dockerTools closureInfo runCommand;
+
+  }

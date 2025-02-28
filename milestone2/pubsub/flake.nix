@@ -6,7 +6,7 @@
     aiken.url   = "github:aiken-lang/aiken/v1.1.10";
   };
 
-  outputs = { self, nixpkgs, aiken }:
+  outputs = { self, nixpkgs, aiken }@inputs:
     let
 
       # This is an actual output; see note below.
@@ -64,10 +64,9 @@
       in
         {
 
-          # This needs to be one of the outputs. It's expected in arion-pkgs.nix,
-          # and I think also by the internal workings of Arion.
-          # TODO ask around, read the source code, figure out how this works
-          inherit pkgs;
+          # Things we want/need to pass via arion-pkgs.nix
+          # See https://github.com/hercules-ci/arion/issues/247
+          inherit inputs pkgs;
 
           # `nix build .#publisher` (or subscriber etc)
           packages.x86_64-linux = rec {
