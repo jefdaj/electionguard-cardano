@@ -38,16 +38,17 @@
       ];
       
       # based on https://stackoverflow.com/a/78450917
-      singleScriptPyPkg = script: pyDeps:
-        pkgs.python312.pkgs.buildPythonApplication rec {
-          name = "ipfs-download-${version}";
-          version = "0.1";
+      singleScriptPyPkg = script: version: pyDeps:
+        let scriptName = builtins.baseNameOf script;
+        in pkgs.python312.pkgs.buildPythonApplication rec {
+          name = "${scriptName}-${version}";
+          inherit version;
           pyproject = false;
           propagatedBuildInputs = pyDeps pkgs.python312.pkgs;
           src = script;
           dontUnpack = true;
           installPhase = ''
-            install -Dm755 "${src}" "$out/bin/${builtins.baseNameOf script}"
+            install -Dm755 "${src}" "$out/bin/${scriptName}"
           '';
         };
 
@@ -111,12 +112,12 @@
 
           };
 
-          # TODO rename publish.py and subscribe.py for simplicity
-          # packages = rec {
-          #   publisherUpload    = singleScriptPyPkg ./publisher/ipfs-upload.py    pyPkgList;
-          #   subscriberDownload = singleScriptPyPkg ./subscriber/ipfs-download.py pyPkgList;
-          #   # default = subscriberDownload;
-          # };
+          # `nix build .#publisher` (or subscriber etc)
+          packages.x86_64-linux = rec {
+            publisher  = singleScriptPyPkg ./publisher/publish.py    "0.1" pyPkgList;
+            subscriber = singleScriptPyPkg ./subscriber/subscribe.py "0.1" pyPkgList;
+            # default = subscriberDownload;
+          };
 
       };
 }
