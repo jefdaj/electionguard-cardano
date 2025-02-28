@@ -1,6 +1,10 @@
-{ inputs, pkgs, packages, devShells, ...}:
+{ pkgs, ...}:
 
 let
+
+  # smuggle flake in via pkgs
+  # see https://github.com/hercules-ci/arion/issues/247
+  inherit (pkgs) flake;
 
   # re-use node data
   NODE_CONFIG = "../investigate/cardano-node-ogmios/config";
@@ -89,27 +93,27 @@ let
     let subName = "sub" + builtins.toString n;
     in {
       "${subName}-ipfs" = mkIpfsService subName portSuffix;
-      "${subName}-download" = {
+      "${subName}-subscribe" = {
         image.enableRecommendedContents = true; # sh, env, misc lightweight files
         service.useHostStore = true;
         service.stop_signal = "SIGINT";
         service.environment.IPFS_HTTP_PORT = builtins.toString (5000 + portSuffix);
-        service.environment.IPFS_DATA_DIR  = "${TMP_DATA}/${subName}-download";
+        service.environment.IPFS_DATA_DIR  = "${TMP_DATA}/${subName}-subscribe";
         image.contents = [
-          # subscriberDownload
+          flake.packages.x86_64-linux.subscriber
         ];
-        # service.command = [
-          # "ipfs-download.py"
-        # ];
+        service.command = [
+          "subscribe.py" # TODO is that right? start simpler with sh if needed
+        ];
       };
      };
 
 in {
   config.project.name = "pubsub";
   config.services =
-    shared; # //
+    shared //
     # mkPublisher  1 1 //
-    # mkSubscriber 1 2 //
+    mkSubscriber 1 2; # //
     # mkSubscriber 2 3;
 
   # {

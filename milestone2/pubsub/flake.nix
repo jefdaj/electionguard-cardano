@@ -64,9 +64,9 @@
       in
         {
 
-          # Things we want/need to pass via arion-pkgs.nix
+          # This is expected by arion-pkgs.nix
           # See https://github.com/hercules-ci/arion/issues/247
-          inherit inputs pkgs;
+          inherit pkgs;
 
           # `nix build .#publisher` (or subscriber etc)
           packages.x86_64-linux = rec {
