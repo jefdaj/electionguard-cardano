@@ -75,23 +75,11 @@
         };
 
         # https://stackoverflow.com/a/78450917
-        # TODO why isn't the overridden python getting in when using this?
-        # not a big deal because mkDerivation works, but weird
-        # defaultPackage = myPython.pkgs.buildPythonPackage rec {
-
-        defaultPackage = pkgs.stdenv.mkDerivation rec {
+        defaultPackage = myPython.pkgs.buildPythonApplication rec {
           name = "ipfs-download-${version}";
           version = "0.1";
-
-          # from buildPythonPackage/Application version
-          # pyproject = false;
-          # nativeBuildInputs = myPyPkgList myPython.pkgs;
-
-          buildInputs = [
-              (myPython.withPackages myPyPkgList)
-          ];
-
-          # https://stackoverflow.com/a/43837692
+          pyproject = false;
+          propagatedBuildInputs = myPyPkgList myPython.pkgs;
           src = ./subscriber/ipfs-download.py;
           dontUnpack = true;
           installPhase = ''
