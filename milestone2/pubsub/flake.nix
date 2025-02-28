@@ -13,8 +13,7 @@
         pname = "aiken + python dev environment";
         venvDir = ".venv";
 
-        # TODO which python version to use?
-        myPython312Overlay = self: super: {
+        py312Overlay = self: super: {
           python312 = super.python312.override {
             packageOverrides = pyself: pysuper: {
               # TODO it there a way to re-enable the pytest-runner in nixpkgs?
@@ -25,9 +24,9 @@
           };
         };
 
-        pkgs = nixpkgs.legacyPackages."${system}".extend myPython312Overlay;
+        pkgs = nixpkgs.legacyPackages."${system}".extend py312Overlay;
 
-        myPyPackageList = ps: with ps; [
+        myPyPkgList = ps: with ps; [
           aioipfs
           click
           click-default-group
@@ -58,24 +57,25 @@
               aiken.packages.x86_64-linux.aiken
 
               # for publisher and subscriber python scripts
-              (pkgs.python312.withPackages myPyPackageList)
+              (python312.withPackages myPyPkgList)
 
             ];
         };
 
         # https://stackoverflow.com/a/78450917
-        # TODO buildPythonApplication?
-        # TODO bug in aioipfs? try earlier commits/version tags if there are any
+        # TODO why isn't the overridden python getting in here?
         defaultPackage = pkgs.python312.pkgs.buildPythonPackage rec {
-          name = "ipfs-download";
+          name = "ipfs-download-${version}";
           version = "0.1";
           pyproject = false;
-          nativeBuildInputs = myPyPackageList pkgs.python312.pkgs;
           src = ./subscriber/ipfs-download.py;
           dontUnpack = true;
           installPhase = ''
-            install -Dm755 "${src}" "$out/bin/${name}"
+            install -Dm755 "${src}" "$out/bin/ipfs-download"
           '';
+          nativeBuildInputs = with pkgs.python312.pkgs; [
+            aioipfs
+          ];
         };
       }
 
