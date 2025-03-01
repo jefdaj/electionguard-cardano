@@ -70,32 +70,38 @@ let
     };
   };
 
-  mkIpfsService = namePrefix: portSuffix: rec {
-    # TODO pin named version
-    # service.image = "ipfs/kubo:release";
-    service.name = namePrefix + "-ipfs"; # TODO overridden by top attr name?
-    service.image = "e58cd5ca3066";
-    service.ports = [
-      # host:container
-      "${builtins.toString (4000 + portSuffix)}:4001" # ipfs swarm
-      "${builtins.toString (5000 + portSuffix)}:5001" # ipfs api
-      "${builtins.toString (8080 + portSuffix)}:8080" # ipfs gateway
-    ];
-    service.volumes = [
-      "${TMP_DATA}/${service.name}:/data/ipfs"
-    ];
-    service.environment.IPFS_LOGGING="fatal";
-  };
+  # TODO rename portSuffix now that it also controls ip addr
+  mkIpfsService = namePrefix: portSuffix:
+    let ipAddr = "172.32.0.${toString (100 + portSuffix)}"; # TODO clean up
+    in rec {
+      # TODO pin named version
+      # service.image = "ipfs/kubo:release";
+      service.name = namePrefix + "-ipfs"; # TODO overridden by top attr name?
+      service.image = "e58cd5ca3066";
+      service.ports = [
+        # host:container
+        "${builtins.toString (4000 + portSuffix)}:4001" # ipfs swarm
+        "${builtins.toString (5000 + portSuffix)}:5001" # ipfs api
+        "${builtins.toString (8080 + portSuffix)}:8080" # ipfs gateway
+      ];
+      service.volumes = [
+        "${TMP_DATA}/${service.name}:/data/ipfs"
+      ];
+      service.environment.IPFS_LOGGING="fatal";
+      service.networks = { pubsub-custom = { ipv4_address = ipAddr; }; };
+    };
 
+  # TODO rename portSuffix now that it also controls ip addr
   mkPublisher = n: portSuffix:
     let
       pubName  = "pub${toString n}";
       pubData  = "${TMP_DATA}/${pubName}-publish";
-      ipfsHost = "127.0.0.1"; # kubo log saying 0.0.0.0 is outdated?
-      ipfsPort = toString (5000 + portSuffix);
+      pubAddr  = "172.32.0.${toString (100 + portSuffix)}"; # TODO clean up
+      ipfsHost = "172.32.0.${toString (150 + portSuffix)}"; # TODO clean up
+      ipfsPort = toString 5001;
       ipfsAddr = "/ip4/${ipfsHost}/tcp/${ipfsPort}";
     in {
-      "${pubName}-ipfs" = mkIpfsService pubName portSuffix;
+      "${pubName}-ipfs" = mkIpfsService pubName (portSuffix + 50);
       "${pubName}-publish" = {
         image.enableRecommendedContents = true; # sh, env, misc lightweight files
         service.useHostStore = true;
@@ -113,6 +119,7 @@ let
           "/upload"
           "/new_cids/new_cids.txt"
         ];
+        service.networks = { pubsub-custom = { ipv4_address = pubAddr; }; };
         # TODO proper syntax for this?
         # service.depends = [
         #   (pubName + "-ipfs")
@@ -120,15 +127,17 @@ let
       };
      };
 
+  # TODO rename portSuffix now that it also controls ip addr
   mkSubscriber = n: portSuffix:
     let
       subName  = "sub" + builtins.toString n;
       subData  = "${TMP_DATA}/${subName}-subscribe";
-      ipfsHost = "127.0.0.1"; # kubo log saying 0.0.0.0 is outdated?
-      ipfsPort = builtins.toString (5000 + portSuffix);
+      subAddr  = "172.32.0.${toString (100 + portSuffix)}"; # TODO clean up
+      ipfsHost = "172.32.0.${toString (150 + portSuffix)}"; # TODO clean up
+      ipfsPort = toString 5001;
       ipfsAddr = "/ip4/${ipfsHost}/tcp/${ipfsPort}";
     in {
-      "${subName}-ipfs" = mkIpfsService subName portSuffix;
+      "${subName}-ipfs" = mkIpfsService subName (portSuffix + 50);
       "${subName}-subscribe" = {
         image.enableRecommendedContents = true; # sh, env, misc lightweight files
         service.useHostStore = true;
@@ -146,6 +155,7 @@ let
           "subscribe.py"
           "/new_cids/new_cids.txt"
         ];
+        service.networks = { pubsub-custom = { ipv4_address = subAddr; }; };
       };
      };
 
@@ -156,4 +166,19 @@ in {
     mkPublisher  1 1 //
     mkSubscriber 1 2; # //
     # mkSubscriber 2 3;
+
+    # https://github.com/hercules-ci/arion/blob/main/examples/traefik/arion-compose.nix
+    config.networks = {
+      # TODO how to get a network per entity (pub1, sub1, sub2, ...)
+      pubsub-custom = {
+        name = "pubsub-custom";
+        ipam = {
+          config = [{
+            subnet = "172.32.0.0/16";
+            gateway = "172.32.0.1";
+          }];
+        };
+      };
+    };
+
 }
