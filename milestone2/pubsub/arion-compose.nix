@@ -165,8 +165,8 @@ in {
   config.services =
     # shared //
     mkPublisher  1 1 //
-    mkSubscriber 1 2; # //
-    # mkSubscriber 2 3;
+    mkSubscriber 1 2 //
+    mkSubscriber 2 3;
 
     # https://github.com/hercules-ci/arion/blob/main/examples/traefik/arion-compose.nix
     config.networks = {
