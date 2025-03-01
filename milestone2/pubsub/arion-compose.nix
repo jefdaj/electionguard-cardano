@@ -89,7 +89,7 @@ let
         "${TMP_DATA}/${service.name}:/data/ipfs"
       ];
       service.environment.IPFS_LOGGING="fatal";
-      service.networks = { pubsub-custom = { ipv4_address = ipAddr; }; };
+      service.networks = { pubsub = { ipv4_address = ipAddr; }; };
     };
 
   # TODO rename portSuffix now that it also controls ip addr
@@ -119,7 +119,7 @@ let
           "/upload"
           "/new_cids/new_cids.txt"
         ];
-        service.networks = { pubsub-custom = { ipv4_address = pubAddr; }; };
+        service.networks = { pubsub = { ipv4_address = pubAddr; }; };
         service.restart = "on-failure";
         # TODO proper syntax for this?
         # service.depends = [
@@ -155,7 +155,7 @@ let
           "subscribe.py"
           "/new_cids/new_cids.txt"
         ];
-        service.networks = { pubsub-custom = { ipv4_address = subAddr; }; };
+        service.networks = { pubsub = { ipv4_address = subAddr; }; };
         service.restart = "on-failure";
       };
      };
@@ -169,10 +169,11 @@ in {
     mkSubscriber 2 3;
 
     # https://github.com/hercules-ci/arion/blob/main/examples/traefik/arion-compose.nix
+    config.enableDefaultNetwork = false;
     config.networks = {
       # TODO how to get a network per entity (pub1, sub1, sub2, ...)
-      pubsub-custom = {
-        name = "pubsub-custom";
+      pubsub = {
+        name = "pubsub"; # TODO was the -custom important?
         ipam = {
           config = [{
             subnet = "172.32.0.0/16";
