@@ -13,7 +13,7 @@ import aioipfs
 
 
 # see arion-compose.nix
-pprint(os.environ)
+# pprint(os.environ)
 IPFS_API_ADDR = os.environ['IPFS_API_ADDR']
 IPFS_DATA_DIR = os.environ['IPFS_DATA_DIR']
 
@@ -26,7 +26,7 @@ def yield_cids_from_file(path: str):
     # watches for changes to new_cids.txt and yields them
     prev_mtime = 0
     while True:
-        time.sleep(5)
+        time.sleep(0.1) # TODO needs to be fast to avoid missing some?
         if not exists(path):
             # touch it
             # TODO remove?

@@ -80,9 +80,10 @@ let
       service.image = "e58cd5ca3066";
       service.ports = [
         # host:container
-        "${builtins.toString (4000 + portSuffix)}:4001" # ipfs swarm
-        "${builtins.toString (5000 + portSuffix)}:5001" # ipfs api
-        "${builtins.toString (8080 + portSuffix)}:8080" # ipfs gateway
+        # TODO are these only needed for testing but not production?
+        # "${builtins.toString (4000 + portSuffix)}:4001" # ipfs swarm
+        # "${builtins.toString (5000 + portSuffix)}:5001" # ipfs api
+        # "${builtins.toString (8080 + portSuffix)}:8080" # ipfs gateway
       ];
       service.volumes = [
         "${TMP_DATA}/${service.name}:/data/ipfs"
@@ -98,8 +99,7 @@ let
       pubData  = "${TMP_DATA}/${pubName}-publish";
       pubAddr  = "172.32.0.${toString (100 + portSuffix)}"; # TODO clean up
       ipfsHost = "172.32.0.${toString (150 + portSuffix)}"; # TODO clean up
-      ipfsPort = toString 5001;
-      ipfsAddr = "/ip4/${ipfsHost}/tcp/${ipfsPort}";
+      ipfsAddr = "/ip4/${ipfsHost}/tcp/5001";
     in {
       "${pubName}-ipfs" = mkIpfsService pubName (portSuffix + 50);
       "${pubName}-publish" = {
@@ -120,6 +120,7 @@ let
           "/new_cids/new_cids.txt"
         ];
         service.networks = { pubsub-custom = { ipv4_address = pubAddr; }; };
+        service.restart = "on-failure";
         # TODO proper syntax for this?
         # service.depends = [
         #   (pubName + "-ipfs")
@@ -134,8 +135,7 @@ let
       subData  = "${TMP_DATA}/${subName}-subscribe";
       subAddr  = "172.32.0.${toString (100 + portSuffix)}"; # TODO clean up
       ipfsHost = "172.32.0.${toString (150 + portSuffix)}"; # TODO clean up
-      ipfsPort = toString 5001;
-      ipfsAddr = "/ip4/${ipfsHost}/tcp/${ipfsPort}";
+      ipfsAddr = "/ip4/${ipfsHost}/tcp/5001";
     in {
       "${subName}-ipfs" = mkIpfsService subName (portSuffix + 50);
       "${subName}-subscribe" = {
@@ -156,6 +156,7 @@ let
           "/new_cids/new_cids.txt"
         ];
         service.networks = { pubsub-custom = { ipv4_address = subAddr; }; };
+        service.restart = "on-failure";
       };
      };
 

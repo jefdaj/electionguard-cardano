@@ -12,7 +12,7 @@ from pprint import pprint
 from typing import List
 
 # see arion-compose.nix
-pprint(os.environ)
+# pprint(os.environ)
 IPFS_API_ADDR = os.environ['IPFS_API_ADDR']
 
 
@@ -48,12 +48,7 @@ async def upload_and_announce_json(actual_path: str, virtual_path: str, new_cids
         'pin'      : True,   # this is the default
         # 'input_enc': 'json', # this is the default
     }
-
-    # this call "freezes" for about 1-2min(?), then finally errors with connect failed
-    print('about to call add_json')
     added_file = await client.add_json(js, **kwargs)
-    print('finished add_json')
-
     new_cids = [added_file['Hash']]
     announce_new_cids(new_cids, new_cids_path)
     # print('{0} {1}'.format(added_file['Hash'], added_file['Name']))
@@ -71,7 +66,7 @@ class UploadNewFiles(FileSystemEventHandler):
         virtual_path = os.path.splitext(
             os.path.relpath(path, self.upload_dir)
         )[0]
-        print('upload:', locals())
+        # print('upload:', locals())
         try:
             self.loop.run_until_complete(
                 upload_and_announce_json(
