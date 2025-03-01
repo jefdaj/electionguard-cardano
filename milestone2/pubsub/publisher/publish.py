@@ -34,7 +34,7 @@ def wrapped_json_with_path(actual_path: str, virtual_path: str) -> dict:
 
 
 def announce_new_cids(cids: List[str], path: str):
-    with open(path, 'r') as f:
+    with open(path, 'w') as f:
         f.writelines(cids)
     print(f'wrote {len(cids)} CIDs to {path}')
 
@@ -82,14 +82,14 @@ class UploadNewFiles(FileSystemEventHandler):
 
     def on_created(self, event):
         path = event.src_path
-        if not os.path.isfile(path)
+        if not os.path.isfile(path):
             return
         print(f'File {path} has been created')
         self.upload(path)
 
     def on_modified(self, event):
         path = event.src_path
-        if not os.path.isfile(path)
+        if not os.path.isfile(path):
             return
         print(f'File {path} has been modified')
         self.upload(path)
