@@ -6,6 +6,7 @@ import asyncio
 import aioipfs
 import time
 import os
+from datetime import datetime
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from pprint import pprint
@@ -28,7 +29,8 @@ def wrapped_json_with_path(actual_path: str, virtual_path: str) -> dict:
         content = json.load(f)
     js = {
         'path': virtual_path,
-        'content': content
+        'content': content,
+        'uploaded_at': str(datetime.now()) # just for uniqueness
     }
     return js
 
