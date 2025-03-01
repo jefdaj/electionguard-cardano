@@ -109,6 +109,10 @@ let
           "/upload"
           "/new_cids/new_cids.txt"
         ];
+        # TODO proper syntax for this?
+        # service.depends = [
+        #   (pubName + "-ipfs")
+        # ];
       };
      };
 
