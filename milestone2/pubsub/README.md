@@ -22,6 +22,8 @@ arion logs --follow
 
 ## IPFS
 
+TODO update ip addrs here once stable
+
 ```bash
 # ipfs
 
