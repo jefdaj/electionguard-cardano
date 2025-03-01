@@ -8,6 +8,7 @@ import time
 
 from os.path import join, dirname, exists
 from tempfile import TemporaryDirectory
+from pprint import pprint
 import aioipfs
 
 
@@ -42,7 +43,10 @@ def yield_cids_from_file(path: str):
 
 
 async def get(cid: str, dstdir: str):
-    client = aioipfs.AsyncIPFS(maddr=f'/ip4/127.0.0.1/tcp/{IPFS_HTTP_PORT}')
+    ipfs_api_addr = f'/ip4/0.0.0.0/tcp/{IPFS_HTTP_PORT}'
+    pprint(locals())
+    client = aioipfs.AsyncIPFS(maddr=ipfs_api_addr)
+    # client = aioipfs.AsyncIPFS(host='127.0.0.1', port=IPFS_HTTP_PORT)
     await client.get(cid, dstdir=dstdir)
     await client.close()
 

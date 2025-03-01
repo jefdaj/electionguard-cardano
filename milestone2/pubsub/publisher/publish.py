@@ -8,12 +8,11 @@ import time
 import os
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-# from pprint import pprint
+from pprint import pprint
 from typing import List
 
 # see arion-compose.nix for ports
-# TODO load a common config json there and in python
-IPFS_HTTP_PORT = 5001
+IPFS_HTTP_PORT = int(os.environ['IPFS_HTTP_PORT'])
 
 
 def write_cids_to_file(cids: List[str], path: str):
@@ -40,18 +39,23 @@ def announce_new_cids(cids: List[str], path: str):
 
 
 async def upload_and_announce_json(actual_path: str, virtual_path: str, new_cids_path: str):
-    client = aioipfs.AsyncIPFS(maddr=f'/ip4/127.0.0.1/tcp/{IPFS_HTTP_PORT}')
+    ipfs_api_addr = f'/ip4/0.0.0.0/tcp/{IPFS_HTTP_PORT}'
+    pprint(locals())
+    client = aioipfs.AsyncIPFS(maddr=ipfs_api_addr)
+    # client = aioipfs.AsyncIPFS(host='127.0.0.1', port=IPFS_HTTP_PORT)
     js = wrapped_json_with_path(actual_path, virtual_path)
-    # pprint(js)
     kwargs = {
         # 'recursive': False,
         # 'progress' : True,   # TODO False?
         'pin'      : True,   # this is the default
         # 'input_enc': 'json', # this is the default
     }
+
+    # this call "freezes" for about 1-2min(?), then finally errors with connect failed
+    print('about to call add_json')
     added_file = await client.add_json(js, **kwargs)
-    # pprint(added_file)
-    # print(added_file['Hash'])
+    print('finished add_json')
+
     new_cids = [added_file['Hash']]
     announce_new_cids(new_cids, new_cids_path)
     # print('{0} {1}'.format(added_file['Hash'], added_file['Name']))
@@ -97,6 +101,7 @@ class UploadNewFiles(FileSystemEventHandler):
 
 if __name__ == '__main__':
     upload_dir    = sys.argv[1]
+    os.makedirs(upload_dir, exist_ok=True)
     new_cids_path = sys.argv[2]
     loop = asyncio.new_event_loop()
     observer = Observer()
