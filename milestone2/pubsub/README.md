@@ -34,6 +34,10 @@ curl -X POST http://127.0.0.1:5001/api/v0/swarm/peers
 curl "http://127.0.0.1:8081/ipfs/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi" > cat.jpg
 ```
 
+`dweb.link` appears to be a good current gateway in case users need one.
+Construct URLs like: <https://dweb.link/ipfs/MYCID>
+They appear to work immediately, at least with the tiny test JSON files.
+
 The officially recommended
 [ipfs-http-client](https://github.com/ipfs-shipyard/py-ipfs-http-client) is
 abandoned, but [aioipfs](https://gitlab.com/cipres/aioipfs) works great!
