@@ -1,6 +1,6 @@
 # pubsub
 
-My first attempt at a non-trivial smart contract!
+My first attempt at integrating the on-chain + off-chain code into a non-trivial dApp.
 It'll focus on just distributing an authenticated log of files via Cardano + IPFS.
 That's part of what the ElectionGuard contract will need to do,
 as well as potentially useful on its own.
