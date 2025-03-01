@@ -91,13 +91,16 @@ let
     let
       pubName = "pub" + builtins.toString n;
       pubData = "${TMP_DATA}/${pubName}-publish";
+      ipfsHost = "${pubName}-ipfs.local";
+      ipfsPort = builtins.toString (5000 + portSuffix);
+      ipfsAddr = "/ip4/${ipfsHost}/tcp/${ipfsPort}";
     in {
       "${pubName}-ipfs" = mkIpfsService pubName portSuffix;
       "${pubName}-publish" = {
         image.enableRecommendedContents = true; # sh, env, misc lightweight files
         service.useHostStore = true;
         service.stop_signal = "SIGINT";
-        service.environment.IPFS_HTTP_PORT = builtins.toString (5000 + portSuffix);
+        service.environment.IPFS_API_ADDR = ipfsAddr;
         image.contents = [
           flake.packages.x86_64-linux.publisher
         ];
@@ -121,13 +124,16 @@ let
     let
       subName = "sub" + builtins.toString n;
       subData = "${TMP_DATA}/${subName}-subscribe";
+      ipfsHost = "${subName}-ipfs.local";
+      ipfsPort = builtins.toString (5000 + portSuffix);
+      ipfsAddr = "/ip4/${ipfsHost}/tcp/${ipfsPort}";
     in {
       "${subName}-ipfs" = mkIpfsService subName portSuffix;
       "${subName}-subscribe" = {
         image.enableRecommendedContents = true; # sh, env, misc lightweight files
         service.useHostStore = true;
         service.stop_signal = "SIGINT";
-        service.environment.IPFS_HTTP_PORT = builtins.toString (5000 + portSuffix);
+        service.environment.IPFS_API_ADDR = ipfsAddr;
         service.environment.IPFS_DATA_DIR  = "/data";
         image.contents = [
           flake.packages.x86_64-linux.subscriber

@@ -11,8 +11,8 @@ from watchdog.events import FileSystemEventHandler
 from pprint import pprint
 from typing import List
 
-# see arion-compose.nix for ports
-IPFS_HTTP_PORT = int(os.environ['IPFS_HTTP_PORT'])
+# see arion-compose.nix
+IPFS_HTTP_ADDR = os.environ['IPFS_API_ADDR']
 
 
 def write_cids_to_file(cids: List[str], path: str):
@@ -39,10 +39,7 @@ def announce_new_cids(cids: List[str], path: str):
 
 
 async def upload_and_announce_json(actual_path: str, virtual_path: str, new_cids_path: str):
-    ipfs_api_addr = f'/ip4/0.0.0.0/tcp/{IPFS_HTTP_PORT}'
-    pprint(locals())
-    client = aioipfs.AsyncIPFS(maddr=ipfs_api_addr)
-    # client = aioipfs.AsyncIPFS(host='127.0.0.1', port=IPFS_HTTP_PORT)
+    client = aioipfs.AsyncIPFS(maddr=IPFS_API_ADDR)
     js = wrapped_json_with_path(actual_path, virtual_path)
     kwargs = {
         # 'recursive': False,

@@ -12,8 +12,8 @@ from pprint import pprint
 import aioipfs
 
 
-# these come from arion-compose.nix
-IPFS_HTTP_PORT = int(os.environ['IPFS_HTTP_PORT'])
+# see arion-compose.nix
+IPFS_API_ADDR = os.environ['IPFS_API_ADDR']
 IPFS_DATA_DIR = os.environ['IPFS_DATA_DIR']
 
 # TODO if you make this a bind mount it'll appear automatically, right?
@@ -43,10 +43,7 @@ def yield_cids_from_file(path: str):
 
 
 async def get(cid: str, dstdir: str):
-    ipfs_api_addr = f'/ip4/0.0.0.0/tcp/{IPFS_HTTP_PORT}'
-    pprint(locals())
-    client = aioipfs.AsyncIPFS(maddr=ipfs_api_addr)
-    # client = aioipfs.AsyncIPFS(host='127.0.0.1', port=IPFS_HTTP_PORT)
+    client = aioipfs.AsyncIPFS(maddr=IPFS_API_ADDR)
     await client.get(cid, dstdir=dstdir)
     await client.close()
 
