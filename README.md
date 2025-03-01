@@ -12,7 +12,7 @@ Current status as of 2024-02-25:
 
 - All Milestones (1, 2, and 3) approved
 
-- Milestone 1:
+- Milestone 1 (ElectionGuard stuff):
   * Have [electionguard-python passing its tests](./milestone1/electionguard-python-tests.md)
   * Cleaned up [my fork](https://github.com/jefdaj/electionguard-python)
     and pushed [a Docker image](https://ghcr.io/jefdaj/electionguard-python)
@@ -21,10 +21,12 @@ Current status as of 2024-02-25:
   * The [local election script](./milestone1/local-election) (output 1.1) works
   * Next step is to demo + explain the local election script
 
-- Milestone 2:
+- Milestone 2 (Cardano stuff):
   * [Cardano node + Ogmios](./milestone2/investigate/cardano-node-ogmios/) works
   * [Kupo](./milestone2/investigate/kupo/) works
   * [ipfs-cluster](./milestone2/investigate/ipfs-cluster/) works
   * [Aiken](./milestone2/investigate/aiken/) works
   * [PyCardano](./milestone2/investigate/aiken-pycardano) looks promising
-  * Working on a small [pubsub dApp](./milestone2/pubsub) to test my ideas + dev stack
+
+- Milestone 3 (ElectionGuard + Cardano integration):
+  * Working on a small [pubsub dApp](./milestone3/pubsub) to test my ideas + dev stack
