@@ -12,7 +12,8 @@ from pprint import pprint
 from typing import List
 
 # see arion-compose.nix
-IPFS_HTTP_ADDR = os.environ['IPFS_API_ADDR']
+pprint(os.environ)
+IPFS_API_ADDR = os.environ['IPFS_API_ADDR']
 
 
 def write_cids_to_file(cids: List[str], path: str):

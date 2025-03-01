@@ -89,10 +89,10 @@ let
 
   mkPublisher = n: portSuffix:
     let
-      pubName = "pub" + builtins.toString n;
-      pubData = "${TMP_DATA}/${pubName}-publish";
-      ipfsHost = "${pubName}-ipfs.local";
-      ipfsPort = builtins.toString (5000 + portSuffix);
+      pubName  = "pub${toString n}";
+      pubData  = "${TMP_DATA}/${pubName}-publish";
+      ipfsHost = "127.0.0.1"; # kubo log saying 0.0.0.0 is outdated?
+      ipfsPort = toString (5000 + portSuffix);
       ipfsAddr = "/ip4/${ipfsHost}/tcp/${ipfsPort}";
     in {
       "${pubName}-ipfs" = mkIpfsService pubName portSuffix;
@@ -122,9 +122,9 @@ let
 
   mkSubscriber = n: portSuffix:
     let
-      subName = "sub" + builtins.toString n;
-      subData = "${TMP_DATA}/${subName}-subscribe";
-      ipfsHost = "${subName}-ipfs.local";
+      subName  = "sub" + builtins.toString n;
+      subData  = "${TMP_DATA}/${subName}-subscribe";
+      ipfsHost = "127.0.0.1"; # kubo log saying 0.0.0.0 is outdated?
       ipfsPort = builtins.toString (5000 + portSuffix);
       ipfsAddr = "/ip4/${ipfsHost}/tcp/${ipfsPort}";
     in {

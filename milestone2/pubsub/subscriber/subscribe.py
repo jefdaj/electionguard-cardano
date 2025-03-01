@@ -13,6 +13,7 @@ import aioipfs
 
 
 # see arion-compose.nix
+pprint(os.environ)
 IPFS_API_ADDR = os.environ['IPFS_API_ADDR']
 IPFS_DATA_DIR = os.environ['IPFS_DATA_DIR']
 
