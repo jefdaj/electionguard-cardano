@@ -84,6 +84,7 @@ let
     service.volumes = [
       "${TMP_DATA}/${service.name}:/data/ipfs"
     ];
+    service.environment.IPFS_LOGGING="fatal";
   };
 
   mkPublisher = n: portSuffix:
@@ -147,6 +148,6 @@ in {
   config.services =
     # shared //
     mkPublisher  1 1 //
-    mkSubscriber 1 2 //
-    mkSubscriber 2 3;
+    mkSubscriber 1 2; # //
+    # mkSubscriber 2 3;
 }
