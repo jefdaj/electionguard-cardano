@@ -28,6 +28,7 @@ Current status as of 2024-03-01:
   * [Aiken](./milestone2/investigate/aiken/) works
   * [PyCardano](./milestone2/investigate/aiken-pycardano) looks promising
   * Work in progress on the [smart contract architecture](./milestone2/smart-contract-architecture.md)
+  * Working on a small [pubsub dApp](./milestone2/pubsub) to test my ideas + dev stack
 
 - [Milestone 3](./milestone3/) (ElectionGuard + Cardano integration):
-  * Working on a small [pubsub dApp](./milestone3/pubsub) to test my ideas + dev stack
+  * Starting to plan
