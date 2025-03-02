@@ -8,7 +8,7 @@ ElectionGuard + Cardano
 
 Work in progress on [the Catalyst fund13 project](https://milestones.projectcatalyst.io/projects/1300090).
 
-Current status as of 2024-03-01:
+Current status as of 2024-03-02:
 
 - All Milestones (1, 2, and 3) approved
 
@@ -27,8 +27,8 @@ Current status as of 2024-03-01:
   * [ipfs-cluster](./milestone2/investigate/ipfs-cluster/) works
   * [Aiken](./milestone2/investigate/aiken/) works
   * [PyCardano](./milestone2/investigate/aiken-pycardano) looks promising
-  * Work in progress on the [smart contract architecture](./milestone2/smart-contract-architecture.md)
+  * Working on the [smart contract architecture](./milestone2/smart-contract-architecture.md)
   * Working on a small [pubsub dApp](./milestone2/pubsub) to test my ideas + dev stack
 
 - [Milestone 3](./milestone3/) (ElectionGuard + Cardano integration):
-  * Starting to plan
+  * Starting to plan demos
