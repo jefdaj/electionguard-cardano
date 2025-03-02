@@ -1,4 +1,4 @@
-{ pkgs, ...}:
+{ pkgs, lib, ...}:
 
 let
 
@@ -33,8 +33,9 @@ let
 
   # roleName should be like "node1", "pub1", "sub1", "pub2", ...
   # subnetNumber is the 2nd part of the ip addr like 127.{subnetNumber}.0.N
-  mkNodeConfig = roleName: subnetNumber:
-    let
+  # TODO are the ip addresses stable? ogmios=1, cardano=2?
+  mkNodeConfig = roleNumber: subnetNumber:
+    let roleName = "node${toString roleNumber}";
     in {
       networks = mkNetworks roleName subnetNumber;
       services = {
@@ -55,6 +56,7 @@ let
             # # - ./config/network/${NETWORK:-preview}/genesis:/genesis
           ];
           service.restart = "on-failure";
+          service.networks = [ roleName ];
           # TODO figure this out
           # service.logging = {
           #   driver = "json-file";
@@ -82,12 +84,13 @@ let
             "${NODE_CONFIG}/network/preview:/config"
             "${NODE_DATA}/node-ipc:/ipc"
           ];
-          service.ports = [
+          # service.ports = [
             # host:container
             # TODO remove? forward from network?
-            "1337:1337"
-          ];
+            # "1337:1337"
+          # ];
           service.restart = "on-failure";
+          service.networks = [ roleName ];
         };
       };
     };
@@ -112,8 +115,7 @@ let
         "${TMP_DATA}/${service.name}:/data/ipfs"
       ];
       service.environment.IPFS_LOGGING="fatal";
-      # TODO service.networks?
-      # service.networks = { pubsub = { ipv4_address = ipAddr; }; };
+      service.networks = [ roleName ];
     };
 
   # roleNumber is appended to the role name: "sub1", "sub2", ...
@@ -146,7 +148,7 @@ let
             "/upload"
             "/new_cids/new_cids.txt"
           ];
-          service.networks = { pubsub = { ipv4_address = pubAddr; }; };
+          service.networks = [ pubName ];
           service.restart = "on-failure";
           # TODO proper syntax for this?
           # service.depends = [
@@ -186,8 +188,7 @@ let
             "subscribe.py"
             "/new_cids/new_cids.txt"
           ];
-          # TODO service.networks?
-          # service.networks = { pubsub = { ipv4_address = subAddr; }; };
+          service.networks = [ subName ];
           service.restart = "on-failure";
         };
       };
@@ -199,7 +200,7 @@ let
     };
 
 in {
-  config = pkgs.lib.mkMerge [
+  config = lib.mkMerge [
 
     mainConfig
 
