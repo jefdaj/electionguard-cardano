@@ -17,8 +17,8 @@ let
   # temporary workaround to test IPFS sync before smart contracts are written
   SHARED_CIDS_DIR = "${TMP_DATA}/new_cids";
 
-  shared = {
-    shared-node = {
+  node = {
+    node-cardano = {
       service.image = "ghcr.io/intersectmbo/cardano-node:10.1.4";
       service.command = [
         "run"
@@ -49,7 +49,7 @@ let
           # max-size: "400k"
           # max-file: "20"
     };
-    shared-ogmios = {
+    node-ogmios = {
       # TODO pin to a named version
       # service.image = "cardanosolutions/ogmios:latest";
       service.image = "76902d6a9306";
@@ -163,7 +163,7 @@ let
 in {
   config.project.name = "pubsub";
   config.services =
-    # shared //
+    node //
     mkPublisher  1 1 //
     mkSubscriber 1 2 //
     mkSubscriber 2 3;

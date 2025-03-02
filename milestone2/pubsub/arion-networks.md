@@ -39,4 +39,5 @@ that should be perfect.
 
 ## Separate network per entity
 
-
+Ideally I can make this modular, so that only running one or multiple
+entities/roles per computer uses the same code.
