@@ -17,10 +17,23 @@ from typing import List
 IPFS_API_ADDR = os.environ['IPFS_API_ADDR']
 
 
-def write_cids_to_file(cids: List[str], path: str):
-    with open(path, 'w') as f:
+LAST_CIDS_WRITTEN = datetime.now()
+
+
+def announce_new_cids(cids: List[str], path: str):
+    # debounce: if writing a bunch of things too fast, append instead
+    # then the subscriber can deduplicate as needed and not miss anything
+    now = datetime.now()
+    global LAST_CIDS_WRITTEN
+    if (now - LAST_CIDS_WRITTEN).total_seconds() < 5:
+        write_mode = 'a'
+    else:
+        write_mode = 'w'
+    LAST_CIDS_WRITTEN = now
+    with open(path, write_mode) as f:
         for cid in cids:
-            f.writeline(cid)
+            f.write(cid + '\n')
+    print(f'wrote {len(cids)} CIDs to {path}')
 
 
 # TODO more specific return type?
@@ -33,12 +46,6 @@ def wrapped_json_with_path(actual_path: str, virtual_path: str) -> dict:
         'uploaded_at': str(datetime.now()) # just for uniqueness
     }
     return js
-
-
-def announce_new_cids(cids: List[str], path: str):
-    with open(path, 'w') as f:
-        f.writelines(cids)
-    print(f'wrote {len(cids)} CIDs to {path}')
 
 
 async def upload_and_announce_json(actual_path: str, virtual_path: str, new_cids_path: str):

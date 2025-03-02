@@ -21,6 +21,11 @@ IPFS_DATA_DIR = os.environ['IPFS_DATA_DIR']
 os.makedirs(IPFS_DATA_DIR, exist_ok=True)
 
 
+# prevents re-writing the same CID
+# needed because of the debounce in publish.py
+CIDS_ALREADY_SEEN = set()
+
+
 def yield_cids_from_file(path: str):
     # quick hack to test the downloader before the cardano stuff exists
     # watches for changes to new_cids.txt and yields them
@@ -39,7 +44,10 @@ def yield_cids_from_file(path: str):
             for line in f.readlines():
                 cid = line.strip()
                 if len(cid) > 0:
-                    yield cid
+                    global CIDS_ALREADY_SEEN
+                    if not cid in CIDS_ALREADY_SEEN:
+                        CIDS_ALREADY_SEEN.add(cid)
+                        yield cid
         prev_mtime = cur_mtime
 
 
