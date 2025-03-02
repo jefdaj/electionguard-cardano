@@ -17,66 +17,89 @@ let
   # temporary workaround to test IPFS sync before smart contracts are written
   SHARED_CIDS_DIR = "${TMP_DATA}/new_cids";
 
-  node = {
-    node-cardano = {
-      service.image = "ghcr.io/intersectmbo/cardano-node:10.1.4";
-      service.command = [
-        "run"
-        "--config" "/config/config.json"
-        "--database-path" "/data/db"
-        "--socket-path" "/ipc/node.socket"
-        "--topology" "/config/topology.json"
-       ];
-      service.volumes = [
-        "${NODE_CONFIG}/network/preview/cardano-node:/config"
-        "${NODE_DATA}/node-db:/data"
-        "${NODE_DATA}/node-ipc:/ipc"
-        # # TODO is this needed?
-        # # - ./config/network/${NETWORK:-preview}/genesis:/genesis
-      ];
-      service.restart = "on-failure";
-      # TODO figure this out
-      # service.logging = {
-      #   driver = "json-file";
-      #   options = {
-      #     max-size = "400k";
-      #     max-file = "20";
-      #   };
-      # };
-      # logging:
-        # driver: "json-file"
-        # options:
-          # max-size: "400k"
-          # max-file: "20"
-    };
-    node-ogmios = {
-      # TODO pin to a named version
-      # service.image = "cardanosolutions/ogmios:latest";
-      service.image = "76902d6a9306";
-      service.command = [
-        "--host" "0.0.0.0"
-        "--node-socket" "/ipc/node.socket"
-        "--node-config" "/config/cardano-node/config.json"
-      ];
-      service.volumes = [
-        "${NODE_CONFIG}/network/preview:/config"
-        "${NODE_DATA}/node-ipc:/ipc"
-      ];
-      service.ports = [
-        # host:container
-        "1337:1337"
-      ];
-      service.restart = "on-failure";
+  # roleName is like "node1", "sub1", "sub2", ...
+  # subnetNumber is the 2nd part of the ip addr like 127.{subnetNumber}.0.2
+  mkNetworks = roleName: subnetNumber: {
+    "${roleName}" = {
+      name = "${roleName}";
+      ipam = {
+        config = [{
+          subnet  = "172.${toString subnetNumber}.0.0/16";
+          gateway = "172.${toString subnetNumber}.0.1";
+        }];
+      };
     };
   };
 
-  # TODO rename portSuffix now that it also controls ip addr
-  mkIpfsService = namePrefix: portSuffix:
-    let ipAddr = "172.32.0.${toString (100 + portSuffix)}"; # TODO clean up
+  # roleName should be like "node1", "pub1", "sub1", "pub2", ...
+  # subnetNumber is the 2nd part of the ip addr like 127.{subnetNumber}.0.N
+  mkNodeConfig = roleName: subnetNumber:
+    let
+    in {
+      networks = mkNetworks roleName subnetNumber;
+      services = {
+        "${roleName}-cardano" = {
+          service.image = "ghcr.io/intersectmbo/cardano-node:10.1.4";
+          service.command = [
+            "run"
+            "--config" "/config/config.json"
+            "--database-path" "/data/db"
+            "--socket-path" "/ipc/node.socket"
+            "--topology" "/config/topology.json"
+           ];
+          service.volumes = [
+            "${NODE_CONFIG}/network/preview/cardano-node:/config"
+            "${NODE_DATA}/node-db:/data"
+            "${NODE_DATA}/node-ipc:/ipc"
+            # # TODO is this needed?
+            # # - ./config/network/${NETWORK:-preview}/genesis:/genesis
+          ];
+          service.restart = "on-failure";
+          # TODO figure this out
+          # service.logging = {
+          #   driver = "json-file";
+          #   options = {
+          #     max-size = "400k";
+          #     max-file = "20";
+          #   };
+          # };
+          # logging:
+            # driver: "json-file"
+            # options:
+              # max-size: "400k"
+              # max-file: "20"
+        };
+        "${roleName}-ogmios" = {
+          # TODO pin to a named version
+          # service.image = "cardanosolutions/ogmios:latest";
+          service.image = "76902d6a9306";
+          service.command = [
+            "--host" "0.0.0.0"
+            "--node-socket" "/ipc/node.socket"
+            "--node-config" "/config/cardano-node/config.json"
+          ];
+          service.volumes = [
+            "${NODE_CONFIG}/network/preview:/config"
+            "${NODE_DATA}/node-ipc:/ipc"
+          ];
+          service.ports = [
+            # host:container
+            # TODO remove? forward from network?
+            "1337:1337"
+          ];
+          service.restart = "on-failure";
+        };
+      };
+    };
+
+  # roleName should be like "pub1", "sub1", "pub2", ...
+  # ipNumber is the final part of the ip addr like 172.XX.0.{ipNumber}
+  mkIpfsService = roleName: subnetNumber:
+    let ipAddr = "172.${toString subnetNumber}.0.2";
     in rec {
       # TODO pin named version
       # service.image = "ipfs/kubo:release";
-      service.name = namePrefix + "-ipfs"; # TODO overridden by top attr name?
+      service.name = roleName + "-ipfs"; # TODO overridden by top attr name?
       service.image = "e58cd5ca3066";
       service.ports = [
         # host:container
@@ -89,98 +112,103 @@ let
         "${TMP_DATA}/${service.name}:/data/ipfs"
       ];
       service.environment.IPFS_LOGGING="fatal";
-      service.networks = { pubsub = { ipv4_address = ipAddr; }; };
+      # TODO service.networks?
+      # service.networks = { pubsub = { ipv4_address = ipAddr; }; };
     };
 
-  # TODO rename portSuffix now that it also controls ip addr
-  mkPublisher = n: portSuffix:
+  # roleNumber is appended to the role name: "sub1", "sub2", ...
+  # subnetNumber is the 2nd part of the ip addr like 127.{subnetNumber}.0.3
+  mkPublisherConfig = roleNumber: subnetNumber:
     let
-      pubName  = "pub${toString n}";
+      ipfsHost = "172.${toString subnetNumber}.0.2";
+      ipfsAddr = "/ip4/${ipfsHost}/tcp/5001";
+      pubName  = "pub${toString roleNumber}";
+      pubAddr  = "172.${toString subnetNumber}.0.3";
       pubData  = "${TMP_DATA}/${pubName}-publish";
-      pubAddr  = "172.32.0.${toString (100 + portSuffix)}"; # TODO clean up
-      ipfsHost = "172.32.0.${toString (150 + portSuffix)}"; # TODO clean up
-      ipfsAddr = "/ip4/${ipfsHost}/tcp/5001";
     in {
-      "${pubName}-ipfs" = mkIpfsService pubName (portSuffix + 50);
-      "${pubName}-publish" = {
-        image.enableRecommendedContents = true; # sh, env, misc lightweight files
-        service.useHostStore = true;
-        service.stop_signal = "SIGINT";
-        service.environment.IPFS_API_ADDR = ipfsAddr;
-        image.contents = [
-          flake.packages.x86_64-linux.publisher
-        ];
-        service.volumes = [
-          "${SHARED_CIDS_DIR}:/new_cids"
-          "${pubData}:/upload"
-        ];
-        service.command = [
-          "publish.py"
-          "/upload"
-          "/new_cids/new_cids.txt"
-        ];
-        service.networks = { pubsub = { ipv4_address = pubAddr; }; };
-        service.restart = "on-failure";
-        # TODO proper syntax for this?
-        # service.depends = [
-        #   (pubName + "-ipfs")
-        # ];
-      };
-     };
-
-  # TODO rename portSuffix now that it also controls ip addr
-  mkSubscriber = n: portSuffix:
-    let
-      subName  = "sub" + builtins.toString n;
-      subData  = "${TMP_DATA}/${subName}-subscribe";
-      subAddr  = "172.32.0.${toString (100 + portSuffix)}"; # TODO clean up
-      ipfsHost = "172.32.0.${toString (150 + portSuffix)}"; # TODO clean up
-      ipfsAddr = "/ip4/${ipfsHost}/tcp/5001";
-    in {
-      "${subName}-ipfs" = mkIpfsService subName (portSuffix + 50);
-      "${subName}-subscribe" = {
-        image.enableRecommendedContents = true; # sh, env, misc lightweight files
-        service.useHostStore = true;
-        service.stop_signal = "SIGINT";
-        service.environment.IPFS_API_ADDR = ipfsAddr;
-        service.environment.IPFS_DATA_DIR  = "/data";
-        image.contents = [
-          flake.packages.x86_64-linux.subscriber
-        ];
-        service.volumes = [
-          "${subData}:/data"
-          "${SHARED_CIDS_DIR}:/new_cids"
-        ];
-        service.command = [
-          "subscribe.py"
-          "/new_cids/new_cids.txt"
-        ];
-        service.networks = { pubsub = { ipv4_address = subAddr; }; };
-        service.restart = "on-failure";
-      };
-     };
-
-in {
-  config.project.name = "pubsub";
-  config.services =
-    node //
-    mkPublisher  1 1 //
-    mkSubscriber 1 2 //
-    mkSubscriber 2 3;
-
-    # https://github.com/hercules-ci/arion/blob/main/examples/traefik/arion-compose.nix
-    config.enableDefaultNetwork = false;
-    config.networks = {
-      # TODO how to get a network per entity (pub1, sub1, sub2, ...)
-      pubsub = {
-        name = "pubsub"; # TODO was the -custom important?
-        ipam = {
-          config = [{
-            subnet = "172.32.0.0/16";
-            gateway = "172.32.0.1";
-          }];
+      networks = mkNetworks pubName subnetNumber;
+      services = {
+        "${pubName}-ipfs" = mkIpfsService pubName subnetNumber;
+        "${pubName}-publish" = {
+          image.enableRecommendedContents = true; # sh, env, misc lightweight files
+          service.useHostStore = true;
+          service.stop_signal = "SIGINT";
+          service.environment.IPFS_API_ADDR = ipfsAddr;
+          image.contents = [
+            flake.packages.x86_64-linux.publisher
+          ];
+          service.volumes = [
+            "${SHARED_CIDS_DIR}:/new_cids"
+            "${pubData}:/upload"
+          ];
+          service.command = [
+            "publish.py"
+            "/upload"
+            "/new_cids/new_cids.txt"
+          ];
+          service.networks = { pubsub = { ipv4_address = pubAddr; }; };
+          service.restart = "on-failure";
+          # TODO proper syntax for this?
+          # service.depends = [
+          #   (pubName + "-ipfs")
+          # ];
         };
       };
     };
 
+  # roleNumber is appended to the role name: "sub1", "sub2", ...
+  # subnetNumber is the 2nd part of the ip addr like 127.{subnetNumber}.0.2
+  mkSubscriberConfig = roleNumber: subnetNumber:
+    let
+      subName  = "sub${toString roleNumber}";
+      subData  = "${TMP_DATA}/${subName}-subscribe";
+      subAddr  = "172.${toString subnetNumber}.0.3";
+      ipfsHost = "172.${toString subnetNumber}.0.2";
+      ipfsAddr = "/ip4/${ipfsHost}/tcp/5001";
+    in {
+      networks = mkNetworks subName subnetNumber;
+      services = {
+        "${subName}-ipfs" = mkIpfsService subName subnetNumber;
+        "${subName}-subscribe" = {
+          image.enableRecommendedContents = true; # sh, env, misc lightweight files
+          service.useHostStore = true;
+          service.stop_signal = "SIGINT";
+          service.environment.IPFS_API_ADDR = ipfsAddr;
+          service.environment.IPFS_DATA_DIR  = "/data";
+          image.contents = [
+            flake.packages.x86_64-linux.subscriber
+          ];
+          service.volumes = [
+            "${subData}:/data"
+            "${SHARED_CIDS_DIR}:/new_cids"
+          ];
+          service.command = [
+            "subscribe.py"
+            "/new_cids/new_cids.txt"
+          ];
+          # TODO service.networks?
+          # service.networks = { pubsub = { ipv4_address = subAddr; }; };
+          service.restart = "on-failure";
+        };
+      };
+    };
+
+    mainConfig = {
+      project.name = "pubsub";
+      enableDefaultNetwork = false;
+    };
+
+in {
+  config = pkgs.lib.mkMerge [
+
+    mainConfig
+
+    # 1st number is for naming roles: node1, pub1, sub1, sub2, ...
+    # 2nd number is for the subnet: 172.{11,12,13,14, ...}.0.0/16
+    (mkNodeConfig       1 11)
+    (mkPublisherConfig  1 12)
+    (mkSubscriberConfig 1 13)
+    (mkSubscriberConfig 2 14)
+
+  ];
 }

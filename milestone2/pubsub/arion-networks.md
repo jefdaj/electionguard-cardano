@@ -41,3 +41,16 @@ that should be perfect.
 
 Ideally I can make this modular, so that only running one or multiple
 entities/roles per computer uses the same code.
+
+Seems the convention is Docker related networks start with `172`.
+
+First attempt:
+
+- subnets  : 172.{11,12,13,14}0.0/16
+- gateways : 172.{11,12,13,14}0.1
+- cardano  : 172.11.0.2
+- ogmios   : 172.11.0.3
+- ipfs     : 172.{12,13,14}.0.2
+- pub/sub  : 172.{12,13,14}.0.3
+
+TODO are there rules about the subnets not being a more obvious "1,2,3,..."?
