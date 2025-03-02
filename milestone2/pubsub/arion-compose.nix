@@ -38,7 +38,7 @@ let
     };
   };
 
-  # add to the services.network of a container to give them LAN or WAN access
+  # merge into the services.networks of a container to give them LAN or WAN access
   # TODO how are you actually supposed to do this?
   mkLan = { lan = {}; };
   mkWan = { wan = {}; };
