@@ -33,7 +33,6 @@ let
 
   # roleName should be like "node1", "pub1", "sub1", "pub2", ...
   # subnetNumber is the 2nd part of the ip addr like 127.{subnetNumber}.0.N
-  # TODO are the ip addresses stable? ogmios=1, cardano=2?
   mkNodeConfig = roleNumber: subnetNumber:
     let roleName = "node${toString roleNumber}";
     in {
@@ -56,7 +55,9 @@ let
             # # - ./config/network/${NETWORK:-preview}/genesis:/genesis
           ];
           service.restart = "on-failure";
-          service.networks = [ roleName ];
+          service.networks = {
+            "${roleName}" = { ipv4_address = "172.${toString subnetNumber}.0.2"; };
+          };
           # TODO figure this out
           # service.logging = {
           #   driver = "json-file";
@@ -90,7 +91,9 @@ let
             # "1337:1337"
           # ];
           service.restart = "on-failure";
-          service.networks = [ roleName ];
+          service.networks = {
+            "${roleName}" = { ipv4_address = "172.${toString subnetNumber}.0.3"; };
+          };
         };
       };
     };
