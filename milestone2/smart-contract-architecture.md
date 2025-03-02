@@ -2,8 +2,7 @@
 
 Just some initial ideas.
 
-General flow:
-- phase 1, setup:
+Phase 1, setup:
     - Admin announces election
         - mints admin state NFT
         - mints election state NFT
@@ -28,38 +27,41 @@ General flow:
         - admin has to do initial transition into voting phase before devices can post anything
         - amount sent for fees should scale with the expected votes each device will service
         - when can this be done? any time during the setup phase?
-    - phase 2, voting:
-        - devices post ballots:
-            - submitted
-            - cast/spoiled
-            - mark as timed out if voter makes no cast/spoil decision
-            - can guardians decrypt spoiled ones in real time here?
-        - admin closes voting
-            - can be early, but only if everyone has voted
-            - if they don't, should it just progress after the deadline anyway?
-            - burns device state NFTs
-            - what happens to any pending votes?
-    - phase 3, tally:
-        - guardians post decryption shares
-            - of final tally
-            - of each spoiled ballot
-        - admin combines them
-            - posts final decrypted tally
-            - posts short summary too
-    - phase 4, dispute resolution:
-        - observers (anyone) post verifications
-            - obviously needs to have some collateral later, or something
-        - will this also end up being dispute resolution time?
-            - no need to hold up the votes for disputes, unless there are large irregularities
-            - but do need to decide who gets money for various things
-        - and it can also be risk limiting audit time if needed
-        - no need for anything in the demo other than a simple verification
-        - simple incentives for a first draft later:
-            - first N people to post certifications get rewards
-                - unless they miss a failure, then it costs them their collateral to not have checked
-            - first N people to post irregularities/failure get rewards
-                - but only if they correctly identify the failure, not for generically saying it failed
-                - and not if it actually succeeded of course
+
+Phase 2, voting:
+    - devices post ballots:
+        - submitted
+        - cast/spoiled
+        - mark as timed out if voter makes no cast/spoil decision
+        - can guardians decrypt spoiled ones in real time here?
+    - admin closes voting
+        - can be early, but only if everyone has voted
+        - if they don't, should it just progress after the deadline anyway?
+        - burns device state NFTs
+        - what happens to any pending votes?
+
+Phase 3, tally:
+    - guardians post decryption shares
+        - of final tally
+        - of each spoiled ballot
+    - admin combines them
+        - posts final decrypted tally
+        - posts short summary too
+
+Phase 4, dispute resolution:
+    - observers (anyone) post verifications
+        - obviously needs to have some collateral later, or something
+    - will this also end up being dispute resolution time?
+        - no need to hold up the votes for disputes, unless there are large irregularities
+        - but do need to decide who gets money for various things
+    - and it can also be risk limiting audit time if needed
+    - no need for anything in the demo other than a simple verification
+    - simple incentives for a first draft later:
+        - first N people to post certifications get rewards
+            - unless they miss a failure, then it costs them their collateral to not have checked
+        - first N people to post irregularities/failure get rewards
+            - but only if they correctly identify the failure, not for generically saying it failed
+            - and not if it actually succeeded of course
 
 All the NFTs are "state NFTs" (may not be the right word?): their owners are
 coded in the datum and can't be changed, and the NFT just tracks which UTXO
