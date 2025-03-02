@@ -22,6 +22,7 @@ let
   mkNetworks = roleName: subnetNumber: {
     "${roleName}" = {
       name = "${roleName}";
+      internal = true; # denies internet access
       ipam = {
         config = [{
           subnet  = "172.${toString subnetNumber}.0.0/16";
@@ -36,6 +37,11 @@ let
       ipv4_address = "172.${toString subnetNumber}.0.${toString ipNumber}";
     };
   };
+
+  # add to the services.network of a container to give them LAN or WAN access
+  # TODO how are you actually supposed to do this?
+  mkLan = { lan = {}; };
+  mkWan = { wan = {}; };
 
   # roleName should be like "node1", "pub1", "sub1", "pub2", ...
   # subnetNumber is the 2nd part of the ip addr like 127.{subnetNumber}.0.N
@@ -61,7 +67,11 @@ let
             # # - ./config/network/${NETWORK:-preview}/genesis:/genesis
           ];
           service.restart = "on-failure";
-          service.networks = mkStaticIp roleName subnetNumber 2;
+          service.networks =
+            # Cardano node needs to talk to the internet of course.
+            # There should be no need for the other containers to talk to it directly, right?
+            # Assuming they're going thru Ogmios.
+            (mkStaticIp roleName subnetNumber 2) // mkWan;
           # TODO figure this out
           # service.logging = {
           #   driver = "json-file";
@@ -95,7 +105,11 @@ let
             # "1337:1337"
           # ];
           service.restart = "on-failure";
-          service.networks = mkStaticIp roleName subnetNumber 3;
+          service.networks =
+            # Ogmios should have access to the Cardano node (via its native
+            # "node1" network), and other containers should also be able to
+            # access it to talk with the Cardano node.
+            (mkStaticIp roleName subnetNumber 3) // mkLan;
         };
       };
     };
@@ -119,8 +133,13 @@ let
       service.volumes = [
         "${TMP_DATA}/${service.name}:/data/ipfs"
       ];
-      service.environment.IPFS_LOGGING="fatal";
-      service.networks = mkStaticIp roleName subnetNumber 2;
+      service.environment.IPFS_LOGGING="info";
+      service.networks =
+        # Ideally we want to simulate IPFS nodes not being on the same
+        # computer, so we make them talk over the internet all the time.  But
+        # they seem to still be able to talk to each other directly via the
+        # pubsub_wan local bridge network. That's not a big deal.
+        (mkStaticIp roleName subnetNumber 2) // mkWan;
     };
 
   # roleNumber is appended to the role name: "sub1", "sub2", ...
@@ -201,7 +220,34 @@ let
 
     mainConfig = {
       project.name = "pubsub";
-      enableDefaultNetwork = false;
+      enableDefaultNetwork = true; # TODO does this do anything?
+      networks = {
+
+        # Add this one to services so they can talk to each other,
+        # but not to the wider world.
+        lan = {
+          internal = true;
+          ipam = {
+            config = [{
+              subnet  = "172.11.0.0/16";
+              gateway = "172.11.0.1";
+            }];
+          };
+        };
+
+        # Add this one so they can talk to the wider world.
+        # Note they can also talk to each other.
+        # TODO is there a way to isolate them so they have to go over the internet?
+        wan = {
+          ipam = {
+            config = [{
+              subnet  = "172.12.0.0/16";
+              gateway = "172.12.0.1";
+            }];
+          };
+        };
+
+      };
     };
 
 in {
@@ -211,10 +257,10 @@ in {
 
     # 1st number is for naming roles: node1, pub1, sub1, sub2, ...
     # 2nd number is for the subnet: 172.{11,12,13,14, ...}.0.0/16
-    (mkNodeConfig       1 11)
-    (mkPublisherConfig  1 12)
-    (mkSubscriberConfig 1 13)
-    (mkSubscriberConfig 2 14)
+    (mkNodeConfig       1 13)
+    (mkPublisherConfig  1 14)
+    (mkSubscriberConfig 1 15)
+    (mkSubscriberConfig 2 16)
 
   ];
 }

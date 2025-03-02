@@ -56,9 +56,10 @@ First attempt:
 TODO are there rules about the subnets not being a more obvious "1,2,3,..."?
 
 Verdict: seems to work!
-Can still access Ogmios on <http://172.11.0.3:1337>,
+Can still access Ogmios on <http://172.13.0.3:1337>,
 it can still connect to Cardano, and Cardano is still syncing.
 Can also `curl http://example.com` from the Cardano container.
+Publisher and subscriber both work too.
 
-Broke my publisher config somehow though...
-Ah, it's the same thing where I need explicit static IPs or they can get reordered.
+TODO is there a more elegant way to control firewall than by adding custom
+`pubsub_lan` and `pubsub_wan` networks?
