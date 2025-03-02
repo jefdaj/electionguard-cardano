@@ -54,3 +54,11 @@ First attempt:
 - pub/sub  : 172.{12,13,14}.0.3
 
 TODO are there rules about the subnets not being a more obvious "1,2,3,..."?
+
+Verdict: seems to work!
+Can still access Ogmios on <http://172.11.0.3:1337>,
+it can still connect to Cardano, and Cardano is still syncing.
+Can also `curl http://example.com` from the Cardano container.
+
+Broke my publisher config somehow though...
+Ah, it's the same thing where I need explicit static IPs or they can get reordered.

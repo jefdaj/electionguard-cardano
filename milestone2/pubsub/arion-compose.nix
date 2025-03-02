@@ -31,6 +31,12 @@ let
     };
   };
 
+  mkStaticIp = networkName: subnetNumber: ipNumber: {
+    "${networkName}" = {
+      ipv4_address = "172.${toString subnetNumber}.0.${toString ipNumber}";
+    };
+  };
+
   # roleName should be like "node1", "pub1", "sub1", "pub2", ...
   # subnetNumber is the 2nd part of the ip addr like 127.{subnetNumber}.0.N
   mkNodeConfig = roleNumber: subnetNumber:
@@ -55,9 +61,7 @@ let
             # # - ./config/network/${NETWORK:-preview}/genesis:/genesis
           ];
           service.restart = "on-failure";
-          service.networks = {
-            "${roleName}" = { ipv4_address = "172.${toString subnetNumber}.0.2"; };
-          };
+          service.networks = mkStaticIp roleName subnetNumber 2;
           # TODO figure this out
           # service.logging = {
           #   driver = "json-file";
@@ -91,9 +95,7 @@ let
             # "1337:1337"
           # ];
           service.restart = "on-failure";
-          service.networks = {
-            "${roleName}" = { ipv4_address = "172.${toString subnetNumber}.0.3"; };
-          };
+          service.networks = mkStaticIp roleName subnetNumber 3;
         };
       };
     };
@@ -118,7 +120,7 @@ let
         "${TMP_DATA}/${service.name}:/data/ipfs"
       ];
       service.environment.IPFS_LOGGING="fatal";
-      service.networks = [ roleName ];
+      service.networks = mkStaticIp roleName subnetNumber 2;
     };
 
   # roleNumber is appended to the role name: "sub1", "sub2", ...
@@ -151,7 +153,7 @@ let
             "/upload"
             "/new_cids/new_cids.txt"
           ];
-          service.networks = [ pubName ];
+          service.networks = mkStaticIp pubName subnetNumber 3;
           service.restart = "on-failure";
           # TODO proper syntax for this?
           # service.depends = [
@@ -191,7 +193,7 @@ let
             "subscribe.py"
             "/new_cids/new_cids.txt"
           ];
-          service.networks = [ subName ];
+          service.networks = mkStaticIp subName subnetNumber 3;
           service.restart = "on-failure";
         };
       };
