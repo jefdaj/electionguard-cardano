@@ -2,7 +2,9 @@
 
 Just some initial ideas.
 
-Phase 1, setup:
+General flow:
+
+- Phase 1, setup:
     - Admin announces election
         - mints admin state NFT
         - mints election state NFT
@@ -28,7 +30,7 @@ Phase 1, setup:
         - amount sent for fees should scale with the expected votes each device will service
         - when can this be done? any time during the setup phase?
 
-Phase 2, voting:
+- Phase 2, voting:
     - devices post ballots:
         - submitted
         - cast/spoiled
@@ -40,7 +42,7 @@ Phase 2, voting:
         - burns device state NFTs
         - what happens to any pending votes?
 
-Phase 3, tally:
+- Phase 3, tally:
     - guardians post decryption shares
         - of final tally
         - of each spoiled ballot
@@ -48,7 +50,7 @@ Phase 3, tally:
         - posts final decrypted tally
         - posts short summary too
 
-Phase 4, dispute resolution:
+- Phase 4, dispute resolution:
     - observers (anyone) post verifications
         - obviously needs to have some collateral later, or something
     - will this also end up being dispute resolution time?
