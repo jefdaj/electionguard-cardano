@@ -71,8 +71,8 @@
 
           # `nix build .#publisher` (or subscriber etc)
           packages.x86_64-linux = rec {
-            publisher  = singleScriptPyPkg ./offchain/publisher/publish.py    "0.1" pubPyPkgList;
-            subscriber = singleScriptPyPkg ./offchain/subscriber/subscribe.py "0.1" subPyPkgList;
+            publisher  = singleScriptPyPkg ./publisher/publish.py    "0.1" pubPyPkgList;
+            subscriber = singleScriptPyPkg ./subscriber/subscribe.py "0.1" subPyPkgList;
           };
 
           # `nix develop .#aiken` (or publisher, subscriber, etc)
@@ -84,7 +84,7 @@
               ]);
               shellHook = ''
                 echo "running devShells.x86_64-linux.aiken shellHook"
-                cd onchain
+                cd aiken
                 aiken --version
               '';
             };
@@ -95,7 +95,7 @@
               ];
               shellHook = ''
                 echo "running devShells.x86_64-linux.publisher shellHook"
-                cd offhcain/publisher
+                cd publisher
                 # TODO how to mix this with the Nix python pkgs productively?
                 # source .venv/bin/activate || python -m venv .venv
                 # pip install -r requirements.txt
@@ -108,7 +108,7 @@
               ]);
               shellHook = ''
                 echo "running devShells.x86_64-linux.subscriber shellHook"
-                cd offhcain/subscriber
+                cd subscriber
                 # TODO how to mix this with the Nix python pkgs productively?
                 # source .venv/bin/activate || python -m venv .venv
                 # pip install -r requirements.txt
