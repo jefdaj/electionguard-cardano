@@ -1,26 +1,28 @@
 use aiken/crypto.{VerificationKeyHash}
 
-// TODO can we restrict these to a particular size or format?
+/// ipfs content identifier
+/// TODO can we restrict these to a particular size or format?
 pub type CID =
   ByteArray
 
-// IPFS content identifier
-
-// TODO include funds here? or is that handled entirely by Values?
 pub type PubsubDatum {
   publisher: VerificationKeyHash,
-  // TODO should this also contain the CIDs?
 }
 
 pub type PubsubAction {
+
   PsOpen
-  // open the channel
-  PsFund
-  // add (or remove) ADA for publishing fees
-  // TODO is a fund action needed? or can you just always send ADA?
+  /// open the channel
+
   PsPublish { cids: List<CID> }
-  // announce publication of the corresponding files
+  /// announce publication of the corresponding files
+
+  PsCollect
+  /// collect ada and/or other tokens sent to the validator addr
+  /// TODO sending ada to the contract is always valid, right?
+
   PsClose
+  /// close the channel and recover remaining ada
+  /// TODO should this require exlicitly burning any assets you don't want?
+
 }
-// close the channel and recover remaining ADA
-// if other assets have been sent, publisher can decide whether to move or leave (burn) them
