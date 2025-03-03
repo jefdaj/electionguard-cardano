@@ -1,10 +1,11 @@
 # pubsub2: post CIDs to preview testnet
 
 
-Instead of `new_cids.txt`, this version will post CIDs on the preview testnet.
-The publisher will construct transactions via PyCardano,
-they'll be checked onchain by an Aiken validator,
-and subscribers will get the CIDs via Kupo.
+Instead of `new_cids.txt`, this version will post CIDs on the preview testnet:
+
+1. The publisher will construct transactions via PyCardano.
+2. They'll be checked onchain by an Aiken validator.
+3. Subscribers will get the CIDs via Kupo.
 
 
 ## Usage
