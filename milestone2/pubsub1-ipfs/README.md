@@ -1,122 +1,41 @@
-# pubsub
+# pubsub1: IPFS sync with mock "blockchain" text file
 
-My first attempt at integrating the on-chain + off-chain code into a non-trivial dApp.
-It'll focus on just distributing an authenticated log of files via Cardano + IPFS.
-That's part of what the ElectionGuard contract will need to do,
-as well as potentially useful on its own.
+This has two Python scripts in containers: publish.py and subscribe.py.
+Each is networked with their own IPFS instance, and they share access to a text file `new_cids.txt`.
+The publisher uploads files to IPFS and writes their CIDs to the file.
+Subscribers monitor the file for CIDs to fetch and pin.
+
+Syncing publisher -> subscribers works almost instantly on the local network,
+and global access via `dweb.link` mostly works but takes a few seconds.
+I assume the changes need to propagate, and the Dweb instances need to peer with mine or find a route to mine?
 
 
-## Setup
+## TODO
+
+- [ ] Pin IPFS container version.
+- [ ] test syncing with publisher and subscriber in different physical locations.
+- [ ] Is my top-level JSON `path` and `contents` format a rudimentary form of UnixFS?
+
+
+## Usage
+
+First, build and start the containers.
+There should be one publisher (script + ipfs) and two subscribers (script + ipfs each).
+
 
 ```bash
-# start everything
-nix develop
-arion up -d
+./up.sh
+# or
+./up.sh offline
 ```
 
+Now you should be able to add JSON files (along with parent dirs as needed) in
+`/tmp/pubsub/pub1-publish` and see them propogate to
+`/tmp/pubsub/sub{1,2}-subscribe`.
 
-```bash
-# tail logs
-nix develop
-arion logs --follow
-```
+Note that you might have to `sudo` copy things into that folder, then `chmod`
+them back to user permissions to get `publish.py` to pick them up.
 
-## IPFS
-
-TODO update ip addrs here once stable
-
-```bash
-# ipfs
-
-# apis are on ports 5001, 5002, ...
-curl -X POST http://127.0.0.1:5001/api/v0/swarm/peers
-
-# http is on ports 8081, 8082, ...
-curl "http://127.0.0.1:8081/ipfs/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi" > cat.jpg
-```
-
-`dweb.link` appears to be a good current gateway in case users need one.
-Construct URLs like: <https://dweb.link/ipfs/MYCID>
-They appear to work immediately, at least with the tiny test JSON files.
-
-The officially recommended
-[ipfs-http-client](https://github.com/ipfs-shipyard/py-ipfs-http-client) is
-abandoned, but [aioipfs](https://gitlab.com/cipres/aioipfs) works great!
-
-```bash
-cd publisher # or subscriber
-nix develop
-pip install -r requirements.txt
-```
-
-
-## IPFS via Python
-
-```bash
-$ cd publisher
-$ nix develop
-
-$ # upload a json file, embedding the public path in it
-$ ./ipfs-upload.py
-Actual path to a JSON file to upload: ../../../milestone1/local-election/data/public/1_config/1_announce/1_manifest.json
-Path to put in IPFS JSON data: 1_config/1_announce/1_manifest
-QmZ4EzZfUvrHDtZFw7HC2zcX9HGKpwHrZYzgTPbGigdGqj
-Actual path to a JSON file to upload: ^C
-ok, done
-
-```
-
-```bash
-$ cd subscriber
-$ nix develop
-
-$ # download it from other ipfs instance
-$ ./ipfs-download.py
-Next CID to download: QmZ4EzZfUvrHDtZFw7HC2zcX9HGKpwHrZYzgTPbGigdGqj
-wrote QmZ4EzZfUvrHDtZFw7HC2zcX9HGKpwHrZYzgTPbGigdGqj to ./data/1_config/1_announce/1_manifest.json
-Next CID to download: ^C
-ok, done
-
-$ cat ./data/1_config/1_announce/1_manifest.json | jq | head
-{
-  "election_scope_id": "electionguard-cardano-test-manifest",
-  "spec_version": "1.0",
-  "type": "general",
-  "start_date": "2025-02-25T15:20:54.121535",
-  "end_date": "2025-02-28T03:20:54.121535",
-  "geopolitical_units": [
-    {
-      "object_id": "electionguard-cardano-test-county",
-      "name": "ElectionGuard + Cardano Test County",
-```
-
-
-## versions
-
-- one where it runs locally and they share a node
-- one using 2 computers and a node each
-
-
-## literature
-
-- blog post
-- asciinema demo of the local version
-- video of the local + 2 computer versions
-
-
-## file formats
-
-- all posts are JSON, but there's no way to validate that on chain right?
-- top level fields: relative path from root dir, further content
-- that way the sync app can maintain the folder in an easy, human readable way
-- reusing a path replaces it in the sync folder
-- no way to delete? maybe add that for the folder sync use case
-- publisher's signature and date posted come from TX info, not JSON
-
-
-## interfaces
-
-- simple Python CLI per role: publisher, subscriber
-- subscriber will need to type in the contract address, time to scan from
-    * can those be combined in one QR code?
-    * default to date I wrote this if none given
+You can also look at the latest CIDs in `/tmp/pubsub/new_cids/new_cids.txt`
+and find them online at <https://dweb.link/ipfs/MYCID>.
+Sometimes those will error out, but usually they show up immediately.
