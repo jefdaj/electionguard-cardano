@@ -3,11 +3,9 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
-    # works, but not part of the first IPFS task
-    # aiken.url   = "github:aiken-lang/aiken/v1.1.10";
   };
 
-  outputs = { self, nixpkgs }@inputs:
+  outputs = { self, nixpkgs }:
     let
 
       # This is an actual output; see note below.
@@ -32,20 +30,11 @@
 
       pubPyPkgList = ps: with ps; [
         aioipfs
-        click
-        click-default-group
-        dotmap
-        pygments
-        pycardano
         watchdog
       ];
 
       subPyPkgList = ps: with ps; [
         aioipfs
-        click
-        click-default-group
-        dotmap
-        pygments
       ];
       
       # based on https://stackoverflow.com/a/78450917
@@ -70,25 +59,14 @@
           # See https://github.com/hercules-ci/arion/issues/247
           inherit pkgs;
 
-          # `nix build .#publisher` (or subscriber etc)
+          # `nix build .#publisher` (or subscriber)
           packages.x86_64-linux = rec {
             publisher  = singleScriptPyPkg ./publisher/publish.py    "0.1" pubPyPkgList;
             subscriber = singleScriptPyPkg ./subscriber/subscribe.py "0.1" subPyPkgList;
           };
 
-          # `nix develop .#publisher` (or subscriber, etc)
+          # `nix develop .#publisher` (or subscriber)
           devShells.x86_64-linux = {
-
-          # works, but not part of the first IPFS task
-          #   aiken = pkgs.mkShell {
-          #     nativeBuildInputs = devPkgList pkgs ++ (with pkgs; [
-          #       aiken.packages.x86_64-linux.aiken
-          #     ]);
-          #     shellHook = ''
-          #       echo "running devShells.x86_64-linux.aiken shellHook"
-          #       cd aiken
-          #     '';
-          #   };
 
             publisher = pkgs.mkShell {
               nativeBuildInputs = (devPkgList pkgs) ++ [

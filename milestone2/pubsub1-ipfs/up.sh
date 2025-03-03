@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -x
+
 TMP_DATA=/tmp/pubsub
 [[ -d "$TMP_DATA" ]] && sudo rm -rf "$TMP_DATA"
 
