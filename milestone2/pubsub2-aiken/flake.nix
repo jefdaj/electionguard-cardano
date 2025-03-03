@@ -1,5 +1,5 @@
 {
-  description = "pubsub dApp test";
+  description = "pubsub dApp test #2 ipfs + aiken";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
@@ -15,9 +15,9 @@
       py312Overlay = self: super: {
         python312 = super.python312.override {
           packageOverrides = pyself: pysuper: {
-            pytest-runner       = pyself.callPackage ./python-packages/pytest-runner.nix       {};
-            py-multiformats-cid = pyself.callPackage ./python-packages/py-multiformats-cid.nix {};
-            aioipfs             = pyself.callPackage ./python-packages/aioipfs.nix             {};
+            pytest-runner       = pyself.callPackage ./offchain/python-packages/pytest-runner.nix       {};
+            py-multiformats-cid = pyself.callPackage ./offchain/python-packages/py-multiformats-cid.nix {};
+            aioipfs             = pyself.callPackage ./offchain/python-packages/aioipfs.nix             {};
           };
         };
       };
@@ -27,6 +27,14 @@
         jq
         time
         tree
+      ];
+
+      aikenPyPkgList = ps: with ps; [
+        click
+        click-default-group
+        dotmap
+        pygments
+        pycardano
       ];
 
       pubPyPkgList = ps: with ps; [
@@ -71,8 +79,8 @@
 
           # `nix build .#publisher` (or subscriber etc)
           packages.x86_64-linux = rec {
-            publisher  = singleScriptPyPkg ./publisher/publish.py    "0.1" pubPyPkgList;
-            subscriber = singleScriptPyPkg ./subscriber/subscribe.py "0.1" subPyPkgList;
+            publisher  = singleScriptPyPkg ./offchain/publisher/publish.py    "0.1" pubPyPkgList;
+            subscriber = singleScriptPyPkg ./offchain/subscriber/subscribe.py "0.1" subPyPkgList;
           };
 
           # `nix develop .#aiken` (or publisher, subscriber, etc)
@@ -81,10 +89,11 @@
             aiken = pkgs.mkShell {
               nativeBuildInputs = devPkgList pkgs ++ (with pkgs; [
                 aiken.packages.x86_64-linux.aiken
+                (pkgs.python312.withPackages aikenPyPkgList)
               ]);
               shellHook = ''
                 echo "running devShells.x86_64-linux.aiken shellHook"
-                cd aiken
+                cd onchain
               '';
             };
 
@@ -94,7 +103,7 @@
               ];
               shellHook = ''
                 echo "running devShells.x86_64-linux.publisher shellHook"
-                cd publisher
+                cd offhcain/publisher
                 # TODO how to mix this with the Nix python pkgs productively?
                 # source .venv/bin/activate || python -m venv .venv
                 # pip install -r requirements.txt
@@ -107,7 +116,7 @@
               ]);
               shellHook = ''
                 echo "running devShells.x86_64-linux.subscriber shellHook"
-                cd subscriber
+                cd offhcain/subscriber
                 # TODO how to mix this with the Nix python pkgs productively?
                 # source .venv/bin/activate || python -m venv .venv
                 # pip install -r requirements.txt

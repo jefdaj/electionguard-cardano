@@ -1,5 +1,5 @@
 {
-  description = "pubsub dApp test";
+  description = "pubsub dApp test #1 ipfs only";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
