@@ -1,70 +1,128 @@
 {
-  description = "Publisher dev shell with Aiken, PyCardano";
-
-  # based on https://www.zknotes.com/page/python%20development%20flake
-
-  # to activate, type `nix develop` while in the repo dir or a subdir.
-  # or use direnv to automatically do so (see .envrc)
-  # for best results, don't have a global python installed.  mixing python
-  # versions can make for venv problems.
+  description = "pubsub dApp test";
 
   inputs = {
-    nixpkgs.url     = "github:NixOS/nixpkgs/nixos-24.11";
-    aiken.url       = "github:aiken-lang/aiken/v1.1.10";
-    flake-utils.url = "github:numtide/flake-utils";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    aiken.url   = "github:aiken-lang/aiken/v1.1.10";
   };
 
-  outputs = { self, nixpkgs, aiken, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (
-      system: let
-        pname = "aiken + python dev environment";
-        pkgs = nixpkgs.legacyPackages."${system}";
-        venvDir = ".venv";
-      in
-        rec {
-          inherit pname;
+  outputs = { self, nixpkgs, aiken }@inputs:
+    let
 
-          # `nix develop`
-          devShell = pkgs.mkShell {
-            nativeBuildInputs = with pkgs; [
+      # This is an actual output; see note below.
+      pkgs = nixpkgs.legacyPackages.x86_64-linux.extend py312Overlay;
 
-              arion
-              file
-              jq
-              time
-              tree
-
-              aiken.packages.x86_64-linux.aiken
-
-              python3Packages.python
-              python3Packages.distutils # needed for aioipfs
-              python3Packages.python-lsp-server
-              python3Packages.autopep8
-
-            ];
-
-            shellHook = ''
-                # create a virtualenv if there isn't one.
-
-                # DOESN'T install deps for the python app.  Do that once `nix develop` runs with
-                # $ cd src
-                # $ pip install -r ./requirements.txt
-
-                if [ -d "${venvDir}" ]; then
-                  echo "Skipping venv creation, '${venvDir}' already exists"
-                else
-                  echo "Creating new venv environment in path: '${venvDir}'"
-                  # Note that the module venv was only introduced in python 3, so for 2.7
-                  # this needs to be replaced with a call to virtualenv
-                  python -m venv "${venvDir}"
-                  # unescape to attempt use
-                  # \$\{pythonPackages.python.interpreter\} -m venv "${venvDir}"
-                fi
-
-                # activate our virtual env.
-                source "${venvDir}/bin/activate"
-              '';
+      py312Overlay = self: super: {
+        python312 = super.python312.override {
+          packageOverrides = pyself: pysuper: {
+            pytest-runner       = pyself.callPackage ./python-packages/pytest-runner.nix       {};
+            py-multiformats-cid = pyself.callPackage ./python-packages/py-multiformats-cid.nix {};
+            aioipfs             = pyself.callPackage ./python-packages/aioipfs.nix             {};
           };
-        }
-    );
+        };
+      };
+
+      devPkgList = ps: with ps; [
+        file
+        jq
+        time
+        tree
+      ];
+
+      pubPyPkgList = ps: with ps; [
+        aioipfs
+        click
+        click-default-group
+        dotmap
+        pygments
+        pycardano
+        watchdog
+      ];
+
+      subPyPkgList = ps: with ps; [
+        aioipfs
+        click
+        click-default-group
+        dotmap
+        pygments
+      ];
+
+      # based on https://stackoverflow.com/a/78450917
+      singleScriptPyPkg = script: version: pyDeps:
+        let scriptName = builtins.baseNameOf script;
+        in pkgs.python312.pkgs.buildPythonApplication rec {
+          name = "${scriptName}-${version}";
+          inherit version;
+          pyproject = false;
+          propagatedBuildInputs = pyDeps pkgs.python312.pkgs;
+          src = script;
+          dontUnpack = true;
+          installPhase = ''
+            install -Dm755 "${src}" "$out/bin/${scriptName}"
+          '';
+        };
+
+      in
+        {
+
+          # This is expected by arion-pkgs.nix
+          # See https://github.com/hercules-ci/arion/issues/247
+          inherit pkgs;
+
+          # `nix build .#publisher` (or subscriber etc)
+          packages.x86_64-linux = rec {
+            publisher  = singleScriptPyPkg ./publisher/publish.py    "0.1" pubPyPkgList;
+            subscriber = singleScriptPyPkg ./subscriber/subscribe.py "0.1" subPyPkgList;
+          };
+
+          # `nix develop .#aiken` (or publisher, subscriber, etc)
+          devShells.x86_64-linux = {
+
+            aiken = pkgs.mkShell {
+              nativeBuildInputs = devPkgList pkgs ++ (with pkgs; [
+                aiken.packages.x86_64-linux.aiken
+              ]);
+              shellHook = ''
+                echo "running devShells.x86_64-linux.aiken shellHook"
+                cd aiken
+              '';
+            };
+
+            publisher = pkgs.mkShell {
+              nativeBuildInputs = (devPkgList pkgs) ++ [
+                (pkgs.python312.withPackages pubPyPkgList)
+              ];
+              shellHook = ''
+                echo "running devShells.x86_64-linux.publisher shellHook"
+                cd publisher
+                # TODO how to mix this with the Nix python pkgs productively?
+                # source .venv/bin/activate || python -m venv .venv
+                # pip install -r requirements.txt
+              '';
+            };
+
+            subscriber = pkgs.mkShell {
+              nativeBuildInputs = devPkgList pkgs ++ (with pkgs; [
+                (pkgs.python312.withPackages subPyPkgList)
+              ]);
+              shellHook = ''
+                echo "running devShells.x86_64-linux.subscriber shellHook"
+                cd subscriber
+                # TODO how to mix this with the Nix python pkgs productively?
+                # source .venv/bin/activate || python -m venv .venv
+                # pip install -r requirements.txt
+              '';
+            };
+
+            # `nix develop`
+            # TODO remove? alias to one of the others?
+            default = pkgs.mkShell {
+              nativeBuildInputs = devPkgList pkgs;
+              shellHook = ''
+                echo "running devShells.x86_64-linux.default shellHook"
+              '';
+            };
+
+          };
+      };
 }

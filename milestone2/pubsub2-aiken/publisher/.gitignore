@@ -1,0 +1,11 @@
+# Python
+.venv/
+
+# wallet keys holding tADA from faucet
+keys/
+
+# Nix
+result*
+
+# ipfs data
+data/
