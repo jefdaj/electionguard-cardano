@@ -13,26 +13,26 @@ let
   # temporary workaround to test IPFS sync before smart contracts are written
   SHARED_CIDS_DIR = "${TMP_DATA}/new_cids";
 
-  networkUtils = import ./networkUtils.nix;
+  networks = import ./networks.nix;
 
   mkIpfsService = import ./ipfs.nix {
     inherit TMP_DATA;
-    inherit (networkUtils) mkStaticIp mkWan;
+    inherit (networks) mkStaticIp mkWan;
   };
 
   mkNodeConfig = import ./node/arion.nix {
-    inherit (networkUtils) mkNetworks mkStaticIp mkLan mkWan;
+    inherit (networks) mkNetworks mkStaticIp mkLan mkWan;
   };
 
   mkPublisherConfig = import ./publisher/arion.nix {
     inherit TMP_DATA SHARED_CIDS_DIR mkIpfsService;
-    inherit (networkUtils) mkNetworks mkStaticIp;
+    inherit (networks) mkNetworks mkStaticIp;
     publisherPkg = flake.packages.x86_64-linux.publisher;
   };
 
   mkSubscriberConfig = import ./subscriber/arion.nix {
     inherit TMP_DATA SHARED_CIDS_DIR mkIpfsService;
-    inherit (networkUtils) mkNetworks mkStaticIp;
+    inherit (networks) mkNetworks mkStaticIp;
     subscriberPkg = flake.packages.x86_64-linux.subscriber;
   };
 
@@ -40,7 +40,7 @@ let
     project.name = "pubsub";
     enableDefaultNetwork = true; # TODO does this do anything?
     networks = {
-      inherit (networkUtils) lan wan;
+      inherit (networks) lan wan;
     };
   };
 
