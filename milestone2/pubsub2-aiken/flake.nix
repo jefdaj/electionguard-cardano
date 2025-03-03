@@ -15,9 +15,9 @@
       py312Overlay = self: super: {
         python312 = super.python312.override {
           packageOverrides = pyself: pysuper: {
-            pytest-runner       = pyself.callPackage ./offchain/python-packages/pytest-runner.nix       {};
-            py-multiformats-cid = pyself.callPackage ./offchain/python-packages/py-multiformats-cid.nix {};
-            aioipfs             = pyself.callPackage ./offchain/python-packages/aioipfs.nix             {};
+            pytest-runner       = pyself.callPackage ./python-packages/pytest-runner.nix       {};
+            py-multiformats-cid = pyself.callPackage ./python-packages/py-multiformats-cid.nix {};
+            aioipfs             = pyself.callPackage ./python-packages/aioipfs.nix             {};
           };
         };
       };
@@ -27,14 +27,6 @@
         jq
         time
         tree
-      ];
-
-      aikenPyPkgList = ps: with ps; [
-        click
-        click-default-group
-        dotmap
-        pygments
-        pycardano
       ];
 
       pubPyPkgList = ps: with ps; [
@@ -89,11 +81,11 @@
             aiken = pkgs.mkShell {
               nativeBuildInputs = devPkgList pkgs ++ (with pkgs; [
                 aiken.packages.x86_64-linux.aiken
-                (pkgs.python312.withPackages aikenPyPkgList)
               ]);
               shellHook = ''
                 echo "running devShells.x86_64-linux.aiken shellHook"
                 cd onchain
+                aiken --version
               '';
             };
 
@@ -124,7 +116,6 @@
             };
 
             # `nix develop`
-            # TODO remove? alias to one of the others?
             default = pkgs.mkShell {
               nativeBuildInputs = devPkgList pkgs;
               shellHook = ''

@@ -6,6 +6,3 @@ build/
 docs/
 # Nix
 result*
-
-# Cardano keys
-keys/

@@ -1,4 +1,19 @@
-# pubsub
+# pubsub2: post CIDs to preview testnet
+
+
+Instead of `new_cids.txt`, this version will post CIDs on the preview testnet.
+The publisher will construct transactions via PyCardano,
+they'll be checked onchain by an Aiken validator,
+and subscribers will get the CIDs via Kupo.
+
+
+## Usage
+
+```bash
+./up.sh
+arion logs --follow
+```
+
 
 ## TODO
 
@@ -55,22 +70,19 @@ NFT.
 
 
 
-## PyCardano setup
+## Publisher
 
 ```bash
-nix develop
+nix develop .#publisher
+
+# to try new things before bothering to Nix package them
 pip install -r requirements.txt
-```
-
-## Generate keys
-
-```bash
-nix develop
 
 # safe to re-run, but only needs to be done once
 # then send tADA from faucet -> keys/me.addr
 ./generate-credentials.py
 ```
+
 
 ## Aiken
 
