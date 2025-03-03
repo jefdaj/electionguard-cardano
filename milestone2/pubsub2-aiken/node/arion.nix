@@ -1,9 +1,13 @@
+{ mkNetworks
+, mkStaticIp
+, mkLan
+, mkWan
+}:
+
 let
 
-  utils = import ../utils.nix;
-  inherit (utils) mkNetworks mkStaticIp mkLan mkWan;
-
   # re-use node data
+  # this applies starting from the parent dir with arion-compose.nix, which is weird
   NODE_CONFIG = "../investigate/cardano-node-ogmios/config";
   NODE_DATA   = "../investigate/cardano-node-ogmios/data";
 
