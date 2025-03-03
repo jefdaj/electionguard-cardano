@@ -3,7 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
-    aiken.url   = "github:aiken-lang/aiken/v1.1.10";
+    aiken.url   = "github:aiken-lang/aiken/v1.1.10"; # TODO report dependency issue with later versions
   };
 
   outputs = { self, nixpkgs, aiken }@inputs:
