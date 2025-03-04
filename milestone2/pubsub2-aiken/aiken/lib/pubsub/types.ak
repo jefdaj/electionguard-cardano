@@ -1,28 +1,38 @@
 use aiken/crypto.{VerificationKeyHash}
 
-/// ipfs content identifier
-/// TODO can we restrict these to a particular size or format?
-pub type CID =
-  ByteArray
+/// IPFS content identifier
+/// TODO can they be restricted to the proper size or format?
+pub type CID = ByteArray
 
 pub type PubsubDatum {
+
+  /// TODO nft: ???,
+  /// State NFT uniquely identifying the channel.
+
   publisher: VerificationKeyHash,
+  /// All transactions must be signed by this key.
+  /// It could be removed in favor of NFT ownership,
+  /// but for the ElectionGuard use case I don't want state
+  /// NFTs to be transferrable.
+
 }
 
 pub type PubsubAction {
 
   PsOpen
-  /// open the channel
+  /// Open the channel, minting the state NFT and funding with some ADA.
 
   PsPublish { cids: List<CID> }
-  /// announce publication of the corresponding files
+  /// Announce publication of the corresponding IPFS files.
 
   PsCollect
-  /// collect ada and/or other tokens sent to the validator addr
-  /// TODO sending ada to the contract is always valid, right?
+  /// Collect ADA and/or other tokens sent to the validator.
+  /// TODO sending ADA to the contract is always valid, right?
 
   PsClose
-  /// close the channel and recover remaining ada
-  /// TODO should this require exlicitly burning any assets you don't want?
+  /// Close the channel, burning the NFT and recovering any ADA.
+  /// The publisher can choose whether to collect other tokens here too.
+  /// TODO if not, are they basically burned/frozen at the validator address?
+  /// TODO should it require exlicitly burning any assets you don't want?
 
 }
