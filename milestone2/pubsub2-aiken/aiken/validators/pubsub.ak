@@ -1,4 +1,3 @@
-use aiken/collection/dict
 use aiken/collection/list
 use cardano/address.{Script}
 use cardano/assets.{PolicyId}
@@ -14,10 +13,10 @@ use pubsub/types.{
 validator pubsub(token_name: ByteArray, oneshot_ref: OutputReference) {
   mint(redeemer: PubsubAction, policy_id: PolicyId, self: Transaction) {
     when redeemer is {
-      PsOpen -> and {
-          h.tx_mints(self, policy_id, token_name, 1),
-          h.tx_consumes(self, oneshot_ref),
-        }
+      PsOpen -> {
+        expect Some(_own_input) = h.find_tx_input(self, oneshot_ref)
+        h.tx_mints(self, policy_id, token_name, 1)
+      }
       PsClose -> h.tx_mints(self, policy_id, token_name, -1)
       _ -> fail
     }
@@ -26,23 +25,15 @@ validator pubsub(token_name: ByteArray, oneshot_ref: OutputReference) {
   spend(
     datum: Option<PubsubDatum>,
     redeemer: PubsubAction,
-    utxo: OutputReference,
+    own_ref: OutputReference,
     self: Transaction,
   ) {
     expect Some(PubsubDatum { publisher }) = datum
     when redeemer is {
       PsOpen -> {
         let Transaction { inputs, .. } = self
-        expect Some(own_input) =
-          list.find(
-            inputs,
-            fn(
-              /// TODO None during PsOpen?
-              i,
-            ) {
-              i.output_reference == utxo
-            },
-          )
+        /// TODO None during PsOpen?
+        expect Some(own_input) = h.find_tx_input(self, own_ref)
         expect Script(policy_id) = own_input.output.address.payment_credential
         and {
           h.tx_mints(self, policy_id, token_name, 1),
