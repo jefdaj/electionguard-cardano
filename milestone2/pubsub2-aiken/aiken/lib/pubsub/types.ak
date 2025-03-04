@@ -5,7 +5,7 @@ use aiken/crypto.{VerificationKeyHash}
 pub type CID =
   ByteArray
 
-pub type PubsubDatum {
+pub type PubsubConfig {
   /// TODO nft: ???,
   /// State NFT uniquely identifying the channel.
   /// All transactions must be signed by this key.

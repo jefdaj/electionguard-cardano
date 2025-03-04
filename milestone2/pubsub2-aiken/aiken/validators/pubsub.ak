@@ -5,7 +5,7 @@ use cardano/script_context.{ScriptContext}
 use cardano/transaction.{OutputReference, Transaction}
 use pubsub/utils as u
 use pubsub/types.{
-  PsClose, PsCollect, PsOpen, PsPublish, PubsubAction, PubsubDatum,
+  PsClose, PsCollect, PsOpen, PsPublish, PubsubAction, PubsubConfig,
 }
 
 /// TODO is including the required name and amount here valid?
@@ -23,12 +23,12 @@ validator pubsub(token_name: ByteArray, oneshot_ref: OutputReference) {
   }
 
   spend(
-    datum: Option<PubsubDatum>,
+    datum: Option<PubsubConfig>,
     redeemer: PubsubAction,
     own_ref: OutputReference,
     self: Transaction,
   ) {
-    expect Some(PubsubDatum { publisher }) = datum
+    expect Some(PubsubConfig { publisher }) = datum
     when redeemer is {
       PsOpen -> {
         let Transaction { inputs, .. } = self
