@@ -1,8 +1,8 @@
-use aiken/collection/list
 use aiken/collection/dict
+use aiken/collection/list
 use aiken/crypto.{VerificationKeyHash}
-use cardano/transaction.{Transaction, OutputReference}
 use cardano/assets.{PolicyId}
+use cardano/transaction.{OutputReference, Transaction}
 
 // Whether a transaction was signed by the required key.
 pub fn tx_signed_by(tx: Transaction, signer: VerificationKeyHash) -> Bool {
