@@ -30,9 +30,13 @@ validator pubsub(channel_name: ByteArray, oneshot_ref: OutputReference) {
     expect Some(PubsubConfig { publisher }) = datum
     when redeemer is {
       PsOpen -> {
-        let Transaction { inputs, .. } = self
         /// TODO None during PsOpen?
-	expect Some(own_input) = transaction.find_input(self.inputs, own_ref)
+	/// expect True = list.any(
+        ///   self.inputs,
+	///   fn(i) { i.output_reference == oneshot_ref }
+	/// )
+	/// expect Some(own_input) = transaction.find_input(self.inputs, own_ref)
+	expect Some(own_input) = u.find_tx_input(self, own_ref)
         expect Script(policy_id) = own_input.output.address.payment_credential
         and {
           u.tx_mints(self, policy_id, channel_name, 1),
@@ -42,20 +46,18 @@ validator pubsub(channel_name: ByteArray, oneshot_ref: OutputReference) {
       PsPublish { cids } -> and {
           u.tx_signed_by(self, publisher),
           list.length(cids) > 0,
-          todo @"cids are the right format",
-          todo @"an output goes back to validator addr",
-          todo @"validator output gets the state nft",
-          todo @"publisher is unchanged",
+          /// todo @"cids are the right format",
+          /// todo @"an output goes back to validator addr",
+          /// todo @"validator output gets the state nft",
+          /// todo @"publisher is unchanged",
         }
-      PsCollect -> and {
-          u.tx_signed_by(self, publisher),
-          todo @"datum goes back to the validator unchanged",
-          todo @"all collected assets go to the publisher",
-        }
-      PsClose -> and {
-          u.tx_signed_by(self, publisher),
-          todo @"all collected assets go to the publisher",
-        }
+      PsCollect ->
+          u.tx_signed_by(self, publisher)
+          /// todo @"datum goes back to the validator unchanged",
+          /// todo @"all collected assets go to the publisher",
+      PsClose ->
+          u.tx_signed_by(self, publisher)
+          /// todo @"all collected assets go to the publisher",
     }
   }
 
