@@ -9,16 +9,14 @@ use pubsub/types.{
   PsClose, PsCollect, PsOpen, PsPublish, PubsubAction, PubsubConfig,
 }
 
-/// TODO is including the required name and amount here valid?
-/// TODO hardcode token name? "pubsub channel NFT" or similar
-validator pubsub(token_name: ByteArray, oneshot_ref: OutputReference) {
+validator pubsub(channel_name: ByteArray, oneshot_ref: OutputReference) {
   mint(redeemer: PubsubAction, policy_id: PolicyId, self: Transaction) {
     when redeemer is {
       PsOpen -> {
 	expect Some(_oneshot_input) = transaction.find_input(self.inputs, oneshot_ref)
-        u.tx_mints(self, policy_id, token_name, 1)
+        u.tx_mints(self, policy_id, channel_name, 1)
       }
-      PsClose -> u.tx_mints(self, policy_id, token_name, -1)
+      PsClose -> u.tx_mints(self, policy_id, channel_name, -1)
       _ -> fail
     }
   }
@@ -37,7 +35,7 @@ validator pubsub(token_name: ByteArray, oneshot_ref: OutputReference) {
 	expect Some(own_input) = transaction.find_input(self.inputs, own_ref)
         expect Script(policy_id) = own_input.output.address.payment_credential
         and {
-          u.tx_mints(self, policy_id, token_name, 1),
+          u.tx_mints(self, policy_id, channel_name, 1),
           u.tx_signed_by(self, publisher),
         }
       }
