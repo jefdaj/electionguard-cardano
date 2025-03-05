@@ -1,8 +1,23 @@
+#!/usr/bin/env python3
+
 import click
-from click_default_group import DefaultGroup
 
 from dataclasses import dataclass
 from typing import Dict, Optional, List
+from pprint import pprint
+
+from utils import (
+    build_election,
+    load_cast_ballots,
+    load_tally_shares,
+    load_spoiled_shares,
+    load_spoiled_results,
+    load_guardian_pubkeys,
+    load_spoiled_ballots,
+    to_public_record,
+    from_public_record,
+)
+
 
 from electionguard.ballot import CiphertextBallot, SubmittedBallot
 from electionguard.election import CiphertextElectionContext
@@ -96,18 +111,45 @@ def verify_aggregation(
     )
 
 
-
 ### cli ###
 
 @click.command("verify")
+@click.option(
+    "--public-dir",
+    prompt="Public records directory",
+    help="The location of a directory into which will be placed all public records. "
+    + "This folder should be protected. Existing files will be overwritten.",
+    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+)
 def VerifyCommand(
+    public_dir: str
 ) -> None:
     """Verify all public election artifacts.
     """
-    cfg = parse_config('verify.json')
-    print('verification stuff would go here')
 
-@click.group(cls=DefaultGroup, default='verify', default_if_no_args=True)
+    manifest  = from_public_record(public_dir, 'manifest')
+    details   = from_public_record(public_dir, 'ceremony_details')
+    joint_key = from_public_record(public_dir, 'joint_key')
+
+    (_, _, context) = build_election(
+        details,
+        manifest,
+        joint_key
+    )
+
+    cast_ballots    = load_cast_ballots(public_dir)
+    spoiled_ballots = load_spoiled_ballots(public_dir)
+    # TODO also load submitted and check that there aren't any missing
+
+    # TODO and spoiled?
+    for ballot in cast_ballots:
+        pprint(verify_ballot(ballot, manifest, context))
+
+    # ballots
+    # decryption
+    # aggregation
+
+@click.group
 def cli() -> None:
     pass
 

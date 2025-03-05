@@ -6,7 +6,7 @@ let
 
   # public outputs of local-election/election.py
   # TODO add verifier output to the public dir too later
-  PUBLIC_DIR = toString ../local-election/data;
+  PUBLIC_DIR = toString ../local-election/data/public;
 
   mkContainer = mode: scripts_dir: public_dir: private_dir: n:
   {

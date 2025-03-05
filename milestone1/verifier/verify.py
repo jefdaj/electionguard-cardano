@@ -80,8 +80,6 @@ def teardown(cfg):
 ### verify ###
 
 def verify(cfg):
-    print('verify would go here')
-    raise SystemExit
     run_in_container(
         cfg, "verifier", 1,
         [
