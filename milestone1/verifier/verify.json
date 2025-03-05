@@ -1,0 +1,10 @@
+{
+  "arion": {
+    "project_name": "verifier",
+    "bind_mounts": {
+      "scripts": "/scripts",
+      "public": "/data/public",
+      "private": "/data/private"
+    }
+  }
+}
