@@ -1,4 +1,3 @@
-// use pubsub/tests as t
 use cardano/transaction.{OutputReference, Transaction, placeholder}
 use pubsub/types.{PubsubConfig, PubsubAction, PsOpen, PsPublish, PsCollect, PsClose}
 
