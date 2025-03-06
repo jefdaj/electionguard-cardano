@@ -173,7 +173,7 @@ def print_colorful_json_obj(obj):
 
 def verify_ciphertext_ballots(ballots, header_msg, manifest, context) -> int:
     print(header_msg)
-    irregularities = {}
+    errors = {}
     for ballot in ballots:
         print(f'  {ballot.object_id}...', end=' '),
         with CaptureLog(level=logging.DEBUG) as log:
@@ -187,9 +187,9 @@ def verify_ciphertext_ballots(ballots, header_msg, manifest, context) -> int:
                 if result.message is not None:
                     msgs.append(result.message)
                 msgs.append(log.getvalue().strip())
-                irregularities[ballot.object_id] = ' '.join(msgs)
+                errors[ballot.object_id] = ' '.join(msgs)
     print()
-    return irregularities
+    return errors
 
 
 @click.command("verify")
@@ -216,15 +216,15 @@ def VerifyCommand(
         joint_key
     )
 
-    irregularities = {}
+    errors = {}
 
-    # TODO capture error in case a ballot is missing here and add to irregularities
+    # TODO capture error in case a ballot is missing here and add to errors
     submitted_ballots = load_submitted_ballots(public_dir)
     cast_ballots      = load_cast_ballots(public_dir)
     spoiled_ballots   = load_spoiled_ballots(public_dir)
 
     print('verifying that all ballots are accounted for:')
-    # TODO capture these assertions -> irregularities too
+    # TODO capture these assertions -> errors too
 
     submitted_ballot_ids = set(b.object_id for b in submitted_ballots)
     cast_ballot_ids      = set(b.object_id for b in cast_ballots)
@@ -244,13 +244,13 @@ def VerifyCommand(
 
     print()
 
-    irregularities['cast_ballots'] = verify_ciphertext_ballots(
+    errors['cast_ballots'] = verify_ciphertext_ballots(
         cast_ballots,
         f'verifying the ciphertext of the {n_cast} cast ballots:',
         manifest, context
     )
 
-    irregularities['spoiled_ballots'] = verify_ciphertext_ballots(
+    errors['spoiled_ballots'] = verify_ciphertext_ballots(
         spoiled_ballots,
         f'verifying the ciphertext of the {n_spoiled} spoiled ballots:',
         manifest, context
@@ -260,11 +260,11 @@ def VerifyCommand(
     # TODO tally decryption
     # TODO aggregation
 
-    irregularities = {k:v for (k,v) in irregularities.items() if len(v) > 0}
-    n_irregularities = sum(len(v) for v in irregularities.values())
-    if n_irregularities > 0:
-        print(f'ERROR Found {n_irregularities} irregularities...\n')
-        print_colorful_json_obj(irregularities)
+    errors = {k:v for (k,v) in errors.items() if len(v) > 0}
+    n_errors = sum(len(v) for v in errors.values())
+    if n_errors > 0:
+        print(f'ERROR Found {n_errors} irregularities...\n')
+        print_colorful_json_obj(errors)
         print('The election should NOT be certified!')
         # TODO exit 1 here?
 
