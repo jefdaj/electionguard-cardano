@@ -159,6 +159,26 @@ def verify_aggregation(
 
 ### cli ###
 
+def verify_ciphertext_ballots(ballots, header_msg, manifest, context) -> int:
+    print(header_msg)
+    n_irregularities = 0
+    for ballot in ballots:
+        print(f'  {ballot.object_id}...', end=' '),
+        with CaptureLog(level=logging.DEBUG) as log:
+            result = verify_ballot(ballot, manifest, context)
+            if result.verified:
+                print('ok')
+            else:
+                # print(f'ERROR {ballot.object_id} failed verification!')
+                print('FAIL')
+                n_irregularities += 1
+            log_str = log.getvalue().strip()
+            if len(log_str) > 0:
+                print('log_str:', log_str)
+    print()
+    return n_irregularities
+
+
 @click.command("verify")
 @click.option(
     "--public-dir",
@@ -209,33 +229,17 @@ def VerifyCommand(
 
     n_irregularities = 0
 
-    print(f'verifying the ciphertext of the {n_cast} cast ballots:')
-    for ballot in cast_ballots:
-        print(f'  {ballot.object_id}...', end=' '),
-        with CaptureLog(level=logging.DEBUG) as log:
-            result = verify_ballot(ballot, manifest, context)
-            if result.verified:
-                print('ok')
-            else:
-                # print(f'ERROR {ballot.object_id} failed verification!')
-                print('FAIL')
-                n_irregularities += 1
-            log_str = log.getvalue().strip()
-            if len(log_str) > 0:
-                print('log_str:', log_str)
+    n_irregularities += verify_ciphertext_ballots(
+        cast_ballots,
+        f'verifying the ciphertext of the {n_cast} cast ballots:',
+        manifest, context
+    )
 
-    print()
-
-    print(f'verifying the ciphertext of the {n_spoiled} spoiled ballots:')
-    for ballot in spoiled_ballots:
-        print(f'  {ballot.object_id}...', end=' '),
-        result = verify_ballot(ballot, manifest, context)
-        if result.verified:
-            print('ok')
-        else:
-            # TODO function to deduplicate with cast section above
-            # print(f'ERROR {ballot.object_id} failed verification!')
-            n_irregularities += 1
+    n_irregularities += verify_ciphertext_ballots(
+        spoiled_ballots,
+        f'verifying the ciphertext of the {n_spoiled} spoiled ballots:',
+        manifest, context
+    )
 
     # TODO spoiled ballot decryption
     # TODO tally decryption
