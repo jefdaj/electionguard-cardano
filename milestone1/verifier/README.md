@@ -18,42 +18,53 @@ $ ./verify.py
 
 docker exec verifier-verifier1-1 poetry run /scripts/verifier.py verify --public-dir /data/public
 
-checking that all ballots are accounted for:
-  6 ballots cast + 6 spoiled = 12 submitted... ok
-  set(cast IDs) + set(spoiled IDs) = set(submitted IDs)... ok
-
 verifying the ciphertext of the 6 cast ballots:
-  ballot-21e37226-f38c-11ef-b7ff-0242ac140006... ok
-  ballot-26bb5bc4-f38c-11ef-82f8-0242ac140007... ok
-  ballot-244a9242-f38c-11ef-8e96-0242ac140008... ok
-  ballot-22dbdd9e-f38c-11ef-b4ba-0242ac140007... ok
-  ballot-24c6b4a8-f38c-11ef-bf9a-0242ac140007... ok
-  ballot-226159de-f38c-11ef-94a1-0242ac140008... ok
+  ballot-557762aa-fab7-11ef-80d6-0242ac120006... ok
+  ballot-578663ca-fab7-11ef-9526-0242ac120006... ok
+  ballot-599b493c-fab7-11ef-8aba-0242ac120006... ok
+  ballot-54f69c1a-fab7-11ef-8746-0242ac120004... ok
+  ballot-57032910-fab7-11ef-bd39-0242ac120004... ok
+  ballot-5470327e-fab7-11ef-8ae4-0242ac120008... ok
 
 verifying the ciphertext of the 6 spoiled ballots:
-  ballot-235283ea-f38c-11ef-91fa-0242ac140004... ok
-  ballot-263fd22e-f38c-11ef-b322-0242ac140008... ok
-  ballot-25c027cc-f38c-11ef-949b-0242ac140006... ok
-  ballot-216af0b2-f38c-11ef-83ff-0242ac140004... ok
-  ballot-23cf5780-f38c-11ef-b600-0242ac140006... ok
-  ballot-2541cb0c-f38c-11ef-8f7f-0242ac140004... ok
+  ballot-567f7d40-fab7-11ef-a62d-0242ac120008... ok
+  ballot-55fa190c-fab7-11ef-b966-0242ac120005... ok
+  ballot-588d02c4-fab7-11ef-bb8a-0242ac120008... ok
+  ballot-580a3e98-fab7-11ef-8763-0242ac120005... ok
+  ballot-53e938fa-fab7-11ef-bcc5-0242ac120005... ok
+  ballot-5914e0e0-fab7-11ef-8983-0242ac120004... ok
 ```
 
 And if I manually edit one of the ciphertexts:
 
 ```
-...
+verifying that all ballots are accounted for:
+  6 ballots cast + 6 spoiled = 12 submitted... ok
+  set(cast IDs) + set(spoiled IDs) = set(submitted IDs)... ok
+
+verifying the ciphertext of the 6 cast ballots:
+  ballot-557762aa-fab7-11ef-80d6-0242ac120006... ok
+  ballot-578663ca-fab7-11ef-9526-0242ac120006... ok
+  ballot-599b493c-fab7-11ef-8aba-0242ac120006... ok
+  ballot-54f69c1a-fab7-11ef-8746-0242ac120004... ok
+  ballot-57032910-fab7-11ef-bd39-0242ac120004... ok
+  ballot-5470327e-fab7-11ef-8ae4-0242ac120008... ok
 
 verifying the ciphertext of the 6 spoiled ballots:
-  ballot-235283ea-f38c-11ef-91fa-0242ac140004... ok
-  ballot-263fd22e-f38c-11ef-b322-0242ac140008... ok
-  ballot-25c027cc-f38c-11ef-949b-0242ac140006... ok
-  ballot-216af0b2-f38c-11ef-83ff-0242ac140004... ok
-  ballot-23cf5780-f38c-11ef-b600-0242ac140006... [8:2025-03-06 01:06:48,926]:WARNING:ballot.py.is_valid_encryption:#L201: mismatching crypto hash: referendum-pineapple-affirmative-selection expected(060A0951838584221D643D3FD25110B91570B2C15E5094EF5DE44138936E3669), actual(A6775F6E69EB1A2953D5EB832EEAF3DC77964BAAE096100CEE6363460525F0E3)
-[8:2025-03-06 01:06:48,974]:WARNING:ballot.py.is_valid_encryption:#L591: ciphertext does not equal elgamal accumulation for : referendum-pineapple
-ERROR ballot-23cf5780-f38c-11ef-b600-0242ac140006 failed verification!
-  ballot-2541cb0c-f38c-11ef-8f7f-0242ac140004... ok
+  ballot-567f7d40-fab7-11ef-a62d-0242ac120008... ok
+  ballot-55fa190c-fab7-11ef-b966-0242ac120005... FAIL
+  ballot-588d02c4-fab7-11ef-bb8a-0242ac120008... ok
+  ballot-580a3e98-fab7-11ef-8763-0242ac120005... ok
+  ballot-53e938fa-fab7-11ef-bcc5-0242ac120005... ok
+  ballot-5914e0e0-fab7-11ef-8983-0242ac120004... ok
 
-ERROR 1 ballots failed verification
-election should NOT be certified
+ERROR Found 1 irregularities...
+
+{
+  "spoiled_ballots": {
+    "ballot-55fa190c-fab7-11ef-b966-0242ac120005": "ballot.py.is_valid_encryption:#L201: mismatching crypto hash: referendum-pineapple-affirmative-selection expected(920BA11D5357F8B7563D1E6ED20CC97246C9856106E80B812DA2CEDD6572EA16), actual(AA2906CD7AAB1E74946895EFDBF0E414678152E3FA425289F5301DD573BA83FC)\nballot.py.is_valid_encryption:#L591: ciphertext does not equal elgamal accumulation for : referendum-pineapple"
+  }
+}
+
+The election should NOT be certified!
 ```
