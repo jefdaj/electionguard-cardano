@@ -212,11 +212,15 @@ def VerifyCommand(
         joint_key
     )
 
+    irregularities = {}
+
+    # TODO capture error in case a ballot is missing here and add to irregularities
     submitted_ballots = load_submitted_ballots(public_dir)
     cast_ballots      = load_cast_ballots(public_dir)
     spoiled_ballots   = load_spoiled_ballots(public_dir)
 
     print('verifying that all ballots are accounted for:')
+    # TODO capture these assertions -> irregularities too
 
     submitted_ballot_ids = set(b.object_id for b in submitted_ballots)
     cast_ballot_ids      = set(b.object_id for b in cast_ballots)
@@ -235,8 +239,6 @@ def VerifyCommand(
     print('ok')
 
     print()
-
-    irregularities = {}
 
     irregularities['cast_ballots'] = verify_ciphertext_ballots(
         cast_ballots,
