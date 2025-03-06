@@ -143,7 +143,7 @@ def VerifyCommand(
     cast_ballots      = load_cast_ballots(public_dir)
     spoiled_ballots   = load_spoiled_ballots(public_dir)
 
-    print('checking that all ballots are accounted for:')
+    print('verifying that all ballots are accounted for:')
 
     submitted_ballot_ids = set(b.object_id for b in submitted_ballots)
     cast_ballot_ids      = set(b.object_id for b in cast_ballots)
@@ -163,7 +163,7 @@ def VerifyCommand(
 
     print()
 
-    n_failed = 0
+    n_irregularities = 0
 
     print(f'verifying the ciphertext of the {n_cast} cast ballots:')
     for ballot in cast_ballots:
@@ -174,10 +174,10 @@ def VerifyCommand(
                 print('ok')
             else:
                 print(f'ERROR {ballot.object_id} failed verification!')
-                n_failed += 1
+                n_irregularities += 1
         except:
             print(f'ERROR {ballot.object_id} failed verification!')
-            n_failed += 1
+            n_irregularities += 1
 
     print()
 
@@ -190,14 +190,14 @@ def VerifyCommand(
                 print('ok')
             else:
                 print(f'ERROR {ballot.object_id} failed verification!')
-                n_failed += 1
+                n_irregularities += 1
         except:
             print(f'ERROR {ballot.object_id} failed verification!')
-            n_failed += 1
+            n_irregularities += 1
 
-    if n_failed > 0:
+    if n_irregularities > 0:
         print()
-        print(f'ERROR {n_failed} ballots failed verification')
+        print(f'ERROR found {n_irregularities} irregulariries')
         print('election should NOT be certified')
 
     # TODO spoiled ballot decryption

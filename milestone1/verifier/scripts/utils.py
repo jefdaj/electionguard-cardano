@@ -185,7 +185,11 @@ def load_ballots(
         id_list_dir: str,
         state: Optional[BallotBoxState]
         ) -> List[SubmittedBallot]:
-    ballot_ids = [splitext(n)[0] for n in listdir(id_list_dir)]
+    ballot_ids = [
+        splitext(n)[0]
+        for n in listdir(id_list_dir)
+        if n.startswith('ballot-') # TODO remove? may only be relevant for vim swapfiles
+    ]
     ballots = [
         from_public_record(public_dir, 'ballot_submitted', ballot_id=bid)
         for bid in ballot_ids

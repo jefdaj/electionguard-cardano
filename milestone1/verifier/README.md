@@ -5,7 +5,10 @@ This verifies the results of the [local election script](../local-election).
 
 TODO:
 
-- [ ] Would it make more sense to have this script create the summary json?
+- [ ] Monkey patch the electionguard LOG to throw exceptions during verification
+      (because throwing them all the time messes with the test suite)
+- [ ] Make a JSON summary of the verification as well as printing
+- [ ] Have this script create the summary json rather than the admin?
 
 Example output so far:
 
