@@ -38,7 +38,8 @@ import sys
 from io import StringIO
 
 
-# TODO move to utils
+### utils ###
+
 # based on:
 # docs.python.org/3/howto/logging-cookbook.html#using-a-context-manager-for-selective-logging
 # gist.github.com/66Ton99/b13c2867adef506554a4
@@ -78,7 +79,19 @@ class CaptureLog:
 
         # implicit return of None => don't swallow exceptions
 
+# TODO unify with the one in local-election scripts
+def print_colorful_json_obj(obj):
+	# based on https://stackoverflow.com/a/32166163
+	formatted_json = json.dumps(obj, indent=2)
+	colorful_json = highlight(
+		formatted_json,
+		lexers.JsonLexer(),
+		formatters.TerminalFormatter()
+	)
+	print(colorful_json)
 
+
+### from electionguard_verify src ###
 
 @dataclass
 class Verification:
@@ -89,7 +102,6 @@ class Verification:
     verified: bool
     """Verification successful?"""
     message: Optional[str]
-
 
 def verify_ballot(
     ballot: CiphertextBallot,
@@ -112,7 +124,6 @@ def verify_ballot(
 
     return Verification(True, message=None)
 
-
 def verify_decryption(
     tally: PlaintextTally,
     election_public_keys: Dict[GuardianId, ElectionPublicKey],
@@ -134,7 +145,6 @@ def verify_decryption(
                     )
 
     return Verification(True, message=None)
-
 
 def verify_aggregation(
     submitted_ballots: List[SubmittedBallot],
@@ -161,19 +171,7 @@ def verify_aggregation(
     )
 
 
-### cli ###
-
-# TODO move to utils
-# TODO unify with the one in local-election scripts
-def print_colorful_json_obj(obj):
-	# based on https://stackoverflow.com/a/32166163
-	formatted_json = json.dumps(obj, indent=2)
-	colorful_json = highlight(
-		formatted_json,
-		lexers.JsonLexer(),
-		formatters.TerminalFormatter()
-	)
-	print(colorful_json)
+### my verify code ###
 
 def verify_ciphertext_ballots(ballots, header_msg, manifest, context) -> int:
     print(header_msg)
@@ -195,6 +193,102 @@ def verify_ciphertext_ballots(ballots, header_msg, manifest, context) -> int:
     print()
     return errors
 
+def verify_load_ballots(public_dir, load_fn, error_dict, error_name):
+    try:
+        ballots = load_fn(public_dir)
+        ballot_ids = set(b.object_id for b in ballots)
+        n_loaded = len(ballot_ids)
+        return (ballots, ballot_ids, n_loaded)
+    except FileNotFoundError as e:
+        error_dict[error_name]['verify_load_ballots'] = str(e)
+        raise
+
+
+# TODO pass cfg here
+def verify_election(public_dir):
+
+    # custom dict to build up a report
+    # TODO codify it as a class?
+    errors = {
+        'cast_ballots': {},
+        'spoiled_ballots': {},
+    }
+
+    all_ballots_loaded = True
+    finished_verifying = True
+
+    manifest  = from_public_record(public_dir, 'manifest')
+    details   = from_public_record(public_dir, 'ceremony_details')
+    joint_key = from_public_record(public_dir, 'joint_key')
+    (_, _, context) = build_election(details, manifest, joint_key)
+
+
+    # TODO capture error in case a ballot is missing here and add to errors
+    submitted_ballots = load_submitted_ballots(public_dir)
+    submitted_ballot_ids = set(b.object_id for b in submitted_ballots)
+    n_submitted = len(submitted_ballot_ids)
+
+    try:
+        (cast_ballots, cast_ballot_ids, n_cast) = verify_load_ballots(
+            public_dir, load_cast_ballots, errors, 'cast_ballots'
+        )
+        cast_ballots_loaded = True
+        errors['cast_ballots'] = verify_ciphertext_ballots(
+            cast_ballots,
+            f'verifying the ciphertext of the {n_cast} cast ballots:',
+            manifest, context
+        )
+    except:
+        all_ballots_loaded = False
+        finished_verifying = False
+
+    try:
+        (spoiled_ballots, spoiled_ballot_ids, n_spoiled) = verify_load_ballots(
+            public_dir, load_spoiled_ballots, errors, 'spoiled_ballots'
+        )
+        spoiled_ballots_loaded = True
+        errors['spoiled_ballots'] = verify_ciphertext_ballots(
+            spoiled_ballots,
+            f'verifying the ciphertext of the {n_spoiled} spoiled ballots:',
+            manifest, context
+        )
+
+    except:
+        all_ballots_loaded = False
+        finished_verifying = False
+
+    if not all_ballots_loaded:
+        print('Had to abort the verification.')
+        summarize_errors(errors)
+        return
+
+    else:
+        print('verifying that all ballots are accounted for:')
+
+        print(f'  {n_cast} ballots cast + {n_spoiled} spoiled = {n_submitted} submitted...', end=' ')
+        assert n_cast + n_spoiled == n_submitted
+        print('ok')
+
+        print('  set(cast IDs) + set(spoiled IDs) = set(submitted IDs)...', end=' ')
+        assert cast_ballot_ids.union(spoiled_ballot_ids) == submitted_ballot_ids
+        print('ok')
+
+    # TODO spoiled ballot decryption
+    # TODO tally decryption
+    # TODO aggregation
+
+# TODO pass cfg here
+def summarize_errors(errors):
+    errors = {k:v for (k,v) in errors.items() if len(v) > 0}
+    n_errors = sum(len(v) for v in errors.values())
+    if n_errors > 0:
+        print(f'ERROR Found {n_errors} irregularities...\n')
+        print_colorful_json_obj(errors)
+        print('The election should NOT be certified!')
+        # TODO exit 1 here?
+
+
+### cli ###
 
 @click.command("verify")
 @click.option(
@@ -209,68 +303,8 @@ def VerifyCommand(
 ) -> None:
     """Verify all public election artifacts.
     """
-
-    manifest  = from_public_record(public_dir, 'manifest')
-    details   = from_public_record(public_dir, 'ceremony_details')
-    joint_key = from_public_record(public_dir, 'joint_key')
-
-    (_, _, context) = build_election(
-        details,
-        manifest,
-        joint_key
-    )
-
-    errors = {}
-
-    # TODO capture error in case a ballot is missing here and add to errors
-    submitted_ballots = load_submitted_ballots(public_dir)
-    cast_ballots      = load_cast_ballots(public_dir)
-    spoiled_ballots   = load_spoiled_ballots(public_dir)
-
-    print('verifying that all ballots are accounted for:')
-    # TODO capture these assertions -> errors too
-
-    submitted_ballot_ids = set(b.object_id for b in submitted_ballots)
-    cast_ballot_ids      = set(b.object_id for b in cast_ballots)
-    spoiled_ballot_ids   = set(b.object_id for b in spoiled_ballots)
-
-    n_submitted = len(submitted_ballot_ids)
-    n_cast      = len(cast_ballot_ids)
-    n_spoiled   = len(spoiled_ballot_ids)
-
-    print(f'  {n_cast} ballots cast + {n_spoiled} spoiled = {n_submitted} submitted...', end=' ')
-    assert n_cast + n_spoiled == n_submitted
-    print('ok')
-
-    print('  set(cast IDs) + set(spoiled IDs) = set(submitted IDs)...', end=' ')
-    assert cast_ballot_ids.union(spoiled_ballot_ids) == submitted_ballot_ids
-    print('ok')
-
-    print()
-
-    errors['cast_ballots'] = verify_ciphertext_ballots(
-        cast_ballots,
-        f'verifying the ciphertext of the {n_cast} cast ballots:',
-        manifest, context
-    )
-
-    errors['spoiled_ballots'] = verify_ciphertext_ballots(
-        spoiled_ballots,
-        f'verifying the ciphertext of the {n_spoiled} spoiled ballots:',
-        manifest, context
-    )
-
-    # TODO spoiled ballot decryption
-    # TODO tally decryption
-    # TODO aggregation
-
-    errors = {k:v for (k,v) in errors.items() if len(v) > 0}
-    n_errors = sum(len(v) for v in errors.values())
-    if n_errors > 0:
-        print(f'ERROR Found {n_errors} irregularities...\n')
-        print_colorful_json_obj(errors)
-        print('The election should NOT be certified!')
-        # TODO exit 1 here?
+    # TODO parse and pass cfg here
+    verify_election(public_dir)
 
 
 @click.group

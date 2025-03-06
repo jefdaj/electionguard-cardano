@@ -68,3 +68,29 @@ ERROR Found 1 irregularities...
 
 The election should NOT be certified!
 ```
+
+And if I remove a file:
+
+```
+verifying that all ballots are accounted for:
+  Unable to check ballot IDs because cast_ballots failed to load
+
+verifying the ciphertext of the 6 spoiled ballots:
+  ballot-567f7d40-fab7-11ef-a62d-0242ac120008... ok
+  ballot-55fa190c-fab7-11ef-b966-0242ac120005... ok
+  ballot-588d02c4-fab7-11ef-bb8a-0242ac120008... ok
+  ballot-580a3e98-fab7-11ef-8763-0242ac120005... ok
+  ballot-53e938fa-fab7-11ef-bcc5-0242ac120005... ok
+  ballot-5914e0e0-fab7-11ef-8983-0242ac120004... ok
+
+Unable to finish running the verification.
+ERROR Found 1 irregularities...
+
+{
+  "cast_ballots": {
+    "load_cast_ballots": "[Errno 2] No such file or directory: '/data/public/2_ballots/1_submitted/ballot-5470327e-fab7-11ef-8ae4-0242ac120008.json'"
+  }
+}
+
+The election should NOT be certified!
+```
