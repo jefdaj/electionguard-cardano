@@ -8,6 +8,7 @@ from pprint import pprint
 
 from utils import (
     build_election,
+    load_submitted_ballots,
     load_cast_ballots,
     load_tally_shares,
     load_spoiled_shares,
@@ -137,17 +138,54 @@ def VerifyCommand(
         joint_key
     )
 
-    cast_ballots    = load_cast_ballots(public_dir)
-    spoiled_ballots = load_spoiled_ballots(public_dir)
-    # TODO also load submitted and check that there aren't any missing
+    submitted_ballots = load_submitted_ballots(public_dir)
+    cast_ballots      = load_cast_ballots(public_dir)
+    spoiled_ballots   = load_spoiled_ballots(public_dir)
 
-    # TODO and spoiled?
+    print('checking that all ballots are accounted for:')
+
+    submitted_ballot_ids = set(b.object_id for b in submitted_ballots)
+    cast_ballot_ids      = set(b.object_id for b in cast_ballots)
+    spoiled_ballot_ids   = set(b.object_id for b in spoiled_ballots)
+
+    n_submitted = len(submitted_ballot_ids)
+    n_cast      = len(cast_ballot_ids)
+    n_spoiled   = len(spoiled_ballot_ids)
+
+    print(f'  {n_cast} ballots cast + {n_spoiled} spoiled = {n_submitted} submitted...', end=' ')
+    assert n_cast + n_spoiled == n_submitted
+    print('ok')
+
+    print('  set(cast IDs) + set(spoiled IDs) = set(submitted IDs)...', end=' ')
+    assert cast_ballot_ids.union(spoiled_ballot_ids) == submitted_ballot_ids
+    print('ok')
+
+    print()
+
+    print(f'verifying the ciphertext of the {n_cast} cast ballots:')
     for ballot in cast_ballots:
-        pprint(verify_ballot(ballot, manifest, context))
+        print(f'  {ballot.object_id}...', end=' '),
+        result = verify_ballot(ballot, manifest, context)
+        if result.verified:
+            print('ok')
+        else:
+            raise Exception('ERROR {ballot.object_id} failed verification!')
 
-    # ballots
-    # decryption
-    # aggregation
+    print()
+
+    print(f'verifying the ciphertext of the {n_spoiled} spoiled ballots:')
+    for ballot in spoiled_ballots:
+        print(f'  {ballot.object_id}...', end=' '),
+        result = verify_ballot(ballot, manifest, context)
+        if result.verified:
+            print('ok')
+        else:
+            raise Exception('ERROR {ballot.object_id} failed verification!')
+
+    # TODO spoiled ballot decryption
+    # TODO tally decryption
+    # TODO aggregation
+
 
 @click.group
 def cli() -> None:

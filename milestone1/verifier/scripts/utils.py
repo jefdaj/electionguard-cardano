@@ -180,10 +180,10 @@ def from_private_record(private_dir: str, record_type: str, **fmtargs):
 ### load sets of files ###
 
 # you probably want the cast or spoiled versions below
-def load_submitted_ballots(
+def load_ballots(
         public_dir: str,
         id_list_dir: str,
-        state: BallotBoxState
+        state: Optional[BallotBoxState]
         ) -> List[SubmittedBallot]:
     ballot_ids = [splitext(n)[0] for n in listdir(id_list_dir)]
     ballots = [
@@ -191,17 +191,23 @@ def load_submitted_ballots(
         for bid in ballot_ids
     ]
     # TODO is this right? seems too simple and hacky
-    for b in ballots:
-        b.state = state
+    if state is not None:
+        for b in ballots:
+            b.state = state
     return ballots
+
+# mainly for checking that the cast + spoiled ones add up to the total
+def load_submitted_ballots(public_dir: str) -> List[SubmittedBallot]:
+    submitted_dir = join(public_dir, PUBLIC_RECORDS['ballot_submitted'][1])
+    return load_ballots(public_dir, submitted_dir, None)
 
 def load_cast_ballots(public_dir: str) -> List[SubmittedBallot]:
     cast_dir = join(public_dir, PUBLIC_RECORDS['cast_notice'][1])
-    return load_submitted_ballots(public_dir, cast_dir, BallotBoxState.CAST)
+    return load_ballots(public_dir, cast_dir, BallotBoxState.CAST)
 
 def load_spoiled_ballots(public_dir: str) -> List[SubmittedBallot]:
     spoiled_dir = join(public_dir, PUBLIC_RECORDS['ballot_spoiled'][1])
-    return load_submitted_ballots(public_dir, spoiled_dir, BallotBoxState.SPOILED)
+    return load_ballots(public_dir, spoiled_dir, BallotBoxState.SPOILED)
 
 def load_spoiled_results(public_dir: str) -> List[PlaintextTally]:
     spoiled_dir = join(public_dir, PUBLIC_RECORDS['spoiled_result'][1])
