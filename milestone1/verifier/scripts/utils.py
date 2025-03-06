@@ -240,6 +240,11 @@ def load_guardian_pubkeys(public_dir: str) -> List[ElectionPublicKey]:
     assert len(guardian_pubkeys) > 0
     return guardian_pubkeys
 
+def load_guardian_pubkeys_dict(public_dir: str) -> Dict[GuardianId, ElectionPublicKey]:
+    pubkeys_list = load_guardian_pubkeys(public_dir)
+    pubkeys_dict = {key.owner_id: key for key in pubkeys_list}
+    return pubkeys_dict
+
 def load_designated_backups(
         public_dir: str,
         guardian_id: GuardianId) -> Dict[str, ElectionPartialKeyBackup]:

@@ -5,6 +5,7 @@ import click
 from dataclasses import dataclass
 from typing import Dict, Optional, List
 from pprint import pprint
+from collections import defaultdict
 
 from utils import (
     build_election,
@@ -13,7 +14,7 @@ from utils import (
     load_tally_shares,
     load_spoiled_shares,
     load_spoiled_results,
-    load_guardian_pubkeys,
+    load_guardian_pubkeys_dict,
     load_spoiled_ballots,
     to_public_record,
     from_public_record,
@@ -81,14 +82,26 @@ class CaptureLog:
 
 # TODO unify with the one in local-election scripts
 def print_colorful_json_obj(obj):
-	# based on https://stackoverflow.com/a/32166163
-	formatted_json = json.dumps(obj, indent=2)
-	colorful_json = highlight(
-		formatted_json,
-		lexers.JsonLexer(),
-		formatters.TerminalFormatter()
-	)
-	print(colorful_json)
+    # based on https://stackoverflow.com/a/32166163
+    formatted_json = json.dumps(obj, indent=2)
+    colorful_json = highlight(
+        formatted_json,
+        lexers.JsonLexer(),
+        formatters.TerminalFormatter()
+    )
+    print(colorful_json)
+
+# TODO pass cfg here
+def summarize_errors(errors):
+    errors = {k:v for (k,v) in errors.items() if len(v) > 0}
+    n_errors = sum(len(v) for v in errors.values())
+    if n_errors > 0:
+        print(f'ERROR Found {n_errors} irregularities...\n')
+        print_colorful_json_obj(errors)
+        print('The election should NOT be certified!')
+    else:
+        print('No errors found. The election can be certified')
+
 
 
 ### from electionguard_verify src ###
@@ -262,6 +275,25 @@ def verify_ballots(public_dir, errors, manifest, context):
             errors, 'ballots_accounted_for'
         )
 
+        # for later comparisons
+        return (spoiled_ballot_ids, n_spoiled)
+
+def verify_spoiled_results(public_dir, guardian_pubkeys, context):
+    # TODO assert that the len here matches spoiled_ballots
+    print('verifying spoiled ballot decryptions:')
+    spoiled_results = load_spoiled_results(public_dir)
+    for spoiled_result in spoiled_results:
+        print(f'  {spoiled_result.object_id}...', end=' ')
+        try:
+            verify_decryption(spoiled_result, guardian_pubkeys, context)
+            print('ok')
+        except:
+            print('ERROR')
+            raise
+    spoiled_result_ids = set(r.object_id for r in spoiled_results)
+    n_spoiled_results = len(spoiled_result_ids)
+    return (spoiled_result_ids, n_spoiled_results)
+
 def abort(error_dict):
     print('Unable to finish verification.')
     summarize_errors(error_dict)
@@ -272,60 +304,72 @@ def verify_election(public_dir):
 
     # custom dict to build up a report
     # TODO codify it as a class?
-    errors = {
-        'manifest': {},
-        'ceremony': {},
-        'election_details': {},
-        'cast_ballots': {},
-        'spoiled_ballots': {},
-        'ballots_accounted_for': {},
-    }
+    errors = defaultdict(lambda: {})
 
     try:
         manifest  = from_public_record(public_dir, 'manifest')
     except Exception as e:
-        errors['manifest'] = str(e)
+        errors['manifest']['from_public_record'] = str(e)
         abort(errors)
 
     try:
         details = from_public_record(public_dir, 'ceremony_details')
     except Exception as e:
-        errors['ceremony'] = str(e)
+        errors['ceremony']['from_public_record'] = str(e)
         abort(errors)
 
     # TODO other 3_election things here too?
     try:
         joint_key = from_public_record(public_dir, 'joint_key')
     except Exception as e:
-        errors['election_details'] = str(e)
+        errors['election_details']['from_public_record'] = str(e)
         abort(errors)
+
+    pprint(errors)
 
     try:
         (_, _, context) = build_election(details, manifest, joint_key)
     except Exception as e:
-        errors['election_details'] = str(e)
+        errors['election_details']['build_election'] = str(e)
         abort(errors)
 
     try:
-        verify_ballots(public_dir, errors, manifest, context)
+        (spoiled_ids, n_spoiled) = verify_ballots(public_dir, errors, manifest, context)
         ballots_verified = True
     except:
         ballots_verified = False
 
-    # TODO spoiled ballot decryption
+    try:
+        guardian_pubkeys = load_guardian_pubkeys_dict(public_dir)
+    except Exception as e:
+        errors['guardian_pubkeys']['load_guardian_pubkeys'] = str(e)
+        abort(errors)
+
+    print()
+
+    pprint(errors)
+
+    # TODO this also goes under verify_ballots because it depends on those results
+    try:
+        (spoiled_result_ids, n_spoiled_results) = verify_spoiled_results(
+            public_dir, guardian_pubkeys, context
+        )
+        # TODO put this in the same section with the earlier "all accounted for" checks?
+        verify_predicate(
+            n_spoiled_results == n_spoiled,
+            f'  {n_spoiled_results} decrypted ballots = {n_spoiled} spoiled',
+            errors, 'spoiled_results'
+        )
+        spoiled_results_verified = True
+    except Exception as e:
+        errors['decryptions'] = str(e)
+        spoiled_results_verified = False
+
+    # TODO why is this suddenly wrong?
+    summarize_errors(errors)
+
     # TODO tally decryption
     # TODO aggregation
-
-# TODO pass cfg here
-def summarize_errors(errors):
-    errors = {k:v for (k,v) in errors.items() if len(v) > 0}
-    n_errors = sum(len(v) for v in errors.values())
-    if n_errors > 0:
-        print(f'ERROR Found {n_errors} irregularities...\n')
-        print_colorful_json_obj(errors)
-        print('The election should NOT be certified!')
-        # TODO exit 1 here?
-
 
 ### cli ###
 
