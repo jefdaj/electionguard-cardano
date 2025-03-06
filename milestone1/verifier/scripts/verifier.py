@@ -30,6 +30,7 @@ from electionguard.manifest import (
 from electionguard.type import GuardianId
 from electionguard.tally import PlaintextTally, CiphertextTally
 
+# TODO do anything with the electionguard internal logger here?
 
 @dataclass
 class Verification:
@@ -162,25 +163,42 @@ def VerifyCommand(
 
     print()
 
+    n_failed = 0
+
     print(f'verifying the ciphertext of the {n_cast} cast ballots:')
     for ballot in cast_ballots:
         print(f'  {ballot.object_id}...', end=' '),
-        result = verify_ballot(ballot, manifest, context)
-        if result.verified:
-            print('ok')
-        else:
-            raise Exception('ERROR {ballot.object_id} failed verification!')
+        try:
+            result = verify_ballot(ballot, manifest, context)
+            if result.verified:
+                print('ok')
+            else:
+                print(f'ERROR {ballot.object_id} failed verification!')
+                n_failed += 1
+        except:
+            print(f'ERROR {ballot.object_id} failed verification!')
+            n_failed += 1
 
     print()
 
     print(f'verifying the ciphertext of the {n_spoiled} spoiled ballots:')
     for ballot in spoiled_ballots:
         print(f'  {ballot.object_id}...', end=' '),
-        result = verify_ballot(ballot, manifest, context)
-        if result.verified:
-            print('ok')
-        else:
-            raise Exception('ERROR {ballot.object_id} failed verification!')
+        try:
+            result = verify_ballot(ballot, manifest, context)
+            if result.verified:
+                print('ok')
+            else:
+                print(f'ERROR {ballot.object_id} failed verification!')
+                n_failed += 1
+        except:
+            print(f'ERROR {ballot.object_id} failed verification!')
+            n_failed += 1
+
+    if n_failed > 0:
+        print()
+        print(f'ERROR {n_failed} ballots failed verification')
+        print('election should NOT be certified')
 
     # TODO spoiled ballot decryption
     # TODO tally decryption
