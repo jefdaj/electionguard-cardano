@@ -203,6 +203,14 @@ def verify_load_ballots(public_dir, load_fn, error_dict, error_name):
         error_dict[error_name]['verify_load_ballots'] = str(e)
         raise
 
+def verify_predicate(predicate, header_msg, error_dict, error_name):
+    try:
+        print(header_msg + '...', end=' ')
+        assert predicate
+        print('ok')
+    except Exception as e:
+        print('FAIL')
+        error_dict[error_name] = str(e)
 
 # TODO pass cfg here
 def verify_election(public_dir):
@@ -212,18 +220,20 @@ def verify_election(public_dir):
     errors = {
         'cast_ballots': {},
         'spoiled_ballots': {},
+        'ballots_accounted_for': {},
     }
 
     all_ballots_loaded = True
     finished_verifying = True
 
+    # TODO handle these not existing too
     manifest  = from_public_record(public_dir, 'manifest')
     details   = from_public_record(public_dir, 'ceremony_details')
     joint_key = from_public_record(public_dir, 'joint_key')
     (_, _, context) = build_election(details, manifest, joint_key)
 
 
-    # TODO capture error in case a ballot is missing here and add to errors
+    # TODO handle these not existing too? might be silent unless they're all missing
     submitted_ballots = load_submitted_ballots(public_dir)
     submitted_ballot_ids = set(b.object_id for b in submitted_ballots)
     n_submitted = len(submitted_ballot_ids)
@@ -265,13 +275,17 @@ def verify_election(public_dir):
     else:
         print('verifying that all ballots are accounted for:')
 
-        print(f'  {n_cast} ballots cast + {n_spoiled} spoiled = {n_submitted} submitted...', end=' ')
-        assert n_cast + n_spoiled == n_submitted
-        print('ok')
+        verify_predicate(
+            n_cast + n_spoiled == n_submitted,
+            f'  {n_cast} ballots cast + {n_spoiled} spoiled = {n_submitted} submitted',
+            errors, 'ballots_accounted_for'
+        )
 
-        print('  set(cast IDs) + set(spoiled IDs) = set(submitted IDs)...', end=' ')
-        assert cast_ballot_ids.union(spoiled_ballot_ids) == submitted_ballot_ids
-        print('ok')
+        verify_predicate(
+            cast_ballot_ids.union(spoiled_ballot_ids) == submitted_ballot_ids,
+            '  set(cast IDs) + set(spoiled IDs) = set(submitted IDs)',
+            errors, 'ballots_accounted_for'
+        )
 
     # TODO spoiled ballot decryption
     # TODO tally decryption
