@@ -37,6 +37,8 @@ import logging
 import sys
 from io import StringIO
 
+
+# TODO move to utils
 # based on:
 # docs.python.org/3/howto/logging-cookbook.html#using-a-context-manager-for-selective-logging
 # gist.github.com/66Ton99/b13c2867adef506554a4
@@ -161,6 +163,8 @@ def verify_aggregation(
 
 ### cli ###
 
+# TODO move to utils
+# TODO unify with the one in local-election scripts
 def print_colorful_json_obj(obj):
 	# based on https://stackoverflow.com/a/32166163
 	formatted_json = json.dumps(obj, indent=2)
