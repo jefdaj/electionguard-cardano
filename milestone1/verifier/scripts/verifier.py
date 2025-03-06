@@ -212,26 +212,8 @@ def verify_predicate(predicate, header_msg, error_dict, error_name):
         print('FAIL')
         error_dict[error_name] = str(e)
 
-# TODO pass cfg here
-def verify_election(public_dir):
-
-    # custom dict to build up a report
-    # TODO codify it as a class?
-    errors = {
-        'cast_ballots': {},
-        'spoiled_ballots': {},
-        'ballots_accounted_for': {},
-    }
-
+def verify_ballots(public_dir, errors, manifest, context):
     all_ballots_loaded = True
-    finished_verifying = True
-
-    # TODO handle these not existing too
-    manifest  = from_public_record(public_dir, 'manifest')
-    details   = from_public_record(public_dir, 'ceremony_details')
-    joint_key = from_public_record(public_dir, 'joint_key')
-    (_, _, context) = build_election(details, manifest, joint_key)
-
 
     # TODO handle these not existing too? might be silent unless they're all missing
     submitted_ballots = load_submitted_ballots(public_dir)
@@ -242,7 +224,6 @@ def verify_election(public_dir):
         (cast_ballots, cast_ballot_ids, n_cast) = verify_load_ballots(
             public_dir, load_cast_ballots, errors, 'cast_ballots'
         )
-        cast_ballots_loaded = True
         errors['cast_ballots'] = verify_ciphertext_ballots(
             cast_ballots,
             f'verifying the ciphertext of the {n_cast} cast ballots:',
@@ -250,27 +231,21 @@ def verify_election(public_dir):
         )
     except:
         all_ballots_loaded = False
-        finished_verifying = False
 
     try:
         (spoiled_ballots, spoiled_ballot_ids, n_spoiled) = verify_load_ballots(
             public_dir, load_spoiled_ballots, errors, 'spoiled_ballots'
         )
-        spoiled_ballots_loaded = True
         errors['spoiled_ballots'] = verify_ciphertext_ballots(
             spoiled_ballots,
             f'verifying the ciphertext of the {n_spoiled} spoiled ballots:',
             manifest, context
         )
-
     except:
         all_ballots_loaded = False
-        finished_verifying = False
 
     if not all_ballots_loaded:
-        print('Had to abort the verification.')
-        summarize_errors(errors)
-        return
+        abort(errors)
 
     else:
         print('verifying that all ballots are accounted for:')
@@ -286,6 +261,56 @@ def verify_election(public_dir):
             '  set(cast IDs) + set(spoiled IDs) = set(submitted IDs)',
             errors, 'ballots_accounted_for'
         )
+
+def abort(error_dict):
+    print('Unable to finish verification.')
+    summarize_errors(error_dict)
+    raise SystemExit(1)
+
+# TODO pass cfg here
+def verify_election(public_dir):
+
+    # custom dict to build up a report
+    # TODO codify it as a class?
+    errors = {
+        'manifest': {},
+        'ceremony': {},
+        'election_details': {},
+        'cast_ballots': {},
+        'spoiled_ballots': {},
+        'ballots_accounted_for': {},
+    }
+
+    try:
+        manifest  = from_public_record(public_dir, 'manifest')
+    except Exception as e:
+        errors['manifest'] = str(e)
+        abort(errors)
+
+    try:
+        details = from_public_record(public_dir, 'ceremony_details')
+    except Exception as e:
+        errors['ceremony'] = str(e)
+        abort(errors)
+
+    # TODO other 3_election things here too?
+    try:
+        joint_key = from_public_record(public_dir, 'joint_key')
+    except Exception as e:
+        errors['election_details'] = str(e)
+        abort(errors)
+
+    try:
+        (_, _, context) = build_election(details, manifest, joint_key)
+    except Exception as e:
+        errors['election_details'] = str(e)
+        abort(errors)
+
+    try:
+        verify_ballots(public_dir, errors, manifest, context)
+        ballots_verified = True
+    except:
+        ballots_verified = False
 
     # TODO spoiled ballot decryption
     # TODO tally decryption
