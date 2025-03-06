@@ -30,6 +30,8 @@ from electionguard.manifest import (
 from electionguard.type import GuardianId
 from electionguard.tally import PlaintextTally, CiphertextTally
 
+import json
+from pygments import highlight, lexers, formatters
 
 import logging
 import sys
@@ -159,9 +161,19 @@ def verify_aggregation(
 
 ### cli ###
 
+def print_colorful_json_obj(obj):
+	# based on https://stackoverflow.com/a/32166163
+	formatted_json = json.dumps(obj, indent=2)
+	colorful_json = highlight(
+		formatted_json,
+		lexers.JsonLexer(),
+		formatters.TerminalFormatter()
+	)
+	print(colorful_json)
+
 def verify_ciphertext_ballots(ballots, header_msg, manifest, context) -> int:
     print(header_msg)
-    n_irregularities = 0
+    irregularities = {}
     for ballot in ballots:
         print(f'  {ballot.object_id}...', end=' '),
         with CaptureLog(level=logging.DEBUG) as log:
@@ -171,12 +183,9 @@ def verify_ciphertext_ballots(ballots, header_msg, manifest, context) -> int:
             else:
                 # print(f'ERROR {ballot.object_id} failed verification!')
                 print('FAIL')
-                n_irregularities += 1
-            log_str = log.getvalue().strip()
-            if len(log_str) > 0:
-                print('log_str:', log_str)
+                irregularities[ballot.object_id] = log.getvalue().strip()
     print()
-    return n_irregularities
+    return irregularities
 
 
 @click.command("verify")
@@ -227,15 +236,15 @@ def VerifyCommand(
 
     print()
 
-    n_irregularities = 0
+    irregularities = {}
 
-    n_irregularities += verify_ciphertext_ballots(
+    irregularities['cast_ballots'] = verify_ciphertext_ballots(
         cast_ballots,
         f'verifying the ciphertext of the {n_cast} cast ballots:',
         manifest, context
     )
 
-    n_irregularities += verify_ciphertext_ballots(
+    irregularities['spoiled_ballots'] = verify_ciphertext_ballots(
         spoiled_ballots,
         f'verifying the ciphertext of the {n_spoiled} spoiled ballots:',
         manifest, context
@@ -245,10 +254,12 @@ def VerifyCommand(
     # TODO tally decryption
     # TODO aggregation
 
+    irregularities = {k:v for (k,v) in irregularities.items() if len(v) > 0}
+    n_irregularities = sum(len(v) for v in irregularities.values())
     if n_irregularities > 0:
-        print()
-        print(f'ERROR found {n_irregularities} irregulariries')
-        print('election should NOT be certified')
+        print(f'ERROR Found {n_irregularities} irregularities...\n')
+        print_colorful_json_obj(irregularities)
+        print('The election should NOT be certified!')
         # TODO exit 1 here?
 
 
