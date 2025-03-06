@@ -173,6 +173,16 @@ def verify_aggregation(
 
 ### my verify code ###
 
+def verify_load_ballots(public_dir, load_fn, error_dict, error_name):
+    try:
+        ballots = load_fn(public_dir)
+        ballot_ids = set(b.object_id for b in ballots)
+        n_loaded = len(ballot_ids)
+        return (ballots, ballot_ids, n_loaded)
+    except FileNotFoundError as e:
+        error_dict[error_name]['verify_load_ballots'] = str(e)
+        raise
+
 def verify_ciphertext_ballots(ballots, header_msg, manifest, context) -> int:
     print(header_msg)
     errors = {}
@@ -192,16 +202,6 @@ def verify_ciphertext_ballots(ballots, header_msg, manifest, context) -> int:
                 errors[ballot.object_id] = ' '.join(msgs)
     print()
     return errors
-
-def verify_load_ballots(public_dir, load_fn, error_dict, error_name):
-    try:
-        ballots = load_fn(public_dir)
-        ballot_ids = set(b.object_id for b in ballots)
-        n_loaded = len(ballot_ids)
-        return (ballots, ballot_ids, n_loaded)
-    except FileNotFoundError as e:
-        error_dict[error_name]['verify_load_ballots'] = str(e)
-        raise
 
 def verify_predicate(predicate, header_msg, error_dict, error_name):
     try:
