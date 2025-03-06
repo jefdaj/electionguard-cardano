@@ -183,7 +183,11 @@ def verify_ciphertext_ballots(ballots, header_msg, manifest, context) -> int:
             else:
                 # print(f'ERROR {ballot.object_id} failed verification!')
                 print('FAIL')
-                irregularities[ballot.object_id] = log.getvalue().strip()
+                msgs = []
+                if result.message is not None:
+                    msgs.append(result.message)
+                msgs.append(log.getvalue().strip())
+                irregularities[ballot.object_id] = ' '.join(msgs)
     print()
     return irregularities
 
