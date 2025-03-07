@@ -410,6 +410,8 @@ def SummaryCommand(
     Roughly based on print_results_step in the electionguard_cli.
     """
 
+    # TODO import the version from the verifier here instead once that exists
+
     csb = CliStepBase() # prints in electionguard_cli style
 
     manifest        = from_public_record(public_dir, 'manifest')

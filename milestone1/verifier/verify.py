@@ -79,12 +79,16 @@ def teardown(cfg):
 
 ### verify ###
 
+# TODO get this to work with admin and multiple verifiers
 def verify(cfg):
+    verifier_n  = 1
+    verifier_id = f'verifier{verifier_n}'
     run_in_container(
-        cfg, "verifier", 1,
+        cfg, "verifier", verifier_n,
         [
             "verify",
             "--public-dir", cfg.arion.bind_mounts.public,
+            "--verifier-id", verifier_id, # can be a verifier or admin
         ]
     )
 

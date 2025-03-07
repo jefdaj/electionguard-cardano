@@ -141,7 +141,7 @@ PUBLIC_RECORDS = {
     'summary': (
         dict,
         '.',
-        '3_results/3_summary'
+        '4_verify/{verifier_id}'
     ),
 }
 

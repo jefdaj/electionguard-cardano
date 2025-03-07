@@ -40,6 +40,8 @@ import logging
 import sys
 from io import StringIO
 
+from electionguard_cli.cli_steps.cli_step_base import CliStepBase
+
 
 ### utils ###
 
@@ -94,7 +96,8 @@ def print_colorful_json_obj(obj):
     print(colorful_json)
 
 # TODO pass cfg here
-def summarize_errors(errors):
+def summarize_errors(errors) -> int:
+    # prints and then returns a summary dict + n_errors
     errors = {k:v for (k,v) in errors.items() if len(v) > 0}
     n_errors = sum(
         1 if isinstance(v, str) else len(v)
@@ -103,10 +106,12 @@ def summarize_errors(errors):
     if n_errors > 0:
         print(f'Found {n_errors} irregularities...\n')
         print_colorful_json_obj(errors)
-        print('The election should NOT be certified! ⛔')
+        print('The election could NOT be verfified! ⛔')
     else:
         print('No irregularities found.')
-        print('The election can be certified! 🎉')
+        print('The election has been verfified! 🎉')
+        print()
+    return (errors, n_errors)
 
 def abort(error_dict):
     print('Unable to finish verification.')
@@ -156,6 +161,11 @@ def verify_predicate(predicate, header_msg, error_dict, error_name):
         error_dict[error_name] = str(e)
 
 def verify_ballots(public_dir, errors, manifest, context):
+    verify_header = 'Verifying the election'
+    csb = CliStepBase() # prints in electionguard_cli style
+    csb.print_header(verify_header)
+    print()
+
     all_ballots_loaded = True
 
     # TODO handle these not existing too? might be silent unless they're all missing
@@ -280,7 +290,7 @@ def verify_tally(public_dir, errors, manifest, cast_ballots, guardian_pubkeys, c
         tally_verified = False
 
 # TODO pass cfg here
-def verify_election(public_dir):
+def verify_election(public_dir, verifier_id):
 
     # custom dict to build up a report
     # TODO codify it as a class?
@@ -352,7 +362,88 @@ def verify_election(public_dir):
     verify_tally(public_dir, errors, manifest, cast_ballots, guardian_pubkeys, context)
 
     print()
-    summarize_errors(errors)
+
+    (errors, n_errors) = summarize_errors(errors)
+    summarize_results(public_dir, verifier_id, errors)
+
+
+### summarize ###
+
+# TODO include summarize_errors here if there are any
+# TODO make sure that happens even if any of the files fail to load
+# TODO move above the main verify_election function
+def summarize_results(
+    public_dir,
+    verifier_id,
+    errors
+):
+
+    # no particular format, except it must be json-serializable
+    summary = defaultdict(lambda: {})
+
+    csb = CliStepBase() # prints in electionguard_cli style
+
+    manifest        = from_public_record(public_dir, 'manifest')
+    tally_result    = from_public_record(public_dir, 'plaintext_tally')
+    spoiled_results = load_spoiled_results(public_dir)
+
+    selection_names = manifest.get_selection_names("en")
+    contest_names   = manifest.get_contest_names()
+
+    spoiled_header = 'Individual spoiled ballots'
+    csb.print_header(spoiled_header)
+    print()
+    spoiled_summaries = {}
+    for spoiled_result in spoiled_results:
+        ballot_id = spoiled_result.object_id
+        short_id  = ballot_id[ballot_id.find('-')+1:]
+        print(short_id)
+        ballot_summary = []
+        for contest in spoiled_result.contests.values():
+            question = contest_names.get(contest.object_id)
+            selected = [
+                selection_names[selection.object_id]
+                for selection in contest.selections.values()
+                if selection.tally > 0
+            ]
+            assert len(selected) < 2 # for a one of m contest
+            try:
+                answer = selected[0]
+            except IndexError:
+                answer = 'No answer' # TODO is this allowed?
+            print(f'  {question} {answer}')
+            contest_summary = {question: answer}
+            ballot_summary.append(contest_summary)
+        spoiled_summaries[short_id] = ballot_summary
+        print()
+
+    tally_header = "Tally of all cast ballots"
+    csb.print_header(tally_header)
+    tally_summary = []
+    contest_summaries = []
+    for tally_contest in tally_result.contests.values():
+        contest_name = contest_names.get(tally_contest.object_id)
+        contest_summary = {
+            'question': contest_name,
+            'votes': {},
+        }
+        csb.print_section(contest_name)
+        values = list(tally_contest.selections.values())
+        values.sort(key=lambda v: v.tally, reverse=True)
+        for selection in values:
+            name = selection_names[selection.object_id]
+            csb.print_value(f"  {name}", selection.tally)
+            contest_summary['votes'][name] = selection.tally
+        tally_summary.append(contest_summary)
+
+    # save summary json
+    # no particular format, except it must be a json-serializable dict
+    summary = {
+        tally_header  : tally_summary,
+        spoiled_header: spoiled_summaries,
+    }
+    to_public_record(public_dir, 'summary', summary, verifier_id=verifier_id)
+
 
 
 ### cli ###
@@ -365,13 +456,20 @@ def verify_election(public_dir):
     + "This folder should be protected. Existing files will be overwritten.",
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
+@click.option(
+    "--verifier-id",
+    prompt="Unique ID for this verifier",
+    help="Unique ID for this  in the ceremony",
+    type=click.STRING,
+)
 def VerifyCommand(
-    public_dir: str
+    public_dir: str,
+    verifier_id: str,
 ) -> None:
     """Verify all public election artifacts.
     """
     # TODO parse and pass cfg here
-    verify_election(public_dir)
+    verify_election(public_dir, verifier_id)
 
 
 @click.group

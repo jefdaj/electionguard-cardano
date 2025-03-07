@@ -155,14 +155,14 @@ def round3(guardian_id, sequence_order, public_dir, private_dir):
 )
 @click.option(
     "--guardian-id",
-    prompt="Unique ID for this ",
-    help="Unique ID for this  in the ceremony",
+    prompt="Unique ID for this guardian",
+    help="Unique ID for this guardian in the ceremony",
     type=click.STRING,
 )
 @click.option(
     "--guardian-sequence-order",
-    prompt="Sequence order for this ",
-    help="Sequence order for this  in the ceremony",
+    prompt="Sequence order for this guardian",
+    help="Sequence order for this guardian in the ceremony",
     type=click.INT,
 )
 @click.option(
