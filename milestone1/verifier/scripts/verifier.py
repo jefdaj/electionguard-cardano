@@ -31,6 +31,8 @@ from electionguard.manifest import (
 from electionguard.type import GuardianId
 from electionguard.tally import PlaintextTally, CiphertextTally
 
+from electionguard_verify import *
+
 import json
 from pygments import highlight, lexers, formatters
 
@@ -106,89 +108,13 @@ def summarize_errors(errors):
         print('No irregularities found.')
         print('The election can be certified! 🎉')
 
+def abort(error_dict):
+    print('Unable to finish verification.')
+    summarize_errors(error_dict)
+    raise SystemExit(1)
 
 
-### from electionguard_verify src ###
-
-@dataclass
-class Verification:
-    """
-    Representation of a verification result with an optional message
-    """
-
-    verified: bool
-    """Verification successful?"""
-    message: Optional[str]
-
-def verify_ballot(
-    ballot: CiphertextBallot,
-    manifest: Manifest,
-    context: CiphertextElectionContext,
-) -> Verification:
-    """
-    Method to verify the validity of a ballot
-    """
-
-    if not ballot.is_valid_encryption(
-        manifest.crypto_hash(),
-        context.elgamal_public_key,
-        context.crypto_extended_base_hash,
-    ):
-        return Verification(
-            False,
-            message=f"verify_ballot: mismatching ballot encryption {ballot.object_id}",
-        )
-
-    return Verification(True, message=None)
-
-def verify_decryption(
-    tally: PlaintextTally,
-    election_public_keys: Dict[GuardianId, ElectionPublicKey],
-    context: CiphertextElectionContext,
-) -> Verification:
-    for _, contest in tally.contests.items():
-        for selection_id, selection in contest.selections.items():
-            for share in selection.shares:
-                election_public_key = election_public_keys.get(share.guardian_id).key
-                if not share.proof.is_valid(
-                    selection.message,
-                    election_public_key,
-                    share.share,
-                    context.crypto_extended_base_hash,
-                ):
-                    return Verification(
-                        False,
-                        message=f"verify_decryption: {selection_id} selection is not valid",
-                    )
-
-    return Verification(True, message=None)
-
-def verify_aggregation(
-    submitted_ballots: List[SubmittedBallot],
-    tally: CiphertextTally,
-    manifest: Manifest,
-    context: CiphertextElectionContext,
-) -> Verification:
-    new_tally = CiphertextTally("verify", InternalManifest(manifest), context)
-
-    for ballot in submitted_ballots:
-        new_tally.append(ballot, True)
-
-    if (
-        isinstance(tally, CiphertextTally)
-        and new_tally.cast_ballot_ids == tally.cast_ballot_ids
-        and new_tally.spoiled_ballot_ids == tally.spoiled_ballot_ids
-        and new_tally.contests == tally.contests
-    ):
-        return Verification(True, message=None)
-
-    return Verification(
-        False,
-        message="verify_aggregation: aggregated value of ballots doesn't matches with tally",
-    )
-
-
-### my verify code ###
+### verify ###
 
 def verify_load_ballots(public_dir, load_fn, error_dict, error_name):
     try:
@@ -309,11 +235,6 @@ def verify_spoiled_results(public_dir, guardian_pubkeys, context):
     n_spoiled_results = len(spoiled_result_ids)
     return (spoiled_result_ids, n_spoiled_results)
 
-def abort(error_dict):
-    print('Unable to finish verification.')
-    summarize_errors(error_dict)
-    raise SystemExit(1)
-
 def verify_tally(public_dir, errors, manifest, cast_ballots, guardian_pubkeys, context):
     print('verifying the final tally:')
 
@@ -367,14 +288,11 @@ def verify_election(public_dir):
         errors['ceremony']['from_public_record'] = str(e)
         abort(errors)
 
-    # TODO other 3_election things here too?
     try:
         joint_key = from_public_record(public_dir, 'joint_key')
     except Exception as e:
         errors['election_details']['from_public_record'] = str(e)
         abort(errors)
-
-    # pprint(errors)
 
     try:
         (_, _, context) = build_election(details, manifest, joint_key)
@@ -425,8 +343,6 @@ def verify_election(public_dir):
 
     print()
     summarize_errors(errors)
-
-    # TODO aggregation
 
 
 ### cli ###
