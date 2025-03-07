@@ -8,7 +8,8 @@ TODO:
 - [x] Monkey patch the electionguard LOG to throw exceptions during verification
       (because throwing them all the time messes with the test suite)
 - [x] Make a JSON summary of the verification as well as printing
-- [ ] Have this script create the summary json rather than the admin?
+- [ ] Have this script create the summary json rather than the admin
+- [ ] Clean up the code! It's very messy so far
 
 Example outputs so far....
 
