@@ -94,13 +94,17 @@ def print_colorful_json_obj(obj):
 # TODO pass cfg here
 def summarize_errors(errors):
     errors = {k:v for (k,v) in errors.items() if len(v) > 0}
-    n_errors = sum(len(v) for v in errors.values())
+    n_errors = sum(
+        1 if isinstance(v, str) else len(v)
+        for v in errors.values()
+    )
     if n_errors > 0:
-        print(f'ERROR Found {n_errors} irregularities...\n')
+        print(f'Found {n_errors} irregularities...\n')
         print_colorful_json_obj(errors)
         print('The election should NOT be certified!')
     else:
-        print('No errors found. The election can be certified')
+        print('No irregularities found.')
+        print('The election can be certified.')
 
 
 
@@ -234,33 +238,44 @@ def verify_ballots(public_dir, errors, manifest, context):
     n_submitted = len(submitted_ballot_ids)
 
     try:
+        # if this fails we just get one verify_load_ballots error
+        # (No such file or directory)
+        print('loading cast ballots...', end=' ')
         (cast_ballots, cast_ballot_ids, n_cast) = verify_load_ballots(
             public_dir, load_cast_ballots, errors, 'cast_ballots'
         )
+        print('ok')
+        # if this fails we get a dict of ballot ids to irregularities
         errors['cast_ballots'] = verify_ciphertext_ballots(
             cast_ballots,
             f'verifying the ciphertext of the {n_cast} cast ballots:',
             manifest, context
         )
     except:
+        print('FAIL')
         all_ballots_loaded = False
 
     try:
+        print('loading spoiled ballots...', end=' ')
         (spoiled_ballots, spoiled_ballot_ids, n_spoiled) = verify_load_ballots(
             public_dir, load_spoiled_ballots, errors, 'spoiled_ballots'
         )
+        print('ok')
         errors['spoiled_ballots'] = verify_ciphertext_ballots(
             spoiled_ballots,
             f'verifying the ciphertext of the {n_spoiled} spoiled ballots:',
             manifest, context
         )
     except:
+        print('FAIL')
         all_ballots_loaded = False
 
     if not all_ballots_loaded:
         abort(errors)
+        print('still going after abort?')
 
     else:
+        # TODO move this to the end, after spoiled ballot decryptions?
         print('verifying that all ballots are accounted for:')
 
         verify_predicate(
@@ -325,7 +340,7 @@ def verify_election(public_dir):
         errors['election_details']['from_public_record'] = str(e)
         abort(errors)
 
-    pprint(errors)
+    # pprint(errors)
 
     try:
         (_, _, context) = build_election(details, manifest, joint_key)
@@ -336,18 +351,23 @@ def verify_election(public_dir):
     try:
         (spoiled_ids, n_spoiled) = verify_ballots(public_dir, errors, manifest, context)
         ballots_verified = True
-    except:
+    except SystemExit:
+        raise
+    except Exception as e:
+        print(str(e))
         ballots_verified = False
 
     try:
         guardian_pubkeys = load_guardian_pubkeys_dict(public_dir)
+    except SystemExit:
+        raise
     except Exception as e:
         errors['guardian_pubkeys']['load_guardian_pubkeys'] = str(e)
         abort(errors)
 
     print()
 
-    pprint(errors)
+    # pprint(errors)
 
     # TODO this also goes under verify_ballots because it depends on those results
     try:
@@ -365,7 +385,7 @@ def verify_election(public_dir):
         errors['decryptions'] = str(e)
         spoiled_results_verified = False
 
-    # TODO why is this suddenly wrong?
+    print()
     summarize_errors(errors)
 
     # TODO tally decryption
