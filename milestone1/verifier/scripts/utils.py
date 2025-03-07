@@ -216,7 +216,11 @@ def load_spoiled_ballots(public_dir: str) -> List[SubmittedBallot]:
 
 def load_spoiled_results(public_dir: str) -> List[PlaintextTally]:
     spoiled_dir = join(public_dir, PUBLIC_RECORDS['spoiled_result'][1])
-    spoiled_ids = [splitext(n)[0] for n in listdir(spoiled_dir)]
+    spoiled_ids = [
+        splitext(n)[0]
+        for n in listdir(spoiled_dir)
+        if n.startswith('ballot-')
+    ]
     spoiled_results = [
         from_public_record(public_dir, 'spoiled_result', ballot_id=i)
         for i in spoiled_ids

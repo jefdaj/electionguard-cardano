@@ -219,17 +219,27 @@ def verify_ballots(public_dir, errors, manifest, context):
         # for later comparisons
         return (spoiled_ballot_ids, n_spoiled, cast_ballots)
 
-def verify_spoiled_results(public_dir, guardian_pubkeys, context):
+def verify_spoiled_results(public_dir, errors, guardian_pubkeys, context):
     # TODO assert that the len here matches spoiled_ballots
     print('verifying spoiled ballot decryptions:')
     spoiled_results = load_spoiled_results(public_dir)
     for spoiled_result in spoiled_results:
         print(f'  {spoiled_result.object_id}', end=' ')
         try:
-            verify_decryption(spoiled_result, guardian_pubkeys, context)
-            print('✅')
-        except:
-            print('ERROR')
+            with CaptureLog(level=logging.DEBUG) as log:
+                result = verify_decryption(spoiled_result, guardian_pubkeys, context)
+                if result.verified:
+                    print('✅')
+                else:
+                    print('❌')
+                    msgs = []
+                    if result.message is not None:
+                        msgs.append(result.message)
+                    msgs.append(log.getvalue().strip())
+                    errors[spoiled_result.object_id] = ' '.join(msgs)
+        except Exception as e:
+            print('❌')
+            errors[spoiled_result.object_id] = str(e)
             raise
     spoiled_result_ids = set(r.object_id for r in spoiled_results)
     n_spoiled_results = len(spoiled_result_ids)
@@ -324,7 +334,7 @@ def verify_election(public_dir):
     # TODO this also goes under verify_ballots because it depends on those results
     try:
         (spoiled_result_ids, n_spoiled_results) = verify_spoiled_results(
-            public_dir, guardian_pubkeys, context
+            public_dir, errors['spoiled_results'], guardian_pubkeys, context
         )
         # TODO put this in the same section with the earlier "all accounted for" checks?
         verify_predicate(
