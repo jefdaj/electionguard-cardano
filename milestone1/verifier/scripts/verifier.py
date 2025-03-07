@@ -291,7 +291,7 @@ def verify_ballots(public_dir, errors, manifest, context):
         )
 
         # for later comparisons
-        return (spoiled_ballot_ids, n_spoiled)
+        return (spoiled_ballot_ids, n_spoiled, cast_ballots)
 
 def verify_spoiled_results(public_dir, guardian_pubkeys, context):
     # TODO assert that the len here matches spoiled_ballots
@@ -313,6 +313,40 @@ def abort(error_dict):
     print('Unable to finish verification.')
     summarize_errors(error_dict)
     raise SystemExit(1)
+
+def verify_tally(public_dir, errors, manifest, cast_ballots, guardian_pubkeys, context):
+    print('verifying the final tally:')
+
+    try:
+        # TODO rename tally_result? final_tally?
+        print('  loading tally...', end=' ')
+        plaintext_tally = from_public_record(public_dir, 'plaintext_tally')
+        print('ok')
+    except Exception as e:
+        print('FAIL')
+        errors['final_tally'] = str(e)
+        tally_verified = False
+
+    try:
+        n_cast = len(cast_ballots)
+        print(f'  verifying aggregation of {n_cast} cast ballots into tally...', end=' ')
+        verify_aggregation(cast_ballots, plaintext_tally, manifest, context)
+        print('ok')
+    except Exception as e:
+        print('FAIL')
+        errors['final_tally'] = str(e)
+        tally_verified = False
+
+    try:
+        print('  verifying tally decryption...', end=' ')
+        verify_decryption(plaintext_tally, guardian_pubkeys, context)
+        print('ok')
+        tally_verified = True
+        # TODO produce 8_summary.json and print here
+    except Exception as e:
+        print('FAIL')
+        errors['final_tally'] = str(e)
+        tally_verified = False
 
 # TODO pass cfg here
 def verify_election(public_dir):
@@ -349,7 +383,9 @@ def verify_election(public_dir):
         abort(errors)
 
     try:
-        (spoiled_ids, n_spoiled) = verify_ballots(public_dir, errors, manifest, context)
+        (spoiled_ids, n_spoiled, cast_ballots) = verify_ballots(
+            public_dir, errors, manifest, context
+        )
         ballots_verified = True
     except SystemExit:
         raise
@@ -385,24 +421,13 @@ def verify_election(public_dir):
 
     print()
 
-    try:
-        # TODO rename tally_result?
-        print('loading plaintext tally...', end=' ')
-        plaintext_tally = from_public_record(public_dir, 'plaintext_tally')
-        print('ok')
-        print('verifying plaintext tally...', end=' ')
-        verify_decryption(plaintext_tally, guardian_pubkeys, context)
-        print('ok')
-        tally_verified = True
-    except Exception as e:
-        print('FAIL')
-        errors['plaintext_tally'] = str(e)
-        tally_verified = False
+    verify_tally(public_dir, errors, manifest, cast_ballots, guardian_pubkeys, context)
 
     print()
     summarize_errors(errors)
 
     # TODO aggregation
+
 
 ### cli ###
 
