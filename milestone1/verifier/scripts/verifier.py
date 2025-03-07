@@ -367,8 +367,6 @@ def verify_election(public_dir):
 
     print()
 
-    # pprint(errors)
-
     # TODO this also goes under verify_ballots because it depends on those results
     try:
         (spoiled_result_ids, n_spoiled_results) = verify_spoiled_results(
@@ -382,13 +380,28 @@ def verify_election(public_dir):
         )
         spoiled_results_verified = True
     except Exception as e:
-        errors['decryptions'] = str(e)
+        errors['spoiled_results'] = str(e)
         spoiled_results_verified = False
+
+    print()
+
+    try:
+        # TODO rename tally_result?
+        print('loading plaintext tally...', end=' ')
+        plaintext_tally = from_public_record(public_dir, 'plaintext_tally')
+        print('ok')
+        print('verifying plaintext tally...', end=' ')
+        verify_decryption(plaintext_tally, guardian_pubkeys, context)
+        print('ok')
+        tally_verified = True
+    except Exception as e:
+        print('FAIL')
+        errors['plaintext_tally'] = str(e)
+        tally_verified = False
 
     print()
     summarize_errors(errors)
 
-    # TODO tally decryption
     # TODO aggregation
 
 ### cli ###

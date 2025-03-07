@@ -127,6 +127,7 @@ PUBLIC_RECORDS = {
         '3_results/2_decrypt/1_shares/2_spoiled',
         '{spoiled_id}_{guardian_id}'
     ),
+    # TODO rename tally_result?
     'plaintext_tally': (
         PlaintextTally,
         '3_results/2_decrypt/2_combined',
