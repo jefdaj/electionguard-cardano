@@ -140,8 +140,8 @@ PUBLIC_RECORDS = {
     ),
     'summary': (
         dict,
-        '.',
-        '4_verify/{verifier_id}'
+        '4_verify',
+        '{verifier_id}'
     ),
 }
 

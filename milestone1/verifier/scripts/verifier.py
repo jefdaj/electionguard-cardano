@@ -161,7 +161,7 @@ def verify_predicate(predicate, header_msg, error_dict, error_name):
         error_dict[error_name] = str(e)
 
 def verify_ballots(public_dir, errors, manifest, context):
-    verify_header = 'Verifying the election'
+    verify_header = 'Verification steps'
     csb = CliStepBase() # prints in electionguard_cli style
     csb.print_header(verify_header)
     print()
@@ -364,7 +364,7 @@ def verify_election(public_dir, verifier_id):
     print()
 
     (errors, n_errors) = summarize_errors(errors)
-    summarize_results(public_dir, verifier_id, errors)
+    summarize_results(public_dir, verifier_id, errors, n_errors)
 
 
 ### summarize ###
@@ -375,7 +375,8 @@ def verify_election(public_dir, verifier_id):
 def summarize_results(
     public_dir,
     verifier_id,
-    errors
+    errors,
+    n_errors,
 ):
 
     # no particular format, except it must be json-serializable
@@ -439,10 +440,13 @@ def summarize_results(
     # save summary json
     # no particular format, except it must be a json-serializable dict
     summary = {
+        'Verified': n_errors == 0,
+        'Irregularities': errors,
         tally_header  : tally_summary,
         spoiled_header: spoiled_summaries,
     }
     to_public_record(public_dir, 'summary', summary, verifier_id=verifier_id)
+    print()
 
 
 
