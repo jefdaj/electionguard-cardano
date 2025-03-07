@@ -101,10 +101,10 @@ def summarize_errors(errors):
     if n_errors > 0:
         print(f'Found {n_errors} irregularities...\n')
         print_colorful_json_obj(errors)
-        print('The election should NOT be certified!')
+        print('The election should NOT be certified! ⛔')
     else:
         print('No irregularities found.')
-        print('The election can be certified.')
+        print('The election can be certified! 🎉')
 
 
 
@@ -204,14 +204,14 @@ def verify_ciphertext_ballots(ballots, header_msg, manifest, context) -> int:
     print(header_msg)
     errors = {}
     for ballot in ballots:
-        print(f'  {ballot.object_id}...', end=' '),
+        print(f'  {ballot.object_id}', end=' '),
         with CaptureLog(level=logging.DEBUG) as log:
             result = verify_ballot(ballot, manifest, context)
             if result.verified:
-                print('ok')
+                print('✅')
             else:
                 # print(f'ERROR {ballot.object_id} failed verification!')
-                print('FAIL')
+                print('❌')
                 msgs = []
                 if result.message is not None:
                     msgs.append(result.message)
@@ -222,11 +222,11 @@ def verify_ciphertext_ballots(ballots, header_msg, manifest, context) -> int:
 
 def verify_predicate(predicate, header_msg, error_dict, error_name):
     try:
-        print(header_msg + '...', end=' ')
+        print(header_msg + '', end=' ')
         assert predicate
-        print('ok')
+        print('✅')
     except Exception as e:
-        print('FAIL')
+        print('❌')
         error_dict[error_name] = str(e)
 
 def verify_ballots(public_dir, errors, manifest, context):
@@ -240,11 +240,11 @@ def verify_ballots(public_dir, errors, manifest, context):
     try:
         # if this fails we just get one verify_load_ballots error
         # (No such file or directory)
-        print('loading cast ballots...', end=' ')
+        print('loading cast ballots', end=' ')
         (cast_ballots, cast_ballot_ids, n_cast) = verify_load_ballots(
             public_dir, load_cast_ballots, errors, 'cast_ballots'
         )
-        print('ok')
+        print('✅')
         # if this fails we get a dict of ballot ids to irregularities
         errors['cast_ballots'] = verify_ciphertext_ballots(
             cast_ballots,
@@ -252,22 +252,22 @@ def verify_ballots(public_dir, errors, manifest, context):
             manifest, context
         )
     except:
-        print('FAIL')
+        print('❌')
         all_ballots_loaded = False
 
     try:
-        print('loading spoiled ballots...', end=' ')
+        print('loading spoiled ballots', end=' ')
         (spoiled_ballots, spoiled_ballot_ids, n_spoiled) = verify_load_ballots(
             public_dir, load_spoiled_ballots, errors, 'spoiled_ballots'
         )
-        print('ok')
+        print('✅')
         errors['spoiled_ballots'] = verify_ciphertext_ballots(
             spoiled_ballots,
             f'verifying the ciphertext of the {n_spoiled} spoiled ballots:',
             manifest, context
         )
     except:
-        print('FAIL')
+        print('❌')
         all_ballots_loaded = False
 
     if not all_ballots_loaded:
@@ -276,7 +276,7 @@ def verify_ballots(public_dir, errors, manifest, context):
 
     else:
         # TODO move this to the end, after spoiled ballot decryptions?
-        print('verifying that all ballots are accounted for:')
+        print('double checking that all ballots are accounted for:')
 
         verify_predicate(
             n_cast + n_spoiled == n_submitted,
@@ -298,10 +298,10 @@ def verify_spoiled_results(public_dir, guardian_pubkeys, context):
     print('verifying spoiled ballot decryptions:')
     spoiled_results = load_spoiled_results(public_dir)
     for spoiled_result in spoiled_results:
-        print(f'  {spoiled_result.object_id}...', end=' ')
+        print(f'  {spoiled_result.object_id}', end=' ')
         try:
             verify_decryption(spoiled_result, guardian_pubkeys, context)
-            print('ok')
+            print('✅')
         except:
             print('ERROR')
             raise
@@ -319,32 +319,32 @@ def verify_tally(public_dir, errors, manifest, cast_ballots, guardian_pubkeys, c
 
     try:
         # TODO rename tally_result? final_tally?
-        print('  loading tally...', end=' ')
+        print('  loading tally', end=' ')
         plaintext_tally = from_public_record(public_dir, 'plaintext_tally')
-        print('ok')
+        print('✅')
     except Exception as e:
-        print('FAIL')
+        print('❌')
         errors['final_tally'] = str(e)
         tally_verified = False
 
     try:
         n_cast = len(cast_ballots)
-        print(f'  verifying aggregation of {n_cast} cast ballots into tally...', end=' ')
+        print(f'  verifying aggregation of {n_cast} cast ballots into tally', end=' ')
         verify_aggregation(cast_ballots, plaintext_tally, manifest, context)
-        print('ok')
+        print('✅')
     except Exception as e:
-        print('FAIL')
+        print('❌')
         errors['final_tally'] = str(e)
         tally_verified = False
 
     try:
-        print('  verifying tally decryption...', end=' ')
+        print('  verifying tally decryption', end=' ')
         verify_decryption(plaintext_tally, guardian_pubkeys, context)
-        print('ok')
+        print('✅')
         tally_verified = True
         # TODO produce 8_summary.json and print here
     except Exception as e:
-        print('FAIL')
+        print('❌')
         errors['final_tally'] = str(e)
         tally_verified = False
 
