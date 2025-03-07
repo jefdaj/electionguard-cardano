@@ -176,7 +176,7 @@ def verify_ballots(public_dir, errors, manifest, context):
     try:
         # if this fails we just get one verify_load_ballots error
         # (No such file or directory)
-        print('loading cast ballots', end=' ')
+        print('loading cast ballots and checking their formats', end=' ')
         (cast_ballots, cast_ballot_ids, n_cast) = verify_load_ballots(
             public_dir, load_cast_ballots, errors, 'cast_ballots'
         )
@@ -192,7 +192,7 @@ def verify_ballots(public_dir, errors, manifest, context):
         all_ballots_loaded = False
 
     try:
-        print('loading spoiled ballots', end=' ')
+        print('loading spoiled ballots and checking their formats', end=' ')
         (spoiled_ballots, spoiled_ballot_ids, n_spoiled) = verify_load_ballots(
             public_dir, load_spoiled_ballots, errors, 'spoiled_ballots'
         )
@@ -231,8 +231,18 @@ def verify_ballots(public_dir, errors, manifest, context):
 
 def verify_spoiled_results(public_dir, errors, guardian_pubkeys, context):
     # TODO assert that the len here matches spoiled_ballots
+
+    print('loading decrypted ballots and checking their formats', end=' ')
+    # TODO verify_load_ballots here?
+    try:
+        spoiled_results = load_spoiled_results(public_dir)
+        print('✅')
+    except Exception as e:
+        print('❌')
+        errors['load_spoiled_results'] = str(e)
+        raise
+
     print('verifying spoiled ballot decryptions:')
-    spoiled_results = load_spoiled_results(public_dir)
     for spoiled_result in spoiled_results:
         print(f'  {spoiled_result.object_id}', end=' ')
         try:
@@ -260,7 +270,7 @@ def verify_tally(public_dir, errors, manifest, cast_ballots, guardian_pubkeys, c
 
     try:
         # TODO rename tally_result? final_tally?
-        print('  loading tally', end=' ')
+        print('  loading tally and checking its format', end=' ')
         plaintext_tally = from_public_record(public_dir, 'plaintext_tally')
         print('✅')
     except Exception as e:
@@ -342,6 +352,7 @@ def verify_election(public_dir, verifier_id):
     print()
 
     # TODO this also goes under verify_ballots because it depends on those results
+    # TODO why aren't these causing overall failures like they should?
     try:
         (spoiled_result_ids, n_spoiled_results) = verify_spoiled_results(
             public_dir, errors['spoiled_results'], guardian_pubkeys, context
@@ -352,10 +363,16 @@ def verify_election(public_dir, verifier_id):
             f'  {n_spoiled_results} decrypted ballots = {n_spoiled} spoiled',
             errors, 'spoiled_results'
         )
+        verify_predicate(
+            spoiled_result_ids == spoiled_ids,
+            '  set(decrypted IDs) + set(spoiled IDs)',
+            errors, 'ballots_accounted_for',
+        )
         spoiled_results_verified = True
     except Exception as e:
         errors['spoiled_results'] = str(e)
         spoiled_results_verified = False
+        raise
 
     print()
 
@@ -418,7 +435,7 @@ def summarize_results(
         spoiled_summaries[short_id] = ballot_summary
         print()
 
-    tally_header = "Tally of all cast ballots"
+    tally_header = "Final tally of cast ballots"
     csb.print_header(tally_header)
     tally_summary = []
     contest_summaries = []
