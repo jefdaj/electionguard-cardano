@@ -55,6 +55,7 @@ digraph verifier_deps {
   {manifest,context,all_spoiled_shares,ballot_spoiled} -> spoiled_result
 
   # overall election cerfification/verification
-  # TODO is this how people will see it? or will they care about each individual ballot?
-  plaintext_tally -> election
+  # TODO is this how people will see it? or will they only require the plaintext_tally?
+  # (either way, this is the way to get the code working first)
+  {all_ballots,all_spoiled_results,plaintext_tally} -> election
 }
