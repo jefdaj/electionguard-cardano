@@ -11,7 +11,8 @@ let
   mkContainer = mode: scripts_dir: public_dir: private_dir: n:
   {
 
-    service.image = "ghcr.io/jefdaj/electionguard-python:1.4.0";
+    # service.image = "ghcr.io/jefdaj/electionguard-python:1.4.0";
+    service.image = "3517e1782878"; # add-pygraphviz branch (unpublished so far)
 
     service.volumes = [
       "${scripts_dir}:/scripts/"

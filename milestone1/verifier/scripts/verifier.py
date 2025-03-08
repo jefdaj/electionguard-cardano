@@ -14,6 +14,7 @@ from utils import (
     # to_public_record,
     from_public_record,
 )
+import pygraphviz as pgv
 
 
 ### utils ###
@@ -154,13 +155,36 @@ def verify_summary(pubdir, errors, vdeps, kwargs={}) -> bool:
 
 ### main ###
 
+def list_deps(depgraph, artifact_name):
+    return depgraph.predecessors(artifact_name)
+
+def verify_artifact(depgraph, pubdir, errors, artifact_name):
+    dep_names = list_deps(depgraph, artifact_name)
+    vdeps = {}
+    for dep_name in dep_names:
+        verify_fn = locals()[f'verify_{dep_name}']
+        try:
+            vdeps[dep_name] = verify_artifact(depgraph, pubdir, errors, dep_name)
+        except Exception as e:
+            errors[dep_name] = str(e)
+            return
+
+def verify_deps(depgraph, artifact_name):
+    print(f'verify_deps {artifact_name}')
+    vdeps = {}
+    for dep_name in list_deps(depgraph, artifact_name):
+        verify_fn = locals()[f'verify_{dep_name}']
+        vdeps[dep_name] = verify_fn(pubdir, errors, )
+
 def main(pubdir, verifier_id):
+    depgraph = pgv.AGraph('/scripts/verifier_deps.dot') # TODO scripts var?
     errors = defaultdict(lambda: {})
-    print('verifying public election artifacts...\n')
-    verify_manifest(pubdir, errors, {}, {})
-    ceremony_details = verify_ceremony_details(pubdir, errors, {}, {})
-    vdeps = {'ceremony_details': ceremony_details}
-    verify_all_guardian_pubkeys(pubdir, errors, vdeps, {})
+    print(list_deps(depgraph, 'all_guardian_pubkeys'))
+    # print('verifying public election artifacts...\n')
+    # verify_manifest(pubdir, errors, {}, {})
+    # ceremony_details = verify_ceremony_details(pubdir, errors, {}, {})
+    # vdeps = {'ceremony_details': ceremony_details}
+    # verify_all_guardian_pubkeys(pubdir, errors, vdeps, {})
 
 
 ### cli ###
