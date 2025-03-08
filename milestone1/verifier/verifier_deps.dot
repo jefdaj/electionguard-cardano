@@ -21,7 +21,6 @@ digraph verifier_deps {
   plaintext_tally
   spoiled_result
   # summary # TODO remove once moved to verify step
-  election
 
   # "all" versions of things that are actually sets
   {ceremony_details,guardian_pubkey} -> all_guardian_pubkeys
@@ -37,6 +36,8 @@ digraph verifier_deps {
   build_election [style=dotted]    # not really a dep, but makes it cleaner # TODO remove?
   internal_manifest [style=dotted] # not serializable; have to build_election each time
   # TODO verify? (the new 4_verify outputs. not sure if useful bc will depend on all other nodes)
+  election
+  summary # TODO rename verify?
 
   # dependenencies from guardian.py
   ceremony_details -> guardian_pubkey -> guardian_backup
@@ -59,4 +60,5 @@ digraph verifier_deps {
   # TODO is this how people will see it? or will they only require the plaintext_tally?
   # (either way, this is the way to get the code working first)
   {all_ballots,all_spoiled_results,plaintext_tally} -> election
+  election -> summary
 }
