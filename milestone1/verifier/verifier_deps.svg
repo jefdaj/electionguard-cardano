@@ -12,20 +12,20 @@
 <!-- manifest -->
 <g id="node1" class="node">
 <title>manifest</title>
-<ellipse fill="none" stroke="black" cx="452" cy="-676" rx="54.89" ry="18"/>
-<text text-anchor="middle" x="452" y="-671.33" font-family="Times,serif" font-size="14.00">manifest</text>
+<ellipse fill="none" stroke="black" cx="462" cy="-676" rx="54.89" ry="18"/>
+<text text-anchor="middle" x="462" y="-671.33" font-family="Times,serif" font-size="14.00">manifest</text>
 </g>
 <!-- plaintext_tally -->
 <g id="node16" class="node">
 <title>plaintext_tally</title>
-<ellipse fill="none" stroke="black" cx="339" cy="-112" rx="82.77" ry="18"/>
-<text text-anchor="middle" x="339" y="-107.33" font-family="Times,serif" font-size="14.00">plaintext_tally</text>
+<ellipse fill="none" stroke="black" cx="351" cy="-112" rx="82.77" ry="18"/>
+<text text-anchor="middle" x="351" y="-107.33" font-family="Times,serif" font-size="14.00">plaintext_tally</text>
 </g>
 <!-- manifest&#45;&gt;plaintext_tally -->
-<g id="edge35" class="edge">
+<g id="edge36" class="edge">
 <title>manifest&#45;&gt;plaintext_tally</title>
-<path fill="none" stroke="black" d="M410.34,-663.94C362.13,-650.68 280.71,-626.86 213,-600 123.94,-564.67 98.58,-559.35 19,-506 9.59,-499.69 0,-500.33 0,-489 0,-489 0,-489 0,-299 0,-183.13 154.1,-138.96 254.5,-122.47"/>
-<polygon fill="black" stroke="black" points="255.03,-125.93 264.36,-120.92 253.94,-119.01 255.03,-125.93"/>
+<path fill="none" stroke="black" d="M421.81,-663.3C309.41,-630.02 0,-534.29 0,-489 0,-489 0,-489 0,-299 0,-179.56 160.65,-136.6 264.58,-121.3"/>
+<polygon fill="black" stroke="black" points="264.79,-124.81 274.2,-119.95 263.81,-117.88 264.79,-124.81"/>
 </g>
 <!-- spoiled_result -->
 <g id="node17" class="node">
@@ -34,94 +34,101 @@
 <text text-anchor="middle" x="507" y="-201.32" font-family="Times,serif" font-size="14.00">spoiled_result</text>
 </g>
 <!-- manifest&#45;&gt;spoiled_result -->
-<g id="edge39" class="edge">
+<g id="edge40" class="edge">
 <title>manifest&#45;&gt;spoiled_result</title>
-<path fill="none" stroke="black" d="M460.71,-657.81C476.22,-625.58 507,-553.49 507,-489 507,-489 507,-489 507,-393 507,-337.3 507,-272.21 507,-235.68"/>
+<path fill="none" stroke="black" d="M469.03,-657.9C481.69,-625.52 507,-552.79 507,-489 507,-489 507,-489 507,-393 507,-337.3 507,-272.21 507,-235.68"/>
 <polygon fill="black" stroke="black" points="510.5,-235.95 507,-225.95 503.5,-235.95 510.5,-235.95"/>
 </g>
 <!-- build_election -->
 <g id="node27" class="node">
 <title>build_election</title>
-<ellipse fill="none" stroke="black" stroke-dasharray="1,5" cx="303" cy="-582" rx="80.67" ry="18"/>
-<text text-anchor="middle" x="303" y="-577.33" font-family="Times,serif" font-size="14.00">build_election</text>
+<ellipse fill="none" stroke="black" stroke-dasharray="1,5" cx="313" cy="-582" rx="80.67" ry="18"/>
+<text text-anchor="middle" x="313" y="-577.33" font-family="Times,serif" font-size="14.00">build_election</text>
 </g>
 <!-- manifest&#45;&gt;build_election -->
-<g id="edge26" class="edge">
+<g id="edge27" class="edge">
 <title>manifest&#45;&gt;build_election</title>
-<path fill="none" stroke="black" d="M427.06,-659.6C403.01,-644.75 366.34,-622.11 339.1,-605.29"/>
-<polygon fill="black" stroke="black" points="341.16,-602.45 330.82,-600.18 337.49,-608.41 341.16,-602.45"/>
+<path fill="none" stroke="black" d="M437.06,-659.6C413.01,-644.75 376.34,-622.11 349.1,-605.29"/>
+<polygon fill="black" stroke="black" points="351.16,-602.45 340.82,-600.18 347.49,-608.41 351.16,-602.45"/>
 </g>
 <!-- ceremony_details -->
 <g id="node2" class="node">
 <title>ceremony_details</title>
-<ellipse fill="none" stroke="black" cx="312" cy="-958" rx="98.56" ry="18"/>
-<text text-anchor="middle" x="312" y="-953.33" font-family="Times,serif" font-size="14.00">ceremony_details</text>
+<ellipse fill="none" stroke="black" cx="322" cy="-958" rx="98.56" ry="18"/>
+<text text-anchor="middle" x="322" y="-953.33" font-family="Times,serif" font-size="14.00">ceremony_details</text>
 </g>
 <!-- guardian_pubkey -->
 <g id="node3" class="node">
 <title>guardian_pubkey</title>
-<ellipse fill="none" stroke="black" cx="513" cy="-864" rx="96.98" ry="18"/>
-<text text-anchor="middle" x="513" y="-859.33" font-family="Times,serif" font-size="14.00">guardian_pubkey</text>
+<ellipse fill="none" stroke="black" cx="636" cy="-864" rx="96.98" ry="18"/>
+<text text-anchor="middle" x="636" y="-859.33" font-family="Times,serif" font-size="14.00">guardian_pubkey</text>
 </g>
 <!-- ceremony_details&#45;&gt;guardian_pubkey -->
-<g id="edge14" class="edge">
-<title>ceremony_details&#45;&gt;guardian_pubkey</title>
-<path fill="none" stroke="black" d="M347.47,-940.76C380.81,-925.51 430.88,-902.59 467.21,-885.96"/>
-<polygon fill="black" stroke="black" points="468.53,-889.2 476.17,-881.86 465.62,-882.84 468.53,-889.2"/>
-</g>
-<!-- ceremony_details&#45;&gt;build_election -->
-<g id="edge27" class="edge">
-<title>ceremony_details&#45;&gt;build_election</title>
-<path fill="none" stroke="black" d="M303.62,-939.9C282.15,-893.78 228.85,-763.23 258,-658 262.83,-640.57 272.9,-623.13 282.3,-609.45"/>
-<polygon fill="black" stroke="black" points="285.06,-611.61 288.05,-601.45 279.37,-607.53 285.06,-611.61"/>
-</g>
-<!-- guardian_backup -->
-<g id="node4" class="node">
-<title>guardian_backup</title>
-<ellipse fill="none" stroke="black" cx="1058" cy="-770" rx="96.45" ry="18"/>
-<text text-anchor="middle" x="1058" y="-765.33" font-family="Times,serif" font-size="14.00">guardian_backup</text>
-</g>
-<!-- guardian_pubkey&#45;&gt;guardian_backup -->
 <g id="edge15" class="edge">
-<title>guardian_pubkey&#45;&gt;guardian_backup</title>
-<path fill="none" stroke="black" d="M583.13,-851.16C684.1,-834.12 869.99,-802.74 976.78,-784.71"/>
-<polygon fill="black" stroke="black" points="977.37,-788.16 986.64,-783.05 976.2,-781.26 977.37,-788.16"/>
-</g>
-<!-- guardian_verification -->
-<g id="node5" class="node">
-<title>guardian_verification</title>
-<ellipse fill="none" stroke="black" cx="640" cy="-770" rx="116.97" ry="18"/>
-<text text-anchor="middle" x="640" y="-765.33" font-family="Times,serif" font-size="14.00">guardian_verification</text>
-</g>
-<!-- guardian_pubkey&#45;&gt;guardian_verification -->
-<g id="edge16" class="edge">
-<title>guardian_pubkey&#45;&gt;guardian_verification</title>
-<path fill="none" stroke="black" d="M536.29,-846.13C556.22,-831.69 585.12,-810.76 607.35,-794.65"/>
-<polygon fill="black" stroke="black" points="609.15,-797.67 615.2,-788.97 605.05,-792 609.15,-797.67"/>
+<title>ceremony_details&#45;&gt;guardian_pubkey</title>
+<path fill="none" stroke="black" d="M372.45,-942.22C427.5,-926.09 515.64,-900.27 574.65,-882.98"/>
+<polygon fill="black" stroke="black" points="575.61,-886.34 584.22,-880.17 573.64,-879.62 575.61,-886.34"/>
 </g>
 <!-- all_guardian_pubkeys -->
 <g id="node19" class="node">
 <title>all_guardian_pubkeys</title>
-<ellipse fill="none" stroke="black" cx="386" cy="-770" rx="119.08" ry="18"/>
-<text text-anchor="middle" x="386" y="-765.33" font-family="Times,serif" font-size="14.00">all_guardian_pubkeys</text>
+<ellipse fill="none" stroke="black" cx="396" cy="-770" rx="119.08" ry="18"/>
+<text text-anchor="middle" x="396" y="-765.33" font-family="Times,serif" font-size="14.00">all_guardian_pubkeys</text>
+</g>
+<!-- ceremony_details&#45;&gt;all_guardian_pubkeys -->
+<g id="edge1" class="edge">
+<title>ceremony_details&#45;&gt;all_guardian_pubkeys</title>
+<path fill="none" stroke="black" d="M249,-863C249.06,-825.46 283.94,-802.66 319.7,-789.15"/>
+<polygon fill="black" stroke="black" points="320.59,-792.55 328.86,-785.92 318.26,-785.95 320.59,-792.55"/>
+</g>
+<!-- ceremony_details&#45;&gt;build_election -->
+<g id="edge28" class="edge">
+<title>ceremony_details&#45;&gt;build_election</title>
+<path fill="none" stroke="black" d="M297.26,-940.41C276.07,-924.01 248.95,-896.81 249,-865"/>
+<path fill="none" stroke="black" d="M249,-863C249.15,-771.5 239.53,-744.96 268,-658 273.67,-640.7 283.89,-623.15 293.17,-609.38"/>
+<polygon fill="black" stroke="black" points="295.94,-611.53 298.81,-601.33 290.21,-607.51 295.94,-611.53"/>
+</g>
+<!-- guardian_backup -->
+<g id="node4" class="node">
+<title>guardian_backup</title>
+<ellipse fill="none" stroke="black" cx="1107" cy="-770" rx="96.45" ry="18"/>
+<text text-anchor="middle" x="1107" y="-765.33" font-family="Times,serif" font-size="14.00">guardian_backup</text>
+</g>
+<!-- guardian_pubkey&#45;&gt;guardian_backup -->
+<g id="edge16" class="edge">
+<title>guardian_pubkey&#45;&gt;guardian_backup</title>
+<path fill="none" stroke="black" d="M701,-850.3C787.36,-833.44 939.66,-803.69 1031.17,-785.81"/>
+<polygon fill="black" stroke="black" points="1031.66,-789.28 1040.81,-783.93 1030.32,-782.41 1031.66,-789.28"/>
+</g>
+<!-- guardian_verification -->
+<g id="node5" class="node">
+<title>guardian_verification</title>
+<ellipse fill="none" stroke="black" cx="876" cy="-770" rx="116.97" ry="18"/>
+<text text-anchor="middle" x="876" y="-765.33" font-family="Times,serif" font-size="14.00">guardian_verification</text>
+</g>
+<!-- guardian_pubkey&#45;&gt;guardian_verification -->
+<g id="edge17" class="edge">
+<title>guardian_pubkey&#45;&gt;guardian_verification</title>
+<path fill="none" stroke="black" d="M676.98,-847.29C717.43,-831.79 779.43,-808.02 823.47,-791.14"/>
+<polygon fill="black" stroke="black" points="824.48,-794.5 832.56,-787.65 821.97,-787.96 824.48,-794.5"/>
 </g>
 <!-- guardian_pubkey&#45;&gt;all_guardian_pubkeys -->
-<g id="edge1" class="edge">
+<g id="edge2" class="edge">
 <title>guardian_pubkey&#45;&gt;all_guardian_pubkeys</title>
-<path fill="none" stroke="black" d="M489.71,-846.13C469.78,-831.69 440.88,-810.76 418.65,-794.65"/>
-<polygon fill="black" stroke="black" points="420.95,-792 410.8,-788.97 416.85,-797.67 420.95,-792"/>
+<path fill="none" stroke="black" d="M595.02,-847.29C554.69,-831.83 492.95,-808.16 448.93,-791.29"/>
+<polygon fill="black" stroke="black" points="450.43,-788.12 439.84,-787.81 447.93,-794.65 450.43,-788.12"/>
 </g>
 <!-- joint_key -->
 <g id="node6" class="node">
 <title>joint_key</title>
-<ellipse fill="none" stroke="black" cx="323" cy="-676" rx="55.94" ry="18"/>
-<text text-anchor="middle" x="323" y="-671.33" font-family="Times,serif" font-size="14.00">joint_key</text>
+<ellipse fill="none" stroke="black" cx="333" cy="-676" rx="55.94" ry="18"/>
+<text text-anchor="middle" x="333" y="-671.33" font-family="Times,serif" font-size="14.00">joint_key</text>
 </g>
 <!-- joint_key&#45;&gt;build_election -->
-<g id="edge28" class="edge">
+<g id="edge29" class="edge">
 <title>joint_key&#45;&gt;build_election</title>
-<path fill="none" stroke="black" d="M319.24,-657.7C316.39,-644.59 312.41,-626.31 309.11,-611.11"/>
-<polygon fill="black" stroke="black" points="312.61,-610.73 307.07,-601.71 305.77,-612.22 312.61,-610.73"/>
+<path fill="none" stroke="black" d="M329.24,-657.7C326.39,-644.59 322.41,-626.31 319.11,-611.11"/>
+<polygon fill="black" stroke="black" points="322.61,-610.73 317.07,-601.71 315.77,-612.22 322.61,-610.73"/>
 </g>
 <!-- constants -->
 <g id="node7" class="node">
@@ -142,7 +149,7 @@
 <text text-anchor="middle" x="351" y="-389.32" font-family="Times,serif" font-size="14.00">ciphertext_tally</text>
 </g>
 <!-- context&#45;&gt;ciphertext_tally -->
-<g id="edge32" class="edge">
+<g id="edge33" class="edge">
 <title>context&#45;&gt;ciphertext_tally</title>
 <path fill="none" stroke="black" d="M303.64,-470.13C312.17,-456.59 324.3,-437.35 334.15,-421.73"/>
 <polygon fill="black" stroke="black" points="337.05,-423.68 339.43,-413.36 331.13,-419.95 337.05,-423.68"/>
@@ -154,7 +161,7 @@
 <text text-anchor="middle" x="258" y="-295.32" font-family="Times,serif" font-size="14.00">tally_share</text>
 </g>
 <!-- context&#45;&gt;tally_share -->
-<g id="edge18" class="edge">
+<g id="edge19" class="edge">
 <title>context&#45;&gt;tally_share</title>
 <path fill="none" stroke="black" d="M280.57,-470.17C270.64,-455.61 257.51,-433.57 252,-412 244.99,-384.58 247.98,-352.15 251.82,-329.45"/>
 <polygon fill="black" stroke="black" points="255.24,-330.2 253.63,-319.72 248.36,-328.91 255.24,-330.2"/>
@@ -166,19 +173,19 @@
 <text text-anchor="middle" x="653" y="-389.32" font-family="Times,serif" font-size="14.00">spoiled_share</text>
 </g>
 <!-- context&#45;&gt;spoiled_share -->
-<g id="edge20" class="edge">
+<g id="edge21" class="edge">
 <title>context&#45;&gt;spoiled_share</title>
 <path fill="none" stroke="black" d="M329.72,-475.77C336.45,-473.79 343.42,-471.79 350,-470 431.58,-447.75 526.28,-424.76 587.8,-410.2"/>
 <polygon fill="black" stroke="black" points="588.49,-413.63 597.42,-407.93 586.88,-406.82 588.49,-413.63"/>
 </g>
 <!-- context&#45;&gt;plaintext_tally -->
-<g id="edge36" class="edge">
+<g id="edge37" class="edge">
 <title>context&#45;&gt;plaintext_tally</title>
 <path fill="none" stroke="black" d="M327.2,-474.9C368.47,-459.61 434.29,-432.78 450,-412 480.18,-372.07 473.34,-350.86 469,-301"/>
-<path fill="none" stroke="black" d="M469,-299C467.13,-247.38 421.07,-253.21 398,-207"/>
+<path fill="none" stroke="black" d="M469,-299C467.13,-247.38 418.63,-254.35 398,-207"/>
 </g>
 <!-- context&#45;&gt;spoiled_result -->
-<g id="edge40" class="edge">
+<g id="edge41" class="edge">
 <title>context&#45;&gt;spoiled_result</title>
 <path fill="none" stroke="black" d="M469,-299C466.98,-275.83 477.59,-251.59 488.1,-233.82"/>
 <polygon fill="black" stroke="black" points="491.01,-235.76 493.38,-225.43 485.09,-232.03 491.01,-235.76"/>
@@ -186,32 +193,32 @@
 <!-- device -->
 <g id="node9" class="node">
 <title>device</title>
-<ellipse fill="none" stroke="black" cx="900" cy="-770" rx="43.32" ry="18"/>
-<text text-anchor="middle" x="900" y="-765.33" font-family="Times,serif" font-size="14.00">device</text>
+<ellipse fill="none" stroke="black" cx="698" cy="-770" rx="43.32" ry="18"/>
+<text text-anchor="middle" x="698" y="-765.33" font-family="Times,serif" font-size="14.00">device</text>
 </g>
 <!-- ballot_submitted -->
 <g id="node10" class="node">
 <title>ballot_submitted</title>
-<ellipse fill="none" stroke="black" cx="728" cy="-676" rx="95.4" ry="18"/>
-<text text-anchor="middle" x="728" y="-671.33" font-family="Times,serif" font-size="14.00">ballot_submitted</text>
+<ellipse fill="none" stroke="black" cx="698" cy="-676" rx="95.4" ry="18"/>
+<text text-anchor="middle" x="698" y="-671.33" font-family="Times,serif" font-size="14.00">ballot_submitted</text>
 </g>
 <!-- device&#45;&gt;ballot_submitted -->
-<g id="edge23" class="edge">
+<g id="edge24" class="edge">
 <title>device&#45;&gt;ballot_submitted</title>
-<path fill="none" stroke="black" d="M874.25,-755.23C846.34,-740.3 801.43,-716.28 768.73,-698.79"/>
-<polygon fill="black" stroke="black" points="770.38,-695.7 759.91,-694.07 767.08,-701.87 770.38,-695.7"/>
+<path fill="none" stroke="black" d="M698,-751.7C698,-738.72 698,-720.66 698,-705.56"/>
+<polygon fill="black" stroke="black" points="701.5,-705.74 698,-695.74 694.5,-705.74 701.5,-705.74"/>
 </g>
 <!-- cast_notice -->
 <g id="node11" class="node">
 <title>cast_notice</title>
-<ellipse fill="none" stroke="black" cx="931" cy="-676" rx="66.99" ry="18"/>
-<text text-anchor="middle" x="931" y="-671.33" font-family="Times,serif" font-size="14.00">cast_notice</text>
+<ellipse fill="none" stroke="black" cx="915" cy="-676" rx="66.99" ry="18"/>
+<text text-anchor="middle" x="915" y="-671.33" font-family="Times,serif" font-size="14.00">cast_notice</text>
 </g>
 <!-- device&#45;&gt;cast_notice -->
-<g id="edge24" class="edge">
+<g id="edge25" class="edge">
 <title>device&#45;&gt;cast_notice</title>
-<path fill="none" stroke="black" d="M905.83,-751.7C910.25,-738.59 916.41,-720.31 921.53,-705.11"/>
-<polygon fill="black" stroke="black" points="924.84,-706.26 924.71,-695.66 918.2,-704.02 924.84,-706.26"/>
+<path fill="none" stroke="black" d="M727.27,-756.59C763.85,-741.08 826.85,-714.37 869.68,-696.21"/>
+<polygon fill="black" stroke="black" points="870.88,-699.51 878.72,-692.38 868.14,-693.06 870.88,-699.51"/>
 </g>
 <!-- ballot_spoiled -->
 <g id="node12" class="node">
@@ -220,16 +227,16 @@
 <text text-anchor="middle" x="1162" y="-671.33" font-family="Times,serif" font-size="14.00">ballot_spoiled</text>
 </g>
 <!-- device&#45;&gt;ballot_spoiled -->
-<g id="edge25" class="edge">
+<g id="edge26" class="edge">
 <title>device&#45;&gt;ballot_spoiled</title>
-<path fill="none" stroke="black" d="M932.39,-757.63C976.61,-742.1 1056.43,-714.07 1109.32,-695.5"/>
-<polygon fill="black" stroke="black" points="1110.48,-698.8 1118.75,-692.19 1108.16,-692.2 1110.48,-698.8"/>
+<path fill="none" stroke="black" d="M730.53,-757.61C736.94,-755.59 743.65,-753.61 750,-752 865.05,-722.86 1000.91,-700.39 1084.25,-687.93"/>
+<polygon fill="black" stroke="black" points="1084.52,-691.43 1093.9,-686.5 1083.5,-684.5 1084.52,-691.43"/>
 </g>
 <!-- ballot_submitted&#45;&gt;spoiled_share -->
-<g id="edge21" class="edge">
+<g id="edge22" class="edge">
 <title>ballot_submitted&#45;&gt;spoiled_share</title>
-<path fill="none" stroke="black" d="M680.28,-660.08C652.09,-648.53 618.73,-629.43 602,-600 568.91,-541.8 608.94,-462.38 634.63,-421.58"/>
-<polygon fill="black" stroke="black" points="637.47,-423.64 639.98,-413.35 631.6,-419.83 637.47,-423.64"/>
+<path fill="none" stroke="black" d="M664.25,-658.88C642.08,-646.26 614.89,-626.42 602,-600 572.79,-540.11 610.73,-461.97 635.22,-421.66"/>
+<polygon fill="black" stroke="black" points="638.11,-423.64 640.45,-413.31 632.17,-419.92 638.11,-423.64"/>
 </g>
 <!-- all_ballots_submitted -->
 <g id="node20" class="node">
@@ -238,10 +245,10 @@
 <text text-anchor="middle" x="728" y="-577.33" font-family="Times,serif" font-size="14.00">all_ballots_submitted</text>
 </g>
 <!-- ballot_submitted&#45;&gt;all_ballots_submitted -->
-<g id="edge2" class="edge">
+<g id="edge3" class="edge">
 <title>ballot_submitted&#45;&gt;all_ballots_submitted</title>
-<path fill="none" stroke="black" d="M728,-657.7C728,-644.72 728,-626.66 728,-611.56"/>
-<polygon fill="black" stroke="black" points="731.5,-611.74 728,-601.74 724.5,-611.74 731.5,-611.74"/>
+<path fill="none" stroke="black" d="M703.64,-657.7C707.92,-644.59 713.88,-626.31 718.83,-611.11"/>
+<polygon fill="black" stroke="black" points="722.14,-612.26 721.91,-601.67 715.49,-610.09 722.14,-612.26"/>
 </g>
 <!-- all_cast_notices -->
 <g id="node22" class="node">
@@ -250,20 +257,20 @@
 <text text-anchor="middle" x="953" y="-577.33" font-family="Times,serif" font-size="14.00">all_cast_notices</text>
 </g>
 <!-- cast_notice&#45;&gt;all_cast_notices -->
-<g id="edge4" class="edge">
+<g id="edge5" class="edge">
 <title>cast_notice&#45;&gt;all_cast_notices</title>
-<path fill="none" stroke="black" d="M935.14,-657.7C938.27,-644.59 942.64,-626.31 946.28,-611.11"/>
-<polygon fill="black" stroke="black" points="949.61,-612.24 948.53,-601.7 942.8,-610.61 949.61,-612.24"/>
+<path fill="none" stroke="black" d="M922.15,-657.7C927.61,-644.46 935.26,-625.95 941.57,-610.66"/>
+<polygon fill="black" stroke="black" points="944.72,-612.2 945.31,-601.63 938.25,-609.53 944.72,-612.2"/>
 </g>
 <!-- ballot_spoiled&#45;&gt;spoiled_share -->
-<g id="edge22" class="edge">
+<g id="edge23" class="edge">
 <title>ballot_spoiled&#45;&gt;spoiled_share</title>
 <path fill="none" stroke="black" d="M1197.59,-659.6C1240.69,-638.86 1303.9,-600.33 1273,-564 1138.21,-405.56 990.23,-594.6 811,-489"/>
 <path fill="none" stroke="black" d="M811,-487C801.25,-481.22 801.27,-476.51 792,-470 762.06,-448.97 725.56,-429.48 697.48,-415.65"/>
 <polygon fill="black" stroke="black" points="699.04,-412.52 688.52,-411.29 695.98,-418.81 699.04,-412.52"/>
 </g>
 <!-- ballot_spoiled&#45;&gt;spoiled_result -->
-<g id="edge41" class="edge">
+<g id="edge42" class="edge">
 <title>ballot_spoiled&#45;&gt;spoiled_result</title>
 <path fill="none" stroke="black" d="M811,-487C770.01,-462.68 781.64,-315.76 748,-282 707.6,-241.46 645.68,-222.76 594.73,-214.17"/>
 <polygon fill="black" stroke="black" points="595.28,-210.72 584.86,-212.63 594.2,-217.63 595.28,-210.72"/>
@@ -275,23 +282,23 @@
 <text text-anchor="middle" x="1162" y="-577.33" font-family="Times,serif" font-size="14.00">all_ballots_spoiled</text>
 </g>
 <!-- ballot_spoiled&#45;&gt;all_ballots_spoiled -->
-<g id="edge3" class="edge">
+<g id="edge4" class="edge">
 <title>ballot_spoiled&#45;&gt;all_ballots_spoiled</title>
 <path fill="none" stroke="black" d="M1162,-657.7C1162,-644.72 1162,-626.66 1162,-611.56"/>
 <polygon fill="black" stroke="black" points="1165.5,-611.74 1162,-601.74 1158.5,-611.74 1165.5,-611.74"/>
 </g>
 <!-- ciphertext_tally&#45;&gt;tally_share -->
-<g id="edge19" class="edge">
+<g id="edge20" class="edge">
 <title>ciphertext_tally&#45;&gt;tally_share</title>
 <path fill="none" stroke="black" d="M333.94,-376.13C319.65,-361.99 299.06,-341.62 282.93,-325.66"/>
 <polygon fill="black" stroke="black" points="285.6,-323.38 276.03,-318.83 280.67,-328.35 285.6,-323.38"/>
 </g>
 <!-- ciphertext_tally&#45;&gt;plaintext_tally -->
-<g id="edge37" class="edge">
+<g id="edge38" class="edge">
 <title>ciphertext_tally&#45;&gt;plaintext_tally</title>
-<path fill="none" stroke="black" d="M362.99,-375.74C384.93,-341.85 426.73,-264.88 398,-207"/>
-<path fill="none" stroke="black" d="M398,-205C386.42,-181.79 370.38,-157.14 357.95,-139.2"/>
-<polygon fill="black" stroke="black" points="360.95,-137.39 352.34,-131.22 355.23,-141.41 360.95,-137.39"/>
+<path fill="none" stroke="black" d="M362.66,-375.71C383.76,-342.1 423.83,-266.05 398,-207"/>
+<path fill="none" stroke="black" d="M398,-205C388.35,-182.84 375.83,-158.51 366.14,-140.44"/>
+<polygon fill="black" stroke="black" points="369.22,-138.79 361.38,-131.66 363.07,-142.12 369.22,-138.79"/>
 </g>
 <!-- all_tally_shares -->
 <g id="node26" class="node">
@@ -300,7 +307,7 @@
 <text text-anchor="middle" x="258" y="-201.32" font-family="Times,serif" font-size="14.00">all_tally_shares</text>
 </g>
 <!-- tally_share&#45;&gt;all_tally_shares -->
-<g id="edge12" class="edge">
+<g id="edge13" class="edge">
 <title>tally_share&#45;&gt;all_tally_shares</title>
 <path fill="none" stroke="black" d="M258,-281.7C258,-268.72 258,-250.66 258,-235.56"/>
 <polygon fill="black" stroke="black" points="261.5,-235.74 258,-225.74 254.5,-235.74 261.5,-235.74"/>
@@ -312,7 +319,7 @@
 <text text-anchor="middle" x="637" y="-295.32" font-family="Times,serif" font-size="14.00">all_spoiled_shares</text>
 </g>
 <!-- spoiled_share&#45;&gt;all_spoiled_shares -->
-<g id="edge8" class="edge">
+<g id="edge9" class="edge">
 <title>spoiled_share&#45;&gt;all_spoiled_shares</title>
 <path fill="none" stroke="black" d="M649.99,-375.7C647.73,-362.72 644.59,-344.66 641.97,-329.56"/>
 <polygon fill="black" stroke="black" points="645.42,-328.97 640.26,-319.72 638.52,-330.17 645.42,-328.97"/>
@@ -320,51 +327,51 @@
 <!-- election -->
 <g id="node18" class="node">
 <title>election</title>
-<ellipse fill="none" stroke="black" cx="565" cy="-18" rx="50.68" ry="18"/>
-<text text-anchor="middle" x="565" y="-13.32" font-family="Times,serif" font-size="14.00">election</text>
+<ellipse fill="none" stroke="black" cx="636" cy="-18" rx="50.68" ry="18"/>
+<text text-anchor="middle" x="636" y="-13.32" font-family="Times,serif" font-size="14.00">election</text>
 </g>
 <!-- plaintext_tally&#45;&gt;election -->
-<g id="edge43" class="edge">
+<g id="edge44" class="edge">
 <title>plaintext_tally&#45;&gt;election</title>
-<path fill="none" stroke="black" d="M376.83,-95.6C416.94,-79.27 480.18,-53.53 522.11,-36.46"/>
-<polygon fill="black" stroke="black" points="523.21,-39.79 531.15,-32.78 520.57,-33.31 523.21,-39.79"/>
+<path fill="none" stroke="black" d="M395.84,-96.52C448.38,-79.56 535.05,-51.59 588.65,-34.29"/>
+<polygon fill="black" stroke="black" points="589.68,-37.63 598.12,-31.23 587.52,-30.97 589.68,-37.63"/>
 </g>
 <!-- all_spoiled_results -->
 <g id="node25" class="node">
 <title>all_spoiled_results</title>
-<ellipse fill="none" stroke="black" cx="565" cy="-112" rx="103.29" ry="18"/>
-<text text-anchor="middle" x="565" y="-107.33" font-family="Times,serif" font-size="14.00">all_spoiled_results</text>
+<ellipse fill="none" stroke="black" cx="636" cy="-112" rx="103.29" ry="18"/>
+<text text-anchor="middle" x="636" y="-107.33" font-family="Times,serif" font-size="14.00">all_spoiled_results</text>
 </g>
 <!-- spoiled_result&#45;&gt;all_spoiled_results -->
-<g id="edge10" class="edge">
+<g id="edge11" class="edge">
 <title>spoiled_result&#45;&gt;all_spoiled_results</title>
-<path fill="none" stroke="black" d="M517.91,-187.7C526.42,-174.2 538.38,-155.23 548.12,-139.78"/>
-<polygon fill="black" stroke="black" points="550.96,-141.83 553.33,-131.51 545.04,-138.1 550.96,-141.83"/>
+<path fill="none" stroke="black" d="M530.36,-188.34C550.69,-173.84 580.38,-152.67 603.11,-136.46"/>
+<polygon fill="black" stroke="black" points="605.04,-139.38 611.14,-130.73 600.97,-133.68 605.04,-139.38"/>
 </g>
 <!-- all_guardian_pubkeys&#45;&gt;joint_key -->
-<g id="edge17" class="edge">
+<g id="edge18" class="edge">
 <title>all_guardian_pubkeys&#45;&gt;joint_key</title>
-<path fill="none" stroke="black" d="M374.15,-751.7C364.76,-737.99 351.5,-718.62 340.83,-703.04"/>
-<polygon fill="black" stroke="black" points="343.98,-701.44 335.44,-695.16 338.2,-705.39 343.98,-701.44"/>
+<path fill="none" stroke="black" d="M384.15,-751.7C374.76,-737.99 361.5,-718.62 350.83,-703.04"/>
+<polygon fill="black" stroke="black" points="353.98,-701.44 345.44,-695.16 348.2,-705.39 353.98,-701.44"/>
 </g>
 <!-- all_guardian_pubkeys&#45;&gt;all_spoiled_shares -->
-<g id="edge9" class="edge">
+<g id="edge10" class="edge">
 <title>all_guardian_pubkeys&#45;&gt;all_spoiled_shares</title>
-<path fill="none" stroke="black" d="M432.01,-753.05C460.2,-741.01 494.83,-721.76 516,-694 546.92,-653.46 535.27,-633.05 545,-583"/>
-<path fill="none" stroke="black" d="M545,-581C571.61,-493.45 525.68,-459.09 564,-376 573.16,-356.14 589.85,-338.37 604.96,-325.12"/>
+<path fill="none" stroke="black" d="M444.12,-753.12C472.39,-741.28 506.34,-722.22 526,-694 554.61,-652.93 535.45,-632.13 545,-583"/>
+<path fill="none" stroke="black" d="M545,-581C567.83,-492.39 525.68,-459.09 564,-376 573.16,-356.14 589.85,-338.37 604.96,-325.12"/>
 <polygon fill="black" stroke="black" points="607.04,-327.95 612.44,-318.84 602.53,-322.59 607.04,-327.95"/>
 </g>
 <!-- all_guardian_pubkeys&#45;&gt;all_spoiled_results -->
-<g id="edge11" class="edge">
+<g id="edge12" class="edge">
 <title>all_guardian_pubkeys&#45;&gt;all_spoiled_results</title>
-<path fill="none" stroke="black" d="M545,-581C565.68,-516.32 597.53,-513.11 650,-470 687.35,-439.31 717.31,-453.56 742,-412 763.38,-376.01 746.67,-359.84 748,-318 748.51,-302.01 754.42,-296.66 748,-282 718.82,-215.33 648.93,-163.29 604.46,-135.45"/>
-<polygon fill="black" stroke="black" points="606.48,-132.58 596.13,-130.34 602.83,-138.55 606.48,-132.58"/>
+<path fill="none" stroke="black" d="M545,-581C562.66,-515.43 597.53,-513.11 650,-470 687.35,-439.31 717.31,-453.56 742,-412 771.54,-362.27 764.69,-337.38 748,-282 730.81,-224.95 687.38,-169.45 659.93,-138.4"/>
+<polygon fill="black" stroke="black" points="662.61,-136.15 653.32,-131.06 657.41,-140.83 662.61,-136.15"/>
 </g>
 <!-- all_guardian_pubkeys&#45;&gt;all_tally_shares -->
-<g id="edge13" class="edge">
+<g id="edge14" class="edge">
 <title>all_guardian_pubkeys&#45;&gt;all_tally_shares</title>
-<path fill="none" stroke="black" d="M340.34,-753.04C257.41,-721.21 84.58,-641.03 19,-506 -38.15,-388.34 133.87,-274.85 216.44,-228.68"/>
-<polygon fill="black" stroke="black" points="218.12,-231.75 225.19,-223.86 214.75,-225.62 218.12,-231.75"/>
+<path fill="none" stroke="black" d="M348.57,-753.13C263.36,-721.69 86.95,-642.44 19,-506 -39.37,-388.79 133.69,-274.88 216.51,-228.63"/>
+<polygon fill="black" stroke="black" points="217.98,-231.81 225.05,-223.93 214.6,-225.68 217.98,-231.81"/>
 </g>
 <!-- all_ballots -->
 <g id="node23" class="node">
@@ -373,64 +380,64 @@
 <text text-anchor="middle" x="721" y="-483.32" font-family="Times,serif" font-size="14.00">all_ballots</text>
 </g>
 <!-- all_ballots_submitted&#45;&gt;all_ballots -->
-<g id="edge5" class="edge">
+<g id="edge6" class="edge">
 <title>all_ballots_submitted&#45;&gt;all_ballots</title>
 <path fill="none" stroke="black" d="M726.68,-563.7C725.7,-550.72 724.32,-532.66 723.17,-517.56"/>
 <polygon fill="black" stroke="black" points="726.67,-517.44 722.43,-507.74 719.69,-517.97 726.67,-517.44"/>
 </g>
 <!-- all_ballots_spoiled&#45;&gt;all_ballots -->
-<g id="edge6" class="edge">
+<g id="edge7" class="edge">
 <title>all_ballots_spoiled&#45;&gt;all_ballots</title>
 <path fill="none" stroke="black" d="M1096.32,-567.86C1023.19,-553.15 901.52,-528.43 797,-506 791.44,-504.81 785.66,-503.55 779.88,-502.28"/>
 <polygon fill="black" stroke="black" points="780.81,-498.9 770.29,-500.15 779.3,-505.73 780.81,-498.9"/>
 </g>
 <!-- all_cast_notices&#45;&gt;all_ballots -->
-<g id="edge7" class="edge">
+<g id="edge8" class="edge">
 <title>all_cast_notices&#45;&gt;all_ballots</title>
 <path fill="none" stroke="black" d="M913.64,-565.39C873.09,-549.31 809.92,-524.26 767.06,-507.27"/>
 <polygon fill="black" stroke="black" points="768.35,-504.01 757.77,-503.58 765.77,-510.52 768.35,-504.01"/>
 </g>
 <!-- all_ballots&#45;&gt;ciphertext_tally -->
-<g id="edge33" class="edge">
+<g id="edge34" class="edge">
 <title>all_ballots&#45;&gt;ciphertext_tally</title>
 <path fill="none" stroke="black" d="M675.26,-475.63C610.34,-459.48 491.12,-429.84 416.73,-411.34"/>
 <polygon fill="black" stroke="black" points="417.66,-407.97 407.11,-408.95 415.97,-414.76 417.66,-407.97"/>
 </g>
 <!-- all_ballots&#45;&gt;election -->
-<g id="edge44" class="edge">
+<g id="edge45" class="edge">
 <title>all_ballots&#45;&gt;election</title>
-<path fill="none" stroke="black" d="M742.71,-470.67C779.23,-441.16 849,-375.09 849,-301 849,-301 849,-301 849,-205 849,-97.06 703.66,-48.37 620.92,-29.39"/>
-<polygon fill="black" stroke="black" points="621.68,-25.98 611.17,-27.24 620.17,-32.81 621.68,-25.98"/>
+<path fill="none" stroke="black" d="M742.71,-470.67C779.23,-441.16 849,-375.09 849,-301 849,-301 849,-301 849,-205 849,-116.82 744.15,-60.82 681.58,-35.25"/>
+<polygon fill="black" stroke="black" points="683.17,-32.11 672.58,-31.67 680.58,-38.62 683.17,-32.11"/>
 </g>
 <!-- all_spoiled_shares&#45;&gt;spoiled_result -->
-<g id="edge42" class="edge">
+<g id="edge43" class="edge">
 <title>all_spoiled_shares&#45;&gt;spoiled_result</title>
 <path fill="none" stroke="black" d="M613.16,-282.13C592.5,-267.51 562.43,-246.23 539.57,-230.05"/>
 <polygon fill="black" stroke="black" points="541.68,-227.25 531.49,-224.33 537.63,-232.97 541.68,-227.25"/>
 </g>
 <!-- all_spoiled_results&#45;&gt;election -->
-<g id="edge45" class="edge">
+<g id="edge46" class="edge">
 <title>all_spoiled_results&#45;&gt;election</title>
-<path fill="none" stroke="black" d="M565,-93.7C565,-80.72 565,-62.66 565,-47.56"/>
-<polygon fill="black" stroke="black" points="568.5,-47.74 565,-37.74 561.5,-47.74 568.5,-47.74"/>
+<path fill="none" stroke="black" d="M636,-93.7C636,-80.72 636,-62.66 636,-47.56"/>
+<polygon fill="black" stroke="black" points="639.5,-47.74 636,-37.74 632.5,-47.74 639.5,-47.74"/>
 </g>
 <!-- all_tally_shares&#45;&gt;plaintext_tally -->
-<g id="edge38" class="edge">
+<g id="edge39" class="edge">
 <title>all_tally_shares&#45;&gt;plaintext_tally</title>
-<path fill="none" stroke="black" d="M272.86,-188.13C285.11,-174.21 302.69,-154.25 316.64,-138.4"/>
-<polygon fill="black" stroke="black" points="318.98,-141.03 322.96,-131.21 313.73,-136.41 318.98,-141.03"/>
+<path fill="none" stroke="black" d="M275.06,-188.13C289.26,-174.08 309.68,-153.88 325.77,-137.96"/>
+<polygon fill="black" stroke="black" points="328.01,-140.66 332.66,-131.14 323.09,-135.69 328.01,-140.66"/>
 </g>
 <!-- build_election&#45;&gt;constants -->
-<g id="edge29" class="edge">
+<g id="edge30" class="edge">
 <title>build_election&#45;&gt;constants</title>
-<path fill="none" stroke="black" d="M324.01,-564.34C342.35,-549.79 369.17,-528.52 389.64,-512.29"/>
-<polygon fill="black" stroke="black" points="391.69,-515.12 397.35,-506.17 387.34,-509.64 391.69,-515.12"/>
+<path fill="none" stroke="black" d="M332.44,-564.13C348.98,-549.77 372.93,-528.99 391.44,-512.92"/>
+<polygon fill="black" stroke="black" points="393.64,-515.65 398.89,-506.45 389.05,-510.36 393.64,-515.65"/>
 </g>
 <!-- build_election&#45;&gt;context -->
-<g id="edge30" class="edge">
+<g id="edge31" class="edge">
 <title>build_election&#45;&gt;context</title>
-<path fill="none" stroke="black" d="M301.12,-563.7C299.71,-550.72 297.75,-532.66 296.1,-517.56"/>
-<polygon fill="black" stroke="black" points="299.6,-517.29 295.04,-507.73 292.64,-518.05 299.6,-517.29"/>
+<path fill="none" stroke="black" d="M309.24,-563.7C306.39,-550.59 302.41,-532.31 299.11,-517.11"/>
+<polygon fill="black" stroke="black" points="302.61,-516.73 297.07,-507.71 295.77,-518.22 302.61,-516.73"/>
 </g>
 <!-- internal_manifest -->
 <g id="node28" class="node">
@@ -439,13 +446,13 @@
 <text text-anchor="middle" x="127" y="-483.32" font-family="Times,serif" font-size="14.00">internal_manifest</text>
 </g>
 <!-- build_election&#45;&gt;internal_manifest -->
-<g id="edge31" class="edge">
+<g id="edge32" class="edge">
 <title>build_election&#45;&gt;internal_manifest</title>
-<path fill="none" stroke="black" d="M272.34,-564.97C243.55,-549.92 200.25,-527.29 168.4,-510.64"/>
-<polygon fill="black" stroke="black" points="170.32,-507.69 159.83,-506.16 167.07,-513.9 170.32,-507.69"/>
+<path fill="none" stroke="black" d="M281.03,-565.18C250.43,-550.05 204.07,-527.12 170.2,-510.37"/>
+<polygon fill="black" stroke="black" points="171.99,-507.35 161.48,-506.05 168.89,-513.62 171.99,-507.35"/>
 </g>
 <!-- internal_manifest&#45;&gt;ciphertext_tally -->
-<g id="edge34" class="edge">
+<g id="edge35" class="edge">
 <title>internal_manifest&#45;&gt;ciphertext_tally</title>
 <path fill="none" stroke="black" d="M165.76,-471.08C203.58,-455.55 261.23,-431.87 302.17,-415.06"/>
 <polygon fill="black" stroke="black" points="303.39,-418.34 311.31,-411.3 300.73,-411.86 303.39,-418.34"/>

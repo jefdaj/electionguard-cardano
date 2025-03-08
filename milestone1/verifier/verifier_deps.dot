@@ -24,7 +24,7 @@ digraph verifier_deps {
   election
 
   # "all" versions of things that are actually sets
-  guardian_pubkey -> all_guardian_pubkeys
+  {ceremony_details,guardian_pubkey} -> all_guardian_pubkeys
   ballot_submitted -> all_ballots_submitted
   ballot_spoiled -> all_ballots_spoiled
   cast_notice -> all_cast_notices
