@@ -29,7 +29,7 @@ digraph verifier_deps {
   cast_notice -> all_cast_notices
   {all_ballots_submitted,all_ballots_spoiled,all_cast_notices} -> all_ballots # TODO all_ballots_spoiled not needed here?
   {all_guardian_pubkeys, spoiled_share} -> all_spoiled_shares
-  spoiled_result -> all_spoiled_results
+  {all_guardian_pubkeys, spoiled_result} -> all_spoiled_results
   {all_guardian_pubkeys, tally_share} -> all_tally_shares
 
   # misc other nodes added manually
@@ -40,7 +40,7 @@ digraph verifier_deps {
   # dependenencies from guardian.py
   ceremony_details -> guardian_pubkey -> guardian_backup
   guardian_pubkey -> guardian_verification # TODO remove? it really depends on the *cardano* wallet key right?
-  guardian_pubkey -> joint_key
+  all_guardian_pubkeys -> joint_key
   {ciphertext_tally,context} -> tally_share
   {context,ballot_submitted,ballot_spoiled} -> spoiled_share
   
