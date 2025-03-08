@@ -126,17 +126,24 @@ def verify_spoiled_result(results, pubdir, kwargs={}) -> bool:
     return "not implemented yet"
 
 def verify_all_guardian_pubkeys(results, pubdir, kwargs={}) -> bool:
-    ceremony_details = vdeps['ceremony_details']
+    print('verify_all_guardian_pubkeys')
+    # ceremony_details = vdeps['ceremony_details']
     guardian_pubkeys: Dict[GuardianId, ElectionPublicKey] = {}
     print('\nguardian pubkeys:')
+    n_failed = 0
     for n in range(1, ceremony_details.number_of_guardians+1):
         guardian_id = f'guardian_{n}'
-        pubkey = verify_guardian_pubkey(
-            pubdir, errors, {},
-            guardian_id=guardian_id
-        )
-        if pubkey is not None:
+        try:
+            pubkey = verify_artifact(
+                results, pubdir, 'guardian_pubkey',
+                guardian_id=guardian_id
+            )
             guardian_pubkeys[guardian_id] = pubkey
+        except Exception as e:
+            print(e)
+            n_failed += 1
+    if n_failed > 0:
+        raise Exception(f'failed to verify {n_failed} guardian pubkeys')
     return guardian_pubkeys
 
 def verify_all_ballots_submitted(results, pubdir, kwargs={}) -> bool:
@@ -178,18 +185,26 @@ def verify_summary(results, pubdir, kwargs={}) -> bool:
 def list_deps(depgraph, artifact_name):
     return depgraph.predecessors(artifact_name)
 
-def verify_artifact(depgraph, results, pubdir, artifact_name):
-    # print(f'verify_artifact {artifact_name}') # TODO remove
+def verify_artifact(depgraph, results, pubdir, artifact_name, **kwargs):
+    print(f'verify_artifact {artifact_name}') # TODO remove
+
+    state = results[artifact_name]
+    if state.attempted:
+        return # TODO is this all?
 
     # recursively verify dependencies
     vdeps = {}
     any_dep_failed = False
     dep_names = list_deps(depgraph, artifact_name)
-    # print('dep_names:', dep_names)
+    print('dep_names:', dep_names)
     for dep_name in dep_names:
         dep_state = results[dep_name]
         if not dep_state.attempted:
-            verify_artifact(depgraph, results, pubdir, dep_name)
+            try:
+                verify_artifact(depgraph, results, pubdir, dep_name)
+            except Exception as e:
+                print(e)
+                raise
         if isinstance(dep_state.result, str):
             # failed; mark main artifact failed too
             mark_failed(
@@ -200,15 +215,14 @@ def verify_artifact(depgraph, results, pubdir, artifact_name):
             # TODO break rather than attempting the rest?
         else:
             # verified; pass to the main artifact verify_fn
-            vdeps[dep_name] = vstate.result
+            vdeps[dep_name] = dep_state.result
     if any_dep_failed:
         return
 
     # verify the main artifact
-    state = results[artifact_name]
-    # print('state:', state)
     try:
-        state.verify_fn(results, pubdir) # TODO what about kwargs here?
+        result = state.verify_fn(results, pubdir, **kwargs)
+        return result
     except Exception as e:
         mark_failed(results, artifact_name, str(e))
 
@@ -229,12 +243,9 @@ def main(pubdir, verifier_id):
 
     print('verifying public election artifacts...\n')
 
-    # verify_manifest(pubdir, results, {}, {})
+    verify_artifact(depgraph, results, pubdir, 'all_guardian_pubkeys')
     verify_artifact(depgraph, results, pubdir, 'manifest')
     verify_artifact(depgraph, results, pubdir, 'ceremony_details')
-    # ceremony_details = verify_ceremony_details(pubdir, results, {}, {})
-    # vdeps = {'ceremony_details': ceremony_details}
-    # verify_all_guardian_pubkeys(results, pubdir, {})
 
 
 ### cli ###
