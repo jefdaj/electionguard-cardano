@@ -1,117 +1,141 @@
 #!/usr/bin/env python3
 
 import click
-from typing import Optional
+from collections import defaultdict
+from utils import (
+    # build_election,
+    # load_submitted_ballots,
+    # load_cast_ballots,
+    # load_tally_shares,
+    # load_spoiled_shares,
+    # load_spoiled_results,
+    # load_guardian_pubkeys_dict,
+    # load_spoiled_ballots,
+    # to_public_record,
+    from_public_record,
+)
 
 
 ### utils ###
 
-def verify_from_public_record(public_dir, artifact_name, **kwargs):
+def verify_from_public_record(pubdir, errors, artifact_name, **fmtargs):
     "Wrap from_public_record with verification stuff"
+    msg = f'loading {artifact_name} and checking its format'
+    try:
+        artifact = from_public_record(pubdir, artifact_name, **fmtargs)
+        print(f'✅ {msg}')
+        return artifact
+    except Exception as e:
+        errors[artifact_name] = str(e)
+        print(f'❌ {msg}')
+        print(errors)
 
 
 ### verify a node in the dependency graph ###
 #
-# Each function returns None for success, or a str explaining the error.
-# It takes a list of dependency nodes `deps` and optional extra `kwargs`.
+# Each function takes the main public dir `pubdir`, the main `errors` dict, a
+# list of alreadfy-verified dependency nodes `vdeps` and optional extra
+# `kwargs`. It returns whether verification succeeded.
 #
 # TODO is throwing an exception also OK, or should it be cast to str?
 # TODO should kwargs be passed expanded instead?
 #
 #############################################
 
-def verify_manifest(public_dir, deps, kwargs={}) -> Optional[str]:
+def verify_manifest(pubdir, errors, vdeps, kwargs={}) -> bool:
+    verify_from_public_record(pubdir, errors, 'manifest')
+
+def verify_ceremony_details(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_ceremony_details(public_dir, deps, kwargs={}) -> Optional[str]:
+def verify_guardian_pubkey(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_guardian_pubkey(public_dir, deps, kwargs={}) -> Optional[str]:
+def verify_guardian_backup(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_guardian_backup(public_dir, deps, kwargs={}) -> Optional[str]:
+def verify_guardian_verification(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_guardian_verification(public_dir, deps, kwargs={}) -> Optional[str]:
+def verify_joint_key(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_joint_key(public_dir, deps, kwargs={}) -> Optional[str]:
+def verify_constants(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_constants(public_dir, deps, kwargs={}) -> Optional[str]:
+def verify_context(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_context(public_dir, deps, kwargs={}) -> Optional[str]:
+def verify_device(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_device(public_dir, deps, kwargs={}) -> Optional[str]:
+def verify_ballot_submitted(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_ballot_submitted(public_dir, deps, kwargs={}) -> Optional[str]:
+def verify_cast_notice(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_cast_notice(public_dir, deps, kwargs={}) -> Optional[str]:
+def verify_ballot_spoiled(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_ballot_spoiled(public_dir, deps, kwargs={}) -> Optional[str]:
+def verify_ciphertext_tally(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_ciphertext_tally(public_dir, deps, kwargs={}) -> Optional[str]:
+def verify_tally_share(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_tally_share(public_dir, deps, kwargs={}) -> Optional[str]:
+def verify_spoiled_share(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_spoiled_share(public_dir, deps, kwargs={}) -> Optional[str]:
+def verify_plaintext_tally(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_plaintext_tally(public_dir, deps, kwargs={}) -> Optional[str]:
+def verify_spoiled_result(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_spoiled_result(public_dir, deps, kwargs={}) -> Optional[str]:
+def verify_all_guardian_pubkeys(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_all_guardian_pubkeys(public_dir, deps, kwargs={}) -> Optional[str]:
+def verify_all_ballots_submitted(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_all_ballots_submitted(public_dir, deps, kwargs={}) -> Optional[str]:
+def verify_all_ballots_spoiled(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_all_ballots_spoiled(public_dir, deps, kwargs={}) -> Optional[str]:
+def verify_all_cast_notices(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_all_cast_notices(public_dir, deps, kwargs={}) -> Optional[str]:
+def verify_all_ballots(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_all_ballots(public_dir, deps, kwargs={}) -> Optional[str]:
+def verify_all_spoiled_shares(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_all_spoiled_shares(public_dir, deps, kwargs={}) -> Optional[str]:
+def verify_all_spoiled_results(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_all_spoiled_results(public_dir, deps, kwargs={}) -> Optional[str]:
+def verify_all_tally_shares(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_all_tally_shares(public_dir, deps, kwargs={}) -> Optional[str]:
+def verify_build_election(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_build_election(public_dir, deps, kwargs={}) -> Optional[str]:
+def verify_internal_manifest(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_internal_manifest(public_dir, deps, kwargs={}) -> Optional[str]:
+def verify_election(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_election(public_dir, deps, kwargs={}) -> Optional[str]:
-    return "not implemented yet"
-
-def verify_summary(public_dir, deps, kwargs={}) -> Optional[str]:
+def verify_summary(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
 
 ### main ###
 
-def main(public_dir, verifier_id):
-    pass
+def main(pubdir, verifier_id):
+    errors = defaultdict(lambda: {})
+    print('verifying public election artifacts...')
+    verify_manifest(pubdir, errors, {}, {})
 
 
 ### cli ###
