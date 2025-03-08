@@ -1,5 +1,6 @@
 digraph verifier_deps {
   concentrate=true
+  ranksep=0.8
 
   # nodes from PUBLIC_RECORDS keys
   manifest
