@@ -18,9 +18,8 @@ from utils import (
 
 ### utils ###
 
-def verify_from_public_record(pubdir, errors, artifact_name, **fmtargs):
+def verify_from_public_record(pubdir, errors, artifact_name, msg, **fmtargs):
     "Wrap from_public_record with verification stuff"
-    msg = f'loading {artifact_name} and checking its format'
     try:
         artifact = from_public_record(pubdir, artifact_name, **fmtargs)
         print(f'✅ {msg}')
@@ -34,8 +33,8 @@ def verify_from_public_record(pubdir, errors, artifact_name, **fmtargs):
 ### verify a node in the dependency graph ###
 #
 # Each function takes the main public dir `pubdir`, the main `errors` dict, a
-# list of alreadfy-verified dependency nodes `vdeps` and optional extra
-# `kwargs`. It returns whether verification succeeded.
+# list of already-verified dependency nodes `vdeps` and optional extra `kwargs`
+# (for example `ballot_id`). It returns whether verification succeeded.
 #
 # TODO is throwing an exception also OK, or should it be cast to str?
 # TODO should kwargs be passed expanded instead?
@@ -43,28 +42,40 @@ def verify_from_public_record(pubdir, errors, artifact_name, **fmtargs):
 #############################################
 
 def verify_manifest(pubdir, errors, vdeps, kwargs={}) -> bool:
-    verify_from_public_record(pubdir, errors, 'manifest')
+    msg = 'manifest'
+    return verify_from_public_record(pubdir, errors, 'manifest', msg)
 
 def verify_ceremony_details(pubdir, errors, vdeps, kwargs={}) -> bool:
-    return "not implemented yet"
+    msg = 'ceremony_details'
+    return verify_from_public_record(pubdir, errors, 'ceremony_details', msg)
 
-def verify_guardian_pubkey(pubdir, errors, vdeps, kwargs={}) -> bool:
-    return "not implemented yet"
+def verify_guardian_pubkey(pubdir, errors, vdeps, guardian_id) -> bool:
+    msg = f'{guardian_id}'
+    return verify_from_public_record(
+        pubdir, errors, 'guardian_pubkey', msg,
+        guardian_id=guardian_id
+    )
 
+# TODO are these verified at all? they aren't public in the spec
 def verify_guardian_backup(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
+# TODO are these verified at all? they aren't public in the spec
 def verify_guardian_verification(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
 def verify_joint_key(pubdir, errors, vdeps, kwargs={}) -> bool:
-    return "not implemented yet"
+    msg = 'joint_key'
+    return verify_from_public_record(pubdir, errors, 'joint_key', msg)
 
+# TODO is this ever used?
 def verify_constants(pubdir, errors, vdeps, kwargs={}) -> bool:
-    return "not implemented yet"
+    msg = 'constants'
+    return verify_from_public_record(pubdir, errors, 'constants', msg)
 
 def verify_context(pubdir, errors, vdeps, kwargs={}) -> bool:
-    return "not implemented yet"
+    msg = 'constants'
+    return verify_from_public_record(pubdir, errors, 'context', msg)
 
 def verify_device(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
@@ -94,7 +105,18 @@ def verify_spoiled_result(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
 
 def verify_all_guardian_pubkeys(pubdir, errors, vdeps, kwargs={}) -> bool:
-    return "not implemented yet"
+    ceremony_details = vdeps['ceremony_details']
+    guardian_pubkeys: Dict[GuardianId, ElectionPublicKey] = {}
+    print('\nguardian pubkeys:')
+    for n in range(1, ceremony_details.number_of_guardians+1):
+        guardian_id = f'guardian_{n}'
+        pubkey = verify_guardian_pubkey(
+            pubdir, errors, {},
+            guardian_id=guardian_id
+        )
+        if pubkey is not None:
+            guardian_pubkeys[guardian_id] = pubkey
+    return guardian_pubkeys
 
 def verify_all_ballots_submitted(pubdir, errors, vdeps, kwargs={}) -> bool:
     return "not implemented yet"
@@ -134,8 +156,11 @@ def verify_summary(pubdir, errors, vdeps, kwargs={}) -> bool:
 
 def main(pubdir, verifier_id):
     errors = defaultdict(lambda: {})
-    print('verifying public election artifacts...')
+    print('verifying public election artifacts...\n')
     verify_manifest(pubdir, errors, {}, {})
+    ceremony_details = verify_ceremony_details(pubdir, errors, {}, {})
+    vdeps = {'ceremony_details': ceremony_details}
+    verify_all_guardian_pubkeys(pubdir, errors, vdeps, {})
 
 
 ### cli ###
