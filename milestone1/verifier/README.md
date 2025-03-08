@@ -11,6 +11,8 @@ TODO:
 - [ ] Have this script create the summary json rather than the admin
 - [ ] Clean up the code! It's very messy so far
 
+## Initial messy version
+
 Example outputs so far....
 
 ```bash
@@ -140,4 +142,84 @@ Found 1 irregularities...
 }
 
 The election should NOT be certified! ⛔
+```
+
+## Cleaner graph-based version
+
+I started working on a dependency graph to better figure out which artifacts
+can still be verified if one or more fail. It can be rendered for humans or used
+to determine dependencies for any particular artifact in python code.
+
+```bash
+$ nix develop
+$ dot -Tsvg verifier_deps.dot -o verifier_deps.svg
+```
+
+![](./verifier_deps.svg)
+
+```python
+import pygraphviz as pgv
+
+G = pgv.AGraph('verifier.dot')
+print(G)
+
+print('dependencies of plaintext_tally:')
+print(G.predecessors('plaintext_tally'))
+```
+
+```dot
+digraph verifier_deps {
+	graph [concentrate=true];
+	manifest -> plaintext_tally;
+	manifest -> spoiled_result;
+	build_election	[style=dotted];
+	manifest -> build_election;
+	ceremony_details -> guardian_pubkey;
+	ceremony_details -> build_election;
+	guardian_pubkey -> guardian_backup;
+	guardian_pubkey -> guardian_verification;
+	guardian_pubkey -> joint_key;
+	guardian_pubkey -> all_guardian_pubkeys;
+	joint_key -> build_election;
+	context -> ciphertext_tally;
+	context -> tally_share;
+	context -> spoiled_share;
+	context -> plaintext_tally;
+	context -> spoiled_result;
+	device -> ballot_submitted;
+	device -> cast_notice;
+	device -> ballot_spoiled;
+	ballot_submitted -> spoiled_share;
+	ballot_submitted -> all_ballots_submitted;
+	cast_notice -> all_cast_notices;
+	ballot_spoiled -> spoiled_share;
+	ballot_spoiled -> spoiled_result;
+	ballot_spoiled -> all_ballots_spoiled;
+	ciphertext_tally -> tally_share;
+	ciphertext_tally -> plaintext_tally;
+	tally_share -> all_tally_shares;
+	spoiled_share -> all_spoiled_shares;
+	plaintext_tally -> election;
+	spoiled_result -> all_spoiled_results;
+	all_guardian_pubkeys -> all_spoiled_shares;
+	all_guardian_pubkeys -> all_tally_shares;
+	all_ballots_submitted -> ciphertext_tally;
+	all_ballots_submitted -> all_ballots;
+	all_ballots_spoiled -> ciphertext_tally;
+	all_ballots_spoiled -> all_ballots;
+	all_cast_notices -> ciphertext_tally;
+	all_cast_notices -> all_ballots;
+	all_spoiled_shares -> spoiled_result;
+	all_tally_shares -> plaintext_tally;
+	build_election -> constants;
+	build_election -> context;
+	internal_manifest	[style=dotted];
+	build_election -> internal_manifest;
+	internal_manifest -> ciphertext_tally;
+}
+```
+
+```
+dependencies of plaintext_tally:
+['manifest', 'context', 'ciphertext_tally', 'all_tally_shares']
 ```

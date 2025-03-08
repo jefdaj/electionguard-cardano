@@ -10,6 +10,7 @@
         jq
         time
         tree
+        graphviz
 
         # python
         # these are only the dependencies for election.py;
@@ -19,6 +20,7 @@
           click-default-group
           dotmap
           pygments
+          pygraphviz
         ]))
 
       ];

@@ -1,0 +1,60 @@
+digraph verifier_deps {
+  concentrate=true
+
+  # nodes from PUBLIC_RECORDS keys
+  manifest
+  ceremony_details
+  guardian_pubkey
+  guardian_backup # TODO remove? not sure whether these are considered public
+  guardian_verification
+  joint_key
+  constants
+  context
+  device
+  ballot_submitted
+  cast_notice
+  ballot_spoiled
+  ciphertext_tally
+  tally_share
+  spoiled_share
+  plaintext_tally
+  spoiled_result
+  # summary # TODO remove once moved to verify step
+  election
+
+  # "all" versions of things that are actually sets
+  guardian_pubkey -> all_guardian_pubkeys
+  ballot_submitted -> all_ballots_submitted
+  ballot_spoiled -> all_ballots_spoiled
+  cast_notice -> all_cast_notices
+  {all_ballots_submitted,all_ballots_spoiled,all_cast_notices} -> all_ballots # TODO all_ballots_spoiled not needed here?
+  {all_guardian_pubkeys, spoiled_share} -> all_spoiled_shares
+  spoiled_result -> all_spoiled_results
+  {all_guardian_pubkeys, tally_share} -> all_tally_shares
+
+  # misc other nodes added manually
+  build_election [style=dotted]    # not really a dep, but makes it cleaner # TODO remove?
+  internal_manifest [style=dotted] # not serializable; have to build_election each time
+  # TODO verify? (the new 4_verify outputs. not sure if useful bc will depend on all other nodes)
+
+  # dependenencies from guardian.py
+  ceremony_details -> guardian_pubkey -> guardian_backup
+  guardian_pubkey -> guardian_verification # TODO remove? it really depends on the *cardano* wallet key right?
+  guardian_pubkey -> joint_key
+  {ciphertext_tally,context} -> tally_share
+  {context,ballot_submitted,ballot_spoiled} -> spoiled_share
+  
+
+  # dependencies from device.py
+  device -> {ballot_submitted,ballot_spoiled,cast_notice}
+
+  # dependenencies from admin.py
+  {manifest,ceremony_details,joint_key} -> build_election -> {constants,internal_manifest,context}
+  {internal_manifest,context,all_ballots_submitted,all_cast_notices,all_ballots_spoiled} -> ciphertext_tally
+  {manifest,context,all_tally_shares,ciphertext_tally} -> plaintext_tally
+  {manifest,context,all_spoiled_shares,ballot_spoiled} -> spoiled_result
+
+  # overall election cerfification/verification
+  # TODO is this how people will see it? or will they care about each individual ballot?
+  plaintext_tally -> election
+}
