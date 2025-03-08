@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import click
-from typing import Any, Union, Optional
+from typing import Any, Union, Optional, Callable
 from collections import defaultdict
 from utils import (
     # build_election,
@@ -29,7 +29,7 @@ def mark_verified(results, artifact_name, obj):
     results[artifact_name].attempted = True
     results[artifact_name].result = obj
 
-def verify_from_public_record(pubdir, results, artifact_name, msg=None, **fmtargs):
+def verify_load(pubdir, results, artifact_name, msg=None, **fmtargs):
     "Wrap from_public_record with verification stuff"
     if msg is None:
         msg = artifact_name
@@ -46,7 +46,7 @@ def verify_from_public_record(pubdir, results, artifact_name, msg=None, **fmtarg
 @dataclass
 class VerifyState:
 
-    verify_fn: Callable[str, dict, dict] = field(init=False)
+    verify_fn: Callable[[str, dict, dict], None]
 
     # whether we've already tried to verify this one
     attempted: bool = field(init=True, default=False)
@@ -68,14 +68,14 @@ class VerifyState:
 #############################################
 
 def verify_manifest(results, pubdir, kwargs={}) -> bool:
-    return verify_from_public_record(pubdir, results, 'manifest')
+    return verify_load(pubdir, results, 'manifest')
 
 def verify_ceremony_details(results, pubdir, kwargs={}) -> bool:
-    return verify_from_public_record(pubdir, results, 'ceremony_details')
+    return verify_load(pubdir, results, 'ceremony_details')
 
 def verify_guardian_pubkey(results, pubdir, guardian_id) -> bool:
     msg = f'{guardian_id}'
-    return verify_from_public_record(
+    return verify_load(
         pubdir, errors, 'guardian_pubkey', msg,
         guardian_id=guardian_id
     )
@@ -89,14 +89,14 @@ def verify_guardian_verification(results, pubdir, kwargs={}) -> bool:
     return "not implemented yet"
 
 def verify_joint_key(results, pubdir, kwargs={}) -> bool:
-    return verify_from_public_record(pubdir, results, 'joint_key')
+    return verify_load(pubdir, results, 'joint_key')
 
 # TODO is this ever used?
 def verify_constants(results, pubdir, kwargs={}) -> bool:
-    return verify_from_public_record(pubdir, results, 'constants')
+    return verify_load(pubdir, results, 'constants')
 
 def verify_context(results, pubdir, kwargs={}) -> bool:
-    return verify_from_public_record(pubdir, results, 'context')
+    return verify_load(pubdir, results, 'context')
 
 def verify_device(results, pubdir, kwargs={}) -> bool:
     return "not implemented yet"
@@ -179,15 +179,38 @@ def list_deps(depgraph, artifact_name):
     return depgraph.predecessors(artifact_name)
 
 def verify_artifact(depgraph, results, pubdir, artifact_name):
-    dep_names = list_deps(depgraph, artifact_name)
+    # print(f'verify_artifact {artifact_name}') # TODO remove
+
+    # recursively verify dependencies
     vdeps = {}
+    any_dep_failed = False
+    dep_names = list_deps(depgraph, artifact_name)
+    # print('dep_names:', dep_names)
     for dep_name in dep_names:
-        verify_fn = globals()[f'verify_{dep_name}']
-        try:
-            vdeps[dep_name] = verify_artifact(depgraph, results, pubdir, dep_name)
-        except Exception as e:
-            errors[dep_name] = str(e)
-            return
+        dep_state = results[dep_name]
+        if not dep_state.attempted:
+            verify_artifact(depgraph, results, pubdir, dep_name)
+        if isinstance(dep_state.result, str):
+            # failed; mark main artifact failed too
+            mark_failed(
+                results, artifact_name,
+                f'skipped because {dep_name} failed to verify' # TODO multiple deps in msg?
+            )
+            any_dep_failed = True
+            # TODO break rather than attempting the rest?
+        else:
+            # verified; pass to the main artifact verify_fn
+            vdeps[dep_name] = vstate.result
+    if any_dep_failed:
+        return
+
+    # verify the main artifact
+    state = results[artifact_name]
+    # print('state:', state)
+    try:
+        state.verify_fn(results, pubdir) # TODO what about kwargs here?
+    except Exception as e:
+        mark_failed(results, artifact_name, str(e))
 
 def main(pubdir, verifier_id):
 
@@ -196,7 +219,7 @@ def main(pubdir, verifier_id):
 
     # main state is a dict of artifact_name -> VerifyState
     # it accumulates both successful result objects and error messages
-    exclude_fns = ['verify_from_public_record', 'verify_artifact']
+    exclude_fns = ['verify_load', 'verify_artifact']
     results = {
         name.replace('verify_', ''): VerifyState(fn)
         for (name,fn) in globals().items()
@@ -207,6 +230,8 @@ def main(pubdir, verifier_id):
     print('verifying public election artifacts...\n')
 
     # verify_manifest(pubdir, results, {}, {})
+    verify_artifact(depgraph, results, pubdir, 'manifest')
+    verify_artifact(depgraph, results, pubdir, 'ceremony_details')
     # ceremony_details = verify_ceremony_details(pubdir, results, {}, {})
     # vdeps = {'ceremony_details': ceremony_details}
     # verify_all_guardian_pubkeys(results, pubdir, {})
