@@ -269,9 +269,8 @@ def verify_tally(public_dir, errors, manifest, cast_ballots, guardian_pubkeys, c
     print('verifying the final tally:')
 
     try:
-        # TODO rename tally_result? final_tally?
         print('  loading tally and checking its format', end=' ')
-        plaintext_tally = from_public_record(public_dir, 'plaintext_tally')
+        tally_result = from_public_record(public_dir, 'plaintext_tally')
         print('✅')
     except Exception as e:
         print('❌')
@@ -281,7 +280,7 @@ def verify_tally(public_dir, errors, manifest, cast_ballots, guardian_pubkeys, c
     try:
         n_cast = len(cast_ballots)
         print(f'  verifying aggregation of {n_cast} cast ballots into tally', end=' ')
-        verify_aggregation(cast_ballots, plaintext_tally, manifest, context)
+        verify_aggregation(cast_ballots, tally_result, manifest, context)
         print('✅')
     except Exception as e:
         print('❌')
@@ -290,7 +289,7 @@ def verify_tally(public_dir, errors, manifest, cast_ballots, guardian_pubkeys, c
 
     try:
         print('  verifying tally decryption', end=' ')
-        verify_decryption(plaintext_tally, guardian_pubkeys, context)
+        verify_decryption(tally_result, guardian_pubkeys, context)
         print('✅')
         tally_verified = True
         # TODO produce 8_summary.json and print here
