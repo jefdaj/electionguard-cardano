@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import click
+from typing import Any, Union, Optional
 from collections import defaultdict
 from utils import (
     # build_election,
@@ -15,20 +16,44 @@ from utils import (
     from_public_record,
 )
 import pygraphviz as pgv
+from dataclasses import dataclass, field
 
 
 ### utils ###
 
-def verify_from_public_record(pubdir, errors, artifact_name, msg, **fmtargs):
+def mark_failed(results, artifact_name, error_msg):
+    results[artifact_name].attempted = True
+    results[artifact_name].result = error_msg
+
+def mark_verified(results, artifact_name, obj):
+    results[artifact_name].attempted = True
+    results[artifact_name].result = obj
+
+def verify_from_public_record(pubdir, results, artifact_name, msg=None, **fmtargs):
     "Wrap from_public_record with verification stuff"
+    if msg is None:
+        msg = artifact_name
     try:
         artifact = from_public_record(pubdir, artifact_name, **fmtargs)
+        mark_verified(results, artifact_name, artifact)
         print(f'✅ {msg}')
+        # TODO is returning it redundant?
         return artifact
     except Exception as e:
-        errors[artifact_name] = str(e)
+        mark_failed(results, artifact_name, str(e))
         print(f'❌ {msg}')
-        print(errors)
+
+@dataclass
+class VerifyState:
+
+    verify_fn: Callable[str, dict, dict] = field(init=False)
+
+    # whether we've already tried to verify this one
+    attempted: bool = field(init=True, default=False)
+
+    # str means error msg; anything else is success
+    # TODO is this optional union thing really the best way?
+    result: Optional[Union[str, Any]] = field(init=True, default=None)
 
 
 ### verify a node in the dependency graph ###
@@ -42,15 +67,13 @@ def verify_from_public_record(pubdir, errors, artifact_name, msg, **fmtargs):
 #
 #############################################
 
-def verify_manifest(pubdir, errors, vdeps, kwargs={}) -> bool:
-    msg = 'manifest'
-    return verify_from_public_record(pubdir, errors, 'manifest', msg)
+def verify_manifest(results, pubdir, kwargs={}) -> bool:
+    return verify_from_public_record(pubdir, results, 'manifest')
 
-def verify_ceremony_details(pubdir, errors, vdeps, kwargs={}) -> bool:
-    msg = 'ceremony_details'
-    return verify_from_public_record(pubdir, errors, 'ceremony_details', msg)
+def verify_ceremony_details(results, pubdir, kwargs={}) -> bool:
+    return verify_from_public_record(pubdir, results, 'ceremony_details')
 
-def verify_guardian_pubkey(pubdir, errors, vdeps, guardian_id) -> bool:
+def verify_guardian_pubkey(results, pubdir, guardian_id) -> bool:
     msg = f'{guardian_id}'
     return verify_from_public_record(
         pubdir, errors, 'guardian_pubkey', msg,
@@ -58,54 +81,51 @@ def verify_guardian_pubkey(pubdir, errors, vdeps, guardian_id) -> bool:
     )
 
 # TODO are these verified at all? they aren't public in the spec
-def verify_guardian_backup(pubdir, errors, vdeps, kwargs={}) -> bool:
+def verify_guardian_backup(results, pubdir, kwargs={}) -> bool:
     return "not implemented yet"
 
 # TODO are these verified at all? they aren't public in the spec
-def verify_guardian_verification(pubdir, errors, vdeps, kwargs={}) -> bool:
+def verify_guardian_verification(results, pubdir, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_joint_key(pubdir, errors, vdeps, kwargs={}) -> bool:
-    msg = 'joint_key'
-    return verify_from_public_record(pubdir, errors, 'joint_key', msg)
+def verify_joint_key(results, pubdir, kwargs={}) -> bool:
+    return verify_from_public_record(pubdir, results, 'joint_key')
 
 # TODO is this ever used?
-def verify_constants(pubdir, errors, vdeps, kwargs={}) -> bool:
-    msg = 'constants'
-    return verify_from_public_record(pubdir, errors, 'constants', msg)
+def verify_constants(results, pubdir, kwargs={}) -> bool:
+    return verify_from_public_record(pubdir, results, 'constants')
 
-def verify_context(pubdir, errors, vdeps, kwargs={}) -> bool:
-    msg = 'constants'
-    return verify_from_public_record(pubdir, errors, 'context', msg)
+def verify_context(results, pubdir, kwargs={}) -> bool:
+    return verify_from_public_record(pubdir, results, 'context')
 
-def verify_device(pubdir, errors, vdeps, kwargs={}) -> bool:
+def verify_device(results, pubdir, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_ballot_submitted(pubdir, errors, vdeps, kwargs={}) -> bool:
+def verify_ballot_submitted(results, pubdir, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_cast_notice(pubdir, errors, vdeps, kwargs={}) -> bool:
+def verify_cast_notice(results, pubdir, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_ballot_spoiled(pubdir, errors, vdeps, kwargs={}) -> bool:
+def verify_ballot_spoiled(results, pubdir, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_ciphertext_tally(pubdir, errors, vdeps, kwargs={}) -> bool:
+def verify_ciphertext_tally(results, pubdir, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_tally_share(pubdir, errors, vdeps, kwargs={}) -> bool:
+def verify_tally_share(results, pubdir, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_spoiled_share(pubdir, errors, vdeps, kwargs={}) -> bool:
+def verify_spoiled_share(results, pubdir, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_plaintext_tally(pubdir, errors, vdeps, kwargs={}) -> bool:
+def verify_plaintext_tally(results, pubdir, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_spoiled_result(pubdir, errors, vdeps, kwargs={}) -> bool:
+def verify_spoiled_result(results, pubdir, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_all_guardian_pubkeys(pubdir, errors, vdeps, kwargs={}) -> bool:
+def verify_all_guardian_pubkeys(results, pubdir, kwargs={}) -> bool:
     ceremony_details = vdeps['ceremony_details']
     guardian_pubkeys: Dict[GuardianId, ElectionPublicKey] = {}
     print('\nguardian pubkeys:')
@@ -119,37 +139,37 @@ def verify_all_guardian_pubkeys(pubdir, errors, vdeps, kwargs={}) -> bool:
             guardian_pubkeys[guardian_id] = pubkey
     return guardian_pubkeys
 
-def verify_all_ballots_submitted(pubdir, errors, vdeps, kwargs={}) -> bool:
+def verify_all_ballots_submitted(results, pubdir, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_all_ballots_spoiled(pubdir, errors, vdeps, kwargs={}) -> bool:
+def verify_all_ballots_spoiled(results, pubdir, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_all_cast_notices(pubdir, errors, vdeps, kwargs={}) -> bool:
+def verify_all_cast_notices(results, pubdir, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_all_ballots(pubdir, errors, vdeps, kwargs={}) -> bool:
+def verify_all_ballots(results, pubdir, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_all_spoiled_shares(pubdir, errors, vdeps, kwargs={}) -> bool:
+def verify_all_spoiled_shares(results, pubdir, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_all_spoiled_results(pubdir, errors, vdeps, kwargs={}) -> bool:
+def verify_all_spoiled_results(results, pubdir, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_all_tally_shares(pubdir, errors, vdeps, kwargs={}) -> bool:
+def verify_all_tally_shares(results, pubdir, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_build_election(pubdir, errors, vdeps, kwargs={}) -> bool:
+def verify_build_election(results, pubdir, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_internal_manifest(pubdir, errors, vdeps, kwargs={}) -> bool:
+def verify_internal_manifest(results, pubdir, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_election(pubdir, errors, vdeps, kwargs={}) -> bool:
+def verify_election(results, pubdir, kwargs={}) -> bool:
     return "not implemented yet"
 
-def verify_summary(pubdir, errors, vdeps, kwargs={}) -> bool:
+def verify_summary(results, pubdir, kwargs={}) -> bool:
     return "not implemented yet"
 
 
@@ -158,33 +178,38 @@ def verify_summary(pubdir, errors, vdeps, kwargs={}) -> bool:
 def list_deps(depgraph, artifact_name):
     return depgraph.predecessors(artifact_name)
 
-def verify_artifact(depgraph, pubdir, errors, artifact_name):
+def verify_artifact(depgraph, results, pubdir, artifact_name):
     dep_names = list_deps(depgraph, artifact_name)
     vdeps = {}
     for dep_name in dep_names:
-        verify_fn = locals()[f'verify_{dep_name}']
+        verify_fn = globals()[f'verify_{dep_name}']
         try:
-            vdeps[dep_name] = verify_artifact(depgraph, pubdir, errors, dep_name)
+            vdeps[dep_name] = verify_artifact(depgraph, results, pubdir, dep_name)
         except Exception as e:
             errors[dep_name] = str(e)
             return
 
-def verify_deps(depgraph, artifact_name):
-    print(f'verify_deps {artifact_name}')
-    vdeps = {}
-    for dep_name in list_deps(depgraph, artifact_name):
-        verify_fn = locals()[f'verify_{dep_name}']
-        vdeps[dep_name] = verify_fn(pubdir, errors, )
-
 def main(pubdir, verifier_id):
-    depgraph = pgv.AGraph('/scripts/verifier_deps.dot') # TODO scripts var?
-    errors = defaultdict(lambda: {})
-    print(list_deps(depgraph, 'all_guardian_pubkeys'))
-    # print('verifying public election artifacts...\n')
-    # verify_manifest(pubdir, errors, {}, {})
-    # ceremony_details = verify_ceremony_details(pubdir, errors, {}, {})
+
+    # describes dependencies, and can be rendered to debug
+    depgraph = pgv.AGraph('/scripts/verifier_deps.dot')
+
+    # main state is a dict of artifact_name -> VerifyState
+    # it accumulates both successful result objects and error messages
+    exclude_fns = ['verify_from_public_record', 'verify_artifact']
+    results = {
+        name.replace('verify_', ''): VerifyState(fn)
+        for (name,fn) in globals().items()
+        if name.startswith('verify_') and not name in exclude_fns
+    }
+    # print(results)
+
+    print('verifying public election artifacts...\n')
+
+    # verify_manifest(pubdir, results, {}, {})
+    # ceremony_details = verify_ceremony_details(pubdir, results, {}, {})
     # vdeps = {'ceremony_details': ceremony_details}
-    # verify_all_guardian_pubkeys(pubdir, errors, vdeps, {})
+    # verify_all_guardian_pubkeys(results, pubdir, {})
 
 
 ### cli ###
