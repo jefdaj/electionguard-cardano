@@ -1,65 +1,80 @@
 digraph verifier_deps {
   concentrate=true
-  ranksep=0.8
 
   # nodes from PUBLIC_RECORDS keys
   manifest
   ceremony_details
-  guardian_pubkey
-  guardian_backup # TODO remove? not sure whether these are considered public
-  guardian_verification
+  one_guardian_pubkey
+  one_guardian_backup # TODO remove? not sure whether these are considered public
+  one_guardian_verification
   joint_key
   constants
   context
-  each_device
-  each_ballot_submitted
-  each_cast_notice
-  each_ballot_spoiled
-  each_ciphertext_tally
-  each_tally_share
-  each_spoiled_share
+  one_device
+  one_ballot_submitted
+  one_cast_notice
+  one_ballot_spoiled
+  ciphertext_tally
+  one_tally_share
+  one_spoiled_share
   plaintext_tally
-  each_spoiled_result
+  one_spoiled_result
 
   # "all" versions of things that are actually sets
-  {ceremony_details,guardian_pubkey} -> all_guardian_pubkeys
-  each_ballot_submitted -> all_ballots_submitted
-  each_ballot_spoiled -> all_ballots_spoiled
-  each_cast_notice -> all_cast_notices
-  {all_ballots_submitted,all_ballots_spoiled,all_cast_notices} -> all_ballots # TODO all_ballots_spoiled not needed here?
+  {ceremony_details,one_guardian_pubkey} -> all_guardian_pubkeys
+  one_ballot_submitted -> all_ballots_submitted
+  one_ballot_spoiled -> all_ballots_spoiled
+  one_ballot_submitted -> one_cast_notice -> all_cast_notices
 
-  # TODO fix these
-  {all_guardian_pubkeys, spoiled_share} -> all_spoiled_shares
-  {all_guardian_pubkeys, spoiled_result} -> all_spoiled_results
-  {all_guardian_pubkeys, tally_share} -> all_tally_shares
+  one_ballot_submitted -> {one_spoiled_share,one_ballot_spoiled} -> one_spoiled_result
+  one_guardian_pubkey -> one_tally_share
+  {all_guardian_pubkeys, one_spoiled_share} -> all_spoiled_shares
+  {all_guardian_pubkeys, one_spoiled_result} -> all_spoiled_results
+  {all_guardian_pubkeys, one_tally_share} -> all_tally_shares
 
   # misc other nodes added manually
   build_election [style=dotted]    # not really a dep, but makes it cleaner # TODO remove?
   internal_manifest [style=dotted] # not serializable; have to build_election each time
-  election
 
   # dependenencies from guardian.py
-  ceremony_details -> guardian_pubkey -> guardian_backup
-  {ceremony_details,guardian_backup} -> all_guardian_backups
-  {guardian_pubkey,guardian_backup} -> guardian_verification # TODO remove? it really depends on the *cardano* wallet key right?
-  {ceremony_details,guardian_verification} -> all_guardian_verifications
+  ceremony_details -> one_guardian_pubkey -> one_guardian_backup
+
+  # TODO these should depend on the guardian pubkeys, not just the ceremony details,
+  #      because they should be checking that those guardians signed them
+  {ceremony_details,one_guardian_backup} -> all_guardian_backups
+  {ceremony_details,one_guardian_verification} -> all_guardian_verifications
+
+  {one_guardian_pubkey,one_guardian_backup} -> one_guardian_verification # TODO remove? it really depends on the *cardano* wallet key right?
   all_guardian_pubkeys -> joint_key
-  {ciphertext_tally,context} -> tally_share
-  {context,ballot_submitted,ballot_spoiled} -> spoiled_share
+  {ciphertext_tally,context} -> one_tally_share
+  {context,one_ballot_submitted,one_ballot_spoiled} -> one_spoiled_share
   
 
   # dependencies from device.py
-  device -> {ballot_submitted,ballot_spoiled,cast_notice}
+  one_device -> {one_ballot_submitted,one_ballot_spoiled,one_cast_notice}
+  one_device -> all_devices
 
   # dependenencies from admin.py
   {manifest,ceremony_details,joint_key} -> build_election -> {constants,internal_manifest,context}
-  {internal_manifest,context,all_ballots} -> ciphertext_tally
+  {internal_manifest,context,all_ballots_cast} -> ciphertext_tally
   {manifest,context,all_tally_shares,ciphertext_tally} -> plaintext_tally
-  {manifest,context,all_spoiled_shares,ballot_spoiled} -> spoiled_result
+  {manifest,context,one_spoiled_share,one_ballot_spoiled} -> one_spoiled_result
 
   # overall election cerfification/verification
   # TODO is this how people will see it? or will they only require the plaintext_tally?
   # (either way, this is the way to get the code working first)
-  {all_ballots,all_spoiled_results,plaintext_tally} -> election
-  election
+
+  # backbone of "phony" nodes (in the Makefile sense) to make verification
+  # proceed in a nice linear way. this way we can have our dependency graph but
+  # still show human-readable output. note that the summary/verification step
+  # is missing because it's done at the end
+  node [style=filled, fillcolor=skyblue]
+  {manifest,ceremony_details} -> phony_announce
+  {ceremony_details,all_guardian_pubkeys,all_guardian_backups,all_guardian_verifications,joint_key} -> phony_ceremony
+  {joint_key,context,constants} -> phony_constants
+  {phony_announce,phony_ceremony,phony_constants,all_devices} -> phony_config
+  {all_ballots_submitted,all_ballots_spoiled,all_cast_notices,all_spoiled_results} -> phony_ballots
+  {plaintext_tally,all_spoiled_results} -> phony_decryptions
+  {phony_config,phony_ballots,phony_decryptions} -> phony_election
+  phony_election
 }
