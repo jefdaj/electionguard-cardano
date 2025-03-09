@@ -69,12 +69,12 @@ digraph verifier_deps {
   # still show human-readable output. note that the summary/verification step
   # is missing because it's done at the end
   node [style=filled, fillcolor=skyblue]
-  {manifest,ceremony_details} -> phony_announce
-  {ceremony_details,all_guardian_pubkeys,all_guardian_backups,all_guardian_verifications,joint_key} -> phony_ceremony
-  {joint_key,context,constants} -> phony_constants
-  {phony_announce,phony_ceremony,phony_constants,all_devices} -> phony_config
-  {all_ballots_submitted,all_ballots_spoiled,all_cast_notices,all_spoiled_results} -> phony_ballots
-  {plaintext_tally,all_spoiled_results} -> phony_decryptions
-  {phony_config,phony_ballots,phony_decryptions} -> phony_election
-  phony_election
+  {manifest,ceremony_details} -> gather_announce
+  {ceremony_details,all_guardian_pubkeys,all_guardian_backups,all_guardian_verifications,joint_key} -> gather_ceremony
+  {joint_key,context,constants} -> gather_constants
+  {gather_announce,gather_ceremony,gather_constants,all_devices} -> gather_config
+  {all_ballots_submitted,all_ballots_spoiled,all_cast_notices,all_spoiled_results} -> gather_ballots
+  {plaintext_tally,all_spoiled_results} -> gather_decryptions
+  {gather_config,gather_ballots,gather_decryptions} -> gather_election
+  gather_election
 }
