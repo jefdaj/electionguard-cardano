@@ -11,23 +11,24 @@ digraph verifier_deps {
   joint_key
   constants
   context
-  device
-  ballot_submitted
-  cast_notice
-  ballot_spoiled
-  ciphertext_tally
-  tally_share
-  spoiled_share
+  each_device
+  each_ballot_submitted
+  each_cast_notice
+  each_ballot_spoiled
+  each_ciphertext_tally
+  each_tally_share
+  each_spoiled_share
   plaintext_tally
-  spoiled_result
-  # summary # TODO remove once moved to verify step
+  each_spoiled_result
 
   # "all" versions of things that are actually sets
   {ceremony_details,guardian_pubkey} -> all_guardian_pubkeys
-  ballot_submitted -> all_ballots_submitted
-  ballot_spoiled -> all_ballots_spoiled
-  cast_notice -> all_cast_notices
+  each_ballot_submitted -> all_ballots_submitted
+  each_ballot_spoiled -> all_ballots_spoiled
+  each_cast_notice -> all_cast_notices
   {all_ballots_submitted,all_ballots_spoiled,all_cast_notices} -> all_ballots # TODO all_ballots_spoiled not needed here?
+
+  # TODO fix these
   {all_guardian_pubkeys, spoiled_share} -> all_spoiled_shares
   {all_guardian_pubkeys, spoiled_result} -> all_spoiled_results
   {all_guardian_pubkeys, tally_share} -> all_tally_shares
@@ -35,13 +36,13 @@ digraph verifier_deps {
   # misc other nodes added manually
   build_election [style=dotted]    # not really a dep, but makes it cleaner # TODO remove?
   internal_manifest [style=dotted] # not serializable; have to build_election each time
-  # TODO verify? (the new 4_verify outputs. not sure if useful bc will depend on all other nodes)
   election
-  summary # TODO rename verify?
 
   # dependenencies from guardian.py
   ceremony_details -> guardian_pubkey -> guardian_backup
-  guardian_pubkey -> guardian_verification # TODO remove? it really depends on the *cardano* wallet key right?
+  {ceremony_details,guardian_backup} -> all_guardian_backups
+  {guardian_pubkey,guardian_backup} -> guardian_verification # TODO remove? it really depends on the *cardano* wallet key right?
+  {ceremony_details,guardian_verification} -> all_guardian_verifications
   all_guardian_pubkeys -> joint_key
   {ciphertext_tally,context} -> tally_share
   {context,ballot_submitted,ballot_spoiled} -> spoiled_share
@@ -60,5 +61,5 @@ digraph verifier_deps {
   # TODO is this how people will see it? or will they only require the plaintext_tally?
   # (either way, this is the way to get the code working first)
   {all_ballots,all_spoiled_results,plaintext_tally} -> election
-  election -> summary
+  election
 }

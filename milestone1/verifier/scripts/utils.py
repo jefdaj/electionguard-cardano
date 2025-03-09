@@ -47,10 +47,11 @@ PRIVATE_RECORDS = {
     'plaintext_ballot': (
         PlaintextBallot,
         'plaintext_ballots',
-        '{obj.object_id}'
+        '{ballot_id}'
     ),
 }
 
+# TODO fix local-election scripts to use ballot_id rather than obj.whatever_id
 PUBLIC_RECORDS = {
     'manifest': (
         Manifest,
@@ -105,12 +106,12 @@ PUBLIC_RECORDS = {
     'cast_notice': (
         dict,
         '2_ballots/2_cast',
-        '{obj.ballot_id}'
+        '{ballot_id}'
     ),
     'ballot_spoiled': (
         CiphertextBallot,
         '2_ballots/3_spoiled',
-        '{obj.object_id}'
+        '{ballot_id}'
     ),
     'ciphertext_tally': (
         PublishedCiphertextTally,
@@ -150,7 +151,7 @@ def to_record(records_map, public_dir: str, record_type: str, obj, **fmtargs):
     (_, dname, fstr) = records_map[record_type]
     dpath = join(public_dir, dname)
     makedirs(dpath, exist_ok=True)
-    fmtargs['obj'] = obj # so we can use its fields too
+    # fmtargs['obj'] = obj # so we can use its fields too
     fname = fstr.format(**fmtargs)
     serialize.to_file(obj, fname, dpath)
 
@@ -178,6 +179,49 @@ def from_private_record(private_dir: str, record_type: str, **fmtargs):
     return from_record(PRIVATE_RECORDS, private_dir, record_type, **fmtargs)
 
 
+### list all expected fmtargs for artifacts of a given type ###
+
+def list_ballot_ids(id_list_dir):
+    return [
+        splitext(n)[0]
+        for n in listdir(id_list_dir)
+        if n.startswith('ballot-') # TODO remove? may only be relevant for vim swapfiles
+    ]
+
+def list_submitted_ballot_fmtargs(public_dir):
+    submitted_dir = join(public_dir, PUBLIC_RECORDS['ballot_submitted'][1])
+    return [{'ballot_id': i} for i in list_ballot_ids(submitted_dir)]
+
+def list_cast_ballot_fmtargs(public_dir):
+    cast_dir = join(public_dir, PUBLIC_RECORDS['cast_notice'][1])
+    return [{'ballot_id': i} for i in list_ballot_ids(cast_dir)]
+
+
+def list_spoiled_ballot_fmtargs(public_dir):
+    spoiled_dir = join(public_dir, PUBLIC_RECORDS['spoiled_result'][1])
+    return [{'ballot_id': i} for i in list_ballot_ids(spoiled_dir)]
+
+def list_guardian_pubkey_fmtargs(public_dir, n_guardians):
+    fmtargs_list = []
+    for n in range(1, n_guardians+1):
+        fmtargs_list.append({'guardian_id': f'guardian_{n}'})
+    return fmtargs_list
+
+def list_guardian_backup_fmtargs(public_dir, n_guardians):
+    for guardian_id in range(1, n_guardians+1):
+        for backup_n in range(1, n_guardians+1):
+            if backup_n == guardian_id:
+                continue
+            fmtargs_list.append({
+                'guardian_id': guardian_id,
+                'backup_order': backup_order
+            })
+    return fmtargs_list
+
+def list_guardian_verification_fmtargs(public_dir, n_guardians):
+    return list_guardian_backup_fmtargs(public_dir, n_guardians)
+
+
 ### load sets of files ###
 
 # you probably want the cast or spoiled versions below
@@ -186,11 +230,7 @@ def load_ballots(
         id_list_dir: str,
         state: Optional[BallotBoxState]
         ) -> List[SubmittedBallot]:
-    ballot_ids = [
-        splitext(n)[0]
-        for n in listdir(id_list_dir)
-        if n.startswith('ballot-') # TODO remove? may only be relevant for vim swapfiles
-    ]
+    ballot_ids = list_ballot_ids(id_list_dir)
     ballots = [
         from_public_record(public_dir, 'ballot_submitted', ballot_id=bid)
         for bid in ballot_ids
