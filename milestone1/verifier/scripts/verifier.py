@@ -33,7 +33,7 @@ from electionguard.key_ceremony import (
     # ElectionJointKey,
     # ElectionKeyPair,
     ElectionPublicKey,
-    # ElectionPartialKeyBackup,
+    ElectionPartialKeyBackup,
     # ElectionPartialKeyVerification,
     # combine_election_public_keys,
     # generate_election_key_pair,
@@ -99,13 +99,16 @@ def verify_guardian_pubkey(results, pubdir, guardian_id) -> ElectionPublicKey:
     )
     return res
 
-def verify_one_guardian_backup(results, pubdir):
-    guardian_pubkey = verify(results, pubdir, 'guardian_pubkey')
-    raise NotImplementedError
+def verify_guardian_backup(results, pubdir, guardian_id, backup_order):
+    guardian_pubkey = verify(results, pubdir, 'guardian_pubkey', guardian_id=guardian_id)
+    return verify_public_record(
+        results, pubdir, 'guardian_backup',
+        guardian_id=guardian_id, backup_order=backup_order
+    )
 
 def verify_one_guardian_verification(results, pubdir):
     guardian_pubkey = verify(results, pubdir, 'guardian_pubkey')
-    one_guardian_backup = verify(results, pubdir, 'one_guardian_backup')
+    guardian_backup = verify(results, pubdir, 'guardian_backup')
     raise NotImplementedError
 
 def verify_joint_key(results, pubdir):
@@ -175,10 +178,9 @@ def verify_one_spoiled_result(results, pubdir):
 # TODO should this be a list or dict?
 def verify_all_guardian_pubkeys(results, pubdir) -> List[ElectionPublicKey]:
     ceremony_details = verify(results, pubdir, 'ceremony_details') # TODO error here?
-    n_guardians = ceremony_details.number_of_guardians
     pubkeys = []
     print('\nverifying all guardian pubkeys:')
-    for n in range(1, n_guardians+1):
+    for n in range(1, ceremony_details.number_of_guardians+1):
         guardian_id = f'guardian_{n}'
         pubkey = verify(results, pubdir, 'guardian_pubkey', guardian_id=guardian_id)
         pubkeys.append(pubkey)
@@ -223,8 +225,19 @@ def verify_internal_manifest(results, pubdir):
 
 def verify_all_guardian_backups(results, pubdir):
     ceremony_details = verify(results, pubdir, 'ceremony_details')
-    one_guardian_backup = verify(results, pubdir, 'one_guardian_backup')
-    raise NotImplementedError
+    backups = []
+    print('\nverifying all guardian backups:')
+    for gn in range(1, ceremony_details.number_of_guardians+1):
+        for bo in range(1, ceremony_details.number_of_guardians+1):
+            if gn == bo:
+                continue
+            guardian_id = f'guardian_{gn}'
+            backup = verify(
+                results, pubdir, 'guardian_backup',
+                guardian_id=guardian_id, backup_order=bo
+            )
+        backups.append(backup)
+    return backups
 
 def verify_all_guardian_verifications(results, pubdir):
     ceremony_details = verify(results, pubdir, 'ceremony_details')
@@ -349,6 +362,7 @@ def main(pubdir, verifier_id):
 
     verify(results, pubdir, 'gather_announce')
     verify(results, pubdir, 'all_guardian_pubkeys')
+    verify(results, pubdir, 'all_guardian_backups')
 
     # TODO summary here
     print()
@@ -356,6 +370,7 @@ def main(pubdir, verifier_id):
     # pprint(results.keys())
     # pprint(results['all_guardian_pubkeys'])
     # pprint(results['guardian_pubkey'].keys())
+    # pprint(results['guardian_backup'])
 
 
 @click.command("verify")
