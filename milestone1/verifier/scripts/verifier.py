@@ -2,6 +2,7 @@
 
 # TODO add nodes for checking all the ballots are accounted for!
 
+import time
 import click
 from typing import Any, Union, Optional, Callable, List, Dict, Tuple
 from collections import defaultdict
@@ -85,25 +86,25 @@ def verify_ceremony_details(results, pubdir) -> CeremonyDetails:
     return verify_public_record(results, pubdir, 'ceremony_details')
 
 def verify_gather_announce(results, pubdir) -> bool:
+    print('\nverifying announcement:')
     manifest = verify(results, pubdir, 'manifest')
     ceremony_details = verify(results, pubdir, 'ceremony_details')
     return True
 
-def verify_one_guardian_pubkey(results, pubdir, guardian_id) -> ElectionPublicKey:
-    # TODO what was this for?
-    # ceremony_details = verify(results, pubdir, 'ceremony_details')
-    # TODO explicitly say that kwargs needs guardian_id?
-    return verify_public_record(
+def verify_guardian_pubkey(results, pubdir, guardian_id) -> ElectionPublicKey:
+    # TODO why isn't this recording results?
+    res =  verify_public_record(
         results, pubdir, 'guardian_pubkey',
         guardian_id=guardian_id
     )
+    return res
 
 def verify_one_guardian_backup(results, pubdir):
-    one_guardian_pubkey = verify(results, pubdir, 'one_guardian_pubkey')
+    guardian_pubkey = verify(results, pubdir, 'guardian_pubkey')
     raise NotImplementedError
 
 def verify_one_guardian_verification(results, pubdir):
-    one_guardian_pubkey = verify(results, pubdir, 'one_guardian_pubkey')
+    guardian_pubkey = verify(results, pubdir, 'guardian_pubkey')
     one_guardian_backup = verify(results, pubdir, 'one_guardian_backup')
     raise NotImplementedError
 
@@ -143,7 +144,7 @@ def verify_ciphertext_tally(results, pubdir):
     raise NotImplementedError
 
 def verify_one_tally_share(results, pubdir):
-    one_guardian_pubkey = verify(results, pubdir, 'one_guardian_pubkey')
+    guardian_pubkey = verify(results, pubdir, 'guardian_pubkey')
     context = verify(results, pubdir, 'context')
     ciphertext_tally = verify(results, pubdir, 'ciphertext_tally')
     raise NotImplementedError
@@ -171,10 +172,17 @@ def verify_one_spoiled_result(results, pubdir):
     one_spoiled_share = verify(results, pubdir, 'one_spoiled_share')
     raise NotImplementedError
 
-def verify_all_guardian_pubkeys(results, pubdir):
-    ceremony_details = verify(results, pubdir, 'ceremony_details')
-    one_guardian_pubkey = verify(results, pubdir, 'one_guardian_pubkey')
-    raise NotImplementedError
+# TODO should this be a list or dict?
+def verify_all_guardian_pubkeys(results, pubdir) -> List[ElectionPublicKey]:
+    ceremony_details = verify(results, pubdir, 'ceremony_details') # TODO error here?
+    n_guardians = ceremony_details.number_of_guardians
+    pubkeys = []
+    print('\nverifying all guardian pubkeys:')
+    for n in range(1, n_guardians+1):
+        guardian_id = f'guardian_{n}'
+        pubkey = verify(results, pubdir, 'guardian_pubkey', guardian_id=guardian_id)
+        pubkeys.append(pubkey)
+    return pubkeys
 
 def verify_all_ballots_submitted(results, pubdir):
     one_ballot_submitted = verify(results, pubdir, 'one_ballot_submitted')
@@ -271,25 +279,25 @@ def verify_gather_election(results, pubdir):
 
 
 def verify_public_record(
-    results: ResultsCache, pubdir: str, recname: TargetName, **fmtargs
+    results: ResultsCache, pubdir: str, target: TargetName, **fmtargs
 ) -> Union[Failure, Success]:
     "Wrap from_public_record with verification stuff"
     if len(fmtargs) == 0:
-        # we normally want to use recname,
+        # we normally want to use target,
         # but custom msg is better for ballots and other things with ids
         # TODO back to custom msg passsed here?
-        msg = recname
+        msg = target
     else:
-        msg = f'{recname} {fmtargs}'
+        msg = f'{target} {fmtargs}'
     try:
-        result = from_public_record(pubdir, recname, **fmtargs)
+        result = from_public_record(pubdir, target, **fmtargs)
         print(f'✅ {msg}')
         return result
     except Exception as e:
         print(f'❌ {msg}')
         raise
 
-def verify(results: ResultsCache, pubdir: str, recname: TargetName, **kwargs):
+def verify(results: ResultsCache, pubdir: str, target: TargetName, **kwargs):
     """
     Main verify function that calls the others with caching etc
     `results` is the main program state
@@ -297,32 +305,38 @@ def verify(results: ResultsCache, pubdir: str, recname: TargetName, **kwargs):
     `pubrec` is a key in the PUBLIC_RECORDS map
     """
 
+    kwargs_frozen = freeze_kwargs(kwargs)
+
     # memoize
     # note this could sort of be done using functools.cache,
     # except that wouldn't also accumulate errors
-    kwargs_frozen = freeze_kwargs(kwargs)
-    if recname in results and kwargs_frozen in results[recname]:
-        print(f'using memoized {recname} {kwargs}')
-        return results[recname][kwargs_frozen]
+    if target in results:
+        if kwargs_frozen in results[target]:
+            # print(f'using memoized {target} {kwargs}')
+            result = results[target][kwargs_frozen]
+            return result
 
     # find and call the verify_ function,
     # capturing logs + errors
-    verify_fn = globals()[f'verify_{recname}']
+    verify_fn = globals()[f'verify_{target}']
     with CaptureLog(level=logging.DEBUG) as log:
         try:
-            if len(kwargs) == 0:
-                result = verify_fn(results, pubdir)
-            else:
-                result = verify_fn(results, pubdir, **kwargs)
+            # if len(kwargs) == 0:
+                # result = verify_fn(results, pubdir)
+            # else:
+            result = verify_fn(results, pubdir, **kwargs)
         except Exception as e:
             msgs = [str(e)]
             msgs.append(log.getvalue().strip())
             result = ' '.join(msgs)
+            # print(f'err during {verify_fn.__name__}: "{result}"')
 
     # cache result
-    if not recname in results:
-        results[recname] = {}
-    results[recname][kwargs_frozen] = result
+    if not target in results:
+        results[target] = {}
+    results[target][kwargs_frozen] = result
+
+    return result
 
 
 ### cli ###
@@ -333,18 +347,15 @@ def main(pubdir, verifier_id):
     # it accumulates both successful result objects and error messages
     results: ResultsCache = {}
 
-    print('verifying public election artifacts...\n')
-
     verify(results, pubdir, 'gather_announce')
-    verify(results, pubdir, 'one_guardian_pubkey', guardian_id='guardian_1')
-    verify(results, pubdir, 'one_guardian_pubkey', guardian_id='guardian_2')
-    verify(results, pubdir, 'one_guardian_pubkey', guardian_id='guardian_3')
+    verify(results, pubdir, 'all_guardian_pubkeys')
 
     # TODO summary here
     print()
     # pprint(results)
-    pprint(results.keys())
-    pprint(results['one_guardian_pubkey'].keys())
+    # pprint(results.keys())
+    # pprint(results['all_guardian_pubkeys'])
+    # pprint(results['guardian_pubkey'].keys())
 
 
 @click.command("verify")
