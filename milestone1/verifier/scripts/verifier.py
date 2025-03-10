@@ -47,7 +47,7 @@ from electionguard.key_ceremony import (
 # TODO util functions to use that type easily
 
 # normally one of the keys in the PUBLIC_RECORDS map,
-# but might also be prefixed with one_, all_, gather_, etc.
+# but might also be prefixed with , all_, gather_, etc.
 TargetName = str
 
 # any extra arguments needed to identify a record (guardian_id etc)
@@ -106,14 +106,23 @@ def verify_guardian_backup(results, pubdir, guardian_id, backup_order):
         guardian_id=guardian_id, backup_order=backup_order
     )
 
-def verify_one_guardian_verification(results, pubdir):
-    guardian_pubkey = verify(results, pubdir, 'guardian_pubkey')
-    guardian_backup = verify(results, pubdir, 'guardian_backup')
-    raise NotImplementedError
+def verify_guardian_verification(results, pubdir, guardian_id, backup_order):
+    guardian_pubkey = verify(
+        results, pubdir, 'guardian_pubkey',
+        guardian_id=guardian_id
+    )
+    guardian_backup = verify(
+        results, pubdir, 'guardian_backup',
+        guardian_id=guardian_id, backup_order=backup_order
+    )
+    return verify_public_record(
+        results, pubdir, 'guardian_verification',
+        guardian_id=guardian_id, backup_order=backup_order
+    )
 
 def verify_joint_key(results, pubdir):
     all_guardian_pubkeys = verify(results, pubdir, 'all_guardian_pubkeys')
-    raise NotImplementedError
+    return verify_public_record(results, pubdir, 'joint_key')
 
 def verify_constants(results, pubdir):
     build_election = verify(results, pubdir, 'build_election')
@@ -123,21 +132,21 @@ def verify_context(results, pubdir):
     build_election = verify(results, pubdir, 'build_election')
     raise NotImplementedError
 
-def verify_one_device(results, pubdir):
+def verify_device(results, pubdir):
     raise NotImplementedError
 
-def verify_one_ballot_submitted(results, pubdir):
-    one_device = verify(results, pubdir, 'one_device')
+def verify_ballot_submitted(results, pubdir):
+    device = verify(results, pubdir, 'device')
     raise NotImplementedError
 
-def verify_one_cast_notice(results, pubdir):
-    one_device = verify(results, pubdir, 'one_device')
-    one_ballot_submitted = verify(results, pubdir, 'one_ballot_submitted')
+def verify_cast_notice(results, pubdir):
+    device = verify(results, pubdir, 'device')
+    ballot_submitted = verify(results, pubdir, 'ballot_submitted')
     raise NotImplementedError
 
-def verify_one_ballot_spoiled(results, pubdir):
-    one_device = verify(results, pubdir, 'one_device')
-    one_ballot_submitted = verify(results, pubdir, 'one_ballot_submitted')
+def verify_ballot_spoiled(results, pubdir):
+    device = verify(results, pubdir, 'device')
+    ballot_submitted = verify(results, pubdir, 'ballot_submitted')
     raise NotImplementedError
 
 def verify_ciphertext_tally(results, pubdir):
@@ -146,17 +155,17 @@ def verify_ciphertext_tally(results, pubdir):
     all_ballots_cast = verify(results, pubdir, 'all_ballots_cast')
     raise NotImplementedError
 
-def verify_one_tally_share(results, pubdir):
+def verify_tally_share(results, pubdir):
     guardian_pubkey = verify(results, pubdir, 'guardian_pubkey')
     context = verify(results, pubdir, 'context')
     ciphertext_tally = verify(results, pubdir, 'ciphertext_tally')
     raise NotImplementedError
 
-def verify_one_spoiled_share(results, pubdir):
+def verify_spoiled_share(results, pubdir):
     context = verify(results, pubdir, 'context')
-    one_ballot_submitted = verify(results, pubdir, 'one_ballot_submitted')
-    one_ballot_submitted = verify(results, pubdir, 'one_ballot_submitted')
-    one_ballot_spoiled = verify(results, pubdir, 'one_ballot_spoiled')
+    ballot_submitted = verify(results, pubdir, 'ballot_submitted')
+    ballot_submitted = verify(results, pubdir, 'ballot_submitted')
+    ballot_spoiled = verify(results, pubdir, 'ballot_spoiled')
     raise NotImplementedError
 
 def verify_plaintext_tally(results, pubdir):
@@ -166,20 +175,20 @@ def verify_plaintext_tally(results, pubdir):
     all_tally_shares = verify(results, pubdir, 'all_tally_shares')
     raise NotImplementedError
 
-def verify_one_spoiled_result(results, pubdir):
+def verify_spoiled_result(results, pubdir):
     manifest = verify(results, pubdir, 'manifest')
     context = verify(results, pubdir, 'context')
-    one_ballot_spoiled = verify(results, pubdir, 'one_ballot_spoiled')
-    one_ballot_spoiled = verify(results, pubdir, 'one_ballot_spoiled')
-    one_spoiled_share = verify(results, pubdir, 'one_spoiled_share')
-    one_spoiled_share = verify(results, pubdir, 'one_spoiled_share')
+    ballot_spoiled = verify(results, pubdir, 'ballot_spoiled')
+    ballot_spoiled = verify(results, pubdir, 'ballot_spoiled')
+    spoiled_share = verify(results, pubdir, 'spoiled_share')
+    spoiled_share = verify(results, pubdir, 'spoiled_share')
     raise NotImplementedError
 
 # TODO should this be a list or dict?
 def verify_all_guardian_pubkeys(results, pubdir) -> List[ElectionPublicKey]:
     ceremony_details = verify(results, pubdir, 'ceremony_details') # TODO error here?
     pubkeys = []
-    print('\nverifying all guardian pubkeys:')
+    # print('\nverifying all guardian pubkeys:')
     for n in range(1, ceremony_details.number_of_guardians+1):
         guardian_id = f'guardian_{n}'
         pubkey = verify(results, pubdir, 'guardian_pubkey', guardian_id=guardian_id)
@@ -187,29 +196,29 @@ def verify_all_guardian_pubkeys(results, pubdir) -> List[ElectionPublicKey]:
     return pubkeys
 
 def verify_all_ballots_submitted(results, pubdir):
-    one_ballot_submitted = verify(results, pubdir, 'one_ballot_submitted')
+    ballot_submitted = verify(results, pubdir, 'ballot_submitted')
     raise NotImplementedError
 
 def verify_all_ballots_spoiled(results, pubdir):
-    one_ballot_spoiled = verify(results, pubdir, 'one_ballot_spoiled')
+    ballot_spoiled = verify(results, pubdir, 'ballot_spoiled')
     raise NotImplementedError
 
 def verify_all_cast_notices(results, pubdir):
-    one_cast_notice = verify(results, pubdir, 'one_cast_notice')
+    cast_notice = verify(results, pubdir, 'cast_notice')
     raise NotImplementedError
 
 def verify_all_spoiled_shares(results, pubdir):
-    one_spoiled_share = verify(results, pubdir, 'one_spoiled_share')
+    spoiled_share = verify(results, pubdir, 'spoiled_share')
     all_guardian_pubkeys = verify(results, pubdir, 'all_guardian_pubkeys')
     raise NotImplementedError
 
 def verify_all_spoiled_results(results, pubdir):
-    one_spoiled_result = verify(results, pubdir, 'one_spoiled_result')
+    spoiled_result = verify(results, pubdir, 'spoiled_result')
     all_guardian_pubkeys = verify(results, pubdir, 'all_guardian_pubkeys')
     raise NotImplementedError
 
 def verify_all_tally_shares(results, pubdir):
-    one_tally_share = verify(results, pubdir, 'one_tally_share')
+    tally_share = verify(results, pubdir, 'tally_share')
     all_guardian_pubkeys = verify(results, pubdir, 'all_guardian_pubkeys')
     raise NotImplementedError
 
@@ -226,7 +235,7 @@ def verify_internal_manifest(results, pubdir):
 def verify_all_guardian_backups(results, pubdir):
     ceremony_details = verify(results, pubdir, 'ceremony_details')
     backups = []
-    print('\nverifying all guardian backups:')
+    # print('\nverifying all guardian backups:')
     for gn in range(1, ceremony_details.number_of_guardians+1):
         for bo in range(1, ceremony_details.number_of_guardians+1):
             if gn == bo:
@@ -241,22 +250,35 @@ def verify_all_guardian_backups(results, pubdir):
 
 def verify_all_guardian_verifications(results, pubdir):
     ceremony_details = verify(results, pubdir, 'ceremony_details')
-    one_guardian_verification = verify(results, pubdir, 'one_guardian_verification')
-    raise NotImplementedError
+    verifications = []
+    # print('\nverifying all guardian backup verifications:')
+    for gn in range(1, ceremony_details.number_of_guardians+1):
+        for bo in range(1, ceremony_details.number_of_guardians+1):
+            if gn == bo:
+                continue
+            guardian_id = f'guardian_{gn}'
+            verification = verify(
+                results, pubdir, 'guardian_verification',
+                guardian_id=guardian_id, backup_order=bo
+            )
+        verifications.append(verification)
+    return verifications
+
 
 def verify_all_devices(results, pubdir):
-    one_device = verify(results, pubdir, 'one_device')
+    device = verify(results, pubdir, 'device')
     raise NotImplementedError
 
 def verify_all_ballots_cast(results, pubdir):
     raise NotImplementedError
 
 def verify_gather_ceremony(results, pubdir):
+    print('\nverifying key ceremony:')
     ceremony_details = verify(results, pubdir, 'ceremony_details')
-    joint_key = verify(results, pubdir, 'joint_key')
     all_guardian_pubkeys = verify(results, pubdir, 'all_guardian_pubkeys')
     all_guardian_backups = verify(results, pubdir, 'all_guardian_backups')
     all_guardian_verifications = verify(results, pubdir, 'all_guardian_verifications')
+    joint_key = verify(results, pubdir, 'joint_key')
     raise NotImplementedError
 
 def verify_gather_constants(results, pubdir):
@@ -361,8 +383,7 @@ def main(pubdir, verifier_id):
     results: ResultsCache = {}
 
     verify(results, pubdir, 'gather_announce')
-    verify(results, pubdir, 'all_guardian_pubkeys')
-    verify(results, pubdir, 'all_guardian_backups')
+    verify(results, pubdir, 'gather_ceremony')
 
     # TODO summary here
     print()
