@@ -27,6 +27,18 @@ import logging
 from pprint import pprint
 
 from electionguard.manifest import Manifest
+from electionguard.key_ceremony import (
+    CeremonyDetails,
+    # ElectionJointKey,
+    # ElectionKeyPair,
+    # ElectionPublicKey,
+    # ElectionPartialKeyBackup,
+    # ElectionPartialKeyVerification,
+    # combine_election_public_keys,
+    # generate_election_key_pair,
+    # generate_election_partial_key_backup,
+    # verify_election_partial_key_backup
+)
 
 
 ### utils ###
@@ -68,78 +80,78 @@ ResultsCache = Dict[RecordName, Dict[RecordArgs, Union[Failure, Success]]]
 def verify_manifest(results, pubdir, kwargs) -> Union[Failure, Manifest]:
     return verify_public_record(results, pubdir, 'manifest')
 
-def verify_ceremony_details(results, pubdir):
-    raise NotImplementedError
+def verify_ceremony_details(results, pubdir, kwargs) -> Union[Failure, CeremonyDetails]:
+    return verify_public_record(results, pubdir, 'ceremony_details')
 
-def verify_one_guardian_pubkey(results, pubdir):
+def verify_one_guardian_pubkey(results, pubdir, kwargs):
     ceremony_details = verify(results, pubdir, 'ceremony_details')
     raise NotImplementedError
 
-def verify_one_guardian_backup(results, pubdir):
+def verify_one_guardian_backup(results, pubdir, kwargs):
     one_guardian_pubkey = verify(results, pubdir, 'one_guardian_pubkey')
     raise NotImplementedError
 
-def verify_one_guardian_verification(results, pubdir):
+def verify_one_guardian_verification(results, pubdir, kwargs):
     one_guardian_pubkey = verify(results, pubdir, 'one_guardian_pubkey')
     one_guardian_backup = verify(results, pubdir, 'one_guardian_backup')
     raise NotImplementedError
 
-def verify_joint_key(results, pubdir):
+def verify_joint_key(results, pubdir, kwargs):
     all_guardian_pubkeys = verify(results, pubdir, 'all_guardian_pubkeys')
     raise NotImplementedError
 
-def verify_constants(results, pubdir):
+def verify_constants(results, pubdir, kwargs):
     build_election = verify(results, pubdir, 'build_election')
     raise NotImplementedError
 
-def verify_context(results, pubdir):
+def verify_context(results, pubdir, kwargs):
     build_election = verify(results, pubdir, 'build_election')
     raise NotImplementedError
 
-def verify_one_device(results, pubdir):
+def verify_one_device(results, pubdir, kwargs):
     raise NotImplementedError
 
-def verify_one_ballot_submitted(results, pubdir):
+def verify_one_ballot_submitted(results, pubdir, kwargs):
     one_device = verify(results, pubdir, 'one_device')
     raise NotImplementedError
 
-def verify_one_cast_notice(results, pubdir):
+def verify_one_cast_notice(results, pubdir, kwargs):
     one_device = verify(results, pubdir, 'one_device')
     one_ballot_submitted = verify(results, pubdir, 'one_ballot_submitted')
     raise NotImplementedError
 
-def verify_one_ballot_spoiled(results, pubdir):
+def verify_one_ballot_spoiled(results, pubdir, kwargs):
     one_device = verify(results, pubdir, 'one_device')
     one_ballot_submitted = verify(results, pubdir, 'one_ballot_submitted')
     raise NotImplementedError
 
-def verify_ciphertext_tally(results, pubdir):
+def verify_ciphertext_tally(results, pubdir, kwargs):
     context = verify(results, pubdir, 'context')
     internal_manifest = verify(results, pubdir, 'internal_manifest')
     all_ballots_cast = verify(results, pubdir, 'all_ballots_cast')
     raise NotImplementedError
 
-def verify_one_tally_share(results, pubdir):
+def verify_one_tally_share(results, pubdir, kwargs):
     one_guardian_pubkey = verify(results, pubdir, 'one_guardian_pubkey')
     context = verify(results, pubdir, 'context')
     ciphertext_tally = verify(results, pubdir, 'ciphertext_tally')
     raise NotImplementedError
 
-def verify_one_spoiled_share(results, pubdir):
+def verify_one_spoiled_share(results, pubdir, kwargs):
     context = verify(results, pubdir, 'context')
     one_ballot_submitted = verify(results, pubdir, 'one_ballot_submitted')
     one_ballot_submitted = verify(results, pubdir, 'one_ballot_submitted')
     one_ballot_spoiled = verify(results, pubdir, 'one_ballot_spoiled')
     raise NotImplementedError
 
-def verify_plaintext_tally(results, pubdir):
+def verify_plaintext_tally(results, pubdir, kwargs):
     manifest = verify(results, pubdir, 'manifest')
     context = verify(results, pubdir, 'context')
     ciphertext_tally = verify(results, pubdir, 'ciphertext_tally')
     all_tally_shares = verify(results, pubdir, 'all_tally_shares')
     raise NotImplementedError
 
-def verify_one_spoiled_result(results, pubdir):
+def verify_one_spoiled_result(results, pubdir, kwargs):
     manifest = verify(results, pubdir, 'manifest')
     context = verify(results, pubdir, 'context')
     one_ballot_spoiled = verify(results, pubdir, 'one_ballot_spoiled')
@@ -148,71 +160,71 @@ def verify_one_spoiled_result(results, pubdir):
     one_spoiled_share = verify(results, pubdir, 'one_spoiled_share')
     raise NotImplementedError
 
-def verify_all_guardian_pubkeys(results, pubdir):
+def verify_all_guardian_pubkeys(results, pubdir, kwargs):
     ceremony_details = verify(results, pubdir, 'ceremony_details')
     one_guardian_pubkey = verify(results, pubdir, 'one_guardian_pubkey')
     raise NotImplementedError
 
-def verify_all_ballots_submitted(results, pubdir):
+def verify_all_ballots_submitted(results, pubdir, kwargs):
     one_ballot_submitted = verify(results, pubdir, 'one_ballot_submitted')
     raise NotImplementedError
 
-def verify_all_ballots_spoiled(results, pubdir):
+def verify_all_ballots_spoiled(results, pubdir, kwargs):
     one_ballot_spoiled = verify(results, pubdir, 'one_ballot_spoiled')
     raise NotImplementedError
 
-def verify_all_cast_notices(results, pubdir):
+def verify_all_cast_notices(results, pubdir, kwargs):
     one_cast_notice = verify(results, pubdir, 'one_cast_notice')
     raise NotImplementedError
 
-def verify_all_spoiled_shares(results, pubdir):
+def verify_all_spoiled_shares(results, pubdir, kwargs):
     one_spoiled_share = verify(results, pubdir, 'one_spoiled_share')
     all_guardian_pubkeys = verify(results, pubdir, 'all_guardian_pubkeys')
     raise NotImplementedError
 
-def verify_all_spoiled_results(results, pubdir):
+def verify_all_spoiled_results(results, pubdir, kwargs):
     one_spoiled_result = verify(results, pubdir, 'one_spoiled_result')
     all_guardian_pubkeys = verify(results, pubdir, 'all_guardian_pubkeys')
     raise NotImplementedError
 
-def verify_all_tally_shares(results, pubdir):
+def verify_all_tally_shares(results, pubdir, kwargs):
     one_tally_share = verify(results, pubdir, 'one_tally_share')
     all_guardian_pubkeys = verify(results, pubdir, 'all_guardian_pubkeys')
     raise NotImplementedError
 
-def verify_build_election(results, pubdir):
+def verify_build_election(results, pubdir, kwargs):
     manifest = verify(results, pubdir, 'manifest')
     ceremony_details = verify(results, pubdir, 'ceremony_details')
     joint_key = verify(results, pubdir, 'joint_key')
     raise NotImplementedError
 
-def verify_internal_manifest(results, pubdir):
+def verify_internal_manifest(results, pubdir, kwargs):
     build_election = verify(results, pubdir, 'build_election')
     raise NotImplementedError
 
-def verify_all_guardian_backups(results, pubdir):
+def verify_all_guardian_backups(results, pubdir, kwargs):
     ceremony_details = verify(results, pubdir, 'ceremony_details')
     one_guardian_backup = verify(results, pubdir, 'one_guardian_backup')
     raise NotImplementedError
 
-def verify_all_guardian_verifications(results, pubdir):
+def verify_all_guardian_verifications(results, pubdir, kwargs):
     ceremony_details = verify(results, pubdir, 'ceremony_details')
     one_guardian_verification = verify(results, pubdir, 'one_guardian_verification')
     raise NotImplementedError
 
-def verify_all_devices(results, pubdir):
+def verify_all_devices(results, pubdir, kwargs):
     one_device = verify(results, pubdir, 'one_device')
     raise NotImplementedError
 
-def verify_all_ballots_cast(results, pubdir):
+def verify_all_ballots_cast(results, pubdir, kwargs):
     raise NotImplementedError
 
-def verify_gather_announce(results, pubdir):
+def verify_gather_announce(results, pubdir, kwargs) -> bool:
     manifest = verify(results, pubdir, 'manifest')
     ceremony_details = verify(results, pubdir, 'ceremony_details')
-    raise NotImplementedError
+    return True
 
-def verify_gather_ceremony(results, pubdir):
+def verify_gather_ceremony(results, pubdir, kwargs):
     ceremony_details = verify(results, pubdir, 'ceremony_details')
     joint_key = verify(results, pubdir, 'joint_key')
     all_guardian_pubkeys = verify(results, pubdir, 'all_guardian_pubkeys')
@@ -220,32 +232,32 @@ def verify_gather_ceremony(results, pubdir):
     all_guardian_verifications = verify(results, pubdir, 'all_guardian_verifications')
     raise NotImplementedError
 
-def verify_gather_constants(results, pubdir):
+def verify_gather_constants(results, pubdir, kwargs):
     joint_key = verify(results, pubdir, 'joint_key')
     constants = verify(results, pubdir, 'constants')
     context = verify(results, pubdir, 'context')
     raise NotImplementedError
 
-def verify_gather_config(results, pubdir):
+def verify_gather_config(results, pubdir, kwargs):
     all_devices = verify(results, pubdir, 'all_devices')
     gather_announce = verify(results, pubdir, 'gather_announce')
     gather_ceremony = verify(results, pubdir, 'gather_ceremony')
     gather_constants = verify(results, pubdir, 'gather_constants')
     raise NotImplementedError
 
-def verify_gather_ballots(results, pubdir):
+def verify_gather_ballots(results, pubdir, kwargs):
     all_ballots_submitted = verify(results, pubdir, 'all_ballots_submitted')
     all_ballots_spoiled = verify(results, pubdir, 'all_ballots_spoiled')
     all_cast_notices = verify(results, pubdir, 'all_cast_notices')
     all_spoiled_results = verify(results, pubdir, 'all_spoiled_results')
     raise NotImplementedError
 
-def verify_gather_decryptions(results, pubdir):
+def verify_gather_decryptions(results, pubdir, kwargs):
     plaintext_tally = verify(results, pubdir, 'plaintext_tally')
     all_spoiled_results = verify(results, pubdir, 'all_spoiled_results')
     raise NotImplementedError
 
-def verify_gather_election(results, pubdir):
+def verify_gather_election(results, pubdir, kwargs):
     gather_config = verify(results, pubdir, 'gather_config')
     gather_ballots = verify(results, pubdir, 'gather_ballots')
     gather_decryptions = verify(results, pubdir, 'gather_decryptions')
@@ -303,8 +315,6 @@ def verify(results: ResultsCache, pubdir: str, recname: RecordName, kwargs={}):
         results[recname] = {}
     results[recname][kwargs_frozen] = result
 
-    # pprint(results)
-
 
 ### cli ###
 
@@ -312,14 +322,17 @@ def main(pubdir, verifier_id):
 
     # main state is a dict of artifact_name -> fmtargs -> either str or result
     # it accumulates both successful result objects and error messages
-    # TODO explicit typing for the error message strs?
     results: ResultsCache = {}
 
     print('verifying public election artifacts...\n')
     # verify_manifest(results, pubdir, {})
-    verify(results, pubdir, 'manifest', {})
+    verify(results, pubdir, 'gather_announce', {})
 
     # TODO summary here
+    print()
+    pprint(results)
+    # pprint(results.keys())
+    # pprint(results['ceremony_details'])
 
 
 @click.command("verify")
