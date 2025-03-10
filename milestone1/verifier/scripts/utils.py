@@ -23,6 +23,7 @@ from pprint import pprint
 from typing import Dict, List, Tuple, Optional
 import json
 import uuid
+from io import StringIO
 
 
 # hide INFO dumps of crypto from elgamal.py
@@ -431,3 +432,44 @@ def build_ballot(
     ballot = PlaintextBallot(ballot_id, style_id, contests)
 
     return ballot
+
+# based on:
+# docs.python.org/3/howto/logging-cookbook.html#using-a-context-manager-for-selective-logging
+# gist.github.com/66Ton99/b13c2867adef506554a4
+class CaptureLog:
+
+    def __init__(self, level=None, close=True):
+        self.logger = logging.getLogger('electionguard')
+        self.log_buffer = StringIO()
+        self.handler = logging.StreamHandler(self.log_buffer)
+        self.level = level
+        self.close = close
+
+    def __enter__(self):
+
+        # remove original handlers and add the temporary one
+        self.old_handlers = list(h for h in self.logger.handlers)
+        self.logger.handlers.clear()
+        self.logger.addHandler(self.handler)
+
+        if self.level is not None:
+            self.old_level = self.logger.level
+            self.logger.setLevel(self.level)
+
+        # for use within the context manager block
+        return self.log_buffer
+
+    def __exit__(self, et, ev, tb):
+        if self.level is not None:
+            self.logger.setLevel(self.old_level)
+        if self.close:
+            self.handler.close()
+
+        # remove temporary handler and put back the originals
+        self.logger.handlers.clear()
+        for h in self.old_handlers:
+            self.logger.addHandler(h)
+
+        # implicit return of None => don't swallow exceptions
+
+

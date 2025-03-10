@@ -15,13 +15,15 @@ from utils import (
     # load_guardian_pubkeys_dict,
     # load_spoiled_ballots,
     # to_public_record,
+    # list_submitted_ballot_fmtargs,
+    # list_cast_ballot_fmtargs,
+    # list_spoiled_ballot_fmtargs,
+    # list_guardian_backup_fmtargs,
+    # list_guardian_verification_fmtargs,
     from_public_record,
-    list_submitted_ballot_fmtargs,
-    list_cast_ballot_fmtargs,
-    list_spoiled_ballot_fmtargs,
-    list_guardian_backup_fmtargs,
-    list_guardian_verification_fmtargs,
+    CaptureLog,
 )
+import logging
 from pprint import pprint
 
 from electionguard.manifest import Manifest
@@ -285,15 +287,16 @@ def verify(results: ResultsCache, pubdir: str, recname: RecordName, kwargs={}):
         print(f'using memoized {recname} {kwargs}')
         return results[recname][kwargs_frozen]
 
-    # find and call the verify_ function
-    # TODO exception handling
-    # TODO cache result
+    # find and call the verify_ function,
+    # capturing logs + errors
     verify_fn = globals()[f'verify_{recname}']
-    try:
-        result = verify_fn(results, pubdir, kwargs)
-    except Exception as e:
-        result = str(e)
-        # TODO capture log and append here too?
+    with CaptureLog(level=logging.DEBUG) as log:
+        try:
+            result = verify_fn(results, pubdir, kwargs)
+        except Exception as e:
+            msgs = [str(e)]
+            msgs.append(log.getvalue().strip())
+            result = ' '.join(msgs)
 
     # cache result
     if not recname in results:
