@@ -8,9 +8,10 @@ if __name__ == '__main__':
 
     # stub out verify_* fns in verifier2
     for node in G.nodes():
-        print(f'def verify_{node}(results, pubdir, kwargs):') # TODO return type?
+        # print('@cache')
+        print(f'def verify_{node}(results, pubdir):') # TODO return type?
         for dep_name in G.predecessors(node):
-            print(f'    {dep_name} = verify_{dep_name}(results, pubdir, kwargs)')
+            print(f"    {dep_name} = verify(results, pubdir, '{dep_name}')")
         print('    raise NotImplementedError')
         print()
 
