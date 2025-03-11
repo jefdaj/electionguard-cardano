@@ -7,14 +7,15 @@
       buildInputs = with self.pkgs; [
 
         arion
+        inotify-tools
         jq
         time
         tree
         graphviz
 
         # python
-        # these are only the dependencies for election.py;
-        # the other scripts run in the electionguard-python container
+        # these are only the dependencies for the top-level scripts;
+        # scripts/*.py run in the electionguard-python container instead
         (self.pkgs.python3.withPackages (ps: with ps; [
           click
           click-default-group
@@ -24,6 +25,19 @@
         ]))
 
       ];
+
+      shellHook = ''
+        scripts_dir=$(realpath scripts)
+        echo "scripts_dir: $scripts_dir"
+        inotifywait -m "$scripts_dir" -e close_write |
+          while read -r directory action file; do
+            echo "$file"
+            if [[ "$file" =~ verifier.py$ ]]; then
+              clear
+              ./verify.py
+            fi
+          done
+      '';
     };
   };
 }
