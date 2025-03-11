@@ -7,7 +7,7 @@ import click
 from typing import Any, Union, Optional, Callable, List, Dict, Tuple
 from collections import defaultdict
 from utils import (
-    # build_election,
+    build_election,
     # load_submitted_ballots,
     # load_cast_ballots,
     # load_tally_shares,
@@ -30,16 +30,19 @@ from pprint import pprint
 from electionguard.manifest import Manifest
 from electionguard.key_ceremony import (
     CeremonyDetails,
-    # ElectionJointKey,
+    ElectionJointKey,
     # ElectionKeyPair,
     ElectionPublicKey,
     ElectionPartialKeyBackup,
-    # ElectionPartialKeyVerification,
+    ElectionPartialKeyVerification,
     # combine_election_public_keys,
     # generate_election_key_pair,
     # generate_election_partial_key_backup,
     # verify_election_partial_key_backup
 )
+from electionguard.constants import ElectionConstants
+from electionguard.manifest import Manifest, InternalManifest
+from electionguard.election import CiphertextElectionContext
 
 
 ### utils ###
@@ -72,6 +75,21 @@ ResultsCache = Dict[
     ]
 ]
 
+class DependencyError(Exception):
+    "Make a target fail when one or more of its deps does"
+
+def verify_deps(**deps):
+    "Make a target fail when one or more of its deps does"
+    errors = {k:v for (k,v) in deps.items() if isinstance(v, Failure)}
+    n_errors = len(errors)
+    # print(errors)
+    if n_errors > 0:
+        e = DependencyError(f'{n_errors} dependencies failed')
+        print(errors)
+        # print(e) # TODO handle this in verify()
+        raise e
+    return deps
+
 
 ### verify a node in the dependency graph ###
 #
@@ -92,8 +110,10 @@ def verify_ceremony_details(results, pubdir) -> CeremonyDetails:
 
 def verify_gather_announce(results, pubdir) -> bool:
     print('\nverifying announcement:')
-    manifest = verify(results, pubdir, 'manifest')
-    ceremony_details = verify(results, pubdir, 'ceremony_details')
+    deps = verify_deps(
+        manifest = verify(results, pubdir, 'manifest'),
+        ceremony_details = verify(results, pubdir, 'ceremony_details'),
+    )
     return True
 
 def verify_guardian_pubkey(results, pubdir, guardian_id) -> ElectionPublicKey:
@@ -104,38 +124,39 @@ def verify_guardian_pubkey(results, pubdir, guardian_id) -> ElectionPublicKey:
     )
     return res
 
-def verify_guardian_backup(results, pubdir, guardian_id, backup_order):
-    guardian_pubkey = verify(results, pubdir, 'guardian_pubkey', guardian_id=guardian_id)
+def verify_guardian_backup(results, pubdir, guardian_id, backup_order) -> ElectionPartialKeyBackup:
+    # TODO verify the backup corresponds to the key
+    deps = verify_deps(
+        guardian_pubkey = verify(results, pubdir, 'guardian_pubkey', guardian_id=guardian_id),
+    )
     return verify_public_record(
         results, pubdir, 'guardian_backup',
         guardian_id=guardian_id, backup_order=backup_order
     )
 
-def verify_guardian_verification(results, pubdir, guardian_id, backup_order):
-    guardian_pubkey = verify(
-        results, pubdir, 'guardian_pubkey',
-        guardian_id=guardian_id
-    )
-    guardian_backup = verify(
-        results, pubdir, 'guardian_backup',
-        guardian_id=guardian_id, backup_order=backup_order
+def verify_guardian_verification(results, pubdir, guardian_id, backup_order) -> ElectionPartialKeyVerification:
+    # TODO verify the verification corresponds to the backup
+    deps = verify_deps(
+        guardian_pubkey = verify(
+            results, pubdir, 'guardian_pubkey',
+            guardian_id=guardian_id
+        ),
+        guardian_backup = verify(
+            results, pubdir, 'guardian_backup',
+            guardian_id=guardian_id, backup_order=backup_order
+        ),
     )
     return verify_public_record(
         results, pubdir, 'guardian_verification',
         guardian_id=guardian_id, backup_order=backup_order
     )
 
-def verify_joint_key(results, pubdir):
-    all_guardian_pubkeys = verify(results, pubdir, 'all_guardian_pubkeys')
+def verify_joint_key(results, pubdir) -> ElectionJointKey:
+    # TODO add verification that joint_key derives from the pubkeys!
+    deps = verify_deps(
+        all_guardian_pubkeys = verify(results, pubdir, 'all_guardian_pubkeys'),
+    )
     return verify_public_record(results, pubdir, 'joint_key')
-
-def verify_constants(results, pubdir):
-    build_election = verify(results, pubdir, 'build_election')
-    raise NotImplementedError
-
-def verify_context(results, pubdir):
-    build_election = verify(results, pubdir, 'build_election')
-    raise NotImplementedError
 
 def verify_device(results, pubdir):
     raise NotImplementedError
@@ -227,15 +248,37 @@ def verify_all_tally_shares(results, pubdir):
     all_guardian_pubkeys = verify(results, pubdir, 'all_guardian_pubkeys')
     raise NotImplementedError
 
-def verify_build_election(results, pubdir):
-    manifest = verify(results, pubdir, 'manifest')
-    ceremony_details = verify(results, pubdir, 'ceremony_details')
-    joint_key = verify(results, pubdir, 'joint_key')
-    raise NotImplementedError
+def verify_build_election(results, pubdir) -> \
+    Tuple[
+        ElectionConstants,
+        InternalManifest,
+        CiphertextElectionContext
+    ]:
+    deps = verify_deps(
+        ceremony_details = verify(results, pubdir, 'ceremony_details'),
+        manifest = verify(results, pubdir, 'manifest'),
+        joint_key = verify(results, pubdir, 'joint_key'),
+    )
+    return build_election(
+        deps['ceremony_details'],
+        deps['manifest'],
+        deps['joint_key'],
+    )
 
-def verify_internal_manifest(results, pubdir):
-    build_election = verify(results, pubdir, 'build_election')
-    raise NotImplementedError
+def verify_constants(results, pubdir) -> ElectionConstants:
+    deps = verify_deps(build_election = verify(results, pubdir, 'build_election'))
+    (constants, _, _) = deps['build_election']
+    return constants
+
+def verify_internal_manifest(results, pubdir) -> InternalManifest:
+    deps = verify_deps(build_election = verify(results, pubdir, 'build_election'))
+    (_, internal_manifest, _) = deps['build_election']
+    return internal_manifest
+
+def verify_context(results, pubdir) -> CiphertextElectionContext:
+    deps = verify_deps(build_election = verify(results, pubdir, 'build_election'))
+    (_, _, context) = deps['build_election']
+    return context
 
 def verify_all_guardian_backups(results, pubdir):
     ceremony_details = verify(results, pubdir, 'ceremony_details')
@@ -277,45 +320,59 @@ def verify_all_devices(results, pubdir):
 def verify_all_ballots_cast(results, pubdir):
     raise NotImplementedError
 
-def verify_gather_ceremony(results, pubdir):
+def verify_gather_ceremony(results, pubdir) -> bool:
     print('\nverifying key ceremony:')
-    ceremony_details = verify(results, pubdir, 'ceremony_details')
-    all_guardian_pubkeys = verify(results, pubdir, 'all_guardian_pubkeys')
-    all_guardian_backups = verify(results, pubdir, 'all_guardian_backups')
-    all_guardian_verifications = verify(results, pubdir, 'all_guardian_verifications')
-    joint_key = verify(results, pubdir, 'joint_key')
-    raise NotImplementedError
+    deps = verify_deps(
+        ceremony_details = verify(results, pubdir, 'ceremony_details'),
+        all_guardian_pubkeys = verify(results, pubdir, 'all_guardian_pubkeys'),
+        all_guardian_backups = verify(results, pubdir, 'all_guardian_backups'),
+        all_guardian_verifications = verify(results, pubdir, 'all_guardian_verifications'),
+        joint_key = verify(results, pubdir, 'joint_key'),
+    )
+    return True
 
-def verify_gather_constants(results, pubdir):
-    joint_key = verify(results, pubdir, 'joint_key')
-    constants = verify(results, pubdir, 'constants')
-    context = verify(results, pubdir, 'context')
-    raise NotImplementedError
+# TODO rename other mentions of this as the "election" step, which was confusing ofc
+def verify_gather_constants(results, pubdir) -> bool:
+    deps = verify_deps(
+        joint_key = verify(results, pubdir, 'joint_key'),
+        constants = verify(results, pubdir, 'constants'),
+        context = verify(results, pubdir, 'context'),
+    )
+    return True
 
-def verify_gather_config(results, pubdir):
-    all_devices = verify(results, pubdir, 'all_devices')
-    gather_announce = verify(results, pubdir, 'gather_announce')
-    gather_ceremony = verify(results, pubdir, 'gather_ceremony')
-    gather_constants = verify(results, pubdir, 'gather_constants')
-    raise NotImplementedError
+def verify_gather_config(results, pubdir) -> bool:
+    deps = verify_deps(
+        all_devices = verify(results, pubdir, 'all_devices'),
+        gather_announce = verify(results, pubdir, 'gather_announce'),
+        gather_ceremony = verify(results, pubdir, 'gather_ceremony'),
+        gather_constants = verify(results, pubdir, 'gather_constants'),
+    )
+    print('310')
+    return True
 
-def verify_gather_ballots(results, pubdir):
-    all_ballots_submitted = verify(results, pubdir, 'all_ballots_submitted')
-    all_ballots_spoiled = verify(results, pubdir, 'all_ballots_spoiled')
-    all_cast_notices = verify(results, pubdir, 'all_cast_notices')
-    all_spoiled_results = verify(results, pubdir, 'all_spoiled_results')
-    raise NotImplementedError
+def verify_gather_ballots(results, pubdir) -> bool:
+    deps = verify_deps(
+        all_ballots_submitted = verify(results, pubdir, 'all_ballots_submitted'),
+        all_ballots_spoiled = verify(results, pubdir, 'all_ballots_spoiled'),
+        all_cast_notices = verify(results, pubdir, 'all_cast_notices'),
+        all_spoiled_results = verify(results, pubdir, 'all_spoiled_results'),
+    )
+    return True
 
-def verify_gather_decryptions(results, pubdir):
-    plaintext_tally = verify(results, pubdir, 'plaintext_tally')
-    all_spoiled_results = verify(results, pubdir, 'all_spoiled_results')
-    raise NotImplementedError
+def verify_gather_decryptions(results, pubdir) -> bool:
+    deps = verify_deps(
+        plaintext_tally = verify(results, pubdir, 'plaintext_tally'),
+        all_spoiled_results = verify(results, pubdir, 'all_spoiled_results'),
+    )
+    return True
 
-def verify_gather_election(results, pubdir):
-    gather_config = verify(results, pubdir, 'gather_config')
-    gather_ballots = verify(results, pubdir, 'gather_ballots')
-    gather_decryptions = verify(results, pubdir, 'gather_decryptions')
-    raise NotImplementedError
+def verify_gather_election(results, pubdir) -> bool:
+    deps = verify_deps(
+        gather_config = verify(results, pubdir, 'gather_config'),
+        gather_ballots = verify(results, pubdir, 'gather_ballots'),
+        gather_decryptions = verify(results, pubdir, 'gather_decryptions'),
+    )
+    return True
 
 
 def verify_public_record(
@@ -333,6 +390,9 @@ def verify_public_record(
         result = from_public_record(pubdir, target, **fmtargs)
         print(f'✅ {msg}')
         return result
+    except NotImplementedError as e:
+        print(str(e))
+        raise
     except Exception as e:
         print(f'❌ {msg}')
         raise
@@ -365,10 +425,12 @@ def verify(results: ResultsCache, pubdir: str, target: TargetName, **kwargs):
                 # result = verify_fn(results, pubdir)
             # else:
             result = verify_fn(results, pubdir, **kwargs)
+        # except DependencyError as e:
+        #     print(f'skipped {target} because dependencies failed')
         except Exception as e:
             msgs = [str(e)]
             msgs.append(log.getvalue().strip())
-            result = ' '.join(msgs)
+            result = Failure(' '.join(msgs).strip())
             # print(f'err during {verify_fn.__name__}: "{result}"')
 
     # cache result
@@ -387,13 +449,14 @@ def main(pubdir, verifier_id):
     # accumulates successful result objects and error messages
     results: ResultsCache = {}
 
-    verify(results, pubdir, 'gather_announce')
-    verify(results, pubdir, 'gather_ceremony')
+    # TODO why doesn't this fail properly? parts aren't implemented
+    verify(results, pubdir, 'gather_config')
 
     # TODO summary here
-    # print()
+    print()
     # pprint(results)
     # pprint(results.keys())
+    # pprint(results['gather_config'])
     # pprint(results['all_guardian_pubkeys'])
     # pprint(results['guardian_pubkey'].keys())
     # pprint(results['guardian_backup'])
