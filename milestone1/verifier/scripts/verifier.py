@@ -192,7 +192,7 @@ def verify_ballot_spoiled(results, pubdir):
 def verify_ciphertext_tally(results, pubdir):
     context = verify(results, pubdir, 'context')
     internal_manifest = verify(results, pubdir, 'internal_manifest')
-    all_ballots_cast = verify(results, pubdir, 'all_ballots_cast')
+    all_cast_notices = verify(results, pubdir, 'all_cast_notices')
     raise NotImplementedError
 
 def verify_tally_share(results, pubdir):
@@ -325,9 +325,6 @@ def verify_all_guardian_verifications(results, pubdir):
             )
         verifications.append(verification)
     return verifications
-
-def verify_all_ballots_cast(results, pubdir):
-    raise NotImplementedError
 
 def verify_gather_ceremony(results, pubdir) -> bool:
     print('\nkey ceremony:')

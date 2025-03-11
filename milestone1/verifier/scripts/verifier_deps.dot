@@ -56,7 +56,7 @@ digraph verifier_deps {
 
   # dependenencies from admin.py
   {manifest,ceremony_details,joint_key} -> build_election -> {constants,internal_manifest,context}
-  {internal_manifest,context,all_ballots_cast} -> ciphertext_tally
+  {internal_manifest,context,all_cast_notices} -> ciphertext_tally
   {manifest,context,all_tally_shares,ciphertext_tally} -> plaintext_tally
   {manifest,context,one_spoiled_share,one_ballot_spoiled} -> one_spoiled_result
 
