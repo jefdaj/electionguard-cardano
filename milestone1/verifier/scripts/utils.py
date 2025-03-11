@@ -182,6 +182,13 @@ def from_private_record(private_dir: str, record_type: str, **fmtargs):
 
 ### list all expected fmtargs for artifacts of a given type ###
 
+def list_device_numbers(public_dir: str):
+    # TODO list the IDs instead?
+    device_dir = join(public_dir, PUBLIC_RECORDS['device'][1])
+    names = [splitext(n)[0].split('_')[-1] for n in listdir(device_dir)]
+    numbers = [int(name) for name in names]
+    return sorted(numbers)
+
 def list_ballot_ids(id_list_dir):
     return [
         splitext(n)[0]

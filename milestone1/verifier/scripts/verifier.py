@@ -23,6 +23,7 @@ from utils import (
     # list_guardian_verification_fmtargs,
     from_public_record,
     CaptureLog,
+    list_device_numbers,
 )
 import logging
 from pprint import pprint
@@ -43,6 +44,7 @@ from electionguard.key_ceremony import (
 from electionguard.constants import ElectionConstants
 from electionguard.manifest import Manifest, InternalManifest
 from electionguard.election import CiphertextElectionContext
+from electionguard.encrypt import EncryptionDevice
 
 
 ### utils ###
@@ -109,7 +111,7 @@ def verify_ceremony_details(results, pubdir) -> CeremonyDetails:
     return verify_public_record(results, pubdir, 'ceremony_details')
 
 def verify_gather_announce(results, pubdir) -> bool:
-    print('\nverifying announcement:')
+    print('\nannouncement:')
     deps = verify_deps(
         manifest = verify(results, pubdir, 'manifest'),
         ceremony_details = verify(results, pubdir, 'ceremony_details'),
@@ -158,8 +160,20 @@ def verify_joint_key(results, pubdir) -> ElectionJointKey:
     )
     return verify_public_record(results, pubdir, 'joint_key')
 
-def verify_device(results, pubdir):
-    raise NotImplementedError
+# TODO use longer IDs rather than sequential small numbers?
+def verify_device(results, pubdir, device_number) -> EncryptionDevice:
+    return verify_public_record(
+        results, pubdir, 'device',
+        device_number=device_number
+    )
+
+def verify_all_devices(results, pubdir) -> List[EncryptionDevice]:
+    print('\nencryption devices:')
+    deps = verify_deps(**{
+        f'device_{n}': verify(results, pubdir, 'device', device_number=n)
+        for n in list_device_numbers(pubdir)
+    })
+    return deps.values()
 
 def verify_ballot_submitted(results, pubdir):
     device = verify(results, pubdir, 'device')
@@ -214,7 +228,7 @@ def verify_spoiled_result(results, pubdir):
 def verify_all_guardian_pubkeys(results, pubdir) -> List[ElectionPublicKey]:
     ceremony_details = verify(results, pubdir, 'ceremony_details') # TODO error here?
     pubkeys = []
-    # print('\nverifying all guardian pubkeys:')
+    # print('\nall guardian pubkeys:')
     for n in range(1, ceremony_details.number_of_guardians+1):
         guardian_id = f'guardian_{n}'
         pubkey = verify(results, pubdir, 'guardian_pubkey', guardian_id=guardian_id)
@@ -283,7 +297,7 @@ def verify_context(results, pubdir) -> CiphertextElectionContext:
 def verify_all_guardian_backups(results, pubdir):
     ceremony_details = verify(results, pubdir, 'ceremony_details')
     backups = []
-    # print('\nverifying all guardian backups:')
+    # print('\nall guardian backups:')
     for gn in range(1, ceremony_details.number_of_guardians+1):
         for bo in range(1, ceremony_details.number_of_guardians+1):
             if gn == bo:
@@ -299,7 +313,7 @@ def verify_all_guardian_backups(results, pubdir):
 def verify_all_guardian_verifications(results, pubdir):
     ceremony_details = verify(results, pubdir, 'ceremony_details')
     verifications = []
-    # print('\nverifying all guardian backup verifications:')
+    # print('\nall guardian backup verifications:')
     for gn in range(1, ceremony_details.number_of_guardians+1):
         for bo in range(1, ceremony_details.number_of_guardians+1):
             if gn == bo:
@@ -312,16 +326,11 @@ def verify_all_guardian_verifications(results, pubdir):
         verifications.append(verification)
     return verifications
 
-
-def verify_all_devices(results, pubdir):
-    device = verify(results, pubdir, 'device')
-    raise NotImplementedError
-
 def verify_all_ballots_cast(results, pubdir):
     raise NotImplementedError
 
 def verify_gather_ceremony(results, pubdir) -> bool:
-    print('\nverifying key ceremony:')
+    print('\nkey ceremony:')
     deps = verify_deps(
         ceremony_details = verify(results, pubdir, 'ceremony_details'),
         all_guardian_pubkeys = verify(results, pubdir, 'all_guardian_pubkeys'),
@@ -333,6 +342,7 @@ def verify_gather_ceremony(results, pubdir) -> bool:
 
 # TODO rename other mentions of this as the "election" step, which was confusing ofc
 def verify_gather_constants(results, pubdir) -> bool:
+    print('\nelection constants:') # TODO remove?
     deps = verify_deps(
         joint_key = verify(results, pubdir, 'joint_key'),
         constants = verify(results, pubdir, 'constants'),
@@ -347,7 +357,6 @@ def verify_gather_config(results, pubdir) -> bool:
         gather_ceremony = verify(results, pubdir, 'gather_ceremony'),
         gather_constants = verify(results, pubdir, 'gather_constants'),
     )
-    print('310')
     return True
 
 def verify_gather_ballots(results, pubdir) -> bool:
@@ -449,7 +458,9 @@ def main(pubdir, verifier_id):
     # accumulates successful result objects and error messages
     results: ResultsCache = {}
 
-    # TODO why doesn't this fail properly? parts aren't implemented
+    verify(results, pubdir, 'gather_announce')
+    verify(results, pubdir, 'gather_ceremony')
+    verify(results, pubdir, 'gather_constants')
     verify(results, pubdir, 'gather_config')
 
     # TODO summary here
