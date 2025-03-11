@@ -281,17 +281,27 @@ def verify_build_election(results, pubdir) -> \
 
 def verify_constants(results, pubdir) -> ElectionConstants:
     deps = verify_deps(build_election = verify(results, pubdir, 'build_election'))
-    (constants, _, _) = deps['build_election']
+    constants = with_checkmark_message(
+        lambda: deps['build_election'][0],
+        'constants'
+    )
     return constants
 
 def verify_internal_manifest(results, pubdir) -> InternalManifest:
     deps = verify_deps(build_election = verify(results, pubdir, 'build_election'))
     (_, internal_manifest, _) = deps['build_election']
+    internal_manifest = with_checkmark_message(
+        lambda: deps['build_election'][1],
+        'internal_manifest'
+    )
     return internal_manifest
 
 def verify_context(results, pubdir) -> CiphertextElectionContext:
     deps = verify_deps(build_election = verify(results, pubdir, 'build_election'))
-    (_, _, context) = deps['build_election']
+    context = with_checkmark_message(
+        lambda: deps['build_election'][2],
+        'context'
+    )
     return context
 
 def verify_all_guardian_backups(results, pubdir):
@@ -333,16 +343,21 @@ def verify_gather_ceremony(results, pubdir) -> bool:
         all_guardian_pubkeys = verify(results, pubdir, 'all_guardian_pubkeys'),
         all_guardian_backups = verify(results, pubdir, 'all_guardian_backups'),
         all_guardian_verifications = verify(results, pubdir, 'all_guardian_verifications'),
-        joint_key = verify(results, pubdir, 'joint_key'),
+
+        # this is sometimes called part of the ceremony,
+        # but i prefer putting it in 3_constants because admin does it
+        # joint_key = verify(results, pubdir, 'joint_key'),
     )
     return True
 
-# TODO rename other mentions of this as the "election" step, which was confusing ofc
+# TODO figure out a less confusing name for this... final details? specifics?
+# TODO then rename to match in other scripts too
 def verify_gather_constants(results, pubdir) -> bool:
-    # print('\nelection constants:') # TODO remove?
+    print('\nelection constants:')
     deps = verify_deps(
         joint_key = verify(results, pubdir, 'joint_key'),
         constants = verify(results, pubdir, 'constants'),
+        internal_manifest = verify(results, pubdir, 'internal_manifest'),
         context = verify(results, pubdir, 'context'),
     )
     return True
@@ -380,6 +395,14 @@ def verify_gather_election(results, pubdir) -> bool:
     )
     return True
 
+def with_checkmark_message(fn_call, msg):
+    try:
+        result = fn_call()
+        print(f'✅ {msg}')
+        return result
+    except Exception as e:
+        print(f'❌ {msg}')
+        raise
 
 def verify_public_record(
     results: ResultsCache, pubdir: str, target: TargetName, **fmtargs
@@ -393,14 +416,17 @@ def verify_public_record(
     else:
         msg = f'{target} {fmtargs}'
     try:
-        result = from_public_record(pubdir, target, **fmtargs)
-        print(f'✅ {msg}')
+        result = with_checkmark_message(
+            lambda: from_public_record(pubdir, target, **fmtargs),
+            msg
+        )
+        # print(f'✅ {msg}')
         return result
     except NotImplementedError as e:
         print(str(e))
         raise
     except Exception as e:
-        print(f'❌ {msg}')
+        # print(f'❌ {msg}')
         raise
 
 def verify(results: ResultsCache, pubdir: str, target: TargetName, **kwargs):
