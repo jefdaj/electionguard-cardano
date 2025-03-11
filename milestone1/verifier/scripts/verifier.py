@@ -52,7 +52,7 @@ TargetName = str
 
 # any extra arguments needed to identify a record (guardian_id etc)
 # has to be frozen (hashable) to go in results below
-RecordArgs = Tuple[Tuple[str, Any]]
+TargetArgs = Tuple[Tuple[str, Any]]
 
 # from https://stackoverflow.com/a/2704866
 def freeze_kwargs(kwargs):
@@ -65,7 +65,12 @@ Failure = str
 Success = Any
 
 # main state of the verify program
-ResultsCache = Dict[TargetName, Dict[RecordArgs, Union[Failure, Success]]]
+ResultsCache = Dict[
+    TargetName,
+    Dict[TargetArgs,
+         Union[Failure, Success]
+    ]
+]
 
 
 ### verify a node in the dependency graph ###
@@ -378,15 +383,15 @@ def verify(results: ResultsCache, pubdir: str, target: TargetName, **kwargs):
 
 def main(pubdir, verifier_id):
 
-    # main state is a dict of artifact_name -> fmtargs -> either str or result
-    # it accumulates both successful result objects and error messages
+    # main program state
+    # accumulates successful result objects and error messages
     results: ResultsCache = {}
 
     verify(results, pubdir, 'gather_announce')
     verify(results, pubdir, 'gather_ceremony')
 
     # TODO summary here
-    print()
+    # print()
     # pprint(results)
     # pprint(results.keys())
     # pprint(results['all_guardian_pubkeys'])
