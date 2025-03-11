@@ -342,7 +342,7 @@ def verify_gather_ceremony(results, pubdir) -> bool:
 
 # TODO rename other mentions of this as the "election" step, which was confusing ofc
 def verify_gather_constants(results, pubdir) -> bool:
-    print('\nelection constants:') # TODO remove?
+    # print('\nelection constants:') # TODO remove?
     deps = verify_deps(
         joint_key = verify(results, pubdir, 'joint_key'),
         constants = verify(results, pubdir, 'constants'),
@@ -352,10 +352,10 @@ def verify_gather_constants(results, pubdir) -> bool:
 
 def verify_gather_config(results, pubdir) -> bool:
     deps = verify_deps(
-        all_devices = verify(results, pubdir, 'all_devices'),
         gather_announce = verify(results, pubdir, 'gather_announce'),
         gather_ceremony = verify(results, pubdir, 'gather_ceremony'),
         gather_constants = verify(results, pubdir, 'gather_constants'),
+        all_devices = verify(results, pubdir, 'all_devices'),
     )
     return True
 
@@ -458,10 +458,10 @@ def main(pubdir, verifier_id):
     # accumulates successful result objects and error messages
     results: ResultsCache = {}
 
-    verify(results, pubdir, 'gather_announce')
-    verify(results, pubdir, 'gather_ceremony')
-    verify(results, pubdir, 'gather_constants')
     verify(results, pubdir, 'gather_config')
+    # verify(results, pubdir, 'gather_ceremony')
+    # verify(results, pubdir, 'gather_constants')
+    # verify(results, pubdir, 'gather_config')
 
     # TODO summary here
     print()
