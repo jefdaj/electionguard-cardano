@@ -4,6 +4,7 @@
 
 import time
 import click
+from copy import deepcopy
 from typing import Any, Union, Optional, Callable, List, Dict, Tuple
 from collections import defaultdict
 from utils import (
@@ -46,6 +47,7 @@ from electionguard.manifest import Manifest, InternalManifest
 from electionguard.election import CiphertextElectionContext
 from electionguard.encrypt import EncryptionDevice
 from electionguard.ballot import CiphertextBallot, SubmittedBallot
+from electionguard.ballot_box import (BallotBoxState)
 
 
 ### utils ###
@@ -184,29 +186,52 @@ def verify_ballot_submitted(results, pubdir, ballot_id) -> SubmittedBallot:
         ballot_id=ballot_id
     )
 
-def verify_cast_notice(results, pubdir, ballot_id) -> dict:
-    # TODO verify it was submitted by one of the devices (or rely on Cardano for that?)
-    # TODO verify time cast_at seems about right? (within a short window after submitted)
-    # device = verify(results, pubdir, 'device')
-    ballot_submitted = verify(results, pubdir, 'ballot_submitted', ballot_id=ballot_id)
-    cast_notice = verify_public_record(results, pubdir, 'cast_notice', ballot_id=ballot_id)
-    assert cast_notice.ballot_id == ballot_submitted.object_id
-    return cast_notice
+def verify_ballot_cast(results, pubdir, ballot_id) -> CiphertextBallot:
 
-def verify_ballot_spoiled(results, pubdir, ballot_id):
     # TODO verify it was submitted by one of the devices (or rely on Cardano for that?)
     # device = verify(results, pubdir, 'device')
-    ballot_submitted = verify(results, pubdir, 'ballot_submitted', ballot_id=ballot_id)
-    ballot_spoiled = verify_public_record(results, pubdir, 'ballot_spoiled', ballot_id=ballot_id)
-    assert ballot_spoiled.object_id == ballot_submitted.object_id
+
+    deps = verify_deps(
+        ballot_submitted = verify(results, pubdir, 'ballot_submitted', ballot_id=ballot_id),
+        cast_notice = verify_public_record(results, pubdir, 'cast_notice', ballot_id=ballot_id),
+    )
+
+    assert deps['cast_notice'].ballot_id == deps['ballot_submitted'].object_id
+
+    # TODO verify time cast_at seems about right? (within a short window after submitted)
+
+    # TODO post the actual cast ballots rather than copying submitted here?
+    ballot_cast = deepcopy(deps['ballot_submitted'])
+    ballot_cast.state = BallotBoxState.CAST
+
+    return ballot_cast
+
+def verify_ballot_spoiled(results, pubdir, ballot_id) -> CiphertextBallot:
+    # TODO verify it was submitted by one of the devices (or rely on Cardano for that?)
+
+    deps = verify_deps(
+        # device = verify(results, pubdir, 'device'),
+        ballot_submitted = verify(results, pubdir, 'ballot_submitted', ballot_id=ballot_id),
+        ballot_spoiled = verify_public_record(results, pubdir, 'ballot_spoiled', ballot_id=ballot_id),
+    )
+    assert deps['ballot_spoiled'].object_id == deps['ballot_submitted'].object_id
     # TODO verify they're identical except submitted has: all nonces set to null, state set to 999
+
     return ballot_spoiled
 
 def verify_ciphertext_tally(results, pubdir):
-    context = verify(results, pubdir, 'context')
-    internal_manifest = verify(results, pubdir, 'internal_manifest')
-    all_cast_notices = verify(results, pubdir, 'all_cast_notices')
+    print('\nfinal tally:')
+    deps = verify_deps(
+        context = verify(results, pubdir, 'context'),
+        internal_manifest = verify(results, pubdir, 'internal_manifest'),
+    )
     raise NotImplementedError
+
+def verify_tally_aggregation(results, pubdir):
+    deps = verify_deps(
+        all_ballots_cast = verify(results, pubdir, 'all_ballots_cast'),
+        ciphertext_tally = verify(results, pubdir, 'ciphertext_tally'),
+    )
 
 def verify_tally_share(results, pubdir):
     guardian_pubkey = verify(results, pubdir, 'guardian_pubkey')
@@ -264,14 +289,15 @@ def verify_all_ballots_spoiled(results, pubdir) -> List[CiphertextBallot]:
         ballots.append(ballot)
     return ballots
 
-def verify_all_cast_notices(results, pubdir):
+def verify_all_ballots_cast(results, pubdir) -> List[CiphertextBallot]:
     print('\ncast ballots:')
-    notices = []
+    ballots = []
     for fmtargs in list_cast_ballot_fmtargs(pubdir):
-        notice = verify_cast_notice(results, pubdir, **fmtargs)
-        notices.append(notice)
-    return notices
+        ballot = verify_ballot_cast(results, pubdir, **fmtargs)
+        ballots.append(ballot)
+    return ballots
 
+# TODO gather this or remove it
 def verify_all_spoiled_shares(results, pubdir):
     spoiled_share = verify(results, pubdir, 'spoiled_share')
     all_guardian_pubkeys = verify(results, pubdir, 'all_guardian_pubkeys')
@@ -396,14 +422,16 @@ def verify_gather_config(results, pubdir) -> bool:
     )
     return True
 
-def verify_gather_ballots(results, pubdir) -> bool:
+def verify_ballot_sets(results, pubdir) -> bool:
     deps = verify_deps(
         all_ballots_submitted = verify(results, pubdir, 'all_ballots_submitted'),
         all_ballots_spoiled = verify(results, pubdir, 'all_ballots_spoiled'),
-        all_cast_notices = verify(results, pubdir, 'all_cast_notices'),
+        all_ballots_cast = verify(results, pubdir, 'all_ballots_cast'),
         all_spoiled_results = verify(results, pubdir, 'all_spoiled_results'),
     )
     return True
+
+# TODO verify_gather_tally?
 
 def verify_gather_decryptions(results, pubdir) -> bool:
     deps = verify_deps(
@@ -415,7 +443,7 @@ def verify_gather_decryptions(results, pubdir) -> bool:
 def verify_gather_election(results, pubdir) -> bool:
     deps = verify_deps(
         gather_config = verify(results, pubdir, 'gather_config'),
-        gather_ballots = verify(results, pubdir, 'gather_ballots'),
+        ballot_sets = verify(results, pubdir, 'ballot_sets'),
         gather_decryptions = verify(results, pubdir, 'gather_decryptions'),
     )
     return True
@@ -507,21 +535,14 @@ def main(pubdir, verifier_id):
     results: ResultsCache = {}
 
     verify(results, pubdir, 'gather_config')
-    # verify(results, pubdir, 'gather_ceremony')
-    # verify(results, pubdir, 'gather_constants')
-    # verify(results, pubdir, 'gather_config')
     verify(results, pubdir, 'all_ballots_submitted')
-    verify(results, pubdir, 'all_cast_notices')
+    verify(results, pubdir, 'all_ballots_cast')
     verify(results, pubdir, 'all_ballots_spoiled')
+
+    verify(results, pubdir, 'ciphertext_tally')
 
     # TODO summary here
     print()
-    # pprint(results)
-    # pprint(results['all_cast_notices'])
-    # pprint(results['gather_config'])
-    # pprint(results['all_guardian_pubkeys'])
-    # pprint(results['guardian_pubkey'].keys())
-    # pprint(results['guardian_backup'])
 
 
 @click.command("verify")
