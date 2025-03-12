@@ -18,7 +18,7 @@ from utils import (
     # to_public_record,
     list_submitted_ballot_fmtargs,
     list_cast_ballot_fmtargs,
-    # list_spoiled_ballot_fmtargs,
+    list_spoiled_ballot_fmtargs,
     # list_guardian_backup_fmtargs,
     # list_guardian_verification_fmtargs,
     from_public_record,
@@ -188,19 +188,19 @@ def verify_cast_notice(results, pubdir, ballot_id) -> dict:
     # TODO verify it was submitted by one of the devices (or rely on Cardano for that?)
     # TODO verify time cast_at seems about right? (within a short window after submitted)
     # device = verify(results, pubdir, 'device')
-
-    # TODO why is this not being cached?
     ballot_submitted = verify(results, pubdir, 'ballot_submitted', ballot_id=ballot_id)
-
     cast_notice = verify_public_record(results, pubdir, 'cast_notice', ballot_id=ballot_id)
-
     assert cast_notice.ballot_id == ballot_submitted.object_id
     return cast_notice
 
-def verify_ballot_spoiled(results, pubdir):
-    device = verify(results, pubdir, 'device')
-    ballot_submitted = verify(results, pubdir, 'ballot_submitted')
-    raise NotImplementedError
+def verify_ballot_spoiled(results, pubdir, ballot_id):
+    # TODO verify it was submitted by one of the devices (or rely on Cardano for that?)
+    # device = verify(results, pubdir, 'device')
+    ballot_submitted = verify(results, pubdir, 'ballot_submitted', ballot_id=ballot_id)
+    ballot_spoiled = verify_public_record(results, pubdir, 'ballot_spoiled', ballot_id=ballot_id)
+    assert ballot_spoiled.object_id == ballot_submitted.object_id
+    # TODO verify they're identical except submitted has: all nonces set to null, state set to 999
+    return ballot_spoiled
 
 def verify_ciphertext_tally(results, pubdir):
     context = verify(results, pubdir, 'context')
@@ -256,8 +256,8 @@ def verify_all_ballots_submitted(results, pubdir) -> List[SubmittedBallot]:
         ballots.append(ballot)
     return ballots
 
-def verify_all_ballots_spoiled(results, pubdir):
-    print('\nsubmited ballots:')
+def verify_all_ballots_spoiled(results, pubdir) -> List[CiphertextBallot]:
+    print('\nspoiled ballots:')
     ballots = []
     for fmtargs in list_spoiled_ballot_fmtargs(pubdir):
         ballot = verify_ballot_spoiled(results, pubdir, **fmtargs)
@@ -512,7 +512,7 @@ def main(pubdir, verifier_id):
     # verify(results, pubdir, 'gather_config')
     verify(results, pubdir, 'all_ballots_submitted')
     verify(results, pubdir, 'all_cast_notices')
-    # verify(results, pubdir, 'all_ballots_spoiled')
+    verify(results, pubdir, 'all_ballots_spoiled')
 
     # TODO summary here
     print()
