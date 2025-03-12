@@ -212,9 +212,9 @@ def verify_ballot_spoiled(results, pubdir, ballot_id) -> CiphertextBallot:
     deps = verify_deps(
         # device = verify(results, pubdir, 'device'),
         ballot_submitted = verify(results, pubdir, 'ballot_submitted', ballot_id=ballot_id),
-        ballot_spoiled = verify_public_record(results, pubdir, 'ballot_spoiled', ballot_id=ballot_id),
     )
-    assert deps['ballot_spoiled'].object_id == deps['ballot_submitted'].object_id
+    ballot_spoiled = verify_public_record(results, pubdir, 'ballot_spoiled', ballot_id=ballot_id)
+    assert ballot_spoiled.object_id == deps['ballot_submitted'].object_id
     # TODO verify they're identical except submitted has: all nonces set to null, state set to 999
 
     return ballot_spoiled
@@ -423,12 +423,14 @@ def verify_gather_config(results, pubdir) -> bool:
     return True
 
 def verify_ballot_sets(results, pubdir) -> bool:
+    "Make sure the various sets of ballot IDs match up (nothing missing or extra)"
     deps = verify_deps(
         all_ballots_submitted = verify(results, pubdir, 'all_ballots_submitted'),
         all_ballots_spoiled = verify(results, pubdir, 'all_ballots_spoiled'),
         all_ballots_cast = verify(results, pubdir, 'all_ballots_cast'),
         all_spoiled_results = verify(results, pubdir, 'all_spoiled_results'),
     )
+    # TODO set assertions here
     return True
 
 # TODO verify_gather_tally?
