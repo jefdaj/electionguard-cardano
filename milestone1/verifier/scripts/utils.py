@@ -14,7 +14,7 @@ from electionguard.encrypt import EncryptionDevice, EncryptionMediator, contest_
 from electionguard.key_ceremony import (CeremonyDetails, ElectionJointKey,ElectionKeyPair,ElectionPublicKey,ElectionPartialKeyBackup,ElectionPartialKeyVerification,combine_election_public_keys, generate_election_key_pair,generate_election_partial_key_backup,verify_election_partial_key_backup)
 from electionguard.manifest import Manifest, InternalManifest, Language
 from electionguard.tally import (CiphertextTally,PublishedCiphertextTally,PlaintextTally)
-from electionguard.type import GuardianId
+from electionguard.type import GuardianId, BallotId
 from electionguard.utils import get_optional
 from electionguard_tools.helpers.election_builder import ElectionBuilder
 from os import makedirs, listdir
@@ -24,11 +24,23 @@ from typing import Dict, List, Tuple, Optional
 import json
 import uuid
 from io import StringIO
+from dataclasses import dataclass, field
 
 
 # hide INFO dumps of crypto from elgamal.py
 import logging
 logging.getLogger('electionguard').setLevel(logging.WARNING)
+
+
+@dataclass
+class CastNotice:
+    ballot_id: BallotId
+
+    # timestamp, which should be in a window after ballot submitted
+    cast_at: str # TODO int using from_ticks?
+
+
+# TODO dataclass Summary
 
 
 ### path maps ###
@@ -105,7 +117,7 @@ PUBLIC_RECORDS = {
         '{ballot_id}'
     ),
     'cast_notice': (
-        dict,
+        CastNotice,
         '2_ballots/2_cast',
         '{ballot_id}'
     ),
@@ -203,7 +215,6 @@ def list_submitted_ballot_fmtargs(public_dir):
 def list_cast_ballot_fmtargs(public_dir):
     cast_dir = join(public_dir, PUBLIC_RECORDS['cast_notice'][1])
     return [{'ballot_id': i} for i in list_ballot_ids(cast_dir)]
-
 
 def list_spoiled_ballot_fmtargs(public_dir):
     spoiled_dir = join(public_dir, PUBLIC_RECORDS['spoiled_result'][1])

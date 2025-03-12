@@ -16,8 +16,8 @@ from utils import (
     # load_guardian_pubkeys_dict,
     # load_spoiled_ballots,
     # to_public_record,
-    # list_submitted_ballot_fmtargs,
-    # list_cast_ballot_fmtargs,
+    list_submitted_ballot_fmtargs,
+    list_cast_ballot_fmtargs,
     # list_spoiled_ballot_fmtargs,
     # list_guardian_backup_fmtargs,
     # list_guardian_verification_fmtargs,
@@ -45,6 +45,7 @@ from electionguard.constants import ElectionConstants
 from electionguard.manifest import Manifest, InternalManifest
 from electionguard.election import CiphertextElectionContext
 from electionguard.encrypt import EncryptionDevice
+from electionguard.ballot import CiphertextBallot, SubmittedBallot
 
 
 ### utils ###
@@ -175,14 +176,26 @@ def verify_all_devices(results, pubdir) -> List[EncryptionDevice]:
     })
     return deps.values()
 
-def verify_ballot_submitted(results, pubdir):
-    device = verify(results, pubdir, 'device')
-    raise NotImplementedError
+def verify_ballot_submitted(results, pubdir, ballot_id) -> SubmittedBallot:
+    # TODO verify it was submitted by one of the devices (or rely on Cardano for that?)
+    # device = verify(results, pubdir, 'device')
+    return verify_public_record(
+        results, pubdir, 'ballot_submitted',
+        ballot_id=ballot_id
+    )
 
-def verify_cast_notice(results, pubdir):
-    device = verify(results, pubdir, 'device')
-    ballot_submitted = verify(results, pubdir, 'ballot_submitted')
-    raise NotImplementedError
+def verify_cast_notice(results, pubdir, ballot_id) -> dict:
+    # TODO verify it was submitted by one of the devices (or rely on Cardano for that?)
+    # TODO verify time cast_at seems about right? (within a short window after submitted)
+    # device = verify(results, pubdir, 'device')
+
+    # TODO why is this not being cached?
+    ballot_submitted = verify(results, pubdir, 'ballot_submitted', ballot_id=ballot_id)
+
+    cast_notice = verify_public_record(results, pubdir, 'cast_notice', ballot_id=ballot_id)
+
+    assert cast_notice.ballot_id == ballot_submitted.object_id
+    return cast_notice
 
 def verify_ballot_spoiled(results, pubdir):
     device = verify(results, pubdir, 'device')
@@ -235,17 +248,29 @@ def verify_all_guardian_pubkeys(results, pubdir) -> List[ElectionPublicKey]:
         pubkeys.append(pubkey)
     return pubkeys
 
-def verify_all_ballots_submitted(results, pubdir):
-    ballot_submitted = verify(results, pubdir, 'ballot_submitted')
-    raise NotImplementedError
+def verify_all_ballots_submitted(results, pubdir) -> List[SubmittedBallot]:
+    print('\nsubmited ballots:')
+    ballots = []
+    for fmtargs in list_submitted_ballot_fmtargs(pubdir):
+        ballot = verify(results, pubdir, 'ballot_submitted', **fmtargs)
+        ballots.append(ballot)
+    return ballots
 
 def verify_all_ballots_spoiled(results, pubdir):
-    ballot_spoiled = verify(results, pubdir, 'ballot_spoiled')
-    raise NotImplementedError
+    print('\nsubmited ballots:')
+    ballots = []
+    for fmtargs in list_spoiled_ballot_fmtargs(pubdir):
+        ballot = verify_ballot_spoiled(results, pubdir, **fmtargs)
+        ballots.append(ballot)
+    return ballots
 
 def verify_all_cast_notices(results, pubdir):
-    cast_notice = verify(results, pubdir, 'cast_notice')
-    raise NotImplementedError
+    print('\ncast ballots:')
+    notices = []
+    for fmtargs in list_cast_ballot_fmtargs(pubdir):
+        notice = verify_cast_notice(results, pubdir, **fmtargs)
+        notices.append(notice)
+    return notices
 
 def verify_all_spoiled_shares(results, pubdir):
     spoiled_share = verify(results, pubdir, 'spoiled_share')
@@ -485,11 +510,14 @@ def main(pubdir, verifier_id):
     # verify(results, pubdir, 'gather_ceremony')
     # verify(results, pubdir, 'gather_constants')
     # verify(results, pubdir, 'gather_config')
+    verify(results, pubdir, 'all_ballots_submitted')
+    verify(results, pubdir, 'all_cast_notices')
+    # verify(results, pubdir, 'all_ballots_spoiled')
 
     # TODO summary here
     print()
     # pprint(results)
-    # pprint(results.keys())
+    # pprint(results['all_cast_notices'])
     # pprint(results['gather_config'])
     # pprint(results['all_guardian_pubkeys'])
     # pprint(results['guardian_pubkey'].keys())
