@@ -49,6 +49,7 @@ from electionguard.encrypt import EncryptionDevice
 from electionguard.ballot import CiphertextBallot, SubmittedBallot
 from electionguard.ballot_box import (BallotBoxState)
 
+from electionguard_verify import *
 
 ### utils ###
 
@@ -114,7 +115,7 @@ def verify_ceremony_details(results, pubdir) -> CeremonyDetails:
     return verify_public_record(results, pubdir, 'ceremony_details')
 
 def verify_gather_announce(results, pubdir) -> bool:
-    print('\nannouncement:')
+    print('\nverifying announcement:')
     deps = verify_deps(
         manifest = verify(results, pubdir, 'manifest'),
         ceremony_details = verify(results, pubdir, 'ceremony_details'),
@@ -171,7 +172,7 @@ def verify_device(results, pubdir, device_number) -> EncryptionDevice:
     )
 
 def verify_all_devices(results, pubdir) -> List[EncryptionDevice]:
-    print('\nencryption devices:')
+    print('\nverifying encryption devices:')
     deps = verify_deps(**{
         f'device_{n}': verify(results, pubdir, 'device', device_number=n)
         for n in list_device_numbers(pubdir)
@@ -220,18 +221,29 @@ def verify_ballot_spoiled(results, pubdir, ballot_id) -> CiphertextBallot:
     return ballot_spoiled
 
 def verify_ciphertext_tally(results, pubdir):
-    print('\nfinal tally:')
-    deps = verify_deps(
-        context = verify(results, pubdir, 'context'),
-        internal_manifest = verify(results, pubdir, 'internal_manifest'),
+    return verify_public_record(
+        results, pubdir, 'ciphertext_tally',
+        msg='ciphertext_tally json is valid'
     )
-    raise NotImplementedError
 
 def verify_tally_aggregation(results, pubdir):
     deps = verify_deps(
+        manifest = verify(results, pubdir, 'manifest'),
+        context = verify(results, pubdir, 'context'),
         all_ballots_cast = verify(results, pubdir, 'all_ballots_cast'),
         ciphertext_tally = verify(results, pubdir, 'ciphertext_tally'),
     )
+    n_cast = len(deps['all_ballots_cast'])
+    with_checkmark_message(
+        f'ciphertext_tally is the aggregation of all {n_cast} cast ballots',
+        lambda: verify_aggregation(
+            deps['all_ballots_cast'],
+            deps['ciphertext_tally'],
+            deps['manifest'],
+            deps['context']
+        )
+    )
+    return True
 
 def verify_tally_share(results, pubdir):
     guardian_pubkey = verify(results, pubdir, 'guardian_pubkey')
@@ -239,7 +251,20 @@ def verify_tally_share(results, pubdir):
     ciphertext_tally = verify(results, pubdir, 'ciphertext_tally')
     raise NotImplementedError
 
+def verify_gather_tally(results, pubdir):
+    print('\nverifying final tally:')
+    deps = verify_deps(
+        ciphertext_tally = verify(results, pubdir, 'ciphertext_tally'),
+        tally_aggregation = verify(results, pubdir, 'tally_aggregation'),
+    )
+    # TODO ciphertext_tally (the load fn)
+    # TODO tally_aggregation
+    # TODO all_tally_shares
+    # TODO plaintext_tally (decryption)
+    return True
+
 def verify_spoiled_share(results, pubdir):
+    # TODO start on this next
     context = verify(results, pubdir, 'context')
     ballot_submitted = verify(results, pubdir, 'ballot_submitted')
     ballot_submitted = verify(results, pubdir, 'ballot_submitted')
@@ -266,7 +291,7 @@ def verify_spoiled_result(results, pubdir):
 def verify_all_guardian_pubkeys(results, pubdir) -> List[ElectionPublicKey]:
     ceremony_details = verify(results, pubdir, 'ceremony_details') # TODO error here?
     pubkeys = []
-    # print('\nall guardian pubkeys:')
+    # print('\verifying nall guardian pubkeys:')
     for n in range(1, ceremony_details.number_of_guardians+1):
         guardian_id = f'guardian_{n}'
         pubkey = verify(results, pubdir, 'guardian_pubkey', guardian_id=guardian_id)
@@ -274,7 +299,7 @@ def verify_all_guardian_pubkeys(results, pubdir) -> List[ElectionPublicKey]:
     return pubkeys
 
 def verify_all_ballots_submitted(results, pubdir) -> List[SubmittedBallot]:
-    print('\nsubmited ballots:')
+    print('\nverifying submited ballots:')
     ballots = []
     for fmtargs in list_submitted_ballot_fmtargs(pubdir):
         ballot = verify(results, pubdir, 'ballot_submitted', **fmtargs)
@@ -282,7 +307,7 @@ def verify_all_ballots_submitted(results, pubdir) -> List[SubmittedBallot]:
     return ballots
 
 def verify_all_ballots_spoiled(results, pubdir) -> List[CiphertextBallot]:
-    print('\nspoiled ballots:')
+    print('\nverifying spoiled ballots:')
     ballots = []
     for fmtargs in list_spoiled_ballot_fmtargs(pubdir):
         ballot = verify_ballot_spoiled(results, pubdir, **fmtargs)
@@ -290,7 +315,7 @@ def verify_all_ballots_spoiled(results, pubdir) -> List[CiphertextBallot]:
     return ballots
 
 def verify_all_ballots_cast(results, pubdir) -> List[CiphertextBallot]:
-    print('\ncast ballots:')
+    print('\nverifying cast ballots:')
     ballots = []
     for fmtargs in list_cast_ballot_fmtargs(pubdir):
         ballot = verify_ballot_cast(results, pubdir, **fmtargs)
@@ -333,8 +358,8 @@ def verify_build_election(results, pubdir) -> \
 def verify_constants(results, pubdir) -> ElectionConstants:
     deps = verify_deps(build_election = verify(results, pubdir, 'build_election'))
     constants = with_checkmark_message(
-        lambda: deps['build_election'][0],
-        'constants'
+        'constants',
+        lambda: deps['build_election'][0]
     )
     return constants
 
@@ -342,23 +367,23 @@ def verify_internal_manifest(results, pubdir) -> InternalManifest:
     deps = verify_deps(build_election = verify(results, pubdir, 'build_election'))
     (_, internal_manifest, _) = deps['build_election']
     internal_manifest = with_checkmark_message(
-        lambda: deps['build_election'][1],
-        'internal_manifest'
+        'internal_manifest',
+        lambda: deps['build_election'][1]
     )
     return internal_manifest
 
 def verify_context(results, pubdir) -> CiphertextElectionContext:
     deps = verify_deps(build_election = verify(results, pubdir, 'build_election'))
     context = with_checkmark_message(
-        lambda: deps['build_election'][2],
-        'context'
+        'context',
+        lambda: deps['build_election'][2]
     )
     return context
 
 def verify_all_guardian_backups(results, pubdir):
     ceremony_details = verify(results, pubdir, 'ceremony_details')
     backups = []
-    # print('\nall guardian backups:')
+    # print('\nverifying all guardian backups:')
     for gn in range(1, ceremony_details.number_of_guardians+1):
         for bo in range(1, ceremony_details.number_of_guardians+1):
             if gn == bo:
@@ -450,7 +475,7 @@ def verify_gather_election(results, pubdir) -> bool:
     )
     return True
 
-def with_checkmark_message(fn_call, msg):
+def with_checkmark_message(msg, fn_call):
     try:
         result = fn_call()
         print(f'✅ {msg}')
@@ -463,25 +488,25 @@ def verify_public_record(
     results: ResultsCache, pubdir: str, target: TargetName, **fmtargs
 ) -> Union[Failure, Success]:
     "Wrap from_public_record with verification stuff"
-    if len(fmtargs) == 0:
-        # we normally want to use target,
-        # but custom msg is better for ballots and other things with ids
-        # TODO back to custom msg passsed here?
-        msg = target
-    else:
-        msg = f'{target} {fmtargs}'
+    try:
+        # If one of the kwargs is explicitly msg, that should be used.
+        msg = fmtargs.pop('msg')
+    except:
+        # Otherwise, use target + fmtargs if any, and otherwise just target
+        if len(fmtargs) == 0:
+            msg = target
+        else:
+            msg = f'{target} {fmtargs}'
     try:
         result = with_checkmark_message(
-            lambda: from_public_record(pubdir, target, **fmtargs),
-            msg
+            msg,
+            lambda: from_public_record(pubdir, target, **fmtargs)
         )
-        # print(f'✅ {msg}')
         return result
     except NotImplementedError as e:
         print(str(e))
         raise
     except Exception as e:
-        # print(f'❌ {msg}')
         raise
 
 def verify(results: ResultsCache, pubdir: str, target: TargetName, **kwargs):
@@ -541,7 +566,7 @@ def main(pubdir, verifier_id):
     verify(results, pubdir, 'all_ballots_cast')
     verify(results, pubdir, 'all_ballots_spoiled')
 
-    verify(results, pubdir, 'ciphertext_tally')
+    verify(results, pubdir, 'gather_tally')
 
     # TODO summary here
     print()
