@@ -31,7 +31,6 @@ digraph verifier_deps {
   all_guardian_backups
   all_guardian_verifications
 
-  // "all" versions of things that are actually sets
   {ceremony_details,guardian_pubkey} -> all_guardian_pubkeys
   ballot_submitted -> all_ballots_submitted
   ballot_spoiled -> all_ballots_spoiled
@@ -66,7 +65,7 @@ digraph verifier_deps {
   all_guardian_pubkeys -> joint_key
   {ciphertext_tally,context} -> tally_share
   {context,ballot_submitted,ballot_spoiled} -> spoiled_share
-  {ciphertext_tally,all_ballots_cast} -> tally_aggregation -> plaintext_tally
+  {ciphertext_tally,all_ballots_cast,manifest,context} -> tally_aggregation -> plaintext_tally
   
 
   // dependencies from device.py
@@ -75,7 +74,6 @@ digraph verifier_deps {
 
   // dependenencies from admin.py
   {manifest,ceremony_details,joint_key} -> build_election -> {constants,internal_manifest,context}
-  {internal_manifest,context,all_ballots_cast} -> ciphertext_tally
   {manifest,context,all_tally_shares,ciphertext_tally} -> plaintext_tally
   {manifest,context,spoiled_share,ballot_spoiled} -> spoiled_result
 
@@ -89,7 +87,8 @@ digraph verifier_deps {
   // is missing because it's done at the end
   node [style=filled, fillcolor=yellowgreen]
   {gather_config,ballot_sets,gather_decryptions} -> gather_election
-  {plaintext_tally,all_spoiled_results} -> gather_decryptions
+  {ciphertext_tally,tally_aggregation,all_tally_shares,plaintext_tally} -> gather_tally
+  {gather_tally,all_spoiled_results} -> gather_decryptions
   {all_ballots_submitted,all_ballots_spoiled,all_ballots_cast,all_spoiled_results} -> ballot_sets
   {gather_announce,gather_ceremony,gather_constants,all_devices} -> gather_config
   {manifest,ceremony_details} -> gather_announce

@@ -152,10 +152,10 @@ to determine dependencies for any particular artifact in python code.
 
 ```bash
 $ nix develop
-$ dot -Tsvg verifier_deps.dot -o verifier_deps.svg
+$ dot -Tsvg deps.dot -o deps.svg
 ```
 
-![](./verifier_deps.svg)
+![](./deps.svg)
 
 ```python
 import pygraphviz as pgv
