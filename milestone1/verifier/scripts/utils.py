@@ -112,7 +112,7 @@ PUBLIC_RECORDS = {
         'device_{device_number}'
     ),
     'ballot_submitted': (
-        CiphertextBallot,
+        CiphertextBallot, # TODO SubmittedBallot with state set to UNKNOWN?
         '2_ballots/1_submitted',
         '{ballot_id}'
     ),
@@ -122,12 +122,18 @@ PUBLIC_RECORDS = {
         '{ballot_id}'
     ),
     'ballot_spoiled': (
+
+        # This seems correct to me even though it doesn't match the
+        # electionguard-python implementation: we *do* want to publish all
+        # the nonces at this step, right? So people can decrypt immediately
+        # rather than waiting for the guardians.
         CiphertextBallot,
+
         '2_ballots/3_spoiled',
         '{ballot_id}'
     ),
     'ciphertext_tally': (
-        PublishedCiphertextTally,
+        PublishedCiphertextTally, # TODO CiphertextTally? (the non-"published" version)
         '3_results',
         '1_tally'
     ),

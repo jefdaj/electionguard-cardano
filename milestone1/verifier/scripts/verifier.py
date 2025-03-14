@@ -47,7 +47,8 @@ from electionguard.manifest import Manifest, InternalManifest
 from electionguard.election import CiphertextElectionContext
 from electionguard.encrypt import EncryptionDevice
 from electionguard.ballot import CiphertextBallot, SubmittedBallot
-from electionguard.ballot_box import (BallotBoxState)
+from electionguard.ballot_box import (BallotBoxState, submit_ballot)
+from electionguard.tally import CiphertextTally
 
 from electionguard_verify import *
 
@@ -172,22 +173,28 @@ def verify_device(results, pubdir, device_number) -> EncryptionDevice:
     )
 
 def verify_all_devices(results, pubdir) -> List[EncryptionDevice]:
-    print('\nverifying encryption devices:')
+    device_numbers = list_device_numbers(pubdir)
+    print(f'\nverifying {len(device_numbers)} encryption devices:')
     deps = verify_deps(**{
         f'device_{n}': verify(results, pubdir, 'device', device_number=n)
-        for n in list_device_numbers(pubdir)
+        for n in device_numbers
     })
     return deps.values()
 
 def verify_ballot_submitted(results, pubdir, ballot_id) -> SubmittedBallot:
     # TODO verify it was submitted by one of the devices (or rely on Cardano for that?)
     # device = verify(results, pubdir, 'device')
-    return verify_public_record(
+    ballot = verify_public_record(
         results, pubdir, 'ballot_submitted',
         ballot_id=ballot_id
     )
+    # We store the "submitted" ballots on chain as CiphertextBallot instead for now,
+    # so they need to be marked submitted here after deserialization.
+    # TODO store them as submitted instead?
+    ballot_submitted = submit_ballot(ballot, BallotBoxState.UNKNOWN)
+    return ballot_submitted
 
-def verify_ballot_cast(results, pubdir, ballot_id) -> CiphertextBallot:
+def verify_ballot_cast(results, pubdir, ballot_id) -> SubmittedBallot:
 
     # TODO verify it was submitted by one of the devices (or rely on Cardano for that?)
     # device = verify(results, pubdir, 'device')
@@ -203,19 +210,24 @@ def verify_ballot_cast(results, pubdir, ballot_id) -> CiphertextBallot:
 
     # TODO post the actual cast ballots rather than copying submitted here?
     ballot_cast = deepcopy(deps['ballot_submitted'])
-    ballot_cast.state = BallotBoxState.CAST
+    ballot_cast.state = BallotBoxState.CAST # TODO submitted instead?
 
     return ballot_cast
 
-def verify_ballot_spoiled(results, pubdir, ballot_id) -> CiphertextBallot:
+def verify_ballot_spoiled(results, pubdir, ballot_id) -> SubmittedBallot:
     # TODO verify it was submitted by one of the devices (or rely on Cardano for that?)
 
     deps = verify_deps(
         # device = verify(results, pubdir, 'device'),
         ballot_submitted = verify(results, pubdir, 'ballot_submitted', ballot_id=ballot_id),
     )
+    # We store the spoiled ballot as CiphertextBallot rather than
+    # SubmittedBallot, because we want to publish the nonces. But that means we
+    # need to officially "spoil" it here afer deserializing.
+    # TODO is this actually needed for anything? spoiled ballots don't really need to be tallied
     ballot_spoiled = verify_public_record(results, pubdir, 'ballot_spoiled', ballot_id=ballot_id)
     assert ballot_spoiled.object_id == deps['ballot_submitted'].object_id
+    assert ballot_spoiled.state == BallotBoxState.SPOILED
     # TODO verify they're identical except submitted has: all nonces set to null, state set to 999
 
     return ballot_spoiled
@@ -223,7 +235,7 @@ def verify_ballot_spoiled(results, pubdir, ballot_id) -> CiphertextBallot:
 def verify_ciphertext_tally(results, pubdir):
     return verify_public_record(
         results, pubdir, 'ciphertext_tally',
-        msg='ciphertext_tally json is valid'
+        msg='ciphertext_tally format is valid'
     )
 
 def verify_tally_aggregation(results, pubdir):
@@ -231,18 +243,28 @@ def verify_tally_aggregation(results, pubdir):
         manifest = verify(results, pubdir, 'manifest'),
         context = verify(results, pubdir, 'context'),
         all_ballots_cast = verify(results, pubdir, 'all_ballots_cast'),
+        # all_ballots_spoiled = verify(results, pubdir, 'all_ballots_spoiled'), # TODO remove?
         ciphertext_tally = verify(results, pubdir, 'ciphertext_tally'),
     )
+
     n_cast = len(deps['all_ballots_cast'])
-    with_checkmark_message(
-        f'ciphertext_tally is the aggregation of all {n_cast} cast ballots',
-        lambda: verify_aggregation(
-            deps['all_ballots_cast'],
-            deps['ciphertext_tally'],
-            deps['manifest'],
+
+    def verify_closure():
+        new_tally = CiphertextTally(
+            "verify-tally", # TODO best practices for this object id?
+            InternalManifest(deps['manifest']), # TODO no need for internal_manifest anywhere then?
             deps['context']
         )
+        # TODO these need to be SubmittedBallots not CiphertextBallots?
+        for ballot in deps['all_ballots_cast']: # + deps['all_ballots_spoiled']:
+            assert(new_tally.append(ballot, should_validate=True))
+        assert new_tally.contests == deps['ciphertext_tally'].contests
+
+    with_checkmark_message(
+        f'ciphertext_tally is the aggregation of the {n_cast} cast ballots',
+        verify_closure
     )
+
     return True
 
 def verify_tally_share(results, pubdir):
@@ -256,11 +278,9 @@ def verify_gather_tally(results, pubdir):
     deps = verify_deps(
         ciphertext_tally = verify(results, pubdir, 'ciphertext_tally'),
         tally_aggregation = verify(results, pubdir, 'tally_aggregation'),
+        # TODO all_tally_shares
+        # TODO plaintext_tally (decryption)
     )
-    # TODO ciphertext_tally (the load fn)
-    # TODO tally_aggregation
-    # TODO all_tally_shares
-    # TODO plaintext_tally (decryption)
     return True
 
 def verify_spoiled_share(results, pubdir):
@@ -299,27 +319,33 @@ def verify_all_guardian_pubkeys(results, pubdir) -> List[ElectionPublicKey]:
     return pubkeys
 
 def verify_all_ballots_submitted(results, pubdir) -> List[SubmittedBallot]:
-    print('\nverifying submited ballots:')
+    fmtargs_list = list_submitted_ballot_fmtargs(pubdir)
+    print(f'\nverifying {len(fmtargs_list)} submitted ballots:')
     ballots = []
-    for fmtargs in list_submitted_ballot_fmtargs(pubdir):
+    for fmtargs in fmtargs_list:
         ballot = verify(results, pubdir, 'ballot_submitted', **fmtargs)
         ballots.append(ballot)
+    assert len(ballots) == len(fmtargs_list)
     return ballots
 
-def verify_all_ballots_spoiled(results, pubdir) -> List[CiphertextBallot]:
-    print('\nverifying spoiled ballots:')
+def verify_all_ballots_spoiled(results, pubdir) -> List[SubmittedBallot]:
+    fmtargs_list = list_spoiled_ballot_fmtargs(pubdir)
+    print(f'\nverifying {len(fmtargs_list)} spoiled ballots:')
     ballots = []
-    for fmtargs in list_spoiled_ballot_fmtargs(pubdir):
-        ballot = verify_ballot_spoiled(results, pubdir, **fmtargs)
+    for fmtargs in fmtargs_list:
+        ballot = verify(results, pubdir, 'ballot_spoiled', **fmtargs)
         ballots.append(ballot)
+    assert len(ballots) == len(fmtargs_list)
     return ballots
 
-def verify_all_ballots_cast(results, pubdir) -> List[CiphertextBallot]:
-    print('\nverifying cast ballots:')
+def verify_all_ballots_cast(results, pubdir) -> List[SubmittedBallot]:
+    fmtargs_list = list_cast_ballot_fmtargs(pubdir)
+    print(f'\nverifying {len(fmtargs_list)} cast ballots:')
     ballots = []
-    for fmtargs in list_cast_ballot_fmtargs(pubdir):
-        ballot = verify_ballot_cast(results, pubdir, **fmtargs)
+    for fmtargs in fmtargs_list:
+        ballot = verify(results, pubdir, 'ballot_cast', **fmtargs)
         ballots.append(ballot)
+    assert len(ballots) == len(fmtargs_list)
     return ballots
 
 # TODO gather this or remove it
@@ -413,7 +439,7 @@ def verify_all_guardian_verifications(results, pubdir):
     return verifications
 
 def verify_gather_ceremony(results, pubdir) -> bool:
-    print('\nkey ceremony:')
+    print('\nverifying key ceremony:')
     deps = verify_deps(
         ceremony_details = verify(results, pubdir, 'ceremony_details'),
         all_guardian_pubkeys = verify(results, pubdir, 'all_guardian_pubkeys'),
@@ -429,7 +455,7 @@ def verify_gather_ceremony(results, pubdir) -> bool:
 # TODO figure out a less confusing name for this... final details? specifics?
 # TODO then rename to match in other scripts too
 def verify_gather_constants(results, pubdir) -> bool:
-    print('\nelection constants:')
+    print('\nverifying election constants:')
     deps = verify_deps(
         joint_key = verify(results, pubdir, 'joint_key'),
         constants = verify(results, pubdir, 'constants'),
@@ -457,8 +483,6 @@ def verify_ballot_sets(results, pubdir) -> bool:
     )
     # TODO set assertions here
     return True
-
-# TODO verify_gather_tally?
 
 def verify_gather_decryptions(results, pubdir) -> bool:
     deps = verify_deps(
