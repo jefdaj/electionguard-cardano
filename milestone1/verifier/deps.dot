@@ -18,8 +18,6 @@ digraph verifier_deps {
   cast_notice
   ballot_spoiled
   ciphertext_tally
-  tally_share
-  spoiled_share
   plaintext_tally
   spoiled_result
 
@@ -36,13 +34,7 @@ digraph verifier_deps {
   ballot_spoiled -> all_ballots_spoiled
   ballot_submitted -> cast_notice -> all_ballots_cast
 
-  guardian_pubkey -> tally_share
-
-  // TODO are these needed for anything?
-  // {all_guardian_pubkeys, spoiled_share} -> all_spoiled_shares
-
-  {all_guardian_pubkeys, spoiled_result} -> all_spoiled_results
-  {all_guardian_pubkeys, tally_share} -> all_tally_shares
+  spoiled_result -> all_spoiled_results
 
   // nodes added for specific verifications
   node [style=filled, fillcolor=gold]
@@ -51,7 +43,7 @@ digraph verifier_deps {
 
   // misc other nodes added manually
   build_election [style=dotted]    // not really a dep, but makes it cleaner // TODO remove?
-  internal_manifest [style=dotted] // not serializable; have to build_election each time
+  // internal_manifest [style=dotted] // not serializable; have to build_election each time
 
   // dependenencies from guardian.py
   ceremony_details -> guardian_pubkey -> guardian_backup
@@ -63,9 +55,8 @@ digraph verifier_deps {
 
   {guardian_pubkey,guardian_backup} -> guardian_verification // TODO remove? it really depends on the *cardano* wallet key right?
   all_guardian_pubkeys -> joint_key
-  {ciphertext_tally,context} -> tally_share
-  {context,ballot_submitted,ballot_spoiled} -> spoiled_share
-  {ciphertext_tally,all_ballots_cast,manifest,context} -> tally_aggregation -> plaintext_tally
+  {ciphertext_tally,all_ballots_cast,manifest,context} -> tally_aggregation
+  {all_guardian_pubkeys,tally_aggregation} -> plaintext_tally
   
 
   // dependencies from device.py
@@ -73,9 +64,9 @@ digraph verifier_deps {
   device -> all_devices
 
   // dependenencies from admin.py
-  {manifest,ceremony_details,joint_key} -> build_election -> {constants,internal_manifest,context}
-  {manifest,context,all_tally_shares,ciphertext_tally} -> plaintext_tally
-  {manifest,context,spoiled_share,ballot_spoiled} -> spoiled_result
+  {manifest,ceremony_details,joint_key} -> build_election -> {constants,context}
+  {manifest,context,ciphertext_tally} -> plaintext_tally
+  {context,ballot_spoiled,all_guardian_pubkeys} -> spoiled_result
 
   // overall election cerfification/verification
   // TODO is this how people will see it? or will they only require the plaintext_tally?
@@ -87,11 +78,11 @@ digraph verifier_deps {
   // is missing because it's done at the end
   node [style=filled, fillcolor=yellowgreen]
   {gather_config,ballot_sets,gather_decryptions} -> gather_election
-  {ciphertext_tally,tally_aggregation,all_tally_shares,plaintext_tally} -> gather_tally
+  {ciphertext_tally,tally_aggregation,plaintext_tally} -> gather_tally
   {gather_tally,all_spoiled_results} -> gather_decryptions
   {all_ballots_submitted,all_ballots_spoiled,all_ballots_cast,all_spoiled_results} -> ballot_sets
   {gather_announce,gather_ceremony,gather_constants,all_devices} -> gather_config
   {manifest,ceremony_details} -> gather_announce
-  {ceremony_details,all_guardian_pubkeys,all_guardian_backups,all_guardian_verifications,joint_key} -> gather_ceremony
+  {ceremony_details,all_guardian_pubkeys,all_guardian_backups,all_guardian_verifications} -> gather_ceremony
   {joint_key,context,constants} -> gather_constants
 }
