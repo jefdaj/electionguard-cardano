@@ -65,7 +65,7 @@ digraph verifier_deps {
   all_guardian_pubkeys -> joint_key
   {ciphertext_tally,context} -> tally_share
   {context,ballot_submitted,ballot_spoiled} -> spoiled_share
-  {ciphertext_tally,all_ballots_cast,manifest,context} -> tally_aggregation -> plaintext_tally
+  {ciphertext_tally,all_ballots_cast,all_ballots_spoiled,manifest,context} -> tally_aggregation -> plaintext_tally
   
 
   // dependencies from device.py
