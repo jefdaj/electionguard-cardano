@@ -503,7 +503,7 @@ def verify_ballot_sets(results, pubdir) -> bool:
 
     verify_assertion(
         f'{n_spoiled} ballots spoiled = {n_result} ballots decrypted',
-        n_cast + n_spoiled == n_submitted,
+        n_spoiled == n_result
     )
     verify_assertion(
         f'{n_cast} ballots cast + {n_spoiled} ballots spoiled = {n_submitted} ballots submitted',
