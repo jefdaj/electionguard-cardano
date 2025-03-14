@@ -15,6 +15,7 @@ from utils import (
     list_cast_ballot_fmtargs,
     list_spoiled_ballot_fmtargs,
     from_public_record,
+    to_public_record,
     CaptureLog,
     list_device_numbers,
 )
@@ -34,6 +35,8 @@ from electionguard.key_ceremony import (
 )
 from electionguard.manifest import Manifest, InternalManifest
 from electionguard.tally import (CiphertextTally, PlaintextTally)
+
+from electionguard_cli.cli_steps.cli_step_base import CliStepBase
 
 from electionguard_verify import *
 
@@ -631,9 +634,83 @@ def only_failures(results: ResultsCache) -> Failures:
             failures[target_name] = results_failed
     return failures
 
-# TODO json return type?
-def summary(results: ResultsCache):
-    pass
+def summarize_results(
+    results,
+    pubdir,
+    verifier_id,
+    errors,
+    n_errors,
+):
+
+    # no particular format, except it must be json-serializable
+    summary = defaultdict(lambda: {})
+
+    csb = CliStepBase() # prints in electionguard_cli style
+
+    manifest        = results['manifest'][()]
+    tally_result    = results['plaintext_tally'][()]
+    spoiled_results = results['spoiled_result']
+
+    selection_names = manifest.get_selection_names("en")
+    contest_names   = manifest.get_contest_names()
+
+    spoiled_header = 'Individual spoiled ballots'
+    csb.print_header(spoiled_header)
+    print()
+    spoiled_summaries = {}
+    for spoiled_result in spoiled_results.values():
+        ballot_id = spoiled_result.object_id
+        short_id  = ballot_id[ballot_id.find('-')+1:]
+        print(short_id)
+        ballot_summary = []
+        for contest in spoiled_result.contests.values():
+            question = contest_names.get(contest.object_id)
+            selected = [
+                selection_names[selection.object_id]
+                for selection in contest.selections.values()
+                if selection.tally > 0
+            ]
+            assert len(selected) < 2 # for a one of m contest
+            try:
+                answer = selected[0]
+            except IndexError:
+                answer = 'No answer' # TODO is this allowed?
+            print(f'  {question} {answer}')
+            contest_summary = {question: answer}
+            ballot_summary.append(contest_summary)
+        spoiled_summaries[short_id] = ballot_summary
+        print()
+
+    tally_header = "Final tally of cast ballots"
+    csb.print_header(tally_header)
+    tally_summary = []
+    contest_summaries = []
+    for tally_contest in tally_result.contests.values():
+        contest_name = contest_names.get(tally_contest.object_id)
+        contest_summary = {
+            'question': contest_name,
+            'votes': {},
+        }
+        csb.print_section(contest_name)
+        values = list(tally_contest.selections.values())
+        values.sort(key=lambda v: v.tally, reverse=True)
+        for selection in values:
+            name = selection_names[selection.object_id]
+            csb.print_value(f"  {name}", selection.tally)
+            contest_summary['votes'][name] = selection.tally
+        tally_summary.append(contest_summary)
+
+
+    # save summary json
+    # no particular format, except it must be a json-serializable dict
+    summary = {
+        'Verified': n_errors == 0,
+        'Irregularities': errors,
+        tally_header  : tally_summary,
+        spoiled_header: spoiled_summaries,
+    }
+    to_public_record(pubdir, 'summary', summary, verifier_id=verifier_id)
+    print()
 
 
 ### cli ###
@@ -656,13 +733,12 @@ def main(pubdir, verifier_id):
     verify(results, pubdir, 'gather_election')
 
     print()
-    # print(type(results['tally_aggregation'][()]))
-    # print(isinstance(results['tally_aggregation'][()], Failure))
     errors = only_failures(results)
     n_errors = sum(
         len(v) for v in errors.values()
     )
     if n_errors == 0:
+        summarize_results(results, pubdir, verifier_id, errors, n_errors)
         print('🎉 The election has been verified!')
     else:
         msgs = [
