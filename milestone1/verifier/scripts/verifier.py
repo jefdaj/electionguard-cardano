@@ -49,7 +49,7 @@ from electionguard.election import CiphertextElectionContext
 from electionguard.encrypt import EncryptionDevice
 from electionguard.ballot import CiphertextBallot, SubmittedBallot
 from electionguard.ballot_box import (BallotBoxState, submit_ballot)
-from electionguard.tally import CiphertextTally
+from electionguard.tally import (CiphertextTally, PlaintextTally)
 
 from electionguard_verify import *
 
@@ -97,6 +97,19 @@ def verify_deps(**deps):
         # print(e) # TODO handle this in verify()
         raise e
     return deps
+
+def verify_decryption_with_checkmark_message(
+    msg: str,
+    plaintext_tally: PlaintextTally,
+    all_guardian_pubkeys: Dict[GuardianId, ElectionPublicKey],
+    context: CiphertextElectionContext,
+) -> bool:
+    def verify_closure():
+        result = verify_decryption(plaintext_tally, all_guardian_pubkeys, context)
+        if not result.verified:
+            raise Exception(result.message)
+        return True
+    return with_checkmark_message(msg, verify_closure)
 
 
 ### verify a node in the dependency graph ###
@@ -292,17 +305,9 @@ def verify_tally_decryption(results, pubdir):
         all_guardian_pubkeys = verify(results, pubdir, 'all_guardian_pubkeys'),
         context = verify(results, pubdir, 'context'),
     )
-    def verify_closure():
-        result = verify_decryption(
-            deps['plaintext_tally'],
-            deps['all_guardian_pubkeys'],
-            deps['context'],
-        )
-        if not result.verified:
-            raise Exception(result.message)
-    return with_checkmark_message(
+    return verify_decryption_with_checkmark_message(
         'plaintext_tally guardian decryption shares are valid',
-        verify_closure
+        **deps
     )
 
 def verify_spoiled_result(results, pubdir):
