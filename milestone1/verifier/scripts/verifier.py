@@ -488,7 +488,7 @@ def verify_gather_config(results, pubdir) -> bool:
 
 def verify_ballot_sets(results, pubdir) -> bool:
     "Make sure the various sets of ballot IDs match up (nothing missing or extra)"
-    print('\nverifying ballot sets:')
+    print('\nverifying ballot ID sets:')
     deps = verify_deps(
         all_ballots_submitted = verify(results, pubdir, 'all_ballots_submitted'),
         all_ballots_cast = verify(results, pubdir, 'all_ballots_cast'),
@@ -524,6 +524,8 @@ def verify_ballot_sets(results, pubdir) -> bool:
         'set(cast ballot IDs) + set(spoiled ballot IDs) = set(submitted ballot IDs)',
         cast_ids.union(spoiled_ids) == submitted_ids,
     )
+
+    # TODO explicitly assert that each list has all unique IDs?
 
     return True
 
@@ -634,16 +636,16 @@ def main(pubdir, verifier_id):
     # accumulates successful result objects and error messages
     results: ResultsCache = {}
 
+    # these partially overlap, which is fine
     verify(results, pubdir, 'gather_config')
-
     verify(results, pubdir, 'all_ballots_submitted')
     verify(results, pubdir, 'all_ballots_cast')
     verify(results, pubdir, 'all_ballots_spoiled')
     verify(results, pubdir, 'all_spoiled_results')
-
     verify(results, pubdir, 'ballot_sets')
-
     verify(results, pubdir, 'gather_tally')
+    verify(results, pubdir, 'gather_decryptions')
+    verify(results, pubdir, 'gather_election')
 
     # TODO summary here
     print()
