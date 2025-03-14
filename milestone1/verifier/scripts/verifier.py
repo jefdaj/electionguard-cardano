@@ -125,7 +125,7 @@ def verify_ceremony_details(results, pubdir) -> CeremonyDetails:
     return verify_public_record(results, pubdir, 'ceremony_details')
 
 def verify_gather_announce(results, pubdir) -> bool:
-    print('\nverifying announcement:')
+    print('\nVerifying announcement:')
     deps = verify_deps(
         manifest = verify(results, pubdir, 'manifest'),
         ceremony_details = verify(results, pubdir, 'ceremony_details'),
@@ -183,7 +183,7 @@ def verify_device(results, pubdir, device_number) -> EncryptionDevice:
 
 def verify_all_devices(results, pubdir) -> List[EncryptionDevice]:
     device_numbers = list_device_numbers(pubdir)
-    print(f'\nverifying {len(device_numbers)} encryption devices:')
+    print(f'\nVerifying {len(device_numbers)} encryption devices:')
     deps = verify_deps(**{
         f'device_{n}': verify(results, pubdir, 'device', device_number=n)
         for n in device_numbers
@@ -277,7 +277,7 @@ def verify_tally_aggregation(results, pubdir):
     return True
 
 def verify_gather_tally(results, pubdir):
-    print('\nverifying final tally:')
+    print('\nVerifying final tally:')
     deps = verify_deps(
         ciphertext_tally = verify(results, pubdir, 'ciphertext_tally'),
         tally_aggregation = verify(results, pubdir, 'tally_aggregation'),
@@ -333,7 +333,7 @@ def verify_all_guardian_pubkeys(results, pubdir) -> Dict[GuardianId, ElectionPub
 
 def verify_all_ballots_submitted(results, pubdir) -> List[SubmittedBallot]:
     fmtargs_list = list_submitted_ballot_fmtargs(pubdir)
-    print(f'\nverifying {len(fmtargs_list)} submitted ballots:')
+    print(f'\nVerifying {len(fmtargs_list)} submitted ballots:')
     ballots = []
     for fmtargs in fmtargs_list:
         ballot = verify(results, pubdir, 'ballot_submitted', **fmtargs)
@@ -343,7 +343,7 @@ def verify_all_ballots_submitted(results, pubdir) -> List[SubmittedBallot]:
 
 def verify_all_ballots_spoiled(results, pubdir) -> List[SubmittedBallot]:
     fmtargs_list = list_spoiled_ballot_fmtargs(pubdir)
-    print(f'\nverifying {len(fmtargs_list)} spoiled ballots:')
+    print(f'\nVerifying {len(fmtargs_list)} spoiled ballots:')
     ballots = []
     for fmtargs in fmtargs_list:
         ballot = verify(results, pubdir, 'ballot_spoiled', **fmtargs)
@@ -353,7 +353,7 @@ def verify_all_ballots_spoiled(results, pubdir) -> List[SubmittedBallot]:
 
 def verify_all_ballots_cast(results, pubdir) -> List[SubmittedBallot]:
     fmtargs_list = list_cast_ballot_fmtargs(pubdir)
-    print(f'\nverifying {len(fmtargs_list)} cast ballots:')
+    print(f'\nVerifying {len(fmtargs_list)} cast ballots:')
     ballots = []
     for fmtargs in fmtargs_list:
         ballot = verify(results, pubdir, 'ballot_cast', **fmtargs)
@@ -363,7 +363,7 @@ def verify_all_ballots_cast(results, pubdir) -> List[SubmittedBallot]:
 
 def verify_all_spoiled_results(results, pubdir):
     fmtargs_list = list_spoiled_ballot_fmtargs(pubdir)
-    print(f'\nverifying {len(fmtargs_list)} spoiled ballot decyptions:')
+    print(f'\nVerifying {len(fmtargs_list)} spoiled ballot decyptions:')
     ballots = []
     for fmtargs in fmtargs_list:
         ballot = verify(results, pubdir, 'spoiled_result', **fmtargs)
@@ -417,7 +417,7 @@ def verify_context(results, pubdir) -> CiphertextElectionContext:
 def verify_all_guardian_backups(results, pubdir):
     ceremony_details = verify(results, pubdir, 'ceremony_details')
     backups = []
-    # print('\nverifying all guardian backups:')
+    # print('\nVerifying all guardian backups:')
     for gn in range(1, ceremony_details.number_of_guardians+1):
         for bo in range(1, ceremony_details.number_of_guardians+1):
             if gn == bo:
@@ -447,7 +447,7 @@ def verify_all_guardian_verifications(results, pubdir):
     return verifications
 
 def verify_gather_ceremony(results, pubdir) -> bool:
-    print('\nverifying key ceremony:')
+    print('\nVerifying key ceremony:')
     deps = verify_deps(
         ceremony_details = verify(results, pubdir, 'ceremony_details'),
         all_guardian_pubkeys = verify(results, pubdir, 'all_guardian_pubkeys'),
@@ -463,7 +463,7 @@ def verify_gather_ceremony(results, pubdir) -> bool:
 # TODO figure out a less confusing name for this... final details? specifics?
 # TODO then rename to match in other scripts too
 def verify_gather_constants(results, pubdir) -> bool:
-    print('\nverifying election constants:')
+    print('\nVerifying election constants:')
     deps = verify_deps(
         joint_key = verify(results, pubdir, 'joint_key'),
         constants = verify(results, pubdir, 'constants'),
@@ -483,7 +483,7 @@ def verify_gather_config(results, pubdir) -> bool:
 
 def verify_ballot_sets(results, pubdir) -> bool:
     "Make sure the various sets of ballot IDs match up (nothing missing or extra)"
-    print('\nverifying ballot ID sets:')
+    print('\nVerifying ballot ID sets:')
     deps = verify_deps(
         all_ballots_submitted = verify(results, pubdir, 'all_ballots_submitted'),
         all_ballots_cast = verify(results, pubdir, 'all_ballots_cast'),
@@ -738,8 +738,9 @@ def main(pubdir, verifier_id):
         len(v) for v in errors.values()
     )
     if n_errors == 0:
-        summarize_results(results, pubdir, verifier_id, errors, n_errors)
         print('🎉 The election has been verified!')
+        print()
+        summarize_results(results, pubdir, verifier_id, errors, n_errors)
     else:
         msgs = [
             f'Found {n_errors} irregularities. See summary JSON for details.',
