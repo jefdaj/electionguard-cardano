@@ -58,7 +58,7 @@ def freeze_kwargs(kwargs):
     return tuple(sorted(kwargs.items()))
 
 # error message
-Failure = str
+Error = str
 
 # successfully verified public record
 Success = Any
@@ -67,14 +67,14 @@ Success = Any
 ResultsCache = Dict[
     TargetName,
     Dict[TargetArgs,
-         Union[Failure, Success]
+         Union[Error, Success]
     ]
 ]
 
 # summary of just the failed results
-Failures = Dict[
+Errors = Dict[
     TargetName,
-    Dict[TargetArgs, Failure]
+    Dict[TargetArgs, Error]
 ]
 
 class DependencyError(Exception):
@@ -82,7 +82,7 @@ class DependencyError(Exception):
 
 def verify_deps(**deps):
     "Make a target fail when one or more of its deps does"
-    errors = {k:v for (k,v) in deps.items() if isinstance(v, Failure)}
+    errors = {k:v for (k,v) in deps.items() if isinstance(v, Error)}
     n_errors = len(errors)
     error_keys = ', '.join(sorted(errors.keys())) # TODO nested keys too?
     # print(errors)
@@ -556,7 +556,7 @@ def verify_assertion(msg, assertion):
 
 def verify_public_record(
     results: ResultsCache, pubdir: str, target: TargetName, **fmtargs
-) -> Union[Failure, Success]:
+) -> Union[Error, Success]:
     "Wrap from_public_record with verification stuff"
     try:
         # If one of the kwargs is explicitly msg, that should be used.
@@ -609,7 +609,7 @@ def verify(results: ResultsCache, pubdir: str, target: TargetName, **kwargs):
         except Exception as e:
             msgs = [str(e)]
             msgs.append(log.getvalue().strip())
-            result = Failure(' '.join(msgs).strip())
+            result = Error(' '.join(msgs).strip())
             # print(f'err during {verify_fn.__name__}: "{result}"')
 
     # cache result
@@ -622,13 +622,13 @@ def verify(results: ResultsCache, pubdir: str, target: TargetName, **kwargs):
 
 ### summary ###
 
-def only_failures(results: ResultsCache) -> Failures:
-    failures: Failures = {}
+def only_failures(results: ResultsCache) -> Errors:
+    failures: Errors = {}
     for (target_name, results_dict) in results.items():
         results_failed = {
             k:v for (k,v)
             in results_dict.items()
-            if isinstance(v, Failure)
+            if isinstance(v, Error)
         }
         if len(results_failed) > 0:
             failures[target_name] = results_failed
