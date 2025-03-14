@@ -233,8 +233,8 @@ def verify_ballot_spoiled(results, pubdir, ballot_id) -> SubmittedBallot:
 
     deps = verify_deps(
         # device = verify(results, pubdir, 'device'),
-        ballot_spoiled = verify_public_record(results, pubdir, 'ballot_spoiled', ballot_id=ballot_id),
         ballot_submitted = verify(results, pubdir, 'ballot_submitted', ballot_id=ballot_id),
+        ballot_spoiled = verify_public_record(results, pubdir, 'ballot_spoiled', ballot_id=ballot_id)
     )
     # We store the spoiled ballot as CiphertextBallot rather than
     # SubmittedBallot, because we want to publish the nonces. But that means we
@@ -312,14 +312,16 @@ def verify_tally_decryption(results, pubdir):
 
 def verify_spoiled_result(results, pubdir, **fmtargs) -> PlaintextTally:
     deps = verify_deps(
-        ballot_spoiled = verify(results, pubdir, 'ballot_spoiled', **fmtargs),
         all_guardian_pubkeys = verify(results, pubdir, 'all_guardian_pubkeys'),
         context = verify(results, pubdir, 'context'),
-        spoiled_result = verify_public_record(results, pubdir, 'spoiled_result', **fmtargs)
     )
+    spoiled_result = from_public_record(pubdir, 'spoiled_result', **fmtargs)
+    # ballot_spoiled = from_public_record(pubdir, 'ballot_spoiled', **fmtargs),
     verify_decryption_with_checkmark_message(
-        f'ballot_spoiled {fmtargs}',
-        **deps
+        f'spoiled_result {fmtargs}',
+        plaintext_tally=spoiled_result,
+        all_guardian_pubkeys=deps['all_guardian_pubkeys'],
+        context=deps['context'],
     )
     return spoiled_result
 
@@ -486,13 +488,43 @@ def verify_gather_config(results, pubdir) -> bool:
 
 def verify_ballot_sets(results, pubdir) -> bool:
     "Make sure the various sets of ballot IDs match up (nothing missing or extra)"
+    print('\nverifying ballot sets:')
     deps = verify_deps(
         all_ballots_submitted = verify(results, pubdir, 'all_ballots_submitted'),
         all_ballots_cast = verify(results, pubdir, 'all_ballots_cast'),
         all_ballots_spoiled = verify(results, pubdir, 'all_ballots_spoiled'),
         all_spoiled_results = verify(results, pubdir, 'all_spoiled_results'),
     )
-    # TODO set assertions here
+
+    n_submitted = len(deps['all_ballots_submitted'])
+    n_cast      = len(deps['all_ballots_cast'])
+    n_spoiled   = len(deps['all_ballots_spoiled'])
+    n_result    = len(deps['all_spoiled_results'])
+
+    verify_assertion(
+        f'{n_spoiled} ballots spoiled = {n_result} ballots decrypted',
+        n_cast + n_spoiled == n_submitted,
+    )
+    verify_assertion(
+        f'{n_cast} ballots cast + {n_spoiled} ballots spoiled = {n_submitted} ballots submitted',
+        n_cast + n_spoiled == n_submitted,
+    )
+
+    submitted_ids = set(b.object_id for b in deps['all_ballots_submitted'])
+    cast_ids      = set(b.object_id for b in deps['all_ballots_cast'])
+    spoiled_ids   = set(b.object_id for b in deps['all_ballots_spoiled'])
+    result_ids    = set(b.object_id for b in deps['all_spoiled_results'])
+
+    verify_assertion(
+        'set(spoiled ballot IDs) = set(decrypted ballot IDs)',
+        spoiled_ids == result_ids,
+    )
+
+    verify_assertion(
+        'set(cast ballot IDs) + set(spoiled ballot IDs) = set(submitted ballot IDs)',
+        cast_ids.union(spoiled_ids) == submitted_ids,
+    )
+
     return True
 
 def verify_gather_decryptions(results, pubdir) -> bool:
@@ -518,6 +550,12 @@ def with_checkmark_message(msg, fn_call):
     except Exception as e:
         print(f'❌ {msg}')
         raise
+
+def verify_assertion(msg, assertion):
+    # wrapper is required because you can't `assert` inside a lambda
+    def assertion_fn():
+        assert assertion
+    return with_checkmark_message(msg, assertion_fn)
 
 def verify_public_record(
     results: ResultsCache, pubdir: str, target: TargetName, **fmtargs
@@ -598,9 +636,11 @@ def main(pubdir, verifier_id):
 
     verify(results, pubdir, 'gather_config')
 
-    # verify(results, pubdir, 'all_ballots_submitted')
-    # verify(results, pubdir, 'all_ballots_cast')
-    # verify(results, pubdir, 'all_ballots_spoiled')
+    verify(results, pubdir, 'all_ballots_submitted')
+    verify(results, pubdir, 'all_ballots_cast')
+    verify(results, pubdir, 'all_ballots_spoiled')
+    verify(results, pubdir, 'all_spoiled_results')
+
     verify(results, pubdir, 'ballot_sets')
 
     verify(results, pubdir, 'gather_tally')
