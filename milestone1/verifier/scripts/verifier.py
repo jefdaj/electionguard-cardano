@@ -43,6 +43,7 @@ from electionguard.key_ceremony import (
     # verify_election_partial_key_backup
 )
 from electionguard.constants import ElectionConstants
+from electionguard.guardian import GuardianId
 from electionguard.manifest import Manifest, InternalManifest
 from electionguard.election import CiphertextElectionContext
 from electionguard.encrypt import EncryptionDevice
@@ -267,55 +268,57 @@ def verify_tally_aggregation(results, pubdir):
 
     return True
 
-def verify_tally_share(results, pubdir):
-    guardian_pubkey = verify(results, pubdir, 'guardian_pubkey')
-    context = verify(results, pubdir, 'context')
-    ciphertext_tally = verify(results, pubdir, 'ciphertext_tally')
-    raise NotImplementedError
-
 def verify_gather_tally(results, pubdir):
     print('\nverifying final tally:')
     deps = verify_deps(
         ciphertext_tally = verify(results, pubdir, 'ciphertext_tally'),
         tally_aggregation = verify(results, pubdir, 'tally_aggregation'),
-        # TODO all_tally_shares
-        # TODO plaintext_tally (decryption)
+        plaintext_tally = verify(results, pubdir, 'plaintext_tally'),
+        tally_decryption = verify(results, pubdir, 'tally_decryption'),
     )
     return True
 
-def verify_spoiled_share(results, pubdir):
-    # TODO start on this next
-    context = verify(results, pubdir, 'context')
-    ballot_submitted = verify(results, pubdir, 'ballot_submitted')
-    ballot_submitted = verify(results, pubdir, 'ballot_submitted')
-    ballot_spoiled = verify(results, pubdir, 'ballot_spoiled')
-    raise NotImplementedError
-
 def verify_plaintext_tally(results, pubdir):
-    manifest = verify(results, pubdir, 'manifest')
-    context = verify(results, pubdir, 'context')
-    ciphertext_tally = verify(results, pubdir, 'ciphertext_tally')
-    all_tally_shares = verify(results, pubdir, 'all_tally_shares')
-    raise NotImplementedError
+    return verify_public_record(
+        results, pubdir, 'plaintext_tally',
+        msg='plaintext_tally format is valid'
+    )
+
+def verify_tally_decryption(results, pubdir):
+    # TODO is there no way to directly check that plaintext_tally derives from ciphertext_tally?
+    # TODO maybe we *do* need to go via the individual shares after all! bring em back?
+    deps = verify_deps(
+        plaintext_tally = verify(results, pubdir, 'plaintext_tally'),
+        all_guardian_pubkeys = verify(results, pubdir, 'all_guardian_pubkeys'),
+        context = verify(results, pubdir, 'context'),
+    )
+    with_checkmark_message(
+        'plaintext_tally is the decryption of ciphertext_tally'
+        lambda: verify_decryption(
+            deps['plaintext_tally'],
+            deps['all_guardian_pubkeys'],
+            deps['context'],
+        )
+    )
 
 def verify_spoiled_result(results, pubdir):
     manifest = verify(results, pubdir, 'manifest')
     context = verify(results, pubdir, 'context')
     ballot_spoiled = verify(results, pubdir, 'ballot_spoiled')
     ballot_spoiled = verify(results, pubdir, 'ballot_spoiled')
-    spoiled_share = verify(results, pubdir, 'spoiled_share')
-    spoiled_share = verify(results, pubdir, 'spoiled_share')
+    # spoiled_share = verify(results, pubdir, 'spoiled_share')
+    # spoiled_share = verify(results, pubdir, 'spoiled_share')
     raise NotImplementedError
 
 # TODO should this be a list or dict?
-def verify_all_guardian_pubkeys(results, pubdir) -> List[ElectionPublicKey]:
+def verify_all_guardian_pubkeys(results, pubdir) -> Dict[GuardianId, ElectionPublicKey]:
     ceremony_details = verify(results, pubdir, 'ceremony_details') # TODO error here?
-    pubkeys = []
+    pubkeys = {}
     # print('\verifying nall guardian pubkeys:')
     for n in range(1, ceremony_details.number_of_guardians+1):
         guardian_id = f'guardian_{n}'
         pubkey = verify(results, pubdir, 'guardian_pubkey', guardian_id=guardian_id)
-        pubkeys.append(pubkey)
+        pubkeys[guardian_id] = pubkey
     return pubkeys
 
 def verify_all_ballots_submitted(results, pubdir) -> List[SubmittedBallot]:
@@ -348,19 +351,8 @@ def verify_all_ballots_cast(results, pubdir) -> List[SubmittedBallot]:
     assert len(ballots) == len(fmtargs_list)
     return ballots
 
-# TODO gather this or remove it
-def verify_all_spoiled_shares(results, pubdir):
-    spoiled_share = verify(results, pubdir, 'spoiled_share')
-    all_guardian_pubkeys = verify(results, pubdir, 'all_guardian_pubkeys')
-    raise NotImplementedError
-
 def verify_all_spoiled_results(results, pubdir):
     spoiled_result = verify(results, pubdir, 'spoiled_result')
-    all_guardian_pubkeys = verify(results, pubdir, 'all_guardian_pubkeys')
-    raise NotImplementedError
-
-def verify_all_tally_shares(results, pubdir):
-    tally_share = verify(results, pubdir, 'tally_share')
     all_guardian_pubkeys = verify(results, pubdir, 'all_guardian_pubkeys')
     raise NotImplementedError
 
