@@ -285,20 +285,24 @@ def verify_plaintext_tally(results, pubdir):
     )
 
 def verify_tally_decryption(results, pubdir):
-    # TODO is there no way to directly check that plaintext_tally derives from ciphertext_tally?
-    # TODO maybe we *do* need to go via the individual shares after all! bring em back?
+    # TODO also verify that the shares == their corresponding public record files
+    # TODO and that the published shares match the ciphertext_tally? is that possible?
     deps = verify_deps(
         plaintext_tally = verify(results, pubdir, 'plaintext_tally'),
         all_guardian_pubkeys = verify(results, pubdir, 'all_guardian_pubkeys'),
         context = verify(results, pubdir, 'context'),
     )
-    with_checkmark_message(
-        'plaintext_tally is the decryption of ciphertext_tally'
-        lambda: verify_decryption(
+    def verify_closure():
+        result = verify_decryption(
             deps['plaintext_tally'],
             deps['all_guardian_pubkeys'],
             deps['context'],
         )
+        if not result.verified:
+            raise Exception(result.message)
+    return with_checkmark_message(
+        'plaintext_tally guardian decryption shares are valid',
+        verify_closure
     )
 
 def verify_spoiled_result(results, pubdir):
