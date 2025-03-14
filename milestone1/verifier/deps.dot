@@ -60,7 +60,8 @@ digraph verifier_deps {
   
 
   // dependencies from device.py
-  device -> {ballot_submitted,ballot_spoiled,cast_notice}
+  // TODO put back?
+  // device -> {ballot_submitted,ballot_spoiled,cast_notice}
   device -> all_devices
 
   // dependenencies from admin.py
