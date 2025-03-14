@@ -1,57 +1,42 @@
 #!/usr/bin/env python3
 
-# TODO add nodes for checking all the ballots are accounted for!
-
-import time
 import click
-from copy import deepcopy
-from typing import Any, Union, Optional, Callable, List, Dict, Tuple
+import logging
+import time
+
 from collections import defaultdict
+from copy import deepcopy
+from pprint import pprint
+from typing import Any, Union, Optional, Callable, List, Dict, Tuple
+
 from utils import (
     build_election,
-    # load_submitted_ballots,
-    # load_cast_ballots,
-    # load_tally_shares,
-    # load_spoiled_shares,
-    # load_spoiled_results,
-    # load_guardian_pubkeys_dict,
-    # load_spoiled_ballots,
-    # to_public_record,
     list_submitted_ballot_fmtargs,
     list_cast_ballot_fmtargs,
     list_spoiled_ballot_fmtargs,
-    # list_guardian_backup_fmtargs,
-    # list_guardian_verification_fmtargs,
     from_public_record,
     CaptureLog,
     list_device_numbers,
 )
-import logging
-from pprint import pprint
 
-from electionguard.manifest import Manifest
+from electionguard.ballot import CiphertextBallot, SubmittedBallot
+from electionguard.ballot_box import (BallotBoxState, submit_ballot)
+from electionguard.constants import ElectionConstants
+from electionguard.election import CiphertextElectionContext
+from electionguard.encrypt import EncryptionDevice
+from electionguard.guardian import GuardianId
 from electionguard.key_ceremony import (
     CeremonyDetails,
     ElectionJointKey,
-    # ElectionKeyPair,
     ElectionPublicKey,
     ElectionPartialKeyBackup,
     ElectionPartialKeyVerification,
-    # combine_election_public_keys,
-    # generate_election_key_pair,
-    # generate_election_partial_key_backup,
-    # verify_election_partial_key_backup
 )
-from electionguard.constants import ElectionConstants
-from electionguard.guardian import GuardianId
 from electionguard.manifest import Manifest, InternalManifest
-from electionguard.election import CiphertextElectionContext
-from electionguard.encrypt import EncryptionDevice
-from electionguard.ballot import CiphertextBallot, SubmittedBallot
-from electionguard.ballot_box import (BallotBoxState, submit_ballot)
 from electionguard.tally import (CiphertextTally, PlaintextTally)
 
 from electionguard_verify import *
+
 
 ### utils ###
 
@@ -83,6 +68,12 @@ ResultsCache = Dict[
     ]
 ]
 
+# summary of just the failed results
+Failures = Dict[
+    TargetName,
+    Dict[TargetArgs, Failure]
+]
+
 class DependencyError(Exception):
     "Make a target fail when one or more of its deps does"
 
@@ -90,10 +81,11 @@ def verify_deps(**deps):
     "Make a target fail when one or more of its deps does"
     errors = {k:v for (k,v) in deps.items() if isinstance(v, Failure)}
     n_errors = len(errors)
+    error_keys = ', '.join(sorted(errors.keys())) # TODO nested keys too?
     # print(errors)
     if n_errors > 0:
-        e = DependencyError(f'{n_errors} dependencies failed')
-        print(errors)
+        e = DependencyError(f'{n_errors} dependencies failed: {error_keys}')
+        # print(errors)
         # print(e) # TODO handle this in verify()
         raise e
     return deps
@@ -275,7 +267,7 @@ def verify_tally_aggregation(results, pubdir):
         assert new_tally.contests == deps['ciphertext_tally'].contests
 
     with_checkmark_message(
-        f'ciphertext_tally is the aggregation of the {n_cast} cast ballots',
+        f'ciphertext_tally is the correct aggregation of the {n_cast} cast ballots',
         verify_closure
     )
 
@@ -578,9 +570,6 @@ def verify_public_record(
             lambda: from_public_record(pubdir, target, **fmtargs)
         )
         return result
-    except NotImplementedError as e:
-        print(str(e))
-        raise
     except Exception as e:
         raise
 
@@ -628,6 +617,25 @@ def verify(results: ResultsCache, pubdir: str, target: TargetName, **kwargs):
     return result
 
 
+### summary ###
+
+def only_failures(results: ResultsCache) -> Failures:
+    failures: Failures = {}
+    for (target_name, results_dict) in results.items():
+        results_failed = {
+            k:v for (k,v)
+            in results_dict.items()
+            if isinstance(v, Failure)
+        }
+        if len(results_failed) > 0:
+            failures[target_name] = results_failed
+    return failures
+
+# TODO json return type?
+def summary(results: ResultsCache):
+    pass
+
+
 ### cli ###
 
 def main(pubdir, verifier_id):
@@ -647,9 +655,21 @@ def main(pubdir, verifier_id):
     verify(results, pubdir, 'gather_decryptions')
     verify(results, pubdir, 'gather_election')
 
-    # TODO summary here
     print()
-
+    # print(type(results['tally_aggregation'][()]))
+    # print(isinstance(results['tally_aggregation'][()], Failure))
+    errors = only_failures(results)
+    n_errors = sum(
+        len(v) for v in errors.values()
+    )
+    if n_errors == 0:
+        print('🎉 The election has been verified!')
+    else:
+        msgs = [
+            f'Found {n_errors} irregularities. See summary JSON for details.',
+            'The election could NOT be verified!',
+        ]
+        print('\n'.join('⛔ ' + m for m in msgs))
 
 @click.command("verify")
 @click.option(
