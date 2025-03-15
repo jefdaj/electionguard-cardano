@@ -44,8 +44,6 @@ from electionguard_verify import *
 
 ### utils ###
 
-# TODO util functions to use that type easily
-
 # normally one of the keys in the PUBLIC_RECORDS map,
 # but might also be prefixed with , all_, gather_, etc.
 TargetName = str
@@ -92,9 +90,7 @@ class DependencyError(Exception):
 
 def verify_deps(**deps):
     "Make a target fail when one or more of its deps does"
-    # TODO is this missing nested errors?
     errors = {}
-    # errors = {k:v for (k,v) in deps.items() if isinstance(v, Error)}
     for (k, v) in deps.items():
         if isinstance(v, dict):
             for (k2, v2) in v.items():
@@ -105,11 +101,9 @@ def verify_deps(**deps):
         elif isinstance(v, Error):
             errors[k] = v
         # else drop the non-errors
-    error_keys = ', '.join(sorted(errors.keys())) # TODO nested keys too?
+    error_keys = ', '.join(sorted(errors.keys()))
     if len(errors) > 0:
-        e = DependencyError(f'dependencies failed: {error_keys}')
-        # TODO why is this being swallowed?
-        raise e
+        raise DependencyError(f'dependencies failed: {error_keys}')
     return deps
 
 def verify_decryption_with_checkmark_message(
@@ -126,16 +120,7 @@ def verify_decryption_with_checkmark_message(
     return with_checkmark_message(msg, verify_closure)
 
 
-### verify a node in the dependency graph ###
-#
-# Each function takes the main public dir `pubdir`, the main `errors` dict, a
-# list of already-verified dependency nodes `vdeps` and optional extra `kwargs`
-# (for example `ballot_id`). It returns whether verification succeeded.
-#
-# TODO is throwing an exception also OK, or should it be cast to str?
-# TODO should kwargs be passed expanded instead?
-#
-#############################################
+### verify_{name} verifies the {name} node in the dependency graph ###
 
 def verify_manifest(results, pubdir) -> Manifest:
     return verify_public_record(results, pubdir, 'manifest')
@@ -152,7 +137,6 @@ def verify_gather_announce(results, pubdir) -> bool:
     return True
 
 def verify_guardian_pubkey(results, pubdir, guardian_id) -> ElectionPublicKey:
-    # TODO why isn't this recording results?
     res =  verify_public_record(
         results, pubdir, 'guardian_pubkey',
         guardian_id=guardian_id
@@ -223,19 +207,14 @@ def verify_ballot_submitted(results, pubdir, ballot_id) -> SubmittedBallot:
     return ballot_submitted
 
 def verify_ballot_cast(results, pubdir, ballot_id) -> SubmittedBallot:
-
     # TODO verify it was submitted by one of the devices (or rely on Cardano for that?)
     # device = verify(results, pubdir, 'device')
-
     deps = verify_deps(
         ballot_submitted = verify(results, pubdir, 'ballot_submitted', ballot_id=ballot_id),
         cast_notice = verify_public_record(results, pubdir, 'cast_notice', ballot_id=ballot_id),
     )
-
     assert deps['cast_notice'].ballot_id == deps['ballot_submitted'].object_id
-
     # TODO verify time cast_at seems about right? (within a short window after submitted)
-
     # TODO post the actual cast ballots rather than copying submitted here?
     ballot_cast = deepcopy(deps['ballot_submitted'])
     ballot_cast.state = BallotBoxState.CAST # TODO submitted instead?
@@ -244,9 +223,8 @@ def verify_ballot_cast(results, pubdir, ballot_id) -> SubmittedBallot:
 
 def verify_ballot_spoiled(results, pubdir, ballot_id) -> SubmittedBallot:
     # TODO verify it was submitted by one of the devices (or rely on Cardano for that?)
-
+    # device = verify(results, pubdir, 'device'),
     deps = verify_deps(
-        # device = verify(results, pubdir, 'device'),
         ballot_submitted = verify(results, pubdir, 'ballot_submitted', ballot_id=ballot_id),
     )
     ballot_spoiled = verify_public_record(results, pubdir, 'ballot_spoiled', ballot_id=ballot_id)
@@ -257,7 +235,6 @@ def verify_ballot_spoiled(results, pubdir, ballot_id) -> SubmittedBallot:
     assert ballot_spoiled.object_id == deps['ballot_submitted'].object_id
     ballot_submitted_v2 = submit_ballot(ballot_spoiled, BallotBoxState.SPOILED)
     # TODO verify they're identical except submitted has: all nonces set to null, state set to 999
-
     return ballot_submitted_v2
 
 def verify_ciphertext_tally(results, pubdir):
@@ -340,11 +317,11 @@ def verify_spoiled_result(results, pubdir, **fmtargs) -> PlaintextTally:
     )
     return spoiled_result
 
+# TODO rewrite this in verify_deps style
 # TODO should this be a list or dict?
 def verify_all_guardian_pubkeys(results, pubdir) -> Dict[GuardianId, ElectionPublicKey]:
     ceremony_details = verify(results, pubdir, 'ceremony_details') # TODO error here?
     pubkeys = {}
-    # print('\verifying nall guardian pubkeys:')
     for n in range(1, ceremony_details.number_of_guardians+1):
         guardian_id = f'guardian_{n}'
         pubkey = verify(results, pubdir, 'guardian_pubkey', guardian_id=guardian_id)
@@ -433,7 +410,6 @@ def verify_context(results, pubdir) -> CiphertextElectionContext:
 def verify_all_guardian_backups(results, pubdir):
     ceremony_details = verify(results, pubdir, 'ceremony_details')
     backups = []
-    # print('\nVerifying all guardian backups:')
     for gn in range(1, ceremony_details.number_of_guardians+1):
         for bo in range(1, ceremony_details.number_of_guardians+1):
             if gn == bo:
@@ -449,7 +425,6 @@ def verify_all_guardian_backups(results, pubdir):
 def verify_all_guardian_verifications(results, pubdir):
     ceremony_details = verify(results, pubdir, 'ceremony_details')
     verifications = []
-    # print('\nall guardian backup verifications:')
     for gn in range(1, ceremony_details.number_of_guardians+1):
         for bo in range(1, ceremony_details.number_of_guardians+1):
             if gn == bo:
@@ -524,7 +499,6 @@ def verify_n_cast_spoiled_submitted(results, pubdir) -> bool:
     )
 
 def verify_set_spoiled_decrypted(results, pubdir) -> bool:
-    # TODO why isn't this short-circuiting the rest of the fn?
     deps = verify_deps(
         all_ballots_spoiled = verify(results, pubdir, 'all_ballots_spoiled'),
         all_spoiled_results = verify(results, pubdir, 'all_spoiled_results'),
@@ -543,9 +517,6 @@ def verify_set_cast_spoiled_submitted(results, pubdir) -> bool:
         all_ballots_spoiled = verify(results, pubdir, 'all_ballots_spoiled'),
         all_ballots_submitted = verify(results, pubdir, 'all_ballots_submitted'),
     )
-    # errors = {k:v for (k,v) in deps.items() if isinstance(v, Error)}
-    # if len(errors) > 0:
-    #     print(errors)
     cast_ids      = set(b.object_id for b in deps['all_ballots_cast'])
     spoiled_ids   = set(b.object_id for b in deps['all_ballots_spoiled'])
     submitted_ids = set(b.object_id for b in deps['all_ballots_submitted'])
@@ -630,16 +601,12 @@ def verify(results: ResultsCache, pubdir: str, target: TargetName, **kwargs):
     """
 
     kwargs_frozen = freeze_kwargs(kwargs)
-    # unfrozen_test = unfreeze_kwargs(kwargs_frozen)
-    # print('unfreeze works?', unfrozen_test == kwargs)
-    # raise SystemExit
 
     # memoize
     # note this could sort of be done using functools.cache,
     # except that wouldn't also accumulate errors
     if target in results:
         if kwargs_frozen in results[target]:
-            # print(f'using memoized {target} {kwargs}')
             result = results[target][kwargs_frozen]
             return result
 
@@ -648,12 +615,7 @@ def verify(results: ResultsCache, pubdir: str, target: TargetName, **kwargs):
     verify_fn = globals()[f'verify_{target}']
     with CaptureLog(level=logging.DEBUG) as log:
         try:
-            # if len(kwargs) == 0:
-                # result = verify_fn(results, pubdir)
-            # else:
             result = verify_fn(results, pubdir, **kwargs)
-        # except DependencyError as e:
-        #     print(f'skipped {target} because dependencies failed')
         except Exception as e:
             msgs = [str(e)]
             msgs.append(log.getvalue().strip())
@@ -731,6 +693,7 @@ def summarize_results(
 ):
 
     # no particular format, except it must be json-serializable
+    # TODO codify it as a dataclass?
     summary = defaultdict(lambda: {})
 
     csb = CliStepBase() # prints in electionguard_cli style
@@ -738,28 +701,13 @@ def summarize_results(
     manifest        = results['manifest']
     tally_result    = results['plaintext_tally']
     spoiled_results = results['all_spoiled_results']
-
-    # TODO what's up with this?? why is each value itself a list?
-    # spoiled_results_keys = spoiled_results.keys()
-    # print(spoiled_results_keys)
-    # spoiled_results = list(results['all_spoiled_results'][()].values())
-    # # pprint(spoiled_results)
-    # print(type(spoiled_results))
-    # print(type(spoiled_results[0]))
-    # print(type(spoiled_results[0][0]))
-    # raise SystemExit
-
     selection_names = manifest.get_selection_names("en")
     contest_names   = manifest.get_contest_names()
 
     spoiled_header = 'Individual spoiled ballots'
     csb.print_header(spoiled_header)
     spoiled_summaries = {}
-    # pprint([type(r) for r in spoiled_results])
-    # raise SystemExit
     for spoiled_result in spoiled_results:
-        # print('spoiled_result:', type(spoiled_result))
-        # raise SystemExit
         print()
         if isinstance(spoiled_result, Error):
             continue
@@ -788,7 +736,6 @@ def summarize_results(
             contest_summary = {question: answer}
             ballot_summary.append(contest_summary)
         spoiled_summaries[short_id] = ballot_summary
-        # print()
 
     tally_header = "Final tally of cast ballots"
     csb.print_header(tally_header)
