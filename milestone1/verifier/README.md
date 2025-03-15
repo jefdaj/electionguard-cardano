@@ -3,152 +3,7 @@ Verifier Script
 
 This verifies the results of the [local election script](../local-election).
 
-TODO:
-
-- [x] Monkey patch the electionguard LOG to throw exceptions during verification
-      (because throwing them all the time messes with the test suite)
-- [x] Make a JSON summary of the verification as well as printing
-- [ ] Have this script create the summary json rather than the admin
-- [ ] Clean up the code! It's very messy so far
-
-## Initial messy version
-
-Example outputs so far....
-
-```bash
-$ nix develop
-
-$ # raw (correct) public data from ../local-election/election.py
-$ ./verify.py
-
-docker exec verifier-verifier1-1 poetry run /scripts/verifier.py verify --public-dir /data/public
-
-loading cast ballots ✅
-verifying the ciphertext of the 6 cast ballots:
-  ballot-899dd600-fb92-11ef-9582-0242ac120004 ✅
-  ballot-86796dea-fb92-11ef-968e-0242ac120005 ✅
-  ballot-8bb012dc-fb92-11ef-b3ad-0242ac120004 ✅
-  ballot-86fff374-fb92-11ef-8ae9-0242ac120009 ✅
-  ballot-8919b94c-fb92-11ef-9a90-0242ac120009 ✅
-  ballot-8786b1ca-fb92-11ef-a107-0242ac120004 ✅
-
-loading spoiled ballots ✅
-verifying the ciphertext of the 6 spoiled ballots:
-  ballot-85f51bf8-fb92-11ef-8821-0242ac120008 ✅
-  ballot-8894d0ce-fb92-11ef-8d8b-0242ac120005 ✅
-  ballot-8b2cf5be-fb92-11ef-a928-0242ac120009 ✅
-  ballot-8a20ca06-fb92-11ef-b9e9-0242ac120008 ✅
-  ballot-880db7e2-fb92-11ef-880e-0242ac120008 ✅
-  ballot-8aa5a834-fb92-11ef-8e05-0242ac120005 ✅
-
-double checking that all ballots are accounted for:
-  6 ballots cast + 6 spoiled = 12 submitted ✅
-  set(cast IDs) + set(spoiled IDs) = set(submitted IDs) ✅
-
-verifying spoiled ballot decryptions:
-  ballot-85f51bf8-fb92-11ef-8821-0242ac120008 ✅
-  ballot-8894d0ce-fb92-11ef-8d8b-0242ac120005 ✅
-  ballot-8b2cf5be-fb92-11ef-a928-0242ac120009 ✅
-  ballot-8a20ca06-fb92-11ef-b9e9-0242ac120008 ✅
-  ballot-880db7e2-fb92-11ef-880e-0242ac120008 ✅
-  ballot-8aa5a834-fb92-11ef-8e05-0242ac120005 ✅
-  6 decrypted ballots = 6 spoiled ✅
-
-verifying the final tally:
-  loading tally ✅
-  verifying aggregation of 6 cast ballots into tally ✅
-  verifying tally decryption ✅
-
-No irregularities found.
-The election can be certified! 🎉
-```
-
-```bash
-$ # one digit changed in one of the crypto fields of a submitted ballot
-$ ./verify.py
-
-docker exec verifier-verifier1-1 poetry run /scripts/verifier.py verify --public-dir /data/public
-
-loading cast ballots ✅
-verifying the ciphertext of the 6 cast ballots:
-  ballot-899dd600-fb92-11ef-9582-0242ac120004 ✅
-  ballot-86796dea-fb92-11ef-968e-0242ac120005 ✅
-  ballot-8bb012dc-fb92-11ef-b3ad-0242ac120004 ✅
-  ballot-86fff374-fb92-11ef-8ae9-0242ac120009 ✅
-  ballot-8919b94c-fb92-11ef-9a90-0242ac120009 ✅
-  ballot-8786b1ca-fb92-11ef-a107-0242ac120004 ✅
-
-loading spoiled ballots ✅
-verifying the ciphertext of the 6 spoiled ballots:
-  ballot-85f51bf8-fb92-11ef-8821-0242ac120008 ✅
-  ballot-8894d0ce-fb92-11ef-8d8b-0242ac120005 ❌
-  ballot-8b2cf5be-fb92-11ef-a928-0242ac120009 ✅
-  ballot-8a20ca06-fb92-11ef-b9e9-0242ac120008 ✅
-  ballot-880db7e2-fb92-11ef-880e-0242ac120008 ✅
-  ballot-8aa5a834-fb92-11ef-8e05-0242ac120005 ✅
-
-double checking that all ballots are accounted for:
-  6 ballots cast + 6 spoiled = 12 submitted ✅
-  set(cast IDs) + set(spoiled IDs) = set(submitted IDs) ✅
-
-verifying spoiled ballot decryptions:
-  ballot-85f51bf8-fb92-11ef-8821-0242ac120008 ✅
-  ballot-8894d0ce-fb92-11ef-8d8b-0242ac120005 ✅
-  ballot-8b2cf5be-fb92-11ef-a928-0242ac120009 ✅
-  ballot-8a20ca06-fb92-11ef-b9e9-0242ac120008 ✅
-  ballot-880db7e2-fb92-11ef-880e-0242ac120008 ✅
-  ballot-8aa5a834-fb92-11ef-8e05-0242ac120005 ✅
-  6 decrypted ballots = 6 spoiled ✅
-
-verifying the final tally:
-  loading tally ✅
-  verifying aggregation of 6 cast ballots into tally ✅
-  verifying tally decryption ✅
-
-Found 1 irregularities...
-
-{
-  "spoiled_ballots": {
-    "ballot-8894d0ce-fb92-11ef-8d8b-0242ac120005": "verify_ballot: mismatching ballot encryption ballot-8894d0ce-fb92-11ef-8d8b-0242ac120005 chaum_pedersen.py.is_valid:#L114: found an invalid Disjunctive Chaum-Pedersen proof: {'in_bounds_alpha': True, 'in_bounds_beta': True, 'in_bounds_a0': False, 'in_bounds_b0': True, 'in_bounds_a1': True, 'in_bounds_b1': True, 'in_bounds_c0': True, 'in_bounds_c1': True, 'in_bounds_v0': True, 'in_bounds_v1': True, 'consistent_c': False, 'consistent_gv0': False, 'consistent_gv1': True, 'consistent_kv0': True, 'consistent_gc1kv1': True, 'k': '99FC828A9F102AF5C8C4DF2AA12DFA43958CF3545D72CC6F24426C4A563951DDF8A01850B647BCADE849F21B9BA080FD2DD502A9141B93069E7A5487E73551B37954D27A9065B383E92C3501AD05C78C75F6EEDE47C6775B01E72376ADBA4579B6076204237189565E2A2EFCA4004906B25EBA39D64FCA9EAECF417C718020E43D6DF3C67D58B0BB38C61B2C8134770EA529B17D6A7C3F2F0A09B3CBF817C73CA4FA63D50A5FA380A5E0A7C24F21002752FD680E0DF3ECC39C831756DED5BDA0AE82EED10015BB4A15D805AD1EEBF3DDC577A1F106D7D7919F09FE88FE2A2428BDA0142BE7112C803D05B0255252DB78B82340C4A376D837C4125216F02501AA6FAF40F340500EF2C1B8018F6A6800E396980D32D1CC162892780B76770708E9B87BAFA3AAE6A68EC47403566624A3744A5454C280C726D1F653F04F7B53AF2989D3E43A9E019FC4517CD44640B0D77AC329AED34D92B3468C0348124B728728C0195673017F3BED90A1BAAE1E525F2F80DF882420D7BA949C227F5746179D5AE2B9B2ADF4236BACA47D51DB55C3E503B1F683F1836968B6B1E71E74F76C98A39774133C8A24259A40A1E8288918375D0B8963A34EDF669597520770A486C786A1B9DB97426BBBC1E25B2245A43F0EB51F96B916F385229711DF20AC64934DC00095C8309E1B99FE710039F0649CAF7CFD260828317D8B207846DAAF61B79550', 'proof': DisjunctiveChaumPedersenProof(proof_zero_pad='5BAF6ECF54788262571443777EC2891092C6DA42F44C190022D7FEABEC6586D866D8812881EE77161D001A6451E703C8D6FE04EC5A934F4ABF62E4C2772C24B490BBDB4149BCD21E01228E65407B35F8AE60256E4D0BB9D5A60E78D3BB43207E757427CC44294E7F34A2E77763028D63A717BEEF19736E9B671B85CC25CF247EAA6646A635EB82867035BDC123182F02A014FF9B09D20BE00ADAACCA9EA12D4AC7A15026985F24D3A25F66FB8D23E964CD0A10788EE33654CAF4EA174F7E245782F0B0EB876638E868F2A5AF250C0DC199546EBB8BAC84A5652FBADE817C0654EA3DD51361B1676E2243B23D51CF39E9AEEF698CC4A9F7E65B9A8B3880C20B3898D90D9CBF85112C365213BA3AFE8D2247817F33F9BC293CDFE2D4C72AE680F95C670F5ACEEB1200C670F925E4B5789D4B5B94A328DD2D8E49B3A0D871B2E55AA61FAF184AD29A8755F8B545E86700C00455F886B7EFE2E20551C6BB8624888774DE2F7AA1BE8969DD3CAE504899DBC4D5C1672FA0A535556A01130D8E8A7A1BCD80C82BDBE59C6EA45993DFD927DD4757AD95AD1210C7BC51A2362CF0871EF2EE7ED9BBF140F8E51A214618B0407EB93B44EE1BF19831C1625D053D57459DAE2E51947F5A6984BE59D41362E3CCFA6F6F2595373CAB45AF2DD51F8C951B37962B47D53A166004FCA7226D140663B9E4D6813FD378B2DD84A11E09C8EE3FEEE2', proof_zero_data='46D512374A35BE51582C5454595036F19570633D9F5CEDEF79039C49A7269CF26415950CC4DC6EBD76B563EF7AF7A8227273C5932F9251F678419DD27F8902267AF4B08985F017749856D123E7A0268239B0182BF12E70A7BD2610833771DB03530319594F74CAC22B17D1F25C52FA4C07DAB76029BB6CFBBCF6BF2A996E3972C6EE9D0642200CF3F9296D29D7166D69FCDE8C855228E10486CA8647C7444E8D108DB57A1A5B3B1ADC817BEBDD80BFEFED156746A311261727D79584C5084A2579FAFFCB2035BE979E0E6D95DB0CF41C007A31469759DF53A27F780A11E2305EF31109719D767E2BA603D12461270BA020C99CCDC21D5DE407DF02B88A9815CFE205DBCA4BF826EF7A9047F877C52B1A39835F955B97EF90F6DEA676F6166654F65AF820B308D5EDFC18FECA80E73D09204C6A5B4F819D167D04957F9DD83A62C592DC2C37573B9E41E7EE309BBC94896653823942CECAE668109086E0BCABED0042CEF2B136DFD79D4C31FBC6B0759F800E5A3392F8754297B7F52142DD434DB614F183B1854F245271CC8C41751C33BBA8F77C773E8D84F40A5762802566D12EC7F0DF79A9E71846F0A8C9F28689B7A5E6453CF4D8EA786A2E342B635F1F729B1AC91459F14CD8114DD49A9573D4ED12A723880F5DC19AFC18AF7126586AE83D05FA5528BEB78920CB7F6A25F4D8A0F0C9CC0E464EC5E3BCF42B37A9A4C065', proof_one_pad='B9F0C3C8555B256558E89E458CE6A3E2A5C792DBD902AF8136D3A962EBAA36C325A21B9C59670211DC18E194CC6B720DB5C509AAC9E15867DAA214C1A925E77458612A7CB642569C419E1B8A025341B29174D6EC3FEE137AF9EA54AF4F6D10829E082CE22307625D972C553B119BEC607B4F6BD577201E13DE9FE9E30B2B0E7B42EF7AB7409267ECE15C4B75A6DAFD90881F2AA3CE9BDF0A4E61D6BC772946914A32CF7288EB8206B9AA214D743D4869E5D7D7F1D31F3F26B748106F274B7163EF692AA03F9F85D84146BCD72174468618A12A281527A955CF871AA6C3E70F0CDBE83518F5640F141E4CF3F027213910BE5559C3109EDA8E278458693EF6C92207E9F78EFF958F0298C1307C3DF5D222219B70194D46A05E9B4397FE15B32802DCEB9EEC264B97E2BE6032F01F9F589E5EB6DF2BC20D0534177BF70A3CDD9CCB726589C8769CBE932B3E5DFEC5C776FDD51D9B3880E9CBDEDA4A0906F0995A3A518B6C44BF9392B8253E8AEB01A1E5784FAFB5C185A251BC49B17B276C590213299CDDD39701180BAE1F0B06C6F19125A46BDFB2E65A747502A16818AE0F4431927DA8DB14DEDCF872D524DF1F8706D101AA7F056381E4FE35F2ADDD64AAF3C964470D60CFF6E685F699C1AA4D49D2ED749D534937569DD54E2E5EE3E14DE5B1233E84CEAF6B51E56D7A13E096C0B70C5D4A4A676E48FE367085D1F2C55292D8', proof_one_data='58AC0C8722FB08CE493DC8AA51A5FE2100E00F6DC486D2B16B3F28FD6FF1C0301EC79E1241770AB236D9EF11CFF8AE0BD44B715D799CBBC24DBA2AF7B13313624281B23514B41A576F3EECA3516175C3D784341348C9397D8B385554E4621CDE222D7013180756F6235339A2F45CD823E34D6857CE2CFF1B48883C515BE41B239D8F11BB811C340F6B6BD7A5EED93F8ED9A30AE786ED9FD7F65AD2B10A64FCD3668F9CB262E84131A5213B266D074D2D384AC2D8DB57BDA7C0A12A35E7078AA4EFE518988E0F2F0F902372D4FDEA22673F06A7D5D0BABAD0F9AADF3DA3BD411AC3D5576E73C21275F4B9A611F1256571F9185C9F0F9CA825D684A6AB1CF6530D35A0D64248B6EEFA49B6DC74CBA77FB73DCF6416F8E42A8D13275102E60392DF34CB6AA23DE839AEB8CF8801BE5DCA27D1EC5BAA8A32510EA648FED59308A9F16F81EFCBDDADF4D584FB2151E4A1970ED0C1B95F653B01C58E6922CE8C192F315D133EB33BF3AAEA0FDCBE9965C447CCCA54C97280E6F983790A59B4B97EF367983E48D2E5C53FC09EDD22B9DB5F24D9766471925CD1D83EB8E45E4BBFF85D0ECAB0D0A7AC6CEF65E63315774C6E1445CCDDCA4A2547B3985B9FAB85CA0DC0842CE12228B8F1B6D14515DF0E41EC98D9959DBC99077C334AFC35783DD3B584862685D555D7F806A843CE3D24E05A29DCEAD1532FFED0CB53BB357D0DBF714564', proof_zero_challenge='11C30E9024BEA082EDC80F77520FF8228C7FD60E2486BCA54BFC13E3D47E8E88', proof_one_challenge='B5B2793F2B0EAFECE692FF99886A4CC345C8373D272CAF648AD58A4F86E808D0', challenge='C77587CF4FCD506FD45B0F10DA7A44E5D2480D4B4BB36C09D6D19E335B669758', proof_zero_response='3C5FEC5CAB0089FA81FF7AD7D82A04F68DBDA4EB7B3E9AFAB0FCACC3807DD54F', proof_one_response='E111B279449CA6E3B29B6C470465F8D47C36D4C1D40EA9A83714F39242A948C1', usage=<ProofUsage.SelectionValue: \"Prove selection's value (0 or 1)\">)}"
-  }
-}
-
-The election should NOT be certified! ⛔
-```
-
-```bash
-$ # same submitted ballot removed
-$ ./verify.py
-
-docker exec verifier-verifier1-1 poetry run /scripts/verifier.py verify --public-dir /data/public
-
-loading cast ballots ✅
-verifying the ciphertext of the 6 cast ballots:
-  ballot-899dd600-fb92-11ef-9582-0242ac120004 ✅
-  ballot-86796dea-fb92-11ef-968e-0242ac120005 ✅
-  ballot-8bb012dc-fb92-11ef-b3ad-0242ac120004 ✅
-  ballot-86fff374-fb92-11ef-8ae9-0242ac120009 ✅
-  ballot-8919b94c-fb92-11ef-9a90-0242ac120009 ✅
-  ballot-8786b1ca-fb92-11ef-a107-0242ac120004 ✅
-
-loading spoiled ballots ❌
-Unable to finish verification.
-Found 1 irregularities...
-
-{
-  "spoiled_ballots": {
-    "verify_load_ballots": "[Errno 2] No such file or directory: '/data/public/2_ballots/1_submitted/ballot-8894d0ce-fb92-11ef-8d8b-0242ac120005.json'"
-  }
-}
-
-The election should NOT be certified! ⛔
-```
-
-## Cleaner graph-based version
-
-I started working on a dependency graph to better figure out which artifacts
-can still be verified if one or more fail. It can be rendered for humans or used
-to determine dependencies for any particular artifact in python code.
+It's based on a dependency graph:
 
 ```bash
 $ nix develop
@@ -157,17 +12,223 @@ $ dot -Tsvg deps.dot -o deps.svg
 
 ![](./deps.svg)
 
-```python
-import pygraphviz as pgv
+The idea is that when one artifact fails to verify, that failure should spread to any other checks that depend on it, but we should also still verify as many properties of the election as we can without it.
 
-G = pgv.AGraph('verifier.dot')
-# print(G)
+Example usage with valid election data:
 
-print('dependencies of plaintext_tally:')
-print(G.predecessors('plaintext_tally'))
+```bash
+$ nix develop
+$ # run ../local-election/election.py first to generate the public data
+$ ./verify.py
+
+docker exec verifier-verifier1-1 poetry run /scripts/verifier.py verify --public-dir /data/public --verifier-id verifier1
+
+Verifying announcement:
+✅ manifest
+✅ ceremony_details
+
+Verifying key ceremony:
+✅ guardian_pubkey {'guardian_id': 'guardian_1'}
+✅ guardian_pubkey {'guardian_id': 'guardian_2'}
+✅ guardian_pubkey {'guardian_id': 'guardian_3'}
+✅ guardian_backup {'guardian_id': 'guardian_1', 'backup_order': 2}
+✅ guardian_backup {'guardian_id': 'guardian_1', 'backup_order': 3}
+✅ guardian_backup {'guardian_id': 'guardian_2', 'backup_order': 1}
+✅ guardian_backup {'guardian_id': 'guardian_2', 'backup_order': 3}
+✅ guardian_backup {'guardian_id': 'guardian_3', 'backup_order': 1}
+✅ guardian_backup {'guardian_id': 'guardian_3', 'backup_order': 2}
+✅ guardian_verification {'guardian_id': 'guardian_1', 'backup_order': 2}
+✅ guardian_verification {'guardian_id': 'guardian_1', 'backup_order': 3}
+✅ guardian_verification {'guardian_id': 'guardian_2', 'backup_order': 1}
+✅ guardian_verification {'guardian_id': 'guardian_2', 'backup_order': 3}
+✅ guardian_verification {'guardian_id': 'guardian_3', 'backup_order': 1}
+✅ guardian_verification {'guardian_id': 'guardian_3', 'backup_order': 2}
+
+Verifying election constants:
+✅ joint_key
+✅ constants
+✅ internal_manifest
+✅ context
+
+Verifying 4 encryption devices:
+✅ device {'device_number': 1}
+✅ device {'device_number': 2}
+✅ device {'device_number': 3}
+✅ device {'device_number': 4}
+
+Verifying 12 submitted ballots:
+✅ ballot_submitted {'ballot_id': 'ballot-4d8a0600-01cf-11f0-ba88-0242ac120008'}
+✅ ballot_submitted {'ballot_id': 'ballot-4f17c912-01cf-11f0-b9d3-0242ac120009'}
+✅ ballot_submitted {'ballot_id': 'ballot-50aaaa60-01cf-11f0-8d07-0242ac120002'}
+✅ ballot_submitted {'ballot_id': 'ballot-4e0e2caa-01cf-11f0-b5b1-0242ac120004'}
+✅ ballot_submitted {'ballot_id': 'ballot-523e490e-01cf-11f0-93ca-0242ac120004'}
+✅ ballot_submitted {'ballot_id': 'ballot-51bb9838-01cf-11f0-a358-0242ac120008'}
+✅ ballot_submitted {'ballot_id': 'ballot-4e920b7e-01cf-11f0-85e2-0242ac120002'}
+✅ ballot_submitted {'ballot_id': 'ballot-50239f34-01cf-11f0-8e09-0242ac120004'}
+✅ ballot_submitted {'ballot_id': 'ballot-5133d8c6-01cf-11f0-baeb-0242ac120009'}
+✅ ballot_submitted {'ballot_id': 'ballot-4d065d14-01cf-11f0-8606-0242ac120009'}
+✅ ballot_submitted {'ballot_id': 'ballot-4f9eb8d2-01cf-11f0-8d7f-0242ac120008'}
+✅ ballot_submitted {'ballot_id': 'ballot-4c827dfa-01cf-11f0-b1ed-0242ac120002'}
+
+Verifying 6 cast ballots:
+✅ cast_notice {'ballot_id': 'ballot-4d8a0600-01cf-11f0-ba88-0242ac120008'}
+✅ cast_notice {'ballot_id': 'ballot-4e0e2caa-01cf-11f0-b5b1-0242ac120004'}
+✅ cast_notice {'ballot_id': 'ballot-523e490e-01cf-11f0-93ca-0242ac120004'}
+✅ cast_notice {'ballot_id': 'ballot-50239f34-01cf-11f0-8e09-0242ac120004'}
+✅ cast_notice {'ballot_id': 'ballot-4d065d14-01cf-11f0-8606-0242ac120009'}
+✅ cast_notice {'ballot_id': 'ballot-4f9eb8d2-01cf-11f0-8d7f-0242ac120008'}
+
+Verifying 6 spoiled ballots:
+✅ ballot_spoiled {'ballot_id': 'ballot-4f17c912-01cf-11f0-b9d3-0242ac120009'}
+✅ ballot_spoiled {'ballot_id': 'ballot-50aaaa60-01cf-11f0-8d07-0242ac120002'}
+✅ ballot_spoiled {'ballot_id': 'ballot-51bb9838-01cf-11f0-a358-0242ac120008'}
+✅ ballot_spoiled {'ballot_id': 'ballot-4e920b7e-01cf-11f0-85e2-0242ac120002'}
+✅ ballot_spoiled {'ballot_id': 'ballot-5133d8c6-01cf-11f0-baeb-0242ac120009'}
+✅ ballot_spoiled {'ballot_id': 'ballot-4c827dfa-01cf-11f0-b1ed-0242ac120002'}
+
+Verifying 6 spoiled ballot decyptions:
+✅ spoiled_result {'ballot_id': 'ballot-4f17c912-01cf-11f0-b9d3-0242ac120009'}
+✅ spoiled_result {'ballot_id': 'ballot-50aaaa60-01cf-11f0-8d07-0242ac120002'}
+✅ spoiled_result {'ballot_id': 'ballot-51bb9838-01cf-11f0-a358-0242ac120008'}
+✅ spoiled_result {'ballot_id': 'ballot-4e920b7e-01cf-11f0-85e2-0242ac120002'}
+✅ spoiled_result {'ballot_id': 'ballot-5133d8c6-01cf-11f0-baeb-0242ac120009'}
+✅ spoiled_result {'ballot_id': 'ballot-4c827dfa-01cf-11f0-b1ed-0242ac120002'}
+
+Verifying ballot ID sets:
+✅ 6 ballots spoiled = 6 ballots decrypted
+✅ 6 ballots cast + 6 ballots spoiled = 12 ballots submitted
+✅ set(spoiled ballot IDs) = set(decrypted ballot IDs)
+✅ set(cast ballot IDs) + set(spoiled ballot IDs) = set(submitted ballot IDs)
+
+Verifying final tally:
+✅ ciphertext_tally format is valid
+✅ ciphertext_tally is the correct aggregation of the 6 cast ballots
+✅ plaintext_tally format is valid
+✅ plaintext_tally guardian decryption shares are valid
+
+----------------------------------------
+Individual spoiled ballots
+----------------------------------------
+
+4f17c912-01cf-11f0-b9d3-0242ac120009
+  Are pineapples cool? No
+
+50aaaa60-01cf-11f0-8d07-0242ac120002
+  Are pineapples cool? Unsure
+
+51bb9838-01cf-11f0-a358-0242ac120008
+  Are pineapples cool? Unsure
+
+4e920b7e-01cf-11f0-85e2-0242ac120002
+  Are pineapples cool? No
+
+5133d8c6-01cf-11f0-baeb-0242ac120009
+  Are pineapples cool? Unsure
+
+4c827dfa-01cf-11f0-b1ed-0242ac120002
+  Are pineapples cool? Yes
+
+----------------------------------------
+Final tally of cast ballots
+----------------------------------------
+
+Are pineapples cool?
+  Yes: 3
+  No: 2
+  Unsure: 1
+
+🎉 The election has been verified!
 ```
 
+And an example of it failing because I manually removed one of the submitted ballots:
+
+```bash
+$ ./verify.py
+# ... mostly same output as above ...
+
+----------------------------------------
+Final tally of cast ballots
+----------------------------------------
+
+Are pineapples cool?
+  Yes: 3
+  No: 2
+  Unsure: 1
+
+⛔ The election could NOT be verified!
+⛔ There were 9 errors.
+⛔ See verifier1.json for details.
+
+$ cat ../local-election/data/public/4_verify/verifier1.json | jq
 ```
-dependencies of plaintext_tally:
-['manifest', 'context', 'ciphertext_tally', 'all_tally_shares']
+
+```json
+{
+  "Verified": false,
+  "Errors": {
+    "ballot_submitted": {
+      "ballot-50aaaa60-01cf-11f0-8d07-0242ac120002": "[Errno 2] No such file or directory: '/data/public/2_ballots/1_submitted/ballot-50aaaa60-01cf-11f0-8d07-0242ac120002.json'"
+    },
+    "ballot_spoiled": {
+      "ballot-50aaaa60-01cf-11f0-8d07-0242ac120002": "dependencies failed: ballot_submitted"
+    },
+    "all_ballots_spoiled": "dependencies failed: ballot-50aaaa60-01cf-11f0-8d07-0242ac120002",
+    "n_spoiled_decrypted": "dependencies failed: all_ballots_spoiled",
+    "n_cast_spoiled_submitted": "dependencies failed: all_ballots_spoiled",
+    "set_spoiled_decrypted": "dependencies failed: all_ballots_spoiled",
+    "set_cast_spoiled_submitted": "dependencies failed: all_ballots_spoiled",
+    "ballot_sets": "dependencies failed: n_cast_spoiled_submitted, n_spoiled_decrypted, set_cast_spoiled_submitted, set_spoiled_decrypted",
+    "gather_election": "dependencies failed: ballot_sets"
+  },
+  "Final tally of cast ballots": [
+    {
+      "question": "Are pineapples cool?",
+      "votes": {
+        "Yes": 3,
+        "No": 2,
+        "Unsure": 1
+      }
+    }
+  ],
+  "Individual spoiled ballots": {
+    "4f17c912-01cf-11f0-b9d3-0242ac120009": [
+      {
+        "Are pineapples cool?": "No"
+      }
+    ],
+    "50aaaa60-01cf-11f0-8d07-0242ac120002": [
+      {
+        "Are pineapples cool?": "Unsure"
+      }
+    ],
+    "51bb9838-01cf-11f0-a358-0242ac120008": [
+      {
+        "Are pineapples cool?": "Unsure"
+      }
+    ],
+    "4e920b7e-01cf-11f0-85e2-0242ac120002": [
+      {
+        "Are pineapples cool?": "No"
+      }
+    ],
+    "5133d8c6-01cf-11f0-baeb-0242ac120009": [
+      {
+        "Are pineapples cool?": "Unsure"
+      }
+    ],
+    "4c827dfa-01cf-11f0-b1ed-0242ac120002": [
+      {
+        "Are pineapples cool?": "Yes"
+      }
+    ]
+  }
+}
 ```
+
+TODO:
+
+- [x] Monkey patch the electionguard LOG to throw exceptions during verification
+      (because throwing them all the time messes with the test suite)
+- [x] Make a JSON summary of the verification as well as printing
+- [x] Clean up the code! It's very messy so far
+- [ ] Have this script create the local-election summary json rather than admin.py
