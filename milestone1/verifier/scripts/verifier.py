@@ -14,6 +14,7 @@ from utils import (
     list_submitted_ballot_fmtargs,
     list_cast_ballot_fmtargs,
     list_spoiled_ballot_fmtargs,
+    list_guardian_backup_fmtargs,
     from_public_record,
     to_public_record,
     CaptureLog,
@@ -317,16 +318,15 @@ def verify_spoiled_result(results, pubdir, **fmtargs) -> PlaintextTally:
     )
     return spoiled_result
 
-# TODO rewrite this in verify_deps style
-# TODO should this be a list or dict?
 def verify_all_guardian_pubkeys(results, pubdir) -> Dict[GuardianId, ElectionPublicKey]:
-    ceremony_details = verify(results, pubdir, 'ceremony_details') # TODO error here?
-    pubkeys = {}
-    for n in range(1, ceremony_details.number_of_guardians+1):
-        guardian_id = f'guardian_{n}'
-        pubkey = verify(results, pubdir, 'guardian_pubkey', guardian_id=guardian_id)
-        pubkeys[guardian_id] = pubkey
-    return pubkeys
+    deps1 = verify_deps(
+        ceremony_details = verify(results, pubdir, 'ceremony_details'),
+    )
+    deps2 = verify_deps(**{
+        f'guardian_{n}': verify(results, pubdir, 'guardian_pubkey', guardian_id=f'guardian_{n}')
+        for n in range(1, deps1['ceremony_details'].number_of_guardians+1)
+    })
+    return deps2
 
 def verify_all_ballots_submitted(results, pubdir) -> List[SubmittedBallot]:
     fmtargs_list = list_submitted_ballot_fmtargs(pubdir)
@@ -407,20 +407,18 @@ def verify_context(results, pubdir) -> CiphertextElectionContext:
     )
     return context
 
-def verify_all_guardian_backups(results, pubdir):
-    ceremony_details = verify(results, pubdir, 'ceremony_details')
-    backups = []
-    for gn in range(1, ceremony_details.number_of_guardians+1):
-        for bo in range(1, ceremony_details.number_of_guardians+1):
-            if gn == bo:
-                continue
-            guardian_id = f'guardian_{gn}'
-            backup = verify(
-                results, pubdir, 'guardian_backup',
-                guardian_id=guardian_id, backup_order=bo
-            )
-        backups.append(backup)
-    return backups
+def verify_all_guardian_backups(results, pubdir) -> List[ElectionPartialKeyBackup]:
+    deps1 = verify_deps(
+        ceremony_details = verify(results, pubdir, 'ceremony_details'),
+    )
+    n_guardians = deps1['ceremony_details'].number_of_guardians
+    fmtargs_list = list_guardian_backup_fmtargs(pubdir, n_guardians)
+    deps2 = verify_deps(**{
+        record_basename('guardian_backup', **fmtargs):
+            verify(results, pubdir, 'guardian_backup', **fmtargs)
+        for fmtargs in fmtargs_list
+    })
+    return deps2.values()
 
 def verify_all_guardian_verifications(results, pubdir):
     ceremony_details = verify(results, pubdir, 'ceremony_details')
@@ -620,7 +618,7 @@ def verify(results: ResultsCache, pubdir: str, target: TargetName, **kwargs):
             msgs = [str(e)]
             msgs.append(log.getvalue().strip())
             result = Error(' '.join(msgs).strip())
-            print(f'err during {verify_fn.__name__}: "{result}"')
+            # print(f'err during {verify_fn.__name__}: "{result}"')
 
     # cache result
     if not target in results:
@@ -679,7 +677,6 @@ def simplify_and_partition(results: ResultsCache) -> (Successes, Errors):
                 successes[target_name] = successes_dict
         else:
             # should be a single success or a list
-            print(target_name, type(result))
             successes[target_name] = result
 
     return (successes, errors)
@@ -711,14 +708,9 @@ def summarize_results(
         print()
         if isinstance(spoiled_result, Error):
             continue
-        try:
-            ballot_id = spoiled_result.object_id
-            short_id  = ballot_id[ballot_id.find('-')+1:]
-            print(short_id)
-        except Exception as e:
-            print(spoiled_result)
-            print(type(spoiled_result))
-            raise SystemExit
+        ballot_id = spoiled_result.object_id
+        short_id  = ballot_id[ballot_id.find('-')+1:]
+        print(short_id)
         ballot_summary = []
         for contest in spoiled_result.contests.values():
             question = contest_names.get(contest.object_id)
@@ -788,7 +780,6 @@ def main(pubdir, verifier_id):
     verify(results, pubdir, 'gather_decryptions')
     verify(results, pubdir, 'gather_election')
 
-    print()
     (results, errors) = simplify_and_partition(results)
     n_errors = sum(
         1  if isinstance(v, Error) else len(v)

@@ -239,9 +239,11 @@ def list_guardian_pubkey_fmtargs(public_dir, n_guardians):
     return fmtargs_list
 
 def list_guardian_backup_fmtargs(public_dir, n_guardians):
-    for guardian_id in range(1, n_guardians+1):
-        for backup_n in range(1, n_guardians+1):
-            if backup_n == guardian_id:
+    fmtargs_list = []
+    for n in range(1, n_guardians+1):
+        guardian_id = f'guardian_{n}'
+        for backup_order in range(1, n_guardians+1):
+            if backup_order == n:
                 continue
             fmtargs_list.append({
                 'guardian_id': guardian_id,
