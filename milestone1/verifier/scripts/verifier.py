@@ -248,14 +248,14 @@ def verify_ballot_spoiled(results, pubdir, ballot_id) -> SubmittedBallot:
     deps = verify_deps(
         # device = verify(results, pubdir, 'device'),
         ballot_submitted = verify(results, pubdir, 'ballot_submitted', ballot_id=ballot_id),
-        ballot_spoiled = verify_public_record(results, pubdir, 'ballot_spoiled', ballot_id=ballot_id)
     )
+    ballot_spoiled = verify_public_record(results, pubdir, 'ballot_spoiled', ballot_id=ballot_id)
     # We store the spoiled ballot as CiphertextBallot rather than
     # SubmittedBallot, because we want to publish the nonces. But that means we
     # need to officially "spoil" it here afer deserializing.
     # TODO is this actually needed for anything? spoiled ballots don't really need to be tallied
-    assert deps['ballot_spoiled'].object_id == deps['ballot_submitted'].object_id
-    ballot_submitted_v2 = submit_ballot(deps['ballot_spoiled'], BallotBoxState.SPOILED)
+    assert ballot_spoiled.object_id == deps['ballot_submitted'].object_id
+    ballot_submitted_v2 = submit_ballot(ballot_spoiled, BallotBoxState.SPOILED)
     # TODO verify they're identical except submitted has: all nonces set to null, state set to 999
 
     return ballot_submitted_v2
@@ -354,42 +354,38 @@ def verify_all_guardian_pubkeys(results, pubdir) -> Dict[GuardianId, ElectionPub
 def verify_all_ballots_submitted(results, pubdir) -> List[SubmittedBallot]:
     fmtargs_list = list_submitted_ballot_fmtargs(pubdir)
     print(f'\nVerifying {len(fmtargs_list)} submitted ballots:')
-    ballots = []
-    for fmtargs in fmtargs_list:
-        ballot = verify(results, pubdir, 'ballot_submitted', **fmtargs)
-        ballots.append(ballot)
-    # assert len(ballots) == len(fmtargs_list)
-    return ballots
+    deps = verify_deps(**{
+        fmtargs['ballot_id']: verify(results, pubdir, 'ballot_submitted', **fmtargs)
+        for fmtargs in fmtargs_list
+    })
+    return deps.values()
 
 def verify_all_ballots_spoiled(results, pubdir) -> List[SubmittedBallot]:
     fmtargs_list = list_spoiled_ballot_fmtargs(pubdir)
     print(f'\nVerifying {len(fmtargs_list)} spoiled ballots:')
-    ballots = []
-    for fmtargs in fmtargs_list:
-        ballot = verify(results, pubdir, 'ballot_spoiled', **fmtargs)
-        ballots.append(ballot)
-    # assert len(ballots) == len(fmtargs_list)
-    print(f'loaded {len(ballots)} spoiled ballots')
-    return ballots
+    deps = verify_deps(**{
+        fmtargs['ballot_id']: verify(results, pubdir, 'ballot_spoiled', **fmtargs)
+        for fmtargs in fmtargs_list
+    })
+    return deps.values()
 
 def verify_all_ballots_cast(results, pubdir) -> List[SubmittedBallot]:
     fmtargs_list = list_cast_ballot_fmtargs(pubdir)
     print(f'\nVerifying {len(fmtargs_list)} cast ballots:')
-    ballots = []
-    for fmtargs in fmtargs_list:
-        ballot = verify(results, pubdir, 'ballot_cast', **fmtargs)
-        ballots.append(ballot)
-    # assert len(ballots) == len(fmtargs_list)
-    return ballots
+    deps = verify_deps(**{
+        fmtargs['ballot_id']: verify(results, pubdir, 'ballot_cast', **fmtargs)
+        for fmtargs in fmtargs_list
+    })
+    return deps.values()
 
 def verify_all_spoiled_results(results, pubdir) -> List[PlaintextTally]:
     fmtargs_list = list_spoiled_ballot_fmtargs(pubdir)
     print(f'\nVerifying {len(fmtargs_list)} spoiled ballot decyptions:')
-    tallies = []
-    for fmtargs in fmtargs_list:
-        tally = verify(results, pubdir, 'spoiled_result', **fmtargs)
-        tallies.append(tally)
-    return tallies
+    deps = verify_deps(**{
+        fmtargs['ballot_id']: verify(results, pubdir, 'spoiled_result', **fmtargs)
+        for fmtargs in fmtargs_list
+    })
+    return deps.values()
 
 
 def verify_build_election(results, pubdir) -> \
@@ -817,7 +813,7 @@ def summarize_results(
     # no particular format, except it must be a json-serializable dict
     summary = {
         'Verified': n_errors == 0,
-        'Irregularities': errors,
+        'Errors': errors,
         tally_header  : tally_summary,
         spoiled_header: spoiled_summaries,
     }
@@ -857,8 +853,9 @@ def main(pubdir, verifier_id):
         print()
     else:
         msgs = [
-            f'Found {n_errors} irregularities. See {verifier_id}.json for details.',
             'The election could NOT be verified!',
+            f'There were {n_errors} errors.',
+            f'See {verifier_id}.json for details.',
         ]
         print('\n'.join('⛔ ' + m for m in msgs))
 
