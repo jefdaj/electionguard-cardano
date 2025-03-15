@@ -57,6 +57,9 @@ TargetArgs = Tuple[Tuple[str, Any]]
 def freeze_kwargs(kwargs):
     return tuple(sorted(kwargs.items()))
 
+def unfreeze_kwargs(frozen_kwargs):
+    return {k:dict(v) for (k,v) in frozen_kwargs}
+
 # error message
 Error = str
 
@@ -75,6 +78,11 @@ ResultsCache = Dict[
 Errors = Dict[
     TargetName,
     Dict[TargetArgs, Error]
+]
+
+Successes = Dict[
+    TargetName,
+    dict # TODO variant of Dict[TargetArgs, Success] that can go into a JSON
 ]
 
 class DependencyError(Exception):
@@ -361,7 +369,7 @@ def verify_all_ballots_cast(results, pubdir) -> List[SubmittedBallot]:
     assert len(ballots) == len(fmtargs_list)
     return ballots
 
-def verify_all_spoiled_results(results, pubdir):
+def verify_all_spoiled_results(results, pubdir) -> List[SubmittedBallot]:
     fmtargs_list = list_spoiled_ballot_fmtargs(pubdir)
     print(f'\nVerifying {len(fmtargs_list)} spoiled ballot decyptions:')
     ballots = []
@@ -481,47 +489,68 @@ def verify_gather_config(results, pubdir) -> bool:
     )
     return True
 
-def verify_ballot_sets(results, pubdir) -> bool:
-    "Make sure the various sets of ballot IDs match up (nothing missing or extra)"
-    print('\nVerifying ballot ID sets:')
+def verify_n_spoiled_decrypted(results, pubdir) -> bool:
     deps = verify_deps(
-        all_ballots_submitted = verify(results, pubdir, 'all_ballots_submitted'),
-        all_ballots_cast = verify(results, pubdir, 'all_ballots_cast'),
         all_ballots_spoiled = verify(results, pubdir, 'all_ballots_spoiled'),
         all_spoiled_results = verify(results, pubdir, 'all_spoiled_results'),
     )
-
-    n_submitted = len(deps['all_ballots_submitted'])
-    n_cast      = len(deps['all_ballots_cast'])
-    n_spoiled   = len(deps['all_ballots_spoiled'])
-    n_result    = len(deps['all_spoiled_results'])
-
-    verify_assertion(
+    n_spoiled = len(deps['all_ballots_spoiled'])
+    n_result  = len(deps['all_spoiled_results'])
+    return verify_assertion(
         f'{n_spoiled} ballots spoiled = {n_result} ballots decrypted',
         n_spoiled == n_result
     )
-    verify_assertion(
+
+def verify_n_cast_spoiled_submitted(results, pubdir) -> bool:
+    deps = verify_deps(
+        all_ballots_cast = verify(results, pubdir, 'all_ballots_cast'),
+        all_ballots_spoiled = verify(results, pubdir, 'all_ballots_spoiled'),
+        all_ballots_submitted = verify(results, pubdir, 'all_ballots_submitted'),
+    )
+    n_cast      = len(deps['all_ballots_cast'])
+    n_spoiled   = len(deps['all_ballots_spoiled'])
+    n_submitted = len(deps['all_ballots_submitted'])
+    return verify_assertion(
         f'{n_cast} ballots cast + {n_spoiled} ballots spoiled = {n_submitted} ballots submitted',
         n_cast + n_spoiled == n_submitted,
     )
 
-    submitted_ids = set(b.object_id for b in deps['all_ballots_submitted'])
-    cast_ids      = set(b.object_id for b in deps['all_ballots_cast'])
-    spoiled_ids   = set(b.object_id for b in deps['all_ballots_spoiled'])
-    result_ids    = set(b.object_id for b in deps['all_spoiled_results'])
-
-    verify_assertion(
+def verify_set_spoiled_decrypted(results, pubdir) -> bool:
+    deps = verify_deps(
+        all_ballots_spoiled = verify(results, pubdir, 'all_ballots_spoiled'),
+        all_spoiled_results = verify(results, pubdir, 'all_spoiled_results'),
+    )
+    spoiled_ids = set(b.object_id for b in deps['all_ballots_spoiled'])
+    result_ids  = set(b.object_id for b in deps['all_spoiled_results'])
+    return verify_assertion(
         'set(spoiled ballot IDs) = set(decrypted ballot IDs)',
         spoiled_ids == result_ids,
     )
 
-    verify_assertion(
+def verify_set_cast_spoiled_submitted(results, pubdir) -> bool:
+    deps = verify_deps(
+        all_ballots_cast = verify(results, pubdir, 'all_ballots_cast'),
+        all_ballots_spoiled = verify(results, pubdir, 'all_ballots_spoiled'),
+        all_ballots_submitted = verify(results, pubdir, 'all_ballots_submitted'),
+    )
+    cast_ids      = set(b.object_id for b in deps['all_ballots_cast'])
+    spoiled_ids   = set(b.object_id for b in deps['all_ballots_spoiled'])
+    submitted_ids = set(b.object_id for b in deps['all_ballots_submitted'])
+    return verify_assertion(
         'set(cast ballot IDs) + set(spoiled ballot IDs) = set(submitted ballot IDs)',
         cast_ids.union(spoiled_ids) == submitted_ids,
     )
 
+def verify_ballot_sets(results, pubdir) -> bool:
+    "Make sure the various sets of ballot IDs match up (nothing missing or extra)"
+    print('\nVerifying ballot ID sets:')
+    deps = verify_deps(
+        n_spoiled_decrypted = verify(results, pubdir, 'n_spoiled_decrypted'),
+        n_cast_spoiled_submitted = verify(results, pubdir, 'n_cast_spoiled_submitted'),
+        set_spoiled_decrypted = verify(results, pubdir, 'set_spoiled_decrypted'),
+        set_cast_spoiled_submitted = verify(results, pubdir, 'set_cast_spoiled_submitted'),
+    )
     # TODO explicitly assert that each list has all unique IDs?
-
     return True
 
 def verify_gather_decryptions(results, pubdir) -> bool:
@@ -585,6 +614,9 @@ def verify(results: ResultsCache, pubdir: str, target: TargetName, **kwargs):
     """
 
     kwargs_frozen = freeze_kwargs(kwargs)
+    # unfrozen_test = unfreeze_kwargs(kwargs_frozen)
+    # print('unfreeze works?', unfrozen_test == kwargs)
+    # raise SystemExit
 
     # memoize
     # note this could sort of be done using functools.cache,
@@ -622,17 +654,49 @@ def verify(results: ResultsCache, pubdir: str, target: TargetName, **kwargs):
 
 ### summary ###
 
-def only_failures(results: ResultsCache) -> Errors:
-    failures: Errors = {}
-    for (target_name, results_dict) in results.items():
-        results_failed = {
-            k:v for (k,v)
-            in results_dict.items()
-            if isinstance(v, Error)
-        }
-        if len(results_failed) > 0:
-            failures[target_name] = results_failed
-    return failures
+def simplify_and_partition(results: ResultsCache) -> (Successes, Errors):
+
+    successes: Successes = {}
+    errors: Errors = {}
+
+    # simplify
+    results2 = {}
+    try:
+        for (k,v) in results.items():
+            if list(v.keys()) == [()]:
+                results2[k] = list(v.values())[0]
+                continue
+            results2[k] = {}
+            for (k2, v2) in v.items():
+                k2 = dict(k2)
+    except Exception as e:
+        print(e)
+        print(results.keys())
+
+    # partition
+    for (target_name, result) in results2.items():
+        if isinstance(result, Error):
+            errors[target_name] = result
+        elif isinstance(result, dict):
+            successes_dict = {
+                k:v for (k,v)
+                in result.items()
+                if not isinstance(v, Error)
+            }
+            errors_dict = {
+                k:v for (k,v)
+                in result.items()
+                if isinstance(v, Error)
+            }
+            if len(errors_dict) > 0:
+                errors[target_name] = errors_dict
+            if len(successes_dict) > 0:
+                successes[target_name] = successes_dict
+        else:
+            # should be a single success
+            successes[target_name] = result
+
+    return (successes, errors)
 
 def summarize_results(
     results,
@@ -647,18 +711,20 @@ def summarize_results(
 
     csb = CliStepBase() # prints in electionguard_cli style
 
-    manifest        = results['manifest'][()]
-    tally_result    = results['plaintext_tally'][()]
-    spoiled_results = results['spoiled_result']
+    manifest        = results['manifest']
+    tally_result    = results['plaintext_tally']
+    spoiled_results = results['all_spoiled_results']
 
     selection_names = manifest.get_selection_names("en")
     contest_names   = manifest.get_contest_names()
 
     spoiled_header = 'Individual spoiled ballots'
     csb.print_header(spoiled_header)
-    print()
     spoiled_summaries = {}
-    for spoiled_result in spoiled_results.values():
+    for spoiled_result in spoiled_results:
+        print()
+        # if isinstance(spoiled_result, Error):
+        #     continue
         ballot_id = spoiled_result.object_id
         short_id  = ballot_id[ballot_id.find('-')+1:]
         print(short_id)
@@ -679,7 +745,7 @@ def summarize_results(
             contest_summary = {question: answer}
             ballot_summary.append(contest_summary)
         spoiled_summaries[short_id] = ballot_summary
-        print()
+        # print()
 
     tally_header = "Final tally of cast ballots"
     csb.print_header(tally_header)
@@ -700,7 +766,6 @@ def summarize_results(
             contest_summary['votes'][name] = selection.tally
         tally_summary.append(contest_summary)
 
-
     # save summary json
     # no particular format, except it must be a json-serializable dict
     summary = {
@@ -710,6 +775,7 @@ def summarize_results(
         spoiled_header: spoiled_summaries,
     }
     to_public_record(pubdir, 'summary', summary, verifier_id=verifier_id)
+    # pprint(summary)
     print()
 
 
@@ -733,14 +799,15 @@ def main(pubdir, verifier_id):
     verify(results, pubdir, 'gather_election')
 
     print()
-    errors = only_failures(results)
+    (results, errors) = simplify_and_partition(results)
     n_errors = sum(
-        len(v) for v in errors.values()
+        1  if isinstance(v, Error) else len(v)
+        for v in errors.values()
     )
+    summarize_results(results, pubdir, verifier_id, errors, n_errors)
     if n_errors == 0:
         print('🎉 The election has been verified!')
         print()
-        summarize_results(results, pubdir, verifier_id, errors, n_errors)
     else:
         msgs = [
             f'Found {n_errors} irregularities. See summary JSON for details.',
@@ -769,7 +836,11 @@ def VerifyCommand(
     """Verify all public election artifacts.
     """
     # TODO parse and pass cfg here
-    main(public_dir, verifier_id)
+    try:
+        main(public_dir, verifier_id)
+    except Exception as e:
+        print(e)
+        raise
 
 @click.group
 def cli() -> None:
