@@ -8,7 +8,7 @@ ElectionGuard + Cardano
 
 Work in progress on [the Catalyst fund13 project](https://milestones.projectcatalyst.io/projects/1300090).
 
-Current status as of 2024-03-08:
+Current status as of 2025-03-15:
 
 - All Milestones (1, 2, and 3) approved
 
@@ -19,9 +19,11 @@ Current status as of 2024-03-08:
   * Partially archived [the NIST election format docs site](./milestone1/nist-docs)
   * The [Nix environment](./milestone1/nix-environment.md) works
   * The [local election script](./milestone1/local-election) (output 1.1) works
-  * The [initial messy version of the verifier script](./milestone1/verifier#initial-messy-version) (output 1.2) works
-  * Working on [a cleaner graph-based verifier script](./milestone1/verifier#cleaner-graph-based-version)
-  * Next step is to demo + explain the local election script
+  * The [verifier script](./milestone1/verifier) (output 1.2) works
+  * Next steps are:
+    - demo + explain the local election script and verifier
+    - write a test script
+    - fix whatever edge cases the tests uncover in the election + verify scripts
 
 - [Milestone 2](./milestone2/) (Cardano stuff):
   * [Cardano node + Ogmios](./milestone2/investigate/cardano-node-ogmios/) works
