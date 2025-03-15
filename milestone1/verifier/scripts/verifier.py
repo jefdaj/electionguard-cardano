@@ -96,8 +96,6 @@ def verify_deps(**deps):
     # print(errors)
     if n_errors > 0:
         e = DependencyError(f'{n_errors} dependencies failed: {error_keys}')
-        # print(errors)
-        # print(e) # TODO handle this in verify()
         raise e
     return deps
 
@@ -580,7 +578,10 @@ def with_checkmark_message(msg, fn_call):
 def verify_assertion(msg, assertion):
     # wrapper is required because you can't `assert` inside a lambda
     def assertion_fn():
-        assert assertion
+        try:
+            assert assertion
+        except AssertionError as e:
+            raise Exception(f'false: {msg}')
     return with_checkmark_message(msg, assertion_fn)
 
 def verify_public_record(
@@ -810,7 +811,7 @@ def main(pubdir, verifier_id):
         print()
     else:
         msgs = [
-            f'Found {n_errors} irregularities. See summary JSON for details.',
+            f'Found {n_errors} irregularities. See {verifier_id}.json for details.',
             'The election could NOT be verified!',
         ]
         print('\n'.join('⛔ ' + m for m in msgs))
