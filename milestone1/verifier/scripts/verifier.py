@@ -18,6 +18,7 @@ from utils import (
     to_public_record,
     CaptureLog,
     list_device_numbers,
+    record_basename,
 )
 
 from electionguard.ballot import CiphertextBallot, SubmittedBallot
@@ -58,7 +59,8 @@ def freeze_kwargs(kwargs):
     return tuple(sorted(kwargs.items()))
 
 def unfreeze_kwargs(frozen_kwargs):
-    return {k:dict(v) for (k,v) in frozen_kwargs}
+    # return {k:dict(v) for (k,v) in frozen_kwargs}
+    return dict(frozen_kwargs)
 
 # error message
 Error = str
@@ -90,12 +92,23 @@ class DependencyError(Exception):
 
 def verify_deps(**deps):
     "Make a target fail when one or more of its deps does"
-    errors = {k:v for (k,v) in deps.items() if isinstance(v, Error)}
-    n_errors = len(errors)
+    # TODO is this missing nested errors?
+    errors = {}
+    # errors = {k:v for (k,v) in deps.items() if isinstance(v, Error)}
+    for (k, v) in deps.items():
+        if isinstance(v, dict):
+            for (k2, v2) in v.items():
+                if isinstance(v2, Error):
+                    if not k in errors:
+                        errors[k] = {}
+                    errors[k][k2] = v2
+        elif isinstance(v, Error):
+            errors[k] = v
+        # else drop the non-errors
     error_keys = ', '.join(sorted(errors.keys())) # TODO nested keys too?
-    # print(errors)
-    if n_errors > 0:
-        e = DependencyError(f'{n_errors} dependencies failed: {error_keys}')
+    if len(errors) > 0:
+        e = DependencyError(f'dependencies failed: {error_keys}')
+        # TODO why is this being swallowed?
         raise e
     return deps
 
@@ -298,7 +311,7 @@ def verify_plaintext_tally(results, pubdir):
         msg='plaintext_tally format is valid'
     )
 
-def verify_tally_decryption(results, pubdir):
+def verify_tally_decryption(results, pubdir) -> PlaintextTally:
     # TODO also verify that the shares == their corresponding public record files
     # TODO and that the published shares match the ciphertext_tally? is that possible?
     deps = verify_deps(
@@ -306,10 +319,11 @@ def verify_tally_decryption(results, pubdir):
         all_guardian_pubkeys = verify(results, pubdir, 'all_guardian_pubkeys'),
         context = verify(results, pubdir, 'context'),
     )
-    return verify_decryption_with_checkmark_message(
+    verify_decryption_with_checkmark_message(
         'plaintext_tally guardian decryption shares are valid',
         **deps
     )
+    return deps['plaintext_tally']
 
 def verify_spoiled_result(results, pubdir, **fmtargs) -> PlaintextTally:
     deps = verify_deps(
@@ -344,7 +358,7 @@ def verify_all_ballots_submitted(results, pubdir) -> List[SubmittedBallot]:
     for fmtargs in fmtargs_list:
         ballot = verify(results, pubdir, 'ballot_submitted', **fmtargs)
         ballots.append(ballot)
-    assert len(ballots) == len(fmtargs_list)
+    # assert len(ballots) == len(fmtargs_list)
     return ballots
 
 def verify_all_ballots_spoiled(results, pubdir) -> List[SubmittedBallot]:
@@ -354,7 +368,8 @@ def verify_all_ballots_spoiled(results, pubdir) -> List[SubmittedBallot]:
     for fmtargs in fmtargs_list:
         ballot = verify(results, pubdir, 'ballot_spoiled', **fmtargs)
         ballots.append(ballot)
-    assert len(ballots) == len(fmtargs_list)
+    # assert len(ballots) == len(fmtargs_list)
+    print(f'loaded {len(ballots)} spoiled ballots')
     return ballots
 
 def verify_all_ballots_cast(results, pubdir) -> List[SubmittedBallot]:
@@ -364,18 +379,17 @@ def verify_all_ballots_cast(results, pubdir) -> List[SubmittedBallot]:
     for fmtargs in fmtargs_list:
         ballot = verify(results, pubdir, 'ballot_cast', **fmtargs)
         ballots.append(ballot)
-    assert len(ballots) == len(fmtargs_list)
+    # assert len(ballots) == len(fmtargs_list)
     return ballots
 
-def verify_all_spoiled_results(results, pubdir) -> List[SubmittedBallot]:
+def verify_all_spoiled_results(results, pubdir) -> List[PlaintextTally]:
     fmtargs_list = list_spoiled_ballot_fmtargs(pubdir)
     print(f'\nVerifying {len(fmtargs_list)} spoiled ballot decyptions:')
-    ballots = []
+    tallies = []
     for fmtargs in fmtargs_list:
-        ballot = verify(results, pubdir, 'spoiled_result', **fmtargs)
-        ballots.append(ballot)
-    assert len(ballots) == len(fmtargs_list)
-    return ballots
+        tally = verify(results, pubdir, 'spoiled_result', **fmtargs)
+        tallies.append(tally)
+    return tallies
 
 
 def verify_build_election(results, pubdir) -> \
@@ -501,8 +515,8 @@ def verify_n_spoiled_decrypted(results, pubdir) -> bool:
 
 def verify_n_cast_spoiled_submitted(results, pubdir) -> bool:
     deps = verify_deps(
-        all_ballots_cast = verify(results, pubdir, 'all_ballots_cast'),
-        all_ballots_spoiled = verify(results, pubdir, 'all_ballots_spoiled'),
+        all_ballots_cast      = verify(results, pubdir, 'all_ballots_cast'),
+        all_ballots_spoiled   = verify(results, pubdir, 'all_ballots_spoiled'),
         all_ballots_submitted = verify(results, pubdir, 'all_ballots_submitted'),
     )
     n_cast      = len(deps['all_ballots_cast'])
@@ -514,6 +528,7 @@ def verify_n_cast_spoiled_submitted(results, pubdir) -> bool:
     )
 
 def verify_set_spoiled_decrypted(results, pubdir) -> bool:
+    # TODO why isn't this short-circuiting the rest of the fn?
     deps = verify_deps(
         all_ballots_spoiled = verify(results, pubdir, 'all_ballots_spoiled'),
         all_spoiled_results = verify(results, pubdir, 'all_spoiled_results'),
@@ -526,11 +541,15 @@ def verify_set_spoiled_decrypted(results, pubdir) -> bool:
     )
 
 def verify_set_cast_spoiled_submitted(results, pubdir) -> bool:
+    # TODO why isn't this short-circuiting the rest of the fn?
     deps = verify_deps(
         all_ballots_cast = verify(results, pubdir, 'all_ballots_cast'),
         all_ballots_spoiled = verify(results, pubdir, 'all_ballots_spoiled'),
         all_ballots_submitted = verify(results, pubdir, 'all_ballots_submitted'),
     )
+    # errors = {k:v for (k,v) in deps.items() if isinstance(v, Error)}
+    # if len(errors) > 0:
+    #     print(errors)
     cast_ids      = set(b.object_id for b in deps['all_ballots_cast'])
     spoiled_ids   = set(b.object_id for b in deps['all_ballots_spoiled'])
     submitted_ids = set(b.object_id for b in deps['all_ballots_submitted'])
@@ -643,7 +662,7 @@ def verify(results: ResultsCache, pubdir: str, target: TargetName, **kwargs):
             msgs = [str(e)]
             msgs.append(log.getvalue().strip())
             result = Error(' '.join(msgs).strip())
-            # print(f'err during {verify_fn.__name__}: "{result}"')
+            print(f'err during {verify_fn.__name__}: "{result}"')
 
     # cache result
     if not target in results:
@@ -662,17 +681,24 @@ def simplify_and_partition(results: ResultsCache) -> (Successes, Errors):
 
     # simplify
     results2 = {}
-    try:
-        for (k,v) in results.items():
-            if list(v.keys()) == [()]:
-                results2[k] = list(v.values())[0]
-                continue
+    for (k,v) in results.items():
+
+        # special cases/warts
+        if k == 'ballot_cast':
+            k = 'cast_notice'
+
+        # remove trivial kwargs
+        if list(v.keys()) == [()]:
+            v2 = list(v.values())[0]
+            results2[k] = v2
+
+        # convert kwargs to their public record basenames
+        else:
             results2[k] = {}
             for (k2, v2) in v.items():
-                k2 = dict(k2)
-    except Exception as e:
-        print(e)
-        print(results.keys())
+                fmtargs = unfreeze_kwargs(k2)
+                fname = record_basename(k, **fmtargs)
+                results2[k][fname] = v2
 
     # partition
     for (target_name, result) in results2.items():
@@ -694,7 +720,8 @@ def simplify_and_partition(results: ResultsCache) -> (Successes, Errors):
             if len(successes_dict) > 0:
                 successes[target_name] = successes_dict
         else:
-            # should be a single success
+            # should be a single success or a list
+            print(target_name, type(result))
             successes[target_name] = result
 
     return (successes, errors)
@@ -716,19 +743,38 @@ def summarize_results(
     tally_result    = results['plaintext_tally']
     spoiled_results = results['all_spoiled_results']
 
+    # TODO what's up with this?? why is each value itself a list?
+    # spoiled_results_keys = spoiled_results.keys()
+    # print(spoiled_results_keys)
+    # spoiled_results = list(results['all_spoiled_results'][()].values())
+    # # pprint(spoiled_results)
+    # print(type(spoiled_results))
+    # print(type(spoiled_results[0]))
+    # print(type(spoiled_results[0][0]))
+    # raise SystemExit
+
     selection_names = manifest.get_selection_names("en")
     contest_names   = manifest.get_contest_names()
 
     spoiled_header = 'Individual spoiled ballots'
     csb.print_header(spoiled_header)
     spoiled_summaries = {}
+    # pprint([type(r) for r in spoiled_results])
+    # raise SystemExit
     for spoiled_result in spoiled_results:
+        # print('spoiled_result:', type(spoiled_result))
+        # raise SystemExit
         print()
-        # if isinstance(spoiled_result, Error):
-        #     continue
-        ballot_id = spoiled_result.object_id
-        short_id  = ballot_id[ballot_id.find('-')+1:]
-        print(short_id)
+        if isinstance(spoiled_result, Error):
+            continue
+        try:
+            ballot_id = spoiled_result.object_id
+            short_id  = ballot_id[ballot_id.find('-')+1:]
+            print(short_id)
+        except Exception as e:
+            print(spoiled_result)
+            print(type(spoiled_result))
+            raise SystemExit
         ballot_summary = []
         for contest in spoiled_result.contests.values():
             question = contest_names.get(contest.object_id)

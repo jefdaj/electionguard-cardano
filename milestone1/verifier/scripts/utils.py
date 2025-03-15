@@ -182,6 +182,12 @@ def from_record(records_map, public_dir: str, record_type: str, **fmtargs):
     fpath = join(dpath, fname)
     return serialize.from_file(rtype, fpath)
 
+def record_basename(record_type:str, **fmtargs):
+    'So far, only used to simplify verifier summary json keys'
+    (_, _, fstr) = PUBLIC_RECORDS[record_type]
+    fname = fstr.format(**fmtargs)
+    return fname
+
 
 ### load and save single files ###
 
