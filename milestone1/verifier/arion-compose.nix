@@ -4,9 +4,9 @@ let
 
   projectConfig = builtins.fromJSON (builtins.readFile ./verify.json);
 
-  # public outputs of local-election/election.py
+  # public outputs of election/election.py
   # TODO add verifier output to the public dir too later
-  PUBLIC_DIR = toString ../local-election/data/public;
+  PUBLIC_DIR = toString ../election/data/public;
 
   mkContainer = mode: scripts_dir: public_dir: private_dir: n:
   {

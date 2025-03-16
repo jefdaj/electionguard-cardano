@@ -14,4 +14,4 @@ but that's pretty standard and I don't think it will be a problem in practice.
     3. Includes an optional manual mode to step through the election slowly
     4. Runs election commands in the containers
 
-The [local election script](./local-election/) currently does everything here.
+The [election script](./election/) currently does everything here.

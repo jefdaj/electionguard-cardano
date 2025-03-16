@@ -18,7 +18,7 @@ Current status as of 2025-03-15:
     and pushed [a Docker image](https://ghcr.io/jefdaj/electionguard-python)
   * Partially archived [the NIST election format docs site](./milestone1/nist-docs)
   * The [Nix environment](./milestone1/nix-environment.md) works
-  * The [local election script](./milestone1/local-election) (output 1.1) works
+  * The [election script](./milestone1/election) (output 1.1) works
   * The [verifier script](./milestone1/verifier) (output 1.2) works
   * Next steps are:
     - demo + explain the local election script and verifier

@@ -1,7 +1,7 @@
 Verifier Script
 ===============
 
-This verifies the results of the [local election script](../local-election).
+This verifies the results of the [election script](../election).
 
 It's based on a dependency graph:
 
@@ -18,7 +18,7 @@ Example usage with valid election data:
 
 ```bash
 $ nix develop
-$ # run ../local-election/election.py first to generate the public data
+$ # run ../election/election.py first to generate the public data
 $ ./verify.py
 
 docker exec verifier-verifier1-1 poetry run /scripts/verifier.py verify --public-dir /data/public --verifier-id verifier1
@@ -159,7 +159,7 @@ Are pineapples cool?
 ⛔ There were 9 errors.
 ⛔ See verifier1.json for details.
 
-$ cat ../local-election/data/public/4_verify/verifier1.json | jq
+$ cat ../election/data/public/4_verify/verifier1.json | jq
 ```
 
 ```json
@@ -231,4 +231,4 @@ TODO:
       (because throwing them all the time messes with the test suite)
 - [x] Make a JSON summary of the verification as well as printing
 - [x] Clean up the code! It's very messy so far
-- [ ] Have this script create the local-election summary json rather than admin.py
+- [ ] Have this script create the election summary json rather than admin.py
