@@ -24,15 +24,6 @@
 
       ];
 
-      shellHook = ''
-        scripts_dir=$(realpath scripts)
-        echo "scripts_dir: $scripts_dir"
-        inotifywait -m "$scripts_dir" -e close_write |
-          while read -r directory action file; do
-            clear
-            ./election.py
-          done
-      '';
     };
   };
 }

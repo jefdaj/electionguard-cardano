@@ -275,11 +275,11 @@ def decrypt_results(cfg):
 @explain_step
 def verify(cfg):
     verifiers = sorted(
-        [('verifier', n) for n in range(1, cfg.verifiers.count+1)] +
-        [('guardian', n) for n in range(1, cfg.guardians.count+1)] +
+        [('verifier', n) for n in range(1, cfg.election.verifiers.count+1)] + \
+        [('guardian', n) for n in range(1, cfg.election.guardians.count+1)] + \
         [('admin', 1)]
     )
-    for (container_role, container_number) in verfiers:
+    for (container_role, container_number) in verifiers:
         verifier_id = f'{container_role}_{container_number}'
         run_in_container(
             cfg, "verifier.py", container_role, container_number,
@@ -287,6 +287,7 @@ def verify(cfg):
                 "verify",
                 "--public-dir", cfg.arion.bind_mounts.public,
                 "--verifier-id", verifier_id,
+                "--quiet",
             ]
         )
 

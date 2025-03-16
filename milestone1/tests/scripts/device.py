@@ -159,7 +159,10 @@ def VoteCommand(
     device = from_public_record(public_dir, 'device', device_number=device_number)
 
     ballot: PlaintextBallot = build_ballot(manifest, candidate)
-    to_private_record(private_dir, 'plaintext_ballot', ballot)
+    to_private_record(
+        private_dir, 'plaintext_ballot', ballot,
+        ballot_id=ballot.object_id
+    )
 
     encrypter = EncryptionMediator(
         internal_manifest, context, device
@@ -208,7 +211,10 @@ def VoteCommand(
         ballot_spoiled = ballot_enc
         ballot_spoiled.state = BallotBoxState.SPOILED
 
-        to_public_record(public_dir, 'ballot_spoiled', ballot_spoiled)
+        to_public_record(
+            public_dir, 'ballot_spoiled', ballot_spoiled,
+            ballot_id=ballot_spoiled.object_id
+        )
 
     else:
 
@@ -231,7 +237,10 @@ def VoteCommand(
             cast_at=datetime.utcnow()
         )
 
-        to_public_record(public_dir, 'cast_notice', cast_notice)
+        to_public_record(
+            public_dir, 'cast_notice', cast_notice,
+            ballot_id=cast_notice.ballot_id
+        )
 
 
 @click.group()

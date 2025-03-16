@@ -687,6 +687,7 @@ def summarize_results(
     verifier_id,
     errors,
     n_errors,
+    quiet,
 ):
 
     # no particular format, except it must be json-serializable
@@ -702,15 +703,18 @@ def summarize_results(
     contest_names   = manifest.get_contest_names()
 
     spoiled_header = 'Individual spoiled ballots'
-    csb.print_header(spoiled_header)
+    if not quiet:
+        csb.print_header(spoiled_header)
     spoiled_summaries = {}
     for spoiled_result in spoiled_results:
-        print()
+        if not quiet:
+            print()
         if isinstance(spoiled_result, Error):
             continue
         ballot_id = spoiled_result.object_id
         short_id  = ballot_id[ballot_id.find('-')+1:]
-        print(short_id)
+        if not quiet:
+            print(short_id)
         ballot_summary = []
         for contest in spoiled_result.contests.values():
             question = contest_names.get(contest.object_id)
@@ -724,13 +728,15 @@ def summarize_results(
                 answer = selected[0]
             except IndexError:
                 answer = 'No answer' # TODO is this allowed?
-            print(f'  {question} {answer}')
+            if not quiet:
+                print(f'  {question} {answer}')
             contest_summary = {question: answer}
             ballot_summary.append(contest_summary)
         spoiled_summaries[short_id] = ballot_summary
 
     tally_header = "Final tally of cast ballots"
-    csb.print_header(tally_header)
+    if not quiet:
+        csb.print_header(tally_header)
     tally_summary = []
     contest_summaries = []
     for tally_contest in tally_result.contests.values():
@@ -739,12 +745,14 @@ def summarize_results(
             'question': contest_name,
             'votes': {},
         }
-        csb.print_section(contest_name)
+        if not quiet:
+            csb.print_section(contest_name)
         values = list(tally_contest.selections.values())
         values.sort(key=lambda v: v.tally, reverse=True)
         for selection in values:
             name = selection_names[selection.object_id]
-            csb.print_value(f"  {name}", selection.tally)
+            if not quiet:
+                csb.print_value(f"  {name}", selection.tally)
             contest_summary['votes'][name] = selection.tally
         tally_summary.append(contest_summary)
 
@@ -758,12 +766,13 @@ def summarize_results(
     }
     to_public_record(pubdir, 'summary', summary, verifier_id=verifier_id)
     # pprint(summary)
-    print()
+    if not quiet:
+        print()
 
 
 ### cli ###
 
-def main(pubdir, verifier_id):
+def main(pubdir, verifier_id, quiet):
 
     # main program state
     # accumulates successful result objects and error messages
@@ -785,10 +794,11 @@ def main(pubdir, verifier_id):
         1  if isinstance(v, Error) else len(v)
         for v in errors.values()
     )
-    summarize_results(results, pubdir, verifier_id, errors, n_errors)
+    summarize_results(results, pubdir, verifier_id, errors, n_errors, quiet)
     if n_errors == 0:
-        print('🎉 The election has been verified!')
-        print()
+        if not quiet:
+            print('🎉 The election has been verified!')
+            print()
     else:
         msgs = [
             'The election could NOT be verified!',
@@ -811,15 +821,23 @@ def main(pubdir, verifier_id):
     help="Used when saving the final JSON summary file",
     type=click.STRING,
 )
+@click.option(
+    "--quiet",
+    help="Refrain from printing, except in case of errors",
+    type=click.STRING,
+    is_flag=True,
+    default=False,
+)
 def VerifyCommand(
     public_dir: str,
     verifier_id: str,
+    quiet: bool,
 ) -> None:
     """Verify all public election artifacts.
     """
     # TODO parse and pass cfg here
     try:
-        main(public_dir, verifier_id)
+        main(public_dir, verifier_id, quiet)
     except Exception as e:
         print(e)
         raise
