@@ -2,11 +2,7 @@
 
 let
 
-  projectConfig = builtins.fromJSON (builtins.readFile ./verify.json);
-
-  # public outputs of election/election.py
-  # TODO add verifier output to the public dir too later
-  PUBLIC_DIR = toString ../election/data/public;
+  projectConfig = builtins.fromJSON (builtins.readFile ./election.json);
 
   mkContainer = mode: scripts_dir: public_dir: private_dir: n:
   {
@@ -18,7 +14,7 @@ let
       "${public_dir}:/data/public"
 
       # each container only has access to its own private subdir
-      # the verifier shouldn't need it, but just for consistency...
+      # TODO is it confusing that they're each mounted to the same path?
       "${private_dir}/${mode}_${builtins.toString n}:/data/private"
     ];
 
@@ -36,10 +32,13 @@ let
 
   # TODO pull host bind_mount paths from projectConfig too?
   mkAttrsList = mode: nVms:
-    map (mkAttrs mode "./scripts" PUBLIC_DIR "./data/private") (pkgs.lib.range 1 nVms);
+    map (mkAttrs mode "./scripts" "./data/public" "./data/private") (pkgs.lib.range 1 nVms);
 
   mkServices = cfg:
-    builtins.listToAttrs (mkAttrsList "verifier" 1);
+    builtins.listToAttrs (mkAttrsList "admin" 1) //
+    builtins.listToAttrs (mkAttrsList "device" cfg.election.devices.count) //
+    builtins.listToAttrs (mkAttrsList "guardian" cfg.election.guardians.count) //
+    builtins.listToAttrs (mkAttrsList "verifier" cfg.election.verifiers.count);
 
 in {
   config.project.name = projectConfig.arion.project_name;

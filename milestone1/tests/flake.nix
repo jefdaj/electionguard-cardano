@@ -30,7 +30,7 @@
         inotifywait -m "$scripts_dir" -e close_write |
           while read -r directory action file; do
             clear
-            ./test.py
+            ./election.py
           done
       '';
     };
