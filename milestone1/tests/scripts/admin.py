@@ -361,7 +361,7 @@ def DecryptResultsCommand(
     )
     assert tally_result is not None
     to_public_record(public_dir, 'plaintext_tally', tally_result)
-    print('decrypted tally')
+    # print('decrypted tally')
 
     # load spoiled ballots
     spoiled_ballots: List[SubmittedBallot] = load_spoiled_ballots(public_dir)
@@ -391,7 +391,7 @@ def DecryptResultsCommand(
             public_dir, 'spoiled_result', spoiled_result,
             ballot_id=spoiled_result.object_id
         )
-        print(f'decrypted {ballot_id}')
+        # print(f'decrypted {ballot_id}')
 
 
 @click.command("summary")

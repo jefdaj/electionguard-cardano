@@ -23,7 +23,7 @@ import json
 
 from os import listdir, makedirs
 from os.path import join, splitext
-from pprint import pprint
+# from pprint import pprint
 from typing import List, Dict
 
 from electionguard.guardian import Guardian
@@ -246,7 +246,7 @@ def DecryptSharesCommand(
 
     # compute tally share
     tally_share = guardian.compute_tally_share(tally, context)
-    print(f'computed {guardian_id} decryption share of election tally')
+    # print(f'computed {guardian_id} decryption share of election tally', flush=True)
     assert tally_share is not None
     to_public_record(
         public_dir, 'tally_share', tally_share,
@@ -258,12 +258,14 @@ def DecryptSharesCommand(
     spoiled_shares: Dict[BallotId, Optional[DecryptionShare]] \
         = guardian.compute_ballot_shares(spoiled_ballots, context)
     for (spoiled_id, spoiled_share) in spoiled_shares.items():
-        print(f'computed {guardian_id} decryption share of {spoiled_id}')
+        # print(f'computed {guardian_id} decryption share of {spoiled_id}', flush=True)
         assert spoiled_share is not None
         to_public_record(
             public_dir, 'spoiled_share', spoiled_share,
             spoiled_id=spoiled_id, guardian_id=guardian_id
         )
+
+    # print(flush=True)
 
 
 @click.group()

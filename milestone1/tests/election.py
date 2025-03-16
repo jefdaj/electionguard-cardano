@@ -8,8 +8,8 @@ from click_default_group import DefaultGroup
 from dotmap import DotMap
 from os import makedirs
 from os.path import join, exists
-from pprint import pprint
-from pygments import highlight, lexers, formatters
+# from pprint import pprint
+# from pygments import highlight, lexers, formatters
 from typing import Optional
 
 
@@ -21,16 +21,16 @@ LOG = logging.getLogger('electionguard-cardano')
 
 ### utilities ###
 
-def print_colorful_json(msg):
-	# based on https://stackoverflow.com/a/32166163
-	msg = msg.replace("'", '"')
-	formatted_json = json.dumps(json.loads(msg), indent=2)
-	colorful_json = highlight(
-		formatted_json,
-		lexers.JsonLexer(),
-		formatters.TerminalFormatter()
-	)
-	print(colorful_json)
+# def print_colorful_json(msg):
+#	# based on https://stackoverflow.com/a/32166163
+#	msg = msg.replace("'", '"')
+#	formatted_json = json.dumps(json.loads(msg), indent=2)
+#	colorful_json = highlight(
+#		formatted_json,
+#		lexers.JsonLexer(),
+#		formatters.TerminalFormatter()
+#	)
+#	print(colorful_json)
 
 def parse_config(cfg_path, pause_to_explain):
     with open(cfg_path, 'r') as f:
@@ -59,11 +59,12 @@ def run_in_container(cfg, script_name, container_role, container_number, args, *
     try:
         stdout = stdout.strip()
         if len(stdout) > 0:
-            print_colorful_json(stdout)
+            # print_colorful_json(stdout)
+            print(stdout, flush=True)
         if stderr is not None:
             stderr = stderr.strip()
             if len(stderr) > 0:
-                print(stderr)
+                print(stderr, flush=True)
     except json.decoder.JSONDecodeError:
         msg = stdout
         if stderr is not None:
@@ -73,16 +74,17 @@ def run_in_container(cfg, script_name, container_role, container_number, args, *
 def explain_step(fn):
     def decorated_fn(cfg, *args, **kwargs):
         header = f'### {fn.__name__} ###'
-        print('\n' + header)
+        print(header, flush=True)
         if cfg.pause_to_explain:
-            print('#  ')
+            print('#  ', flush=True)
             while True:
                 if len(input('#  ').strip()) == 0:
-                    print('#' * len(header) + '\n')
+                    print('#' * len(header) + '\n', flush=True)
                     break
-        else:
-            print()
-        return fn(cfg, *args, **kwargs)
+        print(flush=True)
+        result = fn(cfg, *args, **kwargs)
+        print(flush=True)
+        return result
     return decorated_fn
 
 def run_single_step(cfg, fn_name):
@@ -101,7 +103,8 @@ def arion_cleanup(cfg):
 def setup(cfg):
     # arion also loads cfg separately via Nix
     arion_cleanup(cfg)
-    subprocess.check_call(['arion', 'up', '-d'])
+    subprocess.check_call(['arion', '--no-ansi', 'up', '-d'])
+    print(flush=True)
 
 @explain_step
 def teardown(cfg):
@@ -338,7 +341,7 @@ def ElectionCommand(
             setup(cfg)
             election(cfg)
         except Exception as e:
-            pprint(e)
+            print(e, flush=True)
             LOG.error('Election failed :(')
         finally:
             teardown(cfg)
