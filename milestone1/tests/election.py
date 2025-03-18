@@ -284,13 +284,14 @@ def verify(cfg):
     )
     for (container_role, container_number) in verifiers:
         verifier_id = f'{container_role}_{container_number}'
+        logfile = join(cfg.arion.bind_mounts.private, 'verify.log')
         run_in_container(
             cfg, "verifier.py", container_role, container_number,
             [
                 "verify",
                 "--public-dir", cfg.arion.bind_mounts.public,
                 "--verifier-id", verifier_id,
-                "--quiet",
+                "--logfile", logfile,
             ]
         )
 
