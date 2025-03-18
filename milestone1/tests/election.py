@@ -2,35 +2,22 @@
 
 import click
 import json
+import logging
 import subprocess
 
 from click_default_group import DefaultGroup
 from dotmap import DotMap
 from os import makedirs
 from os.path import join, exists
-# from pprint import pprint
-# from pygments import highlight, lexers, formatters
 from typing import Optional
 
 
-# see logs.py for electionguard's separate LOG
-import logging
+# see electionguard-python/src/electionguard/logs.py for electionguard's separate LOG
 logging.basicConfig(level=logging.DEBUG, format='%(message)s\n')
 LOG = logging.getLogger('electionguard-cardano')
 
 
 ### utilities ###
-
-# def print_colorful_json(msg):
-#	# based on https://stackoverflow.com/a/32166163
-#	msg = msg.replace("'", '"')
-#	formatted_json = json.dumps(json.loads(msg), indent=2)
-#	colorful_json = highlight(
-#		formatted_json,
-#		lexers.JsonLexer(),
-#		formatters.TerminalFormatter()
-#	)
-#	print(colorful_json)
 
 def parse_config(cfg_path, pause_to_explain):
     with open(cfg_path, 'r') as f:
@@ -53,23 +40,13 @@ def run_in_container(cfg, script_name, container_role, container_number, args, *
     LOG.info(' '.join(args))
     proc = subprocess.Popen(args, **kwargs)
     (stdout, stderr) = proc.communicate()
-    # expects scripts to print a json dump of some info
-    # for example: print(json.dumps(locals()))
-    # TODO not useful long term?
-    try:
-        stdout = stdout.strip()
-        if len(stdout) > 0:
-            # print_colorful_json(stdout)
-            print(stdout, flush=True)
-        if stderr is not None:
-            stderr = stderr.strip()
-            if len(stderr) > 0:
-                print(stderr, flush=True)
-    except json.decoder.JSONDecodeError:
-        msg = stdout
-        if stderr is not None:
-            msg += '\n' + stderr
-        LOG.error(msg)
+    stdout = stdout.strip()
+    if len(stdout) > 0:
+        print(stdout, flush=True) # TODO log?
+    if stderr is not None:
+        stderr = stderr.strip()
+        if len(stderr) > 0:
+            print(stderr, flush=True) # TODO log?
 
 def explain_step(fn):
     def decorated_fn(cfg, *args, **kwargs):
