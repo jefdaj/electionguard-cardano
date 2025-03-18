@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 class ArionConfig(dict):
     def __init__(self):
         super(ArionConfig, self).__init__()
@@ -49,9 +51,10 @@ class ElectionConfig(dict):
         verifiers_count  : int = 2,
     ):
         super(ElectionConfig, self).__init__()
-        self['guardians'] : GuardiansConfig(guardians_count, guardians_quorum)
-        self['devices'  ] : DevicesConfig(devices_count)
-        self['verifiers'] : VerifiersConfig(verifiers_count)
+        self['guardians'] = GuardiansConfig(guardians_count, guardians_quorum)
+        self['devices'  ] = DevicesConfig(devices_count)
+        self['verifiers'] = VerifiersConfig(verifiers_count)
+        self['question' ] = 'Are pineapples cool?'
 
 class MainConfig(dict):
     def __init__(self):
@@ -59,3 +62,9 @@ class MainConfig(dict):
         self['arion'   ] = ArionConfig()
         self['election'] = ElectionConfig()
         self['votes'   ] = VotesConfig()
+
+if __name__ == '__main__':
+    import json
+    cfg = MainConfig()
+    with open('config.json', 'w') as f:
+        json.dump(cfg, f, indent=2)
