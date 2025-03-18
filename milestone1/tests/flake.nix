@@ -19,7 +19,8 @@
           click
           click-default-group
           dotmap
-          pygments
+          hypothesis
+          pytest
         ]))
 
       ];

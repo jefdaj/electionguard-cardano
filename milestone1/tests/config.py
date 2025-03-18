@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
 
+import json
+
+from hypothesis import given, settings
+from hypothesis.strategies import integers, composite, SearchStrategy
+from typing import Callable
+
+
+### verbose but simple config definition ###
+
 class ArionConfig(dict):
     def __init__(self):
         super(ArionConfig, self).__init__()
@@ -57,14 +66,28 @@ class ElectionConfig(dict):
         self['question' ] = 'Are pineapples cool?'
 
 class MainConfig(dict):
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         super(MainConfig, self).__init__()
         self['arion'   ] = ArionConfig()
-        self['election'] = ElectionConfig()
+        self['election'] = ElectionConfig(*args, **kwargs)
         self['votes'   ] = VotesConfig()
 
-if __name__ == '__main__':
-    import json
-    cfg = MainConfig()
-    with open('config.json', 'w') as f:
-        json.dump(cfg, f, indent=2)
+
+### config tests ###
+
+@composite
+def mainconfig(draw: Callable[[SearchStrategy, int], int]):
+    kwargs = {}
+    kwargs['guardians_count' ] = draw(integers(min_value=2, max_value=10))
+    kwargs['guardians_quorum'] = draw(integers(min_value=1, max_value=kwargs['guardians_count']))
+    kwargs['devices_count'   ] = draw(integers(min_value=1, max_value=10))
+    kwargs['verifiers_count' ] = draw(integers(min_value=1, max_value=10))
+    cfg = MainConfig(**kwargs)
+    return cfg
+
+@given(mainconfig())
+@settings(max_examples=1_000)
+def test_mainconfig_json_roundtrip(cfg: MainConfig):
+    tmp  = json.dumps(cfg)
+    cfg2 = json.loads(tmp)
+    assert cfg == cfg2
