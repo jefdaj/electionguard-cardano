@@ -65,9 +65,9 @@ class ElectionConfig(dict):
         self['verifiers'] = VerifiersConfig(verifiers_count)
         self['question' ] = 'Are pineapples cool?'
 
-class MainConfig(dict):
+class ProjectConfig(dict):
     def __init__(self, *args, **kwargs):
-        super(MainConfig, self).__init__()
+        super(ProjectConfig, self).__init__()
         self['arion'   ] = ArionConfig()
         self['election'] = ElectionConfig(*args, **kwargs)
         self['votes'   ] = VotesConfig()
@@ -76,18 +76,18 @@ class MainConfig(dict):
 ### config tests ###
 
 @composite
-def mainconfig(draw: Callable[[SearchStrategy, int], int]):
+def projectconfig(draw: Callable[[SearchStrategy, int], int]):
     kwargs = {}
     kwargs['guardians_count' ] = draw(integers(min_value=2, max_value=10))
     kwargs['guardians_quorum'] = draw(integers(min_value=1, max_value=kwargs['guardians_count']))
     kwargs['devices_count'   ] = draw(integers(min_value=1, max_value=10))
     kwargs['verifiers_count' ] = draw(integers(min_value=1, max_value=10))
-    cfg = MainConfig(**kwargs)
+    cfg = ProjectConfig(**kwargs)
     return cfg
 
-@given(mainconfig())
+@given(projectconfig())
 @settings(max_examples=1_000)
-def test_mainconfig_json_roundtrip(cfg: MainConfig):
+def test_projectconfig_json_roundtrip(cfg: ProjectConfig):
     tmp  = json.dumps(cfg)
     cfg2 = json.loads(tmp)
     assert cfg == cfg2
