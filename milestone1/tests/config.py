@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import json
 
 from hypothesis import given, settings
@@ -9,15 +10,21 @@ from typing import Callable
 
 ### verbose but simple config definition ###
 
-class ArionConfig(dict):
+TMPDIR_PREFIX = '/tmp/electionguard-cardano'
+
+class BindMountsConfig(dict):
     def __init__(self):
+        super(BindMountsConfig, self).__init__()
+        self["scripts"] = "/scripts"
+        self["public" ] = "/data/public"
+        self["private"] = "/data/private"
+
+class ArionConfig(dict):
+    def __init__(self, test_name: str = 'test'):
         super(ArionConfig, self).__init__()
-        self['project_name'] = 'test' # TODO with short random suffix
-        self['bind_mounts'] = {
-            "scripts": "/scripts",
-            "public": "/data/public",
-            "private": "/data/private"
-        }
+        self['project_name'] = test_name
+        self['data_dir'] = os.path.join(TMPDIR_PREFIX, test_name) # TODO maketempd?
+        self['bind_mounts'] = BindMountsConfig()
 
 class VoteConfig(dict):
     def __init__(self, n_cast: int, n_spoil: int):
@@ -66,18 +73,28 @@ class ElectionConfig(dict):
         self['question' ] = 'Are pineapples cool?'
 
 class ProjectConfig(dict):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, test_name='test', **kwargs):
         super(ProjectConfig, self).__init__()
-        self['arion'   ] = ArionConfig()
+        self['arion'   ] = ArionConfig(test_name)
         self['election'] = ElectionConfig(*args, **kwargs)
         self['votes'   ] = VotesConfig()
 
 
 ### config tests ###
 
+# TODO why doesn't this quite work when round-tripped to JSON as part of projectconfig below?
+# @composite
+# def arionconfig(draw):
+#     n: int = draw(integers(min_value=1000, max_value=9999))
+#     test_name = f'test{n}'
+#     cfg = ArionConfig(test_name)
+#     return cfg
+
 @composite
-def projectconfig(draw: Callable[[SearchStrategy, int], int]):
+def projectconfig(draw):
+    test_num: int = draw(integers(min_value=1000, max_value=9999))
     kwargs = {}
+    kwargs['test_name'       ] = f'test{test_num}'
     kwargs['guardians_count' ] = draw(integers(min_value=2, max_value=10))
     kwargs['guardians_quorum'] = draw(integers(min_value=1, max_value=kwargs['guardians_count']))
     kwargs['devices_count'   ] = draw(integers(min_value=1, max_value=10))
@@ -85,7 +102,7 @@ def projectconfig(draw: Callable[[SearchStrategy, int], int]):
     cfg = ProjectConfig(**kwargs)
     return cfg
 
-@given(projectconfig())
+@given(cfg=projectconfig())
 @settings(max_examples=1_000)
 def test_projectconfig_json_roundtrip(cfg: ProjectConfig):
     tmp  = json.dumps(cfg)
