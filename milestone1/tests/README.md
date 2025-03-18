@@ -6,34 +6,22 @@ This script will generate arbitrary election configs, run the elections, and ver
 
 ## Generate random `election.json` configs
 
-Here's what the one from the [election script](../election) looks like:
-
-```json
-{
-  "arion": {
-    "project_name": "test",
-    "bind_mounts": {
-      "scripts": "/scripts",
-      "public": "/data/public",
-      "private": "/data/private"
-    }
-  },
-  "election": {
-    "guardians": {"count": 3, "quorum": 2},
-    "devices": {"count": 4},
-    "verifiers": {"count": 2},
-    "question": "Are pineapples cool?"
-  },
-  "votes": {
-    "Yes":    {"cast": 3, "spoil":1},
-    "No":     {"cast": 2, "spoil":2},
-    "Unsure": {"cast": 1, "spoil":3}
-  }
-}
-```
-
 I'll start simple by just changing the numbers under `election`.
 Then once that works I'll start making `votes` more flexible too.
+
+```bash
+$ nix develop
+$ ./test.py
+============================= test session starts ==============================
+platform linux -- Python 3.12.8, pytest-8.3.3, pluggy-1.5.0
+rootdir: /home/jefdaj/myrepos/electionguard-cardano/milestone1/tests
+plugins: hypothesis-6.112.2
+collected 1 item
+
+config.py .                                                              [100%]
+
+============================== 1 passed in 1.24s ===============================
+```
 
 
 ## TODO

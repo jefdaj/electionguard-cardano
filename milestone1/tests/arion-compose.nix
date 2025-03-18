@@ -30,16 +30,14 @@ let
     value = mkContainer mode scripts_dir public_dir private_dir n;
   };
 
-  # TODO pull host bind_mount paths from projectConfig too
-  # TODO and use that to get random test data tmpdirs
-  mkAttrsList = mode: nVms:
-    map (mkAttrs mode "./scripts" "./data/public" "./data/private") (pkgs.lib.range 1 nVms);
+  mkAttrsList = dataDir: mode: nVms:
+    map (mkAttrs mode "./scripts" "${dataDir}/public" "${dataDir}/private") (pkgs.lib.range 1 nVms);
 
   mkServices = cfg:
-    builtins.listToAttrs (mkAttrsList "admin" 1) //
-    builtins.listToAttrs (mkAttrsList "device" cfg.election.devices.count) //
-    builtins.listToAttrs (mkAttrsList "guardian" cfg.election.guardians.count) //
-    builtins.listToAttrs (mkAttrsList "verifier" cfg.election.verifiers.count);
+    builtins.listToAttrs (mkAttrsList cfg.arion.data_dir "admin" 1) //
+    builtins.listToAttrs (mkAttrsList cfg.arion.data_dir "device" cfg.election.devices.count) //
+    builtins.listToAttrs (mkAttrsList cfg.arion.data_dir "guardian" cfg.election.guardians.count) //
+    builtins.listToAttrs (mkAttrsList cfg.arion.data_dir "verifier" cfg.election.verifiers.count);
 
 in {
   config.project.name = projectConfig.arion.project_name;

@@ -25,6 +25,8 @@
 
       ];
 
+      PYTHONDONTWRITEBYTECODE = true;
+
     };
   };
 }

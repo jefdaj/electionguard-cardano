@@ -10,7 +10,8 @@ from typing import Callable
 
 ### verbose but simple config definition ###
 
-TMPDIR_PREFIX = '/tmp/electionguard-cardano'
+# TODO move to /tmp?
+TMPDIR_PREFIX = './tests'
 
 class BindMountsConfig(dict):
     def __init__(self):
@@ -23,7 +24,7 @@ class ArionConfig(dict):
     def __init__(self, test_name: str = 'test'):
         super(ArionConfig, self).__init__()
         self['project_name'] = test_name
-        self['data_dir'] = os.path.join(TMPDIR_PREFIX, test_name) # TODO maketempd?
+        self['data_dir'] = os.path.join(TMPDIR_PREFIX, test_name)
         self['bind_mounts'] = BindMountsConfig()
 
 class VoteConfig(dict):
