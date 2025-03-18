@@ -2,7 +2,7 @@
 
 let
 
-  projectConfig = builtins.fromJSON (builtins.readFile ./election.json);
+  projectConfig = builtins.fromJSON (builtins.readFile (builtins.getEnv "PROJECT_CONFIG"));
 
   mkContainer = mode: scripts_dir: public_dir: private_dir: n:
   {
@@ -30,7 +30,8 @@ let
     value = mkContainer mode scripts_dir public_dir private_dir n;
   };
 
-  # TODO pull host bind_mount paths from projectConfig too?
+  # TODO pull host bind_mount paths from projectConfig too
+  # TODO and use that to get random test data tmpdirs
   mkAttrsList = mode: nVms:
     map (mkAttrs mode "./scripts" "./data/public" "./data/private") (pkgs.lib.range 1 nVms);
 

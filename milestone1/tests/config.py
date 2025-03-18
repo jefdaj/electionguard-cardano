@@ -12,7 +12,7 @@ from typing import Callable
 class ArionConfig(dict):
     def __init__(self):
         super(ArionConfig, self).__init__()
-        self['project_name'] = 'test'
+        self['project_name'] = 'test' # TODO with short random suffix
         self['bind_mounts'] = {
             "scripts": "/scripts",
             "public": "/data/public",

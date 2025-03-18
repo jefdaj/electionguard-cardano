@@ -7,8 +7,8 @@ import subprocess
 
 from click_default_group import DefaultGroup
 from dotmap import DotMap
-from os import makedirs
-from os.path import join, exists
+from os import makedirs, environ
+from os.path import join, exists, realpath
 from typing import Optional
 
 
@@ -20,9 +20,11 @@ LOG = logging.getLogger('electionguard-cardano')
 ### utilities ###
 
 def parse_config(cfg_path, pause_to_explain):
+    cfg_path = realpath(cfg_path)
     with open(cfg_path, 'r') as f:
         js = json.load(f)
     cfg = DotMap(js)
+    cfg.project_config = cfg_path # for passing to arion as an env var
     cfg.pause_to_explain = pause_to_explain
     cfg.votes = dict(cfg.votes) # TODO is this the simplest way to enable iteration?
     ecfg = cfg.election
@@ -71,7 +73,9 @@ def run_single_step(cfg, fn_name):
 def arion_cleanup(cfg):
     # in case a previous run failed
     # TODO can Docker or Arion do this rm step more safely?
-    subprocess.check_call(['arion', 'down'])
+    env = environ.copy()
+    env['PROJECT_CONFIG'] = cfg.project_config
+    subprocess.check_call(['arion', 'down'], env=env)
     data_dir = './data'
     if exists(data_dir):
         subprocess.check_call(['sudo', 'rm', '-rf', data_dir])
@@ -80,12 +84,16 @@ def arion_cleanup(cfg):
 def setup(cfg):
     # arion also loads cfg separately via Nix
     arion_cleanup(cfg)
-    subprocess.check_call(['arion', '--no-ansi', 'up', '-d'])
+    env = environ.copy()
+    env['PROJECT_CONFIG'] = cfg.project_config
+    subprocess.check_call(['arion', '--no-ansi', 'up', '-d'], env=env)
     print(flush=True)
 
 @explain_step
 def teardown(cfg):
-    subprocess.check_call(['arion', 'down'])
+    env = environ.copy()
+    env['PROJECT_CONFIG'] = cfg.project_config
+    subprocess.check_call(['arion', 'down'], env=env)
 
 
 ### election ###
@@ -292,6 +300,13 @@ def election(cfg):
 
 @click.command("election")
 @click.option(
+    "--project-config",
+    help="Path to the JSON config file.",
+    type=click.Path(exists=True, dir_okay=False, file_okay=True),
+    default='election.json',
+    show_default=True
+)
+@click.option(
     "--pause-to-explain",
     help="Pauses the script while you type comments before each important step.",
     type=click.BOOL,
@@ -306,12 +321,13 @@ def election(cfg):
     # TODO is removing prompt how you make it optional?
 )
 def ElectionCommand(
+    project_config: str,
     pause_to_explain: bool,
     single_step: Optional[str]
 ) -> None:
     """Run an election with some options in a JSON config file.
     """
-    cfg = parse_config('election.json', pause_to_explain)
+    cfg = parse_config(project_config, pause_to_explain)
     if single_step:
         run_single_step(cfg, single_step)
     else:
