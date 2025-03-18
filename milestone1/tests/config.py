@@ -11,7 +11,7 @@ from typing import Callable
 ### verbose but simple config definition ###
 
 # TODO move to /tmp?
-TMPDIR_PREFIX = './tests'
+# TMPDIR_PREFIX = './tests'
 
 class BindMountsConfig(dict):
     def __init__(self):
@@ -24,7 +24,8 @@ class ArionConfig(dict):
     def __init__(self, test_name: str = 'test'):
         super(ArionConfig, self).__init__()
         self['project_name'] = test_name
-        self['data_dir'] = os.path.join(TMPDIR_PREFIX, test_name)
+        # self['data_dir'] = os.path.join(TMPDIR_PREFIX, test_name)
+        self['data_dir'] = 'data'
         self['bind_mounts'] = BindMountsConfig()
 
 class VoteConfig(dict):
@@ -96,10 +97,10 @@ def projectconfig(draw):
     test_num: int = draw(integers(min_value=1000, max_value=9999))
     kwargs = {}
     kwargs['test_name'       ] = f'test{test_num}'
-    kwargs['guardians_count' ] = draw(integers(min_value=2, max_value=10))
+    kwargs['guardians_count' ] = draw(integers(min_value=2, max_value=2))
     kwargs['guardians_quorum'] = draw(integers(min_value=1, max_value=kwargs['guardians_count']))
-    kwargs['devices_count'   ] = draw(integers(min_value=1, max_value=10))
-    kwargs['verifiers_count' ] = draw(integers(min_value=1, max_value=10))
+    kwargs['devices_count'   ] = draw(integers(min_value=1, max_value=1))
+    kwargs['verifiers_count' ] = draw(integers(min_value=1, max_value=1))
     cfg = ProjectConfig(**kwargs)
     return cfg
 

@@ -11,7 +11,11 @@ Then once that works I'll start making `votes` more flexible too.
 
 ```bash
 $ nix develop
-$ ./test.py
+
+# haven't figured out how to create data dir with non-root permissions,
+# so it only works as root for now
+$ sudo ./test.py
+
 ============================= test session starts ==============================
 platform linux -- Python 3.12.8, pytest-8.3.3, pluggy-1.5.0
 rootdir: /home/jefdaj/myrepos/electionguard-cardano/milestone1/tests

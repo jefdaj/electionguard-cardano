@@ -8,6 +8,7 @@ let
   {
 
     service.image = "ghcr.io/jefdaj/electionguard-python:1.4.0";
+    # service.image = "b6d8c3baa286";
 
     service.volumes = [
       "${scripts_dir}:/scripts/"
@@ -17,6 +18,11 @@ let
       # TODO is it confusing that they're each mounted to the same path?
       "${private_dir}/${mode}_${builtins.toString n}:/data/private"
     ];
+
+    # TODO what's a proper default UID?
+    # TODO why does this work with public_dir but not private_dir?
+    # This is needed to prevent giving the data dir root permissions
+    # service.user = "1000:100";
 
     # TODO what's the proper way to keep an arion container running?
     service.command = [ "sh" "-c" ''

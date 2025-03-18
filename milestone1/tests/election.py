@@ -7,17 +7,25 @@ import subprocess
 
 from click_default_group import DefaultGroup
 from dotmap import DotMap
-from os import makedirs, environ
+from os import environ
 from os.path import join, exists, realpath
 from typing import Optional
 
 
-# see electionguard-python/src/electionguard/logs.py for electionguard's separate LOG
-logging.basicConfig(level=logging.DEBUG, format='%(message)s\n')
-LOG = logging.getLogger('electionguard-cardano')
-
-
 ### utilities ###
+
+def init_log(logfile, level=logging.WARNING):
+    log = logging.getLogger(__name__)
+    log.setLevel(level)
+    if logfile is None:
+        handler = logging.StreamHandler(sys.stdout)
+    else:
+        handler = logging.FileHandler(logfile)
+    # handler.setLevel(logging.WARNING)
+    formatter = logging.Formatter('%(message)s')
+    handler.setFormatter(formatter)
+    log.addHandler(handler)
+    return log
 
 def parse_config(cfg_path, pause_to_explain):
     cfg_path = realpath(cfg_path)
@@ -32,76 +40,77 @@ def parse_config(cfg_path, pause_to_explain):
     ecfg.guardians.ids = [f"guardian_{i}" for i in ecfg.guardians.sequence_order]
     return cfg
 
-def run_in_container(cfg, script_name, container_role, container_number, args, **kwargs):
+def run_in_container(cfg, log, script_name, container_role, container_number, args, **kwargs):
     container_name = cfg.arion.project_name + "-" + container_role + str(container_number) + "-1"
     script_path = join(cfg.arion.bind_mounts.scripts, script_name)
     # TODO python don't write bytecode (here or in the image?)
     args = ["docker", "exec", container_name,
             "poetry", "run", script_path] + args
     kwargs.update(stdout=subprocess.PIPE, text=True)
-    LOG.info(' '.join(args))
+    log.info(' '.join(args))
     proc = subprocess.Popen(args, **kwargs)
     (stdout, stderr) = proc.communicate()
     stdout = stdout.strip()
     if len(stdout) > 0:
-        print(stdout, flush=True) # TODO log?
+        log.info(stdout, flush=True) # TODO log?
     if stderr is not None:
         stderr = stderr.strip()
         if len(stderr) > 0:
-            print(stderr, flush=True) # TODO log?
+            log.info(stderr, flush=True) # TODO log?
 
 def explain_step(fn):
-    def decorated_fn(cfg, *args, **kwargs):
+    def decorated_fn(cfg, log, *args, **kwargs):
         header = f'### {fn.__name__} ###'
-        print(header, flush=True)
+        log.info(header)
         if cfg.pause_to_explain:
-            print('#  ', flush=True)
+            log.info('#  ')
             while True:
                 if len(input('#  ').strip()) == 0:
-                    print('#' * len(header) + '\n', flush=True)
+                    log.info('#' * len(header) + '\n')
                     break
-        print(flush=True)
-        result = fn(cfg, *args, **kwargs)
-        print(flush=True)
+        log.info('')
+        result = fn(cfg, log, *args, **kwargs)
+        log.info('')
         return result
     return decorated_fn
 
-def run_single_step(cfg, fn_name):
+def run_single_step(cfg, log, fn_name):
     fn = globals()[fn_name]
     fn(cfg)
 
-def arion_cleanup(cfg):
-    # in case a previous run failed
-    # TODO can Docker or Arion do this rm step more safely?
-    env = environ.copy()
-    env['PROJECT_CONFIG'] = cfg.project_config
-    subprocess.check_call(['arion', 'down'], env=env)
-    data_dir = './data'
-    if exists(data_dir):
-        subprocess.check_call(['sudo', 'rm', '-rf', data_dir])
+# def arion_cleanup(cfg):
+#     # in case a previous run failed
+#     # TODO can Docker or Arion do this rm step more safely?
+#     env = environ.copy()
+#     env['PROJECT_CONFIG'] = cfg.project_config
+#     subprocess.check_call(['arion', 'down'], env=env)
+#     data_dir = './data'
+#     if exists(data_dir):
+#         subprocess.check_call(['sudo', 'rm', '-rf', data_dir])
 
 @explain_step
-def setup(cfg):
+def setup(cfg, log):
     # arion also loads cfg separately via Nix
-    arion_cleanup(cfg)
+    # arion_cleanup(cfg)
     env = environ.copy()
     env['PROJECT_CONFIG'] = cfg.project_config
     subprocess.check_call(['arion', '--no-ansi', 'up', '-d'], env=env)
-    print(flush=True)
+    log.info('')
 
 @explain_step
-def teardown(cfg):
+def teardown(cfg, log):
     env = environ.copy()
     env['PROJECT_CONFIG'] = cfg.project_config
+    # TODO capture stdout/stderr to log
     subprocess.check_call(['arion', 'down'], env=env)
 
 
 ### election ###
 
 @explain_step
-def build_manifest(cfg):
+def build_manifest(cfg, log):
     run_in_container(
-        cfg, "admin.py", "admin", 1,
+        cfg, log, "admin.py", "admin", 1,
         [
             "build-manifest",
             "--public-dir", cfg.arion.bind_mounts.public,
@@ -110,9 +119,9 @@ def build_manifest(cfg):
     )
 
 @explain_step
-def announce_key_ceremony(cfg):
+def announce_key_ceremony(cfg, log):
     run_in_container(
-        cfg, "admin.py", "admin", 1,
+        cfg, log, "admin.py", "admin", 1,
         [
             "announce-key-ceremony",
             "--public-dir", cfg.arion.bind_mounts.public,
@@ -121,11 +130,11 @@ def announce_key_ceremony(cfg):
         ]
     )
 
-def key_ceremony_round(cfg, ceremony_round):
+def key_ceremony_round(cfg, log, ceremony_round):
     for guardian_id, sequence_order in \
             zip(cfg.election.guardians.ids, cfg.election.guardians.sequence_order):
         run_in_container(
-            cfg, "guardian.py", "guardian", sequence_order,
+            cfg, log, "guardian.py", "guardian", sequence_order,
             [
                 "key-ceremony",
                 "--public-dir", cfg.arion.bind_mounts.public,
@@ -137,22 +146,22 @@ def key_ceremony_round(cfg, ceremony_round):
         )
 
 @explain_step
-def key_ceremony_round1(cfg):
-    key_ceremony_round(cfg, 1)
+def key_ceremony_round1(cfg, log):
+    key_ceremony_round(cfg, log, 1)
 
 
 @explain_step
-def key_ceremony_round2(cfg):
-    key_ceremony_round(cfg, 2)
+def key_ceremony_round2(cfg, log):
+    key_ceremony_round(cfg, log, 2)
 
 @explain_step
-def key_ceremony_round3(cfg):
-    key_ceremony_round(cfg, 3)
+def key_ceremony_round3(cfg, log):
+    key_ceremony_round(cfg, log, 3)
 
 @explain_step
-def publish_joint_key(cfg):
+def publish_joint_key(cfg, log):
     run_in_container(
-        cfg, "admin.py", "admin", 1,
+        cfg, log, "admin.py", "admin", 1,
         [
             "publish-joint-key",
             "--public-dir", cfg.arion.bind_mounts.public,
@@ -160,18 +169,18 @@ def publish_joint_key(cfg):
     )
 
 @explain_step
-def build_election(cfg):
+def build_election(cfg, log):
     run_in_container(
-        cfg, "admin.py", "admin", 1,
+        cfg, log, "admin.py", "admin", 1,
         [
             "build-election",
             "--public-dir", cfg.arion.bind_mounts.public,
         ]
     )
 
-def add_device(cfg, device_number):
+def add_device(cfg, log, device_number):
     run_in_container(
-        cfg, "device.py", "device", device_number,
+        cfg, log, "device.py", "device", device_number,
         [
             "add-device",
             "--public-dir", cfg.arion.bind_mounts.public,
@@ -180,13 +189,13 @@ def add_device(cfg, device_number):
     )
 
 @explain_step
-def add_devices(cfg):
+def add_devices(cfg, log):
     for n in range(1, cfg.election.devices.count + 1):
-        add_device(cfg, n)
+        add_device(cfg, log, n)
 
-def vote(cfg, device_number, candidate, spoil=False):
+def vote(cfg, log, device_number, candidate, spoil=False):
     run_in_container(
-        cfg, "device.py", "device", device_number,
+        cfg, log, "device.py", "device", device_number,
         [
             "vote",
             "--public-dir", cfg.arion.bind_mounts.public,
@@ -198,7 +207,7 @@ def vote(cfg, device_number, candidate, spoil=False):
     )
 
 @explain_step
-def vote_all(cfg):
+def vote_all(cfg, log):
     votes_so_far = 0
 
     # remember a "candidate" might also be an answer to a referendum question!
@@ -208,18 +217,18 @@ def vote_all(cfg):
         for _ in range(n_votes.spoil):
             # hack to iterate over devices, just to show there can be more than one
             device_number = votes_so_far % cfg.election.devices.count + 1
-            vote(cfg, device_number, candidate, spoil=True)
+            vote(cfg, log, device_number, candidate, spoil=True)
             votes_so_far += 1
 
         for _ in range(n_votes.cast):
             device_number = votes_so_far % cfg.election.devices.count + 1
-            vote(cfg, device_number, candidate)
+            vote(cfg, log, device_number, candidate)
             votes_so_far += 1
 
 @explain_step
-def tally(cfg):
+def tally(cfg, log):
     run_in_container(
-        cfg, "admin.py", "admin", 1,
+        cfg, log, "admin.py", "admin", 1,
         [
             "tally",
             "--public-dir", cfg.arion.bind_mounts.public,
@@ -227,11 +236,11 @@ def tally(cfg):
     )
 
 @explain_step
-def decrypt_shares(cfg):
+def decrypt_shares(cfg, log):
     for guardian_id, sequence_order in \
             zip(cfg.election.guardians.ids, cfg.election.guardians.sequence_order):
         run_in_container(
-            cfg, "guardian.py", "guardian", sequence_order,
+            cfg, log, "guardian.py", "guardian", sequence_order,
             [
                 "decrypt-shares",
                 "--public-dir", cfg.arion.bind_mounts.public,
@@ -241,9 +250,9 @@ def decrypt_shares(cfg):
         )
 
 @explain_step
-def decrypt_results(cfg):
+def decrypt_results(cfg, log):
     run_in_container(
-        cfg, "admin.py", "admin", 1,
+        cfg, log, "admin.py", "admin", 1,
         [
             "decrypt-results",
             "--public-dir", cfg.arion.bind_mounts.public,
@@ -261,7 +270,7 @@ def decrypt_results(cfg):
 #     )
 
 @explain_step
-def verify(cfg):
+def verify(cfg, log):
     verifiers = sorted(
         [('verifier', n) for n in range(1, cfg.election.verifiers.count+1)] + \
         [('guardian', n) for n in range(1, cfg.election.guardians.count+1)] + \
@@ -271,7 +280,7 @@ def verify(cfg):
         verifier_id = f'{container_role}_{container_number}'
         logfile = join(cfg.arion.bind_mounts.private, 'verify.log')
         run_in_container(
-            cfg, "verifier.py", container_role, container_number,
+            cfg, log, "verifier.py", container_role, container_number,
             [
                 "verify",
                 "--public-dir", cfg.arion.bind_mounts.public,
@@ -280,20 +289,30 @@ def verify(cfg):
             ]
         )
 
-def election(cfg):
-    build_manifest(cfg)
-    announce_key_ceremony(cfg)
-    key_ceremony_round1(cfg)
-    key_ceremony_round2(cfg)
-    key_ceremony_round3(cfg)
-    publish_joint_key(cfg)
-    build_election(cfg)
-    add_devices(cfg)
-    vote_all(cfg)
-    tally(cfg)
-    decrypt_shares(cfg)
-    decrypt_results(cfg)
-    verify(cfg)
+def election(cfg, log):
+    build_manifest(cfg, log)
+    announce_key_ceremony(cfg, log)
+    key_ceremony_round1(cfg, log)
+    key_ceremony_round2(cfg, log)
+    key_ceremony_round3(cfg, log)
+    publish_joint_key(cfg, log)
+    build_election(cfg, log)
+    add_devices(cfg, log)
+    vote_all(cfg, log)
+    tally(cfg, log)
+    decrypt_shares(cfg, log)
+    decrypt_results(cfg, log)
+    verify(cfg, log)
+
+def main(cfg, log):
+    try:
+        setup(cfg, log)
+        election(cfg, log)
+    except Exception as e:
+        log.error(e)
+        log.error('Election failed :(')
+    finally:
+        teardown(cfg, log)
 
 
 ### cli ###
@@ -320,25 +339,26 @@ def election(cfg):
     type=click.STRING,
     # TODO is removing prompt how you make it optional?
 )
+@click.option(
+    "--logfile",
+    prompt="Logfile (default: stdout)",
+    help="Where to log printed messages",
+    type=click.STRING,
+)
 def ElectionCommand(
     project_config: str,
     pause_to_explain: bool,
-    single_step: Optional[str]
+    single_step: Optional[str],
+    logfile: Optional[str],
 ) -> None:
     """Run an election with some options in a JSON config file.
     """
+    log = init_log(logfile, logging.INFO)
     cfg = parse_config(project_config, pause_to_explain)
     if single_step:
-        run_single_step(cfg, single_step)
+        run_single_step(cfg, log, single_step)
     else:
-        try:
-            setup(cfg)
-            election(cfg)
-        except Exception as e:
-            print(e, flush=True)
-            LOG.error('Election failed :(')
-        finally:
-            teardown(cfg)
+        main(cfg, log)
 
 @click.group(cls=DefaultGroup, default='election', default_if_no_args=True)
 def cli() -> None:
