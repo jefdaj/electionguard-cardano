@@ -9,7 +9,6 @@ import string
 import subprocess
 import tempfile
 import time
-import threading
 
 from hypothesis import given, settings, seed
 
@@ -28,10 +27,6 @@ def hash_config(cfg: ProjectConfig, truncate=99) -> str:
 
 ElectionTestDir = str
 
-# Prevent running more than one election at once, just in case of threading issues.
-# TODO would multithreading speed it up significantly?
-ELECTION_LOCK = threading.Lock()
-
 def run_test_election(cfg: ProjectConfig) -> ElectionTestDir:
 
     # use our own custom tmpdir instead of TemporaryDirectory
@@ -39,45 +34,47 @@ def run_test_election(cfg: ProjectConfig) -> ElectionTestDir:
     test_name = f'test{h5}'
     tmpdir = os.path.join(TESTS_DIR, test_name)
 
-    # experimental test strategy: only do the long election operation once,
-    # then re-use the tmpdir for multiple assertions
-    # lockfile = os.path.join(tmpdir, 'lock')
-    with ELECTION_LOCK:
-        if os.path.exists(tmpdir):
-            # if another instance is running, wait for it to finish
-            # while os.path.exists(lockfile):
-            #     time.sleep(1)
-            # TODO check for error here
-            return
+    # This should prevent more than one run_test_election from running with the
+    # same config at the same time. Not sure whether that happens in practice,
+    # but better to be safe than sorry when using pytest -n<threads>, right?
+    # TODO why is it making only one election run at a time though?
+    lockfile = os.path.join(tmpdir, 'election.lock')
 
-        try:
-            os.makedirs(tmpdir)
-            # lock = open(lockfile, 'w')
+    if os.path.exists(tmpdir):
+        # if another instance is running, wait for it to finish
+        while os.path.exists(lockfile):
+            time.sleep(1)
+        return
 
-            data_dir = os.path.join(tmpdir, cfg['arion']['data_dir'])
-            logfile  = os.path.join(tmpdir, 'election.log')
+    try:
+        os.makedirs(tmpdir)
+        lock = open(lockfile, 'w')
 
-            os.makedirs(data_dir, exist_ok=False) # TODO remove?
+        data_dir = os.path.join(tmpdir, cfg['arion']['data_dir'])
+        logfile  = os.path.join(tmpdir, 'election.log')
 
-            # TODO leave data_dir as 'data' and resolve inside election.py?
-            cfg['arion']['data_dir'] = data_dir
-            cfg['arion']['project_name'] = test_name
+        os.makedirs(data_dir, exist_ok=False) # TODO remove?
 
-            cfg_path = os.path.join(tmpdir, 'election.json') # TODO rename config?
-            with open(cfg_path, 'w') as f:
-                json.dump(cfg, f)
+        # TODO leave data_dir as 'data' and resolve inside election.py?
+        cfg['arion']['data_dir'] = data_dir
+        cfg['arion']['project_name'] = test_name
 
-            cfg = parse_config(cfg_path, pause_to_explain=False)
-            log = init_log(cfg, logfile, logging.INFO)
-            main(cfg, log)
+        cfg_path = os.path.join(tmpdir, 'election.json') # TODO rename config?
+        with open(cfg_path, 'w') as f:
+            json.dump(cfg, f)
 
-        except:
-            # TODO rm here? or do we want to keep + inspect the error files?
-            # shutil.rmtree(tmpdir, ignore_errors=True)
-            raise
-        # finally:
-            # lock.close()
-            # os.remove(lockfile)
+        cfg = parse_config(cfg_path, pause_to_explain=False)
+        log = init_log(cfg, logfile, logging.INFO)
+        main(cfg, log)
+
+    except:
+        # TODO rm here? or do we want to keep + inspect the error files?
+        # shutil.rmtree(tmpdir, ignore_errors=True)
+        raise
+
+    finally:
+        lock.close()
+        os.remove(lockfile)
 
     return tmpdir
 
@@ -97,8 +94,20 @@ def with_prerun_election(fn_from_testdir):
         return fn_from_testdir(testdir, *args, **kwargs)
     return fn_from_cfg
 
+def get_random_seed():
+    # random seed can be set per dev session, which offers a good
+    # balance between caching and making sure different values work
+    try:
+        random_seed: int = int(os.environ['TEST_RANDOM_SEED'])
+    except KeyError:
+        random_seed = 1234
+    return random_seed
+
 # A somewhat mind bending hack to make hypothesis reuse cached test elections.
-# This way we can define a lot of rapid tests that make individual assertions about the results.
+# This way we can define a lot of rapid tests that make individual assertions
+# about the results. It's kind of like a hybrid between givens and pytest
+# fixtures: we generate the election configs randomly, but then reuse the same
+# random values across lots of tests.
 #
 # Notes:
 # - with_prerun_election is a separate idea that was also convenient to tack on here
@@ -106,16 +115,8 @@ def with_prerun_election(fn_from_testdir):
 #
 # TODO is this a partial solution to https://github.com/HypothesisWorks/hypothesis/issues/114
 def given_test_election(max_examples=3):
-
-    # random seed can be set per dev session, which offers a good
-    # balance between caching and making sure different values work
-    try:
-        random_seed: int = int(os.environ['TEST_RANDOM_SEED'])
-    except KeyError:
-        random_seed = 1234
-
     return yad([
-        seed(random_seed),
+        seed(get_random_seed()),
         settings(max_examples=max_examples, deadline=None),
         given(cfg=projectconfig()),
         with_prerun_election,
