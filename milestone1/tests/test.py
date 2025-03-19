@@ -8,6 +8,7 @@ import string
 import logging
 import tempfile
 import hashlib
+import time
 
 from hypothesis import given, settings
 
@@ -31,11 +32,17 @@ def run_test_election(cfg: ProjectConfig):
 
     # experimental test strategy: only do the long election operation once,
     # then re-use the tmpdir for multiple assertions
+    lockfile = os.path.join(tmpdir, 'lock')
     if os.path.exists(tmpdir):
+        # if another instance is running, wait for it to finish
+        while os.path.exists(lockfile):
+            time.sleep(1)
+        # TODO check for error here
         return
 
     try:
         os.makedirs(tmpdir)
+        lock = open(lockfile, 'w')
 
         data_dir = os.path.join(tmpdir, cfg['arion']['data_dir'])
         logfile  = os.path.join(tmpdir, 'election.log')
@@ -56,6 +63,10 @@ def run_test_election(cfg: ProjectConfig):
     except:
         shutil.rmtree(tmpdir, ignore_errors=True)
         raise
+    finally:
+        lock.close()
+        os.remove(lockfile)
+
 
 # trivial first assertion to make sure run_test_election succeeds
 @given(cfg=projectconfig())
@@ -64,6 +75,12 @@ def test_run_election(cfg: ProjectConfig):
     run_test_election(cfg)
     assert True
 
+# trivial first assertion to make sure run_test_election succeeds
+@given(cfg=projectconfig())
+@settings(max_examples=3, deadline=None)
+def test_run_election_2(cfg: ProjectConfig):
+    run_test_election(cfg)
+    assert True
 
 # TODO clean this up
 if __name__ == '__main__':

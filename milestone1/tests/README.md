@@ -30,6 +30,8 @@ config.py .                                                              [100%]
 
 ## TODO
 
+- [ ] Generate some elections as currently done first, then sample from them in other tests?
+- [ ] Move `test.py` code -> `election.py`? or `conftest.py`?
 - [ ] Re-learn some Hypothesis basics
 - [ ] Set up the "generate config, run election, assert about results" loop
 - [x] Have `verifier.py` send output to a log rather than printing if `--output` given

@@ -94,7 +94,11 @@ class ProjectConfig(dict):
 
 @composite
 def projectconfig(draw):
+
+    # TODO is this a reasonable way to do it?
+    # it's mainly intended to keep two tests  with the same arion project_name going at once
     test_num: int = draw(integers(min_value=1000, max_value=9999))
+
     kwargs = {}
     kwargs['test_name'       ] = f'test{test_num}'
     kwargs['guardians_count' ] = draw(integers(min_value=2, max_value=10))
