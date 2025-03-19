@@ -78,15 +78,6 @@ def run_single_step(cfg, log, fn_name):
     fn = globals()[fn_name]
     fn(cfg)
 
-def arion_cleanup(cfg, log):
-    # in case a previous run failed
-    # TODO remove?
-    run_process(cfg, log, ['arion', 'down'])
-    # TODO can Docker or Arion do this rm step more safely?
-    # data_dir = './data'
-    # if exists(data_dir):
-    #     subprocess.check_call(['sudo', 'rm', '-rf', data_dir])
-
 def run_process(cfg, log, args):
     env = environ.copy()
     env['PROJECT_CONFIG'] = cfg.project_config
@@ -101,6 +92,15 @@ def run_process(cfg, log, args):
     log.info(msg)
     if proc.returncode != 0:
         raise Exception(f'process returned {proc.returncode}')
+
+def arion_cleanup(cfg, log):
+    # in case a previous run failed
+    # TODO remove?
+    run_process(cfg, log, ['arion', 'down'])
+    # TODO can Docker or Arion do this rm step more safely?
+    # data_dir = './data'
+    # if exists(data_dir):
+    #     subprocess.check_call(['sudo', 'rm', '-rf', data_dir])
 
 @explain_step
 def setup(cfg, log):

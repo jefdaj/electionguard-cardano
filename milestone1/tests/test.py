@@ -7,6 +7,7 @@ import subprocess
 import string
 import logging
 import tempfile
+import hashlib
 
 from hypothesis import given, settings
 
@@ -15,10 +16,18 @@ from election import main, init_log, parse_config
 
 TESTS_DIR = './tests'
 
+def hash_config(cfg: ProjectConfig, truncate=99) -> str:
+    "Ensures tmpdirs are not being reused after their configs change"
+    s = str(cfg).encode('utf-8')
+    d = hashlib.md5(s).digest()
+    return d.hex()[:truncate]
+
 def run_test_election(cfg: ProjectConfig):
 
-    # use our own custom tmpdir isntead of TemporaryDirectory
-    tmpdir = os.path.join(TESTS_DIR, cfg['arion']['project_name'])
+    # use our own custom tmpdir instead of TemporaryDirectory
+    h5 = hash_config(cfg, truncate=5)
+    test_name = f'test_{h5}'
+    tmpdir = os.path.join(TESTS_DIR, test_name)
 
     # experimental test strategy: only do the long election operation once,
     # then re-use the tmpdir for multiple assertions
