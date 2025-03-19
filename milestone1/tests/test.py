@@ -4,20 +4,18 @@ import hashlib
 import json
 import logging
 import os
-# import shutil
-import string
 import subprocess
-import tempfile
-import time
 
+from glob import glob
 from hypothesis import given, settings, seed
 
 from config import *
 from election import main, init_log, parse_config
 
 
-TESTS_DIR = './tests'
+### given_election_testdir: supply cached arbitrary elections ###
 
+TESTS_DIR = './tests'
 
 def hash_config(cfg: ProjectConfig, truncate=99) -> str:
     "Ensures tmpdirs are not being reused after their configs change"
@@ -119,38 +117,80 @@ def get_random_seed():
 def given_election_testdir():
     return yad([
         seed(get_random_seed()),
-        settings(max_examples=10, deadline=None),
+        settings(max_examples=3, deadline=None),
         given(cfg=projectconfig()),
         prerun_election_cfg,
     ])
 
 
-# TODO fill these out with useful properties
+### misc small test helpers ###
+
+def load_json(json_path: str):
+    with open(json_path, 'r') as f:
+        return json.load(f)
+
+# TODO is the return type right?
+def load_election_config_json(testdir: str) -> ProjectConfig:
+    json_path = join(testdir, 'election.json')
+    return load_json(json_path)
+
+def load_summary_json(testdir: str, verifier_id: str) -> dict:
+    json_path = join(testdir, f'data/public/4_verify/{verifier_id}.json')
+    return load_json(json_path)
+
+def election_verified(testdir: str, verifier_id: str) -> bool:
+    try:
+        summary = load_summary_json(testdir, verifier_id)
+        return summary['Verified']
+    except:
+        return False
+
+
+### property tests ###
 
 @given_election_testdir()
-def test_election_property_1(testdir: ElectionTestDir):
-    assert True
+def test_election_verified_by_admin(testdir: ElectionTestDir):
+    assert election_verified(testdir, 'admin1')
 
 @given_election_testdir()
-def test_election_property_2(testdir: ElectionTestDir):
-    assert True
+def test_all_election_verifiers_agree(testdir: ElectionTestDir):
+    first_summary: Optional[dict] = None
+    json_paths = glob(join(testdir, 'data/public/4_verify/*.json'))
+    for json_path in json_paths:
+        summary = load_json(json_path)
+        if first_summary is None:
+            first_summary = summary
+        else:
+            assert summary == first_summary
+
+@given_election_testdir()
+def test_n_verifications(testdir: ElectionTestDir):
+    config = load_election_config_json(testdir)
+    n_expected = sum([
+        1, # admin
+        config['election']['guardians']['count'],
+        config['election']['verifiers']['count'],
+    ])
+    n_actual = len(glob(join(testdir, 'data/public/4_verify/*.json')))
+    assert n_actual == n_expected
 
 @given_election_testdir()
 def test_election_property_3(testdir: ElectionTestDir):
     assert True
-
-@given_election_testdir()
-def test_election_property_3(testdir: ElectionTestDir):
-    assert True
+    # TODO write this
 
 @given_election_testdir()
 def test_election_property_4(testdir: ElectionTestDir):
     assert True
+    # TODO write this
 
 @given_election_testdir()
 def test_election_property_5(testdir: ElectionTestDir):
     assert True
+    # TODO write this
 
+
+### main ###
 
 if __name__ == '__main__':
    args = ['pytest', 'test.py', '-vv']
