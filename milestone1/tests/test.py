@@ -88,7 +88,7 @@ def yad(decorators):
 
 # Convert a test that takes a cfg to one which takes a pre-run election testdir
 # generated from that cfg.
-def with_prerun_election(fn_from_testdir):
+def prerun_election_cfg(fn_from_testdir):
     def fn_from_cfg(cfg: ProjectConfig, *args, **kwargs):
         testdir: ElectionTestDir = run_test_election(cfg)
         return fn_from_testdir(testdir, *args, **kwargs)
@@ -110,42 +110,44 @@ def get_random_seed():
 # random values across lots of tests.
 #
 # Notes:
-# - with_prerun_election is a separate idea that was also convenient to tack on here
+# - prerun_election_cfg is a separate idea that was also convenient to tack on here
 # - max_examples really is a max; hypothesis will often run fewer
 #
 # TODO is this a partial solution to https://github.com/HypothesisWorks/hypothesis/issues/114
-def given_test_election(max_examples=3):
+# TODO top level CLI arg for max_examples here?
+# TODO if no args needed, remove this def lambda
+def given_election_testdir():
     return yad([
         seed(get_random_seed()),
-        settings(max_examples=max_examples, deadline=None),
+        settings(max_examples=10, deadline=None),
         given(cfg=projectconfig()),
-        with_prerun_election,
+        prerun_election_cfg,
     ])
 
 
 # TODO fill these out with useful properties
 
-@given_test_election()
+@given_election_testdir()
 def test_election_property_1(testdir: ElectionTestDir):
     assert True
 
-@given_test_election()
+@given_election_testdir()
 def test_election_property_2(testdir: ElectionTestDir):
     assert True
 
-@given_test_election()
+@given_election_testdir()
 def test_election_property_3(testdir: ElectionTestDir):
     assert True
 
-@given_test_election(max_examples=7)
+@given_election_testdir()
 def test_election_property_3(testdir: ElectionTestDir):
     assert True
 
-@given_test_election(max_examples=2)
+@given_election_testdir()
 def test_election_property_4(testdir: ElectionTestDir):
     assert True
 
-@given_test_election(max_examples=5)
+@given_election_testdir()
 def test_election_property_5(testdir: ElectionTestDir):
     assert True
 
