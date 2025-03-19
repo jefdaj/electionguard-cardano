@@ -14,6 +14,7 @@ $ nix develop
 
 # haven't figured out how to create data dir with non-root permissions,
 # so it only works as root for now
+$ export TEST_RANDOM_SEED=1234
 $ sudo ./test.py
 
 ============================= test session starts ==============================

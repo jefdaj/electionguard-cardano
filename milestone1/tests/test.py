@@ -9,6 +9,7 @@ import string
 import subprocess
 import tempfile
 import time
+import threading
 
 from hypothesis import given, settings, seed
 
@@ -27,6 +28,10 @@ def hash_config(cfg: ProjectConfig, truncate=99) -> str:
 
 ElectionTestDir = str
 
+# Prevent running more than one election at once, just in case of threading issues.
+# TODO would multithreading speed it up significantly?
+ELECTION_LOCK = threading.Lock()
+
 def run_test_election(cfg: ProjectConfig) -> ElectionTestDir:
 
     # use our own custom tmpdir instead of TemporaryDirectory
@@ -36,40 +41,41 @@ def run_test_election(cfg: ProjectConfig) -> ElectionTestDir:
 
     # experimental test strategy: only do the long election operation once,
     # then re-use the tmpdir for multiple assertions
-    lockfile = os.path.join(tmpdir, 'lock')
-    if os.path.exists(tmpdir):
-        # if another instance is running, wait for it to finish
-        while os.path.exists(lockfile):
-            time.sleep(1)
-        # TODO check for error here
-        return
+    # lockfile = os.path.join(tmpdir, 'lock')
+    with ELECTION_LOCK:
+        if os.path.exists(tmpdir):
+            # if another instance is running, wait for it to finish
+            # while os.path.exists(lockfile):
+            #     time.sleep(1)
+            # TODO check for error here
+            return
 
-    try:
-        os.makedirs(tmpdir)
-        lock = open(lockfile, 'w')
+        try:
+            os.makedirs(tmpdir)
+            # lock = open(lockfile, 'w')
 
-        data_dir = os.path.join(tmpdir, cfg['arion']['data_dir'])
-        logfile  = os.path.join(tmpdir, 'election.log')
+            data_dir = os.path.join(tmpdir, cfg['arion']['data_dir'])
+            logfile  = os.path.join(tmpdir, 'election.log')
 
-        os.makedirs(data_dir, exist_ok=False) # TODO remove?
+            os.makedirs(data_dir, exist_ok=False) # TODO remove?
 
-        # TODO try leaving it as 'data' and finding the actual full path inside election.py from that
-        cfg['arion']['data_dir'] = data_dir
+            # TODO try leaving it as 'data' and finding the actual full path inside election.py from that
+            cfg['arion']['data_dir'] = data_dir
 
-        cfg_path = os.path.join(tmpdir, 'election.json') # TODO rename config?
-        with open(cfg_path, 'w') as f:
-            json.dump(cfg, f)
+            cfg_path = os.path.join(tmpdir, 'election.json') # TODO rename config?
+            with open(cfg_path, 'w') as f:
+                json.dump(cfg, f)
 
-        cfg = parse_config(cfg_path, pause_to_explain=False)
-        log = init_log(logfile, logging.INFO)
-        main(cfg, log)
+            cfg = parse_config(cfg_path, pause_to_explain=False)
+            log = init_log(logfile, logging.INFO)
+            main(cfg, log)
 
-    except:
-        shutil.rmtree(tmpdir, ignore_errors=True)
-        raise
-    finally:
-        lock.close()
-        os.remove(lockfile)
+        except:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+            raise
+        # finally:
+            # lock.close()
+            # os.remove(lockfile)
 
     return tmpdir
 
@@ -98,8 +104,16 @@ def with_prerun_election(fn_from_testdir):
 #
 # TODO is this a partial solution to https://github.com/HypothesisWorks/hypothesis/issues/114
 def given_cached_election(max_examples=3):
+
+    # random seed can be set per dev session, which offers a good
+    # balance between caching and making sure different values work
+    try:
+        random_seed: int = int(os.environ['TEST_RANDOM_SEED'])
+    except KeyError:
+        random_seed = 1234
+
     return yad([
-        seed(0),
+        seed(random_seed),
         settings(max_examples=max_examples, deadline=None),
         given(cfg=projectconfig()),
         with_prerun_election,

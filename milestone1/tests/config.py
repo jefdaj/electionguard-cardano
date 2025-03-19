@@ -21,9 +21,9 @@ class BindMountsConfig(dict):
         self["private"] = "/data/private"
 
 class ArionConfig(dict):
-    def __init__(self, test_name: str = 'test'):
+    def __init__(self):
         super(ArionConfig, self).__init__()
-        self['project_name'] = test_name
+        self['project_name'] = 'test'
         # self['data_dir'] = os.path.join(TMPDIR_PREFIX, test_name)
         self['data_dir'] = 'data'
         self['bind_mounts'] = BindMountsConfig()
@@ -75,9 +75,9 @@ class ElectionConfig(dict):
         self['question' ] = 'Are pineapples cool?'
 
 class ProjectConfig(dict):
-    def __init__(self, *args, test_name='test', **kwargs):
+    def __init__(self, *args, **kwargs):
         super(ProjectConfig, self).__init__()
-        self['arion'   ] = ArionConfig(test_name)
+        self['arion'   ] = ArionConfig()
         self['election'] = ElectionConfig(*args, **kwargs)
         self['votes'   ] = VotesConfig()
 
@@ -100,7 +100,7 @@ def projectconfig(draw):
     test_num: int = draw(integers(min_value=1000, max_value=9999))
 
     kwargs = {}
-    kwargs['test_name'       ] = f'test{test_num}'
+    # kwargs['test_name'       ] = f'test{test_num}'
     kwargs['guardians_count' ] = draw(integers(min_value=2, max_value=10))
     kwargs['guardians_quorum'] = draw(integers(min_value=1, max_value=kwargs['guardians_count'])) # TODO -1?
     kwargs['devices_count'   ] = draw(integers(min_value=1, max_value=10))

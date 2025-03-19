@@ -8,14 +8,18 @@ import subprocess
 from click_default_group import DefaultGroup
 from dotmap import DotMap
 from os import environ
-from os.path import join, exists, realpath
+from os.path import join, exists, realpath, basename, dirname
 from typing import Optional
 
 
 ### utilities ###
 
 def init_log(logfile, level=logging.WARNING):
-    log = logging.getLogger(__name__)
+
+    # aha! this keeps the different logs separate:
+    hacky_name = basename(dirname(logfile))
+    log = logging.getLogger(hacky_name)
+
     log.setLevel(level)
     if logfile is None:
         handler = logging.StreamHandler(sys.stdout)
