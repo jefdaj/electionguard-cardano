@@ -97,10 +97,10 @@ def run_process(cfg, log, args):
     if proc.returncode != 0:
         raise Exception(f'process returned {proc.returncode}')
 
-def arion_cleanup(cfg, log):
+# def arion_cleanup(cfg, log):
     # in case a previous run failed
     # TODO remove?
-    run_process(cfg, log, ['arion', 'down'])
+#     run_process(cfg, log, ['arion', 'down'])
     # TODO can Docker or Arion do this rm step more safely?
     # data_dir = './data'
     # if exists(data_dir):
@@ -109,7 +109,7 @@ def arion_cleanup(cfg, log):
 @explain_step
 def setup(cfg, log):
     # arion also loads cfg separately via Nix
-    arion_cleanup(cfg, log)
+    # arion_cleanup(cfg, log)
     run_process(cfg, log, ['arion', 'up', '-d'])
 
 @explain_step

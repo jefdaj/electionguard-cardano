@@ -4,7 +4,7 @@ import hashlib
 import json
 import logging
 import os
-import shutil
+# import shutil
 import string
 import subprocess
 import tempfile
@@ -71,7 +71,8 @@ def run_test_election(cfg: ProjectConfig) -> ElectionTestDir:
             main(cfg, log)
 
         except:
-            shutil.rmtree(tmpdir, ignore_errors=True)
+            # TODO rm here? or do we want to keep + inspect the error files?
+            # shutil.rmtree(tmpdir, ignore_errors=True)
             raise
         # finally:
             # lock.close()
