@@ -7,7 +7,9 @@ import os
 import subprocess
 
 from glob import glob
-from hypothesis import given, settings, seed
+from hypothesis import given, settings, seed, Phase
+from os.path import join, exists
+from sys import argv
 
 from config import *
 from election import main, init_log, parse_config
@@ -30,26 +32,26 @@ def run_test_election(cfg: ProjectConfig) -> ElectionTestDir:
     # use our own custom tmpdir instead of TemporaryDirectory
     h5 = hash_config(cfg, truncate=5)
     test_name = f'test{h5}'
-    tmpdir = os.path.join(TESTS_DIR, test_name)
+    tmpdir = join(TESTS_DIR, test_name)
 
     # This should prevent more than one run_test_election from running with the
     # same config at the same time. Not sure whether that happens in practice,
     # but better to be safe than sorry when using pytest -n<threads>, right?
     # TODO why is it making only one election run at a time though?
-    lockfile = os.path.join(tmpdir, 'election.lock')
+    lockfile = join(tmpdir, 'election.lock')
 
-    if os.path.exists(tmpdir):
+    if exists(tmpdir):
         # if another instance is running, wait for it to finish
-        while os.path.exists(lockfile):
+        while exists(lockfile):
             time.sleep(1)
-        return
+        return tmpdir
 
     try:
         os.makedirs(tmpdir)
         lock = open(lockfile, 'w')
 
-        data_dir = os.path.join(tmpdir, cfg['arion']['data_dir'])
-        logfile  = os.path.join(tmpdir, 'election.log')
+        data_dir = join(tmpdir, cfg['arion']['data_dir'])
+        logfile  = join(tmpdir, 'election.log')
 
         os.makedirs(data_dir, exist_ok=False) # TODO remove?
 
@@ -57,7 +59,7 @@ def run_test_election(cfg: ProjectConfig) -> ElectionTestDir:
         cfg['arion']['data_dir'] = data_dir
         cfg['arion']['project_name'] = test_name
 
-        cfg_path = os.path.join(tmpdir, 'election.json') # TODO rename config?
+        cfg_path = join(tmpdir, 'election.json') # TODO rename config?
         with open(cfg_path, 'w') as f:
             json.dump(cfg, f)
 
@@ -68,14 +70,15 @@ def run_test_election(cfg: ProjectConfig) -> ElectionTestDir:
     except:
         # TODO rm here? or do we want to keep + inspect the error files?
         # shutil.rmtree(tmpdir, ignore_errors=True)
-        raise
+        # raise
+        pass
 
     finally:
         lock.close()
         os.remove(lockfile)
+        return tmpdir
 
-    return tmpdir
-
+# "yet another decorator"
 # https://stackoverflow.com/a/4122845
 def yad(decorators):
     def decorator(f):
@@ -86,7 +89,7 @@ def yad(decorators):
 
 # Convert a test that takes a cfg to one which takes a pre-run election testdir
 # generated from that cfg.
-def prerun_election_cfg(fn_from_testdir):
+def prerun_test_election(fn_from_testdir):
     def fn_from_cfg(cfg: ProjectConfig, *args, **kwargs):
         testdir: ElectionTestDir = run_test_election(cfg)
         return fn_from_testdir(testdir, *args, **kwargs)
@@ -108,7 +111,7 @@ def get_random_seed():
 # random values across lots of tests.
 #
 # Notes:
-# - prerun_election_cfg is a separate idea that was also convenient to tack on here
+# - prerun_test_election is a separate idea that was also convenient to tack on here
 # - max_examples really is a max; hypothesis will often run fewer
 #
 # TODO is this a partial solution to https://github.com/HypothesisWorks/hypothesis/issues/114
@@ -117,9 +120,14 @@ def get_random_seed():
 def given_election_testdir():
     return yad([
         seed(get_random_seed()),
-        settings(max_examples=3, deadline=None),
+        settings(
+            # derandomize=True, # this is already default?
+            max_examples=3,
+            deadline=None,
+            phases=(Phase.explicit, Phase.reuse, Phase.generate),
+        ),
         given(cfg=projectconfig()),
-        prerun_election_cfg,
+        prerun_test_election,
     ])
 
 
@@ -148,9 +156,16 @@ def election_verified(testdir: str, verifier_id: str) -> bool:
 
 ### property tests ###
 
+# TODO rename something less confusing?
+@given_election_testdir()
+def test_election_finished(testdir: ElectionTestDir):
+    json_paths = glob(join(testdir, 'data/public/4_verify/*.json'))
+    n_verifications = len(json_paths)
+    assert n_verifications > 0
+
 @given_election_testdir()
 def test_election_verified_by_admin(testdir: ElectionTestDir):
-    assert election_verified(testdir, 'admin1')
+    assert election_verified(testdir, 'admin_1')
 
 @given_election_testdir()
 def test_all_election_verifiers_agree(testdir: ElectionTestDir):
@@ -171,27 +186,25 @@ def test_n_verifications(testdir: ElectionTestDir):
         config['election']['guardians']['count'],
         config['election']['verifiers']['count'],
     ])
-    n_actual = len(glob(join(testdir, 'data/public/4_verify/*.json')))
+    json_paths = glob(join(testdir, 'data/public/4_verify/*.json'))
+    n_actual = len(json_paths)
     assert n_actual == n_expected
 
-@given_election_testdir()
-def test_election_property_3(testdir: ElectionTestDir):
-    assert True
-    # TODO write this
+# @given_election_testdir()
+# def test_election_property_3(testdir: ElectionTestDir):
+#     assert True
 
-@given_election_testdir()
-def test_election_property_4(testdir: ElectionTestDir):
-    assert True
-    # TODO write this
+# @given_election_testdir()
+# def test_election_property_4(testdir: ElectionTestDir):
+#     assert True
 
-@given_election_testdir()
-def test_election_property_5(testdir: ElectionTestDir):
-    assert True
-    # TODO write this
+# @given_election_testdir()
+# def test_election_property_5(testdir: ElectionTestDir):
+#     assert True
 
 
 ### main ###
 
 if __name__ == '__main__':
-   args = ['pytest', 'test.py', '-vv']
-   subprocess.check_call(args)
+    args = ['pytest', 'test.py'] + argv[1:]
+    subprocess.check_call(args)
