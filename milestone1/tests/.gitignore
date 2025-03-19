@@ -3,3 +3,4 @@ tests/*
 __pycache__/
 *.log
 .hypothesis/
+.tmp-arion-docker*.yaml
