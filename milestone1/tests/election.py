@@ -14,12 +14,9 @@ from typing import Optional
 
 ### utilities ###
 
-def init_log(logfile, level=logging.WARNING):
-
-    # aha! this keeps the different logs separate:
-    hacky_name = basename(dirname(logfile))
-    log = logging.getLogger(hacky_name)
-
+def init_log(cfg, logfile, level=logging.WARNING):
+    # unique name here is important to prevent test logs from mixing
+    log = logging.getLogger(cfg.arion.project_name)
     log.setLevel(level)
     if logfile is None:
         handler = logging.StreamHandler(sys.stdout)
@@ -365,8 +362,8 @@ def ElectionCommand(
 ) -> None:
     """Run an election with some options in a JSON config file.
     """
-    log = init_log(logfile, logging.INFO)
     cfg = parse_config(project_config, pause_to_explain)
+    log = init_log(cfg, logfile, logging.INFO)
     if single_step:
         run_single_step(cfg, log, single_step)
     else:

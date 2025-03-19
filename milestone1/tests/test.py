@@ -36,7 +36,7 @@ def run_test_election(cfg: ProjectConfig) -> ElectionTestDir:
 
     # use our own custom tmpdir instead of TemporaryDirectory
     h5 = hash_config(cfg, truncate=5)
-    test_name = f'test_{h5}'
+    test_name = f'test{h5}'
     tmpdir = os.path.join(TESTS_DIR, test_name)
 
     # experimental test strategy: only do the long election operation once,
@@ -59,15 +59,16 @@ def run_test_election(cfg: ProjectConfig) -> ElectionTestDir:
 
             os.makedirs(data_dir, exist_ok=False) # TODO remove?
 
-            # TODO try leaving it as 'data' and finding the actual full path inside election.py from that
+            # TODO leave data_dir as 'data' and resolve inside election.py?
             cfg['arion']['data_dir'] = data_dir
+            cfg['arion']['project_name'] = test_name
 
             cfg_path = os.path.join(tmpdir, 'election.json') # TODO rename config?
             with open(cfg_path, 'w') as f:
                 json.dump(cfg, f)
 
             cfg = parse_config(cfg_path, pause_to_explain=False)
-            log = init_log(logfile, logging.INFO)
+            log = init_log(cfg, logfile, logging.INFO)
             main(cfg, log)
 
         except:
