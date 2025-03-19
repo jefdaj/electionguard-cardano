@@ -105,7 +105,7 @@ def with_prerun_election(fn_from_testdir):
 # - max_examples really is a max; hypothesis will often run fewer
 #
 # TODO is this a partial solution to https://github.com/HypothesisWorks/hypothesis/issues/114
-def given_cached_election(max_examples=3):
+def given_test_election(max_examples=3):
 
     # random seed can be set per dev session, which offers a good
     # balance between caching and making sure different values work
@@ -124,27 +124,27 @@ def given_cached_election(max_examples=3):
 
 # TODO fill these out with useful properties
 
-@given_cached_election()
+@given_test_election()
 def test_election_property_1(testdir: ElectionTestDir):
     assert True
 
-@given_cached_election()
+@given_test_election()
 def test_election_property_2(testdir: ElectionTestDir):
     assert True
 
-@given_cached_election()
+@given_test_election()
 def test_election_property_3(testdir: ElectionTestDir):
     assert True
 
-@given_cached_election(max_examples=7)
+@given_test_election(max_examples=7)
 def test_election_property_3(testdir: ElectionTestDir):
     assert True
 
-@given_cached_election(max_examples=2)
+@given_test_election(max_examples=2)
 def test_election_property_4(testdir: ElectionTestDir):
     assert True
 
-@given_cached_election(max_examples=5)
+@given_test_election(max_examples=5)
 def test_election_property_5(testdir: ElectionTestDir):
     assert True
 
