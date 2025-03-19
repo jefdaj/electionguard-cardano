@@ -10,7 +10,7 @@ import tempfile
 import hashlib
 import time
 
-from hypothesis import given, settings
+from hypothesis import given, settings, seed
 
 from config import *
 from election import main, init_log, parse_config
@@ -23,7 +23,9 @@ def hash_config(cfg: ProjectConfig, truncate=99) -> str:
     d = hashlib.md5(s).digest()
     return d.hex()[:truncate]
 
-def run_test_election(cfg: ProjectConfig):
+ElectionTestDir = str
+
+def run_test_election(cfg: ProjectConfig) -> ElectionTestDir:
 
     # use our own custom tmpdir instead of TemporaryDirectory
     h5 = hash_config(cfg, truncate=5)
@@ -67,20 +69,62 @@ def run_test_election(cfg: ProjectConfig):
         lock.close()
         os.remove(lockfile)
 
+    return tmpdir
 
-# trivial first assertion to make sure run_test_election succeeds
-@given(cfg=projectconfig())
-@settings(max_examples=3, deadline=None)
-def test_run_election(cfg: ProjectConfig):
-    run_test_election(cfg)
+# https://stackoverflow.com/a/4122845
+def yad(decorators):
+    def decorator(f):
+        for d in reversed(decorators):
+            f = d(f)
+        return f
+    return decorator
+
+# Convert a test that takes a cfg to one which takes a pre-run election with that cfg.
+def with_prerun_election(fn):
+    def wrapped(cfg: ProjectConfig, *args, **kwargs):
+        tmpdir = run_test_election(cfg)
+        return fn(tmpdir, *args, **kwargs)
+    return wrapped
+
+# A somewhat mind bending hack to make hypothesis reuse cached test elections.
+# This way we can define a lot of rapid tests that make individual assertions about the results.
+# Note that max_examples really is a max; hypothesis will often run fewer.
+# TODO is this a partial solution to https://github.com/HypothesisWorks/hypothesis/issues/114
+def given_cached_test_elections(max_examples=3):
+    return yad([
+        seed(0),
+        settings(max_examples=max_examples, deadline=None),
+        given(cfg=projectconfig()),
+        with_prerun_election,
+    ])
+
+
+# TODO fill these out with useful properties
+
+@given_cached_test_elections()
+def test_election_property_1(testdir: ElectionTestDir):
     assert True
 
-# trivial first assertion to make sure run_test_election succeeds
-@given(cfg=projectconfig())
-@settings(max_examples=3, deadline=None)
-def test_run_election_2(cfg: ProjectConfig):
-    run_test_election(cfg)
+@given_cached_test_elections()
+def test_election_property_2(testdir: ElectionTestDir):
     assert True
+
+@given_cached_test_elections()
+def test_election_property_3(testdir: ElectionTestDir):
+    assert True
+
+@given_cached_test_elections(7)
+def test_election_property_3(testdir: ElectionTestDir):
+    assert True
+
+@given_cached_test_elections()
+def test_election_property_4(testdir: ElectionTestDir):
+    assert True
+
+@given_cached_test_elections()
+def test_election_property_5(testdir: ElectionTestDir):
+    assert True
+
 
 # TODO clean this up
 if __name__ == '__main__':
