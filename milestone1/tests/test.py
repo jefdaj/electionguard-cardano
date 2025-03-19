@@ -15,38 +15,45 @@ from election import main, init_log, parse_config
 
 TESTS_DIR = './tests'
 
-@given(cfg=projectconfig())
-@settings(max_examples=3, deadline=None)
-def test_run_election(cfg: ProjectConfig):
+def run_test_election(cfg: ProjectConfig):
 
     # use our own custom tmpdir isntead of TemporaryDirectory
     tmpdir = os.path.join(TESTS_DIR, cfg['arion']['project_name'])
 
     # experimental test strategy: only do the long election operation once,
     # then re-use the tmpdir for multiple assertions
-    if not os.path.exists(tmpdir):
-        try:
-            os.makedirs(tmpdir)
+    if os.path.exists(tmpdir):
+        return
 
-            data_dir = os.path.join(tmpdir, cfg['arion']['data_dir'])
-            logfile  = os.path.join(tmpdir, 'election.log')
+    try:
+        os.makedirs(tmpdir)
 
-            os.makedirs(data_dir, exist_ok=False) # TODO remove?
+        data_dir = os.path.join(tmpdir, cfg['arion']['data_dir'])
+        logfile  = os.path.join(tmpdir, 'election.log')
 
-            # TODO try leaving it as 'data' and finding the actual full path inside election.py from that
-            cfg['arion']['data_dir'] = data_dir
+        os.makedirs(data_dir, exist_ok=False) # TODO remove?
 
-            cfg_path = os.path.join(tmpdir, 'election.json') # TODO rename config?
-            with open(cfg_path, 'w') as f:
-                json.dump(cfg, f)
+        # TODO try leaving it as 'data' and finding the actual full path inside election.py from that
+        cfg['arion']['data_dir'] = data_dir
 
-            cfg = parse_config(cfg_path, pause_to_explain=False)
-            log = init_log(logfile, logging.INFO)
-            main(cfg, log)
+        cfg_path = os.path.join(tmpdir, 'election.json') # TODO rename config?
+        with open(cfg_path, 'w') as f:
+            json.dump(cfg, f)
 
-        except:
-            shutil.rmtree(tmpdir, ignore_errors=True)
-            raise
+        cfg = parse_config(cfg_path, pause_to_explain=False)
+        log = init_log(logfile, logging.INFO)
+        main(cfg, log)
+
+    except:
+        shutil.rmtree(tmpdir, ignore_errors=True)
+        raise
+
+# trivial first assertion to make sure run_test_election succeeds
+@given(cfg=projectconfig())
+@settings(max_examples=3, deadline=None)
+def test_run_election(cfg: ProjectConfig):
+    run_test_election(cfg)
+    assert True
 
 
 # TODO clean this up
