@@ -4,6 +4,7 @@ import click
 import json
 import logging
 import subprocess
+import time
 
 from click_default_group import DefaultGroup
 from dotmap import DotMap
@@ -108,6 +109,7 @@ def setup(cfg, log):
     # arion also loads cfg separately via Nix
     # arion_cleanup(cfg, log)
     run_process(cfg, log, ['arion', 'up', '-d'])
+    time.sleep(3) # TODO does this prevent "network not found" error?
 
 @explain_step
 def teardown(cfg, log):

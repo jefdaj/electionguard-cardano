@@ -91,8 +91,8 @@ def arionconfig(draw):
 
 @composite
 def voteconfig(draw):
-    n_cast  = draw(integers(min_value=0, max_value=3))
-    n_spoil = draw(integers(min_value=0, max_value=3))
+    n_cast  = draw(integers(min_value=0, max_value=10))
+    n_spoil = draw(integers(min_value=0, max_value=10))
     return VoteConfig(n_cast, n_spoil)
 
 @composite

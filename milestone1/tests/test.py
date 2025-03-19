@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import subprocess
+import time
 
 from glob import glob
 from hypothesis import given, settings, seed, Phase
@@ -122,7 +123,7 @@ def given_election_testdir():
         seed(get_random_seed()),
         settings(
             # derandomize=True, # this is already default?
-            max_examples=3,
+            max_examples=10,
             deadline=None,
             phases=(Phase.explicit, Phase.reuse, Phase.generate),
         ),
