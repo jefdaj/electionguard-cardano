@@ -18,14 +18,21 @@ $ export TEST_RANDOM_SEED=1234
 $ sudo ./test.py
 
 ============================= test session starts ==============================
-platform linux -- Python 3.12.8, pytest-8.3.3, pluggy-1.5.0
+platform linux -- Python 3.12.8, pytest-8.3.3, pluggy-1.5.0 -- /nix/store/f80kghwqd0gsf7p4maalc24lpx55ksw7-python3-3.12.8-env/bin/python3.12
+cachedir: .pytest_cache
+hypothesis profile 'default' -> database=DirectoryBasedExampleDatabase(PosixPath('/home/jefdaj/myrepos/electionguard-cardano/milestone1/tests/.hypothesis/examples'))
 rootdir: /home/jefdaj/myrepos/electionguard-cardano/milestone1/tests
 plugins: hypothesis-6.112.2
-collected 1 item
+collecting ... collected 6 items
 
-config.py .                                                              [100%]
+test.py::test_projectconfig_json_roundtrip <- config.py PASSED           [ 16%]
+test.py::test_election_property_1 PASSED                                 [ 33%]
+test.py::test_election_property_2 PASSED                                 [ 50%]
+test.py::test_election_property_3 PASSED                                 [ 66%]
+test.py::test_election_property_4 PASSED                                 [ 83%]
+test.py::test_election_property_5 PASSED                                 [100%]
 
-============================== 1 passed in 1.24s ===============================
+======================== 6 passed in 309.01s (0:05:09) =========================
 ```
 
 
