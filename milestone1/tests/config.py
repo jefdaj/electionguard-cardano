@@ -3,7 +3,7 @@
 import json
 import os
 
-from hypothesis import given, settings
+from hypothesis import given, settings, assume
 from hypothesis.strategies import integers, composite, SearchStrategy
 from typing import Callable
 
@@ -97,10 +97,20 @@ def voteconfig(draw):
 
 @composite
 def votesconfig(draw):
+
     kwargs = {}
     kwargs['yes_votes'   ] = draw(voteconfig())
     kwargs['no_votes'    ] = draw(voteconfig())
     kwargs['unsure_votes'] = draw(voteconfig())
+
+    # there can be 0 votes in any given category,
+    # but the election will fail if there isn't at least one total
+    n_votes = sum(
+        sum([c['cast'], c['spoil']])
+        for c in kwargs.values()
+    )
+    assume(n_votes > 0)
+
     cfg = VotesConfig(**kwargs)
     return cfg
 
