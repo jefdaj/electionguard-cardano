@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
+import hashlib
 import json
+import logging
 import os
 import shutil
-import subprocess
 import string
-import logging
+import subprocess
 import tempfile
-import hashlib
 import time
 
 from hypothesis import given, settings, seed
@@ -15,7 +15,9 @@ from hypothesis import given, settings, seed
 from config import *
 from election import main, init_log, parse_config
 
+
 TESTS_DIR = './tests'
+
 
 def hash_config(cfg: ProjectConfig, truncate=99) -> str:
     "Ensures tmpdirs are not being reused after their configs change"
@@ -79,18 +81,23 @@ def yad(decorators):
         return f
     return decorator
 
-# Convert a test that takes a cfg to one which takes a pre-run election with that cfg.
-def with_prerun_election(fn):
-    def wrapped(cfg: ProjectConfig, *args, **kwargs):
-        tmpdir = run_test_election(cfg)
-        return fn(tmpdir, *args, **kwargs)
-    return wrapped
+# Convert a test that takes a cfg to one which takes a pre-run election testdir
+# generated from that cfg.
+def with_prerun_election(fn_from_testdir):
+    def fn_from_cfg(cfg: ProjectConfig, *args, **kwargs):
+        testdir: ElectionTestDir = run_test_election(cfg)
+        return fn_from_testdir(testdir, *args, **kwargs)
+    return fn_from_cfg
 
 # A somewhat mind bending hack to make hypothesis reuse cached test elections.
 # This way we can define a lot of rapid tests that make individual assertions about the results.
-# Note that max_examples really is a max; hypothesis will often run fewer.
+#
+# Notes:
+# - with_prerun_election is a separate idea that was also convenient to tack on here
+# - max_examples really is a max; hypothesis will often run fewer
+#
 # TODO is this a partial solution to https://github.com/HypothesisWorks/hypothesis/issues/114
-def given_cached_test_elections(max_examples=3):
+def given_cached_election(max_examples=3):
     return yad([
         seed(0),
         settings(max_examples=max_examples, deadline=None),
@@ -101,32 +108,31 @@ def given_cached_test_elections(max_examples=3):
 
 # TODO fill these out with useful properties
 
-@given_cached_test_elections()
+@given_cached_election()
 def test_election_property_1(testdir: ElectionTestDir):
     assert True
 
-@given_cached_test_elections()
+@given_cached_election()
 def test_election_property_2(testdir: ElectionTestDir):
     assert True
 
-@given_cached_test_elections()
+@given_cached_election()
 def test_election_property_3(testdir: ElectionTestDir):
     assert True
 
-@given_cached_test_elections(7)
+@given_cached_election(max_examples=7)
 def test_election_property_3(testdir: ElectionTestDir):
     assert True
 
-@given_cached_test_elections()
+@given_cached_election(max_examples=2)
 def test_election_property_4(testdir: ElectionTestDir):
     assert True
 
-@given_cached_test_elections()
+@given_cached_election(max_examples=5)
 def test_election_property_5(testdir: ElectionTestDir):
     assert True
 
 
-# TODO clean this up
 if __name__ == '__main__':
-   args = ['pytest', 'config.py', 'test.py', '-vvv']
+   args = ['pytest', 'test.py', '-vv']
    subprocess.check_call(args)
