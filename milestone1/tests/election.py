@@ -78,31 +78,39 @@ def run_single_step(cfg, log, fn_name):
     fn = globals()[fn_name]
     fn(cfg)
 
-# def arion_cleanup(cfg):
-#     # in case a previous run failed
-#     # TODO can Docker or Arion do this rm step more safely?
-#     env = environ.copy()
-#     env['PROJECT_CONFIG'] = cfg.project_config
-#     subprocess.check_call(['arion', 'down'], env=env)
-#     data_dir = './data'
-#     if exists(data_dir):
-#         subprocess.check_call(['sudo', 'rm', '-rf', data_dir])
+def arion_cleanup(cfg, log):
+    # in case a previous run failed
+    # TODO remove?
+    run_process(cfg, log, ['arion', 'down'])
+    # TODO can Docker or Arion do this rm step more safely?
+    # data_dir = './data'
+    # if exists(data_dir):
+    #     subprocess.check_call(['sudo', 'rm', '-rf', data_dir])
+
+def run_process(cfg, log, args):
+    env = environ.copy()
+    env['PROJECT_CONFIG'] = cfg.project_config
+    proc = subprocess.Popen(
+        args, env=env, text=True,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    # TODO any easy way to interleave them?
+    stdout, stderr = proc.communicate()
+    msg = stdout + stderr
+    msg = msg.strip()
+    log.info(msg)
+    if proc.returncode != 0:
+        raise Exception(f'process returned {proc.returncode}')
 
 @explain_step
 def setup(cfg, log):
     # arion also loads cfg separately via Nix
-    # arion_cleanup(cfg)
-    env = environ.copy()
-    env['PROJECT_CONFIG'] = cfg.project_config
-    subprocess.check_call(['arion', '--no-ansi', 'up', '-d'], env=env)
-    log.info('')
+    arion_cleanup(cfg, log)
+    run_process(cfg, log, ['arion', 'up', '-d'])
 
 @explain_step
 def teardown(cfg, log):
-    env = environ.copy()
-    env['PROJECT_CONFIG'] = cfg.project_config
-    # TODO capture stdout/stderr to log
-    subprocess.check_call(['arion', 'down'], env=env)
+    run_process(cfg, log, ['arion', 'down'])
 
 
 ### election ###
