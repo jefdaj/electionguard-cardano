@@ -36,7 +36,7 @@ def parse_config(cfg_path, pause_to_explain):
     cfg = DotMap(js)
     cfg.project_config = cfg_path # for passing to arion as an env var
     cfg.pause_to_explain = pause_to_explain
-    cfg.votes = dict(cfg.votes) # TODO is this the simplest way to enable iteration?
+    # cfg.votes = dict(cfg.votes) # TODO is this the simplest way to enable iteration?
     ecfg = cfg.election
     ecfg.guardians.sequence_order = [*range(1, ecfg.guardians.count + 1)]
     ecfg.guardians.ids = [f"guardian_{i}" for i in ecfg.guardians.sequence_order]
@@ -45,7 +45,6 @@ def parse_config(cfg_path, pause_to_explain):
 def run_in_container(cfg, log, script_name, container_role, container_number, args, **kwargs):
     container_name = cfg.arion.project_name + "-" + container_role + str(container_number) + "-1"
     script_path = join(cfg.arion.bind_mounts.scripts, script_name)
-    # TODO python don't write bytecode (here or in the image?)
     args = ["docker", "exec", container_name,
             "poetry", "run", script_path] + args
     kwargs.update(stdout=subprocess.PIPE, text=True)
@@ -78,7 +77,7 @@ def explain_step(fn):
 
 def run_single_step(cfg, log, fn_name):
     fn = globals()[fn_name]
-    fn(cfg)
+    fn(cfg, log)
 
 def run_process(cfg, log, args):
     env = environ.copy()
@@ -125,7 +124,7 @@ def build_manifest(cfg, log):
         [
             "build-manifest",
             "--public-dir", cfg.arion.bind_mounts.public,
-            "--referendum-question", cfg.election.question,
+            "--referendum-question", cfg.votes[0].question,
         ]
     )
 

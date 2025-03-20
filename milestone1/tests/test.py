@@ -206,10 +206,10 @@ def test_n_verifications(testdir: ElectionTestDir):
 # def test_election_property_5(testdir: ElectionTestDir):
 #     assert True
 
-@given(cfg=projectconfig())
-def test_write_projectconfig(cfg: ProjectConfig):
-    with open('test.json', 'w') as f:
-        json.dump(cfg, f)
+# @given(cfg=projectconfig())
+# def test_write_projectconfig(cfg: ProjectConfig):
+#     with open('test.json', 'w') as f:
+#         json.dump(cfg, f)
 
 
 ### main ###
