@@ -198,14 +198,15 @@ def test_n_verifications_matches_cfg(testdir: ElectionTestDir):
     n_actual = len(json_paths)
     assert n_actual == n_expected
 
-def vote_totals(contest_config, spoiled: bool):
-    "Pull just the cast OR spoiled totals from the contests config"
+def vote_totals_from_config(config, spoiled: bool):
+    expected_contests = sorted(config['votes']) # TODO need to sort by key?
+    "Pull just the cast OR spoiled totals from the config"
     if spoiled:
         key = 'spoil'
     else:
         key = 'cast'
     simple_casts = []
-    for contest in contest_config:
+    for contest in expected_contests:
         simple_cast = {
             'question': contest['question'],
             'answers': { k: v[key] for (k, v) in contest['answers'].items() }
@@ -213,33 +214,64 @@ def vote_totals(contest_config, spoiled: bool):
         simple_casts.append(simple_cast)
     return sorted(simple_casts) # TODO is this right?
 
-def cast_vote_totals(contest_config):
-    return vote_totals(contest_config, spoiled=False)
+def cast_vote_totals_from_config(contest_config):
+    return vote_totals_from_config(contest_config, spoiled=False)
 
-def spoiled_vote_totals(contest_config):
-    return vote_totals(contest_config, spoiled=True)
+def spoiled_vote_totals_from_config(contest_config):
+    totals_contest_list = vote_totals_from_config(contest_config, spoiled=True)
+    # simplify to match the summary format
+    totals = {}
+    for contest in totals_contest_list:
+        q = contest['question']
+        if not q in totals:
+            totals[q] = {}
+        for (answer, n_spoiled) in sorted(contest['answers'].items()):
+            totals[q][answer] = n_spoiled
+    return totals
 
 @given_election_testdir()
 def test_cast_votes_match_config(testdir: ElectionTestDir):
 
-    # TODO need to sort by a key? (like question)
     cfg = load_config_json(testdir)
-    expected_contests = sorted(cfg['votes'])
-    expected_casts = cast_vote_totals(expected_contests)
+    expected_cast_totals = cast_vote_totals_from_config(cfg)
 
     # admin isn't special here; could use any verifier
     summary = load_summary_json(testdir, 'admin_1')
-    actual_casts = sorted(summary['Final tally of cast ballots'])
+    actual_cast_totals = sorted(summary['Final tally of cast ballots'])
 
-    assert len(expected_contests) == len(actual_casts)
-    for (expected, actual) in zip(expected_casts, actual_casts):
+    assert len(expected_cast_totals) == len(actual_cast_totals)
+    for (expected, actual) in zip(expected_cast_totals, actual_cast_totals):
 
         assert set(expected['answers'].keys()) == set(actual['answers'].keys())
 
         for (answer, n_actual) in actual['answers'].items():
             assert n_actual == expected['answers'][answer]
 
-# TODO test_spoiled_votes_match_config
+def spoiled_vote_totals_from_summary(summary):
+    ballots = summary['Individual spoiled ballots']
+    totals = {}
+    for (ballot_id, contests) in ballots.items():
+        for contest in contests:
+            for (question, answer) in sorted(contest.items()):
+                if not question in totals:
+                    totals[question] = {}
+                if not answer in totals[question]:
+                    totals[question][answer] = 0
+                totals[question][answer] += 1
+    return totals
+
+@given_election_testdir()
+def test_spoiled_votes_match_config(testdir: ElectionTestDir):
+
+    cfg = load_config_json(testdir)
+    expected_spoiled_totals = spoiled_vote_totals_from_config(cfg)
+
+    # admin isn't special here; could use any verifier
+    summary = load_summary_json(testdir, 'admin_1')
+    actual_spoiled_totals = spoiled_vote_totals_from_summary(summary)
+
+    assert actual_spoiled_totals == expected_spoiled_totals
+
 
 # @given_election_testdir()
 # def test_election_property_4(testdir: ElectionTestDir):
