@@ -187,7 +187,7 @@ def test_all_election_verifiers_agree(testdir: ElectionTestDir):
             assert summary == first_summary
 
 @given_election_testdir()
-def test_n_verifications(testdir: ElectionTestDir):
+def test_n_verifications_matches_cfg(testdir: ElectionTestDir):
     config = load_config_json(testdir)
     n_expected = sum([
         1, # admin
