@@ -198,21 +198,26 @@ def test_n_verifications_matches_cfg(testdir: ElectionTestDir):
     n_actual = len(json_paths)
     assert n_actual == n_expected
 
-def simplify_cast_votes(contest_config):
-    "Pull just the cast totals from the contests config"
+def vote_totals(contest_config, spoiled: bool):
+    "Pull just the cast OR spoiled totals from the contests config"
+    if spoiled:
+        key = 'spoil'
+    else:
+        key = 'cast'
     simple_casts = []
     for contest in contest_config:
         simple_cast = {
             'question': contest['question'],
-            'answers': {
-                k: v['cast']
-                for (k, v) in contest['answers'].items()
-            }
+            'answers': { k: v[key] for (k, v) in contest['answers'].items() }
         }
         simple_casts.append(simple_cast)
     return sorted(simple_casts) # TODO is this right?
 
-# TODO simplify_spoiled_votes too
+def cast_vote_totals(contest_config):
+    return vote_totals(contest_config, spoiled=False)
+
+def spoiled_vote_totals(contest_config):
+    return vote_totals(contest_config, spoiled=True)
 
 @given_election_testdir()
 def test_cast_votes_match_config(testdir: ElectionTestDir):
@@ -220,7 +225,7 @@ def test_cast_votes_match_config(testdir: ElectionTestDir):
     # TODO need to sort by a key? (like question)
     cfg = load_config_json(testdir)
     expected_contests = sorted(cfg['votes'])
-    expected_casts = simplify_cast_votes(expected_contests)
+    expected_casts = cast_vote_totals(expected_contests)
 
     # admin isn't special here; could use any verifier
     summary = load_summary_json(testdir, 'admin_1')
