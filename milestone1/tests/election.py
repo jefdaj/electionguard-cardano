@@ -220,20 +220,22 @@ def vote(cfg, log, device_number, candidate, spoil=False):
 def vote_all(cfg, log):
     votes_so_far = 0
 
-    # remember a "candidate" might also be an answer to a referendum question!
-    # TODO have they come up with a better name for that in the 2.0 spec?
-    for (candidate, n_votes) in cfg.votes.items():
+    for contest in cfg.votes:
 
-        for _ in range(n_votes.spoil):
-            # hack to iterate over devices, just to show there can be more than one
-            device_number = votes_so_far % cfg.election.devices.count + 1
-            vote(cfg, log, device_number, candidate, spoil=True)
-            votes_so_far += 1
+        # remember a "candidate" might also be an answer to a referendum question!
+        # TODO have they come up with a better name for that in the 2.0 spec?
+        for (candidate, n_votes) in contest.answers.items():
 
-        for _ in range(n_votes.cast):
-            device_number = votes_so_far % cfg.election.devices.count + 1
-            vote(cfg, log, device_number, candidate)
-            votes_so_far += 1
+            for _ in range(n_votes.spoil):
+                # hack to iterate over devices, just to show there can be more than one
+                device_number = votes_so_far % cfg.election.devices.count + 1
+                vote(cfg, log, device_number, candidate, spoil=True)
+                votes_so_far += 1
+
+            for _ in range(n_votes.cast):
+                device_number = votes_so_far % cfg.election.devices.count + 1
+                vote(cfg, log, device_number, candidate)
+                votes_so_far += 1
 
 @explain_step
 def tally(cfg, log):
