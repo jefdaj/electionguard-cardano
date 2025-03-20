@@ -70,7 +70,6 @@ class ElectionConfig(dict):
         self['guardians'] = GuardiansConfig(guardians_count, guardians_quorum)
         self['devices'  ] = DevicesConfig(devices_count)
         self['verifiers'] = VerifiersConfig(verifiers_count)
-        self['question' ] = 'Are pineapples cool?'
 
 class ProjectConfig(dict):
     def __init__(self, arion_cfg, election_cfg, votes_cfg):

@@ -75,8 +75,11 @@ def run_test_election(cfg: ProjectConfig) -> ElectionTestDir:
         pass
 
     finally:
-        lock.close()
-        os.remove(lockfile)
+        try:
+            lock.close()
+            os.remove(lockfile)
+        except:
+            pass
         return tmpdir
 
 # "yet another decorator"
@@ -202,6 +205,11 @@ def test_n_verifications(testdir: ElectionTestDir):
 # @given_election_testdir()
 # def test_election_property_5(testdir: ElectionTestDir):
 #     assert True
+
+@given(cfg=projectconfig())
+def test_write_projectconfig(cfg: ProjectConfig):
+    with open('test.json', 'w') as f:
+        json.dump(cfg, f)
 
 
 ### main ###
