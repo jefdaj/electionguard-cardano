@@ -696,7 +696,7 @@ def simplify_and_partition(results: ResultsCache, log: logging.Logger) -> (Succe
             }
             if len(errors_dict) > 0:
                 errors[target_name] = errors_dict
-                log.info(f'some of {target_name} goes in errors')
+                # log.info(f'some of {target_name} goes in errors')
             if len(successes_dict) > 0:
                 successes[target_name] = successes_dict
                 # log.info(f'some of {target_name} goes in successes')
@@ -722,67 +722,72 @@ def summarize_results(
         for v in errors.values()
     )
 
-    # print(successes, flush=True)
-
     # no particular format, except it must be json-serializable
     # TODO codify it as a dataclass?
     summary = defaultdict(lambda: {})
 
-    # csb = CliStepBase() # prints in electionguard_cli style
-
-    manifest        = successes['manifest']
-    tally_result    = successes['plaintext_tally']
-    spoiled_results = successes['all_spoiled_results']
-
-    selection_names = manifest.get_selection_names("en")
-    contest_names   = manifest.get_contest_names()
-
+    tally_header   = "Final tally of cast ballots"
     spoiled_header = 'Individual spoiled ballots'
-    log.info('\n' + spoiled_header + ':')
     spoiled_summaries = {}
-    for spoiled_result in spoiled_results:
-        log.info('')
-        if isinstance(spoiled_result, Error):
-            continue
-        ballot_id = spoiled_result.object_id
-        short_id  = ballot_id[ballot_id.find('-')+1:]
-        log.info(short_id)
-        ballot_summary = []
-        for contest in spoiled_result.contests.values():
-            question = contest_names.get(contest.object_id)
-            selected = [
-                selection_names[selection.object_id]
-                for selection in contest.selections.values()
-                if selection.tally > 0
-            ]
-            assert len(selected) < 2 # for a one of m contest
-            try:
-                answer = selected[0]
-            except IndexError:
-                answer = 'No answer' # TODO is this allowed?
-            log.info(f'  {question} {answer}')
-            contest_summary = {question: answer}
-            ballot_summary.append(contest_summary)
-        spoiled_summaries[short_id] = ballot_summary
+    try:
 
-    tally_header = "Final tally of cast ballots"
-    log.info('\n' + tally_header + ':\n')
-    tally_summary = []
-    contest_summaries = []
-    for tally_contest in tally_result.contests.values():
-        contest_name = contest_names.get(tally_contest.object_id)
-        contest_summary = {
-            'question': contest_name,
-            'answers': {},
-        }
-        log.info(contest_name)
-        values = list(tally_contest.selections.values())
-        values.sort(key=lambda v: v.tally, reverse=True)
-        for selection in values:
-            name = selection_names[selection.object_id]
-            log.info(f"  {name} {selection.tally}")
-            contest_summary['answers'][name] = selection.tally
-        tally_summary.append(contest_summary)
+        log.info('\n' + spoiled_header + ':')
+
+        spoiled_results = successes['all_spoiled_results']
+        manifest        = successes['manifest']
+        selection_names = manifest.get_selection_names("en")
+        contest_names   = manifest.get_contest_names()
+
+        for spoiled_result in spoiled_results:
+            log.info('')
+            if isinstance(spoiled_result, Error):
+                continue
+            ballot_id = spoiled_result.object_id
+            short_id  = ballot_id[ballot_id.find('-')+1:]
+            log.info(short_id)
+            ballot_summary = []
+            for contest in spoiled_result.contests.values():
+                question = contest_names.get(contest.object_id)
+                selected = [
+                    selection_names[selection.object_id]
+                    for selection in contest.selections.values()
+                    if selection.tally > 0
+                ]
+                assert len(selected) < 2 # for a one of m contest
+                try:
+                    answer = selected[0]
+                except IndexError:
+                    answer = 'No answer' # TODO is this allowed?
+                log.info(f'  {question} {answer}')
+                contest_summary = {question: answer}
+                ballot_summary.append(contest_summary)
+            spoiled_summaries[short_id] = ballot_summary
+
+        log.info('\n' + tally_header + ':\n')
+        tally_result    = successes['plaintext_tally']
+        tally_summary = []
+        contest_summaries = []
+        for tally_contest in tally_result.contests.values():
+            contest_name = contest_names.get(tally_contest.object_id)
+            contest_summary = {
+                'question': contest_name,
+                'answers': {},
+            }
+            log.info(contest_name)
+            values = list(tally_contest.selections.values())
+            values.sort(key=lambda v: v.tally, reverse=True)
+            for selection in values:
+                name = selection_names[selection.object_id]
+                log.info(f"  {name} {selection.tally}")
+                contest_summary['answers'][name] = selection.tally
+            tally_summary.append(contest_summary)
+
+    except Exception as e:
+        tally_summary     = 'Unable to summarize tally'
+        spoiled_summaries = 'Unable to summarize individual spoiled ballots'
+        log.error('Unable to summarize individual spoiled ballots')
+        log.error(e)
+        n_errors += 1 # TODO is this a reasonable way to do it?
 
     # save summary json
     # no particular format, except it must be a json-serializable dict
