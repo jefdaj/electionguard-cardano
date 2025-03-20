@@ -11,12 +11,14 @@
   "election": {
     "guardians": {"count": 3, "quorum": 2},
     "devices": {"count": 4},
-    "verifiers": {"count": 2},
-    "question": "Are pineapples cool?"
+    "verifiers": {"count": 2}
   },
-  "votes": {
-    "Yes":    {"cast": 3, "spoil":1},
-    "No":     {"cast": 2, "spoil":2},
-    "Unsure": {"cast": 1, "spoil":3}
-  }
+  "votes": [{
+    "question": "Are pineapples cool?",
+    "answers": {
+      "Yes":    {"cast": 3, "spoil":1},
+      "No":     {"cast": 2, "spoil":2},
+      "Unsure": {"cast": 1, "spoil":3}
+    }
+  }]
 }

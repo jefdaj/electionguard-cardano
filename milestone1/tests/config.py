@@ -5,7 +5,7 @@ import os
 
 from hypothesis import given, settings, assume
 from hypothesis.strategies import integers, composite, SearchStrategy
-from typing import Callable
+from typing import Callable, Dict
 
 
 ### config classes ###
@@ -26,21 +26,19 @@ class ArionConfig(dict):
 
 class VoteConfig(dict):
     def __init__(self, n_cast: int, n_spoil: int):
+        super(VoteConfig, self).__init__()
         assert n_cast  >= 0
         assert n_spoil >= 0
         self['cast' ] = n_cast
         self['spoil'] = n_spoil
 
-class VotesConfig(dict):
-    def __init__(self,
-        yes_votes    : VoteConfig = VoteConfig(3, 1),
-        no_votes     : VoteConfig = VoteConfig(2, 2),
-        unsure_votes : VoteConfig = VoteConfig(1, 3),
-    ):
-        super(VotesConfig, self).__init__()
-        self["Yes"   ] = yes_votes
-        self["No"    ] = no_votes
-        self["Unsure"] = unsure_votes
+class ContestConfig(dict):
+    "One contest in the list under `votes`"
+    # TODO less confusing names
+    def __init__(self, question: str, answers: Dict[str, VoteConfig]):
+        super(ContestConfig, self).__init__()
+        self['question'] = question
+        self['answers' ] = answers
 
 class GuardiansConfig(dict):
     def __init__(self, count: int = 3, quorum: int = 2):
@@ -96,21 +94,42 @@ def voteconfig(draw):
     return VoteConfig(n_cast, n_spoil)
 
 @composite
-def votesconfig(draw):
+def contestconfig(draw):
+    # TODO do we need to assume there's at least one vote per contest?
+    return ContestConfig(
+        question = 'Are pineapples cool?',
+        answers = {
+            'Yes'    : draw(voteconfig()),
+            'No'     : draw(voteconfig()),
+            'Unsure' : draw(voteconfig()),
+        },
+    )
 
-    kwargs = {}
-    kwargs['yes_votes'   ] = draw(voteconfig())
-    kwargs['no_votes'    ] = draw(voteconfig())
-    kwargs['unsure_votes'] = draw(voteconfig())
+@composite
+def contestsconfig(draw):
+
+    contest1 = draw(contestconfig())
+    cfg = [contest1]
 
     # current code will fail if there isn't at least one cast + one spoiled vote
-    # TODO fix this? or is it fine for the demo?
-    n_cast  = sum( c['cast' ] for c in kwargs.values() )
-    n_spoil = sum( c['spoil'] for c in kwargs.values() )
+    # TODO would just force creating the record dirs solve that?
+    n_cast = sum(
+        sum([
+            vcfg['cast']
+            for vcfg in contest['answers'].values()
+        ])
+        for contest in cfg
+    )
+    n_spoil = sum(
+        sum([
+            vcfg['spoil']
+            for vcfg in contest['answers'].values()
+        ])
+        for contest in cfg
+    )
     assume(n_cast  > 0)
     assume(n_spoil > 0)
 
-    cfg = VotesConfig(**kwargs)
     return cfg
 
 @composite
@@ -127,7 +146,7 @@ def electionconfig(draw):
 def projectconfig(draw):
     arion_cfg    = draw(arionconfig())
     election_cfg = draw(electionconfig())
-    votes_cfg    = draw(votesconfig())
+    votes_cfg    = draw(contestsconfig())
     cfg = ProjectConfig(arion_cfg=arion_cfg, election_cfg=election_cfg, votes_cfg=votes_cfg)
     return cfg
 
@@ -149,9 +168,9 @@ def test_roundtrip_arionconfig(cfg: ArionConfig):
 def test_roundtrip_voteconfig(cfg: VoteConfig):
     assert_json_roundtrip(cfg)
 
-@given(cfg=votesconfig())
+@given(cfg=contestconfig())
 @settings(max_examples=1_000)
-def test_roundtrip_votesconfig(cfg: VotesConfig):
+def test_roundtrip_contestconfig(cfg: ContestConfig):
     assert_json_roundtrip(cfg)
 
 @given(cfg=electionconfig())
