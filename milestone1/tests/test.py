@@ -229,9 +229,9 @@ def test_cast_votes_match_config(testdir: ElectionTestDir):
     assert len(expected_contests) == len(actual_casts)
     for (expected, actual) in zip(expected_casts, actual_casts):
 
-        assert set(expected['answers'].keys()) == set(actual['votes'].keys())
+        assert set(expected['answers'].keys()) == set(actual['answers'].keys())
 
-        for (answer, n_actual) in actual['votes'].items():
+        for (answer, n_actual) in actual['answers'].items():
             assert n_actual == expected['answers'][answer]
 
 # TODO test_spoiled_votes_match_config

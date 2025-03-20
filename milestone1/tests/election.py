@@ -36,6 +36,7 @@ def parse_config(cfg_path, pause_to_explain):
     cfg = DotMap(js)
     cfg.project_config = cfg_path # for passing to arion as an env var
     cfg.pause_to_explain = pause_to_explain
+    # TODO do something like this per contest answers dict?
     # cfg.votes = dict(cfg.votes) # TODO is this the simplest way to enable iteration?
     ecfg = cfg.election
     ecfg.guardians.sequence_order = [*range(1, ecfg.guardians.count + 1)]

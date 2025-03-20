@@ -773,7 +773,7 @@ def summarize_results(
         contest_name = contest_names.get(tally_contest.object_id)
         contest_summary = {
             'question': contest_name,
-            'votes': {},
+            'answers': {},
         }
         log.info(contest_name)
         values = list(tally_contest.selections.values())
@@ -781,7 +781,7 @@ def summarize_results(
         for selection in values:
             name = selection_names[selection.object_id]
             log.info(f"  {name} {selection.tally}")
-            contest_summary['votes'][name] = selection.tally
+            contest_summary['answers'][name] = selection.tally
         tally_summary.append(contest_summary)
 
     # save summary json
