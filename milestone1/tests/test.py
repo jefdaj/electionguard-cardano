@@ -15,6 +15,9 @@ from sys import argv
 from config import *
 from election import main, init_log, parse_config
 
+# TODO remove, or leave in for debugging?
+# from hypothesis import note
+
 
 ### given_election_testdir: supply cached arbitrary elections ###
 
@@ -141,10 +144,11 @@ def load_json(json_path: str):
     with open(json_path, 'r') as f:
         return json.load(f)
 
-# TODO is the return type right?
-def load_election_config_json(testdir: str) -> ProjectConfig:
+# TODO should this convert to a ProjectConfig instead?
+def load_config_json(testdir: str) -> dict:
     json_path = join(testdir, 'election.json')
-    return load_json(json_path)
+    json_dict = load_json(json_path)
+    return json_dict
 
 def load_summary_json(testdir: str, verifier_id: str) -> dict:
     json_path = join(testdir, f'data/public/4_verify/{verifier_id}.json')
@@ -184,7 +188,7 @@ def test_all_election_verifiers_agree(testdir: ElectionTestDir):
 
 @given_election_testdir()
 def test_n_verifications(testdir: ElectionTestDir):
-    config = load_election_config_json(testdir)
+    config = load_config_json(testdir)
     n_expected = sum([
         1, # admin
         config['election']['guardians']['count'],
@@ -194,9 +198,43 @@ def test_n_verifications(testdir: ElectionTestDir):
     n_actual = len(json_paths)
     assert n_actual == n_expected
 
-# @given_election_testdir()
-# def test_election_property_3(testdir: ElectionTestDir):
-#     assert True
+def simplify_cast_votes(contest_config):
+    "Pull just the cast totals from the contests config"
+    simple_casts = []
+    for contest in contest_config:
+        simple_cast = {
+            'question': contest['question'],
+            'answers': {
+                k: v['cast']
+                for (k, v) in contest['answers'].items()
+            }
+        }
+        simple_casts.append(simple_cast)
+    return sorted(simple_casts) # TODO is this right?
+
+# TODO simplify_spoiled_votes too
+
+@given_election_testdir()
+def test_cast_votes_match_config(testdir: ElectionTestDir):
+
+    # TODO need to sort by a key? (like question)
+    cfg = load_config_json(testdir)
+    expected_contests = sorted(cfg['votes'])
+    expected_casts = simplify_cast_votes(expected_contests)
+
+    # admin isn't special here; could use any verifier
+    summary = load_summary_json(testdir, 'admin_1')
+    actual_casts = sorted(summary['Final tally of cast ballots'])
+
+    assert len(expected_contests) == len(actual_casts)
+    for (expected, actual) in zip(expected_casts, actual_casts):
+
+        assert set(expected['answers'].keys()) == set(actual['votes'].keys())
+
+        for (answer, n_actual) in actual['votes'].items():
+            assert n_actual == expected['answers'][answer]
+
+# TODO test_spoiled_votes_match_config
 
 # @given_election_testdir()
 # def test_election_property_4(testdir: ElectionTestDir):
