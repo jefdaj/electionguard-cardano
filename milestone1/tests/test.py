@@ -215,5 +215,5 @@ def test_n_verifications(testdir: ElectionTestDir):
 ### main ###
 
 if __name__ == '__main__':
-    args = ['pytest', 'test.py'] + argv[1:]
+    args = ['pytest', 'test.py', '-v'] + argv[1:]
     subprocess.check_call(args)
