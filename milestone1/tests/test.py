@@ -199,7 +199,7 @@ def test_n_verifications_matches_cfg(testdir: ElectionTestDir):
     assert n_actual == n_expected
 
 def vote_totals_from_config(config, spoiled: bool):
-    expected_contests = sorted(config['votes']) # TODO need to sort by key?
+    expected_contests = sorted(config['votes'])
     "Pull just the cast OR spoiled totals from the config"
     if spoiled:
         key = 'spoil'
@@ -209,10 +209,10 @@ def vote_totals_from_config(config, spoiled: bool):
     for contest in expected_contests:
         simple_cast = {
             'question': contest['question'],
-            'answers': { k: v[key] for (k, v) in contest['answers'].items() }
+            'answers': { k: v[key] for (k, v) in sorted(contest['answers'].items()) }
         }
         simple_casts.append(simple_cast)
-    return sorted(simple_casts) # TODO is this right?
+    return simple_casts
 
 def cast_vote_totals_from_config(contest_config):
     return vote_totals_from_config(contest_config, spoiled=False)
@@ -271,20 +271,6 @@ def test_spoiled_votes_match_config(testdir: ElectionTestDir):
     actual_spoiled_totals = spoiled_vote_totals_from_summary(summary)
 
     assert actual_spoiled_totals == expected_spoiled_totals
-
-
-# @given_election_testdir()
-# def test_election_property_4(testdir: ElectionTestDir):
-#     assert True
-
-# @given_election_testdir()
-# def test_election_property_5(testdir: ElectionTestDir):
-#     assert True
-
-# @given(cfg=projectconfig())
-# def test_write_projectconfig(cfg: ProjectConfig):
-#     with open('test.json', 'w') as f:
-#         json.dump(cfg, f)
 
 
 ### main ###
