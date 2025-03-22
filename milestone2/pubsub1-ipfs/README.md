@@ -13,8 +13,21 @@ I assume the changes need to propagate, and the Dweb instances need to peer with
 ## TODO
 
 - [ ] Pin IPFS container version.
-- [ ] test syncing with publisher and subscriber in different physical locations.
+- [x] test syncing with publisher and subscriber in different physical locations.
 - [ ] Is my top-level JSON `path` and `contents` format a rudimentary form of UnixFS?
+
+
+## Separate location tests
+
+The obvious way does NOT seem to work:
+
+- run two instances on different computers within the same (or different) LAN
+- transfer `new_cids.txt` out of band from one to the other
+- wait for the other's subscribers to pick up the files
+
+Not sure why yet. Maybe I need to make sure I have connectivity to a popular relay node?
+In any case it shouldn't be a problem in real elections, because 1) the admin can set up a nice cluster,
+and 2) enough people will be interested in pinning the files to make it more reliable.
 
 
 ## Usage
