@@ -44,9 +44,9 @@ let
     let ipAddr = "172.${toString subnetNumber}.0.2";
     in rec {
       # TODO pin named version
-      # service.image = "ipfs/kubo:release";
+      service.image = "ipfs/kubo:release";
       service.name = roleName + "-ipfs"; # TODO overridden by top attr name?
-      service.image = "e58cd5ca3066";
+      # service.image = "e58cd5ca3066";
       service.ports = [
         # host:container
         # TODO are these only needed for testing but not production?

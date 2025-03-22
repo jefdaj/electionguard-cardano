@@ -26,6 +26,7 @@
         jq
         time
         tree
+        arion
       ];
 
       pubPyPkgList = ps: with ps; [
