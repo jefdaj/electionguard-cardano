@@ -14,3 +14,4 @@ Work in progress:
 - [ ] Lucid + Kupmios
 - [ ] MeshJS + Yaci
 - [ ] Typescript + Nix
+- [ ] [ThreadDB](https://docs.textile.io/threads/)
