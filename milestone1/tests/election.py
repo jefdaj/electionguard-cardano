@@ -109,7 +109,7 @@ def setup(cfg, log):
     # arion also loads cfg separately via Nix
     # arion_cleanup(cfg, log)
     run_process(cfg, log, ['arion', 'up', '-d'])
-    time.sleep(3) # TODO does this prevent "network not found" error?
+    time.sleep(5) # TODO does this prevent "network not found" error?
 
 @explain_step
 def teardown(cfg, log):
