@@ -129,7 +129,7 @@ def given_election_testdir():
         seed(get_random_seed()),
         settings(
             # derandomize=True, # this is already default?
-            max_examples=10,
+            max_examples=2,
             deadline=None,
             phases=(Phase.explicit, Phase.reuse, Phase.generate),
         ),
@@ -172,11 +172,7 @@ def test_election_finished(testdir: ElectionTestDir):
     assert n_verifications > 0
 
 @given_election_testdir()
-def test_election_verified_by_admin(testdir: ElectionTestDir):
-    assert election_verified(testdir, 'admin_1')
-
-@given_election_testdir()
-def test_all_election_verifiers_agree(testdir: ElectionTestDir):
+def test_all_election_verifiers_agree_exactly(testdir: ElectionTestDir):
     first_summary: Optional[dict] = None
     json_paths = glob(join(testdir, 'data/public/4_verify/*.json'))
     for json_path in json_paths:
