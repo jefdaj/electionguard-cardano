@@ -7,7 +7,6 @@ import sys
 
 from collections import defaultdict
 from copy import deepcopy
-from pprint import pprint
 from typing import Any, Union, Optional, Callable, List, Dict, Tuple
 
 from utils import (
@@ -84,6 +83,10 @@ Successes = Dict[
     TargetName,
     dict # TODO variant of Dict[TargetArgs, Success] that can go into a JSON
 ]
+
+# flat summary of whether each top-level node was verified
+# (not including the ones that are mapped over lots of files)
+VerifiedBools = Dict[TargetName, bool]
 
 class DependencyError(Exception):
     "Make a target fail when one or more of its deps does"
@@ -651,10 +654,12 @@ def verify(
 
 ### summary ###
 
-def simplify_and_partition(results: ResultsCache, log: logging.Logger) -> (Successes, Errors):
+def simplify_and_partition(results: ResultsCache, log: logging.Logger) \
+        -> (Successes, Errors, VerifiedBools):
 
     successes: Successes = {}
     errors: Errors = {}
+    bools: VerifiedBools = {}
 
     # simplify
     results2 = {}
@@ -681,6 +686,7 @@ def simplify_and_partition(results: ResultsCache, log: logging.Logger) -> (Succe
     for (target_name, result) in results2.items():
         if isinstance(result, Error):
             errors[target_name] = result
+            bools[target_name] = False
             # log.info(f'{target_name} goes in errors')
             log.info(f'{target_name} error: {result}')
         elif isinstance(result, dict):
@@ -703,16 +709,18 @@ def simplify_and_partition(results: ResultsCache, log: logging.Logger) -> (Succe
         else:
             # should be a single success or a list
             successes[target_name] = result
+            bools[target_name] = True
             # log.info(f'{target_name} goes in successes')
 
     log.debug(f'successes keys: {successes.keys()}')
     log.debug(f'errors keys: {errors.keys()}')
 
-    return (successes, errors)
+    return (successes, errors, bools)
 
 def summarize_results(
     successes: Successes,
     errors: Errors,
+    bools: VerifiedBools,
     pubdir: str,
     log: logging.Logger,
     verifier_id: str,
@@ -792,13 +800,12 @@ def summarize_results(
     # save summary json
     # no particular format, except it must be a json-serializable dict
     summary = {
-        'Verified': n_errors == 0,
+        'Verified': bools,
         'Errors': errors,
         tally_header  : tally_summary,
         spoiled_header: spoiled_summaries,
     }
     to_public_record(pubdir, 'summary', summary, verifier_id=verifier_id)
-    # pprint(summary)
     log.info('')
 
     if n_errors == 0:
@@ -831,10 +838,10 @@ def main(pubdir, log, verifier_id):
     verify(results, pubdir, log, 'gather_decryptions')
     verify(results, pubdir, log, 'gather_election')
 
-    (successes, errors) = simplify_and_partition(results, log)
+    (successes, errors, bools) = simplify_and_partition(results, log)
 
     summarize_results(
-        successes, errors,
+        successes, errors, bools,
         pubdir, log, verifier_id,
     )
 
