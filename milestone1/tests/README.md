@@ -7,6 +7,32 @@ can be slow, but it caches the output files so at least editing and re-running
 the property tests is fast.
 
 ```bash
+# run a single test election as in ../election
+$ nix develop
+$ ./election.py --logfile test.log --project-config election.json
+$ tree -L 2 data/
+data/
+├── private
+│   ├── admin_1
+│   ├── device_1
+│   ├── device_2
+│   ├── device_3
+│   ├── device_4
+│   ├── guardian_1
+│   ├── guardian_2
+│   ├── guardian_3
+│   ├── verifier_1
+│   └── verifier_2
+└── public
+    ├── 1_config
+    ├── 2_ballots
+    ├── 3_results
+    └── 4_verify
+
+17 directories, 0 files
+```
+
+```bash
 $ nix develop
 
 # explicit random seed is optional
