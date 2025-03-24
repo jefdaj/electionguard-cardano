@@ -157,7 +157,7 @@ def load_summary_json(testdir: str, verifier_id: str) -> dict:
 def election_verified(testdir: str, verifier_id: str) -> bool:
     try:
         summary = load_summary_json(testdir, verifier_id)
-        return summary['Verified']
+        return summary['Verified']['gather_election']
     except:
         return False
 
