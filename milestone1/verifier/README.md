@@ -231,4 +231,4 @@ TODO:
       (because throwing them all the time messes with the test suite)
 - [x] Make a JSON summary of the verification as well as printing
 - [x] Clean up the code! It's very messy so far
-- [ ] Have this script create the election summary json rather than admin.py
+- [x] Have this script create the election summary json rather than admin.py
