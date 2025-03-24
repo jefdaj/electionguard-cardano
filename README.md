@@ -8,22 +8,24 @@ ElectionGuard + Cardano
 
 Work in progress on [the Catalyst fund13 project](https://milestones.projectcatalyst.io/projects/1300090).
 
-Current status as of 2025-03-16:
+Current status as of 2025-03-24:
 
 - All Milestones (1, 2, and 3) approved
 
 - [Milestone 1](./milestone1/) (ElectionGuard stuff):
-  * Have [electionguard-python passing its tests](./milestone1/electionguard-python-tests.md)
-  * Cleaned up [my fork](https://github.com/jefdaj/electionguard-python)
-    and pushed [a Docker image](https://ghcr.io/jefdaj/electionguard-python)
-  * Partially archived [the NIST election format docs site](./milestone1/nist-docs)
-  * The [Nix environment](./milestone1/nix-environment.md) works
-  * The [election script](./milestone1/election) (output 1.1) works
-  * The [verifier script](./milestone1/verifier) (output 1.2) works
-  * Working on the [test script](./milestone1/tests) (output 1.3)
-  * Next steps are:
-    - demo + explain the election and verifier scripts
-    - fix whatever edge cases the tests uncover in the election and verifier scripts
+  * The 3 main scripts basically work:
+    - Output 1.1: [election](./milestone1/election)
+    - Output 1.2: [verifier](./milestone1/verifier)
+    - Output 1.3: [tests](./milestone1/tests)
+  * Next steps:
+    - demo and explain everything
+    - add failure/attack tests and fix any edge cases they reveal
+  * Other misc things done along the way:
+    - Have [electionguard-python passing its tests](./milestone1/electionguard-python-tests.md)
+    - Cleaned up [my fork](https://github.com/jefdaj/electionguard-python)
+      and pushed [a Docker image](https://ghcr.io/jefdaj/electionguard-python)
+    - Partially archived [the NIST election format docs site](./milestone1/nist-docs)
+    - Set up a [Nix environment](./milestone1/nix-environment.md)
 
 - [Milestone 2](./milestone2/) (Cardano stuff):
   * [Cardano node + Ogmios](./milestone2/investigate/cardano-node-ogmios/) works
