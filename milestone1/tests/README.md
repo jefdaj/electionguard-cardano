@@ -7,9 +7,12 @@ can be slow, but it caches the output files so at least editing and re-running
 the property tests is fast.
 
 ```bash
-# run a single test election as in ../election
+# run a single test election as before in ../election
+
 $ nix develop
+
 $ ./election.py --logfile test.log --project-config election.json
+
 $ tree -L 2 data/
 data/
 ├── private
@@ -33,6 +36,10 @@ data/
 ```
 
 ```bash
+# generate 10 arbitrary configs,
+# run the corresponding elections,
+# and check properties of their data files
+
 $ nix develop
 
 # explicit random seed is optional
@@ -67,5 +74,5 @@ test.py::test_spoiled_votes_match_config PASSED                          [100%]
 - [x] Have `verifier.py` send output to a log rather than printing if `--output` given
 - [x] Set up the "generate config, run election, assert about results" loop
 - [x] Rearrange `election.json`: "election" -> "roles", "votes" -> "contests", question inside contests
+- [x] Have `verifier.py` save a nested dict of all passing verifications in its json file
 - [ ] Move `test.py` code -> `election.py`? or `conftest.py`?
-- [ ] Have `verifier.py` save a nested dict of all passing verifications in its json file
