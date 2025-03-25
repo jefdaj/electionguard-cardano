@@ -84,11 +84,12 @@ class AttackConfig(list):
             self.append(fn_name)
 
 class RunConfig(dict):
-    def __init__(self, arion_cfg, election_cfg, votes_cfg):
+    def __init__(self, arion_cfg, election_cfg, votes_cfg, attack_cfg):
         super(RunConfig, self).__init__()
         self['arion'   ] = arion_cfg
         self['election'] = election_cfg
         self['votes'   ] = votes_cfg
+        self['attacks' ] = attack_cfg
 
 
 ### arbitrary config generators ###
@@ -158,7 +159,7 @@ def attackconfig(draw):
     fns = draw(lists(
         sampled_from(ATTACK_FUNCTIONS),
         min_size=1,
-        max_size=1 # TODO how many would be useful? at least 3-4 right?
+        max_size=4 # TODO how many would be useful? at least 3-4 right?
     ))
     names = [f.__name__ for f in fns]
     cfg = AttackConfig(attacks=names)
@@ -169,7 +170,13 @@ def runconfig(draw):
     arion_cfg    = draw(arionconfig())
     election_cfg = draw(electionconfig())
     votes_cfg    = draw(contestsconfig())
-    cfg = RunConfig(arion_cfg=arion_cfg, election_cfg=election_cfg, votes_cfg=votes_cfg)
+    attack_cfg  = draw(attackconfig())
+    cfg = RunConfig(
+        arion_cfg=arion_cfg,
+        election_cfg=election_cfg,
+        votes_cfg=votes_cfg,
+        attack_cfg=attack_cfg
+    )
     return cfg
 
 

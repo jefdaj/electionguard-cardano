@@ -20,5 +20,6 @@
       "No":     {"cast": 2, "spoil":2},
       "Unsure": {"cast": 1, "spoil":3}
     }
-  }]
+  }],
+  "attacks": []
 }
