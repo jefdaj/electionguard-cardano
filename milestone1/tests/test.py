@@ -19,7 +19,7 @@ from election import main, init_log, parse_config
 # from hypothesis import note
 
 
-### given_election_testdir: supply cached arbitrary elections ###
+### given_valid_election: supply cached arbitrary elections ###
 
 TESTS_DIR = './tests'
 
@@ -124,7 +124,7 @@ def get_random_seed():
 # TODO is this a partial solution to https://github.com/HypothesisWorks/hypothesis/issues/114
 # TODO top level CLI arg for max_examples here?
 # TODO if no args needed, remove this def lambda
-def given_election_testdir():
+def given_valid_election():
     return yad([
         seed(get_random_seed()),
         settings(
@@ -165,13 +165,13 @@ def election_verified(testdir: str, verifier_id: str) -> bool:
 ### property tests ###
 
 # TODO rename something less confusing?
-@given_election_testdir()
+@given_valid_election()
 def test_election_finished(testdir: ElectionTestDir):
     json_paths = glob(join(testdir, 'data/public/4_verify/*.json'))
     n_verifications = len(json_paths)
     assert n_verifications > 0
 
-@given_election_testdir()
+@given_valid_election()
 def test_all_election_verifiers_agree_exactly(testdir: ElectionTestDir):
     first_summary: Optional[dict] = None
     json_paths = glob(join(testdir, 'data/public/4_verify/*.json'))
@@ -182,7 +182,7 @@ def test_all_election_verifiers_agree_exactly(testdir: ElectionTestDir):
         else:
             assert summary == first_summary
 
-@given_election_testdir()
+@given_valid_election()
 def test_n_verifications_matches_cfg(testdir: ElectionTestDir):
     config = load_config_json(testdir)
     n_expected = sum([
@@ -225,7 +225,7 @@ def spoiled_vote_totals_from_config(contest_config):
             totals[q][answer] = n_spoiled
     return totals
 
-@given_election_testdir()
+@given_valid_election()
 def test_cast_votes_match_config(testdir: ElectionTestDir):
 
     cfg = load_config_json(testdir)
@@ -256,7 +256,7 @@ def spoiled_vote_totals_from_summary(summary):
                 totals[question][answer] += 1
     return totals
 
-@given_election_testdir()
+@given_valid_election()
 def test_spoiled_votes_match_config(testdir: ElectionTestDir):
 
     cfg = load_config_json(testdir)
@@ -280,123 +280,123 @@ def assert_verifiers_verified(testdir: ElectionTestDir, target_name: str):
         if not summary['Verified'][target_name]:
             raise Exception(f'{verifier_id} did not verify {target_name}')
 
-@given_election_testdir()
+@given_valid_election()
 def test_manifest_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'manifest')
 
-@given_election_testdir()
+@given_valid_election()
 def test_ceremony_details_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'ceremony_details')
 
-@given_election_testdir()
+@given_valid_election()
 def test_gather_announce_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'gather_announce')
 
-@given_election_testdir()
+@given_valid_election()
 def test_all_guardian_backups_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'all_guardian_backups')
 
-@given_election_testdir()
+@given_valid_election()
 def test_all_guardian_verifications_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'all_guardian_verifications')
 
-@given_election_testdir()
+@given_valid_election()
 def test_gather_ceremony_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'gather_ceremony')
 
-@given_election_testdir()
+@given_valid_election()
 def test_joint_key_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'joint_key')
 
-@given_election_testdir()
+@given_valid_election()
 def test_build_election_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'build_election')
 
-@given_election_testdir()
+@given_valid_election()
 def test_constants_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'constants')
 
-@given_election_testdir()
+@given_valid_election()
 def test_internal_manifest_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'internal_manifest')
 
-@given_election_testdir()
+@given_valid_election()
 def test_context_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'context')
 
-@given_election_testdir()
+@given_valid_election()
 def test_gather_constants_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'gather_constants')
 
-@given_election_testdir()
+@given_valid_election()
 def test_all_devices_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'all_devices')
 
-@given_election_testdir()
+@given_valid_election()
 def test_gather_config_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'gather_config')
 
-@given_election_testdir()
+@given_valid_election()
 def test_all_ballots_submitted_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'all_ballots_submitted')
 
-@given_election_testdir()
+@given_valid_election()
 def test_all_ballots_cast_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'all_ballots_cast')
 
-@given_election_testdir()
+@given_valid_election()
 def test_all_ballots_spoiled_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'all_ballots_spoiled')
 
-@given_election_testdir()
+@given_valid_election()
 def test_all_spoiled_results_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'all_spoiled_results')
 
-@given_election_testdir()
+@given_valid_election()
 def test_n_spoiled_decrypted_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'n_spoiled_decrypted')
 
-@given_election_testdir()
+@given_valid_election()
 def test_n_cast_spoiled_submitted_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'n_cast_spoiled_submitted')
 
-@given_election_testdir()
+@given_valid_election()
 def test_set_spoiled_decrypted_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'set_spoiled_decrypted')
 
-@given_election_testdir()
+@given_valid_election()
 def test_set_cast_spoiled_submitted_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'set_cast_spoiled_submitted')
 
-@given_election_testdir()
+@given_valid_election()
 def test_ballot_sets_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'ballot_sets')
 
-@given_election_testdir()
+@given_valid_election()
 def test_ciphertext_tally_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'ciphertext_tally')
 
-@given_election_testdir()
+@given_valid_election()
 def test_tally_aggregation_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'tally_aggregation')
 
-@given_election_testdir()
+@given_valid_election()
 def test_plaintext_tally_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'plaintext_tally')
 
-@given_election_testdir()
+@given_valid_election()
 def test_tally_decryption_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'tally_decryption')
 
-@given_election_testdir()
+@given_valid_election()
 def test_gather_tally_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'gather_tally')
 
-@given_election_testdir()
+@given_valid_election()
 def test_gather_decryptions_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'gather_decryptions')
 
-@given_election_testdir()
+@given_valid_election()
 def test_gather_election_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'gather_election')
 
