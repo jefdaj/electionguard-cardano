@@ -83,9 +83,9 @@ class AttackConfig(list):
         for fn_name in attacks:
             self.append(fn_name)
 
-class ProjectConfig(dict):
+class RunConfig(dict):
     def __init__(self, arion_cfg, election_cfg, votes_cfg):
-        super(ProjectConfig, self).__init__()
+        super(RunConfig, self).__init__()
         self['arion'   ] = arion_cfg
         self['election'] = election_cfg
         self['votes'   ] = votes_cfg
@@ -165,11 +165,11 @@ def attackconfig(draw):
     return cfg
 
 @composite
-def projectconfig(draw):
+def runconfig(draw):
     arion_cfg    = draw(arionconfig())
     election_cfg = draw(electionconfig())
     votes_cfg    = draw(contestsconfig())
-    cfg = ProjectConfig(arion_cfg=arion_cfg, election_cfg=election_cfg, votes_cfg=votes_cfg)
+    cfg = RunConfig(arion_cfg=arion_cfg, election_cfg=election_cfg, votes_cfg=votes_cfg)
     return cfg
 
 
@@ -205,7 +205,7 @@ def test_roundtrip_electionconfig(cfg: ElectionConfig):
 def test_roundtrip_attackcfg(cfg: AttackConfig):
     assert_json_roundtrip(cfg)
 
-@given(cfg=projectconfig())
+@given(cfg=runconfig())
 @settings(max_examples=1_000)
-def test_roundtrip_projectconfig(cfg: ProjectConfig):
+def test_roundtrip_runconfig(cfg: RunConfig):
     assert_json_roundtrip(cfg)

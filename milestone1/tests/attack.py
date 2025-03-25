@@ -6,7 +6,7 @@
 # 2. add attacks to the main election config and run them during it 
 
 # TODO here's a good simple idea how to implement option 2:
-# - add AttacksConfig to ProjectConfig (rename TestConfig?)
+# - add AttacksConfig to RunConfig
 # - factor projectconfig() out of given_valid_election and make an attack version
 # - one fn each using different composite generators: honest and attack
 # - work attacks into election using a Dict[election step, List[attack fn]]

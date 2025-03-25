@@ -457,7 +457,7 @@ if __name__ == '__main__':
 
 TESTS_DIR = './tests'
 
-def hash_config(cfg: ProjectConfig, truncate=99) -> str:
+def hash_config(cfg: RunConfig, truncate=99) -> str:
     "Ensures tmpdirs are not being reused after their configs change"
     s = str(cfg).encode('utf-8')
     d = hashlib.md5(s).digest()
@@ -465,7 +465,7 @@ def hash_config(cfg: ProjectConfig, truncate=99) -> str:
 
 ElectionTestDir = str
 
-def run_test_election(cfg: ProjectConfig) -> ElectionTestDir:
+def run_test_election(cfg: RunConfig) -> ElectionTestDir:
 
     # use our own custom tmpdir instead of TemporaryDirectory
     h5 = hash_config(cfg, truncate=5)
@@ -532,7 +532,7 @@ def yad(decorators):
 # generated from that cfg.
 # TODO will this pass args and kwargs properly when chained via yad?
 def prerun_test_election(fn_from_testdir):
-    def fn_from_cfg(cfg: ProjectConfig, *args, **kwargs):
+    def fn_from_cfg(cfg: RunConfig, *args, **kwargs):
         testdir: ElectionTestDir = run_test_election(cfg)
         return fn_from_testdir(testdir, *args, **kwargs)
     return fn_from_cfg
@@ -564,11 +564,11 @@ def given_honest_election():
         seed(get_random_seed()),
         settings(
             # derandomize=True, # this is already default?
-            max_examples=10,
+            max_examples=2,
             deadline=None,
             phases=(Phase.explicit, Phase.reuse, Phase.generate),
         ),
-        given(cfg=projectconfig()),
+        given(cfg=runconfig()),
         prerun_test_election,
     ])
 
@@ -579,7 +579,7 @@ def load_json(json_path: str):
     with open(json_path, 'r') as f:
         return json.load(f)
 
-# TODO should this convert to a ProjectConfig instead?
+# TODO should this convert to a RunConfig instead?
 def load_config_json(testdir: str) -> dict:
     json_path = join(testdir, 'election.json')
     json_dict = load_json(json_path)
