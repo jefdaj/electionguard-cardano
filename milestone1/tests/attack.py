@@ -15,6 +15,7 @@
 #     - pro: less messing with regular non-attack-related code
 #   - or pass attacks into the actual fns and apply them during the main operations?
 
+import random
 
 ### attack functions ###
 #
@@ -25,20 +26,26 @@
 # than once.
 # TODO how do we use index exactly?
 
-def rm_submitted_ballot(log, step, index):
+def rm_submitted_ballot(cfg, log, step, index):
     if step != 'vote_commit_all':
         return
     log.info(f'running attack {index}: rm_submitted_ballot')
+    random.seed(index)
+    # TODO finish writing
 
-def rm_cast_ballot(log, step, index):
+def rm_cast_ballot(cfg, log, step, index):
     if step != 'vote_reveal_all':
         return
     log.info(f'running attack {index}: rm_cast_ballot')
+    random.seed(index)
+    # TODO finish writing
 
-def rm_spoiled_ballot(log, step, index):
+def rm_spoiled_ballot(cfg, log, step, index):
     if step != 'vote_reveal_all':
         return
     log.info(f'running attack {index}: rm_spoiled_ballot')
+    random.seed(index)
+    # TODO finish writing
 
 ATTACK_FUNCTIONS = [
     rm_submitted_ballot,
