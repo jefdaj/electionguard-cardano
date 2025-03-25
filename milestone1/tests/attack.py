@@ -17,15 +17,25 @@
 
 
 ### attack functions ###
+#
+# These attack functions will be run between regular steps in `election.py`.
+# They should be no-ops except when the `step` argument indicates that the
+# step(s) whose output files should be changed have just run.
 
-def rm_submitted_ballot():
-    raise NotImplementedError
+def rm_submitted_ballot(log, step):
+    if step != 'vote_commit_all':
+        return
+    log.info('running rm_submitted_ballot attack')
 
-def rm_cast_ballot():
-    raise NotImplementedError
+def rm_cast_ballot(log, step):
+    if step != 'vote_reveal_all':
+        return
+    log.info('running rm_cast_ballot attack')
 
-def rm_spoiled_ballot():
-    raise NotImplementedError
+def rm_spoiled_ballot(log, step):
+    if step != 'vote_reveal_all':
+        return
+    log.info('running rm_spoiled_ballot attack')
 
 ATTACK_FUNCTIONS = [
     rm_submitted_ballot,

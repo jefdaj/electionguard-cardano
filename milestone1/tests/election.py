@@ -18,6 +18,7 @@ from glob import glob
 from hypothesis import given, settings, seed, Phase
 from sys import argv
 
+from attack import *
 from config import *
 
 # TODO remove, or leave in for debugging?
@@ -371,20 +372,26 @@ def verify(cfg, log):
             ]
         )
 
+def attack(cfg, log, most_recent_step):
+    "Run all attack functions in order, telling them the most recent step"
+    for fn_name in cfg.attacks:
+        fn = globals()[fn_name]
+        fn(log, most_recent_step)
+
 def election(cfg, log):
-    build_manifest(cfg, log)
-    announce_key_ceremony(cfg, log)
-    key_ceremony_round1(cfg, log)
-    key_ceremony_round2(cfg, log)
-    key_ceremony_round3(cfg, log)
-    publish_joint_key(cfg, log)
-    build_election(cfg, log)
-    add_devices(cfg, log)
-    ballot_ids = vote_commit_all(cfg, log)
-    vote_reveal_all(cfg, log, ballot_ids)
-    tally(cfg, log)
-    decrypt_shares(cfg, log)
-    decrypt_results(cfg, log)
+    build_manifest(cfg, log)        ; attack(cfg, log, 'build_manifest')
+    announce_key_ceremony(cfg, log) ; attack(cfg, log, 'announce_key_ceremony')
+    key_ceremony_round1(cfg, log)   ; attack(cfg, log, 'key_ceremony_round1')
+    key_ceremony_round2(cfg, log)   ; attack(cfg, log, 'key_ceremony_round2')
+    key_ceremony_round3(cfg, log)   ; attack(cfg, log, 'key_ceremony_round3')
+    publish_joint_key(cfg, log)     ; attack(cfg, log, 'publish_joint_key')
+    build_election(cfg, log)        ; attack(cfg, log, 'build_election')
+    add_devices(cfg, log)           ; attack(cfg, log, 'add_devices')
+    ids = vote_commit_all(cfg, log) ; attack(cfg, log, 'vote_commit_all')
+    vote_reveal_all(cfg, log, ids)  ; attack(cfg, log, 'vote_reveal_all')
+    tally(cfg, log)                 ; attack(cfg, log, 'tally')
+    decrypt_shares(cfg, log)        ; attack(cfg, log, 'decrypt_shares')
+    decrypt_results(cfg, log)       ; attack(cfg, log, 'decrypt_results')
     verify(cfg, log)
 
 def main(cfg, log):
