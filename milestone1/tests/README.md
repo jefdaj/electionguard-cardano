@@ -131,4 +131,4 @@ data/
 - [x] Set up the "generate config, run election, assert about results" loop
 - [x] Rearrange `election.json`: "election" -> "roles", "votes" -> "contests", question inside contests
 - [x] Have `verifier.py` save a nested dict of all passing verifications in its json file
-- [ ] Move `test.py` code -> `election.py`? or `conftest.py`?
+- [x] Move `test.py` code -> `election.py`? or `conftest.py`?
