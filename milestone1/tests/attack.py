@@ -1,5 +1,17 @@
 #!/usr/bin/env python3
 
+# TODO rethink this! it would be much cooler if attacks can happen throughout
+# the election. two ideas about how to implement that:
+# 1. something with hypothesis' stateful testing
+# 2. add attacks to the main election config and run them during it 
+
+# TODO here's a good simple idea how to implement option 2:
+# - add AttacksConfig to ProjectConfig (rename TestConfig?)
+# - factor projectconfig() out of given_valid_election and make an attack version
+# - one fn each using different composite generators: honest and attack
+# - work attacks into election using a Dict[election step, List[attack fn]]
+#   - rewrite election fn to use a list of str fn names and apply matching attacks?
+
 import click
 import json
 import logging
