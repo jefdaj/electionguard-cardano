@@ -52,6 +52,7 @@ from utils import (
     load_designated_backups,
     to_public_record,
     to_private_record,
+    from_private_record,
     from_public_record,
 )
 
@@ -78,7 +79,7 @@ def add_device(device_number, public_dir):
     )
     to_public_record(public_dir, 'device', device, device_number=device_number)
 
-def vote(public_dir, private_dir, device_number, candidate, spoil):
+def vote_commit(public_dir, private_dir, device_number, candidate):
 
     manifest  = from_public_record(public_dir, 'manifest')
     joint_key = from_public_record(public_dir, 'joint_key')
@@ -88,57 +89,85 @@ def vote(public_dir, private_dir, device_number, candidate, spoil):
     (_, internal_manifest, context) = build_election(details, manifest, joint_key)
     device = from_public_record(public_dir, 'device', device_number=device_number)
 
-    ballot: PlaintextBallot = build_ballot(manifest, candidate)
+    plaintext_ballot: PlaintextBallot = build_ballot(manifest, candidate)
     to_private_record(
-        private_dir, 'plaintext_ballot', ballot,
-        ballot_id=ballot.object_id
+        private_dir, 'plaintext_ballot', plaintext_ballot,
+        ballot_id=plaintext_ballot.object_id
     )
 
     encrypter = EncryptionMediator(
         internal_manifest, context, device
     )
 
-    # neither of these will be used again after this step
-    store1 = DataStore() # for submitted ballots
-    store2 = DataStore() # for cast + spoiled ballots
+    # will not be used again after this step
+    store = DataStore()
 
     # ballots in progress (not yet cast or spoiled)
     # This is also used below as the "spoiled" ballot, because it includes nonces.
-    ballot_enc: CiphertextBallot = encrypter.encrypt(ballot)
+    ciphertext_ballot: CiphertextBallot = encrypter.encrypt(plaintext_ballot)
 
     # This is the same as the cast version; no need to include the files twice.
     ballot_submitted: SubmittedBallot = submit_ballot_to_box(
-        ballot_enc,
+        ciphertext_ballot,
         BallotBoxState.UNKNOWN,
         internal_manifest,
         context,
-        store1
+        store
     )
     assert ballot_submitted.nonce is None
+    ballot_id = ballot_submitted.object_id
     to_public_record(
         public_dir, 'ballot_submitted', ballot_submitted,
-        ballot_id=ballot_submitted.object_id
+        ballot_id=ballot_id
     )
 
+    # "return" it via stdout in run_in_container
+    # TODO is there a cleaner way to do this?
+    print(ballot_id)
+
+def vote_reveal(public_dir, private_dir, device_number, ballot_id, spoil):
+
+    # store = DataStore() # for cast + spoiled ballots. will not be used again
+
     if spoil:
+
+        details   = from_public_record(public_dir, 'ceremony_details')
+        manifest  = from_public_record(public_dir, 'manifest')
+        joint_key = from_public_record(public_dir, 'joint_key')
+
+        (_, internal_manifest, context) = build_election(details, manifest, joint_key)
+        device = from_public_record(public_dir, 'device', device_number=device_number)
+ 
+        encrypter = EncryptionMediator(
+            internal_manifest, context, device
+        )
+
+        plaintext_ballot = from_private_record(
+            private_dir, 'plaintext_ballot',
+            ballot_id=ballot_id,
+        )
+
+        # WARNING this includes nonces
+        # TODO will they be the same nonces as the prev version though? we need that
+        ciphertext_ballot: CiphertextBallot = encrypter.encrypt(plaintext_ballot)
 
         # I think this is how the authors intended for ballots to be spoiled,
         # but it doesn't work for our purposes because they don't include the nonces!
         # They just mark the state as SPOILED but otherwise it stays cast.
         # TODO is this what they meant by not having implemented decryption by nonce?
         # ballot_spoiled: SubmittedBallot = submit_ballot_to_box(
-        #     ballot_enc,
+        #     ciphertext_ballot,
         #     BallotBoxState.SPOILED,
         #     internal_manifest,
         #     context,
-        #     store2
+        #     store
         # )
 
         # Instead, I think we either need to publish the entire ciphertext or
         # just the master nonce. Doing the ciphertext for now.
         # TODO which would make more sense? ask around
         # TODO if using the nonce, which one specifically? nonce_seed?
-        ballot_spoiled = ballot_enc
+        ballot_spoiled = ciphertext_ballot
         ballot_spoiled.state = BallotBoxState.SPOILED
 
         to_public_record(
@@ -157,14 +186,16 @@ def vote(public_dir, private_dir, device_number, candidate, spoil):
         #     BallotBoxState.CAST,
         #     internal_manifest,
         #     context,
-        #     store2
+        #     store
         # )
 
         # Instead, we save a placeholder json file that says "cast" and
         # would be signed by the device on chain. And eventually maybe the
         # voter's phone app too!
+        # TODO should this include the encryption device?
         cast_notice = CastBallotNotice(
-            ballot_id=ballot_enc.object_id,
+            # ballot_id=ballot_enc.object_id, # TODO just ballot_id here?
+            ballot_id=ballot_id,
             cast_at=datetime.utcnow()
         )
 
@@ -199,7 +230,7 @@ def AddDeviceCommand(
     """
     add_device(device_number, public_dir)
 
-@click.command("vote")
+@click.command("vote_commit")
 @click.option(
     "--public-dir",
     prompt="Public records directory",
@@ -226,30 +257,67 @@ def AddDeviceCommand(
     help="The ID of the candidate (or answer!) to vote for. See manifest.json for valid options.",
     type=click.STRING,
 )
+def VoteCommitCommand(
+    public_dir: str,
+    private_dir: str,
+    device_number: int,
+    candidate: str,
+) -> None:
+    """Submit a ballot, but don't say whether it will be cast or spoiled yet.
+    """
+    vote_commit(public_dir, private_dir, device_number, candidate)
+
+@click.command("vote_reveal")
+@click.option(
+    "--public-dir",
+    prompt="Public records directory",
+    help="The location of a directory into which will be placed all public records. "
+    + "This folder should be protected. Existing files will be overwritten.",
+    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+)
+@click.option(
+    "--private-dir",
+    prompt="Private records directory",
+    help="The location of a directory into which will be placed the guardian's private keys "
+    + "This folder should be protected. Existing files will be overwritten.",
+    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+)
+@click.option(
+    "--device-number",
+    prompt="Device number",
+    help="The number of the device.",
+    type=click.INT,
+)
+@click.option(
+    "--ballot-id",
+    prompt="Ballot ID",
+    help="The ID of the ballot to reveal (cast or spoil).",
+    type=click.STRING,
+)
 @click.option(
     "--spoil",
     prompt="Spoil this ballot?",
     help="Whether to spoil (aka audit or challenge) this ballot.",
     type=click.BOOL,
 )
-def VoteCommand(
+def VoteRevealCommand(
     public_dir: str,
     private_dir: str,
     device_number: int,
-    candidate: str,
+    ballot_id: str,
     spoil: bool,
 ) -> None:
-    """Add (announce?) an encryption device,
-    which will encrypt + publish ballots and do the Benaloh challenge.
+    """Cast or spoil a previously submitted ballot by ID.
     """
-    vote(public_dir, private_dir, device_number, candidate, spoil)
+    vote_reveal(public_dir, private_dir, device_number, ballot_id, spoil)
 
 @click.group()
 def cli() -> None:
     pass
 
 cli.add_command(AddDeviceCommand)
-cli.add_command(VoteCommand)
+cli.add_command(VoteCommitCommand)
+cli.add_command(VoteRevealCommand)
 
 if __name__ == '__main__':
     cli()

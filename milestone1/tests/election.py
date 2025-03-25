@@ -73,15 +73,15 @@ def run_in_container(
     log.info(' '.join(args))
     proc = subprocess.Popen(args, **kwargs)
     (stdout, stderr) = proc.communicate()
-    stdout = stdout.strip()
     if stderr is not None:
         stderr = stderr.strip()
         if len(stderr) > 0:
-            log.info(stderr, flush=True) # TODO log?
+            log.info(stderr, flush=True)
+    stdout = stdout.strip()
     if return_stdout:
         return stdout
     elif len(stdout) > 0:
-        log.info(stdout, flush=True) # TODO log?
+        log.info(stdout, flush=True)
 
 def explain_step(fn):
     def decorated_fn(cfg, log, *args, **kwargs):
@@ -227,22 +227,39 @@ def add_devices(cfg, log):
     for n in range(1, cfg.election.devices.count + 1):
         add_device(cfg, log, n)
 
-def vote(cfg, log, device_number, candidate, spoil=False):
-    run_in_container(
+def vote_commit(cfg, log, device_number, candidate, spoil=False):
+    "submit a ballot but don't say whether it's being cast or spoiled yet"
+    ballot_id = run_in_container(
         cfg, log, "device.py", "device", device_number,
         [
-            "vote",
+            "vote_commit",
             "--public-dir", cfg.arion.bind_mounts.public,
             "--private-dir", cfg.arion.bind_mounts.private,
             "--device-number", str(device_number),
             "--candidate", candidate,
+        ],
+        return_stdout=True
+    )
+    return ballot_id
+
+def vote_reveal(cfg, log, device_number, ballot_id, spoil=False):
+    "cast or spoil a previously submitted ballot"
+    run_in_container(
+        cfg, log, "device.py", "device", device_number,
+        [
+            "vote_reveal",
+            "--public-dir", cfg.arion.bind_mounts.public,
+            "--private-dir", cfg.arion.bind_mounts.private,
+            "--device-number", str(device_number),
+            "--ballot-id", ballot_id,
             "--spoil", str(spoil),
         ]
     )
 
 @explain_step
-def vote_all(cfg, log):
+def vote_commit_all(cfg, log):
     votes_so_far = 0
+    ballot_ids = []
 
     for contest in cfg.votes:
 
@@ -253,13 +270,42 @@ def vote_all(cfg, log):
             for _ in range(n_votes.spoil):
                 # hack to iterate over devices, just to show there can be more than one
                 device_number = votes_so_far % cfg.election.devices.count + 1
-                vote(cfg, log, device_number, candidate, spoil=True)
+                ballot_id = vote_commit(cfg, log, device_number, candidate, spoil=True)
+                assert len(ballot_id) > 0
+                votes_so_far += 1
+                ballot_ids.append(ballot_id)
+
+            for _ in range(n_votes.cast):
+                device_number = votes_so_far % cfg.election.devices.count + 1
+                ballot_id = vote_commit(cfg, log, device_number, candidate)
+                assert len(ballot_id) > 0
+                votes_so_far += 1
+                ballot_ids.append(ballot_id)
+
+    return ballot_ids
+
+@explain_step
+def vote_reveal_all(cfg, log, ballot_ids):
+
+    # this time we use this to index in ballot_ids too
+    votes_so_far = 0
+
+    for contest in cfg.votes:
+        for (candidate, n_votes) in contest.answers.items():
+
+            for _ in range(n_votes.spoil):
+                device_number = votes_so_far % cfg.election.devices.count + 1
+                ballot_id = ballot_ids[votes_so_far]
+                vote_reveal(cfg, log, device_number, ballot_id, spoil=True)
                 votes_so_far += 1
 
             for _ in range(n_votes.cast):
                 device_number = votes_so_far % cfg.election.devices.count + 1
-                vote(cfg, log, device_number, candidate)
+                ballot_id = ballot_ids[votes_so_far]
+                vote_reveal(cfg, log, device_number, ballot_id, spoil=False)
                 votes_so_far += 1
+
+    assert votes_so_far == len(ballot_ids)
 
 @explain_step
 def tally(cfg, log):
@@ -334,7 +380,8 @@ def election(cfg, log):
     publish_joint_key(cfg, log)
     build_election(cfg, log)
     add_devices(cfg, log)
-    vote_all(cfg, log)
+    ballot_ids = vote_commit_all(cfg, log)
+    vote_reveal_all(cfg, log, ballot_ids)
     tally(cfg, log)
     decrypt_shares(cfg, log)
     decrypt_results(cfg, log)
