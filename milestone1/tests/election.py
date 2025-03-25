@@ -118,36 +118,25 @@ def run_process(cfg, log, args):
     if proc.returncode != 0:
         raise Exception(f'process returned {proc.returncode}')
 
-# def arion_cleanup(cfg, log):
-    # in case a previous run failed
-    # TODO remove?
-#     run_process(cfg, log, ['arion', 'down'])
-    # TODO can Docker or Arion do this rm step more safely?
-    # data_dir = './data'
-    # if exists(data_dir):
-    #     subprocess.check_call(['sudo', 'rm', '-rf', data_dir])
-
 @explain_step
 def setup(cfg, log):
     # For some reason this occassionally fails with a Docker "network not found" error.
-    # It seems to happen more during heavy testing.
-    # The hacky solution works: turning it off and on again.
-    # TODO is 10 retries necessary? what's the most times it ever fails on my machine?
-    for retry in range(1,11):
+    # The hacky solution seems to work: turning it off and on again.
+    for retry in range(3):
+        # increase delay 1 sec each time
+        time.sleep(retry)
         try:
             run_process(cfg, log, ['arion', 'up', '-d'])
             return
         except Exception as e:
-            log.error(f'arion up failed {retry} times: {e}')
-            run_process(cfg, log, ['arion', 'down']) # TODO teardown?
-            # increase delay 1 sec each time
-            time.sleep(retry) # TODO should this go before up?
+            log.error(f'arion up failed {retry+1} times: {e}')
+            teardown(cfg, log)
     raise Exception('arion up failed too many times')
 
 @explain_step
 def teardown(cfg, log):
     run_process(cfg, log, ['arion', 'down'])
-    time.sleep(3) # TODO does this help?
+    # time.sleep(3) # TODO is this necessary?
 
 
 ### election ###
