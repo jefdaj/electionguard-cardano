@@ -20,22 +20,25 @@
 #
 # These attack functions will be run between regular steps in `election.py`.
 # They should be no-ops except when the `step` argument indicates that the
-# step(s) whose output files should be changed have just run.
+# step(s) whose output files should be changed have just run. The `index` is
+# for disambiguating when the same attack is randomly chosen to be run more
+# than once.
+# TODO how do we use index exactly?
 
-def rm_submitted_ballot(log, step):
+def rm_submitted_ballot(log, step, index):
     if step != 'vote_commit_all':
         return
-    log.info('running rm_submitted_ballot attack')
+    log.info(f'running attack {index}: rm_submitted_ballot')
 
-def rm_cast_ballot(log, step):
+def rm_cast_ballot(log, step, index):
     if step != 'vote_reveal_all':
         return
-    log.info('running rm_cast_ballot attack')
+    log.info(f'running attack {index}: rm_cast_ballot')
 
-def rm_spoiled_ballot(log, step):
+def rm_spoiled_ballot(log, step, index):
     if step != 'vote_reveal_all':
         return
-    log.info('running rm_spoiled_ballot attack')
+    log.info(f'running attack {index}: rm_spoiled_ballot')
 
 ATTACK_FUNCTIONS = [
     rm_submitted_ballot,

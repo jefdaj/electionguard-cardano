@@ -374,9 +374,10 @@ def verify(cfg, log):
 
 def attack(cfg, log, most_recent_step):
     "Run all attack functions in order, telling them the most recent step"
-    for fn_name in cfg.attacks:
+    for i in range(len(cfg.attacks)):
+        fn_name = cfg.attacks[i]
         fn = globals()[fn_name]
-        fn(log, most_recent_step)
+        fn(log, most_recent_step, index=i+1)
 
 def election(cfg, log):
     build_manifest(cfg, log)        ; attack(cfg, log, 'build_manifest')
