@@ -221,6 +221,7 @@ def VoteCommand(
         # I think this is how the authors intended for ballots to be cast,
         # but I don't see any point including the whole ballot again just to
         # change the state from UNKNOWN -> CAST. It seems confusing.
+        # TODO include them anyway in order to make everything easy and symmetric?
         # ballot_cast: SubmittedBallot = submit_ballot_to_box(
         #     ballot_enc,
         #     BallotBoxState.CAST,
