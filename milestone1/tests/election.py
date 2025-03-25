@@ -54,7 +54,17 @@ def parse_config(cfg_path, pause_to_explain):
     ecfg.guardians.ids = [f"guardian_{i}" for i in ecfg.guardians.sequence_order]
     return cfg
 
-def run_in_container(cfg, log, script_name, container_role, container_number, args, **kwargs):
+# TODO args -> *args?
+def run_in_container(
+    cfg,
+    log,
+    script_name,
+    container_role,
+    container_number,
+    args,
+    return_stdout=False,
+    **kwargs
+):
     container_name = cfg.arion.project_name + "-" + container_role + str(container_number) + "-1"
     script_path = join(cfg.arion.bind_mounts.scripts, script_name)
     args = ["docker", "exec", container_name,
@@ -64,12 +74,14 @@ def run_in_container(cfg, log, script_name, container_role, container_number, ar
     proc = subprocess.Popen(args, **kwargs)
     (stdout, stderr) = proc.communicate()
     stdout = stdout.strip()
-    if len(stdout) > 0:
-        log.info(stdout, flush=True) # TODO log?
     if stderr is not None:
         stderr = stderr.strip()
         if len(stderr) > 0:
             log.info(stderr, flush=True) # TODO log?
+    if return_stdout:
+        return stdout
+    elif len(stdout) > 0:
+        log.info(stdout, flush=True) # TODO log?
 
 def explain_step(fn):
     def decorated_fn(cfg, log, *args, **kwargs):
