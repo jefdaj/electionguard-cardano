@@ -4,9 +4,10 @@ import json
 import os
 
 from hypothesis import given, settings, assume
-from hypothesis.strategies import integers, composite
-from typing import Callable, Dict
+from hypothesis.strategies import integers, composite, lists, sampled_from
+from typing import Callable, Dict, List
 
+from attack import ATTACK_FUNCTIONS
 
 ### config classes ###
 
@@ -70,6 +71,15 @@ class ElectionConfig(dict):
         self['guardians'] = GuardiansConfig(guardians_count, guardians_quorum)
         self['devices'  ] = DevicesConfig(devices_count)
         self['verifiers'] = VerifiersConfig(verifiers_count)
+
+# name of an attack function
+AttackFnName = str
+
+class AttackConfig(list):
+    def __init__(self, attacks: List[AttackFnName]):
+        super(AttackConfig, self).__init__()
+        for fn_name in attacks:
+            self.append(fn_name)
 
 class ProjectConfig(dict):
     def __init__(self, arion_cfg, election_cfg, votes_cfg):
@@ -142,6 +152,17 @@ def electionconfig(draw):
     return cfg
 
 @composite
+def attackconfig(draw):
+    fns = draw(lists(
+        sampled_from(ATTACK_FUNCTIONS),
+        min_size=1,
+        max_size=1 # TODO how many would be useful? at least 3-4 right?
+    ))
+    names = [f.__name__ for f in fns]
+    cfg = AttackConfig(attacks=names)
+    return cfg
+
+@composite
 def projectconfig(draw):
     arion_cfg    = draw(arionconfig())
     election_cfg = draw(electionconfig())
@@ -175,6 +196,11 @@ def test_roundtrip_contestconfig(cfg: ContestConfig):
 @given(cfg=electionconfig())
 @settings(max_examples=1_000)
 def test_roundtrip_electionconfig(cfg: ElectionConfig):
+    assert_json_roundtrip(cfg)
+
+@given(cfg=attackconfig())
+@settings(max_examples=1_000)
+def test_roundtrip_attackcfg(cfg: AttackConfig):
     assert_json_roundtrip(cfg)
 
 @given(cfg=projectconfig())
