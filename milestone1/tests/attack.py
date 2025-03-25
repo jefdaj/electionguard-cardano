@@ -10,7 +10,10 @@
 # - factor projectconfig() out of given_valid_election and make an attack version
 # - one fn each using different composite generators: honest and attack
 # - work attacks into election using a Dict[election step, List[attack fn]]
-#   - rewrite election fn to use a list of str fn names and apply matching attacks?
+#   - GO WITH THIS FIRST: rewrite election fn to use a list of str fn names and apply matching attacks?
+#     - pro: easier to edit files in unexpected ways directly as files
+#     - pro: less messing with regular non-attack-related code
+#   - or pass attacks into the actual fns and apply them during the main operations?
 
 import click
 import json
