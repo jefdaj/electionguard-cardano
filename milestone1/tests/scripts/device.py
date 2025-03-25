@@ -123,7 +123,7 @@ def vote_commit(public_dir, private_dir, device_number, candidate):
 
     # "return" it via stdout in run_in_container
     # TODO is there a cleaner way to do this?
-    print(ballot_id)
+    print(ballot_id, flush=True)
 
 def vote_reveal(public_dir, private_dir, device_number, ballot_id, spoil):
 

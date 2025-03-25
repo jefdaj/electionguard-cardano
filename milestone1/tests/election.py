@@ -129,14 +129,25 @@ def run_process(cfg, log, args):
 
 @explain_step
 def setup(cfg, log):
-    # arion also loads cfg separately via Nix
-    # arion_cleanup(cfg, log)
-    run_process(cfg, log, ['arion', 'up', '-d'])
-    time.sleep(5) # TODO does this prevent "network not found" error?
+    # For some reason this occassionally fails with a Docker "network not found" error.
+    # It seems to happen more during heavy testing.
+    # The hacky solution works: turning it off and on again.
+    # TODO is 10 retries necessary? what's the most times it ever fails on my machine?
+    for retry in range(1,11):
+        try:
+            run_process(cfg, log, ['arion', 'up', '-d'])
+            return
+        except Exception as e:
+            log.error(f'arion up failed {retry} times: {e}')
+            run_process(cfg, log, ['arion', 'down']) # TODO teardown?
+            # increase delay 1 sec each time
+            time.sleep(retry) # TODO should this go before up?
+    raise Exception('arion up failed too many times')
 
 @explain_step
 def teardown(cfg, log):
     run_process(cfg, log, ['arion', 'down'])
+    time.sleep(3) # TODO does this help?
 
 
 ### election ###
@@ -564,7 +575,7 @@ def given_valid_election():
         seed(get_random_seed()),
         settings(
             # derandomize=True, # this is already default?
-            max_examples=2,
+            max_examples=10,
             deadline=None,
             phases=(Phase.explicit, Phase.reuse, Phase.generate),
         ),
