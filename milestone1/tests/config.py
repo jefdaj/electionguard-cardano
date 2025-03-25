@@ -4,7 +4,7 @@ import json
 import os
 
 from hypothesis import given, settings, assume
-from hypothesis.strategies import integers, composite, SearchStrategy
+from hypothesis.strategies import integers, composite
 from typing import Callable, Dict
 
 
