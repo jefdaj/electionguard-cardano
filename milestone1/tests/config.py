@@ -5,9 +5,11 @@ import os
 
 from hypothesis import given, settings, assume
 from hypothesis.strategies import integers, composite, lists, sampled_from
+from hypothesis import note
 from typing import Callable, Dict, List
 
 from attack import ATTACK_FUNCTIONS
+
 
 ### config classes ###
 
@@ -171,7 +173,7 @@ def projectconfig(draw):
     return cfg
 
 
-### config tests ###
+### tests ###
 
 def assert_json_roundtrip(cfg):
     tmp  = json.dumps(cfg)
