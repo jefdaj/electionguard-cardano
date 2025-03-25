@@ -62,40 +62,6 @@ POLLING_PLACE  = 'electionguard-cardano-polling-place'
 # DEVICE_PREFIX  = 'device_'
 
 
-@click.command("add-device")
-@click.option(
-    "--device-number",
-    prompt="Device number",
-    help="The number of the device.",
-    type=click.INT,
-)
-@click.option(
-    "--public-dir",
-    prompt="Public records directory",
-    help="The location of a directory into which will be placed all public records. "
-    + "This folder should be protected. Existing files will be overwritten.",
-    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
-)
-def AddDeviceCommand(
-    device_number: int,
-    public_dir: str,
-) -> None:
-    """Add (announce?) an encryption device,
-    which will encrypt + publish ballots and do the Benaloh challenge.
-    """
-
-    # print(json.dumps(locals()))
-
-    device = EncryptionDevice(
-        generate_device_uuid(), # device id (TODO is this deterministic?)
-        device_number * 12345, # session id  (TODO what's this?)
-        device_number * 45678, # launch code (TODO what's this?)
-        POLLING_PLACE,
-    )
-
-    to_public_record(public_dir, 'device', device, device_number=device_number)
-
-
 # TODO what should this inherit from... ElectionObjectBase? CryptoHashCheckable?
 @dataclass
 class CastBallotNotice(object):
@@ -103,52 +69,16 @@ class CastBallotNotice(object):
     cast_at: datetime
 
 
+def add_device(device_number, public_dir):
+    device = EncryptionDevice(
+        generate_device_uuid(), # device id (TODO is this deterministic?)
+        device_number * 12345, # session id  (TODO what's this?)
+        device_number * 45678, # launch code (TODO what's this?)
+        POLLING_PLACE,
+    )
+    to_public_record(public_dir, 'device', device, device_number=device_number)
 
-@click.command("vote")
-@click.option(
-    "--public-dir",
-    prompt="Public records directory",
-    help="The location of a directory into which will be placed all public records. "
-    + "This folder should be protected. Existing files will be overwritten.",
-    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
-)
-@click.option(
-    "--private-dir",
-    prompt="Private records directory",
-    help="The location of a directory into which will be placed the guardian's private keys "
-    + "This folder should be protected. Existing files will be overwritten.",
-    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
-)
-@click.option(
-    "--device-number",
-    prompt="Device number",
-    help="The number of the device.",
-    type=click.INT,
-)
-@click.option(
-    "--candidate",
-    prompt="Candidate name",
-    help="The ID of the candidate (or answer!) to vote for. See manifest.json for valid options.",
-    type=click.STRING,
-)
-@click.option(
-    "--spoil",
-    prompt="Spoil this ballot?",
-    help="Whether to spoil (aka audit or challenge) this ballot.",
-    type=click.BOOL,
-)
-def VoteCommand(
-    public_dir: str,
-    private_dir: str,
-    device_number: int,
-    candidate: str,
-    spoil: bool,
-) -> None:
-    """Add (announce?) an encryption device,
-    which will encrypt + publish ballots and do the Benaloh challenge.
-    """
-
-    # print(json.dumps(locals()))
+def vote(public_dir, private_dir, device_number, candidate, spoil):
 
     manifest  = from_public_record(public_dir, 'manifest')
     joint_key = from_public_record(public_dir, 'joint_key')
@@ -243,6 +173,76 @@ def VoteCommand(
             ballot_id=cast_notice.ballot_id
         )
 
+
+### cli ###
+
+@click.command("add-device")
+@click.option(
+    "--device-number",
+    prompt="Device number",
+    help="The number of the device.",
+    type=click.INT,
+)
+@click.option(
+    "--public-dir",
+    prompt="Public records directory",
+    help="The location of a directory into which will be placed all public records. "
+    + "This folder should be protected. Existing files will be overwritten.",
+    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+)
+def AddDeviceCommand(
+    device_number: int,
+    public_dir: str,
+) -> None:
+    """Add (announce?) an encryption device,
+    which will encrypt + publish ballots and do the Benaloh challenge.
+    """
+    add_device(device_number, public_dir)
+
+@click.command("vote")
+@click.option(
+    "--public-dir",
+    prompt="Public records directory",
+    help="The location of a directory into which will be placed all public records. "
+    + "This folder should be protected. Existing files will be overwritten.",
+    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+)
+@click.option(
+    "--private-dir",
+    prompt="Private records directory",
+    help="The location of a directory into which will be placed the guardian's private keys "
+    + "This folder should be protected. Existing files will be overwritten.",
+    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+)
+@click.option(
+    "--device-number",
+    prompt="Device number",
+    help="The number of the device.",
+    type=click.INT,
+)
+@click.option(
+    "--candidate",
+    prompt="Candidate name",
+    help="The ID of the candidate (or answer!) to vote for. See manifest.json for valid options.",
+    type=click.STRING,
+)
+@click.option(
+    "--spoil",
+    prompt="Spoil this ballot?",
+    help="Whether to spoil (aka audit or challenge) this ballot.",
+    type=click.BOOL,
+)
+def VoteCommand(
+    public_dir: str,
+    private_dir: str,
+    device_number: int,
+    candidate: str,
+    spoil: bool,
+) -> None:
+    """Add (announce?) an encryption device,
+    which will encrypt + publish ballots and do the Benaloh challenge.
+    """
+    vote(public_dir, private_dir, device_number, candidate, spoil)
 
 @click.group()
 def cli() -> None:
