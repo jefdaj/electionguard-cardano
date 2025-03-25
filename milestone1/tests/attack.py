@@ -19,7 +19,7 @@ from hypothesis import given, settings, seed, Phase
 from hypothesis.strategies import composite, lists, sampled_from
 from sys import argv
 
-from config import assert_json_roundtrip
+from config import assert_json_roundtrip, projectconfig, ProjectConfig
 
 # TODO remove, or leave in for debugging?
 from hypothesis import note
@@ -80,3 +80,11 @@ def given_attacked_election():
         given(cfg=projectconfig(), attack=attackconfig()),
         prerun_test_election, # TODO prerun_attack too, but how?
     ])
+
+# This almost works, but doesn't allow setting max_examples per given
+@given(pcfg=projectconfig(), acfg=attackconfig())
+@settings(max_examples=10)
+def test_combined_givens(pcfg: ProjectConfig, acfg: AttackConfig):
+    note(pcfg)
+    note(acfg)
+    assert True
