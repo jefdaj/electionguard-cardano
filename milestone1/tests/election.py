@@ -413,20 +413,24 @@ def attack(cfg, log, step):
         )
 
 def election(cfg, log):
-    build_manifest(cfg, log)        ; attack(cfg, log, 'build_manifest')
-    announce_key_ceremony(cfg, log) ; attack(cfg, log, 'announce_key_ceremony')
-    key_ceremony_round1(cfg, log)   ; attack(cfg, log, 'key_ceremony_round1')
-    key_ceremony_round2(cfg, log)   ; attack(cfg, log, 'key_ceremony_round2')
-    key_ceremony_round3(cfg, log)   ; attack(cfg, log, 'key_ceremony_round3')
-    publish_joint_key(cfg, log)     ; attack(cfg, log, 'publish_joint_key')
-    build_election(cfg, log)        ; attack(cfg, log, 'build_election')
-    add_devices(cfg, log)           ; attack(cfg, log, 'add_devices')
-    ids = vote_commit_all(cfg, log) ; attack(cfg, log, 'vote_commit_all')
-    vote_reveal_all(cfg, log, ids)  ; attack(cfg, log, 'vote_reveal_all')
-    tally(cfg, log)                 ; attack(cfg, log, 'tally')
-    decrypt_shares(cfg, log)        ; attack(cfg, log, 'decrypt_shares')
-    decrypt_results(cfg, log)       ; attack(cfg, log, 'decrypt_results')
-    verify(cfg, log)
+    try:
+        build_manifest(cfg, log)        ; attack(cfg, log, 'build_manifest')
+        announce_key_ceremony(cfg, log) ; attack(cfg, log, 'announce_key_ceremony')
+        key_ceremony_round1(cfg, log)   ; attack(cfg, log, 'key_ceremony_round1')
+        key_ceremony_round2(cfg, log)   ; attack(cfg, log, 'key_ceremony_round2')
+        key_ceremony_round3(cfg, log)   ; attack(cfg, log, 'key_ceremony_round3')
+        publish_joint_key(cfg, log)     ; attack(cfg, log, 'publish_joint_key')
+        build_election(cfg, log)        ; attack(cfg, log, 'build_election')
+        add_devices(cfg, log)           ; attack(cfg, log, 'add_devices')
+        ids = vote_commit_all(cfg, log) ; attack(cfg, log, 'vote_commit_all')
+        vote_reveal_all(cfg, log, ids)  ; attack(cfg, log, 'vote_reveal_all')
+        tally(cfg, log)                 ; attack(cfg, log, 'tally')
+        decrypt_shares(cfg, log)        ; attack(cfg, log, 'decrypt_shares')
+        decrypt_results(cfg, log)       ; attack(cfg, log, 'decrypt_results')
+    except:
+        pass
+    finally:
+        verify(cfg, log) ; attack(cfg, log, 'verify')
 
 def main(cfg, log):
     try:
@@ -754,14 +758,16 @@ def test_spoiled_votes_match_config(testdir: ElectionTestDir):
 
 ### property tests delegated to verifiers ###
 
-def assert_verifiers_verified(testdir: ElectionTestDir, target_name: str):
+def assert_verifiers_verified(testdir: ElectionTestDir, target_name: str, expected: bool = True):
     json_paths = sorted(glob(join(testdir, 'data/public/4_verify/*.json')))
     assert len(json_paths) > 0 # exact number tested separately
     for json_path in json_paths:
         summary = load_json(json_path)
         verifier_id = splitext(basename(json_path))[0]
-        if not summary['Verified'][target_name]:
-            raise Exception(f'{verifier_id} did not verify {target_name}')
+        actual = summary['Verified'][target_name]
+        if actual != expected:
+            msg = f'{verifier_id} verified {target_name}? {actual} but should be {expected}'
+            raise Exception(msg)
 
 @given_honest_election()
 def test_manifest_verified(testdir: ElectionTestDir):
@@ -886,6 +892,11 @@ def test_gather_election_verified(testdir: ElectionTestDir):
 
 ### attack tests ###
 
-# @given_attack_election()
-# def test_fails_loudly_when_attacked(testdir: ElectionTestDir):
-#     with pytest.raises(Exception) as e_info:
+# TODO wait, will this work? or will the election fail during generation?
+# TODO make sure that when the rest of the election fails, verifiers still run
+# TODO and there should be attacks *on* the verifiers of course
+
+# this isn't always true, but a reasonable first approximation
+@given_attack_election()
+def test_election_fails_loudly_when_attacked(testdir: ElectionTestDir):
+    assert_verifiers_verified(testdir, 'gather_election', False)
