@@ -8,7 +8,20 @@ from hypothesis.strategies import integers, composite, lists, sampled_from
 from hypothesis import note
 from typing import Callable, Dict, List
 
-from attack import ATTACK_FUNCTIONS
+
+# TODO how to get this from inside scripts? does it need to be separate?
+# TODO or maybe it should be defined in config or election?
+# TODO oh. or the easy dumb way: copy a list of names -> config.py. start with that
+# from attack import ATTACK_FUNCTIONS
+
+# The actual attack functions live in scripts/attack.py, but info about how to
+# run them lives here. Besides the static info here, they'll also recieve a
+# random seed for picking which device to currupt, which ballot(s) to edit, etc.
+ATTACKS = [
+    {'who': 'device', 'when': 'vote_commit_all', 'what': 'rm_submitted_ballot'},
+    {'who': 'device', 'when': 'vote_reveal_all', 'what': 'rm_cast_ballot'     },
+    {'who': 'device', 'when': 'vote_reveal_all', 'what': 'rm_spoiled_ballot'  },
+]
 
 
 ### config classes ###
@@ -156,13 +169,12 @@ def electionconfig(draw):
 
 @composite
 def attackconfig(draw):
-    fns = draw(lists(
-        sampled_from(ATTACK_FUNCTIONS),
+    attacks = draw(lists(
+        sampled_from(ATTACKS),
         min_size=1,
         max_size=4 # TODO how many would be useful? at least 3-4 right?
     ))
-    names = [f.__name__ for f in fns]
-    cfg = AttackConfig(attacks=names)
+    cfg = AttackConfig(attacks=attacks)
     return cfg
 
 @composite

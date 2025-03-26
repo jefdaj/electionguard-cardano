@@ -52,3 +52,66 @@ ATTACK_FUNCTIONS = [
     rm_cast_ballot,
     rm_spoiled_ballot,
 ]
+
+
+### cli ###
+
+@click.command("attack")
+@click.option(
+    "--public-dir",
+    prompt="Public records directory",
+    help="The location of a directory into which will be placed all public records. "
+    + "This folder should be protected. Existing files will be overwritten.",
+    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+)
+@click.option(
+    "--private-dir",
+    prompt="Private records directory",
+    help="The location of a directory into which will be placed the guardian's private keys "
+    + "This folder should be protected. Existing files will be overwritten.",
+    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+)
+@click.option(
+    "--attacker-id",
+    prompt="Unique ID for this attacker",
+    help="Used to decide which container to run the attack script from",
+    type=click.STRING,
+)
+@click.option(
+    "--attack-fn",
+    prompt="Attack function name",
+    help="Which attack to run",
+    type=click.STRING,
+)
+@click.option(
+    "--logfile",
+    prompt="Logfile (default: stdout)",
+    help="Where to log printed messages",
+    type=click.STRING,
+)
+@click.option(
+    "--random-seed",
+    prompt="Random seed",
+    help="Used when picking files to edit",
+    type=click.INT,
+)
+def AttackCommand(
+    public_dir: str,
+    private_dir: str,
+    attacker_id: str,
+    attack_fn: str,
+    random_seed: int,
+    logfile: Optional[str],
+) -> None:
+    # TODO parse and pass cfg here?
+    log.info(f'locals: {locals()}')
+    log = init_log(logfile, logging.INFO)
+
+@click.group
+def cli() -> None:
+    pass
+
+cli.add_command(AttackCommand)
+
+if __name__ == '__main__':
+    cli()
