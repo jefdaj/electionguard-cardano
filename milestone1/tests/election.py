@@ -17,6 +17,7 @@ import hashlib
 
 from glob import glob
 from hypothesis import given, settings, seed, Phase
+import pytest
 from sys import argv
 
 from config import *
@@ -600,7 +601,7 @@ def get_random_seed():
 # TODO is this a partial solution to https://github.com/HypothesisWorks/hypothesis/issues/114
 # TODO top level CLI arg for max_examples here?
 # TODO if no args needed, remove this def lambda
-def given_honest_election():
+def given_election(attack_cfg_fn):
     return yad([
         seed(get_random_seed()),
         settings(
@@ -609,9 +610,15 @@ def given_honest_election():
             deadline=None,
             phases=(Phase.explicit, Phase.reuse, Phase.generate),
         ),
-        given(cfg=honest_runconfig()),
+        given(cfg=attack_cfg_fn()),
         prerun_test_election,
     ])
+
+def given_honest_election():
+    return given_election(honestrun)
+
+def given_attack_election():
+    return given_election(attackrun)
 
 
 ### misc small test helpers ###
@@ -875,3 +882,10 @@ def test_gather_decryptions_verified(testdir: ElectionTestDir):
 @given_honest_election()
 def test_gather_election_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'gather_election')
+
+
+### attack tests ###
+
+# @given_attack_election()
+# def test_fails_loudly_when_attacked(testdir: ElectionTestDir):
+#     with pytest.raises(Exception) as e_info:
