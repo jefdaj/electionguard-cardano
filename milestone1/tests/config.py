@@ -18,10 +18,10 @@ from typing import Callable, Dict, List
 # run them lives here. Besides the static info here, they'll also recieve a
 # random seed for picking which device to currupt, which ballot(s) to edit, etc.
 ATTACKS = [
-    {'who': 'admin', 'when': ['build_manifest'], 'what': 'withhold_manifest'},
-    # {'who': 'device', 'when': ['vote_commit_all'], 'what': 'withhold_submitted_ballot'},
-    # {'who': 'device', 'when': ['vote_reveal_all'], 'what': 'withhold_cast_ballot'     },
-    # {'who': 'device', 'when': ['vote_reveal_all'], 'what': 'withhold_spoiled_ballot'  },
+    {'who': 'admin' , 'when': ['build_manifest'], 'what': 'withhold_manifest'},
+    {'who': 'device', 'when': ['vote_commit_all'], 'what': 'withhold_submitted_ballot'},
+    {'who': 'device', 'when': ['vote_reveal_all'], 'what': 'withhold_cast_ballot'     },
+    {'who': 'device', 'when': ['vote_reveal_all'], 'what': 'withhold_spoiled_ballot'  },
 ]
 
 
@@ -173,7 +173,7 @@ def attackconfig(draw):
     attacks = draw(lists(
         sampled_from(ATTACKS),
         min_size=1,
-        max_size=1 # TODO how many would be useful? at least 3-4 right?
+        max_size=3 # TODO how many would be useful? at least 3-4 right?
     ))
     cfg = AttackConfig(attacks=attacks)
     return cfg
