@@ -124,9 +124,8 @@ def run_process(cfg, log, args):
 def setup(cfg, log):
     # For some reason this occassionally fails with a Docker "network not found" error.
     # The hacky solution seems to work: turning it off and on again.
-    for retry in range(3):
-        # increase delay 1 sec each time
-        time.sleep(retry)
+    for retry in range(1, 4):
+        time.sleep(retry * 2) # delay 2, 4, 6, 8 sec
         try:
             run_process(cfg, log, ['arion', 'up', '-d'])
             return
@@ -374,16 +373,14 @@ def verify(cfg, log):
         )
 
 def attack(cfg, log, step):
-    "Run any attack functions that match the most recent step"
+    "Run any attack functions that target the current step"
+
     for i in range(1, len(cfg.attacks) + 1):
         attack = cfg.attacks[i-1]
-        if attack.when != step:
+        if not step in attack.when:
             continue
 
-        log.debug(f'setting up {attack.what} attack')
-
         seed = i # TODO should the test hash also contribute?
-        log.debug(f'random seed {seed}')
 
         # attack specifies a role, but not the exact container
         # so we choose which one to corrupt randomly here
@@ -396,22 +393,22 @@ def attack(cfg, log, step):
         }
         random.seed(seed)
         n = random.randint(1, counts[role])
-        log.debug(f'running it as {role} {n}')
 
         logfile = join(cfg.arion.bind_mounts.private, 'attack.log')
-        log.debug(f'logfile {logfile}')
         run_in_container(
             cfg, log, "attack.py", role, n,
             [
                 "attack",
                 "--public-dir", cfg.arion.bind_mounts.public,
                 "--private-dir", cfg.arion.bind_mounts.private,
-                "--attack-fn", attack.what,
                 "--logfile", logfile,
+                "--attack-fn", attack.what,
+                "--step", step,
                 "--random-seed", str(seed),
             ]
         )
 
+# TODO should the attacks be called as part of each step rather than separately?
 def election(cfg, log):
     try:
         build_manifest(cfg, log)        ; attack(cfg, log, 'build_manifest')
@@ -653,7 +650,7 @@ def election_verified(testdir: str, verifier_id: str) -> bool:
 
 # TODO rename something less confusing?
 @given_honest_election()
-def test_election_finished(testdir: ElectionTestDir):
+def test_honest_election_finishes(testdir: ElectionTestDir):
     json_paths = glob(join(testdir, 'data/public/4_verify/*.json'))
     n_verifications = len(json_paths)
     assert n_verifications > 0
@@ -892,9 +889,9 @@ def test_gather_election_verified(testdir: ElectionTestDir):
 
 ### attack tests ###
 
-# TODO wait, will this work? or will the election fail during generation?
-# TODO make sure that when the rest of the election fails, verifiers still run
-# TODO and there should be attacks *on* the verifiers of course
+@given_attack_election()
+def test_withhold_manifest_attack(testdir: ElectionTestDir):
+    assert_verifiers_verified(testdir, 'manifest', False)
 
 # this isn't always true, but a reasonable first approximation
 @given_attack_election()

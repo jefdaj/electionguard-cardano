@@ -26,28 +26,31 @@ from utils import (
 )
 
 
-def attack(log, public_dir, private_dir, fn_name, random_seed):
+def attack(log, public_dir, private_dir, fn_name, step, random_seed):
     # log.info()
     random.seed(random_seed) # TODO do within each fn, or just here?
     attack_fn = globals()[fn_name]
-    attack_fn(log, public_dir, private_dir)
+    attack_fn(log, public_dir, private_dir, step)
 
 
 ### attack functions ###
 
-def withhold_manifest(log, pubdir, privdir):
-    # A pointless attack that's fast to debug because it targets the first step.
+def withhold_manifest(log, pubdir, privdir, step):
+    "A pointless attack that's fast to debug because it targets the first step."
     manifest_path = public_path(pubdir, 'manifest')
     log.info(f'removing {manifest_path}')
-    os.remove(manifest_path)
+    try:
+        os.remove(manifest_path)
+    except Exception as e:
+        log.error(e)
 
-# def withhold_submitted_ballot(log, pubdir, privdir):
+# def withhold_submitted_ballot(log, pubdir, privdir, step):
 #     raise NotImplementedError
 
-# def withhold_cast_ballot(log, pubdir, privdir):
+# def withhold_cast_ballot(log, pubdir, privdir, step):
 #     raise NotImplementedError
 
-# def withhold_spoiled_ballot(log, pubdir, privdir):
+# def withhold_spoiled_ballot(log, pubdir, privdir, step):
 #     raise NotImplementedError
 
 
@@ -69,15 +72,21 @@ def withhold_manifest(log, pubdir, privdir):
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
 @click.option(
+    "--logfile",
+    prompt="Logfile (default: stdout)",
+    help="Where to log printed messages",
+    type=click.STRING,
+)
+@click.option(
     "--attack-fn",
     prompt="Attack function name",
     help="Which attack to run",
     type=click.STRING,
 )
 @click.option(
-    "--logfile",
-    prompt="Logfile (default: stdout)",
-    help="Where to log printed messages",
+    "--step",
+    prompt="Election step",
+    help="Which step of the election is currently going on",
     type=click.STRING,
 )
 @click.option(
@@ -90,12 +99,14 @@ def AttackCommand(
     public_dir: str,
     private_dir: str,
     attack_fn: str,
+    step: str,
     random_seed: int,
     logfile: Optional[str],
 ) -> None:
     # TODO parse and pass cfg here?
     log = init_log(logfile, logging.INFO)
-    attack(log, public_dir, private_dir, attack_fn, random_seed)
+    log.info(f'locals: {locals()}')
+    attack(log, public_dir, private_dir, attack_fn, step, random_seed)
 
 @click.group
 def cli() -> None:

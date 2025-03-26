@@ -178,7 +178,7 @@ def record_basename(record_type:str, **fmtargs):
 def record_path(records_map, root_dir:str, record_type: str, **fmtargs):
     (_, dname, fstr) = records_map[record_type]
     dpath = join(root_dir, dname)
-    # makedirs(dpath, exist_ok=True) # TODO make the dir here?
+    makedirs(dpath, exist_ok=True) # TODO make the dir here?
     fname = fstr.format(**fmtargs)
     return join(dpath, fname + '.json')
 

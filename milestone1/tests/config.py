@@ -18,10 +18,10 @@ from typing import Callable, Dict, List
 # run them lives here. Besides the static info here, they'll also recieve a
 # random seed for picking which device to currupt, which ballot(s) to edit, etc.
 ATTACKS = [
-    {'who': 'admin', 'when': 'build_manifest', 'what': 'withhold_manifest'},
-    # {'who': 'device', 'when': 'vote_commit_all', 'what': 'rm_submitted_ballot'},
-    # {'who': 'device', 'when': 'vote_reveal_all', 'what': 'rm_cast_ballot'     },
-    # {'who': 'device', 'when': 'vote_reveal_all', 'what': 'rm_spoiled_ballot'  },
+    {'who': 'admin', 'when': ['build_manifest'], 'what': 'withhold_manifest'},
+    # {'who': 'device', 'when': ['vote_commit_all'], 'what': 'withhold_submitted_ballot'},
+    # {'who': 'device', 'when': ['vote_reveal_all'], 'what': 'withhold_cast_ballot'     },
+    # {'who': 'device', 'when': ['vote_reveal_all'], 'what': 'withhold_spoiled_ballot'  },
 ]
 
 
