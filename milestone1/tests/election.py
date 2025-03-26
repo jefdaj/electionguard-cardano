@@ -5,6 +5,7 @@ import json
 import logging
 import subprocess
 import time
+import random
 
 from click_default_group import DefaultGroup
 from dotmap import DotMap
@@ -18,7 +19,6 @@ from glob import glob
 from hypothesis import given, settings, seed, Phase
 from sys import argv
 
-from attack import *
 from config import *
 
 # TODO remove, or leave in for debugging?
@@ -372,12 +372,42 @@ def verify(cfg, log):
             ]
         )
 
-def attack(cfg, log, most_recent_step):
-    "Run all attack functions in order, telling them the most recent step"
+def attack(cfg, log, step):
+    "Run any attack functions that match the most recent step"
     for i in range(len(cfg.attacks)):
-        fn_name = cfg.attacks[i]
-        # fn = globals()[fn_name]
-        # fn(log, most_recent_step, index=i+1)
+        attack = cfg.attacks[i]
+        if attack['when'] != step:
+            continue
+
+        log.info(f'setting up attack {attack}')
+
+        seed = i # TODO should the test hash also contribute?
+
+        # attack specifies a role, but not the exact container
+        # so we choose which one to corrupt randomly here
+        role = attack['who']
+        counts = {
+            'admin'    : 1,
+            'verifier' : cfg.verifiers.count,
+            'guardian' : cfg.guardians.count,
+            'device'   : cfg.devices.count,
+        }
+        random.seed(seed)
+        n = random.randint(1, counts[role]+1)
+        log.info(f'running it as {role} {n}')
+
+        logfile = join(cfg.arion.bind_mounts.private, 'attack.log')
+        run_in_container(
+            cfg, log, "attack.py", role, n,
+            [
+                "attack",
+                "--public-dir", cfg.arion.bind_mounts.public,
+                "--private-dir", cfg.arion.bind_mounts.private,
+                "--attack-fn", attack['what'],
+                "--logfile", logfile,
+                "--random-seed", seed,
+            ]
+        )
 
 def election(cfg, log):
     build_manifest(cfg, log)        ; attack(cfg, log, 'build_manifest')
@@ -448,6 +478,7 @@ def ElectionCommand(
     log = init_log(cfg, logfile, logging.INFO)
     if single_step:
         run_single_step(cfg, log, single_step)
+        attack(cfg, log, single_step)
     else:
         main(cfg, log)
 
@@ -576,7 +607,7 @@ def given_honest_election():
             deadline=None,
             phases=(Phase.explicit, Phase.reuse, Phase.generate),
         ),
-        given(cfg=runconfig()),
+        given(cfg=honest_runconfig()),
         prerun_test_election,
     ])
 

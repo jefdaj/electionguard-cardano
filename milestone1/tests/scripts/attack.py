@@ -16,6 +16,9 @@
 #   - or pass attacks into the actual fns and apply them during the main operations?
 
 import random
+from utils import (
+    init_log,
+)
 
 ### attack functions ###
 #
@@ -47,11 +50,12 @@ def rm_spoiled_ballot(cfg, log, step, index):
     random.seed(index)
     # TODO finish writing
 
-ATTACK_FUNCTIONS = [
-    rm_submitted_ballot,
-    rm_cast_ballot,
-    rm_spoiled_ballot,
-]
+# TODO is there a way to define everything here and import from config/election?
+# ATTACK_FUNCTIONS = [
+#     rm_submitted_ballot,
+#     rm_cast_ballot,
+#     rm_spoiled_ballot,
+# ]
 
 
 ### cli ###

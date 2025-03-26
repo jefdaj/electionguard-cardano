@@ -177,8 +177,9 @@ def attackconfig(draw):
     cfg = AttackConfig(attacks=attacks)
     return cfg
 
+# Messed up election with attacks
 @composite
-def runconfig(draw):
+def attackrun(draw):
     arion_cfg    = draw(arionconfig())
     election_cfg = draw(electionconfig())
     votes_cfg    = draw(contestsconfig())
@@ -188,6 +189,22 @@ def runconfig(draw):
         election_cfg=election_cfg,
         votes_cfg=votes_cfg,
         attack_cfg=attack_cfg
+    )
+    return cfg
+
+# Honest/clean election (no attacks)
+# TODO dry this out more?
+@composite
+def honestrun(draw):
+    arion_cfg    = draw(arionconfig())
+    election_cfg = draw(electionconfig())
+    votes_cfg    = draw(contestsconfig())
+    attack_cfg  = draw(attackconfig())
+    cfg = RunConfig(
+        arion_cfg=arion_cfg,
+        election_cfg=election_cfg,
+        votes_cfg=votes_cfg,
+        attack_cfg=[] # only difference
     )
     return cfg
 
@@ -224,7 +241,12 @@ def test_roundtrip_electionconfig(cfg: ElectionConfig):
 def test_roundtrip_attackcfg(cfg: AttackConfig):
     assert_json_roundtrip(cfg)
 
-@given(cfg=runconfig())
+@given(cfg=honestrun())
 @settings(max_examples=1_000)
-def test_roundtrip_runconfig(cfg: RunConfig):
+def test_roundtrip_honestrun(cfg: RunConfig):
+    assert_json_roundtrip(cfg)
+
+@given(cfg=attackrun())
+@settings(max_examples=1_000)
+def test_roundtrip_attackrun(cfg: RunConfig):
     assert_json_roundtrip(cfg)

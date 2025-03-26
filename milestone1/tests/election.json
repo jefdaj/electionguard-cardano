@@ -21,5 +21,7 @@
       "Unsure": {"cast": 1, "spoil":3}
     }
   }],
-  "attacks": []
+  "attacks": [
+    {"who": "device", "when": "vote_commit_all", "what": "rm_submitted_ballot"}
+  ]
 }

@@ -504,4 +504,15 @@ class CaptureLog:
 
         # implicit return of None => don't swallow exceptions
 
-
+def init_log(logfile, level=logging.WARNING):
+    log = logging.getLogger(__name__)
+    log.setLevel(level)
+    if logfile is None:
+        handler = logging.StreamHandler(sys.stdout)
+    else:
+        handler = logging.FileHandler(logfile)
+    # handler.setLevel(logging.WARNING)
+    formatter = logging.Formatter('%(message)s')
+    handler.setFormatter(formatter)
+    log.addHandler(handler)
+    return log

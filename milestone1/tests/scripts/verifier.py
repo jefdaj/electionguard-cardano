@@ -20,6 +20,7 @@ from utils import (
     CaptureLog,
     list_device_numbers,
     record_basename,
+    init_log,
 )
 
 from electionguard.ballot import CiphertextBallot, SubmittedBallot
@@ -844,19 +845,6 @@ def main(pubdir, log, verifier_id):
         successes, errors, bools,
         pubdir, log, verifier_id,
     )
-
-def init_log(logfile, level=logging.WARNING):
-    log = logging.getLogger(__name__)
-    log.setLevel(level)
-    if logfile is None:
-        handler = logging.StreamHandler(sys.stdout)
-    else:
-        handler = logging.FileHandler(logfile)
-    # handler.setLevel(logging.WARNING)
-    formatter = logging.Formatter('%(message)s')
-    handler.setFormatter(formatter)
-    log.addHandler(handler)
-    return log
 
 @click.command("verify")
 @click.option(
