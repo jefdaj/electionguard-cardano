@@ -1,20 +1,5 @@
 #!/usr/bin/env python3
 
-# TODO rethink this! it would be much cooler if attacks can happen throughout
-# the election. two ideas about how to implement that:
-# 1. something with hypothesis' stateful testing
-# 2. add attacks to the main election config and run them during it 
-
-# TODO here's a good simple idea how to implement option 2:
-# - add AttacksConfig to RunConfig
-# - factor projectconfig() out of given_valid_election and make an attack version
-# - one fn each using different composite generators: honest and attack
-# - work attacks into election using a Dict[election step, List[attack fn]]
-#   - GO WITH THIS FIRST: rewrite election fn to use a list of str fn names and apply matching attacks?
-#     - pro: easier to edit files in unexpected ways directly as files
-#     - pro: less messing with regular non-attack-related code
-#   - or pass attacks into the actual fns and apply them during the main operations?
-
 import os
 import click
 import logging
@@ -26,14 +11,9 @@ from utils import (
 )
 
 
-def attack(log, public_dir, private_dir, fn_name, step, random_seed):
-    # log.info()
-    random.seed(random_seed) # TODO do within each fn, or just here?
-    attack_fn = globals()[fn_name]
-    attack_fn(log, public_dir, private_dir, step)
-
-
-### attack functions ###
+### attacks ###
+#
+# See also ATTACKS in config.py for info about how to run them
 
 def withhold_manifest(log, pubdir, privdir, step):
     "A pointless attack that's fast to debug because it targets the first step."
@@ -52,6 +32,18 @@ def withhold_manifest(log, pubdir, privdir, step):
 
 # def withhold_spoiled_ballot(log, pubdir, privdir, step):
 #     raise NotImplementedError
+
+
+### main ###
+
+def main(log, public_dir, private_dir, fn_name, step, random_seed):
+    random.seed(random_seed) # TODO do within each fn, or just here?
+    try:
+        attack_fn = globals()[fn_name]
+    except KeyError:
+        log.error('no such attack fn: {fn_name}')
+        raise
+    attack_fn(log, public_dir, private_dir, step)
 
 
 ### cli ###
@@ -105,8 +97,7 @@ def AttackCommand(
 ) -> None:
     # TODO parse and pass cfg here?
     log = init_log(logfile, logging.INFO)
-    log.info(f'locals: {locals()}')
-    attack(log, public_dir, private_dir, attack_fn, step, random_seed)
+    main(log, public_dir, private_dir, attack_fn, step, random_seed)
 
 @click.group
 def cli() -> None:
