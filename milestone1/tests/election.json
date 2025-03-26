@@ -22,6 +22,6 @@
     }
   }],
   "attacks": [
-    {"who": "device", "when": "vote_commit_all", "what": "rm_submitted_ballot"}
+    {"who": "admin", "when": "build_manifest", "what": "withhold_manifest"}
   ]
 }

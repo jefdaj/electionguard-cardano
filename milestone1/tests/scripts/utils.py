@@ -165,6 +165,32 @@ PUBLIC_RECORDS = {
     ),
 }
 
+### get record filenames ###
+
+# TODO put public in the name
+def record_basename(record_type:str, **fmtargs):
+    'So far, only used to simplify verifier summary json keys'
+    (_, _, fstr) = PUBLIC_RECORDS[record_type]
+    fname = fstr.format(**fmtargs)
+    return fname
+
+# you probably want the public/private specialized versions below
+def record_path(records_map, root_dir:str, record_type: str, **fmtargs):
+    (_, dname, fstr) = records_map[record_type]
+    dpath = join(root_dir, dname)
+    # makedirs(dpath, exist_ok=True) # TODO make the dir here?
+    fname = fstr.format(**fmtargs)
+    return join(dpath, fname + '.json')
+
+def private_path(private_dir: str, record_type: str, **fmtargs):
+    return record_path(PUBLIC_RECORDS, private_dir, record_type, **fmtargs)
+
+def public_path(public_dir: str, record_type: str, **fmtargs):
+    return record_path(PUBLIC_RECORDS, public_dir, record_type, **fmtargs)
+
+
+### load and save single files ###
+
 # you probably want the public or private versions below
 def to_record(records_map, public_dir: str, record_type: str, obj, **fmtargs):
     (_, dname, fstr) = records_map[record_type]
@@ -181,15 +207,6 @@ def from_record(records_map, public_dir: str, record_type: str, **fmtargs):
     fname = fstr.format(**fmtargs) + '.json'
     fpath = join(dpath, fname)
     return serialize.from_file(rtype, fpath)
-
-def record_basename(record_type:str, **fmtargs):
-    'So far, only used to simplify verifier summary json keys'
-    (_, _, fstr) = PUBLIC_RECORDS[record_type]
-    fname = fstr.format(**fmtargs)
-    return fname
-
-
-### load and save single files ###
 
 def to_public_record(public_dir: str, record_type: str, obj, **fmtargs):
     return to_record(PUBLIC_RECORDS, public_dir, record_type, obj, **fmtargs)

@@ -77,12 +77,12 @@ def run_in_container(
     if stderr is not None:
         stderr = stderr.strip()
         if len(stderr) > 0:
-            log.info(stderr, flush=True)
+            log.info(stderr)
     stdout = stdout.strip()
     if return_stdout:
         return stdout
     elif len(stdout) > 0:
-        log.info(stdout, flush=True)
+        log.info(stdout)
 
 def explain_step(fn):
     def decorated_fn(cfg, log, *args, **kwargs):
@@ -374,18 +374,19 @@ def verify(cfg, log):
 
 def attack(cfg, log, step):
     "Run any attack functions that match the most recent step"
-    for i in range(len(cfg.attacks)):
-        attack = cfg.attacks[i]
-        if attack['when'] != step:
+    for i in range(1, len(cfg.attacks) + 1):
+        attack = cfg.attacks[i-1]
+        if attack.when != step:
             continue
 
-        log.info(f'setting up attack {attack}')
+        log.debug(f'setting up {attack.what} attack')
 
         seed = i # TODO should the test hash also contribute?
+        log.debug(f'random seed {seed}')
 
         # attack specifies a role, but not the exact container
         # so we choose which one to corrupt randomly here
-        role = attack['who']
+        role = attack.who
         counts = {
             'admin'    : 1,
             'verifier' : cfg.verifiers.count,
@@ -393,19 +394,20 @@ def attack(cfg, log, step):
             'device'   : cfg.devices.count,
         }
         random.seed(seed)
-        n = random.randint(1, counts[role]+1)
-        log.info(f'running it as {role} {n}')
+        n = random.randint(1, counts[role])
+        log.debug(f'running it as {role} {n}')
 
         logfile = join(cfg.arion.bind_mounts.private, 'attack.log')
+        log.debug(f'logfile {logfile}')
         run_in_container(
             cfg, log, "attack.py", role, n,
             [
                 "attack",
                 "--public-dir", cfg.arion.bind_mounts.public,
                 "--private-dir", cfg.arion.bind_mounts.private,
-                "--attack-fn", attack['what'],
+                "--attack-fn", attack.what,
                 "--logfile", logfile,
-                "--random-seed", seed,
+                "--random-seed", str(seed),
             ]
         )
 

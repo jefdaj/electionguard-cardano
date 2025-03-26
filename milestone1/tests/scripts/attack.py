@@ -15,10 +15,23 @@
 #     - pro: less messing with regular non-attack-related code
 #   - or pass attacks into the actual fns and apply them during the main operations?
 
+import os
+import click
+import logging
 import random
+from typing import Optional
 from utils import (
     init_log,
+    public_path,
 )
+
+
+def attack(log, public_dir, private_dir, fn_name, random_seed):
+    # log.info()
+    random.seed(random_seed) # TODO do within each fn, or just here?
+    attack_fn = globals()[fn_name]
+    attack_fn(log, public_dir, private_dir)
+
 
 ### attack functions ###
 #
@@ -29,25 +42,22 @@ from utils import (
 # than once.
 # TODO how do we use index exactly?
 
-def rm_submitted_ballot(cfg, log, step, index):
-    if step != 'vote_commit_all':
-        return
+def withhold_manifest(log, pubdir, privdir):
+    # A pointless attack that's fast to debug because it targets the first step.
+    manifest_path = public_path(pubdir, 'manifest')
+    log.info(f'removing {manifest_path}')
+    os.remove(manifest_path)
+
+def rm_submitted_ballot(log, pubdir, privdir):
     log.info(f'running attack {index}: rm_submitted_ballot')
-    random.seed(index)
     # TODO finish writing
 
-def rm_cast_ballot(cfg, log, step, index):
-    if step != 'vote_reveal_all':
-        return
+def rm_cast_ballot(log, pubdir, privdir):
     log.info(f'running attack {index}: rm_cast_ballot')
-    random.seed(index)
     # TODO finish writing
 
-def rm_spoiled_ballot(cfg, log, step, index):
-    if step != 'vote_reveal_all':
-        return
+def rm_spoiled_ballot(log, pubdir, privdir):
     log.info(f'running attack {index}: rm_spoiled_ballot')
-    random.seed(index)
     # TODO finish writing
 
 # TODO is there a way to define everything here and import from config/election?
@@ -76,12 +86,6 @@ def rm_spoiled_ballot(cfg, log, step, index):
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
 @click.option(
-    "--attacker-id",
-    prompt="Unique ID for this attacker",
-    help="Used to decide which container to run the attack script from",
-    type=click.STRING,
-)
-@click.option(
     "--attack-fn",
     prompt="Attack function name",
     help="Which attack to run",
@@ -102,14 +106,13 @@ def rm_spoiled_ballot(cfg, log, step, index):
 def AttackCommand(
     public_dir: str,
     private_dir: str,
-    attacker_id: str,
     attack_fn: str,
     random_seed: int,
     logfile: Optional[str],
 ) -> None:
     # TODO parse and pass cfg here?
-    log.info(f'locals: {locals()}')
     log = init_log(logfile, logging.INFO)
+    attack(log, public_dir, private_dir, attack_fn, random_seed)
 
 @click.group
 def cli() -> None:
