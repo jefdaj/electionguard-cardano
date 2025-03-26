@@ -34,13 +34,6 @@ def attack(log, public_dir, private_dir, fn_name, random_seed):
 
 
 ### attack functions ###
-#
-# These attack functions will be run between regular steps in `election.py`.
-# They should be no-ops except when the `step` argument indicates that the
-# step(s) whose output files should be changed have just run. The `index` is
-# for disambiguating when the same attack is randomly chosen to be run more
-# than once.
-# TODO how do we use index exactly?
 
 def withhold_manifest(log, pubdir, privdir):
     # A pointless attack that's fast to debug because it targets the first step.
@@ -48,24 +41,14 @@ def withhold_manifest(log, pubdir, privdir):
     log.info(f'removing {manifest_path}')
     os.remove(manifest_path)
 
-def rm_submitted_ballot(log, pubdir, privdir):
-    log.info(f'running attack {index}: rm_submitted_ballot')
-    # TODO finish writing
+# def withhold_submitted_ballot(log, pubdir, privdir):
+#     raise NotImplementedError
 
-def rm_cast_ballot(log, pubdir, privdir):
-    log.info(f'running attack {index}: rm_cast_ballot')
-    # TODO finish writing
+# def withhold_cast_ballot(log, pubdir, privdir):
+#     raise NotImplementedError
 
-def rm_spoiled_ballot(log, pubdir, privdir):
-    log.info(f'running attack {index}: rm_spoiled_ballot')
-    # TODO finish writing
-
-# TODO is there a way to define everything here and import from config/election?
-# ATTACK_FUNCTIONS = [
-#     rm_submitted_ballot,
-#     rm_cast_ballot,
-#     rm_spoiled_ballot,
-# ]
+# def withhold_spoiled_ballot(log, pubdir, privdir):
+#     raise NotImplementedError
 
 
 ### cli ###
