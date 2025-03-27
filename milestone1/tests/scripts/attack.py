@@ -38,6 +38,7 @@ def admin_withhold_manifest(log, pubdir, privdir, step):
     log.info(f'removing {manifest_path}')
     try:
         os.remove(manifest_path)
+        log.info('attack finished')
     except Exception as e:
         log.error(e)
 
@@ -57,6 +58,7 @@ def device_withhold_submitted_ballot(log, pubdir, privdir, step):
     log.info(f'removing {ballot_path}')
     try:
         os.remove(ballot_path)
+        log.info('attack finished')
     except Exception as e:
         log.error(e)
 
@@ -69,9 +71,9 @@ def device_withhold_cast_ballot(log, pubdir, privdir, step):
     of potentially linking the voter's identity to the cast ballot.
     """
     log.info(f'running during {step} step')
-    own_ballots   = list_own_ballot_fmtargs(privdir)
-    cast_ballots  = list_cast_ballot_fmtargs(pubdir)
-    valid_choices = set(own_ballots).intersect(set(cast_ballots))
+    own_ballots   = set(d['ballot_id'] for d in list_own_ballot_fmtargs(privdir))
+    cast_ballots  = set(d['ballot_id'] for d in list_cast_ballot_fmtargs(pubdir))
+    valid_choices = [{'ballot_id': i} for i in own_ballots.intersection(cast_ballots)]
     try:
         ballot_fmtargs = random.choice(valid_choices)
     except IndexError:
@@ -81,6 +83,7 @@ def device_withhold_cast_ballot(log, pubdir, privdir, step):
     log.info(f'removing {ballot_path}')
     try:
         os.remove(ballot_path)
+        log.info('attack finished')
     except Exception as e:
         log.error(e)
 
@@ -93,9 +96,9 @@ def device_withhold_spoiled_ballot(log, pubdir, privdir, step):
     of potentially linking the voter's identity to the spoiled ballot.
     """
     log.info(f'running during {step} step')
-    own_ballots     = list_own_ballot_fmtargs(privdir)
-    spoiled_ballots = list_spoiled_ballot_fmtargs(pubdir)
-    valid_choices   = set(own_ballots).intersect(set(spoiled_ballots))
+    own_ballots     = set(d['ballot_id'] for d in list_own_ballot_fmtargs(privdir))
+    spoiled_ballots = set(d['ballot_id'] for d in list_spoiled_ballot_fmtargs(pubdir))
+    valid_choices   = [{'ballot_id': i} for i in own_ballots.intersection(spoiled_ballots)]
     try:
         ballot_fmtargs = random.choice(valid_choices)
     except IndexError:
@@ -105,6 +108,7 @@ def device_withhold_spoiled_ballot(log, pubdir, privdir, step):
     log.info(f'removing {ballot_path}')
     try:
         os.remove(ballot_path)
+        log.info('attack finished')
     except Exception as e:
         log.error(e)
 
@@ -140,6 +144,7 @@ def admin_ghost_after_vote(log, pubdir, privdir, step):
                 os.remove(ballot_path)
             except Exception as e:
                 log.error(e)
+        log.info('attack finished')
 
     else:
         raise Exception(f'unexpected step {step}')
