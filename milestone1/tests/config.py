@@ -9,14 +9,10 @@ from hypothesis import note
 from typing import Callable, Dict, List
 
 
-# TODO how to get this from inside scripts? does it need to be separate?
-# TODO or maybe it should be defined in config or election?
-# TODO oh. or the easy dumb way: copy a list of names -> config.py. start with that
-# from attack import ATTACK_FUNCTIONS
-
-# The actual attack functions live in scripts/attack.py, but info about how to
-# run them lives here. Besides the static info here, they'll also recieve a
-# random seed for picking which device to currupt, which ballot(s) to edit, etc.
+# This has to be defined in a separate file from the actual attack functions
+# (they live in scripts/attack.py) because they run in electionguard-python
+# containers, whereas this runs on the host system and will not necessarily be
+# able to import the electionguard module.
 ATTACKS = [
     {'who': 'admin' , 'when': ['build_manifest'], 'what': 'withhold_manifest'},
     {'who': 'device', 'when': ['vote_commit_all'], 'what': 'withhold_submitted_ballot'},

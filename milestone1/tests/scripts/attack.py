@@ -19,7 +19,7 @@ from utils import (
 # See also ATTACKS in config.py for info about how to run them
 
 def withhold_manifest(log, pubdir, privdir, step):
-    "A pointless attack that's fast to debug because it targets the first step."
+    "A silly attack that's fast to debug because it targets the first step."
     manifest_path = public_path(pubdir, 'manifest')
     log.info(f'removing {manifest_path}')
     try:
@@ -28,7 +28,11 @@ def withhold_manifest(log, pubdir, privdir, step):
         log.error(e)
 
 def withhold_submitted_ballot(log, pubdir, privdir, step):
-    # TODO is the random call here deterministic because we used seed in main?
+    """Prevent a ballot from being initially submitted. This would be caught in
+    the current ElectionGuard setup by a voter checking the official website
+    after they finish voting, or in the ideal blockchain setup by checking the
+    mempool/recent transactions before saying whether to cast or spoil it.
+    """
     ballot_fmtargs = random.choice(list_submitted_ballot_fmtargs(pubdir))
     ballot_path = public_path(pubdir, 'ballot_submitted', **ballot_fmtargs)
     log.info(f'removing {ballot_path}')
@@ -38,6 +42,13 @@ def withhold_submitted_ballot(log, pubdir, privdir, step):
         log.error(e)
 
 def withhold_cast_ballot(log, pubdir, privdir, step):
+    """Prevent a cast notice from being published. This would make it appear
+    that the voter never said whether to cast or spoil, but is targeted to the
+    case when they actually cast. They would notice if they tried to look up
+    the cast vote on the website or blockchain after voting. This attack could
+    be made impossible by doing the cast/spoil step from a phone, at the cost
+    of potentially linking the voter's identity to the cast ballot.
+    """
     ballot_fmtargs = random.choice(list_cast_ballot_fmtargs(pubdir))
     ballot_path = public_path(pubdir, 'cast_notice', **ballot_fmtargs)
     log.info(f'removing {ballot_path}')
@@ -47,6 +58,13 @@ def withhold_cast_ballot(log, pubdir, privdir, step):
         log.error(e)
 
 def withhold_spoiled_ballot(log, pubdir, privdir, step):
+    """Prevent a spoiled ballot from being published. This would make it appear
+    that the voter never said whether to cast or spoil, but is targeted to the
+    case when they actually spoiled. They would notice if they tried to look up
+    the spoiled vote on the website or blockchain after voting. This attack could
+    be made impossible by doing the cast/spoil step from a phone, at the cost
+    of potentially linking the voter's identity to the spoiled ballot.
+    """
     ballot_fmtargs = random.choice(list_spoiled_ballot_fmtargs(pubdir))
     ballot_path = public_path(pubdir, 'spoiled_result', **ballot_fmtargs)
     log.info(f'removing {ballot_path}')
