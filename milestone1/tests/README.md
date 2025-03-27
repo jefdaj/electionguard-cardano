@@ -7,91 +7,90 @@ can be slow, but it caches the output files so at least editing and re-running
 the property tests is fast.
 
 ```bash
-# generate 10 arbitrary configs,
-# run the corresponding elections,
-# and verify properties of the output files
+$ nix develop
+
 # explicit random seed is optional
 # sudo is required to work around docker bind mount permission errors
-
-$ nix develop
 $ sudo TEST_RANDOM_SEED=1234 ./test.py
 
-/nix/store/jjfqmy1a6svyhs2x4ymnxl0b1zmdpzmm-python3-3.12.8-env/lib/python3.12/site-packages/hypothesis/strategies/_internal/core.py:1838: HypothesisDeprecationWarning: There is no reason to use @st.composite on a function which does not call the provided draw() function internally.
-  note_deprecation(
-========================= test session starts =========================
+=========================== test session starts ===========================
 platform linux -- Python 3.12.8, pytest-8.3.3, pluggy-1.5.0 -- /nix/store/jjfqmy1a6svyhs2x4ymnxl0b1zmdpzmm-python3-3.12.8-env/bin/python3.12
 cachedir: .pytest_cache
 hypothesis profile 'default' -> database=DirectoryBasedExampleDatabase(PosixPath('/home/jefdaj/myrepos/electionguard-cardano/milestone1/tests/.hypothesis/examples'))
 rootdir: /home/jefdaj/myrepos/electionguard-cardano/milestone1/tests
 plugins: hypothesis-6.112.2
-collected 40 items                                                                                                      
+collected 44 items
 
-test.py::test_roundtrip_arionconfig PASSED                      [  2%]
-test.py::test_roundtrip_voteconfig PASSED                       [  5%]
-test.py::test_roundtrip_contestconfig PASSED                    [  7%]
-test.py::test_roundtrip_electionconfig PASSED                   [ 10%]
-test.py::test_roundtrip_projectconfig PASSED                    [ 12%]
-test.py::test_election_finished PASSED                          [ 15%]
-test.py::test_all_election_verifiers_agree_exactly PASSED       [ 17%]
-test.py::test_n_verifications_matches_cfg PASSED                [ 20%]
-test.py::test_cast_votes_match_config PASSED                    [ 22%]
-test.py::test_spoiled_votes_match_config PASSED                 [ 25%]
-test.py::test_manifest_verified PASSED                          [ 27%]
-test.py::test_ceremony_details_verified PASSED                  [ 30%]
-test.py::test_gather_announce_verified PASSED                   [ 32%]
-test.py::test_all_guardian_backups_verified PASSED              [ 35%]
-test.py::test_all_guardian_verifications_verified PASSED        [ 37%]
-test.py::test_gather_ceremony_verified PASSED                   [ 40%]
-test.py::test_joint_key_verified PASSED                         [ 42%]
-test.py::test_build_election_verified PASSED                    [ 45%]
-test.py::test_constants_verified PASSED                         [ 47%]
-test.py::test_internal_manifest_verified PASSED                 [ 50%]
-test.py::test_context_verified PASSED                           [ 52%]
-test.py::test_gather_constants_verified PASSED                  [ 55%]
-test.py::test_all_devices_verified PASSED                       [ 57%]
-test.py::test_gather_config_verified PASSED                     [ 60%]
-test.py::test_all_ballots_submitted_verified PASSED             [ 62%]
-test.py::test_all_ballots_cast_verified PASSED                  [ 65%]
-test.py::test_all_ballots_spoiled_verified PASSED               [ 67%]
-test.py::test_all_spoiled_results_verified PASSED               [ 70%]
-test.py::test_n_spoiled_decrypted_verified PASSED               [ 72%]
-test.py::test_n_cast_spoiled_submitted_verified PASSED          [ 75%]
-test.py::test_set_spoiled_decrypted_verified PASSED             [ 77%]
-test.py::test_set_cast_spoiled_submitted_verified PASSED        [ 80%]
-test.py::test_ballot_sets_verified PASSED                       [ 82%]
-test.py::test_ciphertext_tally_verified PASSED                  [ 85%]
-test.py::test_tally_aggregation_verified PASSED                 [ 87%]
-test.py::test_plaintext_tally_verified PASSED                   [ 90%]
-test.py::test_tally_decryption_verified PASSED                  [ 92%]
-test.py::test_gather_tally_verified PASSED                      [ 95%]
-test.py::test_gather_decryptions_verified PASSED                [ 97%]
-test.py::test_gather_election_verified PASSED                   [100%]
+election.py::test_roundtrip_arionconfig <- config.py PASSED          [  2%]
+election.py::test_roundtrip_voteconfig <- config.py PASSED           [  4%]
+election.py::test_roundtrip_contestconfig <- config.py PASSED        [  6%]
+election.py::test_roundtrip_electionconfig <- config.py PASSED       [  9%]
+election.py::test_roundtrip_attackcfg <- config.py PASSED            [ 11%]
+election.py::test_roundtrip_honestrun <- config.py PASSED            [ 13%]
+election.py::test_roundtrip_attackrun <- config.py PASSED            [ 15%]
+election.py::test_honest_election_finishes PASSED                    [ 18%]
+election.py::test_all_election_verifiers_agree_exactly PASSED        [ 20%]
+election.py::test_n_verifications_matches_cfg PASSED                 [ 22%]
+election.py::test_cast_votes_match_config PASSED                     [ 25%]
+election.py::test_spoiled_votes_match_config PASSED                  [ 27%]
+election.py::test_manifest_verified PASSED                           [ 29%]
+election.py::test_ceremony_details_verified PASSED                   [ 31%]
+election.py::test_gather_announce_verified PASSED                    [ 34%]
+election.py::test_all_guardian_backups_verified PASSED               [ 36%]
+election.py::test_all_guardian_verifications_verified PASSED         [ 38%]
+election.py::test_gather_ceremony_verified PASSED                    [ 40%]
+election.py::test_joint_key_verified PASSED                          [ 43%]
+election.py::test_build_election_verified PASSED                     [ 45%]
+election.py::test_constants_verified PASSED                          [ 47%]
+election.py::test_internal_manifest_verified PASSED                  [ 50%]
+election.py::test_context_verified PASSED                            [ 52%]
+election.py::test_gather_constants_verified PASSED                   [ 54%]
+election.py::test_all_devices_verified PASSED                        [ 56%]
+election.py::test_gather_config_verified PASSED                      [ 59%]
+election.py::test_all_ballots_submitted_verified PASSED              [ 61%]
+election.py::test_all_ballots_cast_verified PASSED                   [ 63%]
+election.py::test_all_ballots_spoiled_verified PASSED                [ 65%]
+election.py::test_all_spoiled_results_verified PASSED                [ 68%]
+election.py::test_n_spoiled_decrypted_verified PASSED                [ 70%]
+election.py::test_n_cast_spoiled_submitted_verified PASSED           [ 72%]
+election.py::test_set_spoiled_decrypted_verified PASSED              [ 75%]
+election.py::test_set_cast_spoiled_submitted_verified PASSED         [ 77%]
+election.py::test_ballot_sets_verified PASSED                        [ 79%]
+election.py::test_ciphertext_tally_verified PASSED                   [ 81%]
+election.py::test_tally_aggregation_verified PASSED                  [ 84%]
+election.py::test_plaintext_tally_verified PASSED                    [ 86%]
+election.py::test_tally_decryption_verified PASSED                   [ 88%]
+election.py::test_gather_tally_verified PASSED                       [ 90%]
+election.py::test_gather_decryptions_verified PASSED                 [ 93%]
+election.py::test_gather_election_verified PASSED                    [ 95%]
+election.py::test_verifiers_notice_attacks PASSED                    [ 97%]
+election.py::test_attacks_are_logged PASSED                          [100%]
 
-========================== warnings summary ===========================
+============================= warnings summary =============================
 ../../../../../../nix/store/jjfqmy1a6svyhs2x4ymnxl0b1zmdpzmm-python3-3.12.8-env/lib/python3.12/site-packages/hypothesis/strategies/_internal/core.py:1838
   /nix/store/jjfqmy1a6svyhs2x4ymnxl0b1zmdpzmm-python3-3.12.8-env/lib/python3.12/site-packages/hypothesis/strategies/_internal/core.py:1838: HypothesisDeprecationWarning: There is no reason to use @st.composite on a function which does not call the provided draw() function internally.
     note_deprecation(
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-============== 40 passed, 1 warning in 294.21s (0:04:54) ==============
+================ 44 passed, 1 warning in 2268.37s (0:37:48) ================
 
 $ tree -L 2 tests
 tests
-├── test2ac2d
+├── test01e52
 │   ├── data
 │   ├── election.json
 │   └── election.log
-├── test4dceb
+├── test02f73
 │   ├── data
 │   ├── election.json
 │   └── election.log
 ├── ...
-└── testb2523
+└── testf7ce1
     ├── data
     ├── election.json
     └── election.log
 
-21 directories, 20 files
+107 directories, 106 files
 ```
 
 ### Single election for debugging
