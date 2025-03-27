@@ -124,6 +124,7 @@ def run_process(cfg, log, args):
 def setup(cfg, log):
     # For some reason this occassionally fails with a Docker "network not found" error.
     # The hacky solution seems to work: turning it off and on again.
+    time.sleep(2)
     for retry in range(1, 4):
         time.sleep(retry * 2) # delay 2, 4, 6, 8 sec
         try:
@@ -373,10 +374,9 @@ def verify(cfg, log):
         )
 
 @explain_step
-def attack(cfg, log: logging.Logger, step: str, seed: int):
+def attack(cfg, log: logging.Logger, fn_name: str, role: str, step: str, seed: int):
     # attack specifies a role, but not the exact container
     # so we choose which one to corrupt randomly here
-    role = attack.who
     counts = {
         'admin'    : 1,
         'verifier' : cfg.election.verifiers.count,
@@ -393,7 +393,7 @@ def attack(cfg, log: logging.Logger, step: str, seed: int):
             "--public-dir", cfg.arion.bind_mounts.public,
             "--private-dir", cfg.arion.bind_mounts.private,
             "--logfile", logfile,
-            "--attack-fn", attack.what,
+            "--attack-fn", fn_name,
             "--step", step,
             "--random-seed", str(seed),
         ]
@@ -402,11 +402,12 @@ def attack(cfg, log: logging.Logger, step: str, seed: int):
 def attack_all(cfg, log, step):
     "Run any attack functions that target the current step"
     for i in range(1, len(cfg.attacks) + 1):
-        attack = cfg.attacks[i-1]
-        if not step in attack.when:
+        fn_name = cfg.attacks[i-1]
+        attack_cfg = ATTACKS[fn_name]
+        if not step in attack_cfg['when']:
             continue
-    seed = i # TODO should the test hash also contribute?
-    attack(cfg, log, step, seed)
+        seed = i # TODO should the test hash also contribute?
+        attack(cfg, log, fn_name, attack_cfg['who'], step, seed)
 
 # TODO should the attacks be called as part of each step rather than separately?
 def election(cfg, log):
@@ -898,9 +899,9 @@ def test_gather_election_verified(testdir: ElectionTestDir):
 # def test_withhold_manifest_attack(testdir: ElectionTestDir):
 #     assert_verifiers_verified(testdir, 'manifest', False)
 
-# this isn't always true, but a reasonable first approximation
+# TODO are there some cases when the election can still be verified?
 @given_attack_election()
-def test_election_fails_when_attacked(testdir: ElectionTestDir):
+def test_verifiers_notice_attacks(testdir: ElectionTestDir):
     assert_verifiers_verified(testdir, 'gather_election', False)
 
 @given_attack_election()

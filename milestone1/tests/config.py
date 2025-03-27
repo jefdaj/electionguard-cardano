@@ -13,12 +13,13 @@ from typing import Callable, Dict, List
 # (they live in scripts/attack.py) because they run in electionguard-python
 # containers, whereas this runs on the host system and will not necessarily be
 # able to import the electionguard module.
-ATTACKS = [
-    {'who': 'admin' , 'when': ['build_manifest'], 'what': 'withhold_manifest'},
-    {'who': 'device', 'when': ['vote_commit_all'], 'what': 'withhold_submitted_ballot'},
-    {'who': 'device', 'when': ['vote_reveal_all'], 'what': 'withhold_cast_ballot'     },
-    {'who': 'device', 'when': ['vote_reveal_all'], 'what': 'withhold_spoiled_ballot'  },
-]
+ATTACKS = {
+    'admin_withhold_manifest'          : {'who': 'admin' , 'when': ['build_manifest']},
+    'device_withhold_submitted_ballot' : {'who': 'device', 'when': ['vote_commit_all']},
+    'device_withhold_cast_ballot'      : {'who': 'device', 'when': ['vote_reveal_all']},
+    'device_withhold_spoiled_ballot'   : {'who': 'device', 'when': ['vote_reveal_all']},
+    'admin_ghost_after_vote'           : {'who': 'admin', 'when': ['tally', 'decrypt_results']},
+}
 
 
 ### config classes ###
@@ -167,7 +168,7 @@ def electionconfig(draw):
 @composite
 def attackconfig(draw):
     attacks = draw(lists(
-        sampled_from(ATTACKS),
+        sampled_from(list(ATTACKS.keys())),
         min_size=1,
         max_size=3 # TODO how many would be useful? at least 3-4 right?
     ))

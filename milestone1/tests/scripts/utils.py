@@ -245,9 +245,8 @@ def list_cast_ballot_fmtargs(public_dir):
     cast_dir = join(public_dir, PUBLIC_RECORDS['cast_notice'][1])
     return [{'ballot_id': i} for i in list_ballot_ids(cast_dir)]
 
-# TODO is spoiled_result right?
 def list_spoiled_ballot_fmtargs(public_dir):
-    spoiled_dir = join(public_dir, PUBLIC_RECORDS['spoiled_result'][1])
+    spoiled_dir = join(public_dir, PUBLIC_RECORDS['ballot_spoiled'][1])
     return [{'ballot_id': i} for i in list_ballot_ids(spoiled_dir)]
 
 def list_guardian_pubkey_fmtargs(public_dir, n_guardians):

@@ -350,18 +350,21 @@ def DecryptResultsCommand(
 
     # load and decrypt tally
     tally_path = join(public_dir, '6_tally.json')
-    tally_enc = from_public_record(public_dir, 'ciphertext_tally')
-    tally_shares: Dict[GuardianId, DecryptionShare] \
-        = load_tally_shares(public_dir, details.number_of_guardians)
-    tally_result = decrypt_tally(
-        tally_enc,
-        tally_shares,
-        context.crypto_extended_base_hash,
-        manifest
-    )
-    assert tally_result is not None
-    to_public_record(public_dir, 'plaintext_tally', tally_result)
-    # print('decrypted tally')
+    try:
+        tally_enc = from_public_record(public_dir, 'ciphertext_tally')
+        tally_shares: Dict[GuardianId, DecryptionShare] \
+            = load_tally_shares(public_dir, details.number_of_guardians)
+        tally_result = decrypt_tally(
+            tally_enc,
+            tally_shares,
+            context.crypto_extended_base_hash,
+            manifest
+        )
+        assert tally_result is not None
+        to_public_record(public_dir, 'plaintext_tally', tally_result)
+    except Exception as e:
+        log.error(e)
+        # TODO anything else to do here?
 
     # load spoiled ballots
     spoiled_ballots: List[SubmittedBallot] = load_spoiled_ballots(public_dir)
