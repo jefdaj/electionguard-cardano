@@ -387,9 +387,9 @@ def attack(cfg, log, step):
         role = attack.who
         counts = {
             'admin'    : 1,
-            'verifier' : cfg.verifiers.count,
-            'guardian' : cfg.guardians.count,
-            'device'   : cfg.devices.count,
+            'verifier' : cfg.election.verifiers.count,
+            'guardian' : cfg.election.guardians.count,
+            'device'   : cfg.election.devices.count,
         }
         random.seed(seed)
         n = random.randint(1, counts[role])
@@ -902,3 +902,14 @@ def test_gather_election_verified(testdir: ElectionTestDir):
 @given_attack_election()
 def test_election_fails_when_attacked(testdir: ElectionTestDir):
     assert_verifiers_verified(testdir, 'gather_election', False)
+
+@given_attack_election()
+def test_attacks_are_logged(testdir: ElectionTestDir):
+    '''there should be at least 1 private attack.log,
+    and at least one attack mentioned in the main election.log
+    '''
+    attack_logs = glob(join(testdir, 'data/private/*/attack.log'))
+    assert len(attack_logs) > 0
+    with open(join(testdir, 'election.log'), 'r') as f:
+        main_log_txt = f.read() # TODO need to decode as utf-8?
+    assert 'attack.py' in main_log_txt

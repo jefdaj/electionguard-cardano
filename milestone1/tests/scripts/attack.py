@@ -9,6 +9,8 @@ from utils import (
     init_log,
     public_path,
     list_submitted_ballot_fmtargs,
+    list_cast_ballot_fmtargs,
+    list_spoiled_ballot_fmtargs,
 )
 
 
@@ -36,9 +38,8 @@ def withhold_submitted_ballot(log, pubdir, privdir, step):
         log.error(e)
 
 def withhold_cast_ballot(log, pubdir, privdir, step):
-    # TODO is the random call here deterministic because we used seed in main?
     ballot_fmtargs = random.choice(list_cast_ballot_fmtargs(pubdir))
-    ballot_path = public_path(pubdir, 'ballot_cast', **ballot_fmtargs)
+    ballot_path = public_path(pubdir, 'cast_notice', **ballot_fmtargs)
     log.info(f'removing {ballot_path}')
     try:
         os.remove(ballot_path)
@@ -46,9 +47,8 @@ def withhold_cast_ballot(log, pubdir, privdir, step):
         log.error(e)
 
 def withhold_spoiled_ballot(log, pubdir, privdir, step):
-    # TODO is the random call here deterministic because we used seed in main?
     ballot_fmtargs = random.choice(list_spoiled_ballot_fmtargs(pubdir))
-    ballot_path = public_path(pubdir, 'ballot_spoiled', **ballot_fmtargs)
+    ballot_path = public_path(pubdir, 'spoiled_result', **ballot_fmtargs)
     log.info(f'removing {ballot_path}')
     try:
         os.remove(ballot_path)
