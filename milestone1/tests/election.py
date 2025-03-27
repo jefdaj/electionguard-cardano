@@ -603,12 +603,12 @@ def get_random_seed():
 # TODO is this a partial solution to https://github.com/HypothesisWorks/hypothesis/issues/114
 # TODO top level CLI arg for max_examples here?
 # TODO if no args needed, remove this def lambda
-def given_election(attack_cfg_fn):
+def given_election(attack_cfg_fn, max_examples: int):
     return yad([
         seed(get_random_seed()),
         settings(
             # derandomize=True, # this is already default?
-            max_examples=10,
+            max_examples=max_examples,
             deadline=None,
             phases=(Phase.explicit, Phase.reuse, Phase.generate),
         ),
@@ -617,10 +617,10 @@ def given_election(attack_cfg_fn):
     ])
 
 def given_honest_election():
-    return given_election(honestrun)
+    return given_election(honestrun, max_examples=15)
 
 def given_attack_election():
-    return given_election(attackrun)
+    return given_election(attackrun, max_examples=35)
 
 
 ### misc small test helpers ###
