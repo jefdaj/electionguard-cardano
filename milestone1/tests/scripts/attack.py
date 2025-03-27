@@ -11,7 +11,20 @@ from utils import (
     list_submitted_ballot_fmtargs,
     list_cast_ballot_fmtargs,
     list_spoiled_ballot_fmtargs,
+    list_ballot_ids,
 )
+
+
+### utilities ###
+
+def list_own_ballot_fmtargs(privdir):
+    "List fmtargs only of ballots created by this device"
+    bdir = os.path.join(privdir, 'plaintext_ballots')
+    try:
+        return [{'ballot_id': i} for i in list_ballot_ids(bdir)]
+    except FileNotFoundError as e:
+        log.error(e)
+        return []
 
 
 ### attacks ###
@@ -36,7 +49,7 @@ def device_withhold_submitted_ballot(log, pubdir, privdir, step):
     """
     log.info(f'running during {step} step')
     try:
-        ballot_fmtargs = random.choice(list_submitted_ballot_fmtargs(pubdir))
+        ballot_fmtargs = random.choice(list_own_ballot_fmtargs(privdir))
     except IndexError:
         log.error('no ballots submitted. abort attack')
         return
@@ -56,10 +69,13 @@ def device_withhold_cast_ballot(log, pubdir, privdir, step):
     of potentially linking the voter's identity to the cast ballot.
     """
     log.info(f'running during {step} step')
+    own_ballots   = list_own_ballot_fmtargs(privdir)
+    cast_ballots  = list_cast_ballot_fmtargs(pubdir)
+    valid_choices = set(own_ballots).intersect(set(cast_ballots))
     try:
-        ballot_fmtargs = random.choice(list_cast_ballot_fmtargs(pubdir))
+        ballot_fmtargs = random.choice(valid_choices)
     except IndexError:
-        log.error('no ballots cast. abort attack')
+        log.error('abort because this device has no cast ballots to withhold')
         return
     ballot_path = public_path(pubdir, 'cast_notice', **ballot_fmtargs)
     log.info(f'removing {ballot_path}')
@@ -77,10 +93,13 @@ def device_withhold_spoiled_ballot(log, pubdir, privdir, step):
     of potentially linking the voter's identity to the spoiled ballot.
     """
     log.info(f'running during {step} step')
+    own_ballots     = list_own_ballot_fmtargs(privdir)
+    spoiled_ballots = list_spoiled_ballot_fmtargs(pubdir)
+    valid_choices   = set(own_ballots).intersect(set(spoiled_ballots))
     try:
-        ballot_fmtargs = random.choice(list_spoiled_ballot_fmtargs(pubdir))
+        ballot_fmtargs = random.choice(valid_choices)
     except IndexError:
-        log.error('no ballots spoiled. abort attack')
+        log.error('abort because this device has no spoiled ballots to withhold')
         return
     ballot_path = public_path(pubdir, 'ballot_spoiled', **ballot_fmtargs)
     log.info(f'removing {ballot_path}')

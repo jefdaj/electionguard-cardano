@@ -383,9 +383,9 @@ def attack(cfg, log: logging.Logger, fn_name: str, role: str, step: str, seed: i
         'guardian' : cfg.election.guardians.count,
         'device'   : cfg.election.devices.count,
     }
-    random.seed(seed)
     n = random.randint(1, counts[role])
     logfile = join(cfg.arion.bind_mounts.private, 'attack.log')
+    random.seed(seed)
     run_in_container(
         cfg, log, "attack.py", role, n,
         [

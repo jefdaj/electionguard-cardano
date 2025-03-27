@@ -14,7 +14,10 @@ from typing import Callable, Dict, List
 # containers, whereas this runs on the host system and will not necessarily be
 # able to import the electionguard module.
 ATTACKS = {
-    'admin_withhold_manifest'          : {'who': 'admin' , 'when': ['build_manifest']},
+
+    # removed to avoid wasting tests; uncomment for debugging
+    # 'admin_withhold_manifest'          : {'who': 'admin' , 'when': ['build_manifest']},
+
     'device_withhold_submitted_ballot' : {'who': 'device', 'when': ['vote_commit_all']},
     'device_withhold_cast_ballot'      : {'who': 'device', 'when': ['vote_reveal_all']},
     'device_withhold_spoiled_ballot'   : {'who': 'device', 'when': ['vote_reveal_all']},
@@ -134,21 +137,24 @@ def contestsconfig(draw):
     contest1 = draw(contestconfig())
     cfg = [contest1]
 
-    # TODO remove? have zero-vote cases handled now
-    # n_cast = sum(
-    #     sum([
-    #         vcfg['cast']
-    #         for vcfg in contest['answers'].values()
-    #     ])
-    #     for contest in cfg
-    # )
-    # n_spoil = sum(
-    #     sum([
-    #         vcfg['spoil']
-    #         for vcfg in contest['answers'].values()
-    #     ])
-    #     for contest in cfg
-    # )
+    # This isn't technically necessary; we handle zero-vote elections properly
+    # now. But they tend to waste a lot of test runs, so we keep remove them.
+    # It would be fine to comment this out and raise max_examples though.
+    n_cast = sum(
+        sum([
+            vcfg['cast']
+            for vcfg in contest['answers'].values()
+        ])
+        for contest in cfg
+    )
+    n_spoil = sum(
+        sum([
+            vcfg['spoil']
+            for vcfg in contest['answers'].values()
+        ])
+        for contest in cfg
+    )
+    assume(n_cast + n_spoil > 0)
 
     return cfg
 
@@ -167,7 +173,10 @@ def attackconfig(draw):
     attacks = draw(lists(
         sampled_from(list(ATTACKS.keys())),
         min_size=1,
-        max_size=3 # TODO how many would be useful? at least 3-4 right?
+
+        # TODO how many would be useful? at least 3-4 right?
+        #      but only with enough examples to catch unusual combinations
+        max_size=2
     ))
     cfg = AttackConfig(attacks=attacks)
     return cfg
