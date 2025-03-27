@@ -704,11 +704,11 @@ def spoiled_vote_totals_from_config(contest_config):
     totals = {}
     for contest in totals_contest_list:
         q = contest['question']
-        if not q in totals:
-            totals[q] = {}
         for (answer, n_spoiled) in sorted(contest['answers'].items()):
-            # remove zero-vote candidates to match actual config
+            # remove zero-vote candidates and contests to match summary-derived ones below
             if n_spoiled > 0:
+                if not q in totals:
+                    totals[q] = {}
                 totals[q][answer] = n_spoiled
     return totals
 
@@ -748,12 +748,12 @@ def test_spoiled_votes_match_config(testdir: ElectionTestDir):
 
     cfg = load_config_json(testdir)
     expected_spoiled_totals = spoiled_vote_totals_from_config(cfg)
-    # note(expected_spoiled_totals)
+    note(f'expected_spoiled_totals: {expected_spoiled_totals}')
 
     # admin isn't special here; could use any verifier
     summary = load_summary_json(testdir, 'admin_1')
     actual_spoiled_totals = spoiled_vote_totals_from_summary(summary)
-    # note(actual_spoiled_totals)
+    note(f'actual_spoiled_totals: {actual_spoiled_totals}')
 
     assert actual_spoiled_totals == expected_spoiled_totals
 

@@ -226,11 +226,13 @@ def from_private_record(private_dir: str, record_type: str, **fmtargs):
 def list_device_numbers(public_dir: str):
     # TODO list the IDs instead?
     device_dir = join(public_dir, PUBLIC_RECORDS['device'][1])
+    # TODO can this fail? there should always be at least one device
     names = [splitext(n)[0].split('_')[-1] for n in listdir(device_dir)]
     numbers = [int(name) for name in names]
     return sorted(numbers)
 
 def list_ballot_ids(id_list_dir):
+    # TODO catch FileNotFoundError here? may not always want to swallow it
     return [
         splitext(n)[0]
         for n in listdir(id_list_dir)
@@ -243,11 +245,21 @@ def list_submitted_ballot_fmtargs(public_dir):
 
 def list_cast_ballot_fmtargs(public_dir):
     cast_dir = join(public_dir, PUBLIC_RECORDS['cast_notice'][1])
-    return [{'ballot_id': i} for i in list_ballot_ids(cast_dir)]
+    try:
+        ids = list_ballot_ids(cast_dir)
+    except FileNotFoundError:
+        # probably there were no cast ballots
+        ids = []
+    return [{'ballot_id': i} for i in ids]
 
 def list_spoiled_ballot_fmtargs(public_dir):
     spoiled_dir = join(public_dir, PUBLIC_RECORDS['ballot_spoiled'][1])
-    return [{'ballot_id': i} for i in list_ballot_ids(spoiled_dir)]
+    try:
+        ids = list_ballot_ids(spoiled_dir)
+    except FileNotFoundError:
+        # probably there were no spoiled ballots
+        ids = []
+    return [{'ballot_id': i} for i in ids]
 
 def list_guardian_pubkey_fmtargs(public_dir, n_guardians):
     fmtargs_list = []
@@ -294,23 +306,38 @@ def load_ballots(
 # mainly for checking that the cast + spoiled ones add up to the total
 def load_submitted_ballots(public_dir: str) -> List[SubmittedBallot]:
     submitted_dir = join(public_dir, PUBLIC_RECORDS['ballot_submitted'][1])
-    return load_ballots(public_dir, submitted_dir, None)
+    try:
+        return load_ballots(public_dir, submitted_dir, None)
+    except FileNotFoundError:
+        # probably no submitted ballots
+        return []
 
 def load_cast_ballots(public_dir: str) -> List[SubmittedBallot]:
     cast_dir = join(public_dir, PUBLIC_RECORDS['cast_notice'][1])
-    return load_ballots(public_dir, cast_dir, BallotBoxState.CAST)
+    try:
+        return load_ballots(public_dir, cast_dir, BallotBoxState.CAST)
+    except FileNotFoundError:
+        # no cast ballots
+        return []
 
 def load_spoiled_ballots(public_dir: str) -> List[SubmittedBallot]:
     spoiled_dir = join(public_dir, PUBLIC_RECORDS['ballot_spoiled'][1])
-    return load_ballots(public_dir, spoiled_dir, BallotBoxState.SPOILED)
+    try:
+        return load_ballots(public_dir, spoiled_dir, BallotBoxState.SPOILED)
+    except FileNotFoundError:
+        # no spoiled ballots
+        return []
 
 def load_spoiled_results(public_dir: str) -> List[PlaintextTally]:
     spoiled_dir = join(public_dir, PUBLIC_RECORDS['spoiled_result'][1])
-    spoiled_ids = [
-        splitext(n)[0]
-        for n in listdir(spoiled_dir)
-        if n.startswith('ballot-')
-    ]
+    try:
+        spoiled_ids = [
+            splitext(n)[0]
+            for n in listdir(spoiled_dir)
+            if n.startswith('ballot-')
+        ]
+    except FileNotFoundError:
+        spoiled_ids = []
     spoiled_results = [
         from_public_record(public_dir, 'spoiled_result', ballot_id=i)
         for i in spoiled_ids

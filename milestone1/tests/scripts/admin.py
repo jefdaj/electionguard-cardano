@@ -19,7 +19,6 @@ from utils import (
 
 import click
 import json
-from os import listdir, makedirs
 from os.path import join, splitext
 from typing import List, Tuple
 from datetime import datetime, timedelta

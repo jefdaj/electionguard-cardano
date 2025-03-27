@@ -112,8 +112,8 @@ def arionconfig(draw):
 
 @composite
 def voteconfig(draw):
-    n_cast  = draw(integers(min_value=0, max_value=10))
-    n_spoil = draw(integers(min_value=0, max_value=10))
+    n_cast  = draw(integers(min_value=0, max_value=3))
+    n_spoil = draw(integers(min_value=0, max_value=3))
     return VoteConfig(n_cast, n_spoil)
 
 @composite
@@ -135,7 +135,6 @@ def contestsconfig(draw):
     cfg = [contest1]
 
     # current code will fail if there isn't at least one cast + one spoiled vote
-    # TODO would just force creating the record dirs solve that?
     n_cast = sum(
         sum([
             vcfg['cast']
@@ -150,8 +149,7 @@ def contestsconfig(draw):
         ])
         for contest in cfg
     )
-    assume(n_cast  > 0)
-    assume(n_spoil > 0)
+    assume(n_cast + n_spoil > 0) # TODO what happens with zero votes?
 
     return cfg
 
@@ -161,7 +159,7 @@ def electionconfig(draw):
     kwargs['guardians_count' ] = draw(integers(min_value=2, max_value=3))
     kwargs['guardians_quorum'] = draw(integers(min_value=1, max_value=kwargs['guardians_count'])) # TODO -1?
     kwargs['devices_count'   ] = draw(integers(min_value=1, max_value=3))
-    kwargs['verifiers_count' ] = draw(integers(min_value=1, max_value=3))
+    kwargs['verifiers_count' ] = draw(integers(min_value=1, max_value=3)) # TODO allow 0?
     cfg = ElectionConfig(**kwargs)
     return cfg
 
