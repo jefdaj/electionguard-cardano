@@ -372,62 +372,62 @@ def verify(cfg, log):
             ]
         )
 
-def attack(cfg, log, step):
-    "Run any attack functions that target the current step"
+@explain_step
+def attack(cfg, log: logging.Logger, step: str, seed: int):
+    # attack specifies a role, but not the exact container
+    # so we choose which one to corrupt randomly here
+    role = attack.who
+    counts = {
+        'admin'    : 1,
+        'verifier' : cfg.election.verifiers.count,
+        'guardian' : cfg.election.guardians.count,
+        'device'   : cfg.election.devices.count,
+    }
+    random.seed(seed)
+    n = random.randint(1, counts[role])
+    logfile = join(cfg.arion.bind_mounts.private, 'attack.log')
+    run_in_container(
+        cfg, log, "attack.py", role, n,
+        [
+            "attack",
+            "--public-dir", cfg.arion.bind_mounts.public,
+            "--private-dir", cfg.arion.bind_mounts.private,
+            "--logfile", logfile,
+            "--attack-fn", attack.what,
+            "--step", step,
+            "--random-seed", str(seed),
+        ]
+    )
 
+def attack_all(cfg, log, step):
+    "Run any attack functions that target the current step"
     for i in range(1, len(cfg.attacks) + 1):
         attack = cfg.attacks[i-1]
         if not step in attack.when:
             continue
-
-        seed = i # TODO should the test hash also contribute?
-
-        # attack specifies a role, but not the exact container
-        # so we choose which one to corrupt randomly here
-        role = attack.who
-        counts = {
-            'admin'    : 1,
-            'verifier' : cfg.election.verifiers.count,
-            'guardian' : cfg.election.guardians.count,
-            'device'   : cfg.election.devices.count,
-        }
-        random.seed(seed)
-        n = random.randint(1, counts[role])
-
-        logfile = join(cfg.arion.bind_mounts.private, 'attack.log')
-        run_in_container(
-            cfg, log, "attack.py", role, n,
-            [
-                "attack",
-                "--public-dir", cfg.arion.bind_mounts.public,
-                "--private-dir", cfg.arion.bind_mounts.private,
-                "--logfile", logfile,
-                "--attack-fn", attack.what,
-                "--step", step,
-                "--random-seed", str(seed),
-            ]
-        )
+    seed = i # TODO should the test hash also contribute?
+    attack(cfg, log, step, seed)
 
 # TODO should the attacks be called as part of each step rather than separately?
 def election(cfg, log):
     try:
-        build_manifest(cfg, log)        ; attack(cfg, log, 'build_manifest')
-        announce_key_ceremony(cfg, log) ; attack(cfg, log, 'announce_key_ceremony')
-        key_ceremony_round1(cfg, log)   ; attack(cfg, log, 'key_ceremony_round1')
-        key_ceremony_round2(cfg, log)   ; attack(cfg, log, 'key_ceremony_round2')
-        key_ceremony_round3(cfg, log)   ; attack(cfg, log, 'key_ceremony_round3')
-        publish_joint_key(cfg, log)     ; attack(cfg, log, 'publish_joint_key')
-        build_election(cfg, log)        ; attack(cfg, log, 'build_election')
-        add_devices(cfg, log)           ; attack(cfg, log, 'add_devices')
-        ids = vote_commit_all(cfg, log) ; attack(cfg, log, 'vote_commit_all')
-        vote_reveal_all(cfg, log, ids)  ; attack(cfg, log, 'vote_reveal_all')
-        tally(cfg, log)                 ; attack(cfg, log, 'tally')
-        decrypt_shares(cfg, log)        ; attack(cfg, log, 'decrypt_shares')
-        decrypt_results(cfg, log)       ; attack(cfg, log, 'decrypt_results')
+        build_manifest(cfg, log)        ; attack_all(cfg, log, 'build_manifest')
+        announce_key_ceremony(cfg, log) ; attack_all(cfg, log, 'announce_key_ceremony')
+        key_ceremony_round1(cfg, log)   ; attack_all(cfg, log, 'key_ceremony_round1')
+        key_ceremony_round2(cfg, log)   ; attack_all(cfg, log, 'key_ceremony_round2')
+        key_ceremony_round3(cfg, log)   ; attack_all(cfg, log, 'key_ceremony_round3')
+        publish_joint_key(cfg, log)     ; attack_all(cfg, log, 'publish_joint_key')
+        build_election(cfg, log)        ; attack_all(cfg, log, 'build_election')
+        add_devices(cfg, log)           ; attack_all(cfg, log, 'add_devices')
+        ids = vote_commit_all(cfg, log) ; attack_all(cfg, log, 'vote_commit_all')
+        vote_reveal_all(cfg, log, ids)  ; attack_all(cfg, log, 'vote_reveal_all')
+        tally(cfg, log)                 ; attack_all(cfg, log, 'tally')
+        decrypt_shares(cfg, log)        ; attack_all(cfg, log, 'decrypt_shares')
+        decrypt_results(cfg, log)       ; attack_all(cfg, log, 'decrypt_results')
     except:
         pass
     finally:
-        verify(cfg, log) ; attack(cfg, log, 'verify')
+        verify(cfg, log) ; attack_all(cfg, log, 'verify')
 
 def main(cfg, log):
     try:
