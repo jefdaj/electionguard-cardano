@@ -608,7 +608,7 @@ def given_election(attack_cfg_fn):
         seed(get_random_seed()),
         settings(
             # derandomize=True, # this is already default?
-            max_examples=2,
+            max_examples=10,
             deadline=None,
             phases=(Phase.explicit, Phase.reuse, Phase.generate),
         ),
@@ -899,9 +899,21 @@ def test_gather_election_verified(testdir: ElectionTestDir):
 # def test_withhold_manifest_attack(testdir: ElectionTestDir):
 #     assert_verifiers_verified(testdir, 'manifest', False)
 
-# TODO are there some cases when the election can still be verified?
+# TODO are there other cases when the election can still be verified?
 @given_attack_election()
 def test_verifiers_notice_attacks(testdir: ElectionTestDir):
+
+    # sometimes an attack is aborted, and then it wouldn't necessarily be noticed
+    # (for example if it targets spoiled votes and there weren't any)
+    attack_logs = glob(join(testdir, 'data/private/*/attack.log'))
+    n_non_aborted_attacks = 0
+    for attack_log in attack_logs:
+        with open(attack_log, 'r') as f:
+            txt = f.read()
+            if not 'abort' in txt:
+                n_non_aborted_attacks += 1
+    assume(n_non_aborted_attacks > 0)
+
     assert_verifiers_verified(testdir, 'gather_election', False)
 
 @given_attack_election()

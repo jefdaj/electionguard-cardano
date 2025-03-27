@@ -134,22 +134,21 @@ def contestsconfig(draw):
     contest1 = draw(contestconfig())
     cfg = [contest1]
 
-    # current code will fail if there isn't at least one cast + one spoiled vote
-    n_cast = sum(
-        sum([
-            vcfg['cast']
-            for vcfg in contest['answers'].values()
-        ])
-        for contest in cfg
-    )
-    n_spoil = sum(
-        sum([
-            vcfg['spoil']
-            for vcfg in contest['answers'].values()
-        ])
-        for contest in cfg
-    )
-    assume(n_cast + n_spoil > 0) # TODO what happens with zero votes?
+    # TODO remove? have zero-vote cases handled now
+    # n_cast = sum(
+    #     sum([
+    #         vcfg['cast']
+    #         for vcfg in contest['answers'].values()
+    #     ])
+    #     for contest in cfg
+    # )
+    # n_spoil = sum(
+    #     sum([
+    #         vcfg['spoil']
+    #         for vcfg in contest['answers'].values()
+    #     ])
+    #     for contest in cfg
+    # )
 
     return cfg
 

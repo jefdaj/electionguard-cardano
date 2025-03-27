@@ -35,7 +35,11 @@ def device_withhold_submitted_ballot(log, pubdir, privdir, step):
     mempool/recent transactions before saying whether to cast or spoil it.
     """
     log.info(f'running during {step} step')
-    ballot_fmtargs = random.choice(list_submitted_ballot_fmtargs(pubdir))
+    try:
+        ballot_fmtargs = random.choice(list_submitted_ballot_fmtargs(pubdir))
+    except IndexError:
+        log.error('no ballots submitted. abort attack')
+        return
     ballot_path = public_path(pubdir, 'ballot_submitted', **ballot_fmtargs)
     log.info(f'removing {ballot_path}')
     try:
@@ -52,7 +56,11 @@ def device_withhold_cast_ballot(log, pubdir, privdir, step):
     of potentially linking the voter's identity to the cast ballot.
     """
     log.info(f'running during {step} step')
-    ballot_fmtargs = random.choice(list_cast_ballot_fmtargs(pubdir))
+    try:
+        ballot_fmtargs = random.choice(list_cast_ballot_fmtargs(pubdir))
+    except IndexError:
+        log.error('no ballots cast. abort attack')
+        return
     ballot_path = public_path(pubdir, 'cast_notice', **ballot_fmtargs)
     log.info(f'removing {ballot_path}')
     try:
@@ -69,7 +77,11 @@ def device_withhold_spoiled_ballot(log, pubdir, privdir, step):
     of potentially linking the voter's identity to the spoiled ballot.
     """
     log.info(f'running during {step} step')
-    ballot_fmtargs = random.choice(list_spoiled_ballot_fmtargs(pubdir))
+    try:
+        ballot_fmtargs = random.choice(list_spoiled_ballot_fmtargs(pubdir))
+    except IndexError:
+        log.error('no ballots spoiled. abort attack')
+        return
     ballot_path = public_path(pubdir, 'ballot_spoiled', **ballot_fmtargs)
     log.info(f'removing {ballot_path}')
     try:

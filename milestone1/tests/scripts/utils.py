@@ -241,7 +241,12 @@ def list_ballot_ids(id_list_dir):
 
 def list_submitted_ballot_fmtargs(public_dir):
     submitted_dir = join(public_dir, PUBLIC_RECORDS['ballot_submitted'][1])
-    return [{'ballot_id': i} for i in list_ballot_ids(submitted_dir)]
+    try:
+        ids = list_ballot_ids(submitted_dir)
+    except FileNotFoundError:
+        # probably there were no ballots at all
+        ids = []
+    return [{'ballot_id': i} for i in ids]
 
 def list_cast_ballot_fmtargs(public_dir):
     cast_dir = join(public_dir, PUBLIC_RECORDS['cast_notice'][1])
