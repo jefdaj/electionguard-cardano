@@ -15,7 +15,7 @@ from typing import Callable, Dict, List
 # able to import the electionguard module.
 ATTACKS = {
 
-    # 'admin_withhold_manifest'          : {'who': 'admin' , 'when': ['build_manifest']},
+    'admin_withhold_manifest'          : {'who': 'admin' , 'when': ['build_manifest']},
     # 'admin_break_constants'            : {'who': 'admin' , 'when': ['build_election']},
 
     # 'device_withhold_submitted_ballot' : {'who': 'device', 'when': ['vote_commit_all']},
@@ -173,7 +173,9 @@ def electionconfig(draw):
     return cfg
 
 @composite
-def attackconfig(draw):
+def attackconfig(draw, explicit_cfg=None):
+    if explicit_cfg is not None:
+        return explicit_cfg
     attacks = draw(lists(
         sampled_from(list(ATTACKS.keys())),
         min_size=1,
@@ -187,11 +189,11 @@ def attackconfig(draw):
 
 # Messed up election with attacks
 @composite
-def attackrun(draw):
+def attackrun(draw, explicit_cfg=None):
     arion_cfg    = draw(arionconfig())
     election_cfg = draw(electionconfig())
     votes_cfg    = draw(contestsconfig())
-    attack_cfg  = draw(attackconfig())
+    attack_cfg   = draw(attackconfig(explicit_cfg=explicit_cfg))
     cfg = RunConfig(
         arion_cfg=arion_cfg,
         election_cfg=election_cfg,

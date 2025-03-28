@@ -616,11 +616,28 @@ def given_election(attack_cfg_fn, max_examples: int):
         prerun_test_election,
     ])
 
-def given_honest_election():
-    return given_election(honestrun, max_examples=1)
+def given_honest_election(max_examples=1):
+    return given_election(
+        honestrun,
+        max_examples=max_examples
+    )
 
-def given_attack_election():
-    return given_election(attackrun, max_examples=1)
+def given_attack_election(max_examples=1, attack_cfg=None):
+
+    # Override attack_cfg if given explicitly.
+    # See test_withhold_manifest_attack below for an example.
+    if attack_cfg is None:
+        def attackrun2(*args, **kwargs):
+            return attackrun(*args, **kwargs)
+    else:
+        def attackrun2(*args, **kwargs):
+            kwargs.update(explicit_cfg=attack_cfg)
+            return attackrun(*args, **kwargs)
+
+    return given_election(
+        attackrun2,
+        max_examples=max_examples
+    )
 
 
 ### misc small test helpers ###
@@ -894,10 +911,9 @@ def test_gather_election_verified(testdir: ElectionTestDir):
 
 ### attack tests ###
 
-# TODO more specific attacks as decorator args to enable this?
-# @given_attack_election()
-# def test_withhold_manifest_attack(testdir: ElectionTestDir):
-#     assert_verifiers_verified(testdir, 'manifest', False)
+@given_attack_election(attack_cfg=['admin_withhold_manifest'])
+def test_withhold_manifest_attack(testdir: ElectionTestDir):
+    assert_verifiers_verified(testdir, 'manifest', False)
 
 # TODO are there other cases when the election can still be verified?
 @given_attack_election()
