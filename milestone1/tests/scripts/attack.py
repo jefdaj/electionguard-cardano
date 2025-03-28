@@ -13,6 +13,28 @@ from utils import (
     list_spoiled_ballot_fmtargs,
     list_ballot_ids,
 )
+import copy
+import re
+import string
+
+### utilities ###
+
+def edit_random_crypto_string_in_place(json_path: str):
+    """Randomly change one char in one of the hex strings in a JSON file.
+    Raises IndexError if there are none.
+    """
+    with open(json_path, 'r') as f:
+        json_str = f.read() # TODO decode?
+    matches = list(re.findall('"[A-F0-9]{2,}"', json_str))
+    match_to_edit = random.choice(matches)
+    index_to_edit = random.randint(0, len(match_to_edit))
+    new_char = random.choice(string.digits + string.ascii_uppercase[:6])
+    new_str = list(copy.copy(match_to_edit))
+    new_str[index_to_edit] = new_char
+    new_str = ''.join(new_str)
+    new_json = json_str.replace(match_to_edit, new_str)
+    with open(json_path, 'w') as f:
+        f.write(new_json) # TODO encode?
 
 
 ### utilities ###
@@ -41,6 +63,17 @@ def admin_withhold_manifest(log, pubdir, privdir, step):
         log.info('attack finished')
     except Exception as e:
         log.error(e)
+
+# TODO should the protocol be expected to catch this? it doesn't so far
+#      would require others to verify all the crypto operations the admin does
+# def admin_break_constants(log, pubdir, privdir, step):
+#     log.info(f'running during {step} step')
+#     json_path = public_path(pubdir, 'constants')
+#     log.info(f'breaking {json_path}')
+#     try:
+#         edit_random_crypto_string_in_place(json_path)
+#     except Exception as e:
+#         log.error(e)
 
 def device_withhold_submitted_ballot(log, pubdir, privdir, step):
     """Prevent a ballot from being initially submitted. This would be caught in
