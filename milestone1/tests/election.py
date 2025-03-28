@@ -616,7 +616,7 @@ def given_election(attack_cfg_fn, max_examples: int):
         prerun_test_election,
     ])
 
-def given_honest_election(max_examples=1):
+def given_honest_election(max_examples=10):
     return given_election(
         honestrun,
         max_examples=max_examples
@@ -624,15 +624,26 @@ def given_honest_election(max_examples=1):
 
 def given_attacked_election(
     attack: Optional[str] = None,
-    max_examples: int = 1
+    max_examples: Optional[int] = None
 ):
 
     # Override attack_cfg if given explicitly.
     # See test_withhold_manifest_attack below for an example.
     if attack is None:
+
+        if max_examples is None:
+            max_examples = 10
+
         def attackrun2(*args, **kwargs):
             return attackrun(*args, **kwargs)
+
     else:
+
+        # since we're only dealing with one attack,
+        # we probably don't need as many examples
+        if max_examples is None:
+            max_examples = 3
+
         def attackrun2(*args, **kwargs):
             kwargs.update(explicit_cfg=[attack])
             return attackrun(*args, **kwargs)
@@ -671,13 +682,13 @@ def election_verified(testdir: str, verifier_id: str) -> bool:
 
 # TODO rename something less confusing?
 @given_honest_election()
-def test_honest_election_finishes(testdir: ElectionTestDir):
+def test_honest_always_verified(testdir: ElectionTestDir):
     json_paths = glob(join(testdir, 'data/public/4_verify/*.json'))
     n_verifications = len(json_paths)
     assert n_verifications > 0
 
 @given_honest_election()
-def test_all_election_verifiers_agree_exactly(testdir: ElectionTestDir):
+def test_honest_all_verifiers_agree_exactly(testdir: ElectionTestDir):
     first_summary: Optional[dict] = None
     json_paths = glob(join(testdir, 'data/public/4_verify/*.json'))
     for json_path in json_paths:
@@ -688,7 +699,7 @@ def test_all_election_verifiers_agree_exactly(testdir: ElectionTestDir):
             assert summary == first_summary
 
 @given_honest_election()
-def test_n_verifications_matches_cfg(testdir: ElectionTestDir):
+def test_honest_n_verifications_matches_cfg(testdir: ElectionTestDir):
     config = load_config_json(testdir)
     n_expected = sum([
         1, # admin
@@ -733,7 +744,7 @@ def spoiled_vote_totals_from_config(contest_config):
     return totals
 
 @given_honest_election()
-def test_cast_votes_match_config(testdir: ElectionTestDir):
+def test_honest_cast_votes_match_config(testdir: ElectionTestDir):
 
     cfg = load_config_json(testdir)
     expected_cast_totals = cast_vote_totals_from_config(cfg)
@@ -764,7 +775,7 @@ def spoiled_vote_totals_from_summary(summary):
     return totals
 
 @given_honest_election()
-def test_spoiled_votes_match_config(testdir: ElectionTestDir):
+def test_honest_spoiled_votes_match_config(testdir: ElectionTestDir):
 
     cfg = load_config_json(testdir)
     expected_spoiled_totals = spoiled_vote_totals_from_config(cfg)
@@ -792,123 +803,123 @@ def assert_verifiers_verified(testdir: ElectionTestDir, target_name: str, expect
             raise Exception(msg)
 
 @given_honest_election()
-def test_manifest_verified(testdir: ElectionTestDir):
+def test_honest_manifest_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'manifest')
 
 @given_honest_election()
-def test_ceremony_details_verified(testdir: ElectionTestDir):
+def test_honest_ceremony_details_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'ceremony_details')
 
 @given_honest_election()
-def test_gather_announce_verified(testdir: ElectionTestDir):
+def test_honest_gather_announce_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'gather_announce')
 
 @given_honest_election()
-def test_all_guardian_backups_verified(testdir: ElectionTestDir):
+def test_honest_all_guardian_backups_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'all_guardian_backups')
 
 @given_honest_election()
-def test_all_guardian_verifications_verified(testdir: ElectionTestDir):
+def test_honest_all_guardian_verifications_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'all_guardian_verifications')
 
 @given_honest_election()
-def test_gather_ceremony_verified(testdir: ElectionTestDir):
+def test_honest_gather_ceremony_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'gather_ceremony')
 
 @given_honest_election()
-def test_joint_key_verified(testdir: ElectionTestDir):
+def test_honest_joint_key_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'joint_key')
 
 @given_honest_election()
-def test_build_election_verified(testdir: ElectionTestDir):
+def test_honest_build_election_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'build_election')
 
 @given_honest_election()
-def test_constants_verified(testdir: ElectionTestDir):
+def test_honest_constants_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'constants')
 
 @given_honest_election()
-def test_internal_manifest_verified(testdir: ElectionTestDir):
+def test_honest_internal_manifest_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'internal_manifest')
 
 @given_honest_election()
-def test_context_verified(testdir: ElectionTestDir):
+def test_honest_context_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'context')
 
 @given_honest_election()
-def test_gather_constants_verified(testdir: ElectionTestDir):
+def test_honest_gather_constants_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'gather_constants')
 
 @given_honest_election()
-def test_all_devices_verified(testdir: ElectionTestDir):
+def test_honest_all_devices_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'all_devices')
 
 @given_honest_election()
-def test_gather_config_verified(testdir: ElectionTestDir):
+def test_honest_gather_config_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'gather_config')
 
 @given_honest_election()
-def test_all_ballots_submitted_verified(testdir: ElectionTestDir):
+def test_honest_all_ballots_submitted_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'all_ballots_submitted')
 
 @given_honest_election()
-def test_all_ballots_cast_verified(testdir: ElectionTestDir):
+def test_honest_all_ballots_cast_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'all_ballots_cast')
 
 @given_honest_election()
-def test_all_ballots_spoiled_verified(testdir: ElectionTestDir):
+def test_honest_all_ballots_spoiled_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'all_ballots_spoiled')
 
 @given_honest_election()
-def test_all_spoiled_results_verified(testdir: ElectionTestDir):
+def test_honest_all_spoiled_results_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'all_spoiled_results')
 
 @given_honest_election()
-def test_n_spoiled_decrypted_verified(testdir: ElectionTestDir):
+def test_honest_n_spoiled_decrypted_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'n_spoiled_decrypted')
 
 @given_honest_election()
-def test_n_cast_spoiled_submitted_verified(testdir: ElectionTestDir):
+def test_honest_n_cast_spoiled_submitted_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'n_cast_spoiled_submitted')
 
 @given_honest_election()
-def test_set_spoiled_decrypted_verified(testdir: ElectionTestDir):
+def test_honest_set_spoiled_decrypted_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'set_spoiled_decrypted')
 
 @given_honest_election()
-def test_set_cast_spoiled_submitted_verified(testdir: ElectionTestDir):
+def test_honest_set_cast_spoiled_submitted_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'set_cast_spoiled_submitted')
 
 @given_honest_election()
-def test_ballot_sets_verified(testdir: ElectionTestDir):
+def test_honest_ballot_sets_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'ballot_sets')
 
 @given_honest_election()
-def test_ciphertext_tally_verified(testdir: ElectionTestDir):
+def test_honest_ciphertext_tally_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'ciphertext_tally')
 
 @given_honest_election()
-def test_tally_aggregation_verified(testdir: ElectionTestDir):
+def test_honest_tally_aggregation_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'tally_aggregation')
 
 @given_honest_election()
-def test_plaintext_tally_verified(testdir: ElectionTestDir):
+def test_honest_plaintext_tally_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'plaintext_tally')
 
 @given_honest_election()
-def test_tally_decryption_verified(testdir: ElectionTestDir):
+def test_honest_tally_decryption_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'tally_decryption')
 
 @given_honest_election()
-def test_gather_tally_verified(testdir: ElectionTestDir):
+def test_honest_gather_tally_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'gather_tally')
 
 @given_honest_election()
-def test_gather_decryptions_verified(testdir: ElectionTestDir):
+def test_honest_gather_decryptions_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'gather_decryptions')
 
 @given_honest_election()
-def test_gather_election_verified(testdir: ElectionTestDir):
+def test_honest_gather_election_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'gather_election')
 
 
@@ -939,6 +950,9 @@ def assert_verifiers_reject(testdir: ElectionTestDir, targets: List[str]):
 def test_attack_admin_withhold_manifest(testdir: ElectionTestDir):
     assert_verifiers_reject(testdir, [
         'manifest',
+        # ...
+        # lots of other things inbetween should also fail
+        # ...
         'gather_election',
     ])
 
@@ -946,6 +960,8 @@ def test_attack_admin_withhold_manifest(testdir: ElectionTestDir):
 def test_attack_admin_ghost_after_vote(testdir: ElectionTestDir):
     assert_verifiers_reject(testdir, [
         'ciphertext_tally',
+        'all_spoiled_results',
+        # ...
         'gather_election',
     ])
 
