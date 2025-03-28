@@ -17,9 +17,12 @@ import copy
 import re
 import string
 
+
 ### utilities ###
 
-def edit_random_crypto_string_in_place(json_path: str):
+HEX_CHARS = string.digits + string.ascii_uppercase[:6]
+
+def edit_random_crypto_string_in_place(log: logging.Logger, json_path: str):
     """Randomly change one char in one of the hex strings in a JSON file.
     Raises IndexError if there are none.
     """
@@ -27,14 +30,26 @@ def edit_random_crypto_string_in_place(json_path: str):
         json_str = f.read() # TODO decode?
     matches = list(re.findall('"[A-F0-9]{2,}"', json_str))
     match_to_edit = random.choice(matches)
-    index_to_edit = random.randint(0, len(match_to_edit))
-    new_char = random.choice(string.digits + string.ascii_uppercase[:6])
+    index_to_edit = random.randint(1, len(match_to_edit)-1) # avoid first and last quote chars
+    old_char = match_to_edit[index_to_edit]
+    new_char = None
+    while new_char is None or new_char == old_char:
+        new_char = random.choice(HEX_CHARS)
     new_str = list(copy.copy(match_to_edit))
     new_str[index_to_edit] = new_char
     new_str = ''.join(new_str)
+    log.info(f'old string: {match_to_edit}')
+    log.info(f'new string: {new_str}')
+    log.info(f'(changed char {index_to_edit}: {old_char} -> {new_char})')
     new_json = json_str.replace(match_to_edit, new_str)
     with open(json_path, 'w') as f:
         f.write(new_json) # TODO encode?
+
+def break_public_record_crypto_in_place(log: logging.Logger, pubdir: str, record_type: str, **fmtargs):
+    json_path = public_path(pubdir, record_type, **fmtargs)
+    log.info(f'breaking one crypto string in {json_path}...')
+    edit_random_crypto_string_in_place(log, json_path)
+    log.info('done\n')
 
 
 ### utilities ###
@@ -68,12 +83,7 @@ def admin_withhold_manifest(log, pubdir, privdir, step):
 #      would require others to verify all the crypto operations the admin does
 # def admin_break_constants(log, pubdir, privdir, step):
 #     log.info(f'running during {step} step')
-#     json_path = public_path(pubdir, 'constants')
-#     log.info(f'breaking {json_path}')
-#     try:
-#         edit_random_crypto_string_in_place(json_path)
-#     except Exception as e:
-#         log.error(e)
+#     break_public_record_crypto_in_place(log, pubdir, 'constants')
 
 def device_withhold_submitted_ballot(log, pubdir, privdir, step):
     """Prevent a ballot from being initially submitted. This would be caught in
@@ -94,6 +104,10 @@ def device_withhold_submitted_ballot(log, pubdir, privdir, step):
         log.info('attack finished')
     except Exception as e:
         log.error(e)
+
+def device_break_submitted_ballot(log, pubdir, privdir, step):
+    ballot_fmtargs = random.choice(list_submitted_ballot_fmtargs(pubdir))
+    break_public_record_crypto_in_place(log, pubdir, 'ballot_submitted', **ballot_fmtargs)
 
 def device_withhold_cast_ballot(log, pubdir, privdir, step):
     """Prevent a cast notice from being published. This would make it appear
