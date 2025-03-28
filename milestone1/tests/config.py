@@ -19,7 +19,8 @@ ATTACKS = {
     # 'admin_break_constants'            : {'who': 'admin' , 'when': ['build_election']},
 
     # 'device_withhold_submitted_ballot' : {'who': 'device', 'when': ['vote_commit_all']},
-    'device_break_submitted_ballot'    : {'who': 'device', 'when': ['vote_commit_all']},
+    # 'device_break_submitted_ballot'    : {'who': 'device', 'when': ['vote_commit_all']},
+    'device_break_spoiled_ballot'      : {'who': 'device', 'when': ['vote_reveal_all']},
 
     # 'device_withhold_cast_ballot'      : {'who': 'device', 'when': ['vote_reveal_all']},
     # 'device_withhold_spoiled_ballot'   : {'who': 'device', 'when': ['vote_reveal_all']},

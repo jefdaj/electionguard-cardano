@@ -18,6 +18,12 @@ import re
 import string
 
 
+# TODO what do do about things the protocol doesn't currently check?
+#      examples so far:
+#      - constants
+#      - nonce in spoiled ballots
+
+
 ### utilities ###
 
 HEX_CHARS = string.digits + string.ascii_uppercase[:6]
@@ -49,7 +55,15 @@ def break_public_record_crypto_in_place(log: logging.Logger, pubdir: str, record
     json_path = public_path(pubdir, record_type, **fmtargs)
     log.info(f'breaking one crypto string in {json_path}...')
     edit_random_crypto_string_in_place(log, json_path)
-    log.info('done\n')
+
+def announce_attack(fn):
+    def decorated_fn(log, *args, **kwargs):
+        header = f'### running {fn.__name__} ###\n'
+        log.info(header)
+        result = fn(log, *args, **kwargs)
+        log.info('done\n')
+        return result
+    return decorated_fn
 
 
 ### utilities ###
@@ -68,6 +82,7 @@ def list_own_ballot_fmtargs(privdir):
 #
 # See also ATTACKS in config.py for info about how to run them
 
+@announce_attack
 def admin_withhold_manifest(log, pubdir, privdir, step):
     "A silly attack that's fast to debug because it targets the first step."
     log.info(f'running during {step} step')
@@ -85,6 +100,7 @@ def admin_withhold_manifest(log, pubdir, privdir, step):
 #     log.info(f'running during {step} step')
 #     break_public_record_crypto_in_place(log, pubdir, 'constants')
 
+@announce_attack
 def device_withhold_submitted_ballot(log, pubdir, privdir, step):
     """Prevent a ballot from being initially submitted. This would be caught in
     the current ElectionGuard setup by a voter checking the official website
@@ -105,10 +121,26 @@ def device_withhold_submitted_ballot(log, pubdir, privdir, step):
     except Exception as e:
         log.error(e)
 
+@announce_attack
 def device_break_submitted_ballot(log, pubdir, privdir, step):
-    ballot_fmtargs = random.choice(list_submitted_ballot_fmtargs(pubdir))
+    submitted_ballots = set(d['ballot_id'] for d in list_submitted_ballot_fmtargs(pubdir))
+    own_ballots       = set(d['ballot_id'] for d in list_own_ballot_fmtargs(privdir))
+    valid_choices = [{'ballot_id': i} for i in own_ballots.intersection(submitted_ballots)]
+    ballot_fmtargs = random.choice(valid_choices)
     break_public_record_crypto_in_place(log, pubdir, 'ballot_submitted', **ballot_fmtargs)
 
+@announce_attack
+def device_break_spoiled_ballot(log, pubdir, privdir, step):
+    spoiled_ballots = set(d['ballot_id'] for d in list_spoiled_ballot_fmtargs(pubdir))
+    own_ballots     = set(d['ballot_id'] for d in list_own_ballot_fmtargs(privdir))
+    valid_choices = [{'ballot_id': i} for i in own_ballots.intersection(spoiled_ballots)]
+    try:
+        ballot_fmtargs = random.choice(valid_choices)
+    except IndexError:
+        log.error('abort because this device has no spoiled ballots')
+    break_public_record_crypto_in_place(log, pubdir, 'ballot_spoiled', **ballot_fmtargs)
+
+@announce_attack
 def device_withhold_cast_ballot(log, pubdir, privdir, step):
     """Prevent a cast notice from being published. This would make it appear
     that the voter never said whether to cast or spoil, but is targeted to the
@@ -134,6 +166,7 @@ def device_withhold_cast_ballot(log, pubdir, privdir, step):
     except Exception as e:
         log.error(e)
 
+@announce_attack
 def device_withhold_spoiled_ballot(log, pubdir, privdir, step):
     """Prevent a spoiled ballot from being published. This would make it appear
     that the voter never said whether to cast or spoil, but is targeted to the
@@ -159,6 +192,7 @@ def device_withhold_spoiled_ballot(log, pubdir, privdir, step):
     except Exception as e:
         log.error(e)
 
+@announce_attack
 def admin_ghost_after_vote(log, pubdir, privdir, step):
     """This simulates the election authority becoming non-cooperative after
     they see that the voting is going in a direction they don't like. (There's
