@@ -125,9 +125,16 @@ data/
 
 ## TODO
 
-- [x] Re-learn some Hypothesis basics
-- [x] Have `verifier.py` send output to a log rather than printing if `--output` given
-- [x] Set up the "generate config, run election, assert about results" loop
-- [x] Rearrange `election.json`: "election" -> "roles", "votes" -> "contests", question inside contests
-- [x] Have `verifier.py` save a nested dict of all passing verifications in its json file
-- [x] Move `test.py` code -> `election.py`? or `conftest.py`?
+- [ ] Clearly separate Python scripts that run on the host vs in containers
+- [ ] Should the host ones be a module with its own utils file?
+- [ ] Go back to the [election](../election) and [verifier](../verifier) scripts
+      and update them to match the latest code here in tests
+
+
+## Out of scope for now
+
+There are some parts of the election that aren't checked in the current implementation,
+but seem important to me. They should be addressed in future work:
+
+- [ ] admin can alter election constants without anyone noticing
+- [ ] device can alter spoiled ballot nonces (presumably a voter's personal verifier would catch this!)

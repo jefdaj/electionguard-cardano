@@ -18,12 +18,6 @@ import re
 import string
 
 
-# TODO what do do about things the protocol doesn't currently check?
-#      examples so far:
-#      - constants
-#      - nonce in spoiled ballots
-
-
 ### utilities ###
 
 HEX_CHARS = string.digits + string.ascii_uppercase[:6]
