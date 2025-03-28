@@ -125,8 +125,10 @@ data/
 
 ## TODO
 
+- [x] Always tee to test.log
 - [ ] Clearly separate Python scripts that run on the host vs in containers
 - [ ] Should the host ones be a module with its own utils file?
+- [ ] Make `max_examples` configurable at the top script level
 - [ ] Go back to the [election](../election) and [verifier](../verifier) scripts
       and update them to match the latest code here in tests
 

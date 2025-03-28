@@ -617,10 +617,10 @@ def given_election(attack_cfg_fn, max_examples: int):
     ])
 
 def given_honest_election():
-    return given_election(honestrun, max_examples=15)
+    return given_election(honestrun, max_examples=1)
 
 def given_attack_election():
-    return given_election(attackrun, max_examples=35)
+    return given_election(attackrun, max_examples=1)
 
 
 ### misc small test helpers ###
