@@ -622,16 +622,19 @@ def given_honest_election(max_examples=1):
         max_examples=max_examples
     )
 
-def given_attack_election(max_examples=1, attack_cfg=None):
+def given_attacked_election(
+    attack: Optional[str] = None,
+    max_examples: int = 1
+):
 
     # Override attack_cfg if given explicitly.
     # See test_withhold_manifest_attack below for an example.
-    if attack_cfg is None:
+    if attack is None:
         def attackrun2(*args, **kwargs):
             return attackrun(*args, **kwargs)
     else:
         def attackrun2(*args, **kwargs):
-            kwargs.update(explicit_cfg=attack_cfg)
+            kwargs.update(explicit_cfg=[attack])
             return attackrun(*args, **kwargs)
 
     return given_election(
@@ -664,7 +667,7 @@ def election_verified(testdir: str, verifier_id: str) -> bool:
         return False
 
 
-### property tests ###
+### honest election property tests ###
 
 # TODO rename something less confusing?
 @given_honest_election()
@@ -775,7 +778,7 @@ def test_spoiled_votes_match_config(testdir: ElectionTestDir):
     assert actual_spoiled_totals == expected_spoiled_totals
 
 
-### property tests delegated to verifiers ###
+### honest election property tests delegated to verifiers ###
 
 def assert_verifiers_verified(testdir: ElectionTestDir, target_name: str, expected: bool = True):
     json_paths = sorted(glob(join(testdir, 'data/public/4_verify/*.json')))
@@ -909,30 +912,77 @@ def test_gather_election_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'gather_election')
 
 
-### attack tests ###
+### test specific attacks ###
 
-@given_attack_election(attack_cfg=['admin_withhold_manifest'])
-def test_withhold_manifest_attack(testdir: ElectionTestDir):
-    assert_verifiers_verified(testdir, 'manifest', False)
-
-# TODO are there other cases when the election can still be verified?
-@given_attack_election()
-def test_verifiers_notice_attacks(testdir: ElectionTestDir):
-
-    # sometimes an attack is aborted, and then it wouldn't necessarily be noticed
-    # (for example if it targets spoiled votes and there weren't any)
+def assume_successful_attack(testdir: ElectionTestDir):
+    """Assume that the attack(s) went through and should have some affect on
+    the results. Sometimes an attack is aborted instead, and then we wouldn't
+    expect the verifiers to notice anything. For example if it targets spoiled
+    votes and there weren't any broadcast from the corrupted device.
+    """
+    # TODO double check that all attacks print 'aborted' when they abort
     attack_logs = glob(join(testdir, 'data/private/*/attack.log'))
-    n_non_aborted_attacks = 0
+    n_non_aborted = 0
     for attack_log in attack_logs:
         with open(attack_log, 'r') as f:
             txt = f.read()
             if not 'abort' in txt:
-                n_non_aborted_attacks += 1
-    assume(n_non_aborted_attacks > 0)
+                n_non_aborted += 1
+    assume(n_non_aborted > 0)
 
-    assert_verifiers_verified(testdir, 'gather_election', False)
+def assert_verifiers_reject(testdir: ElectionTestDir, targets: List[str]):
+    "Assert that the test election verifiers did not verify any of these targets"
+    for target in targets:
+        assert_verifiers_verified(testdir, target, False)
 
-@given_attack_election()
+@given_attacked_election('admin_withhold_manifest')
+def test_attack_admin_withhold_manifest(testdir: ElectionTestDir):
+    assert_verifiers_reject(testdir, [
+        'manifest',
+        'gather_election',
+    ])
+
+@given_attacked_election('admin_ghost_after_vote')
+def test_attack_admin_ghost_after_vote(testdir: ElectionTestDir):
+    assert_verifiers_reject(testdir, [
+        'ciphertext_tally',
+        'gather_election',
+    ])
+
+@given_attacked_election('device_withhold_submitted_ballot')
+def test_attack_device_withhold_submitted_ballot(testdir: ElectionTestDir):
+    assert_verifiers_reject(testdir, [
+        'set_cast_spoiled_submitted',
+        'ballot_sets',
+        'gather_election',
+    ])
+
+@given_attacked_election('device_withhold_cast_ballot')
+def test_attack_device_withhold_cast_ballot(testdir: ElectionTestDir):
+    assume_successful_attack(testdir)
+    assert_verifiers_reject(testdir, [
+        'gather_election',
+    ])
+
+@given_attacked_election('device_withhold_spoiled_ballot')
+def test_attack_device_withhold_spoiled_ballot(testdir: ElectionTestDir):
+    assume_successful_attack(testdir)
+    assert_verifiers_reject(testdir, [
+        'set_cast_spoiled_submitted',
+        'ballot_sets',
+        'gather_election',
+    ])
+
+
+### test attacks in general ###
+
+# TODO are there other cases when the election can still be verified?
+@given_attacked_election()
+def test_verifiers_notice_attacks(testdir: ElectionTestDir):
+    assume_successful_attack(testdir)
+    assert_verifiers_reject(testdir, ['gather_election'])
+
+@given_attacked_election()
 def test_attacks_are_logged(testdir: ElectionTestDir):
     '''there should be at least 1 private attack.log,
     and at least one attack mentioned in the main election.log
