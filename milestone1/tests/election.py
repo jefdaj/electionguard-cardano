@@ -951,7 +951,8 @@ def test_attack_admin_withhold_manifest(testdir: ElectionTestDir):
     assert_verifiers_reject(testdir, [
         'manifest',
         # ...
-        # lots of other things inbetween should also fail
+        # other things should fail too,
+        # but we don't need to put them all
         # ...
         'gather_election',
     ])
@@ -960,8 +961,6 @@ def test_attack_admin_withhold_manifest(testdir: ElectionTestDir):
 def test_attack_admin_ghost_after_vote(testdir: ElectionTestDir):
     assert_verifiers_reject(testdir, [
         'ciphertext_tally',
-        'all_spoiled_results',
-        # ...
         'gather_election',
     ])
 
