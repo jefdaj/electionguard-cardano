@@ -15,15 +15,15 @@ from typing import Callable, Dict, List
 # able to import the electionguard module.
 ATTACKS = {
 
-    # 'admin_withhold_manifest'          : {'who': 'admin' , 'when': ['build_manifest']},
-    # 'device_withhold_submitted_ballot' : {'who': 'device', 'when': ['vote_commit_all']},
-    # 'device_withhold_cast_ballot'      : {'who': 'device', 'when': ['vote_reveal_all']},
-    # 'device_withhold_spoiled_ballot'   : {'who': 'device', 'when': ['vote_reveal_all']},
-    # 'admin_ghost_after_vote'           : {'who': 'admin', 'when': ['tally', 'decrypt_results']},
+    'admin_withhold_manifest'          : {'who': 'admin' , 'when': ['build_manifest']},
+    'device_withhold_submitted_ballot' : {'who': 'device', 'when': ['vote_commit_all']},
+    'device_mutate_submitted_ballot'   : {'who': 'device', 'when': ['vote_commit_all']},
+    'device_withhold_cast_ballot'      : {'who': 'device', 'when': ['vote_reveal_all']},
+    'device_withhold_spoiled_ballot'   : {'who': 'device', 'when': ['vote_reveal_all']},
+    'admin_ghost_after_vote'           : {'who': 'admin', 'when': ['tally', 'decrypt_results']},
 
     # Things not verified in the current implementation:
     # 'admin_mutate_constants'            : {'who': 'admin' , 'when': ['build_election']},
-    'device_mutate_submitted_ballot'    : {'who': 'device', 'when': ['vote_commit_all']},
     # 'device_mutate_spoiled_ballot'      : {'who': 'device', 'when': ['vote_reveal_all']},
 
 }

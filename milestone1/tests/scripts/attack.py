@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import json
 import os
 import click
 import logging
@@ -13,7 +14,6 @@ from utils import (
     list_spoiled_ballot_fmtargs,
     list_ballot_ids,
 )
-# import copy
 import re
 import string
 
@@ -21,29 +21,6 @@ import string
 ### utilities ###
 
 HEX_CHARS = string.digits + string.ascii_uppercase[:6]
-
-# def edit_random_crypto_string_in_place(log: logging.Logger, json_path: str):
-#     """Randomly change one char in one of the hex strings in a JSON file.
-#     Raises IndexError if there are none.
-#     """
-#     with open(json_path, 'r') as f:
-#         json_str = f.read() # TODO decode?
-#     matches = list(re.findall('"[A-F0-9]{2,}"', json_str))
-#     match_to_edit = random.choice(matches)
-#     index_to_edit = random.randint(1, len(match_to_edit)-1) # avoid first and last quote chars
-#     old_char = match_to_edit[index_to_edit]
-#     new_char = None
-#     while new_char is None or new_char == old_char:
-#         new_char = random.choice(HEX_CHARS)
-#     new_str = list(copy.copy(match_to_edit))
-#     new_str[index_to_edit] = new_char
-#     new_str = ''.join(new_str)
-#     log.info(f'old string: {match_to_edit}')
-#     log.info(f'new string: {new_str}')
-#     log.info(f'(changed char {index_to_edit}: {old_char} -> {new_char})')
-#     new_json = json_str.replace(match_to_edit, new_str)
-#     with open(json_path, 'w') as f:
-#         f.write(new_json) # TODO encode?
 
 def mutate_hex_string(log: logging.Logger, hex_str: str) -> str:
     "Randomly change one char in a hex string"
@@ -55,7 +32,7 @@ def mutate_hex_string(log: logging.Logger, hex_str: str) -> str:
         new_char = random.choice(HEX_CHARS)
     new_str_chars[i] = new_char
     new_hex_str = ''.join(new_str_chars)
-    log.info(f'mutated char {i} {old_char} -> {new_char}')
+    log.info(f'mutated char {i}: {old_char} -> {new_char}')
     log.info(f'old: {hex_str}')
     log.info(f'new: {new_hex_str}')
     return new_hex_str
@@ -77,7 +54,7 @@ def json_edit_matching_values(root, keys_to_match, value_edit_fn):
 
 def edit_random_matching_crypto_value_in_place(
     log: logging.Logger,
-    json_path: str
+    json_path: str,
     keys: List[str],
 ):
     with open(json_path, 'r') as f:
@@ -99,11 +76,12 @@ def edit_random_matching_crypto_value_in_place(
     # now do the actual edit
     # TODO there's got to be a cleaner way, right?
     edit_index = random.randint(0, n_matching_keys)
+    log.info(f'will mutate key #{edit_index}')
     n = 0
     def edit_chosen_match(k, v):
         nonlocal n
         if n == edit_index:
-            v = mutate_hex_str(log, v)
+            v = mutate_hex_string(log, v)
         n += 1
         return v
     json_edit_matching_values(json_dict, keys, edit_chosen_match)
@@ -121,12 +99,13 @@ def mutate_public_record_crypto_in_place(
 ):
     json_path = public_path(pubdir, record_type, **fmtargs)
     log.info(f'breaking one crypto string in {json_path}...')
-    edit_random_crypto_value_in_place(log, json_path, keys)
+    edit_random_matching_crypto_value_in_place(log, json_path, keys)
 
 def announce_attack(fn):
     def decorated_fn(log, *args, **kwargs):
         header = f'### running {fn.__name__} ###\n'
         log.info(header)
+        # TODO print aborted error here in case of exception
         result = fn(log, *args, **kwargs)
         log.info('done\n')
         return result
@@ -187,12 +166,10 @@ def device_withhold_submitted_ballot(log, pubdir, privdir, step):
 
 @announce_attack
 def device_mutate_submitted_ballot(log, pubdir, privdir, step):
-    log.info('debug 1')
     submitted_ballots = set(d['ballot_id'] for d in list_submitted_ballot_fmtargs(pubdir))
     own_ballots       = set(d['ballot_id'] for d in list_own_ballot_fmtargs(privdir))
     valid_choices = [{'ballot_id': i} for i in own_ballots.intersection(submitted_ballots)]
     ballot_fmtargs = random.choice(valid_choices)
-    log.info('debug 2')
     mutate_keys = [
         'manifest_hash',
         'code_seed',
@@ -211,7 +188,6 @@ def device_mutate_submitted_ballot(log, pubdir, privdir, step):
     mutate_public_record_crypto_in_place(
         log, pubdir, 'ballot_submitted', mutate_keys, **ballot_fmtargs
     )
-    log.info('debug 3')
 
 @announce_attack
 def device_mutate_spoiled_ballot(log, pubdir, privdir, step):
@@ -379,7 +355,7 @@ def AttackCommand(
 ) -> None:
     # TODO parse and pass cfg here?
     log = init_log(logfile, logging.INFO)
-    log.info(f'running an attack with locals: {locals()}')
+    # log.info(f'running an attack with locals: {locals()}')
     main(log, public_dir, private_dir, attack_fn, step, random_seed)
 
 @click.group
