@@ -42,12 +42,13 @@ def init_log(cfg, logfile, level=logging.WARNING):
     log.addHandler(handler)
     return log
 
-def parse_config(cfg_path, pause_to_explain):
+def parse_config(cfg_path, pause_to_explain, random_seed):
     cfg_path = realpath(cfg_path)
     with open(cfg_path, 'r') as f:
         js = json.load(f)
     cfg = DotMap(js)
     cfg.project_config = cfg_path # for passing to arion as an env var
+    cfg.random_seed = random_seed
     cfg.pause_to_explain = pause_to_explain
     # TODO do something like this per contest answers dict?
     # cfg.votes = dict(cfg.votes) # TODO is this the simplest way to enable iteration?
@@ -385,7 +386,6 @@ def attack(cfg, log: logging.Logger, fn_name: str, role: str, step: str, seed: i
     }
     n = random.randint(1, counts[role])
     logfile = join(cfg.arion.bind_mounts.private, 'attack.log')
-    random.seed(seed)
     run_in_container(
         cfg, log, "attack.py", role, n,
         [
@@ -406,7 +406,12 @@ def attack_all(cfg, log, step):
         attack_cfg = ATTACKS[fn_name]
         if not step in attack_cfg['when']:
             continue
-        seed = i # TODO should the test hash also contribute?
+
+        # TODO is this reasonable?
+        # we mainly want to make sure that when the same attack is repeated in the same config,
+        # it doesn't use the same seed
+        seed = cfg.random_seed + i
+
         attack(cfg, log, fn_name, attack_cfg['who'], step, seed)
 
 # TODO should the attacks be called as part of each step rather than separately?
@@ -471,15 +476,22 @@ def main(cfg, log):
     help="Where to log printed messages",
     type=click.STRING,
 )
+@click.option(
+    "--random-seed",
+    prompt="Random seed",
+    help="Explicit random seed for debugging",
+    type=click.INT,
+)
 def ElectionCommand(
     project_config: str,
     pause_to_explain: bool,
+    random_seed: int,
     single_step: Optional[str],
     logfile: Optional[str],
 ) -> None:
     """Run an election with some options in a JSON config file.
     """
-    cfg = parse_config(project_config, pause_to_explain)
+    cfg = parse_config(project_config, pause_to_explain, random_seed)
     log = init_log(cfg, logfile, logging.INFO)
     if single_step:
         run_single_step(cfg, log, single_step)
@@ -501,18 +513,20 @@ if __name__ == '__main__':
 
 TESTS_DIR = './tests'
 
-def hash_config(cfg: RunConfig, truncate=99) -> str:
+def hash_config(cfg: RunConfig, truncate=99) -> (int, str):
     "Ensures tmpdirs are not being reused after their configs change"
     s = str(cfg).encode('utf-8')
-    d = hashlib.md5(s).digest()
-    return d.hex()[:truncate]
+    h = hashlib.md5(s).digest().hex()
+    int_hash = int(str(int(h, 16))[-truncate:])
+    str_hash = h[:truncate]
+    return (int_hash, str_hash)
 
 ElectionTestDir = str
 
 def run_test_election(cfg: RunConfig) -> ElectionTestDir:
 
     # use our own custom tmpdir instead of TemporaryDirectory
-    h5 = hash_config(cfg, truncate=5)
+    (random_seed, h5) = hash_config(cfg, truncate=5)
     test_name = f'test{h5}'
     tmpdir = join(TESTS_DIR, test_name)
 
@@ -545,8 +559,9 @@ def run_test_election(cfg: RunConfig) -> ElectionTestDir:
         with open(cfg_path, 'w') as f:
             json.dump(cfg, f)
 
-        cfg = parse_config(cfg_path, pause_to_explain=False)
+        cfg = parse_config(cfg_path, pause_to_explain=False, random_seed=random_seed)
         log = init_log(cfg, logfile, logging.INFO)
+        log.info(f'using random_seed from config hash: {random_seed}\n')
         main(cfg, log)
 
     except:
@@ -582,8 +597,12 @@ def prerun_test_election(fn_from_testdir):
     return fn_from_cfg
 
 def get_random_seed():
-    # random seed can be set per dev session, which offers a good
-    # balance between caching and making sure different values work
+    # Random seed can be set per dev session, which offers a good
+    # balance between caching and making sure different values work.
+    # This is the top level main seed. It controls which random configs
+    # hypothesis generates, and the hashes of the configs control the
+    # downstream attack random seeds.
+    # TODO is there a less confusing way to do that?
     try:
         random_seed: int = int(os.environ['TEST_RANDOM_SEED'])
     except KeyError:
@@ -607,7 +626,7 @@ def given_election(attack_cfg_fn, max_examples: int):
     return yad([
         seed(get_random_seed()),
         settings(
-            # derandomize=True, # this is already default?
+            derandomize=False,
             max_examples=max_examples,
             deadline=None,
             phases=(Phase.explicit, Phase.reuse, Phase.generate),
