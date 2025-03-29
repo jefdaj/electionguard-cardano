@@ -68,19 +68,18 @@ def edit_random_matching_crypto_value_in_place(
         n_matching_keys += 1
         return v
     json_edit_matching_values(json_dict, keys, count_matches)
-    log.info(f'{json_path} contains {n_matching_keys} matching keys')
+    log.info(f'there are {n_matching_keys} matching keys')
     if n_matching_keys == 0:
         log.error('abort because no matching keys') # TODO raise exception and catch above instead?
         return
 
     # now do the actual edit
-    # TODO there's got to be a cleaner way, right?
     edit_index = random.randint(0, n_matching_keys)
-    log.info(f'will mutate key #{edit_index}')
     n = 0
     def edit_chosen_match(k, v):
         nonlocal n
         if n == edit_index:
+            log.info(f'targeting match {n}, {k}')
             v = mutate_hex_string(log, v)
         n += 1
         return v
@@ -98,17 +97,20 @@ def mutate_public_record_crypto_in_place(
     **fmtargs
 ):
     json_path = public_path(pubdir, record_type, **fmtargs)
-    log.info(f'breaking one crypto string in {json_path}...')
+    log.info(f'targeting {json_path}')
     edit_random_matching_crypto_value_in_place(log, json_path, keys)
 
 def announce_attack(fn):
     def decorated_fn(log, *args, **kwargs):
         header = f'### running {fn.__name__} ###\n'
         log.info(header)
-        # TODO print aborted error here in case of exception
-        result = fn(log, *args, **kwargs)
-        log.info('done\n')
-        return result
+        try:
+            result = fn(log, *args, **kwargs)
+            log.info(f'\n### finished {fn.__name__} ###\n')
+            return result
+        except Exception as e:
+            log.error(f'ERROR: {fn.__name__} failed: {e}')
+            raise
     return decorated_fn
 
 def list_own_ballot_fmtargs(privdir):
@@ -170,9 +172,8 @@ def device_mutate_submitted_ballot(log, pubdir, privdir, step):
     own_ballots       = set(d['ballot_id'] for d in list_own_ballot_fmtargs(privdir))
     valid_choices = [{'ballot_id': i} for i in own_ballots.intersection(submitted_ballots)]
     ballot_fmtargs = random.choice(valid_choices)
-    mutate_keys = [
+    fields_to_mutate = [
         'manifest_hash',
-        'code_seed',
         'description_hash',
         'pad',
         'data'
@@ -186,7 +187,7 @@ def device_mutate_submitted_ballot(log, pubdir, privdir, step):
         'proof_one_response',
     ]
     mutate_public_record_crypto_in_place(
-        log, pubdir, 'ballot_submitted', mutate_keys, **ballot_fmtargs
+        log, pubdir, 'ballot_submitted', fields_to_mutate, **ballot_fmtargs
     )
 
 @announce_attack
