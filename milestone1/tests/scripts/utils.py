@@ -416,7 +416,14 @@ def load_decryption_shares(
             shares[guardian_id] = share
         except FileNotFoundError:
             print(f'WARNING {guardian_id} tally share missing')
-    assert len(shares) > 0
+    # assert len(shares) > 0
+
+    # This shouldn't be required, but the ElectionGuard code actually goes into
+    # an infinite loop if you try to decrypt with fewer than all the shares
+    # available. OK for a demo but obviously not production.
+    # TODO is there an easy workaround besides failing early?
+    assert len(shares) == guardian_count
+
     return shares
 
 def load_tally_shares(public_dir, guardian_count):

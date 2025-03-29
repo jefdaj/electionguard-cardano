@@ -13,9 +13,11 @@ from utils import (
     list_cast_ballot_fmtargs,
     list_spoiled_ballot_fmtargs,
     list_ballot_ids,
+    from_private_record,
 )
 import re
 import string
+from electionguard.key_ceremony import ElectionKeyPair
 
 
 ### utilities ###
@@ -80,6 +82,8 @@ def edit_random_matching_crypto_value_in_place(
         nonlocal n
         if n == edit_index:
             log.info(f'targeting match {n}, {k}')
+            if v is None:
+                raise Exception(f'abort because {k} is None') # TODO log error instead?
             v = mutate_hex_string(log, v)
         n += 1
         return v
@@ -109,7 +113,7 @@ def announce_attack(fn):
             log.info(f'\n### finished {fn.__name__} ###\n')
             return result
         except Exception as e:
-            log.error(f'ERROR: {fn.__name__} failed: {e}')
+            log.error(f'ERROR: {e}')
             raise
     return decorated_fn
 
@@ -133,11 +137,7 @@ def admin_withhold_manifest(log, pubdir, privdir, step):
     log.info(f'running during {step} step')
     manifest_path = public_path(pubdir, 'manifest')
     log.info(f'removing {manifest_path}')
-    try:
-        os.remove(manifest_path)
-        log.info('attack finished')
-    except Exception as e:
-        log.error(e)
+    os.remove(manifest_path)
 
 # TODO should the protocol be expected to catch this? it doesn't so far
 #      would require others to verify all the crypto operations the admin does
@@ -160,11 +160,7 @@ def device_withhold_submitted_ballot(log, pubdir, privdir, step):
         return
     ballot_path = public_path(pubdir, 'ballot_submitted', **ballot_fmtargs)
     log.info(f'removing {ballot_path}')
-    try:
-        os.remove(ballot_path)
-        log.info('attack finished')
-    except Exception as e:
-        log.error(e)
+    os.remove(ballot_path)
 
 @announce_attack
 def device_mutate_submitted_ballot(log, pubdir, privdir, step):
@@ -172,34 +168,57 @@ def device_mutate_submitted_ballot(log, pubdir, privdir, step):
     own_ballots       = set(d['ballot_id'] for d in list_own_ballot_fmtargs(privdir))
     valid_choices = [{'ballot_id': i} for i in own_ballots.intersection(submitted_ballots)]
     ballot_fmtargs = random.choice(valid_choices)
-    fields_to_mutate = [
-        'manifest_hash',
-        'description_hash',
-        'pad',
-        'data'
-        'crypto_hash',
-        'proof_zero_pad',
-        'proof_zero_data',
-        'proof_one_pad',
-        'proof_one_data',
-        'challenge',
-        'proof_zero_response',
-        'proof_one_response',
-    ]
     mutate_public_record_crypto_in_place(
-        log, pubdir, 'ballot_submitted', fields_to_mutate, **ballot_fmtargs
+        log, pubdir, 'ballot_submitted',
+        [
+            'manifest_hash',
+            'description_hash',
+            'pad',
+            'data'
+            'crypto_hash',
+            'proof_zero_pad',
+            'proof_zero_data',
+            'proof_one_pad',
+            'proof_one_data',
+            'challenge',
+            'proof_zero_response',
+            'proof_one_response',
+            'nonce', # TODO remove?
+        ],
+        **ballot_fmtargs
     )
 
-@announce_attack
-def device_mutate_spoiled_ballot(log, pubdir, privdir, step):
-    spoiled_ballots = set(d['ballot_id'] for d in list_spoiled_ballot_fmtargs(pubdir))
-    own_ballots     = set(d['ballot_id'] for d in list_own_ballot_fmtargs(privdir))
-    valid_choices = [{'ballot_id': i} for i in own_ballots.intersection(spoiled_ballots)]
-    try:
-        ballot_fmtargs = random.choice(valid_choices)
-    except IndexError:
-        log.error('abort because this device has no spoiled ballots')
-    mutate_public_record_crypto_in_place(log, pubdir, 'ballot_spoiled', **ballot_fmtargs)
+# TODO come back and finish this after rewriting/updating verify_ballot_spoiled
+# @announce_attack
+# def device_mutate_spoiled_ballot(log, pubdir, privdir, step):
+#     spoiled_ballots = set(d['ballot_id'] for d in list_spoiled_ballot_fmtargs(pubdir))
+#     own_ballots     = set(d['ballot_id'] for d in list_own_ballot_fmtargs(privdir))
+#     valid_choices = [{'ballot_id': i} for i in own_ballots.intersection(spoiled_ballots)]
+#     try:
+#         ballot_fmtargs = random.choice(valid_choices)
+#     except IndexError:
+#         raise Exception('abort because this device has no spoiled ballots')
+#     mutate_public_record_crypto_in_place(
+#         log, pubdir, 'ballot_spoiled',
+#         [
+#             'manifest_hash',
+#             'code_seed', # TODO remove?
+#             # 'description_hash',
+#             'pad',
+#             'data'
+#             'crypto_hash',
+#             'proof_zero_pad',
+#             'proof_zero_data',
+#             'proof_one_pad',
+#             'proof_one_data',
+#             'challenge',
+#             # 'proof_zero_response',
+#             'proof_one_response',
+#             'nonce', # TODO remove?
+#         ],
+#         **ballot_fmtargs
+#     )
+
 
 @announce_attack
 def device_withhold_cast_ballot(log, pubdir, privdir, step):
@@ -221,11 +240,7 @@ def device_withhold_cast_ballot(log, pubdir, privdir, step):
         return
     ballot_path = public_path(pubdir, 'cast_notice', **ballot_fmtargs)
     log.info(f'removing {ballot_path}')
-    try:
-        os.remove(ballot_path)
-        log.info('attack finished')
-    except Exception as e:
-        log.error(e)
+    os.remove(ballot_path)
 
 @announce_attack
 def device_withhold_spoiled_ballot(log, pubdir, privdir, step):
@@ -247,11 +262,7 @@ def device_withhold_spoiled_ballot(log, pubdir, privdir, step):
         return
     ballot_path = public_path(pubdir, 'ballot_spoiled', **ballot_fmtargs)
     log.info(f'removing {ballot_path}')
-    try:
-        os.remove(ballot_path)
-        log.info('attack finished')
-    except Exception as e:
-        log.error(e)
+    os.remove(ballot_path)
 
 @announce_attack
 def admin_ghost_after_vote(log, pubdir, privdir, step):
@@ -272,25 +283,59 @@ def admin_ghost_after_vote(log, pubdir, privdir, step):
     if step == 'tally':
         tally_path = public_path(pubdir, 'ciphertext_tally')
         log.info(f'removing {tally_path}')
-        try:
-            os.remove(tally_path)
-        except Exception as e:
-            log.error(e)
+        os.remove(tally_path)
 
     elif step == 'decrypt_results':
         ballot_fmtargs = list_spoiled_ballot_fmtargs(pubdir)
         for fmtargs in ballot_fmtargs:
             ballot_path = public_path(pubdir, 'spoiled_result', **fmtargs)
             log.info(f'removing {ballot_path}')
-            try:
-                os.remove(ballot_path)
-            except Exception as e:
-                log.error(e)
-        log.info('attack finished')
+            os.remove(ballot_path)
 
     else:
         raise Exception(f'unexpected step {step}')
     log.info('')
+
+@announce_attack
+def guardian_withhold_tally_share(log, pubdir, privdir, step):
+    """Simulates one of the guardians refusing to decrypt their share of the
+    tally. This is a realistic possibility if the guardian is a partisan upset
+    at how the election seems to be going. In the full protocol there's a
+    mechanism for recovering from it using the guardian backups, but I haven't
+    implemented it because the ElectionGuard authors also didn't implement it.
+    Doesn't seem important for the demo anyway. So for now, we just let the
+    election fail.
+    """
+    own_key_pair: ElectionKeyPair = from_private_record(privdir, 'election_key_pair')
+    fmtargs = {'guardian_id': own_key_pair.owner_id}
+    json_path = public_path(pubdir, 'tally_share', **fmtargs)
+    log.info(f'removing {json_path}')
+    os.remove(json_path)
+
+@announce_attack
+def guardian_withhold_spoiled_share(log, pubdir, privdir, step):
+    """Simulates one of the guardians refusing to decrypt their share of an
+    an individual ballot.
+    """
+
+    # find our guardian_id
+    own_key_pair: ElectionKeyPair = from_private_record(privdir, 'election_key_pair')
+    fmtargs = {'guardian_id': own_key_pair.owner_id}
+
+    # choose a spoiled ballot to mess up
+    try:
+        ballot_fmtargs = random.choice(list_spoiled_ballot_fmtargs(pubdir))
+    except IndexError:
+        raise Exception('abort because there are no spoiled ballots')
+
+    # have ballot_id and guardian_id now
+    # fmtargs.update(ballot_fmtargs)
+    # TODO name it ballot_id here too?
+    fmtargs['spoiled_id'] = ballot_fmtargs['ballot_id']
+
+    json_path = public_path(pubdir, 'spoiled_share', **fmtargs)
+    log.info(f'removing {json_path}')
+    os.remove(json_path)
 
 
 ### main ###

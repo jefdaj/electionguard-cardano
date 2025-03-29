@@ -1014,6 +1014,28 @@ def test_attack_device_mutate_submitted_ballot(testdir: ElectionTestDir):
         'gather_election',
     ])
 
+# @given_attacked_election('device_mutate_spoiled_ballot', max_examples=50)
+# def test_attack_device_mutate_spoiled_ballot(testdir: ElectionTestDir):
+#     assume_successful_attack(testdir)
+#     assert_verifiers_reject(testdir, [
+#         'gather_election',
+#     ])
+
+@given_attacked_election('guardian_withhold_tally_share')
+def test_attack_guardian_withhold_tally_share(testdir: ElectionTestDir):
+    assume_successful_attack(testdir)
+    assert_verifiers_reject(testdir, [
+        'plaintext_tally',
+        'tally_decryption',
+    ])
+
+@given_attacked_election('guardian_withhold_spoiled_share')
+def test_attack_guardian_withhold_spoiled_share(testdir: ElectionTestDir):
+    assume_successful_attack(testdir)
+    assert_verifiers_reject(testdir, [
+        'all_spoiled_results',
+    ])
+
 
 ### test attacks in general ###
 

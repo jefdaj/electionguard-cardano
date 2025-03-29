@@ -348,6 +348,7 @@ def DecryptResultsCommand(
     )
 
     # load and decrypt tally
+    # TODO break this into a separate command so the other shares can still be decrypted if it fails?
     tally_path = join(public_dir, '6_tally.json')
     try:
         tally_enc = from_public_record(public_dir, 'ciphertext_tally')
@@ -363,7 +364,7 @@ def DecryptResultsCommand(
         to_public_record(public_dir, 'plaintext_tally', tally_result)
     except Exception as e:
         log.error(e)
-        # TODO anything else to do here?
+        raise
 
     # load spoiled ballots
     spoiled_ballots: List[SubmittedBallot] = load_spoiled_ballots(public_dir)

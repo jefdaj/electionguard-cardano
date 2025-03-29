@@ -240,6 +240,7 @@ def verify_ballot_spoiled(results, pubdir, log, ballot_id) -> SubmittedBallot:
     assert ballot_spoiled.object_id == deps['ballot_submitted'].object_id
     ballot_submitted_v2 = submit_ballot(ballot_spoiled, BallotBoxState.SPOILED)
     # TODO verify they're identical except submitted has: all nonces set to null, state set to 999
+    # TODO later, verify that the nonces decrypt to the expected votes (separate voter-side verifier)
     return ballot_submitted_v2
 
 def verify_ciphertext_tally(results, pubdir, log):
