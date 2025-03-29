@@ -22,9 +22,9 @@ ATTACKS = {
     'admin_ghost_after_vote'           : {'who': 'admin', 'when': ['tally', 'decrypt_results']},
 
     # Things not verified in the current implementation:
-    # 'admin_break_constants'            : {'who': 'admin' , 'when': ['build_election']},
-    # 'device_break_submitted_ballot'    : {'who': 'device', 'when': ['vote_commit_all']},
-    # 'device_break_spoiled_ballot'      : {'who': 'device', 'when': ['vote_reveal_all']},
+    # 'admin_mutate_constants'            : {'who': 'admin' , 'when': ['build_election']},
+    # 'device_mutate_submitted_ballot'    : {'who': 'device', 'when': ['vote_commit_all']},
+    # 'device_mutate_spoiled_ballot'      : {'who': 'device', 'when': ['vote_reveal_all']},
 
 }
 

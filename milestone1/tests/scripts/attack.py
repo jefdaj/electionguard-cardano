@@ -45,7 +45,7 @@ def edit_random_crypto_string_in_place(log: logging.Logger, json_path: str):
     with open(json_path, 'w') as f:
         f.write(new_json) # TODO encode?
 
-def break_public_record_crypto_in_place(log: logging.Logger, pubdir: str, record_type: str, **fmtargs):
+def mutate_public_record_crypto_in_place(log: logging.Logger, pubdir: str, record_type: str, **fmtargs):
     json_path = public_path(pubdir, record_type, **fmtargs)
     log.info(f'breaking one crypto string in {json_path}...')
     edit_random_crypto_string_in_place(log, json_path)
@@ -90,9 +90,9 @@ def admin_withhold_manifest(log, pubdir, privdir, step):
 
 # TODO should the protocol be expected to catch this? it doesn't so far
 #      would require others to verify all the crypto operations the admin does
-# def admin_break_constants(log, pubdir, privdir, step):
+# def admin_mutate_constants(log, pubdir, privdir, step):
 #     log.info(f'running during {step} step')
-#     break_public_record_crypto_in_place(log, pubdir, 'constants')
+#     mutate_public_record_crypto_in_place(log, pubdir, 'constants')
 
 @announce_attack
 def device_withhold_submitted_ballot(log, pubdir, privdir, step):
@@ -116,15 +116,15 @@ def device_withhold_submitted_ballot(log, pubdir, privdir, step):
         log.error(e)
 
 @announce_attack
-def device_break_submitted_ballot(log, pubdir, privdir, step):
+def device_mutate_submitted_ballot(log, pubdir, privdir, step):
     submitted_ballots = set(d['ballot_id'] for d in list_submitted_ballot_fmtargs(pubdir))
     own_ballots       = set(d['ballot_id'] for d in list_own_ballot_fmtargs(privdir))
     valid_choices = [{'ballot_id': i} for i in own_ballots.intersection(submitted_ballots)]
     ballot_fmtargs = random.choice(valid_choices)
-    break_public_record_crypto_in_place(log, pubdir, 'ballot_submitted', **ballot_fmtargs)
+    mutate_public_record_crypto_in_place(log, pubdir, 'ballot_submitted', **ballot_fmtargs)
 
 @announce_attack
-def device_break_spoiled_ballot(log, pubdir, privdir, step):
+def device_mutate_spoiled_ballot(log, pubdir, privdir, step):
     spoiled_ballots = set(d['ballot_id'] for d in list_spoiled_ballot_fmtargs(pubdir))
     own_ballots     = set(d['ballot_id'] for d in list_own_ballot_fmtargs(privdir))
     valid_choices = [{'ballot_id': i} for i in own_ballots.intersection(spoiled_ballots)]
@@ -132,7 +132,7 @@ def device_break_spoiled_ballot(log, pubdir, privdir, step):
         ballot_fmtargs = random.choice(valid_choices)
     except IndexError:
         log.error('abort because this device has no spoiled ballots')
-    break_public_record_crypto_in_place(log, pubdir, 'ballot_spoiled', **ballot_fmtargs)
+    mutate_public_record_crypto_in_place(log, pubdir, 'ballot_spoiled', **ballot_fmtargs)
 
 @announce_attack
 def device_withhold_cast_ballot(log, pubdir, privdir, step):
