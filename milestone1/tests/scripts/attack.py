@@ -183,7 +183,6 @@ def device_mutate_submitted_ballot(log, pubdir, privdir, step):
             'challenge',
             'proof_zero_response',
             'proof_one_response',
-            'nonce', # TODO remove?
         ],
         **ballot_fmtargs
     )
