@@ -146,13 +146,26 @@ def teardown(cfg, log):
 
 @explain_step
 def build_manifest(cfg, log):
+    # limit one contest for now, just to keep it simple
+    print('cfg:', cfg)
+    contest = cfg.votes[0]
+    if 'referendum' in contest:
+        type_arg = '--referendum'
+        name = contest.referendum
+        candidates = list(dict(contest.answers).keys())
+    elif 'office' in contest:
+        type_arg = '--office'
+        name = contest.office
+        candidates = list(dict(contest.candidates).keys())
+    else:
+        raise Exception(f'Invalid contest {contest}')
     run_in_container(
         cfg, log, "admin.py", "admin", 1,
         [
             "build-manifest",
             "--public-dir", cfg.arion.bind_mounts.public,
-            "--referendum-question", cfg.votes[0].question,
-        ]
+            type_arg, name
+        ] + candidates
     )
 
 @explain_step

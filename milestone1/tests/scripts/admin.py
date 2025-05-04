@@ -86,6 +86,8 @@ def BuildManifestCommand(
 
     now = datetime.utcnow()
     county_id = "electionguard-cardano-test-county"
+
+    # TODO if we're getting this from CLI, also need to do the answers
     contest_name = referendum_question
 
     manifest = {
@@ -96,7 +98,7 @@ def BuildManifestCommand(
         'end_date': now + timedelta(days=2, hours=12), # TODO does it matter?
         'geopolitical_units': [{
             "object_id": county_id,
-            "name": "ElectionGuard + Cardano Test County",
+            "name": "ElectionGuard + Cardano Test Area",
             "type": "municipality",
             "contact_information": None,
         }],

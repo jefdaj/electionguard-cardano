@@ -1,0 +1,24 @@
+{
+  "arion": {
+    "project_name": "test",
+    "data_dir": "./data",
+    "bind_mounts": {
+      "scripts": "/scripts",
+      "public": "/data/public",
+      "private": "/data/private"
+    }
+  },
+  "election": {
+    "guardians": {"count": 3, "quorum": 2},
+    "devices": {"count": 4},
+    "verifiers": {"count": 2}
+  },
+  "votes": [{
+    "office": "Crypto island president",
+    "candidates": {
+      "Blackbeard":  {"cast": 3, "spoil":1},
+      "Squawks III": {"cast": 2, "spoil":2}
+    }
+  }],
+  "attacks": []
+}

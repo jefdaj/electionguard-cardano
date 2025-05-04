@@ -1,0 +1,25 @@
+{
+  "arion": {
+    "project_name": "test",
+    "data_dir": "./data",
+    "bind_mounts": {
+      "scripts": "/scripts",
+      "public": "/data/public",
+      "private": "/data/private"
+    }
+  },
+  "election": {
+    "guardians": {"count": 3, "quorum": 2},
+    "devices": {"count": 4},
+    "verifiers": {"count": 2}
+  },
+  "votes": [{
+    "referendum": "Are pineapples cool?",
+    "answers": {
+      "Yes":    {"cast": 3, "spoil":1},
+      "No":     {"cast": 2, "spoil":2},
+      "Unsure": {"cast": 1, "spoil":3}
+    }
+  }],
+  "attacks": []
+}
