@@ -75,11 +75,12 @@ def explain_step(fn):
         header = f'### {fn.__name__} ###'
         print('\n' + header)
         if cfg.pause_to_explain:
-            print('#  ')
-            while True:
-                if len(input('#  ').strip()) == 0:
-                    print('#' * len(header) + '\n')
-                    break
+            input('')
+            # print('#  ')
+            # while True:
+            #     if len(input('#  ').strip()) == 0:
+            #         print('#' * len(header) + '\n')
+            #         break
         else:
             print()
         return fn(cfg, *args, **kwargs)
