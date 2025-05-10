@@ -10,11 +10,11 @@
   "election": {
     "guardians": {"count": 3, "quorum": 2},
     "devices": {"count": 4},
-    "question": "Are pineapples cool?"
+    "question": "Should pineapple be banned on pizza?"
   },
   "votes": {
-    "Yes":    {"cast": 3, "spoil":1},
+    "Yes":    {"cast": 1, "spoil":3},
     "No":     {"cast": 2, "spoil":2},
-    "Unsure": {"cast": 1, "spoil":3}
+    "Unsure": {"cast": 3, "spoil":1}
   }
 }

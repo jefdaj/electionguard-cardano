@@ -29,50 +29,50 @@ time ./election.py
 
 You can edit [election.json](./election.json),
 re-run [election.py](./election.py) with no arguments,
-and check that the final `data/public/8_summary.json` matches.
+and check that the final `data/public/3_results/3_summary.json` matches.
 It should look something like this.
 
 ```json
 {
   "Tally of all cast ballots": [
     {
-      "question": "Are pineapples cool?",
+      "question": "Should pineapple be banned on pizza?",
       "votes": {
-        "Yes": 3,
+        "Unsure": 3,
         "No": 2,
-        "Unsure": 1
+        "Yes": 1
       }
     }
   ],
   "Individual spoiled ballots": {
-    "5f1a6d80-f2d7-11ef-96d6-0242ac140006": [
+    "9bbf2f04-2d3e-11f0-8c87-0242ac170002": [
       {
-        "Are pineapples cool?": "Yes"
+        "Should pineapple be banned on pizza?": "Yes"
       }
     ],
-    "6188eea2-f2d7-11ef-864c-0242ac140009": [
+    "a2f8bcb8-2d3e-11f0-bcce-0242ac170006": [
       {
-        "Are pineapples cool?": "No"
+        "Should pineapple be banned on pizza?": "Unsure"
       }
     ],
-    "6380c932-f2d7-11ef-8f89-0242ac140009": [
+    "9e2db2b0-2d3e-11f0-a790-0242ac170006": [
       {
-        "Are pineapples cool?": "Unsure"
+        "Should pineapple be banned on pizza?": "No"
       }
     ],
-    "610d704c-f2d7-11ef-9ed9-0242ac140006": [
+    "9f65852c-2d3e-11f0-ad8d-0242ac170003": [
       {
-        "Are pineapples cool?": "No"
+        "Should pineapple be banned on pizza?": "No"
       }
     ],
-    "63feb02c-f2d7-11ef-ab97-0242ac140002": [
+    "9a8e72de-2d3e-11f0-965b-0242ac170003": [
       {
-        "Are pineapples cool?": "Unsure"
+        "Should pineapple be banned on pizza?": "Yes"
       }
     ],
-    "62ffd0d4-f2d7-11ef-9ab5-0242ac140006": [
+    "996a0a62-2d3e-11f0-9ef6-0242ac170006": [
       {
-        "Are pineapples cool?": "Unsure"
+        "Should pineapple be banned on pizza?": "Yes"
       }
     ]
   }
