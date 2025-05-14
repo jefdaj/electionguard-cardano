@@ -89,6 +89,7 @@ def verify(cfg):
             "verify",
             "--public-dir", cfg.arion.bind_mounts.public,
             "--verifier-id", verifier_id, # can be a verifier or admin
+            "--logfile", 'verify.log'
         ]
     )
 
