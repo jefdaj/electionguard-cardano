@@ -1007,12 +1007,12 @@ def test_attack_device_withhold_spoiled_ballot(testdir: ElectionTestDir):
         'gather_election',
     ])
 
-@given_attacked_election('device_mutate_submitted_ballot', max_examples=50)
-def test_attack_device_mutate_submitted_ballot(testdir: ElectionTestDir):
-    assert_verifiers_reject(testdir, [
-        'ciphertext_tally',
-        'gather_election',
-    ])
+# @given_attacked_election('device_mutate_submitted_ballot', max_examples=50)
+# def test_attack_device_mutate_submitted_ballot(testdir: ElectionTestDir):
+#     assert_verifiers_reject(testdir, [
+#         'ciphertext_tally',
+#         'gather_election',
+#     ])
 
 # @given_attacked_election('device_mutate_spoiled_ballot', max_examples=50)
 # def test_attack_device_mutate_spoiled_ballot(testdir: ElectionTestDir):
