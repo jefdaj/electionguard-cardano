@@ -133,7 +133,7 @@ def voteconfig(draw):
 def contestconfig(draw):
     # TODO do we need to assume there's at least one vote per contest?
     return ContestConfig(
-        question = 'Are pineapples cool?',
+        question = 'Should pineapple be banned on pizza?',
         answers = {
             'Yes'    : draw(voteconfig()),
             'No'     : draw(voteconfig()),
