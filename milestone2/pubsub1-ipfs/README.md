@@ -1,8 +1,6 @@
 # pubsub1: IPFS sync with mock "blockchain" text file
 
-<a href="./asciinema-demo.gif">
-  <img src="./asciinema-demo.gif" />
-</a>
+[DEMO](./asciinema-demo.gif)
 
 This has two Python scripts in containers: publish.py and subscribe.py.
 Each is networked with their own IPFS instance, and they share access to a text file `new_cids.txt`.
