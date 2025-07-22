@@ -43,10 +43,17 @@ let
   mkIpfsService = roleName: subnetNumber:
     let ipAddr = "172.${toString subnetNumber}.0.2";
     in rec {
-      # TODO pin named version
-      # service.image = "ipfs/kubo:release";
       service.name = roleName + "-ipfs"; # TODO overridden by top attr name?
-      service.image = "e58cd5ca3066";
+
+      # Working versions:
+      # service.image = "e58cd5ca3066";
+      # service.image = "ipfs/kubo:v0.32.1";
+      service.image = "ipfs/kubo:v0.34.1";
+
+      # This version breaks something...
+      # TODO does it require upgrading to the broken version of aioipfs?
+      # service.image = "ipfs/kubo:v0.35.0";
+
       service.ports = [
         # host:container
         # TODO are these only needed for testing but not production?
