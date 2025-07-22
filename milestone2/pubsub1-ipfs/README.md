@@ -1,5 +1,9 @@
 # pubsub1: IPFS sync with mock "blockchain" text file
 
+<a href="./asciinema-demo.gif">
+  <img src="./asciinema-demo.gif" />
+</a>
+
 This has two Python scripts in containers: publish.py and subscribe.py.
 Each is networked with their own IPFS instance, and they share access to a text file `new_cids.txt`.
 The publisher uploads files to IPFS and writes their CIDs to the file.
@@ -8,7 +12,6 @@ Subscribers monitor the file for CIDs to fetch and pin.
 Syncing publisher -> subscribers works almost instantly on the local network,
 and global access via `dweb.link` mostly works but takes a few seconds.
 I assume the changes need to propagate, and the Dweb instances need to peer with mine or find a route to mine?
-
 
 ## TODO
 
