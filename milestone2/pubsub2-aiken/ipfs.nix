@@ -10,7 +10,8 @@ let
       # TODO pin named version
       # service.image = "ipfs/kubo:release";
       service.name = roleName + "-ipfs"; # TODO overridden by top attr name?
-      service.image = "e58cd5ca3066";
+      # service.image = "e58cd5ca3066";
+      service.image = "ipfs/kubo:v0.34.1";
       service.ports = [
         # host:container
         # TODO are these only needed for testing but not production?
