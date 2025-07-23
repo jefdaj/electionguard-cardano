@@ -22,7 +22,7 @@ The publisher watches the publish dir for JSON files, wraps them with some info
 about path and creation date, uploads them to IPFS, and writes their CIDs to
 the file.
 
-Subscribers monitor the file for CIDs to fetch and pin, read the JSON, and to
+Subscribers monitor the file for CIDs to fetch and pin, read the JSON, and
 reconstruct the published directory structure.
 
 Syncing publisher -> subscribers works almost instantly on the local network,
@@ -32,7 +32,7 @@ mine or find a route to mine?
 
 ## TODO
 
-- [ ] Pin IPFS container version.
+- [x] Pin IPFS container version.
 - [x] test syncing with publisher and subscriber in different physical locations.
 - [ ] Is my top-level JSON `path` and `contents` format a rudimentary form of UnixFS?
 
