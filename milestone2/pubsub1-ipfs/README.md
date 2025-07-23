@@ -3,14 +3,17 @@
 [demo]: ./asciinema-demo.gif
 [pubpy]: ./publisher/publish.py
 [subpy]: ./subscriber/subscribe.py
+[ac]: ./arion-compose.nix
 
 [DEMO][demo]
 
 There are two Python scripts: [publish.py][pubpy] and [subscribe.py][subpy].
-In the demo there are 2 instances of the subscriber.
+In the demo there are two instances of the subscriber.
 Each pub or sub script runs in a Docker container,
 and each is networked to its own IPFS container.
 Those IPFS containers are then networked together.
+All the networking stuff happens in [arion-compose.nix][ac],
+which generates + runs a Docker compose file.
 
 The script containers also share access to a bind mounted text file `new_cids.txt`,
 which stands in for the Cardano node + Aiken contract I'll be adding in the next section.
