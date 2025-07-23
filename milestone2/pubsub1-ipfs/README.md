@@ -30,6 +30,7 @@ and global access via `dweb.link` mostly works but takes a few seconds.  I
 assume the changes need to propagate, and the Dweb instances need to peer with
 mine or find a route to mine?
 
+
 ## TODO
 
 - [x] Pin IPFS container version.
@@ -37,24 +38,10 @@ mine or find a route to mine?
 - [ ] Is my top-level JSON `path` and `contents` format a rudimentary form of UnixFS?
 
 
-## Separate location tests
-
-The obvious way does NOT seem to work:
-
-- run two instances on different computers within the same (or different) LAN
-- transfer `new_cids.txt` out of band from one to the other
-- wait for the other's subscribers to pick up the files
-
-Not sure why yet. Maybe I need to make sure I have connectivity to a popular relay node?
-In any case it shouldn't be a problem in real elections, because 1) the admin can set up a nice cluster,
-and 2) enough people will be interested in pinning the files to make it more reliable.
-
-
 ## Usage
 
 First, build and start the containers.
 There should be one publisher (script + ipfs) and two subscribers (script + ipfs each).
-
 
 ```bash
 ./up.sh
@@ -72,3 +59,16 @@ them back to user permissions to get `publish.py` to pick them up.
 You can also look at the latest CIDs in `/tmp/pubsub/new_cids/new_cids.txt`
 and find them online at <https://dweb.link/ipfs/MYCID>.
 Sometimes those will error out, but usually they show up immediately.
+
+
+## Separate location tests
+
+The obvious way does NOT seem to work:
+
+- run two instances on different computers within the same (or different) LAN
+- transfer `new_cids.txt` out of band from one to the other
+- wait for the other's subscribers to pick up the files
+
+Not sure why yet. Maybe I need to make sure I have connectivity to a popular relay node?
+In any case it shouldn't be a problem in real elections, because 1) the admin can set up a nice cluster,
+and 2) enough people will be interested in pinning the files to make it more reliable.
