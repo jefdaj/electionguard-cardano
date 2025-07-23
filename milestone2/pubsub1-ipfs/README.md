@@ -1,15 +1,31 @@
 # pubsub1: IPFS sync with mock "blockchain" text file
 
-[DEMO](./asciinema-demo.gif)
+[demo]: ./asciinema-demo.gif
+[pubpy]: ./publisher/publish.py
+[subpy]: ./subscriber/subscribe.py
 
-This has two Python scripts in containers: publish.py and subscribe.py.
-Each is networked with their own IPFS instance, and they share access to a text file `new_cids.txt`.
-The publisher uploads files to IPFS and writes their CIDs to the file.
-Subscribers monitor the file for CIDs to fetch and pin.
+[DEMO][demo]
+
+There are two Python scripts: [publish.py][pubpy] and [subscribe.py][subpy].
+In the demo there are 2 instances of the subscriber.
+Each pub or sub script runs in a Docker container,
+and each is networked to its own IPFS container.
+Those IPFS containers are then networked together.
+
+The script containers also share access to a bind mounted text file `new_cids.txt`,
+which stands in for the Cardano node + Aiken contract I'll be adding in the next section.
+
+The publisher watches the publish dir for JSON files, wraps them with some info
+about path and creation date, uploads them to IPFS, and writes their CIDs to
+the file.
+
+Subscribers monitor the file for CIDs to fetch and pin, read the JSON, and to
+reconstruct the published directory structure.
 
 Syncing publisher -> subscribers works almost instantly on the local network,
-and global access via `dweb.link` mostly works but takes a few seconds.
-I assume the changes need to propagate, and the Dweb instances need to peer with mine or find a route to mine?
+and global access via `dweb.link` mostly works but takes a few seconds.  I
+assume the changes need to propagate, and the Dweb instances need to peer with
+mine or find a route to mine?
 
 ## TODO
 
