@@ -1,6 +1,6 @@
 services:
   cardano-node:
-    image: ghcr.io/intersectmbo/cardano-node:10.1.4
+    image: ghcr.io/intersectmbo/cardano-node:10.5.1
     command: [
       "run",
       "--config", "/config/config.json",
@@ -24,7 +24,7 @@ services:
       - shared-net
 
   ogmios:
-    image: cardanosolutions/ogmios:latest
+    image: cardanosolutions/ogmios:v6.13.0 # TODO upgrade to one that supports node 10.5
     restart: on-failure
     command: [
       "--host", "0.0.0.0",

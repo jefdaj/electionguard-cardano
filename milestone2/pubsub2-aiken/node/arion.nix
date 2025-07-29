@@ -19,7 +19,7 @@ let
       networks = mkNetworks roleName subnetNumber;
       services = {
         "${roleName}-cardano" = {
-          service.image = "ghcr.io/intersectmbo/cardano-node:10.1.4";
+          service.image = "ghcr.io/intersectmbo/cardano-node:10.5.1";
           service.command = [
             "run"
             "--config" "/config/config.json"
@@ -57,7 +57,8 @@ let
         "${roleName}-ogmios" = {
           # TODO pin to a named version
           # service.image = "cardanosolutions/ogmios:latest";
-          service.image = "76902d6a9306";
+          # service.image = "76902d6a9306";
+          service.image = "cardanosolutions/ogmios:v6.13.0"; # TODO ask about progress on a version for node 10.5.1?
           service.command = [
             "--host" "0.0.0.0"
             "--node-socket" "/ipc/node.socket"

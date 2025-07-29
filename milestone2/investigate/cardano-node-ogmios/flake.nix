@@ -1,6 +1,6 @@
 {
-  description = "cardano node + ogmios test env";
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+  description = "cardano node + ogmios env";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
   outputs = { self, nixpkgs, ... }: {
     pkgs = nixpkgs.legacyPackages.x86_64-linux;
     devShells.x86_64-linux.default = self.pkgs.mkShell {
