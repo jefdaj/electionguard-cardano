@@ -1,9 +1,9 @@
-use cardano/address.{Address}
-use cardano/assets.{PolicyId}
+// use cardano/address.{Address}
+// use cardano/assets.{PolicyId}
 use cardano/transaction.{OutputReference, Transaction}
 use pubsub
 use pubsub/types.{PubsubConfig, PsOpen}
-use pubsub/utils as u
+// use pubsub/utils as u
 
 const cfg1: PubsubConfig =
   PubsubConfig { publisher: #"00000000000000000000000000000000000000000000000000000000" }
