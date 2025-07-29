@@ -6,20 +6,9 @@ name = "aiken-lang/stdlib"
 version = "2.2.0"
 source = "github"
 
-[[requirements]]
-name = "sidan-lab/vodka"
-version = "0.1.11"
-source = "github"
-
 [[packages]]
 name = "aiken-lang/stdlib"
 version = "2.2.0"
-requirements = []
-source = "github"
-
-[[packages]]
-name = "sidan-lab/vodka"
-version = "0.1.11"
 requirements = []
 source = "github"
 
