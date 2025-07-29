@@ -1,7 +1,8 @@
 use aiken/crypto.{VerificationKeyHash}
 
 /// IPFS content identifier
-/// TODO use length_of_bytearray to check the right format?
+/// TODO can they be restricted to the proper size or format?
+/// TODO longer, more descriptive name?
 pub type CID =
   ByteArray
 
