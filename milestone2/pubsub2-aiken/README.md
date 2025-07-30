@@ -81,7 +81,7 @@ pip install -r requirements.txt
 
 # safe to re-run, but only needs to be done once
 # then send tADA from faucet -> keys/me.addr
-./generate-credentials.py
+./generate-keys.py
 ```
 
 
