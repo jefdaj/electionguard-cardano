@@ -11,6 +11,8 @@ let
   NODE_CONFIG = "../investigate/cardano-node-ogmios/config";
   NODE_DATA   = "../investigate/cardano-node-ogmios/data";
 
+  ogmiosPort = 1337; # TODO where should this come from?
+
   # roleName should be like "node1", "pub1", "sub1", "pub2", ...
   # subnetNumber is the 2nd part of the ip addr like 127.{subnetNumber}.0.N
   mkNodeConfig = roleNumber: subnetNumber:
@@ -19,6 +21,7 @@ let
       networks = mkNetworks roleName subnetNumber;
       services = {
         "${roleName}-cardano" = {
+          # service.image = "ghcr.io/intersectmbo/cardano-node:10.1.4";
           service.image = "ghcr.io/intersectmbo/cardano-node:10.5.1";
           service.command = [
             "run"
@@ -61,6 +64,7 @@ let
           service.image = "cardanosolutions/ogmios:v6.13.0"; # TODO ask about progress on a version for node 10.5.1?
           service.command = [
             "--host" "0.0.0.0"
+            "--port" "1337"
             "--node-socket" "/ipc/node.socket"
             "--node-config" "/config/cardano-node/config.json"
           ];
@@ -68,11 +72,11 @@ let
             "${NODE_CONFIG}/network/preview:/config"
             "${NODE_DATA}/node-ipc:/ipc"
           ];
-          # service.ports = [
+          service.ports = [
             # host:container
             # TODO remove? forward from network?
-            # "1337:1337"
-          # ];
+            "${toString ogmiosPort}:1337"
+          ];
           service.restart = "on-failure";
           service.networks =
             # Ogmios should have access to the Cardano node (via its native
