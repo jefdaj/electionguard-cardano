@@ -67,7 +67,6 @@ def unlock(
 
     return signed_tx.id
 
-# TODO tell someone on discord that this needs to take context
 def get_utxo_from_str(context, tx_id: str, contract_address: Address) -> UTxO:
     for utxo in context.utxos(str(contract_address)):
         if str(utxo.input.transaction_id) == tx_id:
