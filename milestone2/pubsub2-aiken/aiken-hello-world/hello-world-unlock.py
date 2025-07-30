@@ -63,7 +63,9 @@ def unlock(
     )
  
     # submit transaction
-    return context.submit_tx(signed_tx)
+    context.submit_tx(signed_tx)
+
+    return signed_tx.id
 
 # TODO tell someone on discord that this needs to take context
 def get_utxo_from_str(context, tx_id: str, contract_address: Address) -> UTxO:

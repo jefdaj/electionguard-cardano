@@ -64,7 +64,9 @@ def lock(
     )
  
     # submit transaction
-    return context.submit_tx(signed_tx)
+    context.submit_tx(signed_tx)
+
+    return signed_tx.id
 
 def main():
     # TODO thread host and port from top level arion-compose
