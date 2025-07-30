@@ -21,7 +21,6 @@ let
       networks = mkNetworks roleName subnetNumber;
       services = {
         "${roleName}-cardano" = {
-          # service.image = "ghcr.io/intersectmbo/cardano-node:10.1.4";
           service.image = "ghcr.io/intersectmbo/cardano-node:10.5.1";
           service.command = [
             "run"
@@ -34,8 +33,8 @@ let
             "${NODE_CONFIG}/network/preview/cardano-node:/config"
             "${NODE_DATA}/node-db:/data"
             "${NODE_DATA}/node-ipc:/ipc"
-            # # TODO is this needed?
-            # # - ./config/network/${NETWORK:-preview}/genesis:/genesis
+            # TODO is this ever needed?
+            # - ./config/network/${NETWORK:-preview}/genesis:/genesis
           ];
           service.restart = "on-failure";
           service.networks =
@@ -43,6 +42,7 @@ let
             # There should be no need for the other containers to talk to it directly, right?
             # Assuming they're going thru Ogmios.
             (mkStaticIp roleName subnetNumber 2) // mkWan;
+
           # TODO figure this out
           # service.logging = {
           #   driver = "json-file";
@@ -56,12 +56,10 @@ let
             # options:
               # max-size: "400k"
               # max-file: "20"
+
         };
         "${roleName}-ogmios" = {
-          # TODO pin to a named version
-          # service.image = "cardanosolutions/ogmios:latest";
-          # service.image = "76902d6a9306";
-          service.image = "cardanosolutions/ogmios:v6.13.0"; # TODO ask about progress on a version for node 10.5.1?
+          service.image = "cardanosolutions/ogmios:v6.13.0";
           service.command = [
             "--host" "0.0.0.0"
             "--port" "1337"
@@ -74,7 +72,6 @@ let
           ];
           service.ports = [
             # host:container
-            # TODO remove? forward from network?
             "${toString ogmiosPort}:1337"
           ];
           service.restart = "on-failure";

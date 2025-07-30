@@ -1,3 +1,9 @@
+#!/usr/bin/env python3
+
+# references:
+# https://aiken-lang.org/example--hello-world/end-to-end/pycardano
+# https://ogmios-python.readthedocs.io/en/latest/examples/build_tx_pycardano.html
+
 from pycardano import (
     # BlockFrostChainContext,
     OgmiosV6ChainContext,
@@ -10,5 +16,4 @@ import os
 # )
 
 # TODO thread host and port from top level arion-compose
-# TODO does it work now??
 context = OgmiosV6ChainContext("172.13.0.3", 1337)
