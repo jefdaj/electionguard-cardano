@@ -18,6 +18,8 @@
             pytest-runner       = pyself.callPackage ./nix-packages/pytest-runner.nix       {};
             py-multiformats-cid = pyself.callPackage ./nix-packages/py-multiformats-cid.nix {};
             aioipfs             = pyself.callPackage ./nix-packages/aioipfs.nix             {};
+            pycardano           = pyself.callPackage ./nix-packages/pycardano.nix           {};
+            cbor2               = pyself.callPackage ./nix-packages/cbor2.nix               {};
           };
         };
       };

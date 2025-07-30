@@ -1,5 +1,3 @@
-# usage:
-
 { buildPythonPackage
 , fetchFromGitHub
 , pytest
