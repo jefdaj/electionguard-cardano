@@ -75,16 +75,16 @@
             subscriber = singleScriptPyPkg ./subscriber/subscribe.py "0.1" subPyPkgList;
           };
 
-          # `nix develop .#aiken` (or publisher, subscriber, etc)
+          # `nix develop .#onchain` (or publisher, subscriber, etc)
           devShells.x86_64-linux = {
 
-            aiken = pkgs.mkShell {
+            onchain = pkgs.mkShell {
               nativeBuildInputs = devPkgList pkgs ++ (with pkgs; [
                 aiken.packages.x86_64-linux.aiken
               ]);
               shellHook = ''
                 echo "running devShells.x86_64-linux.aiken shellHook"
-                cd aiken
+                cd onchain
                 aiken --version
               '';
             };
