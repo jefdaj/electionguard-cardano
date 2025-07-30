@@ -1,13 +1,13 @@
-name = "jefdaj/hello-pycardano"
+name = "aiken-lang/hello-world"
 version = "0.0.0"
-compiler = "v1.1.10"
+compiler = "v1.1.19"
 plutus = "v3"
 license = "Apache-2.0"
-description = "Aiken contracts for project 'jefdaj/hello-pycardano'"
+description = "Aiken contracts for project 'aiken-lang/hello-world'"
 
 [repository]
-user = "jefdaj"
-project = "hello-pycardano"
+user = "aiken-lang"
+project = "hello-world"
 platform = "github"
 
 [[dependencies]]

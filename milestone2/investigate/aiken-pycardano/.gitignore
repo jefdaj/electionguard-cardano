@@ -9,7 +9,7 @@ docs/
 .venv/
 
 # Aiken PyCardano hello-world
-keys/
+# keys/
 
 # Nix
 result*
