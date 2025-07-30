@@ -31,6 +31,11 @@
         tree
       ];
 
+      # TODO remove once debugged and implemented in publisher?
+      onchainPyPkgList = ps: with ps; [
+        pycardano
+      ];
+
       pubPyPkgList = ps: with ps; [
         aioipfs
         click
@@ -83,9 +88,10 @@
             onchain = pkgs.mkShell {
               nativeBuildInputs = devPkgList pkgs ++ (with pkgs; [
                 aiken.packages.x86_64-linux.aiken
+                (pkgs.python312.withPackages onchainPyPkgList)
               ]);
               shellHook = ''
-                echo "running devShells.x86_64-linux.aiken shellHook"
+                echo "running devShells.x86_64-linux.onchain shellHook"
                 cd onchain
                 aiken --version
               '';
@@ -93,6 +99,7 @@
 
             publisher = pkgs.mkShell {
               nativeBuildInputs = (devPkgList pkgs) ++ [
+                aiken.packages.x86_64-linux.aiken
                 (pkgs.python312.withPackages pubPyPkgList)
               ];
               shellHook = ''
