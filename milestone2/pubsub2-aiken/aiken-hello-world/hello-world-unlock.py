@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
 
-# references:
-# https://aiken-lang.org/example--hello-world/end-to-end/pycardano
-# https://ogmios-python.readthedocs.io/en/latest/examples/build_tx_pycardano.html
-
 from pycardano import *
 from pycardano.hash import (
     VerificationKeyHash,
@@ -12,12 +8,13 @@ from pycardano.hash import (
 )
 import json
 import os
+import sys
 from dataclasses import dataclass
 
 @dataclass
-class HelloWorldDatum(PlutusData):
+class HelloWorldRedeemer(PlutusData):
     CONSTR_ID = 0
-    owner: bytes
+    msg: bytes
 
 def read_validator() -> dict:
     with open("plutus.json", "r") as f:
@@ -32,32 +29,34 @@ def read_validator() -> dict:
         "script_hash": script_hash,
     }
 
-def lock(
+def unlock(
     addr_path: str,
-    amount: int,
-    into: ScriptHash,
-    datum: PlutusData,
+    utxo: UTxO,
+    from_script: PlutusV3Script,
+    redeemer: Redeemer,
     signing_key: PaymentSigningKey,
+    owner: VerificationKeyHash,
     context: OgmiosV6ChainContext,
 ) -> TransactionId:
     # read addresses
     with open(addr_path, "r") as f:
         input_address = Address.from_primitive(f.read())
-    contract_address = Address(
-        payment_part = into,
-        network=Network.TESTNET,
-    )
  
     # build transaction
     builder = TransactionBuilder(context=context)
+    builder.add_script_input(
+        utxo=utxo,
+        script=from_script,
+        redeemer=redeemer,
+    )
     builder.add_input_address(input_address)
     builder.add_output(
         TransactionOutput(
-            address=contract_address,
-            amount=amount,
-            datum=datum,
+            address=input_address,
+            amount=utxo.output.amount.coin,
         )
     )
+    builder.required_signers = [owner]
     signed_tx = builder.build_and_sign(
         signing_keys=[signing_key],
         change_address=input_address,
@@ -66,25 +65,36 @@ def lock(
     # submit transaction
     return context.submit_tx(signed_tx)
 
-def main():
+# TODO tell someone on discord that this needs to take context
+def get_utxo_from_str(context, tx_id: str, contract_address: Address) -> UTxO:
+    for utxo in context.utxos(str(contract_address)):
+        if str(utxo.input.transaction_id) == tx_id:
+            return utxo
+    raise Exception(f"UTxO not found for transaction {tx_id}")
+
+def main(tx_id: str):
     # TODO thread host and port from top level arion-compose
     context = OgmiosV6ChainContext("172.13.0.3", 1337)
     signing_key = PaymentSigningKey.load("keys/me.sk")
-    owner = PaymentVerificationKey.from_signing_key(signing_key).hash()
-    datum = HelloWorldDatum(owner=owner.to_primitive())
     validator = read_validator()
-    tx_hash = lock(
+    utxo = get_utxo_from_str(context, tx_id, Address(
+        payment_part = validator["script_hash"],
+        network=Network.TESTNET,
+    ))
+    redeemer = Redeemer(data=HelloWorldRedeemer(msg=b"Hello, World!"))
+    tx_hash = unlock(
         addr_path="keys/me.addr",
-        amount=2_000_000,
-        into=validator["script_hash"],
-        datum=datum,
+        utxo=utxo,
+        from_script=validator["script_bytes"],
+        redeemer=redeemer,
         signing_key=signing_key,
+        owner=PaymentVerificationKey.from_signing_key(signing_key).hash(),
         context=context,
     )
-    # TODO why is Tx ID None? The script seems to work otherwise. Maybe needs a delay?
     print(
-        f"2 tADA locked into the contract\n\tTx ID: {tx_hash}\n\tDatum: {datum.to_cbor_hex()}"
+        f"2 tADA unlocked from the contract\n\tTx ID: {tx_hash}\n\tRedeemer: {redeemer.to_cbor_hex()}"
     )
 
 if __name__ == '__main__':
-    main()
+    tx_id = sys.argv[1]
+    main(tx_id)
