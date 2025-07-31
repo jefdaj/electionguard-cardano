@@ -18,6 +18,7 @@ from pprint import pprint
 import subprocess
 from typing import List
 
+
 # This is a temporary hack for use with `aiken blueprint apply`
 # See https://github.com/Python-Cardano/pycardano/issues/439
 # TODO revisit once native apply_params support is released
@@ -88,34 +89,81 @@ def validator_bytes_and_hash(validator: dict) -> dict:
 #         validator = json.load(f)
 #     return validator_bytes_and_hash(validator)
 
+# TODO double check this matches the definitions in lib/types.ak
+# TODO separate definition of CID?
+@dataclass
+class PubsubAction(PlutusData):
+    CONSTR_TAG_PSOPEN    = 0
+    CONSTR_TAG_PSPUBLISH = 1
+    CONSTR_TAG_PSCOLLECT = 2
+    CONSTR_TAG_PSCLOSE   = 3
+
+    constructor: int
+    cids: List[bytes] = None
+
+    @classmethod
+    def ps_open(cls):
+        return cls(constructor=cls.CONSTR_TAG_PSOPEN)
+
+    @classmethod
+    def ps_publish(cls, cids: List[bytes]):
+        return cls(constructor=cls.CONSTR_TAG_PSPUBLISH, cids=cids)
+
+    @classmethod
+    def ps_collect(cls):
+        return cls(constructor=cls.CONSTR_TAG_PSCOLLECT)
+
+    @classmethod
+    def ps_close(cls):
+        return cls(constructor=cls.CONSTR_TAG_PSCLOSE)
+
+# Examples of creating different variants
+# open_action = PubsubAction.ps_open()
+# publish_action = PubsubAction.ps_publish([
+#   b'cid1', 
+#   b'cid2'
+# ])
+# collect_action = PubsubAction.ps_collect()
+# close_action = PubsubAction.ps_close()
+
 def main():
 
-    # TODO thread host and port from top level arion-compose
-    context = OgmiosV6ChainContext("172.13.0.3", 1337)
-    signing_key = PaymentSigningKey.load("keys/me.sk")
-    owner = PaymentVerificationKey.from_signing_key(signing_key).hash()
-    addr = read_addr('keys/me.addr')
-    print('addr:', addr)
+    ctx  = OgmiosV6ChainContext("172.13.0.3", 1337)
+    sk   = PaymentSigningKey.load("keys/me.sk")
+    vk   = PaymentVerificationKey.from_signing_key(sk).hash()
+    addr = read_addr('keys/me.addr') # TODO is this also vk?
+    # print('ctx:', ctx)
+    # print('sk:', sk)
+    # print('vk:', vk)
+    # print('addr:', addr)
 
     channel_hex = cbor2.dumps(b'test channel 001').hex()
-    print('channel_hex:', channel_hex)
+    # print('channel_hex:', channel_hex)
 
-    oneshot_utxo = pick_oneshot_utxo(context, addr)
+    oneshot_utxo = pick_oneshot_utxo(ctx, addr)
     oneshot_ref = OutputReferenceHack(
         oneshot_utxo.input.transaction_id.to_cbor(),
         oneshot_utxo.input.index
     )
     oneshot_hex = oneshot_ref.to_cbor().hex()
-    print('oneshot_hex:', oneshot_hex)
+    # print('oneshot_hex:', oneshot_hex)
 
     script_json = aiken_blueprint_apply_hex_params(
         './plutus.json',
         [channel_hex, oneshot_hex]
     )
-    print('script_json:', script_json)
+    # print('script_json:', script_json)
 
     script_compiled = validator_bytes_and_hash(script_json)
-    print('script_compiled:', script_compiled)
+    # print('script_compiled:', script_compiled)
+
+    act = Redeemer(data=PubsubAction.ps_open())
+    mint_tx = (
+        TransactionBuilder(ctx)
+        .add_input_address(addr)
+        .add_minting_script(script=script_compiled, redeemer=act)
+    )
+    pprint(mint_tx)
 
 if __name__ == '__main__':
     main()
