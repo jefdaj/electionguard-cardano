@@ -35,21 +35,22 @@ def pick_oneshot_utxo(context, addr):
     utxo = max(utxos, key=lambda utxo: utxo.output.amount.coin)
     return utxo
 
-# TODO is str correct here?
 def aiken_blueprint_apply_hex_params(plutus_json_path: str, hex_params: List[str]) -> Dict:
     """
-    Parameterize a Plutus blueprint with a list of parameters, applied sequentially.
+    Apply a list of hex-encoded parameters to a Plutus blueprint using `aiken blueprint apply`.
 
     :param plutus_json_path: Path to the initial plutus.json file
     :param hex_params: List of parameters to apply (as hex-encoded strings)
     :return: Fully parameterized blueprint as a dictionary
-    """
 
-    # Create a temporary file for intermediate outputs
+    **Example**::
+
+        >>> desc = cbor2.dumps(b'my cool validator').hex()
+        >>> oref = OutputReferenceHack(utxo.input.transaction_id.to_cbor(), utxo.input.index)
+        >>> blueprint = parameterize_blueprint('./plutus.json', [desc, oref])
+    """
     with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.json') as temp_out:
         temp_out_path = temp_out.name
-
-    try:
         current_blueprint_path = plutus_json_path
         for hex_param in hex_params:
             cmd = [
@@ -63,16 +64,9 @@ def aiken_blueprint_apply_hex_params(plutus_json_path: str, hex_params: List[str
                 err_msg = f"Blueprint application failed for parameter {param}: {result.stderr}"
                 raise RuntimeError(err_msg)
             current_blueprint_path = temp_out_path
-
         with open(current_blueprint_path, 'r') as f:
             parameterized_blueprint = json.load(f)
-
         return parameterized_blueprint
-
-    finally:
-        # Clean up the temporary file
-        if os.path.exists(temp_out_path):
-            os.unlink(temp_out_path)
 
 def read_addr(addr_path: str):
     with open(addr_path, "r") as f:
