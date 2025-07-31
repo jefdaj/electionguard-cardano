@@ -97,7 +97,7 @@ def main():
     addr = read_addr('keys/me.addr')
     print('addr:', addr)
 
-    channel_hex = cbor2.dumps(b'test1_channel').hex() # note the b!
+    channel_hex = cbor2.dumps(b'test channel 001').hex()
     print('channel_hex:', channel_hex)
 
     oneshot_utxo = pick_oneshot_utxo(context, addr)
@@ -108,17 +108,13 @@ def main():
     oneshot_hex = oneshot_ref.to_cbor().hex()
     print('oneshot_hex:', oneshot_hex)
 
-    # print(
-    #     f"2 tADA locked into the contract\n\tTx ID: {tx_hash}\n\tDatum: {datum.to_cbor_hex()}"
-    # )
-
-    script_cbor = aiken_blueprint_apply_hex_params(
+    script_json = aiken_blueprint_apply_hex_params(
         './plutus.json',
         [channel_hex, oneshot_hex]
     )
-    print('script_cbor:', script_cbor)
+    print('script_json:', script_json)
 
-    script_compiled = validator_bytes_and_hash(script_cbor)
+    script_compiled = validator_bytes_and_hash(script_json)
     print('script_compiled:', script_compiled)
 
 if __name__ == '__main__':

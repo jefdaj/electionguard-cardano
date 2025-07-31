@@ -36,7 +36,7 @@ validator pubsub(channel_name: ByteArray, oneshot_ref: OutputReference) {
         ///   fn(i) { i.output_reference == oneshot_ref }
         /// )
         /// expect Some(own_input) = transaction.find_input(self.inputs, own_ref)
-    expect Some(own_input) = u.find_tx_input(self, own_ref)
+        expect Some(own_input) = u.find_tx_input(self, own_ref)
         expect Script(policy_id) = own_input.output.address.payment_credential
         and {
           u.tx_mints(self, policy_id, channel_name, 1),
