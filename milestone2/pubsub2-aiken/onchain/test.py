@@ -84,6 +84,7 @@ def parameterize_blueprint(plutus_json_path, parameters):
     :param parameters: List of parameters to apply (as hex-encoded strings)
     :return: Fully parameterized blueprint as a dictionary
     """
+
     # Create a temporary file for intermediate outputs
     with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.json') as temp_out:
         temp_out_path = temp_out.name
@@ -150,8 +151,9 @@ def main():
     print(addr)
     # oneshot_ref = pick_oneshot_ref(context, addr)
     channel_name = cbor2.dumps(b'test1_channel').hex() # note the b!
+    print('channel_name:', channel_name)
     oneshot_ref = pick_oneshot_ref(context, addr)
-    print(oneshot_ref)
+    print('oneshot_ref:', oneshot_ref)
     # validator = read_validator()
     # print(
     #     f"2 tADA locked into the contract\n\tTx ID: {tx_hash}\n\tDatum: {datum.to_cbor_hex()}"
