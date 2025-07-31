@@ -16,7 +16,7 @@ import tempfile
 # import shutil
 from pprint import pprint
 import subprocess
-from typing import List, Dict
+from typing import List
 
 # This is a temporary hack for use with `aiken blueprint apply`
 # See https://github.com/Python-Cardano/pycardano/issues/439
@@ -35,7 +35,7 @@ def pick_oneshot_utxo(context, addr):
     utxo = max(utxos, key=lambda utxo: utxo.output.amount.coin)
     return utxo
 
-def aiken_blueprint_apply_hex_params(plutus_json_path: str, hex_params: List[str]) -> Dict:
+def aiken_blueprint_apply_hex_params(plutus_json_path: str, hex_params: List[str]) -> dict:
     """
     Apply a list of hex-encoded parameters to a Plutus blueprint using `aiken blueprint apply`.
 
@@ -47,7 +47,7 @@ def aiken_blueprint_apply_hex_params(plutus_json_path: str, hex_params: List[str
 
         >>> desc = cbor2.dumps(b'my cool validator').hex()
         >>> oref = OutputReferenceHack(utxo.input.transaction_id.to_cbor(), utxo.input.index)
-        >>> blueprint = parameterize_blueprint('./plutus.json', [desc, oref])
+        >>> blueprint = aiken_blueprint_apply_hex_params('./plutus.json', [desc, oref])
     """
     with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.json') as temp_out:
         temp_out_path = temp_out.name
@@ -61,20 +61,18 @@ def aiken_blueprint_apply_hex_params(plutus_json_path: str, hex_params: List[str
             ]
             result = subprocess.run(cmd, capture_output=True, text=True)
             if result.returncode != 0:
-                err_msg = f"Blueprint application failed for parameter {param}: {result.stderr}"
+                err_msg = f"Blueprint application failed for parameter {hex_param}: {result.stderr}"
                 raise RuntimeError(err_msg)
             current_blueprint_path = temp_out_path
         with open(current_blueprint_path, 'r') as f:
-            parameterized_blueprint = json.load(f)
-        return parameterized_blueprint
+            final_blueprint = json.load(f)
+        return final_blueprint
 
 def read_addr(addr_path: str):
     with open(addr_path, "r") as f:
         return Address.from_primitive(f.read())
 
-def read_validator() -> dict:
-    with open("plutus.json", "r") as f:
-        validator = json.load(f)
+def validator_bytes_and_hash(validator: dict) -> dict:
     script_bytes = PlutusV3Script(
         bytes.fromhex(validator["validators"][0]["compiledCode"])
     )
@@ -84,6 +82,11 @@ def read_validator() -> dict:
         "script_bytes": script_bytes,
         "script_hash": script_hash,
     }
+
+# def read_validator_path(plutus_json_path: str) -> dict:
+#     with open(plutus_json_path, "r") as f:
+#         validator = json.load(f)
+#     return validator_bytes_and_hash(validator)
 
 def main():
 
@@ -105,7 +108,6 @@ def main():
     oneshot_hex = oneshot_ref.to_cbor().hex()
     print('oneshot_hex:', oneshot_hex)
 
-    # validator = read_validator()
     # print(
     #     f"2 tADA locked into the contract\n\tTx ID: {tx_hash}\n\tDatum: {datum.to_cbor_hex()}"
     # )
@@ -114,8 +116,10 @@ def main():
         './plutus.json',
         [channel_hex, oneshot_hex]
     )
-    print('script_cbor:')
-    pprint(script_cbor)
+    print('script_cbor:', script_cbor)
+
+    script_compiled = validator_bytes_and_hash(script_cbor)
+    print('script_compiled:', script_compiled)
 
 if __name__ == '__main__':
     main()
