@@ -135,7 +135,7 @@ def main():
     # print('ctx:', ctx)
     # print('sk:', sk)
     # print('vk:', vk)
-    # print('addr:', addr)
+    print('addr:', type(addr), addr)
 
     # note this is also the name of the NFT asset minted to track channel state
     channel_bytes = b'test channel 001'
@@ -161,17 +161,26 @@ def main():
     script = PlutusV3Script(script_compiled['script_bytes'])
 
     psopen = Redeemer(data=PubsubAction.ps_open())
+
+    # the quicker from_primitive way has some normalize error here
     channel_nft = AssetName(channel_bytes)
-    assets = MultiAsset({ script_hash(script): { channel_nft: 1 } })
+    asset = Asset()
+    asset[channel_nft] = 1
+    assets = MultiAsset()
+    policy_id = script_hash(script) # TODO wrong?
+    assets[policy_id] = asset
+    print('assets:', assets)
+
     mint_tx = (
         TransactionBuilder(ctx, mint=assets) # TODO required_signers=[sk] too?
         .add_minting_script(script=script, redeemer=psopen)
         .add_input_address(addr)
     )
-    pprint(mint_tx)
+    # pprint(mint_tx)
 
+    # TODO figure out the error here:
     mint_tx_signed = mint_tx.build_and_sign([sk], change_address=addr)
-    pprint(mint_tx_signed)
+    # pprint(mint_tx_signed)
 
 if __name__ == '__main__':
     main()
