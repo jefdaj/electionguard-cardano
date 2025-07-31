@@ -163,14 +163,14 @@ def main():
     psopen = Redeemer(data=PubsubAction.ps_open())
     nft = MultiAsset({ script_hash(script): { AssetName.from_primitive(channel_bytes): 1 } })
     mint_tx = (
-        TransactionBuilder(ctx, mint=nft)
+        TransactionBuilder(ctx, mint=nft) # TODO required_signers=[sk] too?
         .add_minting_script(script=script, redeemer=psopen)
         .add_input_address(addr)
     )
     pprint(mint_tx)
 
-    # mint_tx_signed = mint_tx.build_and_sign([sk], change_address=addr)
-    # pprint(mint_tx_signed)
+    mint_tx_signed = mint_tx.build_and_sign([sk], change_address=addr)
+    pprint(mint_tx_signed)
 
 if __name__ == '__main__':
     main()
