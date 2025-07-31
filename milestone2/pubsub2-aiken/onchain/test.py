@@ -137,7 +137,9 @@ def main():
     # print('vk:', vk)
     # print('addr:', addr)
 
-    channel_hex = cbor2.dumps(b'test channel 001').hex()
+    # note this is also the name of the NFT asset minted to track channel state
+    channel_bytes = b'test channel 001'
+    channel_hex = cbor2.dumps(channel_bytes).hex()
     # print('channel_hex:', channel_hex)
 
     oneshot_utxo = pick_oneshot_utxo(ctx, addr)
@@ -154,16 +156,21 @@ def main():
     )
     # print('script_json:', script_json)
 
+    # TODO is this intermediate dict format helpful?
     script_compiled = validator_bytes_and_hash(script_json)
-    # print('script_compiled:', script_compiled)
+    script = PlutusV3Script(script_compiled['script_bytes'])
 
-    act = Redeemer(data=PubsubAction.ps_open())
+    psopen = Redeemer(data=PubsubAction.ps_open())
+    nft = MultiAsset({ script_hash(script): { AssetName.from_primitive(channel_bytes): 1 } })
     mint_tx = (
-        TransactionBuilder(ctx)
+        TransactionBuilder(ctx, mint=nft)
+        .add_minting_script(script=script, redeemer=psopen)
         .add_input_address(addr)
-        .add_minting_script(script=script_compiled, redeemer=act)
     )
     pprint(mint_tx)
+
+    # mint_tx_signed = mint_tx.build_and_sign([sk], change_address=addr)
+    # pprint(mint_tx_signed)
 
 if __name__ == '__main__':
     main()
