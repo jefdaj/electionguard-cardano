@@ -22,6 +22,8 @@ def pick_oneshot_ref(context, addr):
     if not utxos:
         raise Exception(f'addr {addr} has no UTXOs')
     largest_utxo = max(utxos, key=lambda utxo: utxo.output.amount.coin)
+    # print(largest_utxo)
+    # print(largest_utxo.to_cbor().hex())
     oref = f'{largest_utxo.input.transaction_id}#{largest_utxo.input.index}'
     return oref
 
@@ -166,7 +168,7 @@ def main():
     # script_cbor = parameterize_blueprint('plutus.json', [channel_name, oneshot_ref])
 
     script_cbor = parameterize_blueprint('./plutus.json', [channel_name])
-    pprint(script_cbor)
+    # pprint(script_cbor)
 
 if __name__ == '__main__':
     main()
