@@ -167,9 +167,10 @@ def main():
     asset = Asset()
     asset[channel_nft] = 1
     assets = MultiAsset()
-    policy_id = script_hash(script) # TODO wrong?
+    policy_id = script_hash(script)
     assets[policy_id] = asset
     print('assets:', assets)
+
 
     mint_tx = (
         TransactionBuilder(ctx, mint=assets) # TODO required_signers=[sk] too?
@@ -178,7 +179,12 @@ def main():
     )
     # pprint(mint_tx)
 
-    # TODO figure out the error here:
+    # TODO figure out the error here
+    # things that don't matter:
+    # - using add_input(utxos[0]) instead of add_input_address(addr)
+    # - downgrading to aiken v0.1.10
+    # - downgrading to pycardano v0.12.3 and cbor2 with c extensions
+    # - upgrading to nixpkgs-unstable
     mint_tx_signed = mint_tx.build_and_sign([sk], change_address=addr)
     # pprint(mint_tx_signed)
 
