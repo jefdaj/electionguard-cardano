@@ -1,4 +1,4 @@
-use aiken/collection/list
+// use aiken/collection/list
 use cardano/address.{Script}
 use cardano/assets.{PolicyId}
 use cardano/script_context.{ScriptContext}
@@ -6,7 +6,7 @@ use cardano/transaction
 use cardano/transaction.{OutputReference, Transaction}
 use pubsub/utils as u
 use pubsub/types.{
-  PsClose, PsCollect, PsOpen, PsPublish, PubsubAction, PubsubConfig,
+  PsClose, PsOpen, PubsubAction, PubsubConfig,
 }
 
 validator pubsub(channel_name: ByteArray, oneshot_ref: OutputReference) {
@@ -17,7 +17,7 @@ validator pubsub(channel_name: ByteArray, oneshot_ref: OutputReference) {
         u.tx_mints(self, policy_id, channel_name, 1)
       }
       PsClose -> u.tx_mints(self, policy_id, channel_name, -1)
-      _ -> fail
+      // _ -> fail
     }
   }
 
@@ -43,16 +43,16 @@ validator pubsub(channel_name: ByteArray, oneshot_ref: OutputReference) {
           u.tx_signed_by(self, publisher),
         }
       }
-      PsPublish { cids } -> and {
-          u.tx_signed_by(self, publisher),
-          list.length(cids) > 0,
+      // PsPublish { cids } -> and {
+          // u.tx_signed_by(self, publisher),
+          // list.length(cids) > 0,
           /// todo @"cids are the right format",
           /// todo @"an output goes back to validator addr",
           /// todo @"validator output gets the state nft",
           /// todo @"publisher is unchanged",
-        }
-      PsCollect ->
-          u.tx_signed_by(self, publisher)
+        // }
+      // PsCollect ->
+          // u.tx_signed_by(self, publisher)
           /// todo @"datum goes back to the validator unchanged",
           /// todo @"all collected assets go to the publisher",
       PsClose ->
