@@ -161,9 +161,10 @@ def main():
     script = PlutusV3Script(script_compiled['script_bytes'])
 
     psopen = Redeemer(data=PubsubAction.ps_open())
-    nft = MultiAsset({ script_hash(script): { AssetName.from_primitive(channel_bytes): 1 } })
+    nft = AssetName(channel_bytes)
+    assets = MultiAsset({ script_hash(script): { nft: 1 } })
     mint_tx = (
-        TransactionBuilder(ctx, mint=nft) # TODO required_signers=[sk] too?
+        TransactionBuilder(ctx, mint=assets) # TODO required_signers=[sk] too?
         .add_minting_script(script=script, redeemer=psopen)
         .add_input_address(addr)
     )
