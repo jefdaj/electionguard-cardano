@@ -159,7 +159,8 @@ def main():
     #     f"2 tADA locked into the contract\n\tTx ID: {tx_hash}\n\tDatum: {datum.to_cbor_hex()}"
     # )
 
-    # TODO find the oneshot ref from test addr
+    # TODO try parameterizing with one of the js libraries and see what cbor it generates!
+    #      then mimic the same thing in python
 
     # fails because i haven't figured out how to encode the oneshot_ref properly:
     # script_cbor = parameterize_blueprint('plutus.json', [channel_name, oneshot_ref])
