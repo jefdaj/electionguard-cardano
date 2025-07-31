@@ -94,20 +94,21 @@ def validator_bytes_and_hash(validator: dict) -> dict:
 @dataclass
 class PubsubAction(PlutusData):
     CONSTR_TAG_PSOPEN    = 0
-    CONSTR_TAG_PSPUBLISH = 1
+    # CONSTR_TAG_PSPUBLISH = 1
     CONSTR_TAG_PSCOLLECT = 2
     CONSTR_TAG_PSCLOSE   = 3
 
     constructor: int
-    cids: List[bytes] = None
+    # TODO why does this break pycardano? what should i use instead?
+    # cids: List[bytes] = None
 
     @classmethod
     def ps_open(cls):
         return cls(constructor=cls.CONSTR_TAG_PSOPEN)
 
-    @classmethod
-    def ps_publish(cls, cids: List[bytes]):
-        return cls(constructor=cls.CONSTR_TAG_PSPUBLISH, cids=cids)
+    # @classmethod
+    # def ps_publish(cls, cids: List[bytes]):
+    #     return cls(constructor=cls.CONSTR_TAG_PSPUBLISH, cids=cids)
 
     @classmethod
     def ps_collect(cls):
@@ -171,17 +172,17 @@ def main():
     assets[policy_id] = asset
     print('assets:', assets)
 
-
     mint_tx = (
         TransactionBuilder(ctx, mint=assets) # TODO required_signers=[sk] too?
         .add_minting_script(script=script, redeemer=psopen)
-        .add_input_address(addr)
+        # .add_input_address(addr)
+        .add_input(oneshot_utxo)
     )
-    # pprint(mint_tx)
+    print(mint_tx)
 
     # TODO figure out the error here
     # things that don't matter:
-    # - using add_input(utxos[0]) instead of add_input_address(addr)
+    # - using add_input_address(addr) vs explicit add_input(oneshot_utxo)
     # - downgrading to aiken v0.1.10
     # - downgrading to pycardano v0.12.3 and cbor2 with c extensions
     # - upgrading to nixpkgs-unstable
