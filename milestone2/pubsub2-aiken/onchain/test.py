@@ -91,37 +91,54 @@ def validator_bytes_and_hash(validator: dict) -> dict:
 
 # TODO double check this matches the definitions in lib/types.ak
 # TODO separate definition of CID?
+# @dataclass
+# class PubsubAction(PlutusData):
+#     CONSTR_TAG_PSOPEN    = 0
+#     # CONSTR_TAG_PSPUBLISH = 1
+#     CONSTR_TAG_PSCOLLECT = 2
+#     CONSTR_TAG_PSCLOSE   = 3
+#
+#     constructor: int
+#     # TODO why does this break pycardano? what should i use instead?
+#     # cids: List[bytes] = None
+#
+#     @classmethod
+#     def ps_open(cls):
+#         return cls(constructor=cls.CONSTR_TAG_PSOPEN)
+#
+#     # @classmethod
+#     # def ps_publish(cls, cids: List[bytes]):
+#     #     return cls(constructor=cls.CONSTR_TAG_PSPUBLISH, cids=cids)
+#
+#     @classmethod
+#     def ps_collect(cls):
+#         return cls(constructor=cls.CONSTR_TAG_PSCOLLECT)
+#
+#     @classmethod
+#     def ps_close(cls):
+#         return cls(constructor=cls.CONSTR_TAG_PSCLOSE)
+
 @dataclass
-class PubsubAction(PlutusData):
-    CONSTR_TAG_PSOPEN    = 0
-    # CONSTR_TAG_PSPUBLISH = 1
-    CONSTR_TAG_PSCOLLECT = 2
-    CONSTR_TAG_PSCLOSE   = 3
+class PsOpen(PlutusData):
+    CONSTR_ID = 0
 
-    constructor: int
-    # TODO why does this break pycardano? what should i use instead?
-    # cids: List[bytes] = None
+@dataclass
+class PsPublish(PlutusData):
+    CONSTR_ID = 1
+    cids: List[bytes]
 
-    @classmethod
-    def ps_open(cls):
-        return cls(constructor=cls.CONSTR_TAG_PSOPEN)
+@dataclass
+class PsCollect(PlutusData):
+    CONSTR_ID = 2
 
-    # @classmethod
-    # def ps_publish(cls, cids: List[bytes]):
-    #     return cls(constructor=cls.CONSTR_TAG_PSPUBLISH, cids=cids)
-
-    @classmethod
-    def ps_collect(cls):
-        return cls(constructor=cls.CONSTR_TAG_PSCOLLECT)
-
-    @classmethod
-    def ps_close(cls):
-        return cls(constructor=cls.CONSTR_TAG_PSCLOSE)
+@dataclass
+class PsClose(PlutusData):
+    CONSTR_ID = 3
 
 # Examples of creating different variants
 # open_action = PubsubAction.ps_open()
 # publish_action = PubsubAction.ps_publish([
-#   b'cid1', 
+#   b'cid1',
 #   b'cid2'
 # ])
 # collect_action = PubsubAction.ps_collect()
@@ -161,7 +178,8 @@ def main():
     script_compiled = validator_bytes_and_hash(script_json)
     script = PlutusV3Script(script_compiled['script_bytes'])
 
-    psopen = Redeemer(data=PubsubAction.ps_open())
+    # psopen = Redeemer(data=PubsubAction.ps_open())
+    psopen = Redeemer(data=PsOpen())
 
     # the quicker from_primitive way has some normalize error here
     channel_nft = AssetName(channel_bytes)
