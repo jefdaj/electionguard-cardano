@@ -16,6 +16,7 @@ import tempfile
 # import shutil
 from pprint import pprint
 import subprocess
+from typing import List, Dict
 
 # This is a temporary hack for use with `aiken blueprint apply`
 # See https://github.com/Python-Cardano/pycardano/issues/439
@@ -34,49 +35,40 @@ def pick_oneshot_utxo(context, addr):
     utxo = max(utxos, key=lambda utxo: utxo.output.amount.coin)
     return utxo
 
-def parameterize_blueprint(plutus_json_path, parameters):
+# TODO is str correct here?
+def aiken_blueprint_apply_hex_params(plutus_json_path: str, hex_params: List[str]) -> Dict:
     """
     Parameterize a Plutus blueprint with a list of parameters, applied sequentially.
-    
-    :param plutus_json_path: Path to the original plutus.json file
-    :param parameters: List of parameters to apply (as hex-encoded strings)
+
+    :param plutus_json_path: Path to the initial plutus.json file
+    :param hex_params: List of parameters to apply (as hex-encoded strings)
     :return: Fully parameterized blueprint as a dictionary
     """
 
     # Create a temporary file for intermediate outputs
     with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.json') as temp_out:
         temp_out_path = temp_out.name
-    
+
     try:
-        # Start with the original blueprint
         current_blueprint_path = plutus_json_path
-        
-        # Apply parameters sequentially
-        for param in parameters:
-            # Construct the command
-            cmd = ['aiken', 'blueprint', 'apply', 
-                   '--in', current_blueprint_path, 
-                   param,
-                   '--out', temp_out_path]
-            
-            print('cmd:', cmd)
-            
-            # Run the command
+        for hex_param in hex_params:
+            cmd = [
+                'aiken', 'blueprint', 'apply',
+                '--in', current_blueprint_path,
+                hex_param,
+                '--out', temp_out_path
+            ]
             result = subprocess.run(cmd, capture_output=True, text=True)
-            
-            # Check for errors
             if result.returncode != 0:
-                raise RuntimeError(f"Blueprint application failed for parameter {param}: {result.stderr}")
-            
-            # Update the current blueprint path for the next iteration
+                err_msg = f"Blueprint application failed for parameter {param}: {result.stderr}"
+                raise RuntimeError(err_msg)
             current_blueprint_path = temp_out_path
-        
-        # Read the final parameterized JSON
+
         with open(current_blueprint_path, 'r') as f:
             parameterized_blueprint = json.load(f)
-        
+
         return parameterized_blueprint
-    
+
     finally:
         # Clean up the temporary file
         if os.path.exists(temp_out_path):
@@ -124,10 +116,10 @@ def main():
     #     f"2 tADA locked into the contract\n\tTx ID: {tx_hash}\n\tDatum: {datum.to_cbor_hex()}"
     # )
 
-    # TODO try parameterizing with one of the js libraries and see what cbor it generates!
-    #      then mimic the same thing in python
-
-    script_cbor = parameterize_blueprint('./plutus.json', [channel_hex, oneshot_hex])
+    script_cbor = aiken_blueprint_apply_hex_params(
+        './plutus.json',
+        [channel_hex, oneshot_hex]
+    )
     print('script_cbor:')
     pprint(script_cbor)
 
