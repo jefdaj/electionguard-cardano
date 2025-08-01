@@ -17,7 +17,7 @@ import tempfile
 # from pprint import pprint
 import subprocess
 from typing import List
-
+import time
 
 # This is a temporary hack for use with `aiken blueprint apply`
 # See https://github.com/Python-Cardano/pycardano/issues/439
@@ -155,54 +155,67 @@ def open_channel(
     ctx: OgmiosV6ChainContext,
     sk: PaymentSigningKey,
     addr: Address,
-    channel_bytes: bytes
+    script: PlutusV3Script,
+    mint_fn, # TODO type
+    oneshot_utxo: UTxO,
+    # channel_bytes: bytes
 ):
-    channel_hex = cbor2.dumps(channel_bytes).hex()
+    # channel_hex = cbor2.dumps(channel_bytes).hex()
     # print('channel_hex:', channel_hex)
 
-    oneshot_utxo = pick_oneshot_utxo(ctx, addr)
-    oneshot_hex = utxo_to_ref_hex(oneshot_utxo)
+    # oneshot_utxo = pick_oneshot_utxo(ctx, addr)
+    # oneshot_hex = utxo_to_ref_hex(oneshot_utxo)
     # print('oneshot_hex:', oneshot_hex)
 
-    script_json = aiken_blueprint_apply_hex_params(
-        './plutus.json',
-        [channel_hex, oneshot_hex]
-    )
+    # script_json = aiken_blueprint_apply_hex_params(
+    #     './plutus.json',
+    #     [channel_hex, oneshot_hex]
+    # )
     # print('script_json:', script_json)
 
     # TODO is this intermediate dict format helpful?
-    script_compiled = validator_bytes_and_hash(script_json)
-    script = PlutusV3Script(script_compiled['script_bytes'])
+    # script_compiled = validator_bytes_and_hash(script_json)
+    # script = PlutusV3Script(script_compiled['script_bytes'])
 
-    psopen = Redeemer(data=PsOpen())
+    action = Redeemer(data=PsOpen())
+    print(f'action={action}')
 
-    assets = channel_nft_assets(script, channel_bytes, 1)
+    # assets = channel_nft_assets(script, channel_bytes, 1)
+    assets = mint_fn(1)
+    print(f'assets={assets}')
 
     mint_tx = (
         TransactionBuilder(ctx, mint=assets)
-        .add_minting_script(script=script, redeemer=psopen)
-        # .add_input_address(addr)
+        .add_minting_script(script=script, redeemer=action)
         .add_input(oneshot_utxo)
+        .add_input_address(addr)
     )
     # print(mint_tx)
 
     mint_tx_signed = mint_tx.build_and_sign([sk], change_address=addr)
     # print('mint_tx_signed:', mint_tx_signed)
 
-    print('seems successful?')
-    # TODO put back submit
-    # ctx.submit_tx(mint_tx_signed)
+    ctx.submit_tx(mint_tx_signed)
 
-def channel_nft_assets(script: PlutusV3Script, channel_bytes: bytes, n_to_mint: int):
-    # the quicker from_primitive way has some normalize error here
-    channel_nft = AssetName(channel_bytes)
-    asset = Asset()
-    asset[channel_nft] = n_to_mint
-    assets = MultiAsset()
-    policy_id = script_hash(script)
-    assets[policy_id] = asset
-    # print('assets:', assets)
-    return assets
+    print(f'submitted mint tx with id={mint_tx_signed.id}')
+    return mint_tx_signed.id
+
+# usage:
+#   fn = channel_nft_minter(script, channel_bytes)
+#   mint_assets = fn(1)
+#   burn_assets = fn(-1)
+def channel_nft_minter(script: PlutusV3Script, channel_bytes: bytes):
+    def channel_nft_assets(n_to_mint: int):
+        # the quicker from_primitive way has some normalize error here
+        channel_nft = AssetName(channel_bytes)
+        asset = Asset()
+        asset[channel_nft] = n_to_mint
+        assets = MultiAsset()
+        policy_id = script_hash(script)
+        assets[policy_id] = asset
+        # print('assets:', assets)
+        return assets
+    return channel_nft_assets
 
 def utxo_contains_channel_nft(policy_id: str, channel_bytes: bytes, utxo: TransactionOutput) -> bool:
     # id_hex='72ea2c9389e19ec51414df7fe21fd1ec004ee48cc35976d9bd7b8c83'
@@ -223,40 +236,33 @@ def close_channel(
     ctx: OgmiosV6ChainContext,
     sk: PaymentSigningKey,
     addr: Address,
-    oneshot_hex: str, # TODO str, really?
+    script: PlutusV3Script,
+    mint_fn, # TODO type
     channel_bytes: bytes
 ):
 
-    channel_hex = cbor2.dumps(channel_bytes).hex()
-
-    # TODO this theoretically shouldn't be needed except during minting, right?
-    #      because any other operation starts with an existing channel nft
-    # TODO can you get it from the policy ID of the NFT instead?
-    script_json = aiken_blueprint_apply_hex_params(
-        './plutus.json',
-        [channel_hex, oneshot_hex]
-    )
-    # print('script_json:', script_json)
-
-    # TODO is this intermediate dict format helpful?
-    script_compiled = validator_bytes_and_hash(script_json)
-    script = PlutusV3Script(script_compiled['script_bytes'])
-    # print('script hash?', script_compiled['script_hash'])
+   # print('script hash?', script_compiled['script_hash'])
     # print('script hash?', plutus_script_hash(script))
 
-    psclose = Redeemer(data=PsClose())
+    action = Redeemer(data=PsClose())
+    print(f'action={action}')
 
-    assets = channel_nft_assets(script, channel_bytes, -1)
+    # assets = channel_nft_assets(script, channel_bytes, -1)
+    assets = mint_fn(-1)
+    print(f'assets={assets}')
 
     # TODO discover this from on-chain context
     # mint_input_id = TransactionId(bytes.fromhex('eac80f1752ce0aa5286fb1441efd6c6bd3eee3aaaa81761ecd73349613cd304e'))
-    utxos = ctx.utxos(addr)
+    # utxos = ctx.utxos(addr)
 
-    # TODO why isn't this the script_hash?
-    policy_id = ScriptHash(bytes.fromhex('e8a52770ef6c591b2185eb1227f2ce5ea235d7747e9fc2f554587884'))
+    policy_id = plutus_script_hash(script) # TODO is this right?
+    print(f'policy_id={policy_id}')
 
-    nft_utxo = next((u for u in utxos if utxo_contains_channel_nft(policy_id, channel_bytes, u)))
-    print('nft_utxo:', nft_utxo)
+    nft_utxo = next((
+        u for u in ctx.utxos(addr)
+        if utxo_contains_channel_nft(policy_id, channel_bytes, u)
+    ))
+    print(f'nft_utxo={nft_utxo}')
     # for utxo in utxos:
 
         # TODO why isn't this the script_hash?
@@ -273,7 +279,7 @@ def close_channel(
     # TODO aha! is there nothing wrong with the selection at all? Maybe I'm just using the wrong policy_id
     burn_tx = (
         TransactionBuilder(ctx, mint=assets)
-        .add_minting_script(script=script, redeemer=psclose)
+        .add_minting_script(script=script, redeemer=action)
         .add_input(nft_utxo)
         .add_input_address(addr)
     )
@@ -285,31 +291,58 @@ def close_channel(
     # print('seems successful?')
     ctx.submit_tx(burn_tx_signed)
 
+    print(f'submitted burn tx with id={burn_tx_signed.id}')
+    return burn_tx_signed.id
+
 def main():
 
     ctx  = OgmiosV6ChainContext("172.13.0.3", 1337)
     sk   = PaymentSigningKey.load("keys/me.sk")
-    # vk   = PaymentVerificationKey.from_signing_key(sk).hash()
-    addr = read_addr('keys/me.addr') # TODO is this also vk?
-    # print('ctx:', ctx)
-    # print('sk:', sk)
-    # print('vk:', vk)
-    # print('addr:', type(addr), addr)
+    # vk = PaymentVerificationKey.from_signing_key(sk).hash()
+
+    addr = read_addr('keys/me.addr')
+    print(f'addr={addr}')
 
     # this is used to parameterize the validator,
     # and also to name the channel nft
     # TODO is it not needed as a parameter? maybe only oneshot_ref is ok
-    channel_bytes = b'test channel 001'
+    channel_bytes = b'test channel 003'
+    print(f'channel_bytes={channel_bytes}')
 
-    # open_channel(ctx, sk, addr, channel_bytes)
+    channel_hex = cbor2.dumps(channel_bytes).hex()
+    print(f'channel_hex={channel_hex}')
 
-    # TODO save this when opening the channel
-    oneshot_ref = OutputReferenceHack(
-        bytes.fromhex("7b929674e0b6a9a848fb7949e6c878c8178fe2b5bfd90d04c60f1f75f4a5da8a"),
-        1
+    # have to pick the oneshot utxo first to apply as a validator param
+    oneshot_utxo = pick_oneshot_utxo(ctx, addr)
+    oneshot_hex = utxo_to_ref_hex(oneshot_utxo)
+    print(f'oneshot_hex={oneshot_hex}')
+
+    # now we can fully specify the validator,
+    # and save it just in case needed
+    script_json = aiken_blueprint_apply_hex_params(
+        './plutus.json',
+        [channel_hex, oneshot_hex]
     )
-    oneshot_hex = oneshot_ref.to_cbor().hex()
-    close_channel(ctx, sk, addr, oneshot_hex, channel_bytes)
+    script_out_path = f'plutus-{channel_hex}-{oneshot_hex}.json'
+    with open(script_out_path, 'w') as f:
+        json.dump(script_json, f)
+        print(f'saved final plutus script to {script_out_path}')
+
+    # TODO is this intermediate dict format helpful?
+    script_compiled = validator_bytes_and_hash(script_json)
+    script = PlutusV3Script(script_compiled['script_bytes'])
+
+    mint_fn = channel_nft_minter(script, channel_bytes)
+ 
+    # open_channel(ctx, sk, addr, channel_bytes)
+    open_channel(ctx, sk, addr, script, mint_fn, oneshot_utxo)
+    # print(f'opened channel with channel_hex={channel_hex} oneshot_hex={oneshot_hex}')
+
+    print('waiting 60 seconds for mint tx to go through...', end='', flush=True)
+    time.sleep(60)
+    print('ok')
+
+    close_channel(ctx, sk, addr, script, mint_fn, channel_bytes)
 
 if __name__ == '__main__':
     main()
