@@ -9,6 +9,8 @@ use pubsub/types.{
   PsClose, PsOpen, PubsubAction, PubsubConfig,
 }
 
+// TODO publisher isn't necessarily owner of ADA when doing multi-tiered channels
+
 validator pubsub(channel_name: ByteArray, oneshot_ref: OutputReference) {
   mint(redeemer: PubsubAction, policy_id: PolicyId, self: Transaction) {
     when redeemer is {
@@ -59,12 +61,16 @@ validator pubsub(channel_name: ByteArray, oneshot_ref: OutputReference) {
           /// todo @"datum goes back to the validator unchanged",
           /// todo @"all collected assets go to the publisher",
       PsClose -> {
-        expect Some(own_input) = u.find_tx_input(self, own_ref)
-        expect Script(policy_id) = own_input.output.address.payment_credential
-        and {
-          u.tx_mints(self, policy_id, channel_name, -1),
-          u.tx_signed_by(self, publisher),
-        }
+
+        // TODO this is redundant because it's already checked in the mint, right?
+        // expect Some(own_input) = u.find_tx_input(self, own_ref)
+        // expect Script(policy_id) = own_input.output.address.payment_credential
+        // and {
+          // u.tx_mints(self, policy_id, channel_name, -1),
+          // u.tx_signed_by(self, publisher),
+        // }
+
+        u.tx_signed_by(self, publisher)
         /// todo @"all collected assets go to the publisher",
       }
     }
