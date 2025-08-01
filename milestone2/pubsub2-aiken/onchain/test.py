@@ -173,14 +173,7 @@ def open_channel(
 
     psopen = Redeemer(data=PsOpen())
 
-    # the quicker from_primitive way has some normalize error here
-    channel_nft = AssetName(channel_bytes)
-    asset = Asset()
-    asset[channel_nft] = 1
-    assets = MultiAsset()
-    policy_id = script_hash(script)
-    assets[policy_id] = asset
-    # print('assets:', assets)
+    assets = channel_nft_assets(script, channel_bytes, 1)
 
     mint_tx = (
         TransactionBuilder(ctx, mint=assets)
@@ -196,6 +189,18 @@ def open_channel(
     print('seems successful?')
     # TODO put back submit
     # ctx.submit_tx(mint_tx_signed)
+
+def channel_nft_assets(script: PlutusV3Script, channel_bytes: bytes, n_to_mint: int):
+    # the quicker from_primitive way has some normalize error here
+    channel_nft = AssetName(channel_bytes)
+    asset = Asset()
+    asset[channel_nft] = n_to_mint
+    assets = MultiAsset()
+    policy_id = script_hash(script)
+    assets[policy_id] = asset
+    # print('assets:', assets)
+    return assets
+
 
 def close_channel(
     ctx: OgmiosV6ChainContext,
@@ -227,14 +232,7 @@ def close_channel(
 
     psclose = Redeemer(data=PsClose())
 
-    # the quicker from_primitive way has some normalize error here
-    channel_nft = AssetName(channel_bytes)
-    asset = Asset()
-    asset[channel_nft] = -1
-    assets = MultiAsset()
-    policy_id = script_hash(script)
-    assets[policy_id] = asset
-    # print('assets:', assets)
+    assets = channel_nft_assets(script, channel_bytes, -1)
 
     # TODO discover this from on-chain context
     channel_nft_input = TransactionInput(
