@@ -1,5 +1,5 @@
 // use aiken/collection/list
-use cardano/address.{Script}
+// use cardano/address.{Script}
 use cardano/assets.{PolicyId}
 use cardano/script_context.{ScriptContext}
 use cardano/transaction
@@ -13,9 +13,11 @@ validator pubsub(channel_name: ByteArray, oneshot_ref: OutputReference) {
   mint(redeemer: PubsubAction, policy_id: PolicyId, self: Transaction) {
     when redeemer is {
       PsOpen -> {
-        True
+
+        // TODO what's wrong with this part?
         // expect Some(_oneshot_input) = transaction.find_input(self.inputs, oneshot_ref)
-        // u.tx_mints(self, policy_id, channel_name, 1)
+
+        u.tx_mints(self, policy_id, channel_name, 1)
       }
       PsClose -> u.tx_mints(self, policy_id, channel_name, -1)
       // _ -> fail
