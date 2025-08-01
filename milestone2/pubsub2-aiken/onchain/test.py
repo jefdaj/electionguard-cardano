@@ -213,23 +213,21 @@ def channel_nft_minter(script: PlutusV3Script, channel_bytes: bytes):
         assets = MultiAsset()
         policy_id = script_hash(script)
         assets[policy_id] = asset
-        # print('assets:', assets)
         return assets
     return channel_nft_assets
 
 def utxo_contains_channel_nft(policy_id: str, channel_bytes: bytes, utxo: TransactionOutput) -> bool:
-    # id_hex='72ea2c9389e19ec51414df7fe21fd1ec004ee48cc35976d9bd7b8c83'
-    # script_hash=ScriptHash(hex=id_hex) # TODO wrong ai stuff here?
-    # channel_bytes=b'test channel 001'
-    # print(utxo.output.amount.multi_asset)
     try:
-        # if len(utxo.output.amount.multi_asset) > 0:
-            # print(utxo.output.amount.multi_asset)
-        # return utxo.output.amount.multi_asset[script_hash].get(AssetName(channel_bytes), 0) == 1
         return utxo.output.amount.multi_asset[policy_id].get(AssetName(channel_bytes), 0) == 1
     except Exception as e:
         # print('error:', str(e))
         return False
+
+def find_channel_state(ctx: OgmiosV6ChainContext, addr: Address, policy_id: ScriptHash, channel_bytes: bytes):
+    return next((
+        u for u in ctx.utxos(addr)
+        if utxo_contains_channel_nft(policy_id, channel_bytes, u)
+    ))
 
 # TODO save oneshot_hex when minting and pass here
 def close_channel(
@@ -258,11 +256,8 @@ def close_channel(
     policy_id = plutus_script_hash(script) # TODO is this right?
     print(f'policy_id={policy_id}')
 
-    nft_utxo = next((
-        u for u in ctx.utxos(addr)
-        if utxo_contains_channel_nft(policy_id, channel_bytes, u)
-    ))
-    print(f'nft_utxo={nft_utxo}')
+    state_utxo = find_channel_state(ctx, addr, policy_id, channel_bytes)
+    print(f'state_utxo={state_utxo}')
     # for utxo in utxos:
 
         # TODO why isn't this the script_hash?
@@ -280,7 +275,7 @@ def close_channel(
     burn_tx = (
         TransactionBuilder(ctx, mint=assets)
         .add_minting_script(script=script, redeemer=action)
-        .add_input(nft_utxo)
+        .add_input(state_utxo)
         .add_input_address(addr)
     )
     # print(burn_tx)
@@ -306,7 +301,7 @@ def main():
     # this is used to parameterize the validator,
     # and also to name the channel nft
     # TODO is it not needed as a parameter? maybe only oneshot_ref is ok
-    channel_bytes = b'test channel 003'
+    channel_bytes = b'pubsub test 004'
     print(f'channel_bytes={channel_bytes}')
 
     channel_hex = cbor2.dumps(channel_bytes).hex()
@@ -338,8 +333,10 @@ def main():
     open_channel(ctx, sk, addr, script, mint_fn, oneshot_utxo)
     # print(f'opened channel with channel_hex={channel_hex} oneshot_hex={oneshot_hex}')
 
-    print('waiting 60 seconds for mint tx to go through...', end='', flush=True)
-    time.sleep(60)
+    # TODO maybe retry this periodically? how long is actually needed?
+    delay_sec = 60
+    print(f'waiting {delay_sec} seconds for mint tx to be confirmed...', end='', flush=True)
+    time.sleep(delay_sec)
     print('ok')
 
     close_channel(ctx, sk, addr, script, mint_fn, channel_bytes)
