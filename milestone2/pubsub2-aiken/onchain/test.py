@@ -14,7 +14,7 @@ from dataclasses import dataclass
 import tempfile
 # from shutil import copytree
 # import shutil
-from pprint import pprint
+# from pprint import pprint
 import subprocess
 from typing import List
 
@@ -144,19 +144,12 @@ class PsClose(PlutusData):
 # collect_action = PubsubAction.ps_collect()
 # close_action = PubsubAction.ps_close()
 
-def main():
-
-    ctx  = OgmiosV6ChainContext("172.13.0.3", 1337)
-    sk   = PaymentSigningKey.load("keys/me.sk")
-    vk   = PaymentVerificationKey.from_signing_key(sk).hash()
-    addr = read_addr('keys/me.addr') # TODO is this also vk?
-    # print('ctx:', ctx)
-    # print('sk:', sk)
-    # print('vk:', vk)
-    print('addr:', type(addr), addr)
-
-    # note this is also the name of the NFT asset minted to track channel state
-    channel_bytes = b'test channel 001'
+def open_channel(
+    ctx: OgmiosV6ChainContext,
+    sk: PaymentSigningKey,
+    addr: Address,
+    channel_bytes: bytes
+):
     channel_hex = cbor2.dumps(channel_bytes).hex()
     # print('channel_hex:', channel_hex)
 
@@ -178,7 +171,6 @@ def main():
     script_compiled = validator_bytes_and_hash(script_json)
     script = PlutusV3Script(script_compiled['script_bytes'])
 
-    # psopen = Redeemer(data=PubsubAction.ps_open())
     psopen = Redeemer(data=PsOpen())
 
     # the quicker from_primitive way has some normalize error here
@@ -188,7 +180,7 @@ def main():
     assets = MultiAsset()
     policy_id = script_hash(script)
     assets[policy_id] = asset
-    print('assets:', assets)
+    # print('assets:', assets)
 
     mint_tx = (
         TransactionBuilder(ctx, mint=assets) # TODO required_signers=[sk] too?
@@ -196,18 +188,32 @@ def main():
         # .add_input_address(addr)
         .add_input(oneshot_utxo)
     )
-    print(mint_tx)
+    # print(mint_tx)
 
-    # TODO figure out the error here
-    # things that don't matter:
-    # - using add_input_address(addr) vs explicit add_input(oneshot_utxo)
-    # - downgrading to aiken v0.1.10
-    # - downgrading to pycardano v0.12.3 and cbor2 with c extensions
-    # - upgrading to nixpkgs-unstable
     mint_tx_signed = mint_tx.build_and_sign([sk], change_address=addr)
-    # pprint(mint_tx_signed)
+    # print('mint_tx_signed:', mint_tx_signed)
 
-    ctx.submit_tx(mint_tx_signed)
+    print('seems successful?')
+    # TODO put back submit
+    # ctx.submit_tx(mint_tx_signed)
+
+
+def main():
+
+    ctx  = OgmiosV6ChainContext("172.13.0.3", 1337)
+    sk   = PaymentSigningKey.load("keys/me.sk")
+    # vk   = PaymentVerificationKey.from_signing_key(sk).hash()
+    addr = read_addr('keys/me.addr') # TODO is this also vk?
+    # print('ctx:', ctx)
+    # print('sk:', sk)
+    # print('vk:', vk)
+    # print('addr:', type(addr), addr)
+
+    # this is used to parameterize the validator,
+    # and also to name the channel nft
+    channel_bytes = b'test channel 001'
+
+    open_channel(ctx, sk, addr, channel_bytes)
 
 if __name__ == '__main__':
     main()
