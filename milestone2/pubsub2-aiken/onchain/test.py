@@ -93,10 +93,10 @@ def validator_bytes_and_hash(validator: dict) -> dict:
 class PsOpen(PlutusData):
     CONSTR_ID = 0
 
-# @dataclass
-# class PsPublish(PlutusData):
-#     CONSTR_ID = 1
-#     cids: List[bytes]
+@dataclass
+class PsPublish(PlutusData):
+    CONSTR_ID = 1
+    cids: List[bytes]
 
 # @dataclass
 # class PsCollect(PlutusData):
@@ -104,7 +104,7 @@ class PsOpen(PlutusData):
 
 @dataclass
 class PsClose(PlutusData):
-    CONSTR_ID = 1
+    CONSTR_ID = 2
 
 # Examples of creating different variants
 # open_action = PubsubAction.ps_open()
