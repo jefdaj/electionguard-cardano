@@ -4,6 +4,7 @@ import cbor2
 import json
 import os
 import subprocess
+import sys
 import tempfile
 import time
 
@@ -223,7 +224,7 @@ def close_channel(
     print(f'submitted burn tx with id={burn_tx_signed.id}')
     return burn_tx_signed.id
 
-def main(test_num: int):
+def main(channel_name: str):
 
     ctx  = OgmiosV6ChainContext("172.13.0.3", 1337)
     sk   = PaymentSigningKey.load("keys/me.sk")
@@ -235,7 +236,7 @@ def main(test_num: int):
     # this is used to parameterize the validator,
     # and also to name the channel nft
     # TODO is it not needed as a parameter? maybe only oneshot_ref is ok
-    channel_bytes = f'pubsub test {test_num}'.encode()
+    channel_bytes = channel_name.encode()
     print(f'channel_bytes={channel_bytes}')
 
     channel_hex = cbor2.dumps(channel_bytes).hex()
@@ -251,7 +252,7 @@ def main(test_num: int):
         [channel_hex, oneshot_hex]
     )
     # TODO is saving it also useful?
-    script_out_path = f'plutus-test-{str(test_num)}.json'
+    script_out_path = f'plutus-{channel_name}.json'
     with open(script_out_path, 'w') as f:
         json.dump(script_json, f, indent=2)
         print(f'saved final plutus script to {script_out_path}')
@@ -271,4 +272,5 @@ def main(test_num: int):
     close_channel(ctx, sk, addr, script, mint_fn, channel_bytes)
 
 if __name__ == '__main__':
-    main(6)
+    channel_name = sys.argv[1]
+    main(channel_name)
