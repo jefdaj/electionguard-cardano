@@ -144,6 +144,13 @@ class PsClose(PlutusData):
 # collect_action = PubsubAction.ps_collect()
 # close_action = PubsubAction.ps_close()
 
+def utxo_to_ref_hex(utxo):
+    ref = OutputReferenceHack(
+        utxo.input.transaction_id.to_cbor(),
+        utxo.input.index
+    )
+    return ref.to_cbor().hex()
+
 def open_channel(
     ctx: OgmiosV6ChainContext,
     sk: PaymentSigningKey,
@@ -154,11 +161,7 @@ def open_channel(
     # print('channel_hex:', channel_hex)
 
     oneshot_utxo = pick_oneshot_utxo(ctx, addr)
-    oneshot_ref = OutputReferenceHack(
-        oneshot_utxo.input.transaction_id.to_cbor(),
-        oneshot_utxo.input.index
-    )
-    oneshot_hex = oneshot_ref.to_cbor().hex()
+    oneshot_hex = utxo_to_ref_hex(oneshot_utxo)
     # print('oneshot_hex:', oneshot_hex)
 
     script_json = aiken_blueprint_apply_hex_params(
@@ -201,25 +204,34 @@ def channel_nft_assets(script: PlutusV3Script, channel_bytes: bytes, n_to_mint: 
     # print('assets:', assets)
     return assets
 
+def utxo_contains_channel_nft(policy_id: str, channel_bytes: bytes, utxo: TransactionOutput) -> bool:
+    # id_hex='72ea2c9389e19ec51414df7fe21fd1ec004ee48cc35976d9bd7b8c83'
+    # script_hash=ScriptHash(hex=id_hex) # TODO wrong ai stuff here?
+    # channel_bytes=b'test channel 001'
+    # print(utxo.output.amount.multi_asset)
+    try:
+        # if len(utxo.output.amount.multi_asset) > 0:
+            # print(utxo.output.amount.multi_asset)
+        # return utxo.output.amount.multi_asset[script_hash].get(AssetName(channel_bytes), 0) == 1
+        return utxo.output.amount.multi_asset[policy_id].get(AssetName(channel_bytes), 0) == 1
+    except Exception as e:
+        # print('error:', str(e))
+        return False
 
+# TODO save oneshot_hex when minting and pass here
 def close_channel(
     ctx: OgmiosV6ChainContext,
     sk: PaymentSigningKey,
     addr: Address,
+    oneshot_hex: str, # TODO str, really?
     channel_bytes: bytes
 ):
+
     channel_hex = cbor2.dumps(channel_bytes).hex()
-    # print('channel_hex:', channel_hex)
 
-    # oneshot_utxo = pick_oneshot_utxo(ctx, addr)
-    # TODO discover this from on-chain context? or just save when opening channel
-    oneshot_ref = OutputReferenceHack(
-        bytes.fromhex("7b929674e0b6a9a848fb7949e6c878c8178fe2b5bfd90d04c60f1f75f4a5da8a"),
-        1
-    )
-    oneshot_hex = oneshot_ref.to_cbor().hex()
-    print('oneshot_hex:', oneshot_hex)
-
+    # TODO this theoretically shouldn't be needed except during minting, right?
+    #      because any other operation starts with an existing channel nft
+    # TODO can you get it from the policy ID of the NFT instead?
     script_json = aiken_blueprint_apply_hex_params(
         './plutus.json',
         [channel_hex, oneshot_hex]
@@ -229,34 +241,49 @@ def close_channel(
     # TODO is this intermediate dict format helpful?
     script_compiled = validator_bytes_and_hash(script_json)
     script = PlutusV3Script(script_compiled['script_bytes'])
+    # print('script hash?', script_compiled['script_hash'])
+    # print('script hash?', plutus_script_hash(script))
 
     psclose = Redeemer(data=PsClose())
 
     assets = channel_nft_assets(script, channel_bytes, -1)
 
     # TODO discover this from on-chain context
-    channel_nft_input = TransactionInput(
-        TransactionId(bytes.fromhex('eac80f1752ce0aa5286fb1441efd6c6bd3eee3aaaa81761ecd73349613cd304e')),
-        0
-    )
+    # mint_input_id = TransactionId(bytes.fromhex('eac80f1752ce0aa5286fb1441efd6c6bd3eee3aaaa81761ecd73349613cd304e'))
+    utxos = ctx.utxos(addr)
+
+    # TODO why isn't this the script_hash?
+    policy_id = ScriptHash(bytes.fromhex('e8a52770ef6c591b2185eb1227f2ce5ea235d7747e9fc2f554587884'))
+
+    nft_utxo = next((u for u in utxos if utxo_contains_channel_nft(policy_id, channel_bytes, u)))
+    print('nft_utxo:', nft_utxo)
+    # for utxo in utxos:
+
+        # TODO why isn't this the script_hash?
+        # policy_id = ScriptHash(bytes.fromhex('e8a52770ef6c591b2185eb1227f2ce5ea235d7747e9fc2f554587884'))
+
+        # if utxo_contains_channel_nft(policy_id, channel_bytes, utxo):
+            # print('found it:', utxo)
+    # raise Exception
+                    
 
     # TODO OK this is almost working! I think lol.
     # It seems to be having trouble with coin selection, but otherwise passes.
 
-    mint_tx = (
+    # TODO aha! is there nothing wrong with the selection at all? Maybe I'm just using the wrong policy_id
+    burn_tx = (
         TransactionBuilder(ctx, mint=assets)
         .add_minting_script(script=script, redeemer=psclose)
+        .add_input(nft_utxo)
         .add_input_address(addr)
-        # .add_input(channel_nft_input)
     )
-    # print(mint_tx)
+    # print(burn_tx)
 
-    mint_tx_signed = mint_tx.build_and_sign([sk], change_address=addr)
-    # print('mint_tx_signed:', mint_tx_signed)
+    burn_tx_signed = burn_tx.build_and_sign([sk], change_address=addr)
+    # print('burn_tx_signed:', burn_tx_signed)
 
     # print('seems successful?')
-    ctx.submit_tx(mint_tx_signed)
-
+    ctx.submit_tx(burn_tx_signed)
 
 def main():
 
@@ -275,7 +302,14 @@ def main():
     channel_bytes = b'test channel 001'
 
     # open_channel(ctx, sk, addr, channel_bytes)
-    close_channel(ctx, sk, addr, channel_bytes)
+
+    # TODO save this when opening the channel
+    oneshot_ref = OutputReferenceHack(
+        bytes.fromhex("7b929674e0b6a9a848fb7949e6c878c8178fe2b5bfd90d04c60f1f75f4a5da8a"),
+        1
+    )
+    oneshot_hex = oneshot_ref.to_cbor().hex()
+    close_channel(ctx, sk, addr, oneshot_hex, channel_bytes)
 
 if __name__ == '__main__':
     main()
