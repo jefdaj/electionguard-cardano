@@ -122,18 +122,18 @@ def validator_bytes_and_hash(validator: dict) -> dict:
 class PsOpen(PlutusData):
     CONSTR_ID = 0
 
-@dataclass
-class PsPublish(PlutusData):
-    CONSTR_ID = 1
-    cids: List[bytes]
+# @dataclass
+# class PsPublish(PlutusData):
+#     CONSTR_ID = 1
+#     cids: List[bytes]
 
-@dataclass
-class PsCollect(PlutusData):
-    CONSTR_ID = 2
+# @dataclass
+# class PsCollect(PlutusData):
+#     CONSTR_ID = 2
 
 @dataclass
 class PsClose(PlutusData):
-    CONSTR_ID = 3
+    CONSTR_ID = 1
 
 # Examples of creating different variants
 # open_action = PubsubAction.ps_open()
@@ -206,6 +206,8 @@ def main():
     # - upgrading to nixpkgs-unstable
     mint_tx_signed = mint_tx.build_and_sign([sk], change_address=addr)
     # pprint(mint_tx_signed)
+
+    ctx.submit_tx(mint_tx_signed)
 
 if __name__ == '__main__':
     main()
