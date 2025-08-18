@@ -1,4 +1,4 @@
-# pubsub2: post CIDs to preview testnet
+# pubsub2: post CIDs to preview testnet using ipfs, aiken, pycardano
 
 
 Instead of `new_cids.txt`, this version will post CIDs on the preview testnet:
