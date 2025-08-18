@@ -1,0 +1,184 @@
+{
+  "preamble": {
+    "title": "jefdaj/pubsub",
+    "description": "Aiken contracts for project 'jefdaj/pubsub'",
+    "version": "0.0.0",
+    "plutusVersion": "v3",
+    "compiler": {
+      "name": "Aiken",
+      "version": "v1.1.19+e525483"
+    },
+    "license": "Apache-2.0"
+  },
+  "validators": [
+    {
+      "title": "pubsub.pubsub.mint",
+      "redeemer": {
+        "title": "redeemer",
+        "schema": {
+          "$ref": "#/definitions/pubsub~1types~1PubsubAction"
+        }
+      },
+      "parameters": [
+        {
+          "title": "channel_name",
+          "schema": {
+            "$ref": "#/definitions/ByteArray"
+          }
+        },
+        {
+          "title": "oneshot_ref",
+          "schema": {
+            "$ref": "#/definitions/cardano~1transaction~1OutputReference"
+          }
+        }
+      ],
+      "compiledCode": "59032e0101002229800aba2aba1aba0aab9faab9eaab9dab9a9bae00348888888966003300130043754013370e90014dc3a40009114c004c02c00e6014007222232598009808000c4c96600266e3cdd7180600080244cdc39bad300d0010038a50402c601e00316403464b30013007300b375400314bd6f7b63044dd5980798061baa001402864660020026eacc03cc040c040c040c040c030dd5002912cc0040062980103d87a8000899192cc004cdc8803800c56600266e3c01c006266e95200033011300f0024bd7045300103d87a80004035133004004301300340346eb8c034004c04000500e488c966002600800315980098051baa00380145900b4566002600a003132598009807800c4c8cc004004dd61807801112cc00400600b132330030033012002375c602000280722c8060c028dd5001c56600266e1d20040018acc004c028dd5001c00a2c805a2c804100820103008375400491111919912cc004c02000a2646600a004264b3001300a0018cc00402200500da4004803a2b30013370e9002000c66002011002806d2001401d1640388070c038dd50011bae3011300e3754007159800980480144c8cc88cc01c010566002601660206ea800633001375c602860226ea8c050c044dd5000c88c8cc004004dd6180b980c180c180c180c180c180c180c180c180a1baa0032259800800c528456600266e3cdd7180c000801c528c4cc008008c064005013202c98081baa004488966002601c003132598009807980a1baa0018992cc004c044c054dd5000c566003300100e9bae301930163754003013a4004806a26600801c00b14a080a22c80a0c060c054dd5180c180a9baa30183019301537546030602a6ea80062c8098c8cc004004dd6180c180a9baa00d2259800800c530103d87a80008992cc004cdd7980d180b9baa001008899ba548000cc0640052f5c1133003003301b0024054603200280ba2b3001300f0018acc004cc00803000e266e212000323300100137586030602a6ea80208966002003148002266e01200233002002301a001405d14a08092266004018006809101222c8078c048004c048c04c004c038dd5001c5900c2018300b3754002601e00a601c601e008452689b2b20041",
+      "hash": "b7b7f983fcacdc3c2bf1d4e31b30d97731bae945984c3346975d70bf"
+    },
+    {
+      "title": "pubsub.pubsub.spend",
+      "datum": {
+        "title": "datum",
+        "schema": {
+          "$ref": "#/definitions/pubsub~1types~1PubsubConfig"
+        }
+      },
+      "redeemer": {
+        "title": "redeemer",
+        "schema": {
+          "$ref": "#/definitions/pubsub~1types~1PubsubAction"
+        }
+      },
+      "parameters": [
+        {
+          "title": "channel_name",
+          "schema": {
+            "$ref": "#/definitions/ByteArray"
+          }
+        },
+        {
+          "title": "oneshot_ref",
+          "schema": {
+            "$ref": "#/definitions/cardano~1transaction~1OutputReference"
+          }
+        }
+      ],
+      "compiledCode": "59032e0101002229800aba2aba1aba0aab9faab9eaab9dab9a9bae00348888888966003300130043754013370e90014dc3a40009114c004c02c00e6014007222232598009808000c4c96600266e3cdd7180600080244cdc39bad300d0010038a50402c601e00316403464b30013007300b375400314bd6f7b63044dd5980798061baa001402864660020026eacc03cc040c040c040c040c030dd5002912cc0040062980103d87a8000899192cc004cdc8803800c56600266e3c01c006266e95200033011300f0024bd7045300103d87a80004035133004004301300340346eb8c034004c04000500e488c966002600800315980098051baa00380145900b4566002600a003132598009807800c4c8cc004004dd61807801112cc00400600b132330030033012002375c602000280722c8060c028dd5001c56600266e1d20040018acc004c028dd5001c00a2c805a2c804100820103008375400491111919912cc004c02000a2646600a004264b3001300a0018cc00402200500da4004803a2b30013370e9002000c66002011002806d2001401d1640388070c038dd50011bae3011300e3754007159800980480144c8cc88cc01c010566002601660206ea800633001375c602860226ea8c050c044dd5000c88c8cc004004dd6180b980c180c180c180c180c180c180c180c180a1baa0032259800800c528456600266e3cdd7180c000801c528c4cc008008c064005013202c98081baa004488966002601c003132598009807980a1baa0018992cc004c044c054dd5000c566003300100e9bae301930163754003013a4004806a26600801c00b14a080a22c80a0c060c054dd5180c180a9baa30183019301537546030602a6ea80062c8098c8cc004004dd6180c180a9baa00d2259800800c530103d87a80008992cc004cdd7980d180b9baa001008899ba548000cc0640052f5c1133003003301b0024054603200280ba2b3001300f0018acc004cc00803000e266e212000323300100137586030602a6ea80208966002003148002266e01200233002002301a001405d14a08092266004018006809101222c8078c048004c048c04c004c038dd5001c5900c2018300b3754002601e00a601c601e008452689b2b20041",
+      "hash": "b7b7f983fcacdc3c2bf1d4e31b30d97731bae945984c3346975d70bf"
+    },
+    {
+      "title": "pubsub.pubsub.else",
+      "redeemer": {
+        "schema": {}
+      },
+      "parameters": [
+        {
+          "title": "channel_name",
+          "schema": {
+            "$ref": "#/definitions/ByteArray"
+          }
+        },
+        {
+          "title": "oneshot_ref",
+          "schema": {
+            "$ref": "#/definitions/cardano~1transaction~1OutputReference"
+          }
+        }
+      ],
+      "compiledCode": "59032e0101002229800aba2aba1aba0aab9faab9eaab9dab9a9bae00348888888966003300130043754013370e90014dc3a40009114c004c02c00e6014007222232598009808000c4c96600266e3cdd7180600080244cdc39bad300d0010038a50402c601e00316403464b30013007300b375400314bd6f7b63044dd5980798061baa001402864660020026eacc03cc040c040c040c040c030dd5002912cc0040062980103d87a8000899192cc004cdc8803800c56600266e3c01c006266e95200033011300f0024bd7045300103d87a80004035133004004301300340346eb8c034004c04000500e488c966002600800315980098051baa00380145900b4566002600a003132598009807800c4c8cc004004dd61807801112cc00400600b132330030033012002375c602000280722c8060c028dd5001c56600266e1d20040018acc004c028dd5001c00a2c805a2c804100820103008375400491111919912cc004c02000a2646600a004264b3001300a0018cc00402200500da4004803a2b30013370e9002000c66002011002806d2001401d1640388070c038dd50011bae3011300e3754007159800980480144c8cc88cc01c010566002601660206ea800633001375c602860226ea8c050c044dd5000c88c8cc004004dd6180b980c180c180c180c180c180c180c180c180a1baa0032259800800c528456600266e3cdd7180c000801c528c4cc008008c064005013202c98081baa004488966002601c003132598009807980a1baa0018992cc004c044c054dd5000c566003300100e9bae301930163754003013a4004806a26600801c00b14a080a22c80a0c060c054dd5180c180a9baa30183019301537546030602a6ea80062c8098c8cc004004dd6180c180a9baa00d2259800800c530103d87a80008992cc004cdd7980d180b9baa001008899ba548000cc0640052f5c1133003003301b0024054603200280ba2b3001300f0018acc004cc00803000e266e212000323300100137586030602a6ea80208966002003148002266e01200233002002301a001405d14a08092266004018006809101222c8078c048004c048c04c004c038dd5001c5900c2018300b3754002601e00a601c601e008452689b2b20041",
+      "hash": "b7b7f983fcacdc3c2bf1d4e31b30d97731bae945984c3346975d70bf"
+    }
+  ],
+  "definitions": {
+    "ByteArray": {
+      "dataType": "bytes"
+    },
+    "Int": {
+      "dataType": "integer"
+    },
+    "List$pubsub/types/CID": {
+      "dataType": "list",
+      "items": {
+        "$ref": "#/definitions/pubsub~1types~1CID"
+      }
+    },
+    "aiken/crypto/VerificationKeyHash": {
+      "title": "VerificationKeyHash",
+      "dataType": "bytes"
+    },
+    "cardano/transaction/OutputReference": {
+      "title": "OutputReference",
+      "description": "An `OutputReference` is a unique reference to an output on-chain. The `output_index`\n corresponds to the position in the output list of the transaction (identified by its id)\n that produced that output",
+      "anyOf": [
+        {
+          "title": "OutputReference",
+          "dataType": "constructor",
+          "index": 0,
+          "fields": [
+            {
+              "title": "transaction_id",
+              "$ref": "#/definitions/ByteArray"
+            },
+            {
+              "title": "output_index",
+              "$ref": "#/definitions/Int"
+            }
+          ]
+        }
+      ]
+    },
+    "pubsub/types/CID": {
+      "title": "CID",
+      "dataType": "bytes"
+    },
+    "pubsub/types/PubsubAction": {
+      "title": "PubsubAction",
+      "anyOf": [
+        {
+          "title": "PsOpen",
+          "description": "Open the channel, minting the state NFT and funding with some ADA.\n TODO is the ADA optional beyond the blockchain-enforced min?",
+          "dataType": "constructor",
+          "index": 0,
+          "fields": []
+        },
+        {
+          "title": "PsPublish",
+          "description": "Announce publication of the corresponding IPFS files.",
+          "dataType": "constructor",
+          "index": 1,
+          "fields": [
+            {
+              "title": "cids",
+              "$ref": "#/definitions/List$pubsub~1types~1CID"
+            }
+          ]
+        },
+        {
+          "title": "PsClose",
+          "description": "Collect ADA and/or other tokens sent to the validator.\n TODO sending ADA to the contract is always valid, right?\n Close the channel, burning the NFT and recovering any ADA.\n The publisher can choose whether to collect other tokens here too.\n TODO if not, are they basically burned/frozen at the validator address?\n TODO should it require exlicitly burning any assets you don't want?",
+          "dataType": "constructor",
+          "index": 2,
+          "fields": []
+        }
+      ]
+    },
+    "pubsub/types/PubsubConfig": {
+      "title": "PubsubConfig",
+      "anyOf": [
+        {
+          "title": "PubsubConfig",
+          "dataType": "constructor",
+          "index": 0,
+          "fields": [
+            {
+              "title": "publisher",
+              "description": "TODO nft: ???,\n State NFT uniquely identifying the channel.\n All transactions must be signed by this key.\n It could be removed in favor of tracking NFT ownership,\n but for the ElectionGuard use case I don't want state\n NFTs to be transferrable.",
+              "$ref": "#/definitions/aiken~1crypto~1VerificationKeyHash"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
