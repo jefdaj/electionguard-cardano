@@ -1,13 +1,14 @@
 {
-  "name": "hello_world",
-  "version": "0.0.1",
-  "scripts": {
-    "generate": "npx tsx generate-credentials.ts",
-    "lock": "npx tsx lock.ts"
-  },
-  "author": "jinglescode",
+  "name": "aiken-hello-world",
+  "type": "module",
   "dependencies": {
-    "@meshsdk/core": "^1.8.4",
-    "tsx": "^4.19.2"
+    "@meshsdk/core": "^1.9.0-beta.1",
+    "dotenv": "^16.4.5",
+    "tsx": "^4.9.4"
+  },
+  "scripts": {
+    "generate": "npx tsx src/generate-keys.ts",
+    "lock":     "npx tsx src/lock-assets.ts",
+    "unlock":   "npx tsx src/unlock-assets.ts"
   }
 }
