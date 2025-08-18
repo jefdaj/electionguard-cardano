@@ -130,6 +130,7 @@ def open_channel(
     mint_fn, # TODO type
     oneshot_utxo: UTxO,
 ):
+    print('\n### open_channel ###')
 
     action = Redeemer(data=PsOpen())
     print(f'action={action}')
@@ -189,6 +190,65 @@ def find_channel_state(
         if utxo_contains_channel_nft(policy_id, channel_bytes, u)
     ))
 
+def wait_for_tx_to_confirm():
+    # TODO maybe retry this periodically?
+    delay_sec = 60
+    print(f'waiting {delay_sec} seconds for tx to be confirmed...', end='', flush=True)
+    time.sleep(delay_sec)
+    print('ok')
+
+def publish_cids(
+    ctx: OgmiosV6ChainContext,
+    sk: PaymentSigningKey,
+    addr: Address,
+    script: PlutusV3Script,
+    channel_bytes: bytes,
+    cids: List[bytes],
+):
+    print('\n### publish_cids ###')
+
+    action = Redeemer(data=PsPublish(cids))
+    print(f'action={action}')
+
+    policy_id = plutus_script_hash(script)
+
+    state_utxo = find_channel_state(ctx, addr, policy_id, channel_bytes)
+    print(f'state_utxo={state_utxo}')
+
+    # Check UTxO creation details
+    # print(f"UTxO Address: {state_utxo.output.address}")
+    # print(f"UTxO Address Type: {state_utxo.output.address.address_type}")
+    # print(f"UTxO Script Hash: {state_utxo.output.script_hash}")
+
+    # Inspect the UTxO more thoroughly
+    print(f"UTxO Full Details: {state_utxo}")
+    print(f"UTxO Assets: {state_utxo.output.amount}")
+
+    # Check for the state NFT
+    state_nft = state_utxo.output.amount.multi_asset.get(policy_id)
+    if state_nft:
+        print(f"State NFT found: {state_nft}")
+
+    # TODO is withdrawal script the right idea? see videos and specs if needed
+    publish_tx = (
+        TransactionBuilder(ctx)
+        .add_script_input(state_utxo, script=script, redeemer=action)
+        .add_input_address(addr)
+    )
+
+    # TODO why isn't there a simple method for this like mint and withdrawal?
+    # script_witness = TransactionWitnessSet()
+    # script_witness.plutus_scripts = [script]
+    # script_witness.plutus_data = [action]
+    # publish_tx.witness_set = script_witness
+
+    publish_tx_signed = publish_tx.build_and_sign([sk], change_address=addr)
+
+    ctx.submit_tx(publish_tx_signed)
+
+    print(f'submitted publish tx with id={publish_tx_signed.id}')
+    return publish_tx_signed.id
+
 def close_channel(
     ctx: OgmiosV6ChainContext,
     sk: PaymentSigningKey,
@@ -197,6 +257,7 @@ def close_channel(
     mint_fn, # TODO type
     channel_bytes: bytes
 ):
+    print('\n### close_channel ###')
 
     action = Redeemer(data=PsClose())
     print(f'action={action}')
@@ -204,7 +265,7 @@ def close_channel(
     assets = mint_fn(-1)
     print(f'assets={assets}')
 
-    policy_id = plutus_script_hash(script) # TODO is this right?
+    policy_id = plutus_script_hash(script)
     print(f'policy_id={policy_id}')
 
     state_utxo = find_channel_state(ctx, addr, policy_id, channel_bytes)
@@ -225,6 +286,8 @@ def close_channel(
     return burn_tx_signed.id
 
 def main(channel_name: str):
+
+    print('### main ###')
 
     ctx  = OgmiosV6ChainContext("172.13.0.3", 1337)
     sk   = PaymentSigningKey.load("keys/me.sk")
@@ -260,14 +323,19 @@ def main(channel_name: str):
     script = PlutusV3Script(validator_bytes_and_hash(script_json)['script_bytes'])
 
     mint_fn = channel_nft_minter(script, channel_bytes)
- 
-    open_channel(ctx, sk, addr, script, mint_fn, oneshot_utxo)
 
-    # TODO maybe retry this periodically?
-    delay_sec = 60
-    print(f'waiting {delay_sec} seconds for mint tx to be confirmed...', end='', flush=True)
-    time.sleep(delay_sec)
-    print('ok')
+    open_channel(ctx, sk, addr, script, mint_fn, oneshot_utxo)
+    wait_for_tx_to_confirm()
+
+    # for now, just publish 3 little CID lists
+    for n in range(1, 6, 2):
+        try:
+            cids = [f'cid {n}'.encode(), f'cid {n+1}'.encode()]
+            publish_cids(ctx, sk, addr, script, channel_bytes, cids)
+        except Exception as e:
+            print('ERROR:', str(e))
+        finally:
+            wait_for_tx_to_confirm()
 
     close_channel(ctx, sk, addr, script, mint_fn, channel_bytes)
 
