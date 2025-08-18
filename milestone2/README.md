@@ -7,4 +7,4 @@ Now I'm starting a small "pubsub" project to test the components I think I
 want to use in the main ElectionGuard project:
 
 1. [file syncing via IPFS](./pubsub1-ipfs)
-2. [Aiken validator(s)](./pubsub2-aiken)
+2. [Aiken validator(s) + PyCardano](./pubsub2-aiken-pycardano)
