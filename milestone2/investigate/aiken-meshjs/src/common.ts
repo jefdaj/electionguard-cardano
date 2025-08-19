@@ -1,13 +1,17 @@
 import {
-  BlockfrostProvider,
+  OgmiosProvider,
   MeshTxBuilder,
   MeshWallet,
   serializePlutusScript,
   UTxO,
 } from "@meshsdk/core";
 import { applyParamsToScript } from "@meshsdk/core-cst";
+import fs from "node:fs";
 import dotenv from "dotenv";
 dotenv.config();
+
+// TODO is this the right port?
+const blockchainProvider = new OgmiosProvider();
 
 export const wallet = new MeshWallet({
   networkId: 0,
@@ -18,10 +22,6 @@ export const wallet = new MeshWallet({
     bech32: fs.readFileSync("keys/me.sk").toString(),
   },
 });
-
-// TODO rewrite this to use my ogmios
-export const blockfrost_api_key = process.env.BLOCKFROST_API_KEY || "";
-const blockchainProvider = new BlockfrostProvider(blockfrost_api_key);
 
 export async function getWalletInfoForTx() {
   const utxos = await wallet.getUtxos();

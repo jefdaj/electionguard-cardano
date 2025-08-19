@@ -1,6 +1,6 @@
 import { Asset, deserializeAddress, mConStr0 } from "@meshsdk/core";
 import { getScript, getTxBuilder, getWalletInfoForTx, wallet } from "./common";
-import blueprint from "../aiken-workspace/plutus.json";
+import blueprint from "../aiken/plutus.json";
 
 export async function lockAsset(assets: Asset[]): Promise<string> {
   const { utxos, walletAddress } = await getWalletInfoForTx();

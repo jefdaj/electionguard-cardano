@@ -6,7 +6,7 @@
     "plutusVersion": "v3",
     "compiler": {
       "name": "Aiken",
-      "version": "v1.1.10+b25afa2"
+      "version": "v1.1.19+e525483"
     }
   },
   "validators": [
@@ -40,7 +40,7 @@
     "ByteArray": {
       "dataType": "bytes"
     },
-    "VerificationKeyHash": {
+    "aiken/crypto/VerificationKeyHash": {
       "title": "VerificationKeyHash",
       "dataType": "bytes"
     },
@@ -54,7 +54,7 @@
           "fields": [
             {
               "title": "owner",
-              "$ref": "#/definitions/VerificationKeyHash"
+              "$ref": "#/definitions/aiken~1crypto~1VerificationKeyHash"
             }
           ]
         }

@@ -7,7 +7,7 @@ import {
   wallet,
 } from "./common";
 import { prompt } from "../../common/prompt";
-import blueprint from "../aiken-workspace/plutus.json";
+import blueprint from "../aiken/plutus.json";
 
 export async function unlockAsset(
   scriptUtxo: UTxO,
