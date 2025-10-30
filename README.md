@@ -8,7 +8,9 @@ ElectionGuard + Cardano
 
 Work in progress on [the Catalyst fund13 project](https://milestones.projectcatalyst.io/projects/1300090).
 
-Current status as of 2025-04-29:
+Current status as of 2025-10-30:
+
+- First few [YouTube videos](https://youtube.com/@prosocialcrypto) are up.
 
 - All Milestones (1, 2, and 3) approved
 
