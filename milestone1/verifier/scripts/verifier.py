@@ -788,7 +788,7 @@ def summarize_results(
             values.sort(key=lambda v: v.tally, reverse=True)
             for selection in values:
                 name = selection_names[selection.object_id]
-                log.info(f"  {name} {selection.tally}")
+                log.info(f"  {selection.tally} {name}")
                 contest_summary['answers'][name] = selection.tally
             tally_summary.append(contest_summary)
 
