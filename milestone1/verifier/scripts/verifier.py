@@ -872,8 +872,7 @@ def VerifyCommand(
     verifier_id: str,
     logfile: Optional[str],
 ) -> None:
-    """Verify all public election artifacts.
-logfile"""
+    """Verify all public election artifacts."""
     # TODO parse and pass cfg here
     log = init_log(logfile, logging.INFO)
     try:
