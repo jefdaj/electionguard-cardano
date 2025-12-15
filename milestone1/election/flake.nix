@@ -1,12 +1,13 @@
 {
   description = "Multi-container election demo";
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
-  outputs = { self, nixpkgs, ... }: {
+  inputs.arion.url = "github:jefdaj/arion/rm-obsolete-version-attribute";
+  outputs = { self, nixpkgs, arion, ... }: {
     pkgs = nixpkgs.legacyPackages.x86_64-linux;
     devShells.x86_64-linux.default = self.pkgs.mkShell {
       buildInputs = with self.pkgs; [
 
-        arion
+        arion.packages.x86_64-linux.arion
         jq
         time
         tree
