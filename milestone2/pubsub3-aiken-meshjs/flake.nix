@@ -4,9 +4,10 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
     aiken.url   = "github:aiken-lang/aiken/v1.1.19";
+    arion.url   = "github:jefdaj/arion/rm-obsolete-version-attribute";
   };
 
-  outputs = { self, nixpkgs, aiken }@inputs:
+  outputs = { self, nixpkgs, aiken, arion }@inputs:
     let
 
       # This is an actual output; see note below.
@@ -26,6 +27,7 @@
       };
 
       devPkgList = ps: with ps; [
+        arion.packages.x86_64-linux.arion
         file
         jq
         time

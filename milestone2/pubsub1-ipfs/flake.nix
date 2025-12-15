@@ -3,9 +3,10 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+    arion.url   = "github:jefdaj/arion/rm-obsolete-version-attribute";
   };
 
-  outputs = { self, nixpkgs }:
+  outputs = { self, nixpkgs, arion }:
     let
 
       # This is an actual output; see note below.
@@ -22,11 +23,11 @@
       };
 
       devPkgList = ps: with ps; [
+        arion.packages.x86_64-linux.arion
         file
         jq
         time
         tree
-        arion
       ];
 
       pubPyPkgList = ps: with ps; [
