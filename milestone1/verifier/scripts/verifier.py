@@ -199,8 +199,6 @@ def verify_all_devices(results, pubdir, log) -> List[EncryptionDevice]:
     return deps.values()
 
 def verify_ballot_submitted(results, pubdir, log, ballot_id) -> SubmittedBallot:
-    # TODO verify it was submitted by one of the devices (or rely on Cardano for that?)
-    # device = verify(results, pubdir, log, 'device')
     ballot = verify_public_record(
         results, pubdir, log, 'ballot_submitted',
         ballot_id=ballot_id
@@ -212,8 +210,6 @@ def verify_ballot_submitted(results, pubdir, log, ballot_id) -> SubmittedBallot:
     return ballot_submitted
 
 def verify_ballot_cast(results, pubdir, log, ballot_id) -> SubmittedBallot:
-    # TODO verify it was submitted by one of the devices (or rely on Cardano for that?)
-    # device = verify(results, pubdir, log, 'device')
     deps = verify_deps(
         ballot_submitted = verify(results, pubdir, log, 'ballot_submitted', ballot_id=ballot_id),
         cast_notice = verify_public_record(results, pubdir, log, 'cast_notice', ballot_id=ballot_id),
@@ -227,8 +223,6 @@ def verify_ballot_cast(results, pubdir, log, ballot_id) -> SubmittedBallot:
     return ballot_cast
 
 def verify_ballot_spoiled(results, pubdir, log, ballot_id) -> SubmittedBallot:
-    # TODO verify it was submitted by one of the devices (or rely on Cardano for that?)
-    # device = verify(results, pubdir, log, 'device'),
     deps = verify_deps(
         ballot_submitted = verify(results, pubdir, log, 'ballot_submitted', ballot_id=ballot_id),
     )
@@ -250,11 +244,11 @@ def verify_ciphertext_tally(results, pubdir, log):
     )
 
 def verify_tally_aggregation(results, pubdir, log):
+
     deps = verify_deps(
         manifest = verify(results, pubdir, log, 'manifest'),
         context = verify(results, pubdir, log, 'context'),
         all_ballots_cast = verify(results, pubdir, log, 'all_ballots_cast'),
-        # all_ballots_spoiled = verify(results, pubdir, log, 'all_ballots_spoiled'), # TODO remove?
         ciphertext_tally = verify(results, pubdir, log, 'ciphertext_tally'),
     )
 
@@ -262,12 +256,11 @@ def verify_tally_aggregation(results, pubdir, log):
 
     def verify_closure():
         new_tally = CiphertextTally(
-            "verify-tally", # TODO best practices for this object id?
-            InternalManifest(deps['manifest']), # TODO no need for internal_manifest anywhere then?
+            "verify-tally",
+            InternalManifest(deps['manifest']),
             deps['context']
         )
-        # TODO these need to be SubmittedBallots not CiphertextBallots?
-        for ballot in deps['all_ballots_cast']: # + deps['all_ballots_spoiled']:
+        for ballot in deps['all_ballots_cast']:
             assert(new_tally.append(ballot, should_validate=True))
         assert new_tally.contests == deps['ciphertext_tally'].contests
 
