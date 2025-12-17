@@ -524,6 +524,11 @@ def verify_set_cast_spoiled_submitted(results, pubdir, log) -> bool:
     cast_ids      = set(b.object_id for b in deps['all_ballots_cast'])
     spoiled_ids   = set(b.object_id for b in deps['all_ballots_spoiled'])
     submitted_ids = set(b.object_id for b in deps['all_ballots_submitted'])
+
+    missing_ids = submitted_ids.difference(cast_ids).difference(spoiled_ids)
+    if len(missing_ids) > 0:
+        log.error(f'missing cast/spoil notices: {missing_ids}')
+
     return verify_assertion(
         'set(cast ballot IDs) + set(spoiled ballot IDs) = set(submitted ballot IDs)',
         cast_ids.union(spoiled_ids) == submitted_ids,
