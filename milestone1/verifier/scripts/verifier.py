@@ -516,10 +516,9 @@ def verify_set_spoiled_decrypted(results, pubdir, log) -> bool:
     )
 
 def verify_set_cast_spoiled_submitted(results, pubdir, log) -> bool:
-    # TODO why isn't this short-circuiting the rest of the fn?
     deps = verify_deps(
-        all_ballots_cast = verify(results, pubdir, log, 'all_ballots_cast'),
-        all_ballots_spoiled = verify(results, pubdir, log, 'all_ballots_spoiled'),
+        all_ballots_cast      = verify(results, pubdir, log, 'all_ballots_cast'),
+        all_ballots_spoiled   = verify(results, pubdir, log, 'all_ballots_spoiled'),
         all_ballots_submitted = verify(results, pubdir, log, 'all_ballots_submitted'),
     )
     cast_ids      = set(b.object_id for b in deps['all_ballots_cast'])
@@ -535,12 +534,11 @@ def verify_ballot_sets(results, pubdir, log) -> bool:
     "Make sure the various sets of ballot IDs match up (nothing missing or extra)"
     log.info('\nVerifying ballot ID sets:')
     deps = verify_deps(
-        n_spoiled_decrypted = verify(results, pubdir, log, 'n_spoiled_decrypted'),
-        n_cast_spoiled_submitted = verify(results, pubdir, log, 'n_cast_spoiled_submitted'),
-        set_spoiled_decrypted = verify(results, pubdir, log, 'set_spoiled_decrypted'),
+        n_spoiled_decrypted        = verify(results, pubdir, log, 'n_spoiled_decrypted'),
+        n_cast_spoiled_submitted   = verify(results, pubdir, log, 'n_cast_spoiled_submitted'),
+        set_spoiled_decrypted      = verify(results, pubdir, log, 'set_spoiled_decrypted'),
         set_cast_spoiled_submitted = verify(results, pubdir, log, 'set_cast_spoiled_submitted'),
     )
-    # TODO explicitly assert that each list has all unique IDs?
     return True
 
 def verify_gather_decryptions(results, pubdir, log) -> bool:
