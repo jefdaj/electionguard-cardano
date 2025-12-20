@@ -120,6 +120,7 @@ class RunConfig(dict):
 
 @composite
 def arionconfig(draw):
+    draw() # just to silence HypothesisDeprecationWarning
     cfg = ArionConfig()
     return cfg
 

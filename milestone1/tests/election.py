@@ -123,13 +123,17 @@ def run_process(cfg, log, args):
 
 @explain_step
 def setup(cfg, log):
+
+    # Only needed when a previous run was inturrupted
+    run_process(cfg, log, ['arion', 'down'])
+
     # For some reason this occassionally fails with a Docker "network not found" error.
     # The hacky solution seems to work: turning it off and on again.
     time.sleep(2)
     for retry in range(1, 4):
         time.sleep(retry * 2) # delay 2, 4, 6, 8 sec
         try:
-            run_process(cfg, log, ['arion', 'up', '-d'])
+            run_process(cfg, log, ['arion', 'up', '-d', '--remove-orphans'])
             return
         except Exception as e:
             log.error(f'arion up failed {retry+1} times: {e}')
@@ -344,6 +348,7 @@ def decrypt_results(cfg, log):
         ]
     )
 
+# TODO remove? Seems redundant with 4_verify/admin_1.json
 # @explain_step
 # def summary(cfg):
 #     run_in_container(
