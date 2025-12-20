@@ -239,31 +239,45 @@ def DecryptSharesCommand(
     manifest  = from_public_record(public_dir, 'manifest')
     joint_key = from_public_record(public_dir, 'joint_key')
     (_, _, context) = build_election(details, manifest, joint_key)
-    tally = from_public_record(public_dir, 'ciphertext_tally')
 
     # create guardian object
     guardian = Guardian(election_key_pair, details)
 
     # compute tally share
-    tally_share = guardian.compute_tally_share(tally, context)
-    # print(f'computed {guardian_id} decryption share of election tally', flush=True)
-    assert tally_share is not None
-    to_public_record(
-        public_dir, 'tally_share', tally_share,
-        guardian_id=guardian_id
-    )
+    try:
+        tally = from_public_record(public_dir, 'ciphertext_tally')
+        tally_share = guardian.compute_tally_share(tally, context)
+        # print(f'computed {guardian_id} decryption share of election tally', flush=True)
+        assert tally_share is not None
+        to_public_record(
+            public_dir, 'tally_share', tally_share,
+            guardian_id=guardian_id
+        )
+    except Exception as e:
+        print(e)
+        print('Failed to compute tally share')
 
     # compute ballot shares
-    spoiled_ballots = load_spoiled_ballots(public_dir)
-    spoiled_shares: Dict[BallotId, Optional[DecryptionShare]] \
-        = guardian.compute_ballot_shares(spoiled_ballots, context)
-    for (spoiled_id, spoiled_share) in spoiled_shares.items():
-        # print(f'computed {guardian_id} decryption share of {spoiled_id}', flush=True)
-        assert spoiled_share is not None
-        to_public_record(
-            public_dir, 'spoiled_share', spoiled_share,
-            spoiled_id=spoiled_id, guardian_id=guardian_id
-        )
+    try:
+        spoiled_ballots = load_spoiled_ballots(public_dir)
+        assert len(spoiled_ballots) > 0 # TODO count to see how many there should be?
+        # TODO loop over this part too to separate errors
+        spoiled_shares: Dict[BallotId, Optional[DecryptionShare]] \
+            = guardian.compute_ballot_shares(spoiled_ballots, context)
+        for (spoiled_id, spoiled_share) in spoiled_shares.items():
+            try:
+                # print(f'computed {guardian_id} decryption share of {spoiled_id}', flush=True)
+                assert spoiled_share is not None
+                to_public_record(
+                    public_dir, 'spoiled_share', spoiled_share,
+                    spoiled_id=spoiled_id, guardian_id=guardian_id
+                )
+            except Exception as e:
+                print(e)
+                print(f'Failed to compute ballot share for {spoiled_id}')
+    except Exception as e:
+        print(e)
+        print('Failed to compute ballot shares')
 
     # print(flush=True)
 

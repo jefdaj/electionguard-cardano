@@ -349,7 +349,7 @@ def DecryptResultsCommand(
 
     # load and decrypt tally
     # TODO break this into a separate command so the other shares can still be decrypted if it fails?
-    tally_path = join(public_dir, '6_tally.json')
+    # tally_path = join(public_dir, '6_tally.json')
     try:
         tally_enc = from_public_record(public_dir, 'ciphertext_tally')
         tally_shares: Dict[GuardianId, DecryptionShare] \
@@ -363,38 +363,31 @@ def DecryptResultsCommand(
         assert tally_result is not None
         to_public_record(public_dir, 'plaintext_tally', tally_result)
     except Exception as e:
-        # TODO should log be passed here? log.error(e)
-        raise
+        print(e)
+        print('Failed to decrypt tally')
 
-    # load spoiled ballots
     spoiled_ballots: List[SubmittedBallot] = load_spoiled_ballots(public_dir)
-
-    # load spoiled ballot shares
-    spoiled_ids = [b.object_id for b in spoiled_ballots]
-    spoiled_shares: Dict[str, Dict[GuardianId, DecryptionShare]] = {}
-    for spoiled_id in spoiled_ids:
-        shares = load_spoiled_shares(
-            public_dir, details.number_of_guardians,
-            spoiled_id=spoiled_id
-            )
-        spoiled_shares[spoiled_id] = shares
-
-    # decrypt spoiled ballots
     for spoiled_ballot in spoiled_ballots:
-        ballot_id = spoiled_ballot.object_id
-        shares: Dict[GuardianId, DecryptionShare] = spoiled_shares[ballot_id]
-        spoiled_result = decrypt_ballot(
-            spoiled_ballot,
-            shares,
-            context.crypto_extended_base_hash,
-            manifest
-        )
-        assert spoiled_result is not None
-        to_public_record(
-            public_dir, 'spoiled_result', spoiled_result,
-            ballot_id=spoiled_result.object_id
-        )
-        # print(f'decrypted {ballot_id}')
+        spoiled_id = spoiled_ballot.object_id
+        try:
+            spoiled_shares: Dict[GuardianId, DecryptionShare] = load_spoiled_shares(
+                public_dir, details.number_of_guardians,
+                spoiled_id=spoiled_id
+            )
+            spoiled_result = decrypt_ballot(
+                spoiled_ballot,
+                spoiled_shares,
+                context.crypto_extended_base_hash,
+                manifest
+            )
+            assert spoiled_result is not None
+            to_public_record(
+                public_dir, 'spoiled_result', spoiled_result,
+                ballot_id=spoiled_result.object_id
+            )
+        except Exception as e:
+            print(e)
+            print(f'Failed to decrypt spoiled ballot {spoiled_id}')
 
 
 @click.command("summary")
