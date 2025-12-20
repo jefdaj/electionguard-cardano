@@ -25,8 +25,8 @@ ATTACKS = {
     'device_mutate_spoiled_ballot'     : {'who': 'device', 'when': ['vote_reveal_all']},
     'device_mutate_submitted_ballot'   : {'who': 'device', 'when': ['vote_commit_all']},
 
-    # Things not verified in the current implementation:
-    # 'admin_mutate_constants'            : {'who': 'admin' , 'when': ['build_election']},
+    # Things NOT checked/caught in the current implementation:
+    # 'admin_mutate_constants'           : {'who': 'admin' , 'when': ['build_election']},
 
 }
 

@@ -147,10 +147,17 @@ def admin_withhold_manifest(log, pubdir, privdir, step):
     os.remove(manifest_path)
 
 # TODO should the protocol be expected to catch this? it doesn't so far
-#      would require others to verify all the crypto operations the admin does
-# def admin_mutate_constants(log, pubdir, privdir, step):
-#     log.info(f'running during {step} step')
-#     mutate_public_record_crypto_in_place(log, pubdir, 'constants')
+def admin_mutate_constants(log, pubdir, privdir, step):
+    log.info(f'running during {step} step')
+    mutate_public_record_crypto_in_place(
+        log, pubdir, 'constants',
+        [
+            'large_prime',
+            'small_prime',
+            'cofactor',
+            'generator'
+        ]
+    )
 
 @announce_attack
 def device_withhold_submitted_ballot(log, pubdir, privdir, step):
