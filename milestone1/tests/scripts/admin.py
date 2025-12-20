@@ -363,7 +363,7 @@ def DecryptResultsCommand(
         assert tally_result is not None
         to_public_record(public_dir, 'plaintext_tally', tally_result)
     except Exception as e:
-        log.error(e)
+        # TODO should log be passed here? log.error(e)
         raise
 
     # load spoiled ballots
