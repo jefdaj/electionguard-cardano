@@ -702,12 +702,14 @@ def simplify_and_partition(results: ResultsCache, log: logging.Logger) \
                 in result.items()
                 if isinstance(v, Error)
             }
-            if len(errors_dict) > 0:
-                errors[target_name] = errors_dict
-                # log.info(f'some of {target_name} goes in errors')
             if len(successes_dict) > 0:
                 successes[target_name] = successes_dict
                 # log.info(f'some of {target_name} goes in successes')
+                bools[target_name] = True
+            if len(errors_dict) > 0:
+                errors[target_name] = errors_dict
+                # log.info(f'some of {target_name} goes in errors')
+                bools[target_name] = False
         else:
             # should be a single success or a list
             successes[target_name] = result
@@ -737,21 +739,28 @@ def summarize_results(
     summary = defaultdict(lambda: {})
 
     tally_header   = "Final tally of cast ballots"
+
     spoiled_header = 'Individual spoiled ballots'
     spoiled_summaries = {}
+
+    log.info('\n' + spoiled_header + ':')
+
     try:
-
-        log.info('\n' + spoiled_header + ':')
-
         spoiled_results = successes['all_spoiled_results']
-        manifest        = successes['manifest']
-        selection_names = manifest.get_selection_names("en")
-        contest_names   = manifest.get_contest_names()
+    except KeyError:
+        spoiled_results = errors['all_spoiled_results']
 
-        for spoiled_result in spoiled_results:
-            log.info('')
+    manifest        = successes['manifest']
+    selection_names = manifest.get_selection_names("en")
+    contest_names   = manifest.get_contest_names()
+
+    for spoiled_result in spoiled_results:
+        try:
+
             if isinstance(spoiled_result, Error):
                 continue
+
+            log.info('')
             ballot_id = spoiled_result.object_id
             short_id  = ballot_id[ballot_id.find('-')+1:]
             log.info(short_id)
@@ -773,8 +782,15 @@ def summarize_results(
                 ballot_summary.append(contest_summary)
             spoiled_summaries[short_id] = ballot_summary
 
+        except Exception as e:
+            spoiled_summaries[short_id] = 'Unable to summarize'
+            log.error(e)
+            log.error(f'Unable to summarize spoiled ballot {spoiled_result.object_id}')
+            n_errors += 1
+
+    try:
         log.info('\n' + tally_header + ':\n')
-        tally_result    = successes['plaintext_tally']
+        tally_result = successes['plaintext_tally']
         tally_summary = []
         contest_summaries = []
         for tally_contest in tally_result.contests.values():
@@ -793,11 +809,9 @@ def summarize_results(
             tally_summary.append(contest_summary)
 
     except Exception as e:
-        tally_summary     = 'Unable to summarize tally'
-        spoiled_summaries = 'Unable to summarize individual spoiled ballots'
-        log.error('Unable to summarize individual spoiled ballots')
+        tally_summary = 'Unable to summarize'
         log.error(e)
-        n_errors += 1 # TODO is this a reasonable way to do it?
+        n_errors += 1
 
     # save summary json
     # no particular format, except it must be a json-serializable dict

@@ -415,7 +415,7 @@ def load_decryption_shares(
             )
             shares[guardian_id] = share
         except FileNotFoundError:
-            msg = f'WARNING {guardian_id} {share_type} share missing'
+            msg = f'WARNING {guardian_id} {share_type} missing'
             if len(fmtargs) > 0:
                 msg += f' {fmtargs}'
             print(msg)
