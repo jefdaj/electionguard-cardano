@@ -72,19 +72,20 @@ def run_in_container(
     script_path = join(cfg.arion.bind_mounts.scripts, script_name)
     args = ["docker", "exec", container_name,
             "poetry", "run", script_path] + args
-    kwargs.update(stdout=subprocess.PIPE, text=True)
+    kwargs.update(stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     log.info(' '.join(args))
     proc = subprocess.Popen(args, **kwargs)
     (stdout, stderr) = proc.communicate()
+    # TODO remove stderr here since it's merged into stdout anyway?
     if stderr is not None:
         stderr = stderr.strip()
         if len(stderr) > 0:
-            log.info(stderr)
+            log.info(stderr + '\n')
     stdout = stdout.strip()
     if return_stdout:
         return stdout
     elif len(stdout) > 0:
-        log.info(stdout)
+        log.info(stdout + '\n')
 
 def explain_step(fn):
     def decorated_fn(cfg, log, *args, **kwargs):

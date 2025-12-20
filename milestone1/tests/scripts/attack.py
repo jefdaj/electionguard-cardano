@@ -279,6 +279,9 @@ def admin_ghost_after_vote(log, pubdir, privdir, step):
 
     log.info(f'running during {step} step')
 
+    # TODO is there a better way to design this so it doesn't require two steps?
+    #      or is that an accurate description of admin not being there for either?
+
     if step == 'tally':
         tally_path = public_path(pubdir, 'ciphertext_tally')
         log.info(f'removing {tally_path}')
