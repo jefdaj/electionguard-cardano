@@ -242,22 +242,34 @@ def verify_ballot_cast(results, pubdir, log, ballot_id) -> SubmittedBallot:
 
     return ballot_cast
 
-# TODO need to validate crypto here too, right?
 def verify_ballot_spoiled(results, pubdir, log, ballot_id) -> SubmittedBallot:
+    # TODO later, verify that the nonces decrypt to the expected votes (separate voter-side verifier)
     # TODO verify it was submitted by one of the devices (or rely on Cardano for that?)
     # device = verify(results, pubdir, log, 'device'),
     deps = verify_deps(
         ballot_submitted = verify(results, pubdir, log, 'ballot_submitted', ballot_id=ballot_id),
+        build_election = verify(results, pubdir, log, 'build_election')
     )
-    ballot_spoiled = verify_public_record(results, pubdir, log, 'ballot_spoiled', ballot_id=ballot_id)
+    (_, internal_manifest, context) = deps['build_election']
+    ballot_spoiled = verify_public_record(
+        results, pubdir, log, 'ballot_spoiled',
+        ballot_id=ballot_id
+    )
+    assert ballot_is_valid_for_election(
+        ballot_spoiled,
+        internal_manifest,
+        context,
+        should_validate=True
+    )
+
+    # TODO verify they're identical except submitted has: all nonces set to null, state set to 999
+    assert ballot_spoiled.object_id == deps['ballot_submitted'].object_id
+
     # We store the spoiled ballot as CiphertextBallot rather than
     # SubmittedBallot, because we want to publish the nonces. But that means we
     # need to officially "spoil" it here afer deserializing.
     # TODO is this actually needed for anything? spoiled ballots don't really need to be tallied
-    assert ballot_spoiled.object_id == deps['ballot_submitted'].object_id
     ballot_submitted_v2 = submit_ballot(ballot_spoiled, BallotBoxState.SPOILED)
-    # TODO verify they're identical except submitted has: all nonces set to null, state set to 999
-    # TODO later, verify that the nonces decrypt to the expected votes (separate voter-side verifier)
     return ballot_submitted_v2
 
 def verify_ciphertext_tally(results, pubdir, log):
