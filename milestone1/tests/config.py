@@ -15,15 +15,13 @@ from typing import Callable, Dict, List
 # able to import the electionguard module.
 ATTACKS = {
 
-    'admin_withhold_manifest'          : {'who': 'admin' , 'when': ['build_manifest']},
+    'admin_withhold_manifest'          : {'who': 'admin', 'when': ['build_manifest']},
+    'admin_ghost_after_vote'           : {'who': 'admin', 'when': ['tally', 'decrypt_results']},
     'device_withhold_submitted_ballot' : {'who': 'device', 'when': ['vote_commit_all']},
     'device_withhold_cast_ballot'      : {'who': 'device', 'when': ['vote_reveal_all']},
     'device_withhold_spoiled_ballot'   : {'who': 'device', 'when': ['vote_reveal_all']},
     'guardian_withhold_tally_share'    : {'who': 'guardian', 'when': ['decrypt_shares']},
     'guardian_withhold_spoiled_share'  : {'who': 'guardian', 'when': ['decrypt_shares']},
-
-    # TODO rename admin_refuse_to_tally or similar?
-    'admin_ghost_after_vote'           : {'who': 'admin', 'when': ['tally', 'decrypt_results']},
 
     # Things to finish:
     # 'device_mutate_spoiled_ballot'     : {'who': 'device', 'when': ['vote_reveal_all']},
