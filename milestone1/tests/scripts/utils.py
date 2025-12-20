@@ -26,7 +26,6 @@ import uuid
 from io import StringIO
 from dataclasses import dataclass, field
 
-
 # hide INFO dumps of crypto from elgamal.py
 import logging
 logging.getLogger('electionguard').setLevel(logging.WARNING)

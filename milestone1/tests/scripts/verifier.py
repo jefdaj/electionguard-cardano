@@ -25,6 +25,7 @@ from utils import (
 
 from electionguard.ballot import CiphertextBallot, SubmittedBallot
 from electionguard.ballot_box import (BallotBoxState, submit_ballot)
+from electionguard.ballot_validator import ballot_is_valid_for_election
 from electionguard.constants import ElectionConstants
 from electionguard.election import CiphertextElectionContext
 from electionguard.encrypt import EncryptionDevice
@@ -201,10 +202,25 @@ def verify_all_devices(results, pubdir, log) -> List[EncryptionDevice]:
 def verify_ballot_submitted(results, pubdir, log, ballot_id) -> SubmittedBallot:
     # TODO verify it was submitted by one of the devices (or rely on Cardano for that?)
     # device = verify(results, pubdir, log, 'device')
+
+    deps = verify_deps(
+        build_election = verify(results, pubdir, log, 'build_election')
+    )
+
+    (_, internal_manifest, context) = deps['build_election']
+
     ballot = verify_public_record(
         results, pubdir, log, 'ballot_submitted',
         ballot_id=ballot_id
     )
+
+    assert ballot_is_valid_for_election(
+        ballot,
+        internal_manifest,
+        context,
+        should_validate=True
+    )
+
     # We store the "submitted" ballots on chain as CiphertextBallot instead for now,
     # so they need to be marked submitted here after deserialization.
     # TODO store them as submitted instead?
@@ -226,6 +242,7 @@ def verify_ballot_cast(results, pubdir, log, ballot_id) -> SubmittedBallot:
 
     return ballot_cast
 
+# TODO need to validate crypto here too, right?
 def verify_ballot_spoiled(results, pubdir, log, ballot_id) -> SubmittedBallot:
     # TODO verify it was submitted by one of the devices (or rely on Cardano for that?)
     # device = verify(results, pubdir, log, 'device'),
@@ -251,24 +268,25 @@ def verify_ciphertext_tally(results, pubdir, log):
 
 def verify_tally_aggregation(results, pubdir, log):
     deps = verify_deps(
-        manifest = verify(results, pubdir, log, 'manifest'),
-        context = verify(results, pubdir, log, 'context'),
+        build_election = verify(results, pubdir, log, 'build_election'),
         all_ballots_cast = verify(results, pubdir, log, 'all_ballots_cast'),
         # all_ballots_spoiled = verify(results, pubdir, log, 'all_ballots_spoiled'), # TODO remove?
         ciphertext_tally = verify(results, pubdir, log, 'ciphertext_tally'),
     )
+
+    (_, internal_manifest, context) = deps['build_election']
 
     n_cast = len(deps['all_ballots_cast'])
 
     def verify_closure():
         new_tally = CiphertextTally(
             "verify-tally", # TODO best practices for this object id?
-            InternalManifest(deps['manifest']), # TODO no need for internal_manifest anywhere then?
-            deps['context']
+            internal_manifest,
+            context
         )
         # TODO these need to be SubmittedBallots not CiphertextBallots?
         for ballot in deps['all_ballots_cast']: # + deps['all_ballots_spoiled']:
-            assert(new_tally.append(ballot, should_validate=True))
+            assert new_tally.append(ballot, should_validate=True)
         assert new_tally.contests == deps['ciphertext_tally'].contests
 
     with_checkmark_message(
@@ -394,14 +412,13 @@ def verify_constants(results, pubdir, log) -> ElectionConstants:
     deps = verify_deps(build_election = verify(results, pubdir, log, 'build_election'))
     constants = with_checkmark_message(
         'constants',
-        lambda: deps['build_election'][0],
+        lambda: deps['build_election'],
         log
     )
     return constants
 
 def verify_internal_manifest(results, pubdir, log) -> InternalManifest:
     deps = verify_deps(build_election = verify(results, pubdir, log, 'build_election'))
-    (_, internal_manifest, _) = deps['build_election']
     internal_manifest = with_checkmark_message(
         'internal_manifest',
         lambda: deps['build_election'][1],
@@ -467,7 +484,7 @@ def verify_gather_constants(results, pubdir, log) -> bool:
     deps = verify_deps(
         joint_key = verify(results, pubdir, log, 'joint_key'),
         constants = verify(results, pubdir, log, 'constants'),
-        internal_manifest = verify(results, pubdir, log, 'internal_manifest'),
+        manifest = verify(results, pubdir, log, 'manifest'), # TODO also internal_manifest?
         context = verify(results, pubdir, log, 'context'),
     )
     return True
@@ -637,7 +654,7 @@ def verify(
     # find and call the verify_ function,
     # capturing logs + errors
     verify_fn = globals()[f'verify_{target}']
-    with CaptureLog(level=logging.DEBUG) as log2:
+    with CaptureLog(level=logging.WARNING) as log2:
         try:
             result = verify_fn(results, pubdir, log, **kwargs)
         except Exception as e:
