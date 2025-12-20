@@ -21,5 +21,5 @@
       "Unsure": {"cast": 3, "spoil":1}
     }
   }],
-  "attacks": ["device_mutate_spoiled_ballot"]
+  "attacks": ["device_mutate_submitted_ballot"]
 }
