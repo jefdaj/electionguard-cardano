@@ -415,7 +415,10 @@ def load_decryption_shares(
             )
             shares[guardian_id] = share
         except FileNotFoundError:
-            print(f'WARNING {guardian_id} tally share missing')
+            msg = f'WARNING {guardian_id} {share_type} share missing'
+            if len(fmtargs) > 0:
+                msg += f' {fmtargs}'
+            print(msg)
     # assert len(shares) > 0
 
     # This shouldn't be required, but the ElectionGuard code actually goes into

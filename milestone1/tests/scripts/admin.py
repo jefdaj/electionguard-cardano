@@ -336,7 +336,7 @@ def DecryptResultsCommand(
     Combine guardian decryption shares into final results: tally + spoiled ballots.
     """
 
-    # load required info
+    # load common required info
     manifest  = from_public_record(public_dir, 'manifest')
     joint_key = from_public_record(public_dir, 'joint_key')
     details   = from_public_record(public_dir, 'ceremony_details')
@@ -348,8 +348,7 @@ def DecryptResultsCommand(
     )
 
     # load and decrypt tally
-    # TODO break this into a separate command so the other shares can still be decrypted if it fails?
-    # tally_path = join(public_dir, '6_tally.json')
+    # TODO separate command from spoiled ballots below?
     try:
         tally_enc = from_public_record(public_dir, 'ciphertext_tally')
         tally_shares: Dict[GuardianId, DecryptionShare] \
@@ -366,13 +365,13 @@ def DecryptResultsCommand(
         print(e)
         print('Failed to decrypt tally')
 
+    # load and decrypt spoiled ballots
     spoiled_ballots: List[SubmittedBallot] = load_spoiled_ballots(public_dir)
     for spoiled_ballot in spoiled_ballots:
-        spoiled_id = spoiled_ballot.object_id
         try:
             spoiled_shares: Dict[GuardianId, DecryptionShare] = load_spoiled_shares(
                 public_dir, details.number_of_guardians,
-                spoiled_id=spoiled_id
+                spoiled_id=spoiled_ballot.object_id
             )
             spoiled_result = decrypt_ballot(
                 spoiled_ballot,
@@ -387,7 +386,7 @@ def DecryptResultsCommand(
             )
         except Exception as e:
             print(e)
-            print(f'Failed to decrypt spoiled ballot {spoiled_id}')
+            print(f'Failed to decrypt spoiled ballot {spoiled_ballot.object_id}')
 
 
 @click.command("summary")
