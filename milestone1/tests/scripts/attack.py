@@ -296,7 +296,6 @@ def admin_ghost_after_vote(log, pubdir, privdir, step):
 
     else:
         raise Exception(f'unexpected step {step}')
-    log.info('')
 
 @announce_attack
 def guardian_withhold_tally_share(log, pubdir, privdir, step):
