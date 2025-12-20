@@ -325,6 +325,7 @@ def load_cast_ballots(public_dir: str) -> List[SubmittedBallot]:
         # no cast ballots
         return []
 
+# TODO load these directly from spoiled_ballots dir? or check that == submitted?
 def load_spoiled_ballots(public_dir: str) -> List[SubmittedBallot]:
     spoiled_dir = join(public_dir, PUBLIC_RECORDS['ballot_spoiled'][1])
     try:

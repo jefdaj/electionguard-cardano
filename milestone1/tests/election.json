@@ -10,8 +10,8 @@
   },
   "election": {
     "guardians": {"count": 3, "quorum": 2},
-    "devices": {"count": 4},
-    "verifiers": {"count": 2}
+    "devices": {"count": 1},
+    "verifiers": {"count": 1}
   },
   "votes": [{
     "question": "Should pineapple be banned on pizza?",
@@ -21,5 +21,5 @@
       "Unsure": {"cast": 3, "spoil":1}
     }
   }],
-  "attacks": []
+  "attacks": ["device_mutate_submitted_ballot"]
 }

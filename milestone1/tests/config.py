@@ -24,7 +24,7 @@ ATTACKS = {
     'guardian_withhold_spoiled_share'  : {'who': 'guardian', 'when': ['decrypt_shares']},
 
     # Things to finish:
-    # 'device_mutate_spoiled_ballot'     : {'who': 'device', 'when': ['vote_reveal_all']},
+    'device_mutate_submitted_ballot'     : {'who': 'device', 'when': ['vote_reveal_all']},
 
     # Things not verified in the current implementation:
     # 'admin_mutate_constants'            : {'who': 'admin' , 'when': ['build_election']},

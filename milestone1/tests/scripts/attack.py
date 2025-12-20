@@ -19,6 +19,7 @@ import re
 import string
 from electionguard.key_ceremony import ElectionKeyPair
 
+# from pprint import pprint
 
 ### utilities ###
 
@@ -28,7 +29,7 @@ def mutate_hex_string(log: logging.Logger, hex_str: str) -> str:
     "Randomly change one char in a hex string"
     new_str_chars = list(hex_str)
     i = random.randint(0, len(hex_str))
-    old_char = new_str_chars[i]
+    old_char = hex_str[i]
     new_char = None
     while new_char is None or new_char == old_char:
         new_char = random.choice(HEX_CHARS)
@@ -84,7 +85,12 @@ def edit_random_matching_crypto_value_in_place(
             log.info(f'targeting match {n}, {k}')
             if v is None:
                 raise Exception(f'abort because {k} is None') # TODO log error instead?
-            v = mutate_hex_string(log, v)
+            # TODO once sure it's working, only do this once
+            for n in range(100):
+                try:
+                    v = mutate_hex_string(log, v)
+                except Exception as e:
+                    print(e)
         n += 1
         return v
     json_edit_matching_values(json_dict, keys, edit_chosen_match)
@@ -92,6 +98,7 @@ def edit_random_matching_crypto_value_in_place(
     # overwrite original file
     with open(json_path, 'w') as f:
         json.dump(json_dict, f)
+    log.info(f'overwrote {json_path}')
 
 def mutate_public_record_crypto_in_place(
     log: logging.Logger,
@@ -166,6 +173,8 @@ def device_withhold_submitted_ballot(log, pubdir, privdir, step):
 def device_mutate_submitted_ballot(log, pubdir, privdir, step):
     submitted_ballots = set(d['ballot_id'] for d in list_submitted_ballot_fmtargs(pubdir))
     own_ballots       = set(d['ballot_id'] for d in list_own_ballot_fmtargs(privdir))
+    # print('submitted_ballots:'); pprint(submitted_ballots)
+    # print('own_ballots:'); pprint(own_ballots)
     valid_choices = [{'ballot_id': i} for i in own_ballots.intersection(submitted_ballots)]
     ballot_fmtargs = random.choice(valid_choices)
     mutate_public_record_crypto_in_place(
@@ -173,14 +182,14 @@ def device_mutate_submitted_ballot(log, pubdir, privdir, step):
         [
             'manifest_hash',
             'description_hash',
-            'pad',
+            # 'pad',
             'data'
             'crypto_hash',
-            'proof_zero_pad',
+            # 'proof_zero_pad',
             'proof_zero_data',
-            'proof_one_pad',
+            # 'proof_one_pad',
             'proof_one_data',
-            'challenge',
+            # 'challenge',
             'proof_zero_response',
             'proof_one_response',
         ],
@@ -188,35 +197,37 @@ def device_mutate_submitted_ballot(log, pubdir, privdir, step):
     )
 
 # TODO come back and finish this after rewriting/updating verify_ballot_spoiled
-# @announce_attack
-# def device_mutate_spoiled_ballot(log, pubdir, privdir, step):
-#     spoiled_ballots = set(d['ballot_id'] for d in list_spoiled_ballot_fmtargs(pubdir))
-#     own_ballots     = set(d['ballot_id'] for d in list_own_ballot_fmtargs(privdir))
-#     valid_choices = [{'ballot_id': i} for i in own_ballots.intersection(spoiled_ballots)]
-#     try:
-#         ballot_fmtargs = random.choice(valid_choices)
-#     except IndexError:
-#         raise Exception('abort because this device has no spoiled ballots')
-#     mutate_public_record_crypto_in_place(
-#         log, pubdir, 'ballot_spoiled',
-#         [
-#             'manifest_hash',
-#             'code_seed', # TODO remove?
-#             # 'description_hash',
-#             'pad',
-#             'data'
-#             'crypto_hash',
-#             'proof_zero_pad',
-#             'proof_zero_data',
-#             'proof_one_pad',
-#             'proof_one_data',
-#             'challenge',
-#             # 'proof_zero_response',
-#             'proof_one_response',
-#             'nonce', # TODO remove?
-#         ],
-#         **ballot_fmtargs
-#     )
+@announce_attack
+def device_mutate_spoiled_ballot(log, pubdir, privdir, step):
+    spoiled_ballots = set(d['ballot_id'] for d in list_spoiled_ballot_fmtargs(pubdir))
+    own_ballots     = set(d['ballot_id'] for d in list_own_ballot_fmtargs(privdir))
+    # print('spoiled_ballots:'); pprint(spoiled_ballots)
+    # print('own_ballots:'); pprint(own_ballots)
+    valid_choices = [{'ballot_id': i} for i in own_ballots.intersection(spoiled_ballots)]
+    try:
+        ballot_fmtargs = random.choice(valid_choices)
+    except IndexError:
+        raise Exception('abort because this device has no spoiled ballots')
+    mutate_public_record_crypto_in_place(
+        log, pubdir, 'ballot_spoiled',
+        [
+            'manifest_hash',
+            'code_seed', # TODO remove?
+            'description_hash',
+            # 'pad',
+            'data'
+            'crypto_hash',
+            # 'proof_zero_pad',
+            'proof_zero_data',
+            # 'proof_one_pad',
+            'proof_one_data',
+            # 'challenge',
+            'proof_zero_response',
+            'proof_one_response',
+            'nonce', # TODO remove?
+        ],
+        **ballot_fmtargs
+    )
 
 
 @announce_attack
