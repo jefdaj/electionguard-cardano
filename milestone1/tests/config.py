@@ -16,6 +16,7 @@ from typing import Callable, Dict, List
 ATTACKS = {
 
     'admin_ghost_after_vote'           : {'who': 'admin', 'when': ['tally', 'decrypt_results']},
+    'admin_withhold_manifest'          : {'who': 'admin', 'when': ['build_manifest']},
     'device_mutate_spoiled_ballot'     : {'who': 'device', 'when': ['vote_reveal_all']},
     'device_mutate_submitted_ballot'   : {'who': 'device', 'when': ['vote_commit_all']},
     'device_withhold_cast_ballot'      : {'who': 'device', 'when': ['vote_reveal_all']},
@@ -23,9 +24,6 @@ ATTACKS = {
     'device_withhold_submitted_ballot' : {'who': 'device', 'when': ['vote_commit_all']},
     'guardian_withhold_spoiled_share'  : {'who': 'guardian', 'when': ['decrypt_shares']},
     'guardian_withhold_tally_share'    : {'who': 'guardian', 'when': ['decrypt_shares']},
-
-    # Things that are caught, but also prevent the election from getting to the verify step:
-    # 'admin_withhold_manifest' : {'who': 'admin', 'when': ['build_manifest']},
 
     # Things NOT checked/caught in the current implementation:
     # 'admin_mutate_constants' : {'who': 'admin' , 'when': ['build_election']},

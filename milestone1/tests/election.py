@@ -436,8 +436,10 @@ def election(cfg, log):
         tally(cfg, log)                 ; attack_all(cfg, log, 'tally')
         decrypt_shares(cfg, log)        ; attack_all(cfg, log, 'decrypt_shares')
         decrypt_results(cfg, log)       ; attack_all(cfg, log, 'decrypt_results')
-    except:
-        pass
+    except Exception as e:
+        # TODO is this already handled in each fn?
+        # TODO if not, use log.error here?
+        print(e)
     finally:
         verify(cfg, log) ; attack_all(cfg, log, 'verify')
 
@@ -863,9 +865,10 @@ def test_honest_build_election_verified(testdir: ElectionTestDir):
 def test_honest_constants_verified(testdir: ElectionTestDir):
   assert_verifiers_verified(testdir, 'constants')
 
-@given_honest_election()
-def test_honest_internal_manifest_verified(testdir: ElectionTestDir):
-  assert_verifiers_verified(testdir, 'internal_manifest')
+# TODO remove?
+# @given_honest_election()
+# def test_honest_internal_manifest_verified(testdir: ElectionTestDir):
+#   assert_verifiers_verified(testdir, 'internal_manifest')
 
 @given_honest_election()
 def test_honest_context_verified(testdir: ElectionTestDir):

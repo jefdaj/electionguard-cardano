@@ -779,15 +779,15 @@ def summarize_results(
     except KeyError:
         spoiled_results = errors['all_spoiled_results']
 
-    manifest        = successes['manifest']
-    selection_names = manifest.get_selection_names("en")
-    contest_names   = manifest.get_contest_names()
-
     for spoiled_result in spoiled_results:
         try:
 
             if isinstance(spoiled_result, Error):
                 continue
+
+            manifest        = successes['manifest']
+            selection_names = manifest.get_selection_names("en")
+            contest_names   = manifest.get_contest_names()
 
             log.info('')
             ballot_id = spoiled_result.object_id
@@ -823,6 +823,11 @@ def summarize_results(
         tally_summary = []
         contest_summaries = []
         for tally_contest in tally_result.contests.values():
+
+            manifest        = successes['manifest']
+            selection_names = manifest.get_selection_names("en")
+            contest_names   = manifest.get_contest_names()
+
             contest_name = contest_names.get(tally_contest.object_id)
             contest_summary = {
                 'question': contest_name,

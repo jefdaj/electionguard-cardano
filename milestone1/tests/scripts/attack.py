@@ -85,12 +85,10 @@ def edit_random_matching_crypto_value_in_place(
             log.info(f'targeting match {n}, {k}')
             if v is None:
                 raise Exception(f'abort because {k} is None') # TODO log error instead?
-            # TODO once sure it's working, only do this once
-            for n in range(100):
-                try:
-                    v = mutate_hex_string(log, v)
-                except Exception as e:
-                    print(e)
+            try:
+                v = mutate_hex_string(log, v)
+            except Exception as e:
+                print(e)
         n += 1
         return v
     json_edit_matching_values(json_dict, keys, edit_chosen_match)
@@ -139,13 +137,13 @@ def list_own_ballot_fmtargs(privdir):
 # See also ATTACKS in config.py for info about how to run them
 
 # TODO put back? short-circuits most of the election
-# @announce_attack
-# def admin_withhold_manifest(log, pubdir, privdir, step):
-#     "A silly attack that's fast to debug because it targets the first step."
-#     log.info(f'running during {step} step')
-#     manifest_path = public_path(pubdir, 'manifest')
-#     log.info(f'removing {manifest_path}')
-#     os.remove(manifest_path)
+@announce_attack
+def admin_withhold_manifest(log, pubdir, privdir, step):
+    "A silly attack that's fast to debug because it targets the first step."
+    log.info(f'running during {step} step')
+    manifest_path = public_path(pubdir, 'manifest')
+    log.info(f'removing {manifest_path}')
+    os.remove(manifest_path)
 
 # TODO should the protocol be expected to catch this? it doesn't so far
 def admin_mutate_constants(log, pubdir, privdir, step):
