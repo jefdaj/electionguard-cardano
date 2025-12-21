@@ -1016,19 +1016,24 @@ def test_attack_device_withhold_spoiled_ballot(testdir: ElectionTestDir):
         'gather_election',
     ])
 
-# @given_attacked_election('device_mutate_submitted_ballot', max_examples=50)
-# def test_attack_device_mutate_submitted_ballot(testdir: ElectionTestDir):
-#     assert_verifiers_reject(testdir, [
-#         'ciphertext_tally',
-#         'gather_election',
-#     ])
+@given_attacked_election('device_mutate_submitted_ballot', max_examples=50)
+def test_attack_device_mutate_submitted_ballot(testdir: ElectionTestDir):
+    assert_verifiers_reject(testdir, [
+        'all_ballots_submitted',
 
-# @given_attacked_election('device_mutate_spoiled_ballot', max_examples=50)
-# def test_attack_device_mutate_spoiled_ballot(testdir: ElectionTestDir):
-#     assume_successful_attack(testdir)
-#     assert_verifiers_reject(testdir, [
-#         'gather_election',
-#     ])
+        # The tally will still validate if the mutated ballot was spoiled rather than cast
+        # 'ciphertext_tally',
+
+        'gather_election',
+    ])
+
+@given_attacked_election('device_mutate_spoiled_ballot', max_examples=50)
+def test_attack_device_mutate_spoiled_ballot(testdir: ElectionTestDir):
+    assume_successful_attack(testdir)
+    assert_verifiers_reject(testdir, [
+        # TODO others
+        'gather_election',
+    ])
 
 @given_attacked_election('guardian_withhold_tally_share')
 def test_attack_guardian_withhold_tally_share(testdir: ElectionTestDir):
@@ -1036,6 +1041,7 @@ def test_attack_guardian_withhold_tally_share(testdir: ElectionTestDir):
     assert_verifiers_reject(testdir, [
         'plaintext_tally',
         'tally_decryption',
+        'gather_election',
     ])
 
 @given_attacked_election('guardian_withhold_spoiled_share')
@@ -1043,6 +1049,7 @@ def test_attack_guardian_withhold_spoiled_share(testdir: ElectionTestDir):
     assume_successful_attack(testdir)
     assert_verifiers_reject(testdir, [
         'all_spoiled_results',
+        'gather_election',
     ])
 
 

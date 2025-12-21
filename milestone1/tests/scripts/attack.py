@@ -179,36 +179,31 @@ def device_withhold_submitted_ballot(log, pubdir, privdir, step):
 def device_mutate_submitted_ballot(log, pubdir, privdir, step):
     submitted_ballots = set(d['ballot_id'] for d in list_submitted_ballot_fmtargs(pubdir))
     own_ballots       = set(d['ballot_id'] for d in list_own_ballot_fmtargs(privdir))
-    # print('submitted_ballots:'); pprint(submitted_ballots)
-    # print('own_ballots:'); pprint(own_ballots)
     valid_choices = [{'ballot_id': i} for i in own_ballots.intersection(submitted_ballots)]
     ballot_fmtargs = random.choice(valid_choices)
     mutate_public_record_crypto_in_place(
         log, pubdir, 'ballot_submitted',
         [
-            'manifest_hash',
-            'description_hash',
+            # 'manifest_hash',
+            # 'description_hash',
             # 'pad',
             'data'
             'crypto_hash',
-            # 'proof_zero_pad',
+            'proof_zero_pad',
             'proof_zero_data',
-            # 'proof_one_pad',
+            'proof_one_pad',
             'proof_one_data',
-            # 'challenge',
+            'challenge',
             'proof_zero_response',
             'proof_one_response',
         ],
         **ballot_fmtargs
     )
 
-# TODO come back and finish this after rewriting/updating verify_ballot_spoiled
 @announce_attack
 def device_mutate_spoiled_ballot(log, pubdir, privdir, step):
     spoiled_ballots = set(d['ballot_id'] for d in list_spoiled_ballot_fmtargs(pubdir))
     own_ballots     = set(d['ballot_id'] for d in list_own_ballot_fmtargs(privdir))
-    # print('spoiled_ballots:'); pprint(spoiled_ballots)
-    # print('own_ballots:'); pprint(own_ballots)
     valid_choices = [{'ballot_id': i} for i in own_ballots.intersection(spoiled_ballots)]
     try:
         ballot_fmtargs = random.choice(valid_choices)
@@ -217,20 +212,20 @@ def device_mutate_spoiled_ballot(log, pubdir, privdir, step):
     mutate_public_record_crypto_in_place(
         log, pubdir, 'ballot_spoiled',
         [
-            'manifest_hash',
-            'code_seed', # TODO remove?
-            'description_hash',
+            # 'manifest_hash',
+            'code_seed',
+            # 'description_hash',
             # 'pad',
             'data'
             'crypto_hash',
-            # 'proof_zero_pad',
+            'proof_zero_pad',
             'proof_zero_data',
-            # 'proof_one_pad',
+            'proof_one_pad',
             'proof_one_data',
-            # 'challenge',
+            'challenge',
             'proof_zero_response',
             'proof_one_response',
-            'nonce', # TODO remove?
+            # 'nonce',
         ],
         **ballot_fmtargs
     )
