@@ -114,8 +114,7 @@ class RunConfig(dict):
 
 ### arbitrary config generators ###
 
-@composite
-def arionconfig(draw):
+def arionconfig():
     cfg = ArionConfig()
     return cfg
 
@@ -192,7 +191,7 @@ def attackconfig(draw, explicit_cfg=None):
 # Messed up election with attacks
 @composite
 def attackrun(draw, explicit_cfg=None):
-    arion_cfg    = draw(arionconfig())
+    arion_cfg    = arionconfig()
     election_cfg = draw(electionconfig())
     votes_cfg    = draw(contestsconfig())
     attack_cfg   = draw(attackconfig(explicit_cfg=explicit_cfg))
@@ -208,7 +207,7 @@ def attackrun(draw, explicit_cfg=None):
 # TODO dry this out more?
 @composite
 def honestrun(draw):
-    arion_cfg    = draw(arionconfig())
+    arion_cfg    = arionconfig()
     election_cfg = draw(electionconfig())
     votes_cfg    = draw(contestsconfig())
     attack_cfg  = draw(attackconfig())
