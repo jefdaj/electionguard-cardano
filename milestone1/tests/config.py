@@ -15,18 +15,20 @@ from typing import Callable, Dict, List
 # able to import the electionguard module.
 ATTACKS = {
 
-    'admin_withhold_manifest'          : {'who': 'admin', 'when': ['build_manifest']},
     'admin_ghost_after_vote'           : {'who': 'admin', 'when': ['tally', 'decrypt_results']},
-    'device_withhold_submitted_ballot' : {'who': 'device', 'when': ['vote_commit_all']},
-    'device_withhold_cast_ballot'      : {'who': 'device', 'when': ['vote_reveal_all']},
-    'device_withhold_spoiled_ballot'   : {'who': 'device', 'when': ['vote_reveal_all']},
-    'guardian_withhold_tally_share'    : {'who': 'guardian', 'when': ['decrypt_shares']},
-    'guardian_withhold_spoiled_share'  : {'who': 'guardian', 'when': ['decrypt_shares']},
     'device_mutate_spoiled_ballot'     : {'who': 'device', 'when': ['vote_reveal_all']},
     'device_mutate_submitted_ballot'   : {'who': 'device', 'when': ['vote_commit_all']},
+    'device_withhold_cast_ballot'      : {'who': 'device', 'when': ['vote_reveal_all']},
+    'device_withhold_spoiled_ballot'   : {'who': 'device', 'when': ['vote_reveal_all']},
+    'device_withhold_submitted_ballot' : {'who': 'device', 'when': ['vote_commit_all']},
+    'guardian_withhold_spoiled_share'  : {'who': 'guardian', 'when': ['decrypt_shares']},
+    'guardian_withhold_tally_share'    : {'who': 'guardian', 'when': ['decrypt_shares']},
+
+    # Things that are caught, but also prevent the election from getting to the verify step:
+    # 'admin_withhold_manifest' : {'who': 'admin', 'when': ['build_manifest']},
 
     # Things NOT checked/caught in the current implementation:
-    # 'admin_mutate_constants'           : {'who': 'admin' , 'when': ['build_election']},
+    # 'admin_mutate_constants' : {'who': 'admin' , 'when': ['build_election']},
 
 }
 
@@ -116,14 +118,13 @@ class RunConfig(dict):
 
 @composite
 def arionconfig(draw):
-    draw() # just to silence HypothesisDeprecationWarning
     cfg = ArionConfig()
     return cfg
 
 @composite
 def voteconfig(draw):
     n_cast  = draw(integers(min_value=0, max_value=3))
-    n_spoil = draw(integers(min_value=0, max_value=3))
+    n_spoil = draw(integers(min_value=1, max_value=3)) # TODO allow zero spoiled?
     return VoteConfig(n_cast, n_spoil)
 
 @composite

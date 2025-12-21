@@ -138,13 +138,14 @@ def list_own_ballot_fmtargs(privdir):
 #
 # See also ATTACKS in config.py for info about how to run them
 
-@announce_attack
-def admin_withhold_manifest(log, pubdir, privdir, step):
-    "A silly attack that's fast to debug because it targets the first step."
-    log.info(f'running during {step} step')
-    manifest_path = public_path(pubdir, 'manifest')
-    log.info(f'removing {manifest_path}')
-    os.remove(manifest_path)
+# TODO put back? short-circuits most of the election
+# @announce_attack
+# def admin_withhold_manifest(log, pubdir, privdir, step):
+#     "A silly attack that's fast to debug because it targets the first step."
+#     log.info(f'running during {step} step')
+#     manifest_path = public_path(pubdir, 'manifest')
+#     log.info(f'removing {manifest_path}')
+#     os.remove(manifest_path)
 
 # TODO should the protocol be expected to catch this? it doesn't so far
 def admin_mutate_constants(log, pubdir, privdir, step):
