@@ -28,7 +28,7 @@ HEX_CHARS = string.digits + string.ascii_uppercase[:6]
 def mutate_hex_string(log: logging.Logger, hex_str: str) -> str:
     "Randomly change one char in a hex string"
     new_str_chars = list(hex_str)
-    i = random.randint(0, len(hex_str))
+    i = random.randint(0, len(hex_str)-1)
     old_char = hex_str[i]
     new_char = None
     while new_char is None or new_char == old_char:
