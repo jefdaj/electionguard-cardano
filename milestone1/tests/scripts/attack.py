@@ -184,18 +184,18 @@ def device_mutate_submitted_ballot(log, pubdir, privdir, step):
     mutate_public_record_crypto_in_place(
         log, pubdir, 'ballot_submitted',
         [
-            # 'manifest_hash',
             # 'description_hash',
+            # 'manifest_hash',
             # 'pad',
-            'data'
-            'crypto_hash',
-            'proof_zero_pad',
-            'proof_zero_data',
-            'proof_one_pad',
-            'proof_one_data',
             'challenge',
-            'proof_zero_response',
+            'crypto_hash',
+            'data'
+            'proof_one_data',
+            'proof_one_pad',
             'proof_one_response',
+            'proof_zero_data',
+            'proof_zero_pad',
+            'proof_zero_response',
         ],
         **ballot_fmtargs
     )
@@ -212,20 +212,26 @@ def device_mutate_spoiled_ballot(log, pubdir, privdir, step):
     mutate_public_record_crypto_in_place(
         log, pubdir, 'ballot_spoiled',
         [
-            # 'manifest_hash',
-            'code_seed',
             # 'description_hash',
-            # 'pad',
-            'data'
-            'crypto_hash',
-            'proof_zero_pad',
-            'proof_zero_data',
-            'proof_one_pad',
-            'proof_one_data',
-            'challenge',
-            'proof_zero_response',
-            'proof_one_response',
+            # 'manifest_hash',
+
+            # I don't believe this version of ElectionGuard handles letting
+            # voters decrypt their ballots using the nonce, but I may want to
+            # write something covering that temporarily because it's a cool
+            # feature. If so, this will become testable:
             # 'nonce',
+
+            # 'pad',
+            'challenge',
+            'code_seed',
+            'crypto_hash',
+            'data'
+            'proof_one_data',
+            'proof_one_pad',
+            'proof_one_response',
+            'proof_zero_data',
+            'proof_zero_pad',
+            'proof_zero_response',
         ],
         **ballot_fmtargs
     )
