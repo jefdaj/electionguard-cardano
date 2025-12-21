@@ -77,7 +77,7 @@ def edit_random_matching_crypto_value_in_place(
         return
 
     # now do the actual edit
-    edit_index = random.randint(0, n_matching_keys)
+    edit_index = random.randint(0, n_matching_keys-1)
     n = 0
     def edit_chosen_match(k, v):
         nonlocal n
