@@ -222,8 +222,8 @@ def device_mutate_spoiled_ballot(log, pubdir, privdir, step):
             # 'nonce',
 
             # 'pad',
+            # 'code_seed',
             'challenge',
-            'code_seed',
             'crypto_hash',
             'data'
             'proof_one_data',
