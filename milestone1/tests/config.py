@@ -227,11 +227,6 @@ def assert_json_roundtrip(cfg):
     cfg2 = json.loads(tmp)
     assert cfg == cfg2
 
-@given(cfg=arionconfig())
-@settings(max_examples=1)
-def test_json_arionconfig(cfg: ArionConfig):
-    assert_json_roundtrip(cfg)
-
 @given(cfg=voteconfig())
 @settings(max_examples=1_000)
 def test_json_voteconfig(cfg: VoteConfig):

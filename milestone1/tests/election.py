@@ -420,7 +420,6 @@ def attack_all(cfg, log, step):
 
         attack(cfg, log, fn_name, attack_cfg['who'], step, seed)
 
-# TODO should the attacks be called as part of each step rather than separately?
 def election(cfg, log):
     try:
         build_manifest(cfg, log)        ; attack_all(cfg, log, 'build_manifest')
@@ -437,8 +436,6 @@ def election(cfg, log):
         decrypt_shares(cfg, log)        ; attack_all(cfg, log, 'decrypt_shares')
         decrypt_results(cfg, log)       ; attack_all(cfg, log, 'decrypt_results')
     except Exception as e:
-        # TODO is this already handled in each fn?
-        # TODO if not, use log.error here?
         print(e)
     finally:
         verify(cfg, log) ; attack_all(cfg, log, 'verify')
