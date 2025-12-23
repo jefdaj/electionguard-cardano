@@ -1,8 +1,6 @@
 Verifier Script
 ===============
 
-<a href="https://asciinema.org/a/763724" target="_blank"><img src="https://asciinema.org/a/763724.svg" /></a>
-
 [![asciicast](https://asciinema.org/a/763724.svg)](https://asciinema.org/a/763724)
 
 This verifies the results of the [election script](../election).
