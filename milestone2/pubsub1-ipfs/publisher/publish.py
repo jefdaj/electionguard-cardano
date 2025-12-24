@@ -49,19 +49,22 @@ def wrapped_json_with_path(actual_path: str, virtual_path: str) -> dict:
 
 
 async def upload_and_announce_json(actual_path: str, virtual_path: str, new_cids_path: str):
-    client = aioipfs.AsyncIPFS(maddr=IPFS_API_ADDR)
-    js = wrapped_json_with_path(actual_path, virtual_path)
-    kwargs = {
-        # 'recursive': False,
-        # 'progress' : True,   # TODO False?
-        'pin'      : True,   # this is the default
-        # 'input_enc': 'json', # this is the default
-    }
-    added_file = await client.add_json(js, **kwargs)
-    new_cids = [added_file['Hash']]
-    announce_new_cids(new_cids, new_cids_path)
-    # print('{0} {1}'.format(added_file['Hash'], added_file['Name']))
-    await client.close()
+    try:
+        client = aioipfs.AsyncIPFS(maddr=IPFS_API_ADDR)
+        js = wrapped_json_with_path(actual_path, virtual_path)
+        kwargs = {
+            # 'recursive': False,
+            # 'progress' : True,   # TODO False?
+            'pin'      : True,   # this is the default
+            # 'input_enc': 'json', # this is the default
+        }
+        added_file = await client.add_json(js, **kwargs)
+        new_cids = [added_file['Hash']]
+        announce_new_cids(new_cids, new_cids_path)
+        # print('{0} {1}'.format(added_file['Hash'], added_file['Name']))
+        await client.close()
+    except Exception as e:
+        print(e)
 
 
 class UploadNewFiles(FileSystemEventHandler):
