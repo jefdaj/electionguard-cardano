@@ -9,4 +9,4 @@ test elections, and verify some properties of the output files.
 
 For details see [this video][vid] and/or the companion [blog post][blog].
 
-![demo](./asciinema-demo-small.mp4)
+![Asciinema demo (mp4)](./asciinema-demo-small.mp4)
