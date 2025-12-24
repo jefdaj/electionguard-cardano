@@ -6,6 +6,7 @@ import logging
 import subprocess
 import time
 import random
+import sys
 
 from click_default_group import DefaultGroup
 from dotmap import DotMap
@@ -84,8 +85,10 @@ def run_in_container(
     stdout = stdout.strip()
     if return_stdout:
         return stdout
-    elif len(stdout) > 0:
-        log.info(stdout + '\n')
+    else:
+        if len(stdout) > 0:
+            log.info(stdout + '\n')
+        return proc.returncode
 
 def explain_step(fn):
     def decorated_fn(cfg, log, *args, **kwargs):
@@ -420,7 +423,7 @@ def attack_all(cfg, log, step):
 
         attack(cfg, log, fn_name, attack_cfg['who'], step, seed)
 
-def election(cfg, log):
+def election(cfg, log) -> int:
     try:
         build_manifest(cfg, log)        ; attack_all(cfg, log, 'build_manifest')
         announce_key_ceremony(cfg, log) ; attack_all(cfg, log, 'announce_key_ceremony')
@@ -438,17 +441,20 @@ def election(cfg, log):
     except Exception as e:
         print(e)
     finally:
-        verify(cfg, log) ; attack_all(cfg, log, 'verify')
+        n_errors = verify(cfg, log) ; attack_all(cfg, log, 'verify')
+        return n_errors
 
 def main(cfg, log):
     try:
         setup(cfg, log)
-        election(cfg, log)
+        code = election(cfg, log)
     except Exception as e:
         log.error(e)
         log.error('Election failed :(')
+        code = 1
     finally:
         teardown(cfg, log)
+        sys.exit(code)
 
 
 ### cli ###

@@ -757,7 +757,7 @@ def summarize_results(
     pubdir: str,
     log: logging.Logger,
     verifier_id: str,
-):
+) -> int:
     n_errors = sum(
         1  if isinstance(v, Error) else len(v)
         for v in errors.values()
@@ -868,6 +868,8 @@ def summarize_results(
         ]
         log.error('\n'.join('⛔ ' + m for m in msgs))
 
+    return n_errors
+
 
 ### cli ###
 
@@ -890,10 +892,12 @@ def main(pubdir, log, verifier_id):
 
     (successes, errors, bools) = simplify_and_partition(results, log)
 
-    summarize_results(
+    n_errors = summarize_results(
         successes, errors, bools,
         pubdir, log, verifier_id,
     )
+
+    sys.exit(n_errors)
 
 @click.command("verify")
 @click.option(
