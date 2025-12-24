@@ -3,6 +3,7 @@
 import click
 import json
 import subprocess
+import sys
 
 from click_default_group import DefaultGroup
 from dotmap import DotMap
@@ -42,7 +43,7 @@ def parse_config(cfg_path):
     ecfg.guardians.ids = [f"guardian_{i}" for i in ecfg.guardians.sequence_order]
     return cfg
 
-def run_in_container(cfg, mode, container_number, args, **kwargs):
+def run_in_container(cfg, mode, container_number, args, **kwargs) -> int:
     container_name = cfg.arion.project_name + "-" + mode + str(container_number) + "-1"
     script_path = join(cfg.arion.bind_mounts.scripts, mode + '.py')
     # TODO python don't write bytecode (here or in the image?)
@@ -68,6 +69,8 @@ def run_in_container(cfg, mode, container_number, args, **kwargs):
         if stderr is not None:
             msg += '\n' + stderr
         LOG.error(msg)
+    finally:
+        return proc.returncode
 
 def setup(cfg):
     # arion also loads cfg separately via Nix
@@ -83,7 +86,7 @@ def teardown(cfg):
 def verify(cfg):
     verifier_n  = 1
     verifier_id = f'verifier{verifier_n}'
-    run_in_container(
+    return run_in_container(
         cfg, "verifier", verifier_n,
         [
             "verify",
@@ -104,12 +107,14 @@ def VerifyCommand(
     cfg = parse_config('verify.json')
     try:
         setup(cfg)
-        verify(cfg)
+        code = verify(cfg)
     except Exception as e:
         pprint(e)
         LOG.error('Election failed :(')
+        code = 1
     finally:
         teardown(cfg)
+        sys.exit(code)
 
 @click.group(cls=DefaultGroup, default='verify', default_if_no_args=True)
 def cli() -> None:
