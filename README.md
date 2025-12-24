@@ -8,20 +8,18 @@ ElectionGuard + Cardano
 
 Work in progress on [the Catalyst fund13 project](https://milestones.projectcatalyst.io/projects/1300090).
 
-Current status as of 2025-10-30:
+Current status as of 2025-12-23:
 
 - First few [YouTube videos](https://youtube.com/@prosocialcrypto) are up.
 
 - All Milestones (1, 2, and 3) approved
 
 - [Milestone 1](./milestone1/) (ElectionGuard stuff):
-  * The 3 main scripts basically work:
+  * The 3 main scripts work:
     - Output 1.1: [election](./milestone1/election)
     - Output 1.2: [verifier](./milestone1/verifier)
     - Output 1.3: [tests](./milestone1/tests)
-  * In progress:
-    - demo and explain everything
-    - add failure/attack tests and fix any edge cases they reveal
+  * They each have a companion YouTube video and blog post
   * Other misc things done along the way:
     - Have [electionguard-python passing its tests](./milestone1/electionguard-python-tests.md)
     - Cleaned up [my fork](https://github.com/jefdaj/electionguard-python)
