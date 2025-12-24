@@ -1,6 +1,6 @@
 # pubsub1: IPFS sync with mock "blockchain" text file
 
-[demo]: ./asciinema-demo.gif
+[demo]: ./asciinema-demo.mp4
 [pubpy]: ./publisher/publish.py
 [subpy]: ./subscriber/subscribe.py
 [ac]: ./arion-compose.nix
