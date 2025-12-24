@@ -6,11 +6,12 @@ ElectionGuard + Cardano
 =======================
 </div>
 
+[yt]: https://youtube.com/@prosocialcrypto
+[blog]: https://cryptoisland.blog/tags/electionguard.html
+
 Work in progress on [the Catalyst fund13 project](https://milestones.projectcatalyst.io/projects/1300090).
 
 Current status as of 2025-12-23:
-
-- First few [YouTube videos](https://youtube.com/@prosocialcrypto) are up.
 
 - All Milestones (1, 2, and 3) approved
 
@@ -19,7 +20,7 @@ Current status as of 2025-12-23:
     - Output 1.1: [election](./milestone1/election)
     - Output 1.2: [verifier](./milestone1/verifier)
     - Output 1.3: [tests](./milestone1/tests)
-  * They each have a companion YouTube video and blog post
+  * They each have a companion video on [my YouTube channel][yt] and post on [my blog][blog]
   * Other misc things done along the way:
     - Have [electionguard-python passing its tests](./milestone1/electionguard-python-tests.md)
     - Cleaned up [my fork](https://github.com/jefdaj/electionguard-python)
