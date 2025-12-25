@@ -12,10 +12,10 @@ from watchdog.events import FileSystemEventHandler
 from pprint import pprint
 from typing import List
 
+
 # see arion-compose.nix
 # pprint(os.environ)
 IPFS_API_ADDR = os.environ['IPFS_API_ADDR']
-
 
 LAST_CIDS_WRITTEN = datetime.now()
 
@@ -66,6 +66,7 @@ async def upload_and_announce_json(actual_path: str, virtual_path: str, new_cids
         await client.close()
     except Exception as e:
         print(e)
+
 
 class UploadNewFiles(FileSystemEventHandler):
     def __init__(self, loop, upload_dir, new_cids_path, debounce_seconds=1.0, *args, **kwargs):
@@ -137,12 +138,10 @@ if __name__ == '__main__':
     observer = Observer()
     uploader = UploadNewFiles(loop, upload_dir, new_cids_path)
     observer.schedule(uploader, path=upload_dir, recursive=True)
-    observer.start()
 
     try:
+        observer.start()
         loop.run_forever()
-        while True:
-            time.sleep(1)
     except: # TODO sigint? keyboardinterrupt?
         pass
     finally:
