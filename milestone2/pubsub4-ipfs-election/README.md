@@ -23,7 +23,7 @@ data/
 └── private
     ├── admin_1
     ├── device_1
-    │   ├── ipfs
+    │   ├── egsync
     │   │   ├── 1_config
     │   │   │   ├── 1_announce
     │   │   │   ├── 2_ceremony
@@ -77,4 +77,8 @@ It could have a very simple API for now:
 
 The mapping of those calls <--> filenames can be moved from utils to the new egsync.
 
-TODO would the official ElectionGuard API help with this? Or is it basically orthogonal?
+TODO
+----
+
+- would the official ElectionGuard API help with this? Or is it basically orthogonal?
+- is a separate egsync container per role a good idea, or should you run egsync in electionguard containers?
