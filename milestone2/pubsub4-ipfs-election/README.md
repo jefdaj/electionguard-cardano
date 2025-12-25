@@ -62,7 +62,19 @@ So far I'm thinking:
 
     * match current `to_public_record` calls in Python code
     * except that the file content is replaced with a CID
-    * and I don't think we need any additional arguments?
-
 - maybe also `authorize_channel` for admin to authorize the guardians + devices + official verifiers to post
   (later, should include a public option for anyone to post disputes and verifications)
+
+Code Refactor
+-------------
+
+Every ElectionGuard role will be doing some publishing + subscribing.
+
+Maybe for now the simple way to get it going is to keep the separate publish
+and subscribe scripts, and work the publish one into utils.py? That way
+`to_public_record` publishes, but `from_public_record` only needs to look in
+the IPFS folder, same as it does with the public folder now.
+
+One other change that might be needed (not sure) is to retry
+`from_public_record` for a few seconds in case it takes longer than expected
+for the files to propagate.
