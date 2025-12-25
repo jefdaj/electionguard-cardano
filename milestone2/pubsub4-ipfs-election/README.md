@@ -65,16 +65,16 @@ So far I'm thinking:
 - maybe also `authorize_channel` for admin to authorize the guardians + devices + official verifiers to post
   (later, should include a public option for anyone to post disputes and verifications)
 
-Code Refactor
--------------
+egsync
+------
 
-Every ElectionGuard role will be doing some publishing + subscribing.
+Maybe it's time to start the egsync container(s) and have the ElectionGuard ones communicate with them via an API?
+It can be a subscriber all the time and also publish things when requested to.
+It could have a very simple API for now:
 
-Maybe for now the simple way to get it going is to keep the separate publish
-and subscribe scripts, and work the publish one into utils.py? That way
-`to_public_record` publishes, but `from_public_record` only needs to look in
-the IPFS folder, same as it does with the public folder now.
+- post `to_public_record`
+- get `from_public_record`
 
-One other change that might be needed (not sure) is to retry
-`from_public_record` for a few seconds in case it takes longer than expected
-for the files to propagate.
+The mapping of those calls <--> filenames can be moved from utils to the new egsync.
+
+TODO would the official ElectionGuard API help with this? Or is it basically orthogonal?
