@@ -58,6 +58,7 @@ So far I'm thinking:
 - channel is a JSONL opened append-only
 - each append corresponds to a UTXO
 - generic message types: `open_channel`, `close_channel`, `post_public_records` (a list of public record messages)
-- public record message types: match current `to_public_record` calls in Python code
+- public record message types: match current `to_public_record` calls in Python code,
+  except that the file content is replaced with a CID
 - maybe also `authorize_channel` for admin to authorize the guardians + devices + official verifiers to post
   (later, should include a public option for anyone to post disputes and verifications)
