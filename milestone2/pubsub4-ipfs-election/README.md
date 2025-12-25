@@ -64,6 +64,8 @@ So far I'm thinking:
     * except that the file content is replaced with a CID
 - maybe also `authorize_channel` for admin to authorize the guardians + devices + official verifiers to post
   (later, should include a public option for anyone to post disputes and verifications)
+- and `add_relay` + `remove_relay` for the admin to optionally say where they'll be serving the IPFS files from
+  (either a self hosted ipfs-cluster or pinning service, probably)
 
 egsync
 ------
