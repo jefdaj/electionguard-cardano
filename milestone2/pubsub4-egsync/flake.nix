@@ -2,32 +2,71 @@
   description = "Election via IPFS + JSON channels";
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
   inputs.arion.url = "github:jefdaj/arion/rm-obsolete-version-attribute";
-  outputs = { self, nixpkgs, arion, ... }: {
-    pkgs = nixpkgs.legacyPackages.x86_64-linux;
-    devShells.x86_64-linux.default = self.pkgs.mkShell {
-      buildInputs = with self.pkgs; [
 
+  outputs = { self, nixpkgs, arion, ... }:
+    let
+
+      # This is an actual output; see note below.
+      pkgs = nixpkgs.legacyPackages.x86_64-linux.extend py312Overlay;
+
+      # TODO is this needed?
+      py312Overlay = self: super: {
+        python312 = super.python312.override {
+          packageOverrides = pyself: pysuper: {
+            # pytest-runner       = pyself.callPackage ./python-packages/pytest-runner.nix       {};
+            # py-multiformats-cid = pyself.callPackage ./python-packages/py-multiformats-cid.nix {};
+            # aioipfs             = pyself.callPackage ./python-packages/aioipfs.nix             {};
+          };
+        };
+      };
+
+      devPkgList = ps: with ps; [
         arion.packages.x86_64-linux.arion
-        inotify-tools
+        file
         jq
         time
         tree
-
-        # python
-        # these are only the dependencies for the top-level scripts;
-        # scripts/*.py run in the electionguard-python container instead
-        (self.pkgs.python3.withPackages (ps: with ps; [
-          click
-          click-default-group
-          dotmap
-          hypothesis
-          pytest
-        ]))
-
       ];
 
-      PYTHONDONTWRITEBYTECODE = true;
+      toplevelPyPkgList = ps: with ps; [
+        click
+        click-default-group
+        dotmap
+        hypothesis
+        pytest
+      ];
 
+      egsyncPyPkgList = ps: with ps; [
+        flask
+        ipfshttpclient
+        requests
+      ];
+
+    in {
+
+      # This is expected by arion-pkgs.nix
+      # See https://github.com/hercules-ci/arion/issues/247
+      inherit pkgs;
+
+      devShells.x86_64-linux = rec {
+
+        default = toplevel;
+
+        # TODO better name for this one?
+        toplevel = pkgs.mkShell {
+          nativeBuildInputs = devPkgList pkgs ++ [
+            (pkgs.python312.withPackages toplevelPyPkgList)
+          ];
+          PYTHONDONTWRITEBYTECODE = true;
+        };
+
+        egsync = pkgs.mkShell {
+          nativeBuildInputs = devPkgList pkgs ++ [
+            (pkgs.python312.withPackages egsyncPyPkgList)
+          ];
+          PYTHONDONTWRITEBYTECODE = true;
+        };
+
+      };
     };
-  };
 }
