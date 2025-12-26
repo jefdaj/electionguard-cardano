@@ -4,15 +4,13 @@ let
   projectConfig = builtins.fromJSON (builtins.readFile (builtins.getEnv "PROJECT_CONFIG"));
 
   # Shared IPFS mesh network (ipfs <-> ipfs only)
-  ipfsMeshNetworkName = "${projectConfig.arion.project_name}-ipfs-mesh-net";
+  ipfsMeshNetworkName = "ipfs-mesh-net";
 
-  # Per-triplet app net (egpy <-> egsync)
-  mkAppNetworkName = mode: n:
-    "${projectConfig.arion.project_name}-${mode}${builtins.toString n}-app-net";
+  # Per-triplet egpy net (egpy <-> egsync)
+  mkAppNetworkName = mode: n: "${mode}${builtins.toString n}-egpy-net";
 
-  # Per-triplet sync net (egsync <-> ipfs)
-  mkSyncNetworkName = mode: n:
-    "${projectConfig.arion.project_name}-${mode}${builtins.toString n}-sync-net";
+  # Per-triplet ipfs net (egsync <-> ipfs)
+  mkSyncNetworkName = mode: n: "${mode}${builtins.toString n}-ipfs-net";
 
   # ---------------------------------------------------------------------------
   # Containers
@@ -53,8 +51,8 @@ let
     '' ];
 
     # On two per-triplet nets:
-    #   - app-net: talk to local egpy
-    #   - sync-net: talk to local ipfs
+    #   - egpy-net: talk to local egpy
+    #   - ipfs-net: talk to local ipfs
     service.networks = [
       (mkAppNetworkName  mode n)
       (mkSyncNetworkName mode n)
@@ -75,7 +73,7 @@ let
     '' ];
 
     # On:
-    #   - its per-triplet sync-net (to talk to local egsync)
+    #   - its per-triplet ipfs-net (to talk to local egsync)
     #   - global ipfs-mesh-net (to talk to other ipfs nodes)
     service.networks = [
       (mkSyncNetworkName mode n)
@@ -135,7 +133,7 @@ let
         { mode = "verifier"; n = cfg.election.verifiers.count; }
       ];
 
-      # For each triplet: app-net and sync-net
+      # For each triplet: egpy-net and ipfs-net
       perTripletNetworks =
         pkgs.lib.concatMap
           (c: pkgs.lib.concatMap
