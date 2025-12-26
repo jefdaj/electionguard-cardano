@@ -78,9 +78,3 @@ It could have a very simple API for now:
 - get `from_public_record`
 
 The mapping of those calls <--> filenames can be moved from utils to the new egsync.
-
-TODO
-----
-
-- would the official ElectionGuard API help with this? Or is it basically orthogonal?
-- is a separate egsync container per role a good idea, or should you run egsync in electionguard containers?
