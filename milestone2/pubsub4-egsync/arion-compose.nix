@@ -1,128 +1,29 @@
 { pkgs, ... }:
 
 let
+
+  ###############
+  # json config #
+  ###############
+
   projectConfig = builtins.fromJSON (builtins.readFile (builtins.getEnv "PROJECT_CONFIG"));
 
-  # Shared IPFS mesh network (connects all *-ipfs containers)
+
+  ############
+  # networks #
+  ############
+
+  # each triplet should be hooked up like:
+  # egpy <--1--> egsync <--2--> ipfs <--3--> ipfs mesh
+
+  # 1. per triplet egpy net: egpy <--> egsync
+  egpyNetworkName = mode: n: "${mode}${builtins.toString n}-egpy-net";
+
+  # 2. per triplet ipfs net: egsync <--> ipfs
+  ipfsNetworkName = mode: n: "${mode}${builtins.toString n}-ipfs-net";
+
+  # 3. shared ipfs net
   ipfsMeshNetworkName = "ipfs-mesh-net";
-
-  # Per-triplet egpy net (egpy <-> egsync)
-  mkEgpyNetworkName = mode: n: "${mode}${builtins.toString n}-egpy-net";
-
-  # Per-triplet ipfs net (egsync <-> ipfs)
-  mkIpfsNetworkName = mode: n: "${mode}${builtins.toString n}-ipfs-net";
-
-  # ---------------------------------------------------------------------------
-  # Containers
-  # ---------------------------------------------------------------------------
-
-  mkEgpyContainer = mode: scripts_dir: public_dir: private_dir: n: {
-    service.image = "ghcr.io/jefdaj/electionguard-python:1.4.0";
-
-    service.volumes = [
-      "${scripts_dir}:/scripts/"
-      "${public_dir}:/data/public"
-      "${private_dir}/${mode}_${builtins.toString n}/egpy:/data/private"
-    ];
-
-    service.command = [ "sh" "-c" ''
-      while true; do sleep 1000; done
-    '' ];
-
-    # Only on its per-triplet app network
-    service.networks = [
-      (mkEgpyNetworkName mode n)
-    ];
-  };
-
-  # Placeholder egsync: isolated between triplets
-  mkEgsyncContainer = mode: scripts_dir: public_dir: private_dir: n: {
-    service.image = "busybox:latest";
-
-    service.volumes = [
-      "${scripts_dir}:/scripts/"
-      "${public_dir}:/data/public"
-      "${private_dir}/${mode}_${builtins.toString n}/egsync:/data/private"
-    ];
-
-    service.command = [ "sh" "-c" ''
-      # placeholder for future Flask sync manager
-      while true; do sleep 1000; done
-    '' ];
-
-    # On two per-triplet nets:
-    #   - egpy-net: talk to local egpy
-    #   - ipfs-net: talk to local ipfs
-    service.networks = [
-      (mkEgpyNetworkName mode n)
-      (mkIpfsNetworkName mode n)
-    ];
-  };
-
-  mkIpfsContainer = mode: private_dir: n: {
-    service.image = "ipfs/kubo:latest";
-
-    # one IPFS repo per logical node
-    service.volumes = [
-      "${private_dir}/${mode}_${builtins.toString n}/ipfs:/data/ipfs"
-    ];
-
-    service.command = [ "sh" "-c" ''
-      ipfs init --profile server || true
-      ipfs daemon --migrate=true --offline=false
-    '' ];
-
-    # On:
-    #   - its per-triplet ipfs-net (to talk to local egsync)
-    #   - global ipfs-mesh-net (to talk to other ipfs nodes)
-    service.networks = [
-      (mkIpfsNetworkName mode n)
-      ipfsMeshNetworkName
-    ];
-  };
-
-  # ---------------------------------------------------------------------------
-  # Attr helpers
-  # ---------------------------------------------------------------------------
-
-  mkEgpyAttrs = mode: scripts_dir: public_dir: private_dir: n: {
-    name = "${mode}${builtins.toString n}-egpy";
-    value = mkEgpyContainer mode scripts_dir public_dir private_dir n;
-  };
-
-  mkEgsyncAttrs = mode: scripts_dir: public_dir: private_dir: n: {
-    name = "${mode}${builtins.toString n}-egsync";
-    value = mkEgsyncContainer mode scripts_dir public_dir private_dir n;
-  };
-
-  mkIpfsAttrs = mode: private_dir: n: {
-    name = "${mode}${builtins.toString n}-ipfs";
-    value = mkIpfsContainer mode private_dir n;
-  };
-
-  # Produce (egpy, egsync, ipfs) triplets for 1..nVms
-  mkTripletAttrsList = dataDir: mode: nVms:
-    let
-      scripts_dir = "./scripts";
-      public_dir  = "${dataDir}/public";
-      private_dir = "${dataDir}/private";
-      range       = pkgs.lib.range 1 nVms;
-    in
-    pkgs.lib.concatMap (n: [
-      (mkEgpyAttrs   mode scripts_dir public_dir private_dir n)
-      (mkEgsyncAttrs mode scripts_dir public_dir private_dir n)
-      (mkIpfsAttrs   mode private_dir n)
-    ]) range;
-
-  mkServices = cfg:
-    builtins.listToAttrs (mkTripletAttrsList cfg.arion.data_dir "admin"     1) //
-    builtins.listToAttrs (mkTripletAttrsList cfg.arion.data_dir "device"    cfg.election.devices.count) //
-    builtins.listToAttrs (mkTripletAttrsList cfg.arion.data_dir "guardian"  cfg.election.guardians.count) //
-    builtins.listToAttrs (mkTripletAttrsList cfg.arion.data_dir "verifier"  cfg.election.verifiers.count);
-
-  # ---------------------------------------------------------------------------
-  # Networks
-  # ---------------------------------------------------------------------------
 
   mkNetworks = cfg:
     let
@@ -139,11 +40,11 @@ let
           (c: pkgs.lib.concatMap
             (n: [
               {
-                name = mkEgpyNetworkName c.mode n;
+                name = egpyNetworkName c.mode n;
                 value = { driver = "bridge"; };
               }
               {
-                name = mkIpfsNetworkName c.mode n;
+                name = ipfsNetworkName c.mode n;
                 value = { driver = "bridge"; };
               }
             ])
@@ -162,10 +63,117 @@ let
       ]
     );
 
+
+  ##############
+  # containers #
+  ##############
+
+  egpyContainer = mode: scripts_dir: public_dir: private_dir: n: {
+    service.image = "ghcr.io/jefdaj/electionguard-python:1.4.0";
+
+    service.volumes = [
+      "${scripts_dir}:/scripts/"
+      "${public_dir}:/data/public"
+      "${private_dir}/${mode}_${builtins.toString n}/egpy:/data/private"
+    ];
+
+    service.command = [ "sh" "-c" ''
+      while true; do sleep 1000; done
+    '' ];
+
+    # [egpy] <--> egsync
+    service.networks = [
+      (egpyNetworkName mode n)
+    ];
+  };
+
+  # TODO write egsync
+  egsyncContainer = mode: scripts_dir: public_dir: private_dir: n: {
+    service.image = "busybox:latest";
+
+    service.volumes = [
+      "${scripts_dir}:/scripts/"
+      "${public_dir}:/data/public"
+      "${private_dir}/${mode}_${builtins.toString n}/egsync:/data/private"
+    ];
+
+    service.command = [ "sh" "-c" ''
+      # placeholder for future Flask sync manager
+      while true; do sleep 1000; done
+    '' ];
+
+    # egpy <--> [egsync] <--> ipfs <--> ipfs mesh
+    service.networks = [
+      (egpyNetworkName mode n)
+      (ipfsNetworkName mode n)
+    ];
+  };
+
+  ipfsContainer = mode: private_dir: n: {
+    service.image = "ipfs/kubo:latest";
+
+    # one IPFS repo per logical node
+    service.volumes = [
+      "${private_dir}/${mode}_${builtins.toString n}/ipfs:/data/ipfs"
+    ];
+
+    service.command = [ "sh" "-c" ''
+      ipfs init --profile server || true
+      ipfs daemon --migrate=true --offline=false
+    '' ];
+
+    # On:
+    #   - its per-triplet ipfs-net (to talk to local egsync)
+    #   - global ipfs-mesh-net (to talk to other ipfs nodes)
+    service.networks = [
+      (ipfsNetworkName mode n)
+      ipfsMeshNetworkName
+    ];
+  };
+
+
+  ############
+  # services #
+  ############
+
+  egpyAttrs = mode: scripts_dir: public_dir: private_dir: n: {
+    name = "${mode}${builtins.toString n}-egpy";
+    value = egpyContainer mode scripts_dir public_dir private_dir n;
+  };
+
+  egsyncAttrs = mode: scripts_dir: public_dir: private_dir: n: {
+    name = "${mode}${builtins.toString n}-egsync";
+    value = egsyncContainer mode scripts_dir public_dir private_dir n;
+  };
+
+  ipfsAttrs = mode: private_dir: n: {
+    name = "${mode}${builtins.toString n}-ipfs";
+    value = ipfsContainer mode private_dir n;
+  };
+
+  # Produce (egpy, egsync, ipfs) triplets for 1..nVms
+  tripletAttrsList = dataDir: mode: nVms:
+    let
+      scripts_dir = "./scripts";
+      public_dir  = "${dataDir}/public";
+      private_dir = "${dataDir}/private";
+      range       = pkgs.lib.range 1 nVms;
+    in
+    pkgs.lib.concatMap (n: [
+      (egpyAttrs   mode scripts_dir public_dir private_dir n)
+      (egsyncAttrs mode scripts_dir public_dir private_dir n)
+      (ipfsAttrs   mode private_dir n)
+    ]) range;
+
+  mkServices = cfg:
+    builtins.listToAttrs (tripletAttrsList cfg.arion.data_dir "admin"    1) //
+    builtins.listToAttrs (tripletAttrsList cfg.arion.data_dir "device"   cfg.election.devices.count) //
+    builtins.listToAttrs (tripletAttrsList cfg.arion.data_dir "guardian" cfg.election.guardians.count) //
+    builtins.listToAttrs (tripletAttrsList cfg.arion.data_dir "verifier" cfg.election.verifiers.count);
+
+
 in {
   config.project.name = projectConfig.arion.project_name;
-
   config.services = mkServices projectConfig;
-
   config.networks = mkNetworks projectConfig;
 }
