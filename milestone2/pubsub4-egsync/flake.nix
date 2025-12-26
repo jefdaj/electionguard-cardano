@@ -42,11 +42,31 @@
         requests
       ];
 
+      # based on https://stackoverflow.com/a/78450917
+      singleScriptPyPkg = script: version: pyDeps:
+        let scriptName = builtins.baseNameOf script;
+        in pkgs.python312.pkgs.buildPythonApplication rec {
+          name = "${scriptName}-${version}";
+          inherit version;
+          pyproject = false;
+          propagatedBuildInputs = pyDeps pkgs.python312.pkgs;
+          src = script;
+          dontUnpack = true;
+          installPhase = ''
+            install -Dm755 "${src}" "$out/bin/${scriptName}"
+          '';
+        };
+
     in {
 
       # This is expected by arion-pkgs.nix
       # See https://github.com/hercules-ci/arion/issues/247
       inherit pkgs;
+
+      # `nix build .#egsync`
+      packages.x86_64-linux = rec {
+        egsync = singleScriptPyPkg ./egsync.py "0.1" egsyncPyPkgList;
+      };
 
       devShells.x86_64-linux = rec {
 

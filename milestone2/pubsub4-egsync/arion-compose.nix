@@ -90,23 +90,31 @@ let
   # TODO write egsync
   # TODO no private_dir needed?
   egsyncContainer = mode: public_dir: private_dir: n: {
-    service.image = "busybox:latest";
+    # service.image = "busybox:latest";
 
     service.volumes = [
       "${public_dir}:/data/public"
       "${private_dir}/${mode}_${builtins.toString n}/egsync:/data/private"
     ];
 
-    service.command = [ "sh" "-c" ''
-      # placeholder for future Flask sync manager
-      while true; do sleep 1000; done
-    '' ];
-
     # egpy <--> [egsync] <--> ipfs <--> ipfs mesh
     service.networks = [
       (egpyNetworkName mode n)
       (ipfsNetworkName mode n)
     ];
+
+    service.useHostStore = true;
+    service.stop_signal = "SIGINT";
+    service.command = [
+      "egsync.py"
+    ];
+    service.restart = "on-failure";
+
+    image.enableRecommendedContents = true; # sh, env, misc lightweight files
+    image.contents = [
+      flake.packages.x86_64-linux.egsync
+    ];
+ 
   };
 
   ipfsContainer = mode: private_dir: n: {
