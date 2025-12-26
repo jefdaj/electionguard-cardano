@@ -3,14 +3,14 @@
 let
   projectConfig = builtins.fromJSON (builtins.readFile (builtins.getEnv "PROJECT_CONFIG"));
 
-  # Shared IPFS mesh network (ipfs <-> ipfs only)
+  # Shared IPFS mesh network (connects all *-ipfs containers)
   ipfsMeshNetworkName = "ipfs-mesh-net";
 
   # Per-triplet egpy net (egpy <-> egsync)
-  mkAppNetworkName = mode: n: "${mode}${builtins.toString n}-egpy-net";
+  mkEgpyNetworkName = mode: n: "${mode}${builtins.toString n}-egpy-net";
 
   # Per-triplet ipfs net (egsync <-> ipfs)
-  mkSyncNetworkName = mode: n: "${mode}${builtins.toString n}-ipfs-net";
+  mkIpfsNetworkName = mode: n: "${mode}${builtins.toString n}-ipfs-net";
 
   # ---------------------------------------------------------------------------
   # Containers
@@ -31,7 +31,7 @@ let
 
     # Only on its per-triplet app network
     service.networks = [
-      (mkAppNetworkName mode n)
+      (mkEgpyNetworkName mode n)
     ];
   };
 
@@ -54,8 +54,8 @@ let
     #   - egpy-net: talk to local egpy
     #   - ipfs-net: talk to local ipfs
     service.networks = [
-      (mkAppNetworkName  mode n)
-      (mkSyncNetworkName mode n)
+      (mkEgpyNetworkName mode n)
+      (mkIpfsNetworkName mode n)
     ];
   };
 
@@ -76,7 +76,7 @@ let
     #   - its per-triplet ipfs-net (to talk to local egsync)
     #   - global ipfs-mesh-net (to talk to other ipfs nodes)
     service.networks = [
-      (mkSyncNetworkName mode n)
+      (mkIpfsNetworkName mode n)
       ipfsMeshNetworkName
     ];
   };
@@ -139,11 +139,11 @@ let
           (c: pkgs.lib.concatMap
             (n: [
               {
-                name = mkAppNetworkName c.mode n;
+                name = mkEgpyNetworkName c.mode n;
                 value = { driver = "bridge"; };
               }
               {
-                name = mkSyncNetworkName c.mode n;
+                name = mkIpfsNetworkName c.mode n;
                 value = { driver = "bridge"; };
               }
             ])
