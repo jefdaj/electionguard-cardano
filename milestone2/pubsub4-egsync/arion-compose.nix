@@ -88,11 +88,11 @@ let
   };
 
   # TODO write egsync
-  egsyncContainer = mode: scripts_dir: public_dir: private_dir: n: {
+  # TODO no private_dir needed?
+  egsyncContainer = mode: public_dir: private_dir: n: {
     service.image = "busybox:latest";
 
     service.volumes = [
-      "${scripts_dir}:/scripts/"
       "${public_dir}:/data/public"
       "${private_dir}/${mode}_${builtins.toString n}/egsync:/data/private"
     ];
@@ -141,9 +141,10 @@ let
     value = egpyContainer mode scripts_dir public_dir private_dir n;
   };
 
-  egsyncAttrs = mode: scripts_dir: public_dir: private_dir: n: {
+  # TODO no private_dir needed?
+  egsyncAttrs = mode: public_dir: private_dir: n: {
     name = "${mode}${builtins.toString n}-egsync";
-    value = egsyncContainer mode scripts_dir public_dir private_dir n;
+    value = egsyncContainer mode public_dir private_dir n;
   };
 
   ipfsAttrs = mode: private_dir: n: {
@@ -154,14 +155,14 @@ let
   # Produce (egpy, egsync, ipfs) triplets for 1..nVms
   tripletAttrsList = dataDir: mode: nVms:
     let
-      scripts_dir = "./scripts";
+      scripts_dir = "./egpy_scripts";
       public_dir  = "${dataDir}/public";
       private_dir = "${dataDir}/private";
       range       = pkgs.lib.range 1 nVms;
     in
     pkgs.lib.concatMap (n: [
       (egpyAttrs   mode scripts_dir public_dir private_dir n)
-      (egsyncAttrs mode scripts_dir public_dir private_dir n)
+      (egsyncAttrs mode public_dir private_dir n)
       (ipfsAttrs   mode private_dir n)
     ]) range;
 

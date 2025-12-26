@@ -10,7 +10,7 @@ from typing import Callable, Dict, List
 
 
 # This has to be defined in a separate file from the actual attack functions
-# (they live in scripts/attack.py) because they run in electionguard-python
+# (they live in egpy_scripts/attack.py) because they run in electionguard-python
 # containers, whereas this runs on the host system and will not necessarily be
 # able to import the electionguard module.
 ATTACKS = {
