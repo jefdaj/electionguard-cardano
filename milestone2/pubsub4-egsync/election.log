@@ -1,0 +1,150 @@
+### setup ###
+
+
+/nix/store/hxy1vk2lvv6qsqv9cvas5k7hi1s8fh98-docker-compose.yaml
+ Network test  Creating
+ Network test  Created
+ Container test-guardian2-1  Creating
+ Container test-device1-1  Creating
+ Container test-admin1-1  Creating
+ Container test-verifier1-1  Creating
+ Container test-guardian3-1  Creating
+ Container test-guardian1-1  Creating
+ Container test-guardian3-1  Created
+ Container test-device1-1  Created
+ Container test-guardian1-1  Created
+ Container test-admin1-1  Created
+ Container test-guardian2-1  Created
+ Container test-verifier1-1  Created
+ Container test-guardian2-1  Starting
+ Container test-admin1-1  Starting
+ Container test-guardian1-1  Starting
+ Container test-guardian3-1  Starting
+ Container test-verifier1-1  Starting
+ Container test-device1-1  Starting
+ Container test-guardian1-1  Started
+ Container test-admin1-1  Started
+ Container test-guardian2-1  Started
+ Container test-guardian3-1  Started
+ Container test-device1-1  Started
+ Container test-verifier1-1  Started
+
+### build_manifest ###
+
+docker exec test-admin1-1 poetry run /scripts/admin.py build-manifest --public-dir /data/public --referendum-question Should pineapple be banned on pizza?
+
+### announce_key_ceremony ###
+
+docker exec test-admin1-1 poetry run /scripts/admin.py announce-key-ceremony --public-dir /data/public --guardian-count 3 --guardian-quorum 2
+
+### key_ceremony_round1 ###
+
+docker exec test-guardian1-1 poetry run /scripts/guardian.py key-ceremony --public-dir /data/public --private-dir /data/private --ceremony-round 1 --guardian-id guardian_1 --guardian-sequence-order 1
+docker exec test-guardian2-1 poetry run /scripts/guardian.py key-ceremony --public-dir /data/public --private-dir /data/private --ceremony-round 1 --guardian-id guardian_2 --guardian-sequence-order 2
+docker exec test-guardian3-1 poetry run /scripts/guardian.py key-ceremony --public-dir /data/public --private-dir /data/private --ceremony-round 1 --guardian-id guardian_3 --guardian-sequence-order 3
+
+### key_ceremony_round2 ###
+
+docker exec test-guardian1-1 poetry run /scripts/guardian.py key-ceremony --public-dir /data/public --private-dir /data/private --ceremony-round 2 --guardian-id guardian_1 --guardian-sequence-order 1
+docker exec test-guardian2-1 poetry run /scripts/guardian.py key-ceremony --public-dir /data/public --private-dir /data/private --ceremony-round 2 --guardian-id guardian_2 --guardian-sequence-order 2
+docker exec test-guardian3-1 poetry run /scripts/guardian.py key-ceremony --public-dir /data/public --private-dir /data/private --ceremony-round 2 --guardian-id guardian_3 --guardian-sequence-order 3
+
+### key_ceremony_round3 ###
+
+docker exec test-guardian1-1 poetry run /scripts/guardian.py key-ceremony --public-dir /data/public --private-dir /data/private --ceremony-round 3 --guardian-id guardian_1 --guardian-sequence-order 1
+docker exec test-guardian2-1 poetry run /scripts/guardian.py key-ceremony --public-dir /data/public --private-dir /data/private --ceremony-round 3 --guardian-id guardian_2 --guardian-sequence-order 2
+docker exec test-guardian3-1 poetry run /scripts/guardian.py key-ceremony --public-dir /data/public --private-dir /data/private --ceremony-round 3 --guardian-id guardian_3 --guardian-sequence-order 3
+
+### publish_joint_key ###
+
+docker exec test-admin1-1 poetry run /scripts/admin.py publish-joint-key --public-dir /data/public
+
+### build_election ###
+
+docker exec test-admin1-1 poetry run /scripts/admin.py build-election --public-dir /data/public
+
+### add_devices ###
+
+docker exec test-device1-1 poetry run /scripts/device.py add-device --public-dir /data/public --device-number 1
+
+### vote_commit_all ###
+
+docker exec test-device1-1 poetry run /scripts/device.py vote_commit --public-dir /data/public --private-dir /data/private --device-number 1 --candidate Yes
+docker exec test-device1-1 poetry run /scripts/device.py vote_commit --public-dir /data/public --private-dir /data/private --device-number 1 --candidate Yes
+docker exec test-device1-1 poetry run /scripts/device.py vote_commit --public-dir /data/public --private-dir /data/private --device-number 1 --candidate Yes
+docker exec test-device1-1 poetry run /scripts/device.py vote_commit --public-dir /data/public --private-dir /data/private --device-number 1 --candidate Yes
+docker exec test-device1-1 poetry run /scripts/device.py vote_commit --public-dir /data/public --private-dir /data/private --device-number 1 --candidate No
+docker exec test-device1-1 poetry run /scripts/device.py vote_commit --public-dir /data/public --private-dir /data/private --device-number 1 --candidate No
+docker exec test-device1-1 poetry run /scripts/device.py vote_commit --public-dir /data/public --private-dir /data/private --device-number 1 --candidate No
+docker exec test-device1-1 poetry run /scripts/device.py vote_commit --public-dir /data/public --private-dir /data/private --device-number 1 --candidate No
+docker exec test-device1-1 poetry run /scripts/device.py vote_commit --public-dir /data/public --private-dir /data/private --device-number 1 --candidate Unsure
+docker exec test-device1-1 poetry run /scripts/device.py vote_commit --public-dir /data/public --private-dir /data/private --device-number 1 --candidate Unsure
+docker exec test-device1-1 poetry run /scripts/device.py vote_commit --public-dir /data/public --private-dir /data/private --device-number 1 --candidate Unsure
+docker exec test-device1-1 poetry run /scripts/device.py vote_commit --public-dir /data/public --private-dir /data/private --device-number 1 --candidate Unsure
+
+### vote_reveal_all ###
+
+docker exec test-device1-1 poetry run /scripts/device.py vote_reveal --public-dir /data/public --private-dir /data/private --device-number 1 --ballot-id ballot-18bd416a-e281-11f0-b76d-cac3a799f840 --spoil True
+docker exec test-device1-1 poetry run /scripts/device.py vote_reveal --public-dir /data/public --private-dir /data/private --device-number 1 --ballot-id ballot-19384162-e281-11f0-9f56-cac3a799f840 --spoil True
+docker exec test-device1-1 poetry run /scripts/device.py vote_reveal --public-dir /data/public --private-dir /data/private --device-number 1 --ballot-id ballot-19b2db52-e281-11f0-8f31-cac3a799f840 --spoil True
+docker exec test-device1-1 poetry run /scripts/device.py vote_reveal --public-dir /data/public --private-dir /data/private --device-number 1 --ballot-id ballot-1a2f8666-e281-11f0-a67a-cac3a799f840 --spoil False
+docker exec test-device1-1 poetry run /scripts/device.py vote_reveal --public-dir /data/public --private-dir /data/private --device-number 1 --ballot-id ballot-1aad1392-e281-11f0-b0a3-cac3a799f840 --spoil True
+docker exec test-device1-1 poetry run /scripts/device.py vote_reveal --public-dir /data/public --private-dir /data/private --device-number 1 --ballot-id ballot-1b29487c-e281-11f0-8c43-cac3a799f840 --spoil True
+docker exec test-device1-1 poetry run /scripts/device.py vote_reveal --public-dir /data/public --private-dir /data/private --device-number 1 --ballot-id ballot-1ba611f4-e281-11f0-9bf5-cac3a799f840 --spoil False
+docker exec test-device1-1 poetry run /scripts/device.py vote_reveal --public-dir /data/public --private-dir /data/private --device-number 1 --ballot-id ballot-1c1f5e2e-e281-11f0-a5c1-cac3a799f840 --spoil False
+docker exec test-device1-1 poetry run /scripts/device.py vote_reveal --public-dir /data/public --private-dir /data/private --device-number 1 --ballot-id ballot-1c9baf4c-e281-11f0-882c-cac3a799f840 --spoil True
+docker exec test-device1-1 poetry run /scripts/device.py vote_reveal --public-dir /data/public --private-dir /data/private --device-number 1 --ballot-id ballot-1d1851f0-e281-11f0-bdba-cac3a799f840 --spoil False
+docker exec test-device1-1 poetry run /scripts/device.py vote_reveal --public-dir /data/public --private-dir /data/private --device-number 1 --ballot-id ballot-1d9560d2-e281-11f0-9a81-cac3a799f840 --spoil False
+docker exec test-device1-1 poetry run /scripts/device.py vote_reveal --public-dir /data/public --private-dir /data/private --device-number 1 --ballot-id ballot-1e127b30-e281-11f0-889a-cac3a799f840 --spoil False
+
+### tally ###
+
+docker exec test-admin1-1 poetry run /scripts/admin.py tally --public-dir /data/public
+
+### decrypt_shares ###
+
+docker exec test-guardian1-1 poetry run /scripts/guardian.py decrypt-shares --public-dir /data/public --private-dir /data/private --guardian-id guardian_1
+docker exec test-guardian2-1 poetry run /scripts/guardian.py decrypt-shares --public-dir /data/public --private-dir /data/private --guardian-id guardian_2
+docker exec test-guardian3-1 poetry run /scripts/guardian.py decrypt-shares --public-dir /data/public --private-dir /data/private --guardian-id guardian_3
+
+### decrypt_results ###
+
+docker exec test-admin1-1 poetry run /scripts/admin.py decrypt-results --public-dir /data/public
+
+### verify ###
+
+docker exec test-admin1-1 poetry run /scripts/verifier.py verify --public-dir /data/public --verifier-id admin_1 --logfile /data/private/verify.log
+docker exec test-guardian1-1 poetry run /scripts/verifier.py verify --public-dir /data/public --verifier-id guardian_1 --logfile /data/private/verify.log
+docker exec test-guardian2-1 poetry run /scripts/verifier.py verify --public-dir /data/public --verifier-id guardian_2 --logfile /data/private/verify.log
+docker exec test-guardian3-1 poetry run /scripts/verifier.py verify --public-dir /data/public --verifier-id guardian_3 --logfile /data/private/verify.log
+docker exec test-verifier1-1 poetry run /scripts/verifier.py verify --public-dir /data/public --verifier-id verifier_1 --logfile /data/private/verify.log
+
+### teardown ###
+
+Container test-verifier1-1  Stopping
+ Container test-admin1-1  Stopping
+ Container test-device1-1  Stopping
+ Container test-guardian2-1  Stopping
+ Container test-guardian3-1  Stopping
+ Container test-guardian1-1  Stopping
+ Container test-verifier1-1  Stopped
+ Container test-verifier1-1  Removing
+ Container test-verifier1-1  Removed
+ Container test-guardian2-1  Stopped
+ Container test-guardian2-1  Removing
+ Container test-guardian2-1  Removed
+ Container test-guardian1-1  Stopped
+ Container test-guardian1-1  Removing
+ Container test-guardian1-1  Removed
+ Container test-guardian3-1  Stopped
+ Container test-guardian3-1  Removing
+ Container test-guardian3-1  Removed
+ Container test-admin1-1  Stopped
+ Container test-admin1-1  Removing
+ Container test-admin1-1  Removed
+ Container test-device1-1  Stopped
+ Container test-device1-1  Removing
+ Container test-device1-1  Removed
+ Network test  Removing
+ Network test  Removed
+
