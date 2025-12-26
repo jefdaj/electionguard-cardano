@@ -22,7 +22,7 @@ let
     service.volumes = [
       "${scripts_dir}:/scripts/"
       "${public_dir}:/data/public"
-      "${private_dir}/${mode}_${builtins.toString n}:/data/private"
+      "${private_dir}/${mode}_${builtins.toString n}/egpy:/data/private"
     ];
 
     service.command = [ "sh" "-c" ''
@@ -42,7 +42,7 @@ let
     service.volumes = [
       "${scripts_dir}:/scripts/"
       "${public_dir}:/data/public"
-      "${private_dir}/${mode}_${builtins.toString n}:/data/private"
+      "${private_dir}/${mode}_${builtins.toString n}/egsync:/data/private"
     ];
 
     service.command = [ "sh" "-c" ''
