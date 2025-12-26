@@ -15,7 +15,6 @@ let
       "${public_dir}:/data/public"
 
       # each container only has access to its own private subdir
-      # TODO is it confusing that they're each mounted to the same path?
       "${private_dir}/${mode}_${builtins.toString n}:/data/private"
     ];
 
@@ -32,7 +31,7 @@ let
   };
 
   mkAttrs = mode: scripts_dir: public_dir: private_dir: n: {
-    name = mode + builtins.toString n;
+    name = mode + builtins.toString n + "-egpy";
     value = mkContainer mode scripts_dir public_dir private_dir n;
   };
 

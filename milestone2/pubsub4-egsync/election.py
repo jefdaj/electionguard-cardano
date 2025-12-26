@@ -69,7 +69,7 @@ def run_in_container(
     return_stdout=False,
     **kwargs
 ):
-    container_name = cfg.arion.project_name + "-" + container_role + str(container_number) + "-1"
+    container_name = cfg.arion.project_name + "-" + container_role + str(container_number) + "-egpy-1"
     script_path = join(cfg.arion.bind_mounts.scripts, script_name)
     args = ["docker", "exec", container_name,
             "poetry", "run", script_path] + args
