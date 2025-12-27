@@ -215,10 +215,12 @@ def to_public_record(egsync_api: str, record_type: str, obj, **fmtargs):
     # serialize Python object → JSON-serializable dict
     # raw = serialize.to_raw(obj).encode(serialize.BYTE_ENCODING)
     payload = to_jsonable(obj)
-    # print(type(payload))
-    # pprint(payload)
+    print(type(payload))
+    pprint(egsync_api)
+    pprint(payload)
 
     url = _public_record_url(egsync_api, record_type, **fmtargs)
+    print(url)
     resp = requests.post(url, json=payload, timeout=5)
     resp.raise_for_status()  # raise if 4xx/5xx
 

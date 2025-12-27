@@ -98,7 +98,7 @@ let
     # service.image = "busybox:latest";
 
     service.volumes = [
-      "${public_dir}:/data/public"
+      "${public_dir}:/data/onchain"
       "${private_dir}/${mode}_${builtins.toString n}/egsync:/data/private"
     ];
 

@@ -86,7 +86,6 @@ def BuildManifestCommand(
     provided by the user.
     """
 
-    print(f'BuildManifestCommand egsync_api: {egsync_api}')
     now = datetime.utcnow()
     county_id = "electionguard-cardano-test-county"
     contest_name = referendum_question

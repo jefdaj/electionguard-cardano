@@ -3,14 +3,19 @@
 import os
 import threading
 import time
-from typing import List
-
-from flask import Flask, jsonify, render_template_string, request, abort
+import json
 import ipfshttpclient
 import requests
 
-# TODO how is this loaded again? is it an env var? static?
-PUBLIC_DIR = '/data'
+from flask import Flask, jsonify, render_template_string, request, abort
+from os import makedirs
+from os.path import join
+from typing import List
+
+PUBLIC_DIR = '/data/onchain'
+
+# TODO better naming convention now that the "public" dir is private?
+PRIVATE_DIR = '/data/private'
 
 # TODO should egsync be converting to/from these types? or delegating that to egpy?
 # TODO can there be one source of truth for this in all scripts?
@@ -138,21 +143,22 @@ def record_path(records_map, root_dir:str, record_type: str, **fmtargs):
 
 # you probably want the public or private versions below
 def to_record(records_map, record_type: str, obj, **fmtargs):
-    (_, dname, fstr) = records_map[record_type]
-    dpath = join(PUBLIC_DIR, dname)
+    (dname, fstr) = records_map[record_type]
+    dpath = join(PRIVATE_DIR, dname)
     makedirs(dpath, exist_ok=True)
     fname = fstr.format(**fmtargs)
     # serialize.to_file(obj, fname, dpath)
-    fpath = join(dpath, fname)
+    fpath = join(dpath, fname + '.json')
     # TODO is this right? nothing special?
     with open(fpath, 'w') as f:
-        json.dump(f)
+        json.dump(obj, f)
+    print(f'dumped {record_type} to {fpath}')
 
 # you probably want the public or private versions below
 # TODO separate into the json part (here) and the typed part (still in util.py?)
 def from_record(records_map, record_type: str, **fmtargs):
-    (_, dname, fstr) = records_map[record_type]
-    dpath = join(PUBLIC_DIR, dname)
+    (dname, fstr) = records_map[record_type]
+    dpath = join(PRIVATE_DIR, dname)
     fname = fstr.format(**fmtargs) + '.json'
     fpath = join(dpath, fname)
 
@@ -289,11 +295,13 @@ def index():
 # TODO add an arg or url part for channel
 @app.route("/api/public_records/<record_type>", methods=["POST"])
 def save_public_record(record_type):
+    print(f'save_public_record record_type: {record_type}')
+
     # 1. Validate record_type
     if record_type not in PUBLIC_RECORDS:
         abort(404, description=f"Unknown record_type '{record_type}'")
 
-    rtype, _, _ = PUBLIC_RECORDS[record_type]
+    # rtype, _, _ = PUBLIC_RECORDS[record_type]
 
     # 2. Require JSON
     if not request.is_json:
@@ -317,7 +325,7 @@ def save_public_record(record_type):
 
     # 5. Delegate file-writing to your helper
     # TODO and then append to the channel jsonl in here?
-    to_public_record(PUBLIC_DIR, record_type, raw, **fmtargs)
+    to_public_record(record_type, raw, **fmtargs)
 
     return "", 204
 
@@ -331,7 +339,7 @@ def load_public_record(record_type):
     fmtargs = request.args.to_dict()
 
     try:
-        obj = from_public_record(PUBLIC_DIR, record_type, **fmtargs)
+        obj = from_public_record(PRIVATE_DIR, record_type, **fmtargs)
     except FileNotFoundError:
         abort(404, description="Record not found")
 
