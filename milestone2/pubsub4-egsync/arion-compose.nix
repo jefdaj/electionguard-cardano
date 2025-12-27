@@ -2,6 +2,11 @@
 
 let
 
+  # smuggle flake in via pkgs
+  # see https://github.com/hercules-ci/arion/issues/247
+  inherit (pkgs) flake;
+
+
   ###############
   # json config #
   ###############

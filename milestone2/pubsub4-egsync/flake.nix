@@ -64,7 +64,7 @@
       inherit pkgs;
 
       # `nix build .#egsync`
-      packages.x86_64-linux = rec {
+      packages.x86_64-linux = {
         egsync = singleScriptPyPkg ./egsync.py "0.1" egsyncPyPkgList;
       };
 
