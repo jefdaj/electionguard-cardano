@@ -94,7 +94,7 @@ def run_in_container(
 def egsync_api_url(cfg, container_role, container_number):
     egsync_container = \
       cfg['arion']['project_name'] + \
-      '-' container_role + container_number + '-egsync-1'
+      '-' + container_role + container_number + '-egsync-1'
     api_url = f'http://{egsync_container}:5000/api' # TODO no /api?
     return api_url
 
