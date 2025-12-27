@@ -40,6 +40,7 @@
         flask
         ipfshttpclient
         requests
+        pydantic
       ];
 
       # based on https://stackoverflow.com/a/78450917

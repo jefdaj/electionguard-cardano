@@ -143,7 +143,7 @@ def round3(guardian_id, sequence_order, egsync_api, private_dir):
     "--egsync-api",
     prompt="Base URL of the egsync API",
     help="The URL of the public records API. ",
-    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+    type=click.STRING,
 )
 @click.option(
     "--private-dir",
@@ -203,7 +203,7 @@ def GuardianKeyCeremonyCommand(
     "--egsync-api",
     prompt="Base URL of the egsync API",
     help="The URL of the public records API. ",
-    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+    type=click.STRING,
 )
 @click.option(
     "--private-dir",

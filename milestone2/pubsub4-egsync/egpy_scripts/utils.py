@@ -25,6 +25,9 @@ import json
 import uuid
 from io import StringIO
 from dataclasses import dataclass, field
+import requests
+from urllib.parse import urlencode
+from pydantic.json import pydantic_encoder
 
 # hide INFO dumps of crypto from elgamal.py
 import logging
@@ -184,20 +187,67 @@ def record_path(records_map, root_dir:str, record_type: str, **fmtargs):
 def private_path(private_dir: str, record_type: str, **fmtargs):
     return record_path(PUBLIC_RECORDS, private_dir, record_type, **fmtargs)
 
-def public_path(public_dir: str, record_type: str, **fmtargs):
-    return record_path(PUBLIC_RECORDS, public_dir, record_type, **fmtargs)
+# def public_path(public_dir: str, record_type: str, **fmtargs):
+#     return record_path(PUBLIC_RECORDS, public_dir, record_type, **fmtargs)
 
 
 ### load and save single files ###
 
+def _public_record_url(egsync_api: str, record_type: str, **fmtargs) -> str:
+    url = f"{egsync_api}/public_records/{record_type}"
+    if fmtargs:
+        url = f"{url}?{urlencode(fmtargs)}"
+    return url
+
+def to_jsonable(obj):
+    """
+    Return a JSON-serializable structure (dict/list/str/...) using the same
+    rules as json.dumps(..., default=pydantic_encoder).
+    """
+    # First turn any custom types into JSON primitives using pydantic_encoder,
+    # then parse back into Python so `requests` / Flask `jsonify` can handle it.
+    return json.loads(json.dumps(obj, default=pydantic_encoder))
+
+def to_public_record(egsync_api: str, record_type: str, obj, **fmtargs):
+    """
+    Remote version of to_public_record.
+    """
+    # serialize Python object → JSON-serializable dict
+    # raw = serialize.to_raw(obj).encode(serialize.BYTE_ENCODING)
+    payload = to_jsonable(obj)
+    # print(type(payload))
+    # pprint(payload)
+
+    url = _public_record_url(egsync_api, record_type, **fmtargs)
+    resp = requests.post(url, json=payload, timeout=5)
+    resp.raise_for_status()  # raise if 4xx/5xx
+
+def from_public_record(egsync_api: str, record_type: str, **fmtargs):
+    """
+    Remote version of from_public_record.
+    """
+    url = _public_record_url(egsync_api, record_type, **fmtargs)
+    resp = requests.get(url, timeout=5)
+    if resp.status_code == 404:
+        return None  # or raise a custom exception
+    resp.raise_for_status()
+
+    raw = resp.json()
+
+    # If you have PUBLIC_RECORDS here too, you can reconstruct proper types:
+    rtype, _, _ = PUBLIC_RECORDS[record_type]
+    # obj = serialize.from_dict(rtype, raw)
+    obj = serialize.from_raw(rtype, raw)
+    return obj
+
 # you probably want the public or private versions below
-def to_record(records_map, public_dir: str, record_type: str, obj, **fmtargs):
+def to_record(records_map, egsync_api: str, record_type: str, obj, **fmtargs):
     (_, dname, fstr) = records_map[record_type]
-    dpath = join(public_dir, dname)
-    makedirs(dpath, exist_ok=True)
+    # dpath = join(public_dir, dname)
+    # makedirs(dpath, exist_ok=True)
     # fmtargs['obj'] = obj # so we can use its fields too
-    fname = fstr.format(**fmtargs)
-    serialize.to_file(obj, fname, dpath)
+    # fname = fstr.format(**fmtargs)
+    raw = serialize.to_raw(obj, fname, dpath)
 
 # you probably want the public or private versions below
 def from_record(records_map, public_dir: str, record_type: str, **fmtargs):
@@ -207,14 +257,14 @@ def from_record(records_map, public_dir: str, record_type: str, **fmtargs):
     fpath = join(dpath, fname)
     return serialize.from_file(rtype, fpath)
 
-def to_public_record(public_dir: str, record_type: str, obj, **fmtargs):
-    return to_record(PUBLIC_RECORDS, public_dir, record_type, obj, **fmtargs)
+# def to_public_record(egsync_api: str, record_type: str, obj, **fmtargs):
+#     return to_record(egsync_api, record_type, obj, **fmtargs)
 
 def to_private_record(private_dir: str, record_type: str, obj, **fmtargs):
     return to_record(PRIVATE_RECORDS, private_dir, record_type, obj, **fmtargs)
 
-def from_public_record(public_dir: str, record_type: str, **fmtargs):
-    return from_record(PUBLIC_RECORDS, public_dir, record_type, **fmtargs)
+# def from_public_record(egsync_api: str, record_type: str, **fmtargs):
+#     return from_record(PUBLIC_RECORDS, egsync_api, record_type, **fmtargs)
 
 def from_private_record(private_dir: str, record_type: str, **fmtargs):
     return from_record(PRIVATE_RECORDS, private_dir, record_type, **fmtargs)
@@ -222,7 +272,7 @@ def from_private_record(private_dir: str, record_type: str, **fmtargs):
 
 ### list all expected fmtargs for artifacts of a given type ###
 
-def list_device_numbers(public_dir: str):
+def list_device_numbers(egsync_api: str):
     # TODO list the IDs instead?
     device_dir = join(public_dir, PUBLIC_RECORDS['device'][1])
     # TODO can this fail? there should always be at least one device

@@ -69,7 +69,7 @@ from electionguard.tally import PlaintextTally
     "--egsync-api",
     prompt="Base URL of the egsync API",
     help="The URL of the public records API. ",
-    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+    type=click.STRING,
 )
 @click.option(
     "--referendum-question",
@@ -86,6 +86,7 @@ def BuildManifestCommand(
     provided by the user.
     """
 
+    print(f'BuildManifestCommand egsync_api: {egsync_api}')
     now = datetime.utcnow()
     county_id = "electionguard-cardano-test-county"
     contest_name = referendum_question
@@ -200,7 +201,7 @@ def BuildManifestCommand(
     "--egsync-api",
     prompt="Base URL of the egsync API",
     help="The URL of the public records API. ",
-    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+    type=click.STRING,
 )
 @click.option(
     "--guardian-count",
@@ -233,7 +234,7 @@ def AnnounceKeyCeremonyCommand(
     "--egsync-api",
     prompt="Base URL of the egsync API",
     help="The URL of the public records API. ",
-    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+    type=click.STRING,
 )
 def PublishJointKeyCommand(
     egsync_api: str,
@@ -255,7 +256,7 @@ def PublishJointKeyCommand(
     "--egsync-api",
     prompt="Base URL of the egsync API",
     help="The URL of the public records API. ",
-    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+    type=click.STRING,
 )
 def BuildElectionCommand(
     egsync_api: str,
@@ -282,7 +283,7 @@ def BuildElectionCommand(
     "--egsync-api",
     prompt="Base URL of the egsync API",
     help="The URL of the public records API. ",
-    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+    type=click.STRING,
 )
 def TallyCommand(
     egsync_api: str,
@@ -334,7 +335,7 @@ def TallyCommand(
     "--egsync-api",
     prompt="Base URL of the egsync API",
     help="The URL of the public records API. ",
-    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+    type=click.STRING,
 )
 def DecryptResultsCommand(
     egsync_api: str,
@@ -403,7 +404,7 @@ def DecryptResultsCommand(
     "--egsync-api",
     prompt="Base URL of the egsync API",
     help="The URL of the public records API. ",
-    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+    type=click.STRING,
 )
 def SummaryCommand(
     egsync_api: str,

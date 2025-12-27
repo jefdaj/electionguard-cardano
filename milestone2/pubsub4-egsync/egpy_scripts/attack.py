@@ -376,7 +376,7 @@ def main(log, egsync_api, private_dir, fn_name, step, random_seed):
     "--egsync-api",
     prompt="Base URL of the egsync API",
     help="The URL of the public records API. ",
-    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+    type=click.STRING,
 )
 @click.option(
     "--private-dir",

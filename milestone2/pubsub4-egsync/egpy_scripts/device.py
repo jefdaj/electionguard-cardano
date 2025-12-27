@@ -218,7 +218,7 @@ def vote_reveal(egsync_api, private_dir, device_number, ballot_id, spoil):
     "--egsync-api",
     prompt="Base URL of the egsync API",
     help="The URL of the public records API. ",
-    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+    type=click.STRING,
 )
 def AddDeviceCommand(
     device_number: int,
@@ -234,7 +234,7 @@ def AddDeviceCommand(
     "--egsync-api",
     prompt="Base URL of the egsync API",
     help="The URL of the public records API. ",
-    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+    type=click.STRING,
 )
 @click.option(
     "--private-dir",
@@ -270,7 +270,7 @@ def VoteCommitCommand(
     "--egsync-api",
     prompt="Base URL of the egsync API",
     help="The URL of the public records API. ",
-    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+    type=click.STRING,
 )
 @click.option(
     "--private-dir",
