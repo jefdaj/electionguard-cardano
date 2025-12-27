@@ -12,7 +12,7 @@ from os import makedirs
 from os.path import join
 from typing import List
 
-PUBLIC_DIR = '/data/onchain'
+ONCHAIN_DIR = '/data/onchain'
 
 # TODO better naming convention now that the "public" dir is private?
 PRIVATE_DIR = '/data/private'

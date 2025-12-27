@@ -73,12 +73,12 @@ let
   # containers #
   ##############
 
-  egpyContainer = mode: scripts_dir: public_dir: private_dir: n: {
+  egpyContainer = mode: scripts_dir: onchain_dir: private_dir: n: {
     service.image = "ghcr.io/jefdaj/electionguard-python:1.4.0";
 
     service.volumes = [
       "${scripts_dir}:/scripts/"
-      "${public_dir}:/data/public"
+      "${onchain_dir}:/data/onchain"
       "${private_dir}/${mode}_${builtins.toString n}/egpy:/data/private"
     ];
 
@@ -94,11 +94,11 @@ let
 
   # TODO write egsync
   # TODO no private_dir needed?
-  egsyncContainer = mode: public_dir: private_dir: n: {
+  egsyncContainer = mode: onchain_dir: private_dir: n: {
     # service.image = "busybox:latest";
 
     service.volumes = [
-      "${public_dir}:/data/onchain"
+      "${onchain_dir}:/data/onchain"
       "${private_dir}/${mode}_${builtins.toString n}/egsync:/data/private"
     ];
 
@@ -130,6 +130,8 @@ let
       "${private_dir}/${mode}_${builtins.toString n}/ipfs:/data/ipfs"
     ];
 
+    # TODO why are the containers shutting down here?
+    # TODO go back to how the official docs say to do it?
     service.command = [ "sh" "-c" ''
       ipfs init --profile server || true
       ipfs daemon --migrate=true --offline=false
@@ -149,15 +151,15 @@ let
   # services #
   ############
 
-  egpyAttrs = mode: scripts_dir: public_dir: private_dir: n: {
+  egpyAttrs = mode: scripts_dir: onchain_dir: private_dir: n: {
     name = "${mode}${builtins.toString n}-egpy";
-    value = egpyContainer mode scripts_dir public_dir private_dir n;
+    value = egpyContainer mode scripts_dir onchain_dir private_dir n;
   };
 
   # TODO no private_dir needed?
-  egsyncAttrs = mode: public_dir: private_dir: n: {
+  egsyncAttrs = mode: onchain_dir: private_dir: n: {
     name = "${mode}${builtins.toString n}-egsync";
-    value = egsyncContainer mode public_dir private_dir n;
+    value = egsyncContainer mode onchain_dir private_dir n;
   };
 
   ipfsAttrs = mode: private_dir: n: {
@@ -169,13 +171,13 @@ let
   tripletAttrsList = dataDir: mode: nVms:
     let
       scripts_dir = "./egpy_scripts";
-      public_dir  = "${dataDir}/public";
+      onchain_dir  = "${dataDir}/onchain";
       private_dir = "${dataDir}/private";
       range       = pkgs.lib.range 1 nVms;
     in
     pkgs.lib.concatMap (n: [
-      (egpyAttrs   mode scripts_dir public_dir private_dir n)
-      (egsyncAttrs mode public_dir private_dir n)
+      (egpyAttrs   mode scripts_dir onchain_dir private_dir n)
+      (egsyncAttrs mode onchain_dir private_dir n)
       (ipfsAttrs   mode private_dir n)
     ]) range;
 
