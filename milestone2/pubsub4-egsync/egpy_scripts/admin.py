@@ -191,7 +191,7 @@ def BuildManifestCommand(
         "contact_information": None
     }
 
-    to_public_record(public_dir, 'manifest', manifest)
+    to_public_record(egsync_api, 'manifest', manifest)
 
 
 # TODO combine this step with the manifest above into "announce"?
@@ -225,7 +225,7 @@ def AnnounceKeyCeremonyCommand(
     """
 
     details = CeremonyDetails(guardian_count, guardian_quorum)
-    to_public_record(public_dir, 'ceremony_details', details)
+    to_public_record(egsync_api, 'ceremony_details', details)
 
 
 @click.command("publish-joint-key")
@@ -244,10 +244,10 @@ def PublishJointKeyCommand(
 
     # print(json.dumps(locals()))
 
-    guardian_public_keys: List[ElectionPublicKey] = load_guardian_pubkeys(public_dir)
+    guardian_public_keys: List[ElectionPublicKey] = load_guardian_pubkeys(egsync_api)
     joint_key = combine_election_public_keys(guardian_public_keys)
     assert joint_key is not None
-    to_public_record(public_dir, 'joint_key', joint_key)
+    to_public_record(egsync_api, 'joint_key', joint_key)
 
 
 @click.command("build-election")
@@ -263,9 +263,9 @@ def BuildElectionCommand(
     """Build the InternalManifest and CiphertextElectionContext.
     """
 
-    manifest  = from_public_record(public_dir, 'manifest')
-    details   = from_public_record(public_dir, 'ceremony_details')
-    joint_key = from_public_record(public_dir, 'joint_key')
+    manifest  = from_public_record(egsync_api, 'manifest')
+    details   = from_public_record(egsync_api, 'ceremony_details')
+    joint_key = from_public_record(egsync_api, 'joint_key')
 
     (constants, internal_manifest, context) = build_election(
         details,
@@ -273,8 +273,8 @@ def BuildElectionCommand(
         joint_key
     )
 
-    to_public_record(public_dir, 'constants', constants)
-    to_public_record(public_dir, 'context', context)
+    to_public_record(egsync_api, 'constants', constants)
+    to_public_record(egsync_api, 'context', context)
 
 
 @click.command("tally")
@@ -293,9 +293,9 @@ def TallyCommand(
     # script = __file__
     # print(json.dumps(locals()))
 
-    details   = from_public_record(public_dir, 'ceremony_details')
-    manifest  = from_public_record(public_dir, 'manifest')
-    joint_key = from_public_record(public_dir, 'joint_key')
+    details   = from_public_record(egsync_api, 'ceremony_details')
+    manifest  = from_public_record(egsync_api, 'manifest')
+    joint_key = from_public_record(egsync_api, 'joint_key')
     (_, internal_manifest, context) = build_election(
         details, manifest, joint_key
     )
@@ -306,8 +306,8 @@ def TallyCommand(
         context
     )
 
-    cast_ballots    = load_cast_ballots(public_dir)
-    spoiled_ballots = load_spoiled_ballots(public_dir)
+    cast_ballots    = load_cast_ballots(egsync_api)
+    spoiled_ballots = load_spoiled_ballots(egsync_api)
 
     for ballot in cast_ballots + spoiled_ballots:
         with CaptureLog(level=logging.WARNING) as log:
@@ -325,7 +325,7 @@ def TallyCommand(
     # assert tally.cast()    == len(cast_ballots)
     # assert tally.spoiled() == len(spoiled_ballots)
 
-    to_public_record(public_dir, 'ciphertext_tally', tally.publish())
+    to_public_record(egsync_api, 'ciphertext_tally', tally.publish())
 
 
 # TODO utility functions for these repeated click options
@@ -344,9 +344,9 @@ def DecryptResultsCommand(
     """
 
     # load common required info
-    manifest  = from_public_record(public_dir, 'manifest')
-    joint_key = from_public_record(public_dir, 'joint_key')
-    details   = from_public_record(public_dir, 'ceremony_details')
+    manifest  = from_public_record(egsync_api, 'manifest')
+    joint_key = from_public_record(egsync_api, 'joint_key')
+    details   = from_public_record(egsync_api, 'ceremony_details')
 
     (constants, _, context) = build_election(
         details,
@@ -359,9 +359,9 @@ def DecryptResultsCommand(
     # load and decrypt tally
     # TODO separate command from spoiled ballots below?
     try:
-        tally_enc = from_public_record(public_dir, 'ciphertext_tally')
+        tally_enc = from_public_record(egsync_api, 'ciphertext_tally')
         tally_shares: Dict[GuardianId, DecryptionShare] \
-            = load_tally_shares(public_dir, details.number_of_guardians)
+            = load_tally_shares(egsync_api, details.number_of_guardians)
         tally_result = decrypt_tally(
             tally_enc,
             tally_shares,
@@ -369,17 +369,17 @@ def DecryptResultsCommand(
             manifest
         )
         assert tally_result is not None
-        to_public_record(public_dir, 'plaintext_tally', tally_result)
+        to_public_record(egsync_api, 'plaintext_tally', tally_result)
     except Exception as e:
         print(e)
         print('Failed to decrypt tally')
 
     # load and decrypt spoiled ballots
-    spoiled_ballots: List[SubmittedBallot] = load_spoiled_ballots(public_dir)
+    spoiled_ballots: List[SubmittedBallot] = load_spoiled_ballots(egsync_api)
     for spoiled_ballot in spoiled_ballots:
         try:
             spoiled_shares: Dict[GuardianId, DecryptionShare] = load_spoiled_shares(
-                public_dir, details.number_of_guardians,
+                egsync_api, details.number_of_guardians,
                 spoiled_id=spoiled_ballot.object_id
             )
             spoiled_result = decrypt_ballot(
@@ -390,7 +390,7 @@ def DecryptResultsCommand(
             )
             assert spoiled_result is not None
             to_public_record(
-                public_dir, 'spoiled_result', spoiled_result,
+                egsync_api, 'spoiled_result', spoiled_result,
                 ballot_id=spoiled_result.object_id
             )
         except Exception as e:
@@ -417,9 +417,9 @@ def SummaryCommand(
 
     csb = CliStepBase() # prints in electionguard_cli style
 
-    manifest        = from_public_record(public_dir, 'manifest')
-    tally_result    = from_public_record(public_dir, 'plaintext_tally')
-    spoiled_results = load_spoiled_results(public_dir)
+    manifest        = from_public_record(egsync_api, 'manifest')
+    tally_result    = from_public_record(egsync_api, 'plaintext_tally')
+    spoiled_results = load_spoiled_results(egsync_api)
 
     selection_names = manifest.get_selection_names("en")
     contest_names   = manifest.get_contest_names()
@@ -476,7 +476,7 @@ def SummaryCommand(
         tally_header  : tally_summary,
         spoiled_header: spoiled_summaries,
     }
-    to_public_record(public_dir, 'summary', summary)
+    to_public_record(egsync_api, 'summary', summary)
 
 
 @click.group()

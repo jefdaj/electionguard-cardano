@@ -94,7 +94,7 @@ def run_in_container(
 def egsync_api_url(cfg, container_role, container_number):
     egsync_container = \
       cfg['arion']['project_name'] + \
-      '-' + container_role + container_number + '-egsync-1'
+      '-' + container_role + str(container_number) + '-egsync-1'
     api_url = f'http://{egsync_container}:5000/api' # TODO no /api?
     return api_url
 
@@ -514,7 +514,7 @@ def ElectionCommand(
     log = init_log(cfg, logfile, logging.INFO)
     if single_step:
         run_single_step(cfg, log, single_step)
-        attack(cfg, log, single_step)
+        attack_all(cfg, log, single_step)
     else:
         main(cfg, log)
 

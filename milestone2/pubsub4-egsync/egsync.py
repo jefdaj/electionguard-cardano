@@ -12,62 +12,63 @@ import requests
 # TODO how is this loaded again? is it an env var? static?
 PUBLIC_DIR = '/data'
 
+# TODO should egsync be converting to/from these types? or delegating that to egpy?
 # TODO can there be one source of truth for this in all scripts?
 # TODO actually though, egpy only needs to know the types right?
 # TODO wait do we NOT need the types here? and not need to have electionguard installed?
 PUBLIC_RECORDS = {
     'manifest': (
-        Manifest,
+        # Manifest,
         '1_config/1_announce',
         '1_manifest'
     ),
     'ceremony_details': (
-        CeremonyDetails,
+        # CeremonyDetails,
         '1_config/1_announce',
         '2_ceremony'
     ),
     'guardian_pubkey': (
-        ElectionPublicKey,
+        # ElectionPublicKey,
         '1_config/2_ceremony/1_pubkeys',
         '{guardian_id}'
     ),
     'guardian_backup': (
-        ElectionPartialKeyBackup,
+        # ElectionPartialKeyBackup,
         '1_config/2_ceremony/2_backups',
         '{guardian_id}_backup_{backup_order}'
     ),
     'guardian_verification': (
-        ElectionPartialKeyVerification,
+        # ElectionPartialKeyVerification,
         '1_config/2_ceremony/3_verifications',
         '{guardian_id}_backup_{backup_order}'
     ),
     'joint_key': (
-        ElectionJointKey,
+        # ElectionJointKey,
         '1_config/3_election',
         'joint_key'
     ),
     'constants': (
-        ElectionConstants,
+        # ElectionConstants,
         '1_config/3_election',
         'constants'
     ),
     'context': (
-        CiphertextElectionContext,
+        # CiphertextElectionContext,
         '1_config/3_election',
         'context'
     ),
     'device': (
-        EncryptionDevice,
+        # EncryptionDevice,
         '1_config/4_devices',
         'device_{device_number}'
     ),
     'ballot_submitted': (
-        CiphertextBallot, # TODO SubmittedBallot with state set to UNKNOWN?
+        # CiphertextBallot, # TODO SubmittedBallot with state set to UNKNOWN?
         '2_ballots/1_submitted',
         '{ballot_id}'
     ),
     'cast_notice': (
-        CastNotice,
+        # CastNotice,
         '2_ballots/2_cast',
         '{ballot_id}'
     ),
@@ -77,39 +78,39 @@ PUBLIC_RECORDS = {
         # electionguard-python implementation: we *do* want to publish all
         # the nonces at this step, right? So people can decrypt immediately
         # rather than waiting for the guardians.
-        CiphertextBallot,
+        # CiphertextBallot,
 
         '2_ballots/3_spoiled',
         '{ballot_id}'
     ),
     'ciphertext_tally': (
-        PublishedCiphertextTally, # TODO CiphertextTally? (the non-"published" version)
+        # PublishedCiphertextTally, # TODO CiphertextTally? (the non-"published" version)
         '3_results',
         '1_tally'
     ),
     'tally_share': (
-        DecryptionShare,
+        # DecryptionShare,
         '3_results/2_decrypt/1_shares/1_tally',
         'tally_{guardian_id}'
     ),
     'spoiled_share': (
-        DecryptionShare,
+        # DecryptionShare,
         '3_results/2_decrypt/1_shares/2_spoiled',
         '{spoiled_id}_{guardian_id}'
     ),
     # TODO rename tally_result?
     'plaintext_tally': (
-        PlaintextTally,
+        # PlaintextTally,
         '3_results/2_decrypt/2_combined',
         '1_tally'
     ),
     'spoiled_result': (
-        PlaintextTally,
+        # PlaintextTally,
         '3_results/2_decrypt/2_combined/2_spoiled',
         '{ballot_id}'
     ),
     'summary': (
-        dict,
+        # dict,
         '4_verify',
         '{verifier_id}'
     ),
@@ -141,7 +142,11 @@ def to_record(records_map, record_type: str, obj, **fmtargs):
     dpath = join(PUBLIC_DIR, dname)
     makedirs(dpath, exist_ok=True)
     fname = fstr.format(**fmtargs)
-    serialize.to_file(obj, fname, dpath)
+    # serialize.to_file(obj, fname, dpath)
+    fpath = join(dpath, fname)
+    # TODO is this right? nothing special?
+    with open(fpath, 'w') as f:
+        json.dump(f)
 
 # you probably want the public or private versions below
 # TODO separate into the json part (here) and the typed part (still in util.py?)
@@ -157,7 +162,7 @@ def from_record(records_map, record_type: str, **fmtargs):
     # return serialize.from_file(rtype, fpath)
     return json.load(fpath)
 
-def to_public_record(, record_type: str, obj, **fmtargs):
+def to_public_record(record_type: str, obj, **fmtargs):
     return to_record(PUBLIC_RECORDS, record_type, obj, **fmtargs)
 
 def from_public_record(record_type: str, **fmtargs):
@@ -305,14 +310,14 @@ def save_public_record(record_type):
     #   obj = serialize.object_from_raw(rtype, raw)
     #
     # I'll write this as a placeholder:
-    obj = serialize.from_raw(rtype, raw)
+    # obj = serialize.from_raw(rtype, raw)
 
     # 4. Extra format args come from query params (guardian_id, ballot_id, etc.)
     fmtargs = request.args.to_dict()
 
     # 5. Delegate file-writing to your helper
     # TODO and then append to the channel jsonl in here?
-    to_public_record(PUBLIC_DIR, record_type, obj, **fmtargs)
+    to_public_record(PUBLIC_DIR, record_type, raw, **fmtargs)
 
     return "", 204
 
