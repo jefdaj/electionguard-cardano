@@ -280,7 +280,7 @@ def index():
 
 
 # TODO need another step to convery Python type -> JSON on the other end to send to API?
-@app.route("/public_records/<record_type>", methods=["POST"])
+@app.route("/api/public_records/<record_type>", methods=["POST"])
 def save_public_record(record_type):
     # 1. Validate record_type
     if record_type not in PUBLIC_RECORDS:
@@ -314,7 +314,7 @@ def save_public_record(record_type):
     return "", 204
 
 
-@app.route("/public_records/<record_type>", methods=["GET"])
+@app.route("/api/public_records/<record_type>", methods=["GET"])
 def load_public_record(record_type):
     if record_type not in PUBLIC_RECORDS:
         abort(404, description="Unknown record_type")
