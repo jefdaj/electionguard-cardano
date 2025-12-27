@@ -191,7 +191,7 @@ def BuildManifestCommand(
         "contact_information": None
     }
 
-    to_public_record(egsync_api, 'manifest', manifest)
+    to_public_record(egsync_api, 'admin1', 'manifest', manifest)
 
 
 # TODO combine this step with the manifest above into "announce"?
@@ -225,7 +225,7 @@ def AnnounceKeyCeremonyCommand(
     """
 
     details = CeremonyDetails(guardian_count, guardian_quorum)
-    to_public_record(egsync_api, 'ceremony_details', details)
+    to_public_record(egsync_api, 'admin1', 'ceremony_details', details)
 
 
 @click.command("publish-joint-key")
@@ -247,7 +247,7 @@ def PublishJointKeyCommand(
     guardian_public_keys: List[ElectionPublicKey] = load_guardian_pubkeys(egsync_api)
     joint_key = combine_election_public_keys(guardian_public_keys)
     assert joint_key is not None
-    to_public_record(egsync_api, 'joint_key', joint_key)
+    to_public_record(egsync_api, 'admin1', 'joint_key', joint_key)
 
 
 @click.command("build-election")
@@ -273,8 +273,8 @@ def BuildElectionCommand(
         joint_key
     )
 
-    to_public_record(egsync_api, 'constants', constants)
-    to_public_record(egsync_api, 'context', context)
+    to_public_record(egsync_api, 'admin1', 'constants', constants)
+    to_public_record(egsync_api, 'admin1', 'context', context)
 
 
 @click.command("tally")
@@ -325,7 +325,7 @@ def TallyCommand(
     # assert tally.cast()    == len(cast_ballots)
     # assert tally.spoiled() == len(spoiled_ballots)
 
-    to_public_record(egsync_api, 'ciphertext_tally', tally.publish())
+    to_public_record(egsync_api, 'admin1', 'ciphertext_tally', tally.publish())
 
 
 # TODO utility functions for these repeated click options
@@ -369,7 +369,7 @@ def DecryptResultsCommand(
             manifest
         )
         assert tally_result is not None
-        to_public_record(egsync_api, 'plaintext_tally', tally_result)
+        to_public_record(egsync_api, 'admin1', 'plaintext_tally', tally_result)
     except Exception as e:
         print(e)
         print('Failed to decrypt tally')
@@ -390,7 +390,7 @@ def DecryptResultsCommand(
             )
             assert spoiled_result is not None
             to_public_record(
-                egsync_api, 'spoiled_result', spoiled_result,
+                egsync_api, 'admin1', 'spoiled_result', spoiled_result,
                 ballot_id=spoiled_result.object_id
             )
         except Exception as e:
@@ -476,7 +476,7 @@ def SummaryCommand(
         tally_header  : tally_summary,
         spoiled_header: spoiled_summaries,
     }
-    to_public_record(egsync_api, 'summary', summary)
+    to_public_record(egsync_api, 'admin1', 'summary', summary)
 
 
 @click.group()

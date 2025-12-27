@@ -6,6 +6,7 @@ import time
 import json
 import ipfshttpclient
 import requests
+import sys
 
 from flask import Flask, jsonify, render_template_string, request, abort
 from os import makedirs
@@ -13,6 +14,11 @@ from os.path import join
 from typing import List
 
 ONCHAIN_DIR = '/data/onchain'
+
+# TODO is this a reasonable way to pass it? if not, use env
+IPFS_API = sys.argv[1]
+IPFS_CLIENT = ipfshttpclient.connect(addr=IPFS_API)
+print(IPFS_CLIENT)
 
 # TODO better naming convention now that the "public" dir is private?
 PRIVATE_DIR = '/data/private'
@@ -142,7 +148,7 @@ def record_path(records_map, root_dir:str, record_type: str, **fmtargs):
 ### load and save single files ###
 
 # you probably want the public or private versions below
-def to_record(records_map, record_type: str, obj, **fmtargs):
+def to_record(records_map, record_type: str, obj, **fmtargs) -> str:
     (dname, fstr) = records_map[record_type]
     dpath = join(PRIVATE_DIR, dname)
     makedirs(dpath, exist_ok=True)
@@ -153,6 +159,7 @@ def to_record(records_map, record_type: str, obj, **fmtargs):
     with open(fpath, 'w') as f:
         json.dump(obj, f)
     print(f'dumped {record_type} to {fpath}')
+    return fpath
 
 # you probably want the public or private versions below
 # TODO separate into the json part (here) and the typed part (still in util.py?)
@@ -168,8 +175,39 @@ def from_record(records_map, record_type: str, **fmtargs):
     # return serialize.from_file(rtype, fpath)
     return json.load(fpath)
 
-def to_public_record(record_type: str, obj, **fmtargs):
-    return to_record(PUBLIC_RECORDS, record_type, obj, **fmtargs)
+# TODO cid type?
+def publish_on_ipfs(path: str) -> str:
+    res = IPFS_CLIENT.add(path)
+    cid = res['Hash']
+    IPFS_CLIENT.pin.add(cid)
+    return cid
+
+# TODO how to post a list of records rather than just one? need some kind of queue?
+# TODO cid type?
+def post_onchain(onchain_channel: str, record_type: str, cid: str, **fmtargs):
+    channel_path = join(ONCHAIN_DIR, onchain_channel + '.json')
+    post_json = {
+        'action': 'post_public_record',
+        'record_type': record_type,
+        'cid': cid,
+        **fmtargs
+    }
+    with open(channel_path, 'a') as f:
+        json.dump(post_json, f)
+        # TODO need a newline or anything?
+
+# TODO would it be better to save to a temporary location and let ipfs put the file in place?
+def to_public_record(
+        onchain_channel: str,
+        record_type: str,
+        obj,
+        **fmtargs
+    ):
+    # TODO if adding the file fails, what then? remove locally? retry?
+    fpath = to_record(PUBLIC_RECORDS, record_type, obj, **fmtargs)
+    cid = publish_on_ipfs(fpath)
+    post_onchain(onchain_channel, record_type, cid, **fmtargs)
+    # TODO return something? cid, bool, res
 
 def from_public_record(record_type: str, **fmtargs):
     return from_record(PUBLIC_RECORDS, record_type, **fmtargs)
@@ -203,9 +241,9 @@ app = Flask(__name__)
 #     return [str(cid).strip() for cid in data if cid]
 
 
-# def pin_cid(client: ipfshttpclient.Client, cid: str) -> None:
+# def pin_cid(cid: str) -> None:
 #     app.logger.info(f"Pinning CID: {cid}")
-#     client.pin.add(cid)
+#     IPFS_CLIENT.pin.add(cid)
 
 
 # def ipfs_sync_loop():
@@ -323,9 +361,14 @@ def save_public_record(record_type):
     # 4. Extra format args come from query params (guardian_id, ballot_id, etc.)
     fmtargs = request.args.to_dict()
 
+    try:
+        onchain_channel = fmtargs.pop('onchain_channel')
+    except:
+        abort(400, description="Expected onchain_channel")
+
     # 5. Delegate file-writing to your helper
     # TODO and then append to the channel jsonl in here?
-    to_public_record(record_type, raw, **fmtargs)
+    to_public_record(onchain_channel, record_type, raw, **fmtargs)
 
     return "", 204
 

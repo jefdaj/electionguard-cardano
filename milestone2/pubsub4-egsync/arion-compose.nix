@@ -112,6 +112,8 @@ let
     service.stop_signal = "SIGINT";
     service.command = [
       "egsync.py"
+      # "http://${mode}${builtins.toString n}-ipfs-1:5001" # TODO is this right?
+      "/dns4/test-${mode}${builtins.toString n}-ipfs-1/tcp/5001/http" # TODO get test name here
     ];
     service.restart = "on-failure";
 
@@ -123,7 +125,7 @@ let
   };
 
   ipfsContainer = mode: private_dir: n: {
-    service.image = "ipfs/kubo:latest";
+    service.image = "ipfs/kubo:v0.34.1";
 
     # one IPFS repo per logical node
     service.volumes = [
@@ -132,10 +134,10 @@ let
 
     # TODO why are the containers shutting down here?
     # TODO go back to how the official docs say to do it?
-    service.command = [ "sh" "-c" ''
-      ipfs init --profile server || true
-      ipfs daemon --migrate=true --offline=false
-    '' ];
+    # service.command = [ "sh" "-c" ''
+    #   ipfs init --profile server || true
+    #   ipfs daemon --migrate=true --offline=false
+    # '' ];
 
     # On:
     #   - its per-triplet ipfs-net (to talk to local egsync)
@@ -144,6 +146,16 @@ let
       (ipfsNetworkName mode n)
       ipfsMeshNetworkName
     ];
+
+    service.ports = [
+      # host:container
+      # TODO are these only needed for testing but not production?
+      # "${builtins.toString (4000 + portSuffix)}:4001" # ipfs swarm
+      # "${builtins.toString (5000 + portSuffix)}:5001" # ipfs api
+      # "${builtins.toString (8080 + portSuffix)}:8080" # ipfs gateway
+    ];
+ 
+    service.environment.IPFS_LOGGING="info";
   };
 
 

@@ -434,6 +434,7 @@ def attack_all(cfg, log, step):
 
 def election(cfg, log) -> int:
     try:
+        # TODO need an initial open_channel action here
         build_manifest(cfg, log)        ; attack_all(cfg, log, 'build_manifest')
         announce_key_ceremony(cfg, log) ; attack_all(cfg, log, 'announce_key_ceremony')
         key_ceremony_round1(cfg, log)   ; attack_all(cfg, log, 'key_ceremony_round1')
