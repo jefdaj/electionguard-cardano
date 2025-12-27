@@ -13,9 +13,9 @@
       py312Overlay = self: super: {
         python312 = super.python312.override {
           packageOverrides = pyself: pysuper: {
-            # pytest-runner       = pyself.callPackage ./python-packages/pytest-runner.nix       {};
-            # py-multiformats-cid = pyself.callPackage ./python-packages/py-multiformats-cid.nix {};
-            # aioipfs             = pyself.callPackage ./python-packages/aioipfs.nix             {};
+            pytest-runner       = pyself.callPackage ./python-packages/pytest-runner.nix       {};
+            py-multiformats-cid = pyself.callPackage ./python-packages/py-multiformats-cid.nix {};
+            aioipfs             = pyself.callPackage ./python-packages/aioipfs.nix             {};
           };
         };
       };
