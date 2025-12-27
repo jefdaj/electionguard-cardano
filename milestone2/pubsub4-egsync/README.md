@@ -78,3 +78,8 @@ It could have a very simple API for now:
 - get `from_public_record`
 
 The mapping of those calls <--> filenames can be moved from utils to the new egsync.
+
+TODO
+----
+
+How should attacks work in this version? Will we need a different way than editing files in place? Or maybe have attacks override the immutability in egsync?

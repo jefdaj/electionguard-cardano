@@ -90,6 +90,14 @@ def run_in_container(
             log.info(stdout + '\n')
         return proc.returncode
 
+# TODO where should this go? utils.py?
+def egsync_api_url(cfg, container_role, container_number):
+    egsync_container = \
+      cfg['arion']['project_name'] + \
+      '-' container_role + container_number + '-egsync-1'
+    api_url = f'http://{egsync_container}:5000/api' # TODO no /api?
+    return api_url
+
 def explain_step(fn):
     def decorated_fn(cfg, log, *args, **kwargs):
         header = f'### {fn.__name__} ###'
@@ -158,7 +166,7 @@ def build_manifest(cfg, log):
         cfg, log, "admin.py", "admin", 1,
         [
             "build-manifest",
-            "--public-dir", cfg.arion.bind_mounts.public,
+            "--egsync-api", egsync_api_url(cfg, 'admin', 1),
             "--referendum-question", cfg.votes[0].question,
         ]
     )
@@ -169,7 +177,7 @@ def announce_key_ceremony(cfg, log):
         cfg, log, "admin.py", "admin", 1,
         [
             "announce-key-ceremony",
-            "--public-dir", cfg.arion.bind_mounts.public,
+            "--egsync-api", egsync_api_url(cfg, 'admin', 1),
             "--guardian-count", str(cfg.election.guardians.count),
             "--guardian-quorum", str(cfg.election.guardians.quorum),
         ]
@@ -182,7 +190,7 @@ def key_ceremony_round(cfg, log, ceremony_round):
             cfg, log, "guardian.py", "guardian", sequence_order,
             [
                 "key-ceremony",
-                "--public-dir", cfg.arion.bind_mounts.public,
+                "--egsync-api", egsync_api_url(cfg, 'guardian', sequence_order),
                 "--private-dir", cfg.arion.bind_mounts.private,
                 "--ceremony-round", str(ceremony_round),
                 "--guardian-id", guardian_id,
@@ -209,7 +217,7 @@ def publish_joint_key(cfg, log):
         cfg, log, "admin.py", "admin", 1,
         [
             "publish-joint-key",
-            "--public-dir", cfg.arion.bind_mounts.public,
+            "--egsync-api", egsync_api_url(cfg, 'admin', 1),
         ]
     )
 
@@ -219,7 +227,7 @@ def build_election(cfg, log):
         cfg, log, "admin.py", "admin", 1,
         [
             "build-election",
-            "--public-dir", cfg.arion.bind_mounts.public,
+            "--egsync-api", egsync_api_url(cfg, 'admin', 1),
         ]
     )
 
@@ -228,7 +236,7 @@ def add_device(cfg, log, device_number):
         cfg, log, "device.py", "device", device_number,
         [
             "add-device",
-            "--public-dir", cfg.arion.bind_mounts.public,
+            "--egsync-api", egsync_api_url(cfg, 'device', device_number),
             "--device-number", str(device_number),
         ]
     )
@@ -244,7 +252,7 @@ def vote_commit(cfg, log, device_number, candidate, spoil=False):
         cfg, log, "device.py", "device", device_number,
         [
             "vote_commit",
-            "--public-dir", cfg.arion.bind_mounts.public,
+            "--egsync-api", egsync_api_url(cfg, 'device', device_number),
             "--private-dir", cfg.arion.bind_mounts.private,
             "--device-number", str(device_number),
             "--candidate", candidate,
@@ -259,7 +267,7 @@ def vote_reveal(cfg, log, device_number, ballot_id, spoil=False):
         cfg, log, "device.py", "device", device_number,
         [
             "vote_reveal",
-            "--public-dir", cfg.arion.bind_mounts.public,
+            "--egsync-api", egsync_api_url(cfg, 'device', device_number),
             "--private-dir", cfg.arion.bind_mounts.private,
             "--device-number", str(device_number),
             "--ballot-id", ballot_id,
@@ -324,7 +332,7 @@ def tally(cfg, log):
         cfg, log, "admin.py", "admin", 1,
         [
             "tally",
-            "--public-dir", cfg.arion.bind_mounts.public,
+            "--egsync-api", egsync_api_url(cfg, 'admin', 1),
         ]
     )
 
@@ -336,7 +344,7 @@ def decrypt_shares(cfg, log):
             cfg, log, "guardian.py", "guardian", sequence_order,
             [
                 "decrypt-shares",
-                "--public-dir", cfg.arion.bind_mounts.public,
+                "--egsync-api", egsync_api_url(cfg, 'guardian', sequence_order),
                 "--private-dir", cfg.arion.bind_mounts.private,
                 "--guardian-id", guardian_id,
             ]
@@ -348,7 +356,7 @@ def decrypt_results(cfg, log):
         cfg, log, "admin.py", "admin", 1,
         [
             "decrypt-results",
-            "--public-dir", cfg.arion.bind_mounts.public,
+            "--egsync-api", egsync_api_url(cfg, 'admin', 1),
         ]
     )
 
@@ -359,7 +367,7 @@ def decrypt_results(cfg, log):
 #         cfg, "admin", 1,
 #         [
 #             "summary",
-#             "--public-dir", cfg.arion.bind_mounts.public,
+#             "--egsync-api", egsync_api_url(cfg, 'admin', 1)
 #         ]
 #     )
 
@@ -377,7 +385,7 @@ def verify(cfg, log):
             cfg, log, "verifier.py", container_role, container_number,
             [
                 "verify",
-                "--public-dir", cfg.arion.bind_mounts.public,
+                "--egsync-api", egsync_api_url(cfg, container_role, container_number),
                 "--verifier-id", verifier_id,
                 "--logfile", logfile,
             ]
@@ -399,7 +407,7 @@ def attack(cfg, log: logging.Logger, fn_name: str, role: str, step: str, seed: i
         cfg, log, "attack.py", role, n,
         [
             "attack",
-            "--public-dir", cfg.arion.bind_mounts.public,
+            "--egsync-api", egsync_api_url(cfg, role, n),
             "--private-dir", cfg.arion.bind_mounts.private,
             "--logfile", logfile,
             "--attack-fn", fn_name,
