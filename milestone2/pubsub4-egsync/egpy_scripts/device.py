@@ -70,24 +70,24 @@ class CastBallotNotice(object):
     cast_at: datetime
 
 
-def add_device(device_number, public_dir):
+def add_device(device_number, egsync_api):
     device = EncryptionDevice(
         generate_device_uuid(), # device id (TODO is this deterministic?)
         device_number * 12345, # session id  (TODO what's this?)
         device_number * 45678, # launch code (TODO what's this?)
         POLLING_PLACE,
     )
-    to_public_record(public_dir, 'device', device, device_number=device_number)
+    to_public_record(egsync_api, 'device', device, device_number=device_number)
 
-def vote_commit(public_dir, private_dir, device_number, candidate):
+def vote_commit(egsync_api, private_dir, device_number, candidate):
 
-    manifest  = from_public_record(public_dir, 'manifest')
-    joint_key = from_public_record(public_dir, 'joint_key')
-    details   = from_public_record(public_dir, 'ceremony_details')
+    manifest  = from_public_record(egsync_api, 'manifest')
+    joint_key = from_public_record(egsync_api, 'joint_key')
+    details   = from_public_record(egsync_api, 'ceremony_details')
 
     # TODO is the underscore thing OK in python?
     (_, internal_manifest, context) = build_election(details, manifest, joint_key)
-    device = from_public_record(public_dir, 'device', device_number=device_number)
+    device = from_public_record(egsync_api, 'device', device_number=device_number)
 
     plaintext_ballot: PlaintextBallot = build_ballot(manifest, candidate)
     to_private_record(
@@ -117,7 +117,7 @@ def vote_commit(public_dir, private_dir, device_number, candidate):
     assert ballot_submitted.nonce is None
     ballot_id = ballot_submitted.object_id
     to_public_record(
-        public_dir, 'ballot_submitted', ballot_submitted,
+        egsync_api, 'ballot_submitted', ballot_submitted,
         ballot_id=ballot_id
     )
 
@@ -125,18 +125,18 @@ def vote_commit(public_dir, private_dir, device_number, candidate):
     # TODO is there a cleaner way to do this?
     print(ballot_id, flush=True)
 
-def vote_reveal(public_dir, private_dir, device_number, ballot_id, spoil):
+def vote_reveal(egsync_api, private_dir, device_number, ballot_id, spoil):
 
     # store = DataStore() # for cast + spoiled ballots. will not be used again
 
     if spoil:
 
-        details   = from_public_record(public_dir, 'ceremony_details')
-        manifest  = from_public_record(public_dir, 'manifest')
-        joint_key = from_public_record(public_dir, 'joint_key')
+        details   = from_public_record(egsync_api, 'ceremony_details')
+        manifest  = from_public_record(egsync_api, 'manifest')
+        joint_key = from_public_record(egsync_api, 'joint_key')
 
         (_, internal_manifest, context) = build_election(details, manifest, joint_key)
-        device = from_public_record(public_dir, 'device', device_number=device_number)
+        device = from_public_record(egsync_api, 'device', device_number=device_number)
  
         encrypter = EncryptionMediator(
             internal_manifest, context, device
@@ -171,7 +171,7 @@ def vote_reveal(public_dir, private_dir, device_number, ballot_id, spoil):
         ballot_spoiled.state = BallotBoxState.SPOILED
 
         to_public_record(
-            public_dir, 'ballot_spoiled', ballot_spoiled,
+            egsync_api, 'ballot_spoiled', ballot_spoiled,
             ballot_id=ballot_spoiled.object_id
         )
 
@@ -200,7 +200,7 @@ def vote_reveal(public_dir, private_dir, device_number, ballot_id, spoil):
         )
 
         to_public_record(
-            public_dir, 'cast_notice', cast_notice,
+            egsync_api, 'cast_notice', cast_notice,
             ballot_id=cast_notice.ballot_id
         )
 
@@ -215,27 +215,25 @@ def vote_reveal(public_dir, private_dir, device_number, ballot_id, spoil):
     type=click.INT,
 )
 @click.option(
-    "--public-dir",
-    prompt="Public records directory",
-    help="The location of a directory into which will be placed all public records. "
-    + "This folder should be protected. Existing files will be overwritten.",
+    "--egsync-api",
+    prompt="Base URL of the egsync API",
+    help="The URL of the public records API. ",
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
 def AddDeviceCommand(
     device_number: int,
-    public_dir: str,
+    egsync_api: str,
 ) -> None:
     """Add (announce?) an encryption device,
     which will encrypt + publish ballots and do the Benaloh challenge.
     """
-    add_device(device_number, public_dir)
+    add_device(device_number, egsync_api)
 
 @click.command("vote_commit")
 @click.option(
-    "--public-dir",
-    prompt="Public records directory",
-    help="The location of a directory into which will be placed all public records. "
-    + "This folder should be protected. Existing files will be overwritten.",
+    "--egsync-api",
+    prompt="Base URL of the egsync API",
+    help="The URL of the public records API. ",
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
 @click.option(
@@ -258,21 +256,20 @@ def AddDeviceCommand(
     type=click.STRING,
 )
 def VoteCommitCommand(
-    public_dir: str,
+    egsync_api: str,
     private_dir: str,
     device_number: int,
     candidate: str,
 ) -> None:
     """Submit a ballot, but don't say whether it will be cast or spoiled yet.
     """
-    vote_commit(public_dir, private_dir, device_number, candidate)
+    vote_commit(egsync_api, private_dir, device_number, candidate)
 
 @click.command("vote_reveal")
 @click.option(
-    "--public-dir",
-    prompt="Public records directory",
-    help="The location of a directory into which will be placed all public records. "
-    + "This folder should be protected. Existing files will be overwritten.",
+    "--egsync-api",
+    prompt="Base URL of the egsync API",
+    help="The URL of the public records API. ",
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
 @click.option(
@@ -301,7 +298,7 @@ def VoteCommitCommand(
     type=click.BOOL,
 )
 def VoteRevealCommand(
-    public_dir: str,
+    egsync_api: str,
     private_dir: str,
     device_number: int,
     ballot_id: str,
@@ -309,7 +306,7 @@ def VoteRevealCommand(
 ) -> None:
     """Cast or spoil a previously submitted ballot by ID.
     """
-    vote_reveal(public_dir, private_dir, device_number, ballot_id, spoil)
+    vote_reveal(egsync_api, private_dir, device_number, ballot_id, spoil)
 
 @click.group()
 def cli() -> None:

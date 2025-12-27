@@ -66,10 +66,9 @@ from electionguard.tally import PlaintextTally
 
 @click.command("build-manifest")
 @click.option(
-    "--public-dir",
-    prompt="Public records directory",
-    help="The location of a directory into which will be placed all public records. "
-    + "This folder should be protected. Existing files will be overwritten.",
+    "--egsync-api",
+    prompt="Base URL of the egsync API",
+    help="The URL of the public records API. ",
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
 @click.option(
@@ -79,7 +78,7 @@ from electionguard.tally import PlaintextTally
     type=click.STRING,
 )
 def BuildManifestCommand(
-    public_dir: str,
+    egsync_api: str,
     referendum_question: str
 ) -> None:
     """Build a minimal valid manifest.
@@ -198,10 +197,9 @@ def BuildManifestCommand(
 # TODO combine this step with the manifest above into "announce"?
 @click.command("announce-key-ceremony")
 @click.option(
-    "--public-dir",
-    prompt="Public records directory",
-    help="The location of a directory into which will be placed all public records. "
-    + "This folder should be protected. Existing files will be overwritten.",
+    "--egsync-api",
+    prompt="Base URL of the egsync API",
+    help="The URL of the public records API. ",
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
 @click.option(
@@ -219,7 +217,7 @@ def BuildManifestCommand(
 def AnnounceKeyCeremonyCommand(
     guardian_count: int,
     guardian_quorum: int,
-    public_dir: str,
+    egsync_api: str,
 ) -> None:
     """Announce key ceremony parameters.
     This is provisional based on the electionguard_gui key_ceremony_service.py;
@@ -232,14 +230,13 @@ def AnnounceKeyCeremonyCommand(
 
 @click.command("publish-joint-key")
 @click.option(
-    "--public-dir",
-    prompt="Public records directory",
-    help="The location of a directory into which will be placed the guardian's public keys "
-    + "This folder should be protected. Existing files will be overwritten.",
+    "--egsync-api",
+    prompt="Base URL of the egsync API",
+    help="The URL of the public records API. ",
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
 def PublishJointKeyCommand(
-    public_dir: str,
+    egsync_api: str,
 ) -> None:
     """Final step in the key ceremony.
     Could technically be posted on chain by anyone, not just the admin.
@@ -255,14 +252,13 @@ def PublishJointKeyCommand(
 
 @click.command("build-election")
 @click.option(
-    "--public-dir",
-    prompt="Public records directory",
-    help="The location of a directory into which will be placed all public records. "
-    + "This folder should be protected. Existing files will be overwritten.",
+    "--egsync-api",
+    prompt="Base URL of the egsync API",
+    help="The URL of the public records API. ",
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
 def BuildElectionCommand(
-    public_dir: str,
+    egsync_api: str,
 ) -> None:
     """Build the InternalManifest and CiphertextElectionContext.
     """
@@ -283,14 +279,13 @@ def BuildElectionCommand(
 
 @click.command("tally")
 @click.option(
-    "--public-dir",
-    prompt="Public records directory",
-    help="The location of a directory into which will be placed all public records. "
-    + "This folder should be protected. Existing files will be overwritten.",
+    "--egsync-api",
+    prompt="Base URL of the egsync API",
+    help="The URL of the public records API. ",
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
 def TallyCommand(
-    public_dir: str,
+    egsync_api: str,
 ) -> None:
     """Tally election results.
     """
@@ -336,14 +331,13 @@ def TallyCommand(
 # TODO utility functions for these repeated click options
 @click.command("decrypt-results")
 @click.option(
-    "--public-dir",
-    prompt="Public records directory",
-    help="The location of a directory into which will be placed all public records. "
-    + "This folder should be protected. Existing files will be overwritten.",
+    "--egsync-api",
+    prompt="Base URL of the egsync API",
+    help="The URL of the public records API. ",
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
 def DecryptResultsCommand(
-    public_dir: str,
+    egsync_api: str,
 ) -> None:
     """
     Combine guardian decryption shares into final results: tally + spoiled ballots.
@@ -406,14 +400,13 @@ def DecryptResultsCommand(
 
 @click.command("summary")
 @click.option(
-    "--public-dir",
-    prompt="Public records directory",
-    help="The location of a directory into which will be placed all public records. "
-    + "This folder should be protected. Existing files will be overwritten.",
+    "--egsync-api",
+    prompt="Base URL of the egsync API",
+    help="The URL of the public records API. ",
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
 def SummaryCommand(
-    public_dir: str,
+    egsync_api: str,
 ) -> None:
     """
     Save and print a human-readable summary of the decrypted results.

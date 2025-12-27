@@ -53,11 +53,11 @@ from electionguard.key_ceremony import (
 )
 
 
-def round1(guardian_id, sequence_order, public_dir, private_dir):
+def round1(guardian_id, sequence_order, egsync_api, private_dir):
     '''Round 1: create and share pubkeys
     '''
 
-    details = from_public_record(public_dir, 'ceremony_details')
+    details = from_public_record(egsync_api, 'ceremony_details')
 
     # generate election key pair
     # there will eventually also be separate a Cardano wallet key pair
@@ -70,12 +70,12 @@ def round1(guardian_id, sequence_order, public_dir, private_dir):
     # TODO why not publish_record here? I guess that's later after backups?
     public_key: ElectionPublicKey = election_key_pair.share()
     to_public_record(
-        public_dir, 'guardian_pubkey', public_key,
+        egsync_api, 'guardian_pubkey', public_key,
         guardian_id=guardian_id
     )
 
 
-def round2(guardian_id, sequence_order, public_dir, private_dir):
+def round2(guardian_id, sequence_order, egsync_api, private_dir):
     '''Round 2: create and share backups
     '''
 
@@ -83,7 +83,7 @@ def round2(guardian_id, sequence_order, public_dir, private_dir):
 
     # load other guardians' public keys from shared folder
     other_guardian_pubkeys = [
-        k for k in load_guardian_pubkeys(public_dir)
+        k for k in load_guardian_pubkeys(egsync_api)
         if k.owner_id != guardian_id # remove self
     ]
 
@@ -98,12 +98,12 @@ def round2(guardian_id, sequence_order, public_dir, private_dir):
         )
         backup_order = other_pubkey.sequence_order
         to_public_record(
-            public_dir, 'guardian_backup', backup,
+            egsync_api, 'guardian_backup', backup,
             guardian_id=guardian_id, backup_order=backup_order
         )
 
 
-def round3(guardian_id, sequence_order, public_dir, private_dir):
+def round3(guardian_id, sequence_order, egsync_api, private_dir):
     '''Round 3: verify backups
     '''
 
@@ -112,11 +112,11 @@ def round3(guardian_id, sequence_order, public_dir, private_dir):
     own_public_key = election_key_pair.share()
 
     # find backup files sent to self, with basenames as keys
-    designated_backups = load_designated_backups(public_dir, guardian_id)
+    designated_backups = load_designated_backups(egsync_api, guardian_id)
 
     # load other guardians' public keys from shared folder
     other_guardian_pubkeys = {
-        k.owner_id: k for k in load_guardian_pubkeys(public_dir)
+        k.owner_id: k for k in load_guardian_pubkeys(egsync_api)
         if k.owner_id != guardian_id # remove self
     }
 
@@ -133,17 +133,16 @@ def round3(guardian_id, sequence_order, public_dir, private_dir):
         # these are named identically to the corresponding guardian_backups for now
         guardian_number = int(guardian_id.split('_')[-1])
         to_public_record(
-            public_dir, 'guardian_verification', verification,
+            egsync_api, 'guardian_verification', verification,
             guardian_id=owner_id, backup_order=guardian_number
         )
 
 
 @click.command("key-ceremony")
 @click.option(
-    "--public-dir",
-    prompt="Public records directory",
-    help="The location of a directory into which will be placed all public records. "
-    + "This folder should be protected. Existing files will be overwritten.",
+    "--egsync-api",
+    prompt="Base URL of the egsync API",
+    help="The URL of the public records API. ",
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
 @click.option(
@@ -172,7 +171,7 @@ def round3(guardian_id, sequence_order, public_dir, private_dir):
     type=click.INT,
 )
 def GuardianKeyCeremonyCommand(
-    public_dir: str,
+    egsync_api: str,
     private_dir: str,
     guardian_id: str,
     guardian_sequence_order: int,
@@ -186,13 +185,13 @@ def GuardianKeyCeremonyCommand(
     # print(json.dumps(locals()))
 
     if ceremony_round == 1:
-        round1(guardian_id, guardian_sequence_order, public_dir, private_dir)
+        round1(guardian_id, guardian_sequence_order, egsync_api, private_dir)
 
     elif ceremony_round == 2:
-        round2(guardian_id, guardian_sequence_order, public_dir, private_dir)
+        round2(guardian_id, guardian_sequence_order, egsync_api, private_dir)
 
     elif ceremony_round == 3:
-        round3(guardian_id, guardian_sequence_order, public_dir, private_dir)
+        round3(guardian_id, guardian_sequence_order, egsync_api, private_dir)
 
     # TODO implement round 4 (challenge if necessary)
     else:
@@ -201,10 +200,9 @@ def GuardianKeyCeremonyCommand(
 
 @click.command("decrypt-shares")
 @click.option(
-    "--public-dir",
-    prompt="Public records directory",
-    help="The location of a directory into which will be placed all public records. "
-    + "This folder should be protected. Existing files will be overwritten.",
+    "--egsync-api",
+    prompt="Base URL of the egsync API",
+    help="The URL of the public records API. ",
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
 @click.option(
@@ -221,7 +219,7 @@ def GuardianKeyCeremonyCommand(
     type=click.STRING,
 )
 def DecryptSharesCommand(
-    public_dir: str,
+    egsync_api: str,
     private_dir: str,
     guardian_id: str,
 ) -> None:
@@ -235,9 +233,9 @@ def DecryptSharesCommand(
     election_key_pair = from_private_record(private_dir, 'election_key_pair')
 
     # load public info
-    details   = from_public_record(public_dir, 'ceremony_details')
-    manifest  = from_public_record(public_dir, 'manifest')
-    joint_key = from_public_record(public_dir, 'joint_key')
+    details   = from_public_record(egsync_api, 'ceremony_details')
+    manifest  = from_public_record(egsync_api, 'manifest')
+    joint_key = from_public_record(egsync_api, 'joint_key')
     (_, _, context) = build_election(details, manifest, joint_key)
 
     # create guardian object
@@ -245,12 +243,12 @@ def DecryptSharesCommand(
 
     # compute tally share
     try:
-        tally = from_public_record(public_dir, 'ciphertext_tally')
+        tally = from_public_record(egsync_api, 'ciphertext_tally')
         tally_share = guardian.compute_tally_share(tally, context)
         # print(f'computed {guardian_id} decryption share of election tally', flush=True)
         assert tally_share is not None
         to_public_record(
-            public_dir, 'tally_share', tally_share,
+            egsync_api, 'tally_share', tally_share,
             guardian_id=guardian_id
         )
     except Exception as e:
@@ -259,7 +257,7 @@ def DecryptSharesCommand(
 
     # compute ballot shares
     try:
-        spoiled_ballots = load_spoiled_ballots(public_dir)
+        spoiled_ballots = load_spoiled_ballots(egsync_api)
         assert len(spoiled_ballots) > 0 # TODO count to see how many there should be?
         # TODO loop over this part too to separate errors
         spoiled_shares: Dict[BallotId, Optional[DecryptionShare]] \
@@ -269,7 +267,7 @@ def DecryptSharesCommand(
                 # print(f'computed {guardian_id} decryption share of {spoiled_id}', flush=True)
                 assert spoiled_share is not None
                 to_public_record(
-                    public_dir, 'spoiled_share', spoiled_share,
+                    egsync_api, 'spoiled_share', spoiled_share,
                     spoiled_id=spoiled_id, guardian_id=guardian_id
                 )
             except Exception as e:

@@ -9,8 +9,10 @@ from flask import Flask, jsonify, render_template_string, request, abort
 import ipfshttpclient
 import requests
 
+# TODO how is this loaded again? is it an env var? static?
 PUBLIC_DIR = '/data'
 
+# TODO can there be one source of truth for this in all scripts?
 PUBLIC_RECORDS = {
     'manifest': (
         Manifest,

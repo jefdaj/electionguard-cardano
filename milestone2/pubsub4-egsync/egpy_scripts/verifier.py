@@ -128,89 +128,89 @@ def verify_decryption_with_checkmark_message(
 
 ### verify_{name} verifies the {name} node in the dependency graph ###
 
-def verify_manifest(results, pubdir, log) -> Manifest:
-    return verify_public_record(results, pubdir, log, 'manifest')
+def verify_manifest(results, egsync_api, log) -> Manifest:
+    return verify_public_record(results, egsync_api, log, 'manifest')
 
-def verify_ceremony_details(results, pubdir, log) -> CeremonyDetails:
-    return verify_public_record(results, pubdir, log, 'ceremony_details')
+def verify_ceremony_details(results, egsync_api, log) -> CeremonyDetails:
+    return verify_public_record(results, egsync_api, log, 'ceremony_details')
 
-def verify_gather_announce(results, pubdir, log) -> bool:
+def verify_gather_announce(results, egsync_api, log) -> bool:
     log.info('Verifying announcement:')
     deps = verify_deps(
-        manifest = verify(results, pubdir, log, 'manifest'),
-        ceremony_details = verify(results, pubdir, log, 'ceremony_details'),
+        manifest = verify(results, egsync_api, log, 'manifest'),
+        ceremony_details = verify(results, egsync_api, log, 'ceremony_details'),
     )
     return True
 
-def verify_guardian_pubkey(results, pubdir, log, guardian_id) -> ElectionPublicKey:
+def verify_guardian_pubkey(results, egsync_api, log, guardian_id) -> ElectionPublicKey:
     res =  verify_public_record(
-        results, pubdir, log, 'guardian_pubkey',
+        results, egsync_api, log, 'guardian_pubkey',
         guardian_id=guardian_id
     )
     return res
 
-def verify_guardian_backup(results, pubdir, log, guardian_id, backup_order) -> ElectionPartialKeyBackup:
+def verify_guardian_backup(results, egsync_api, log, guardian_id, backup_order) -> ElectionPartialKeyBackup:
     # TODO verify the backup corresponds to the key
     deps = verify_deps(
-        guardian_pubkey = verify(results, pubdir, log, 'guardian_pubkey', guardian_id=guardian_id),
+        guardian_pubkey = verify(results, egsync_api, log, 'guardian_pubkey', guardian_id=guardian_id),
     )
     return verify_public_record(
-        results, pubdir, log, 'guardian_backup',
+        results, egsync_api, log, 'guardian_backup',
         guardian_id=guardian_id, backup_order=backup_order
     )
 
-def verify_guardian_verification(results, pubdir, log, guardian_id, backup_order) -> ElectionPartialKeyVerification:
+def verify_guardian_verification(results, egsync_api, log, guardian_id, backup_order) -> ElectionPartialKeyVerification:
     # TODO verify the verification corresponds to the backup
     deps = verify_deps(
         guardian_pubkey = verify(
-            results, pubdir, log, 'guardian_pubkey',
+            results, egsync_api, log, 'guardian_pubkey',
             guardian_id=guardian_id
         ),
         guardian_backup = verify(
-            results, pubdir, log, 'guardian_backup',
+            results, egsync_api, log, 'guardian_backup',
             guardian_id=guardian_id, backup_order=backup_order
         ),
     )
     return verify_public_record(
-        results, pubdir, log, 'guardian_verification',
+        results, egsync_api, log, 'guardian_verification',
         guardian_id=guardian_id, backup_order=backup_order
     )
 
-def verify_joint_key(results, pubdir, log) -> ElectionJointKey:
+def verify_joint_key(results, egsync_api, log) -> ElectionJointKey:
     # TODO add verification that joint_key derives from the pubkeys!
     deps = verify_deps(
-        all_guardian_pubkeys = verify(results, pubdir, log, 'all_guardian_pubkeys'),
+        all_guardian_pubkeys = verify(results, egsync_api, log, 'all_guardian_pubkeys'),
     )
-    return verify_public_record(results, pubdir, log, 'joint_key')
+    return verify_public_record(results, egsync_api, log, 'joint_key')
 
 # TODO use longer IDs rather than sequential small numbers?
-def verify_device(results, pubdir, log, device_number) -> EncryptionDevice:
+def verify_device(results, egsync_api, log, device_number) -> EncryptionDevice:
     return verify_public_record(
-        results, pubdir, log, 'device',
+        results, egsync_api, log, 'device',
         device_number=device_number
     )
 
-def verify_all_devices(results, pubdir, log) -> List[EncryptionDevice]:
-    device_numbers = list_device_numbers(pubdir)
+def verify_all_devices(results, egsync_api, log) -> List[EncryptionDevice]:
+    device_numbers = list_device_numbers(egsync_api)
     log.info(f'\nVerifying {len(device_numbers)} encryption devices:')
     deps = verify_deps(**{
-        f'device_{n}': verify(results, pubdir, log, 'device', device_number=n)
+        f'device_{n}': verify(results, egsync_api, log, 'device', device_number=n)
         for n in device_numbers
     })
     return deps.values()
 
-def verify_ballot_submitted(results, pubdir, log, ballot_id) -> SubmittedBallot:
+def verify_ballot_submitted(results, egsync_api, log, ballot_id) -> SubmittedBallot:
     # TODO verify it was submitted by one of the devices (or rely on Cardano for that?)
-    # device = verify(results, pubdir, log, 'device')
+    # device = verify(results, egsync_api, log, 'device')
 
     deps = verify_deps(
-        build_election = verify(results, pubdir, log, 'build_election')
+        build_election = verify(results, egsync_api, log, 'build_election')
     )
 
     (_, internal_manifest, context) = deps['build_election']
 
     ballot = verify_public_record(
-        results, pubdir, log, 'ballot_submitted',
+        results, egsync_api, log, 'ballot_submitted',
         ballot_id=ballot_id
     )
 
@@ -227,12 +227,12 @@ def verify_ballot_submitted(results, pubdir, log, ballot_id) -> SubmittedBallot:
     ballot_submitted = submit_ballot(ballot, BallotBoxState.UNKNOWN)
     return ballot_submitted
 
-def verify_ballot_cast(results, pubdir, log, ballot_id) -> SubmittedBallot:
+def verify_ballot_cast(results, egsync_api, log, ballot_id) -> SubmittedBallot:
     # TODO verify it was submitted by one of the devices (or rely on Cardano for that?)
-    # device = verify(results, pubdir, log, 'device')
+    # device = verify(results, egsync_api, log, 'device')
     deps = verify_deps(
-        ballot_submitted = verify(results, pubdir, log, 'ballot_submitted', ballot_id=ballot_id),
-        cast_notice = verify_public_record(results, pubdir, log, 'cast_notice', ballot_id=ballot_id),
+        ballot_submitted = verify(results, egsync_api, log, 'ballot_submitted', ballot_id=ballot_id),
+        cast_notice = verify_public_record(results, egsync_api, log, 'cast_notice', ballot_id=ballot_id),
     )
     assert deps['cast_notice'].ballot_id == deps['ballot_submitted'].object_id
     # TODO verify time cast_at seems about right? (within a short window after submitted)
@@ -242,17 +242,17 @@ def verify_ballot_cast(results, pubdir, log, ballot_id) -> SubmittedBallot:
 
     return ballot_cast
 
-def verify_ballot_spoiled(results, pubdir, log, ballot_id) -> SubmittedBallot:
+def verify_ballot_spoiled(results, egsync_api, log, ballot_id) -> SubmittedBallot:
     # TODO later, verify that the nonces decrypt to the expected votes (separate voter-side verifier)
     # TODO verify it was submitted by one of the devices (or rely on Cardano for that?)
-    # device = verify(results, pubdir, log, 'device'),
+    # device = verify(results, egsync_api, log, 'device'),
     deps = verify_deps(
-        ballot_submitted = verify(results, pubdir, log, 'ballot_submitted', ballot_id=ballot_id),
-        build_election = verify(results, pubdir, log, 'build_election')
+        ballot_submitted = verify(results, egsync_api, log, 'ballot_submitted', ballot_id=ballot_id),
+        build_election = verify(results, egsync_api, log, 'build_election')
     )
     (_, internal_manifest, context) = deps['build_election']
     ballot_spoiled = verify_public_record(
-        results, pubdir, log, 'ballot_spoiled',
+        results, egsync_api, log, 'ballot_spoiled',
         ballot_id=ballot_id
     )
     assert ballot_is_valid_for_election(
@@ -272,18 +272,18 @@ def verify_ballot_spoiled(results, pubdir, log, ballot_id) -> SubmittedBallot:
     ballot_submitted_v2 = submit_ballot(ballot_spoiled, BallotBoxState.SPOILED)
     return ballot_submitted_v2
 
-def verify_ciphertext_tally(results, pubdir, log):
+def verify_ciphertext_tally(results, egsync_api, log):
     return verify_public_record(
-        results, pubdir, log, 'ciphertext_tally',
+        results, egsync_api, log, 'ciphertext_tally',
         msg='ciphertext_tally format is valid'
     )
 
-def verify_tally_aggregation(results, pubdir, log):
+def verify_tally_aggregation(results, egsync_api, log):
     deps = verify_deps(
-        build_election = verify(results, pubdir, log, 'build_election'),
-        all_ballots_cast = verify(results, pubdir, log, 'all_ballots_cast'),
-        # all_ballots_spoiled = verify(results, pubdir, log, 'all_ballots_spoiled'), # TODO remove?
-        ciphertext_tally = verify(results, pubdir, log, 'ciphertext_tally'),
+        build_election = verify(results, egsync_api, log, 'build_election'),
+        all_ballots_cast = verify(results, egsync_api, log, 'all_ballots_cast'),
+        # all_ballots_spoiled = verify(results, egsync_api, log, 'all_ballots_spoiled'), # TODO remove?
+        ciphertext_tally = verify(results, egsync_api, log, 'ciphertext_tally'),
     )
 
     (_, internal_manifest, context) = deps['build_election']
@@ -309,29 +309,29 @@ def verify_tally_aggregation(results, pubdir, log):
 
     return True
 
-def verify_gather_tally(results, pubdir, log):
+def verify_gather_tally(results, egsync_api, log):
     log.info('\nVerifying final tally:')
     deps = verify_deps(
-        ciphertext_tally = verify(results, pubdir, log, 'ciphertext_tally'),
-        tally_aggregation = verify(results, pubdir, log, 'tally_aggregation'),
-        plaintext_tally = verify(results, pubdir, log, 'plaintext_tally'),
-        tally_decryption = verify(results, pubdir, log, 'tally_decryption'),
+        ciphertext_tally = verify(results, egsync_api, log, 'ciphertext_tally'),
+        tally_aggregation = verify(results, egsync_api, log, 'tally_aggregation'),
+        plaintext_tally = verify(results, egsync_api, log, 'plaintext_tally'),
+        tally_decryption = verify(results, egsync_api, log, 'tally_decryption'),
     )
     return True
 
-def verify_plaintext_tally(results, pubdir, log):
+def verify_plaintext_tally(results, egsync_api, log):
     return verify_public_record(
-        results, pubdir, log, 'plaintext_tally',
+        results, egsync_api, log, 'plaintext_tally',
         msg='plaintext_tally format is valid'
     )
 
-def verify_tally_decryption(results, pubdir, log) -> PlaintextTally:
+def verify_tally_decryption(results, egsync_api, log) -> PlaintextTally:
     # TODO also verify that the shares == their corresponding public record files
     # TODO and that the published shares match the ciphertext_tally? is that possible?
     deps = verify_deps(
-        plaintext_tally = verify(results, pubdir, log, 'plaintext_tally'),
-        all_guardian_pubkeys = verify(results, pubdir, log, 'all_guardian_pubkeys'),
-        context = verify(results, pubdir, log, 'context'),
+        plaintext_tally = verify(results, egsync_api, log, 'plaintext_tally'),
+        all_guardian_pubkeys = verify(results, egsync_api, log, 'all_guardian_pubkeys'),
+        context = verify(results, egsync_api, log, 'context'),
     )
     verify_decryption_with_checkmark_message(
         'plaintext_tally guardian decryption shares are valid',
@@ -340,13 +340,13 @@ def verify_tally_decryption(results, pubdir, log) -> PlaintextTally:
     )
     return deps['plaintext_tally']
 
-def verify_spoiled_result(results, pubdir, log, **fmtargs) -> PlaintextTally:
+def verify_spoiled_result(results, egsync_api, log, **fmtargs) -> PlaintextTally:
     deps = verify_deps(
-        all_guardian_pubkeys = verify(results, pubdir, log, 'all_guardian_pubkeys'),
-        context = verify(results, pubdir, log, 'context'),
+        all_guardian_pubkeys = verify(results, egsync_api, log, 'all_guardian_pubkeys'),
+        context = verify(results, egsync_api, log, 'context'),
     )
-    spoiled_result = from_public_record(pubdir, 'spoiled_result', **fmtargs)
-    # ballot_spoiled = from_public_record(pubdir, 'ballot_spoiled', **fmtargs),
+    spoiled_result = from_public_record(egsync_api, 'spoiled_result', **fmtargs)
+    # ballot_spoiled = from_public_record(egsync_api, 'ballot_spoiled', **fmtargs),
     verify_decryption_with_checkmark_message(
         f'spoiled_result {fmtargs}',
         log=log,
@@ -356,63 +356,63 @@ def verify_spoiled_result(results, pubdir, log, **fmtargs) -> PlaintextTally:
     )
     return spoiled_result
 
-def verify_all_guardian_pubkeys(results, pubdir, log) -> Dict[GuardianId, ElectionPublicKey]:
+def verify_all_guardian_pubkeys(results, egsync_api, log) -> Dict[GuardianId, ElectionPublicKey]:
     deps1 = verify_deps(
-        ceremony_details = verify(results, pubdir, log, 'ceremony_details'),
+        ceremony_details = verify(results, egsync_api, log, 'ceremony_details'),
     )
     deps2 = verify_deps(**{
-        f'guardian_{n}': verify(results, pubdir, log, 'guardian_pubkey', guardian_id=f'guardian_{n}')
+        f'guardian_{n}': verify(results, egsync_api, log, 'guardian_pubkey', guardian_id=f'guardian_{n}')
         for n in range(1, deps1['ceremony_details'].number_of_guardians+1)
     })
     return deps2
 
-def verify_all_ballots_submitted(results, pubdir, log) -> List[SubmittedBallot]:
-    fmtargs_list = list_submitted_ballot_fmtargs(pubdir)
+def verify_all_ballots_submitted(results, egsync_api, log) -> List[SubmittedBallot]:
+    fmtargs_list = list_submitted_ballot_fmtargs(egsync_api)
     log.info(f'\nVerifying {len(fmtargs_list)} submitted ballots:')
     deps = verify_deps(**{
-        fmtargs['ballot_id']: verify(results, pubdir, log, 'ballot_submitted', **fmtargs)
+        fmtargs['ballot_id']: verify(results, egsync_api, log, 'ballot_submitted', **fmtargs)
         for fmtargs in fmtargs_list
     })
     return deps.values()
 
-def verify_all_ballots_spoiled(results, pubdir, log) -> List[SubmittedBallot]:
-    fmtargs_list = list_spoiled_ballot_fmtargs(pubdir)
+def verify_all_ballots_spoiled(results, egsync_api, log) -> List[SubmittedBallot]:
+    fmtargs_list = list_spoiled_ballot_fmtargs(egsync_api)
     log.info(f'\nVerifying {len(fmtargs_list)} spoiled ballots:')
     deps = verify_deps(**{
-        fmtargs['ballot_id']: verify(results, pubdir, log, 'ballot_spoiled', **fmtargs)
+        fmtargs['ballot_id']: verify(results, egsync_api, log, 'ballot_spoiled', **fmtargs)
         for fmtargs in fmtargs_list
     })
     return deps.values()
 
-def verify_all_ballots_cast(results, pubdir, log) -> List[SubmittedBallot]:
-    fmtargs_list = list_cast_ballot_fmtargs(pubdir)
+def verify_all_ballots_cast(results, egsync_api, log) -> List[SubmittedBallot]:
+    fmtargs_list = list_cast_ballot_fmtargs(egsync_api)
     log.info(f'\nVerifying {len(fmtargs_list)} cast ballots:')
     deps = verify_deps(**{
-        fmtargs['ballot_id']: verify(results, pubdir, log, 'ballot_cast', **fmtargs)
+        fmtargs['ballot_id']: verify(results, egsync_api, log, 'ballot_cast', **fmtargs)
         for fmtargs in fmtargs_list
     })
     return deps.values()
 
-def verify_all_spoiled_results(results, pubdir, log) -> List[PlaintextTally]:
-    fmtargs_list = list_spoiled_ballot_fmtargs(pubdir)
+def verify_all_spoiled_results(results, egsync_api, log) -> List[PlaintextTally]:
+    fmtargs_list = list_spoiled_ballot_fmtargs(egsync_api)
     log.info(f'\nVerifying {len(fmtargs_list)} spoiled ballot decyptions:')
     deps = verify_deps(**{
-        fmtargs['ballot_id']: verify(results, pubdir, log, 'spoiled_result', **fmtargs)
+        fmtargs['ballot_id']: verify(results, egsync_api, log, 'spoiled_result', **fmtargs)
         for fmtargs in fmtargs_list
     })
     return deps.values()
 
 
-def verify_build_election(results, pubdir, log) -> \
+def verify_build_election(results, egsync_api, log) -> \
     Tuple[
         ElectionConstants,
         InternalManifest,
         CiphertextElectionContext
     ]:
     deps = verify_deps(
-        ceremony_details = verify(results, pubdir, log, 'ceremony_details'),
-        manifest = verify(results, pubdir, log, 'manifest'),
-        joint_key = verify(results, pubdir, log, 'joint_key'),
+        ceremony_details = verify(results, egsync_api, log, 'ceremony_details'),
+        manifest = verify(results, egsync_api, log, 'manifest'),
+        joint_key = verify(results, egsync_api, log, 'joint_key'),
     )
     return build_election(
         deps['ceremony_details'],
@@ -420,8 +420,8 @@ def verify_build_election(results, pubdir, log) -> \
         deps['joint_key'],
     )
 
-def verify_constants(results, pubdir, log) -> ElectionConstants:
-    deps = verify_deps(build_election = verify(results, pubdir, log, 'build_election'))
+def verify_constants(results, egsync_api, log) -> ElectionConstants:
+    deps = verify_deps(build_election = verify(results, egsync_api, log, 'build_election'))
     constants = with_checkmark_message(
         'constants',
         lambda: deps['build_election'],
@@ -429,8 +429,8 @@ def verify_constants(results, pubdir, log) -> ElectionConstants:
     )
     return constants
 
-def verify_internal_manifest(results, pubdir, log) -> InternalManifest:
-    deps = verify_deps(build_election = verify(results, pubdir, log, 'build_election'))
+def verify_internal_manifest(results, egsync_api, log) -> InternalManifest:
+    deps = verify_deps(build_election = verify(results, egsync_api, log, 'build_election'))
     internal_manifest = with_checkmark_message(
         'internal_manifest',
         lambda: deps['build_election'][1],
@@ -438,8 +438,8 @@ def verify_internal_manifest(results, pubdir, log) -> InternalManifest:
     )
     return internal_manifest
 
-def verify_context(results, pubdir, log) -> CiphertextElectionContext:
-    deps = verify_deps(build_election = verify(results, pubdir, log, 'build_election'))
+def verify_context(results, egsync_api, log) -> CiphertextElectionContext:
+    deps = verify_deps(build_election = verify(results, egsync_api, log, 'build_election'))
     context = with_checkmark_message(
         'context',
         lambda: deps['build_election'][2],
@@ -447,21 +447,21 @@ def verify_context(results, pubdir, log) -> CiphertextElectionContext:
     )
     return context
 
-def verify_all_guardian_backups(results, pubdir, log) -> List[ElectionPartialKeyBackup]:
+def verify_all_guardian_backups(results, egsync_api, log) -> List[ElectionPartialKeyBackup]:
     deps1 = verify_deps(
-        ceremony_details = verify(results, pubdir, log, 'ceremony_details'),
+        ceremony_details = verify(results, egsync_api, log, 'ceremony_details'),
     )
     n_guardians = deps1['ceremony_details'].number_of_guardians
-    fmtargs_list = list_guardian_backup_fmtargs(pubdir, n_guardians)
+    fmtargs_list = list_guardian_backup_fmtargs(egsync_api, n_guardians)
     deps2 = verify_deps(**{
         record_basename('guardian_backup', **fmtargs):
-            verify(results, pubdir, log, 'guardian_backup', **fmtargs)
+            verify(results, egsync_api, log, 'guardian_backup', **fmtargs)
         for fmtargs in fmtargs_list
     })
     return deps2.values()
 
-def verify_all_guardian_verifications(results, pubdir, log):
-    ceremony_details = verify(results, pubdir, log, 'ceremony_details')
+def verify_all_guardian_verifications(results, egsync_api, log):
+    ceremony_details = verify(results, egsync_api, log, 'ceremony_details')
     verifications = []
     for gn in range(1, ceremony_details.number_of_guardians+1):
         for bo in range(1, ceremony_details.number_of_guardians+1):
@@ -469,51 +469,51 @@ def verify_all_guardian_verifications(results, pubdir, log):
                 continue
             guardian_id = f'guardian_{gn}'
             verification = verify(
-                results, pubdir, log, 'guardian_verification',
+                results, egsync_api, log, 'guardian_verification',
                 guardian_id=guardian_id, backup_order=bo
             )
         verifications.append(verification)
     return verifications
 
-def verify_gather_ceremony(results, pubdir, log) -> bool:
+def verify_gather_ceremony(results, egsync_api, log) -> bool:
     log.info('\nVerifying key ceremony:')
     deps = verify_deps(
-        ceremony_details = verify(results, pubdir, log, 'ceremony_details'),
-        all_guardian_pubkeys = verify(results, pubdir, log, 'all_guardian_pubkeys'),
-        all_guardian_backups = verify(results, pubdir, log, 'all_guardian_backups'),
-        all_guardian_verifications = verify(results, pubdir, log, 'all_guardian_verifications'),
+        ceremony_details = verify(results, egsync_api, log, 'ceremony_details'),
+        all_guardian_pubkeys = verify(results, egsync_api, log, 'all_guardian_pubkeys'),
+        all_guardian_backups = verify(results, egsync_api, log, 'all_guardian_backups'),
+        all_guardian_verifications = verify(results, egsync_api, log, 'all_guardian_verifications'),
 
         # this is sometimes called part of the ceremony,
         # but i prefer putting it in 3_constants because admin does it
-        # joint_key = verify(results, pubdir, log, 'joint_key'),
+        # joint_key = verify(results, egsync_api, log, 'joint_key'),
     )
     return True
 
 # TODO figure out a less confusing name for this... final details? specifics?
 # TODO then rename to match in other scripts too
-def verify_gather_constants(results, pubdir, log) -> bool:
+def verify_gather_constants(results, egsync_api, log) -> bool:
     log.info('\nVerifying election constants:')
     deps = verify_deps(
-        joint_key = verify(results, pubdir, log, 'joint_key'),
-        constants = verify(results, pubdir, log, 'constants'),
-        manifest = verify(results, pubdir, log, 'manifest'), # TODO also internal_manifest?
-        context = verify(results, pubdir, log, 'context'),
+        joint_key = verify(results, egsync_api, log, 'joint_key'),
+        constants = verify(results, egsync_api, log, 'constants'),
+        manifest = verify(results, egsync_api, log, 'manifest'), # TODO also internal_manifest?
+        context = verify(results, egsync_api, log, 'context'),
     )
     return True
 
-def verify_gather_config(results, pubdir, log) -> bool:
+def verify_gather_config(results, egsync_api, log) -> bool:
     deps = verify_deps(
-        gather_announce = verify(results, pubdir, log, 'gather_announce'),
-        gather_ceremony = verify(results, pubdir, log, 'gather_ceremony'),
-        gather_constants = verify(results, pubdir, log, 'gather_constants'),
-        all_devices = verify(results, pubdir, log, 'all_devices'),
+        gather_announce = verify(results, egsync_api, log, 'gather_announce'),
+        gather_ceremony = verify(results, egsync_api, log, 'gather_ceremony'),
+        gather_constants = verify(results, egsync_api, log, 'gather_constants'),
+        all_devices = verify(results, egsync_api, log, 'all_devices'),
     )
     return True
 
-def verify_n_spoiled_decrypted(results, pubdir, log) -> bool:
+def verify_n_spoiled_decrypted(results, egsync_api, log) -> bool:
     deps = verify_deps(
-        all_ballots_spoiled = verify(results, pubdir, log, 'all_ballots_spoiled'),
-        all_spoiled_results = verify(results, pubdir, log, 'all_spoiled_results'),
+        all_ballots_spoiled = verify(results, egsync_api, log, 'all_ballots_spoiled'),
+        all_spoiled_results = verify(results, egsync_api, log, 'all_spoiled_results'),
     )
     n_spoiled = len(deps['all_ballots_spoiled'])
     n_result  = len(deps['all_spoiled_results'])
@@ -523,11 +523,11 @@ def verify_n_spoiled_decrypted(results, pubdir, log) -> bool:
         log
     )
 
-def verify_n_cast_spoiled_submitted(results, pubdir, log) -> bool:
+def verify_n_cast_spoiled_submitted(results, egsync_api, log) -> bool:
     deps = verify_deps(
-        all_ballots_cast      = verify(results, pubdir, log, 'all_ballots_cast'),
-        all_ballots_spoiled   = verify(results, pubdir, log, 'all_ballots_spoiled'),
-        all_ballots_submitted = verify(results, pubdir, log, 'all_ballots_submitted'),
+        all_ballots_cast      = verify(results, egsync_api, log, 'all_ballots_cast'),
+        all_ballots_spoiled   = verify(results, egsync_api, log, 'all_ballots_spoiled'),
+        all_ballots_submitted = verify(results, egsync_api, log, 'all_ballots_submitted'),
     )
     n_cast      = len(deps['all_ballots_cast'])
     n_spoiled   = len(deps['all_ballots_spoiled'])
@@ -538,10 +538,10 @@ def verify_n_cast_spoiled_submitted(results, pubdir, log) -> bool:
         log
     )
 
-def verify_set_spoiled_decrypted(results, pubdir, log) -> bool:
+def verify_set_spoiled_decrypted(results, egsync_api, log) -> bool:
     deps = verify_deps(
-        all_ballots_spoiled = verify(results, pubdir, log, 'all_ballots_spoiled'),
-        all_spoiled_results = verify(results, pubdir, log, 'all_spoiled_results'),
+        all_ballots_spoiled = verify(results, egsync_api, log, 'all_ballots_spoiled'),
+        all_spoiled_results = verify(results, egsync_api, log, 'all_spoiled_results'),
     )
     spoiled_ids = set(b.object_id for b in deps['all_ballots_spoiled'])
     result_ids  = set(b.object_id for b in deps['all_spoiled_results'])
@@ -551,12 +551,12 @@ def verify_set_spoiled_decrypted(results, pubdir, log) -> bool:
         log
     )
 
-def verify_set_cast_spoiled_submitted(results, pubdir, log) -> bool:
+def verify_set_cast_spoiled_submitted(results, egsync_api, log) -> bool:
     # TODO why isn't this short-circuiting the rest of the fn?
     deps = verify_deps(
-        all_ballots_cast = verify(results, pubdir, log, 'all_ballots_cast'),
-        all_ballots_spoiled = verify(results, pubdir, log, 'all_ballots_spoiled'),
-        all_ballots_submitted = verify(results, pubdir, log, 'all_ballots_submitted'),
+        all_ballots_cast = verify(results, egsync_api, log, 'all_ballots_cast'),
+        all_ballots_spoiled = verify(results, egsync_api, log, 'all_ballots_spoiled'),
+        all_ballots_submitted = verify(results, egsync_api, log, 'all_ballots_submitted'),
     )
     cast_ids      = set(b.object_id for b in deps['all_ballots_cast'])
     spoiled_ids   = set(b.object_id for b in deps['all_ballots_spoiled'])
@@ -567,30 +567,30 @@ def verify_set_cast_spoiled_submitted(results, pubdir, log) -> bool:
         log
     )
 
-def verify_ballot_sets(results, pubdir, log) -> bool:
+def verify_ballot_sets(results, egsync_api, log) -> bool:
     "Make sure the various sets of ballot IDs match up (nothing missing or extra)"
     log.info('\nVerifying ballot ID sets:')
     deps = verify_deps(
-        n_spoiled_decrypted = verify(results, pubdir, log, 'n_spoiled_decrypted'),
-        n_cast_spoiled_submitted = verify(results, pubdir, log, 'n_cast_spoiled_submitted'),
-        set_spoiled_decrypted = verify(results, pubdir, log, 'set_spoiled_decrypted'),
-        set_cast_spoiled_submitted = verify(results, pubdir, log, 'set_cast_spoiled_submitted'),
+        n_spoiled_decrypted = verify(results, egsync_api, log, 'n_spoiled_decrypted'),
+        n_cast_spoiled_submitted = verify(results, egsync_api, log, 'n_cast_spoiled_submitted'),
+        set_spoiled_decrypted = verify(results, egsync_api, log, 'set_spoiled_decrypted'),
+        set_cast_spoiled_submitted = verify(results, egsync_api, log, 'set_cast_spoiled_submitted'),
     )
     # TODO explicitly assert that each list has all unique IDs?
     return True
 
-def verify_gather_decryptions(results, pubdir, log) -> bool:
+def verify_gather_decryptions(results, egsync_api, log) -> bool:
     deps = verify_deps(
-        plaintext_tally = verify(results, pubdir, log, 'plaintext_tally'),
-        all_spoiled_results = verify(results, pubdir, log, 'all_spoiled_results'),
+        plaintext_tally = verify(results, egsync_api, log, 'plaintext_tally'),
+        all_spoiled_results = verify(results, egsync_api, log, 'all_spoiled_results'),
     )
     return True
 
-def verify_gather_election(results, pubdir, log) -> bool:
+def verify_gather_election(results, egsync_api, log) -> bool:
     deps = verify_deps(
-        gather_config = verify(results, pubdir, log, 'gather_config'),
-        ballot_sets = verify(results, pubdir, log, 'ballot_sets'),
-        gather_decryptions = verify(results, pubdir, log, 'gather_decryptions'),
+        gather_config = verify(results, egsync_api, log, 'gather_config'),
+        ballot_sets = verify(results, egsync_api, log, 'ballot_sets'),
+        gather_decryptions = verify(results, egsync_api, log, 'gather_decryptions'),
     )
     return True
 
@@ -614,7 +614,7 @@ def verify_assertion(msg, assertion, log):
 
 def verify_public_record(
     results: ResultsCache,
-    pubdir: str,
+    egsync_api: str,
     log: logging.Logger,
     target: TargetName,
     **fmtargs
@@ -632,7 +632,7 @@ def verify_public_record(
     try:
         result = with_checkmark_message(
             msg,
-            lambda: from_public_record(pubdir, target, **fmtargs),
+            lambda: from_public_record(egsync_api, target, **fmtargs),
             log
         )
         return result
@@ -641,7 +641,7 @@ def verify_public_record(
 
 def verify(
     results: ResultsCache,
-    pubdir: str,
+    egsync_api: str,
     log: logging.Logger,
     target: TargetName,
     **kwargs
@@ -649,7 +649,7 @@ def verify(
     """
     Main verify function that calls the others with caching etc
     `results` is the main program state
-    `pubdir` is the public_records dir
+    `egsync_api` is the URL to this triplet's egsync 
     `pubrec` is a key in the PUBLIC_RECORDS map
     """
 
@@ -668,7 +668,7 @@ def verify(
     verify_fn = globals()[f'verify_{target}']
     with CaptureLog(level=logging.WARNING) as log2:
         try:
-            result = verify_fn(results, pubdir, log, **kwargs)
+            result = verify_fn(results, egsync_api, log, **kwargs)
         except Exception as e:
             msgs = [str(e)]
             msgs.append(log2.getvalue().strip())
@@ -754,7 +754,7 @@ def summarize_results(
     successes: Successes,
     errors: Errors,
     bools: VerifiedBools,
-    pubdir: str,
+    egsync_api: str,
     log: logging.Logger,
     verifier_id: str,
 ) -> int:
@@ -855,7 +855,7 @@ def summarize_results(
         tally_header  : tally_summary,
         spoiled_header: spoiled_summaries,
     }
-    to_public_record(pubdir, 'summary', summary, verifier_id=verifier_id)
+    to_public_record(egsync_api, 'summary', summary, verifier_id=verifier_id)
     log.info('')
 
     if n_errors == 0:
@@ -873,38 +873,37 @@ def summarize_results(
 
 ### cli ###
 
-def main(pubdir, log, verifier_id):
+def main(egsync_api, log, verifier_id):
 
     # main program state
     # accumulates successful result objects and error messages
     results: ResultsCache = {}
 
     # these partially overlap, which is fine
-    verify(results, pubdir, log, 'gather_config')
-    verify(results, pubdir, log, 'all_ballots_submitted')
-    verify(results, pubdir, log, 'all_ballots_cast')
-    verify(results, pubdir, log, 'all_ballots_spoiled')
-    verify(results, pubdir, log, 'all_spoiled_results')
-    verify(results, pubdir, log, 'ballot_sets')
-    verify(results, pubdir, log, 'gather_tally')
-    verify(results, pubdir, log, 'gather_decryptions')
-    verify(results, pubdir, log, 'gather_election')
+    verify(results, egsync_api, log, 'gather_config')
+    verify(results, egsync_api, log, 'all_ballots_submitted')
+    verify(results, egsync_api, log, 'all_ballots_cast')
+    verify(results, egsync_api, log, 'all_ballots_spoiled')
+    verify(results, egsync_api, log, 'all_spoiled_results')
+    verify(results, egsync_api, log, 'ballot_sets')
+    verify(results, egsync_api, log, 'gather_tally')
+    verify(results, egsync_api, log, 'gather_decryptions')
+    verify(results, egsync_api, log, 'gather_election')
 
     (successes, errors, bools) = simplify_and_partition(results, log)
 
     n_errors = summarize_results(
         successes, errors, bools,
-        pubdir, log, verifier_id,
+        egsync_api, log, verifier_id,
     )
 
     sys.exit(n_errors)
 
 @click.command("verify")
 @click.option(
-    "--public-dir",
-    prompt="Public records directory",
-    help="The location of a directory into which will be placed all public records. "
-    + "This folder should be protected. Existing files will be overwritten.",
+    "--egsync-api",
+    prompt="Base URL of the egsync API",
+    help="The URL of the public records API. ",
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
 @click.option(
@@ -920,7 +919,7 @@ def main(pubdir, log, verifier_id):
     type=click.STRING,
 )
 def VerifyCommand(
-    public_dir: str,
+    egsync_api: str,
     verifier_id: str,
     logfile: Optional[str],
 ) -> None:
@@ -928,7 +927,7 @@ def VerifyCommand(
     # TODO parse and pass cfg here
     log = init_log(logfile, logging.INFO)
     try:
-        main(public_dir, log, verifier_id)
+        main(egsync_api, log, verifier_id)
     except Exception as e:
         log.error(e)
         raise

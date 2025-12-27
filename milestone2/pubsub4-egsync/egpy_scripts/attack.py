@@ -359,24 +359,23 @@ def guardian_withhold_spoiled_share(log, pubdir, privdir, step):
 
 ### main ###
 
-def main(log, public_dir, private_dir, fn_name, step, random_seed):
+def main(log, egsync_api, private_dir, fn_name, step, random_seed):
     random.seed(random_seed) # TODO do within each fn, or just here?
     try:
         attack_fn = globals()[fn_name]
     except KeyError:
         log.error('no such attack fn: {fn_name}')
         raise
-    attack_fn(log, public_dir, private_dir, step)
+    attack_fn(log, egsync_api, private_dir, step)
 
 
 ### cli ###
 
 @click.command("attack")
 @click.option(
-    "--public-dir",
-    prompt="Public records directory",
-    help="The location of a directory into which will be placed all public records. "
-    + "This folder should be protected. Existing files will be overwritten.",
+    "--egsync-api",
+    prompt="Base URL of the egsync API",
+    help="The URL of the public records API. ",
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
 )
 @click.option(
@@ -411,7 +410,7 @@ def main(log, public_dir, private_dir, fn_name, step, random_seed):
     type=click.INT,
 )
 def AttackCommand(
-    public_dir: str,
+    egsync_api: str,
     private_dir: str,
     attack_fn: str,
     step: str,
@@ -421,7 +420,7 @@ def AttackCommand(
     # TODO parse and pass cfg here?
     log = init_log(logfile, logging.INFO)
     # log.info(f'running an attack with locals: {locals()}')
-    main(log, public_dir, private_dir, attack_fn, step, random_seed)
+    main(log, egsync_api, private_dir, attack_fn, step, random_seed)
 
 @click.group
 def cli() -> None:
