@@ -13,6 +13,8 @@ import requests
 PUBLIC_DIR = '/data'
 
 # TODO can there be one source of truth for this in all scripts?
+# TODO actually though, egpy only needs to know the types right?
+# TODO wait do we NOT need the types here? and not need to have electionguard installed?
 PUBLIC_RECORDS = {
     'manifest': (
         Manifest,
@@ -279,12 +281,12 @@ def index():
 #     t.start()
 
 
-# TODO need another step to convery Python type -> JSON on the other end to send to API?
+# TODO add an arg or url part for channel
 @app.route("/api/public_records/<record_type>", methods=["POST"])
 def save_public_record(record_type):
     # 1. Validate record_type
     if record_type not in PUBLIC_RECORDS:
-        abort(404, description="Unknown record_type")
+        abort(404, description=f"Unknown record_type '{record_type}'")
 
     rtype, _, _ = PUBLIC_RECORDS[record_type]
 
@@ -309,6 +311,7 @@ def save_public_record(record_type):
     fmtargs = request.args.to_dict()
 
     # 5. Delegate file-writing to your helper
+    # TODO and then append to the channel jsonl in here?
     to_public_record(PUBLIC_DIR, record_type, obj, **fmtargs)
 
     return "", 204
@@ -317,7 +320,7 @@ def save_public_record(record_type):
 @app.route("/api/public_records/<record_type>", methods=["GET"])
 def load_public_record(record_type):
     if record_type not in PUBLIC_RECORDS:
-        abort(404, description="Unknown record_type")
+        abort(404, description=f"Unknown record_type '{record_type}'")
 
     rtype, _, _ = PUBLIC_RECORDS[record_type]
     fmtargs = request.args.to_dict()
