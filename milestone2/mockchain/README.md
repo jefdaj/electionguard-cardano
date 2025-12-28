@@ -6,6 +6,19 @@ I split it out into a separate mini dev environment because it was starting to
 get complicated working on this + the new "triplet" node design (an egpy +
 egsync + ipfs container per electionguard role).
 
+Usage
+-----
+
+```bash
+nix develop
+./mockchain.py
+```
+
+```bash
+nix build
+./result/bin/mockchain.py
+```
+
 JSON files
 ----------
 

@@ -25,10 +25,7 @@
       ];
 
       mockchainPyPkgList = ps: with ps; [
-        flask
-        ipfshttpclient
-        requests
-        pydantic
+        aioipfs
       ];
 
       # based on https://stackoverflow.com/a/78450917
@@ -48,7 +45,8 @@
 
     in {
 
-      packages.x86_64-linux = {
+      packages.x86_64-linux = rec {
+        default = mockchain;
         mockchain = singleScriptPyPkg ./mockchain.py "0.1" mockchainPyPkgList;
       };
 
