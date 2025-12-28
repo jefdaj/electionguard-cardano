@@ -9,7 +9,6 @@
       # This is an actual output; see note below.
       pkgs = nixpkgs.legacyPackages.x86_64-linux.extend py312Overlay;
 
-      # TODO is this needed?
       py312Overlay = self: super: {
         python312 = super.python312.override {
           packageOverrides = pyself: pysuper: {

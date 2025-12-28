@@ -10,10 +10,93 @@ import sys
 
 from flask import Flask, jsonify, render_template_string, request, abort
 from os import makedirs
-from os.path import join
-from typing import List
+from os.path import join, exists
+from typing import List, Callable, TextIO
+from pathlib import Path
+
+app = Flask(__name__)
+
+
+### subscribe to appended "onchain" json events ###
 
 ONCHAIN_DIR = '/data/onchain'
+
+def watch_jsonl(
+    path: str | Path,
+    callback: Callable[[dict], None],
+    poll_interval: float = 1.0
+) -> None:
+    """
+    Call `callback(obj)` each time a new JSON object is appended
+    to the JSONL file at `path`. Does not re-read old lines.
+    """
+    path = Path(path)
+    app.logger.info(f"watch_jsonl {path}")
+
+    while not exists(path):
+        time.sleep(poll_interval)
+
+    # Open in read-only, text mode
+    with path.open("r", encoding="utf-8") as f:
+        # Start at end so we ignore existing content
+        f.seek(0, 2)  # 2 = os.SEEK_END
+
+        while True:
+            line = f.readline()
+            if not line:
+                # No new data yet; wait and try again
+                time.sleep(poll_interval)
+                continue
+
+            line = line.strip()
+            if not line:
+                continue
+
+            try:
+                obj = json.loads(line)
+            except json.JSONDecodeError:
+                # Optionally handle partial writes / corrupt lines
+                app.logger.info(f"watch_jsonl {path} JSON decode error")
+                continue
+
+            app.logger.info(f"watch_jsonl {path} new obj: {obj}")
+            callback(obj)
+
+def handle_posted_json(obj):
+    app.logger.info(f'handle_posted_json new obj: {obj}')
+
+def ipfs_sync_loop():
+    """
+    Background loop that periodically fetches CIDs and pins them.
+    """
+    # TODO should there be a sync loop per channel?
+    app.logger.info("Starting IPFS sync loop")
+    # client = ipfshttpclient.connect(addr=IPFS_API_ADDR)
+
+    watch_jsonl(join(ONCHAIN_DIR, 'admin1.jsonl'), handle_posted_json)
+
+#     while True:
+#         try:
+#             cids = fetch_cids_from_provider()
+#             new_cids = [cid for cid in cids if cid not in state["pinned_cids"]]
+# 
+#             for cid in new_cids:
+#                 try:
+#                     pin_cid(client, cid)
+#                     state["pinned_cids"].add(cid)
+#                 except Exception as e:
+#                     msg = f"Error pinning {cid}: {e}"
+#                     app.logger.error(msg)
+#                     state["sync_errors"].append(msg)
+# 
+#             state["last_sync"] = time.time()
+#         except Exception as e:
+#             msg = f"Sync error: {e}"
+#             app.logger.error(msg)
+#             state["sync_errors"].append(msg)
+# 
+#         time.sleep(CID_POLL_INTERVAL)
+
 
 # TODO is this a reasonable way to pass it? if not, use env
 IPFS_API = sys.argv[1]
@@ -196,6 +279,7 @@ def post_onchain(onchain_channel: str, record_type: str, cid: str, **fmtargs):
         json.dump(post_json, f)
         # TODO need a newline or anything?
 
+# TODO separate the code for actually saving the file from the ipfs code
 # TODO would it be better to save to a temporary location and let ipfs put the file in place?
 def to_public_record(
         onchain_channel: str,
@@ -217,8 +301,6 @@ def from_public_record(record_type: str, **fmtargs):
 # IPFS_API_ADDR = os.getenv("IPFS_API_ADDR", "/ip4/127.0.0.1/tcp/5001")
 # CID_PROVIDER_URL = os.getenv("CID_PROVIDER_URL", "http://localhost:8080/cids")
 # CID_POLL_INTERVAL = float(os.getenv("CID_POLL_INTERVAL", "30.0"))
-
-app = Flask(__name__)
 
 # Global state for demo purposes; in real apps use something more robust.
 # state = {
@@ -245,35 +327,6 @@ app = Flask(__name__)
 #     app.logger.info(f"Pinning CID: {cid}")
 #     IPFS_CLIENT.pin.add(cid)
 
-
-# def ipfs_sync_loop():
-#     """
-#     Background loop that periodically fetches CIDs and pins them.
-#     """
-#     app.logger.info("Starting IPFS sync loop")
-#     client = ipfshttpclient.connect(addr=IPFS_API_ADDR)
-# 
-#     while True:
-#         try:
-#             cids = fetch_cids_from_provider()
-#             new_cids = [cid for cid in cids if cid not in state["pinned_cids"]]
-# 
-#             for cid in new_cids:
-#                 try:
-#                     pin_cid(client, cid)
-#                     state["pinned_cids"].add(cid)
-#                 except Exception as e:
-#                     msg = f"Error pinning {cid}: {e}"
-#                     app.logger.error(msg)
-#                     state["sync_errors"].append(msg)
-# 
-#             state["last_sync"] = time.time()
-#         except Exception as e:
-#             msg = f"Sync error: {e}"
-#             app.logger.error(msg)
-#             state["sync_errors"].append(msg)
-# 
-#         time.sleep(CID_POLL_INTERVAL)
 
 
 # ----------------- Flask routes ----------------- #
@@ -325,9 +378,9 @@ def index():
 #     # For htmx, return HTML snippet, but also reasonable for plain browser.
 #     return f"<p>Pinned CID: <code>{cid}</code></p>"
 
-# def start_background_thread():
-#     t = threading.Thread(target=ipfs_sync_loop, daemon=True)
-#     t.start()
+def start_background_thread():
+    t = threading.Thread(target=ipfs_sync_loop, daemon=True)
+    t.start()
 
 
 # TODO add an arg or url part for channel
@@ -400,5 +453,5 @@ def load_public_record(record_type):
 
 if __name__ == "__main__":
     # Start background sync thread, then run Flask dev server
-    # start_background_thread()
+    start_background_thread()
     app.run(host="0.0.0.0", port=5000, debug=True)
