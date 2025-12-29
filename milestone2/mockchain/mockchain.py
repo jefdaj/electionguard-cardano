@@ -47,7 +47,7 @@ class MockchainSubscriber(FileSystemEventHandler):
             '^' +
             self.mockchain_dir +
             '/([^/]*)'
-            '/([0-9]{1,}).json$'
+            '/([0-9]{3,3}).json$'
         )
 
     def subscribed_json_path(self, channel: str, index: int) -> str:
