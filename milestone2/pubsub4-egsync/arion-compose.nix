@@ -73,12 +73,12 @@ let
   # containers #
   ##############
 
-  egpyContainer = mode: scripts_dir: onchain_dir: private_dir: n: {
+  egpyContainer = mode: scripts_dir: mockchain_dir: private_dir: n: {
     service.image = "ghcr.io/jefdaj/electionguard-python:1.4.0";
 
     service.volumes = [
       "${scripts_dir}:/scripts/"
-      "${onchain_dir}:/data/onchain"
+      "${mockchain_dir}:/data/mockchain"
       "${private_dir}/${mode}_${builtins.toString n}/egpy:/data/private"
     ];
 
@@ -94,11 +94,11 @@ let
 
   # TODO write egsync
   # TODO no private_dir needed?
-  egsyncContainer = mode: onchain_dir: private_dir: n: {
+  egsyncContainer = mode: mockchain_dir: private_dir: n: {
     # service.image = "busybox:latest";
 
     service.volumes = [
-      "${onchain_dir}:/data/onchain"
+      "${mockchain_dir}:/data/mockchain"
       "${private_dir}/${mode}_${builtins.toString n}/egsync:/data/private"
     ];
 
@@ -110,11 +110,14 @@ let
 
     service.useHostStore = true;
     service.stop_signal = "SIGINT";
-    service.command = [
-      "egsync.py"
-      # "http://${mode}${builtins.toString n}-ipfs-1:5001" # TODO is this right?
-      "/dns4/test-${mode}${builtins.toString n}-ipfs-1/tcp/5001/http" # TODO get test name here
-    ];
+
+    service.environment = {
+      IPFS_API_ADDR = "/dns4/test-${mode}${builtins.toString n}-ipfs-1/tcp/5001/http";
+      MOCKCHAIN_JSON_DIR = "/data/mockchain";
+      PUBLIC_RECORDS_DIR = "/data/private";
+    };
+
+    service.command = ["egsync.py"];
     service.restart = "on-failure";
 
     image.enableRecommendedContents = true; # sh, env, misc lightweight files
@@ -155,7 +158,9 @@ let
       # "${builtins.toString (8080 + portSuffix)}:8080" # ipfs gateway
     ];
  
-    service.environment.IPFS_LOGGING="info";
+    service.environment = {
+      IPFS_LOGGING = "info";
+    };
   };
 
 
@@ -163,15 +168,15 @@ let
   # services #
   ############
 
-  egpyAttrs = mode: scripts_dir: onchain_dir: private_dir: n: {
+  egpyAttrs = mode: scripts_dir: mockchain_dir: private_dir: n: {
     name = "${mode}${builtins.toString n}-egpy";
-    value = egpyContainer mode scripts_dir onchain_dir private_dir n;
+    value = egpyContainer mode scripts_dir mockchain_dir private_dir n;
   };
 
   # TODO no private_dir needed?
-  egsyncAttrs = mode: onchain_dir: private_dir: n: {
+  egsyncAttrs = mode: mockchain_dir: private_dir: n: {
     name = "${mode}${builtins.toString n}-egsync";
-    value = egsyncContainer mode onchain_dir private_dir n;
+    value = egsyncContainer mode mockchain_dir private_dir n;
   };
 
   ipfsAttrs = mode: private_dir: n: {
@@ -183,13 +188,13 @@ let
   tripletAttrsList = dataDir: mode: nVms:
     let
       scripts_dir = "./egpy_scripts";
-      onchain_dir  = "${dataDir}/onchain";
+      mockchain_dir = "${dataDir}/mockchain";
       private_dir = "${dataDir}/private";
       range       = pkgs.lib.range 1 nVms;
     in
     pkgs.lib.concatMap (n: [
-      (egpyAttrs   mode scripts_dir onchain_dir private_dir n)
-      (egsyncAttrs mode onchain_dir private_dir n)
+      (egpyAttrs   mode scripts_dir mockchain_dir private_dir n)
+      (egsyncAttrs mode mockchain_dir private_dir n)
       (ipfsAttrs   mode private_dir n)
     ]) range;
 

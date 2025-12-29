@@ -32,8 +32,17 @@ logging.basicConfig(
     ]
 )
 
+# TODO start app later and just init logger on its own here?
 app = Flask(__name__)
 info = app.logger.info
+
+
+### environment vars ###
+
+# TODO should these handle failure?
+IPFS_API_ADDR = os.environ['IPFS_API_ADDR']; info(f'IPFS_API_ADDR: {IPFS_API_ADDR}')
+MOCKCHAIN_JSON_DIR = os.environ['MOCKCHAIN_JSON_DIR']; info(f'MOCKCHAIN_JSON_DIR: {MOCKCHAIN_JSON_DIR}')
+PUBLIC_RECORDS_DIR = os.environ['PUBLIC_RECORDS_DIR']; info(f'PUBLIC_RECORDS_DIR: {PUBLIC_RECORDS_DIR}')
 
 
 ### ipfs ###
