@@ -26,6 +26,7 @@
 
       mockchainPyPkgList = ps: with ps; [
         aioipfs
+        watchdog
       ];
 
       # based on https://stackoverflow.com/a/78450917
