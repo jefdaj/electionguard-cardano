@@ -94,7 +94,7 @@ let
 
   # TODO write egsync
   # TODO no private_dir needed?
-  egsyncContainer = mode: mockchain_dir: private_dir: n: {
+  egsyncContainer = mode: project_name: mockchain_dir: private_dir: n: {
     # service.image = "busybox:latest";
 
     service.volumes = [
@@ -111,11 +111,13 @@ let
     service.useHostStore = true;
     service.stop_signal = "SIGINT";
 
-    service.environment = {
-      IPFS_API_ADDR = "/dns4/test-${mode}${builtins.toString n}-ipfs-1/tcp/5001/http";
-      MOCKCHAIN_JSON_DIR = "/data/mockchain";
-      PUBLIC_RECORDS_DIR = "/data/private";
-    };
+    service.environment = 
+      let ipfsContainerName = "${project_name}-${mode}${builtins.toString n}-ipfs-1";
+      in {
+        IPFS_API_ADDR = "/dns4/${ipfsContainerName}/tcp/5001"; # TODO /http?
+        MOCKCHAIN_JSON_DIR = "/data/mockchain";
+        PUBLIC_RECORDS_DIR = "/data/private"; # TODO name it something less ironic
+      };
 
     service.command = ["egsync.py"];
     service.restart = "on-failure";
@@ -174,9 +176,9 @@ let
   };
 
   # TODO no private_dir needed?
-  egsyncAttrs = mode: mockchain_dir: private_dir: n: {
+  egsyncAttrs = mode: projName: mockchain_dir: private_dir: n: {
     name = "${mode}${builtins.toString n}-egsync";
-    value = egsyncContainer mode mockchain_dir private_dir n;
+    value = egsyncContainer mode projName mockchain_dir private_dir n;
   };
 
   ipfsAttrs = mode: private_dir: n: {
@@ -185,7 +187,7 @@ let
   };
 
   # Produce (egpy, egsync, ipfs) triplets for 1..nVms
-  tripletAttrsList = dataDir: mode: nVms:
+  tripletAttrsList = projName: dataDir: mode: nVms:
     let
       scripts_dir = "./egpy_scripts";
       mockchain_dir = "${dataDir}/mockchain";
@@ -194,15 +196,15 @@ let
     in
     pkgs.lib.concatMap (n: [
       (egpyAttrs   mode scripts_dir mockchain_dir private_dir n)
-      (egsyncAttrs mode mockchain_dir private_dir n)
+      (egsyncAttrs mode projName mockchain_dir private_dir n)
       (ipfsAttrs   mode private_dir n)
     ]) range;
 
   mkServices = cfg:
-    builtins.listToAttrs (tripletAttrsList cfg.arion.data_dir "admin"    1) //
-    builtins.listToAttrs (tripletAttrsList cfg.arion.data_dir "device"   cfg.election.devices.count) //
-    builtins.listToAttrs (tripletAttrsList cfg.arion.data_dir "guardian" cfg.election.guardians.count) //
-    builtins.listToAttrs (tripletAttrsList cfg.arion.data_dir "verifier" cfg.election.verifiers.count);
+    builtins.listToAttrs (tripletAttrsList cfg.arion.project_name cfg.arion.data_dir "admin"    1) //
+    builtins.listToAttrs (tripletAttrsList cfg.arion.project_name cfg.arion.data_dir "device"   cfg.election.devices.count) //
+    builtins.listToAttrs (tripletAttrsList cfg.arion.project_name cfg.arion.data_dir "guardian" cfg.election.guardians.count) //
+    builtins.listToAttrs (tripletAttrsList cfg.arion.project_name cfg.arion.data_dir "verifier" cfg.election.verifiers.count);
 
 
 in {

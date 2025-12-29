@@ -193,9 +193,9 @@ def private_path(private_dir: str, record_type: str, **fmtargs):
 
 ### load and save single files ###
 
-def _public_record_url(egsync_api: str, onchain_channel: str, record_type: str, **fmtargs) -> str:
+def _public_record_url(egsync_api: str, channel: str, record_type: str, **fmtargs) -> str:
     url = f"{egsync_api}/public_records/{record_type}"
-    fmtargs['onchain_channel'] = onchain_channel # TODO is this a good way to do it?
+    fmtargs['channel'] = channel # TODO is this a good way to do it?
     # if fmtargs:
     url = f"{url}?{urlencode(fmtargs)}"
     return url
@@ -209,7 +209,7 @@ def to_jsonable(obj):
     # then parse back into Python so `requests` / Flask `jsonify` can handle it.
     return json.loads(json.dumps(obj, default=pydantic_encoder))
 
-def to_public_record(egsync_api: str, onchain_channel: str, record_type: str, obj, **fmtargs):
+def to_public_record(egsync_api: str, channel: str, record_type: str, obj, **fmtargs):
     """
     Remote version of to_public_record.
     """
@@ -220,7 +220,7 @@ def to_public_record(egsync_api: str, onchain_channel: str, record_type: str, ob
     pprint(egsync_api)
     pprint(payload)
 
-    url = _public_record_url(egsync_api, onchain_channel, record_type, **fmtargs)
+    url = _public_record_url(egsync_api, channel, record_type, **fmtargs)
     print(url)
     resp = requests.post(url, json=payload, timeout=5)
     resp.raise_for_status()  # raise if 4xx/5xx
