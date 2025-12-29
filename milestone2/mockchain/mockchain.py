@@ -109,11 +109,13 @@ class MockchainSubscriber(FileSystemEventHandler):
         obj = self.parse_mockchain_json(channel, index)
         # pprint(obj)
         try:
-            handler = self.mockchain_event_handlers[obj['action']]
+            action = obj['action']
+            handler = self.mockchain_event_handlers[action]
         except KeyError:
-            print(f'error: unknown action {obj}')
+            print(f'error: unknown action {action} in {obj}')
+            return
         try:
-            handler(obj)
+            return handler(obj)
         except Exception as e:
             print(f'error handling {obj}: {e}')
 
@@ -134,13 +136,21 @@ class MockchainSubscriber(FileSystemEventHandler):
         self.channel_state[channel] = 0
 
 
+def fetch_public_record(obj):
+    print(f'fetch_public_record {obj}')
+    # TODO write this... in pubsub4?
+
+
 if __name__ == '__main__':
     mockchain_dir = sys.argv[1]
     os.makedirs(mockchain_dir, exist_ok=True)
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     observer = Observer() # TODO what does this do?
-    subscriber = MockchainSubscriber(loop, mockchain_dir)
+    handlers = {
+        'post_public_record': fetch_public_record
+    }
+    subscriber = MockchainSubscriber(loop, mockchain_dir, mockchain_event_handlers=handlers)
     observer.schedule(subscriber, path=mockchain_dir, recursive=True)
     try:
         observer.start()
