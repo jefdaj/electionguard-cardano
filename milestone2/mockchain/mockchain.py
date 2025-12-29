@@ -5,48 +5,76 @@ import aioipfs
 import os
 import sys
 import re
+import json
 
 from pprint import pprint
+from os.path import basename, dirname
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
 class MockchainSubscriber(FileSystemEventHandler):
     def __init__(self, loop, mockchain_dir, debounce_seconds=1.0, *args, **kwargs):
         super(MockchainSubscriber, self).__init__(*args, **kwargs)
-        self.loop = loop
+
         self.mockchain_dir = mockchain_dir
 
-        # the subscriber will only read from <channel>/NNNN.json
-        self.valid_channels = set(['admin'])
+        # map of valid channels -> index of latest json parsed from that channel
+        self.channel_state = {'admin': 0}
 
         # for json files that may be partially written or just have multiple fs events
-        self.debounce_seconds = debounce_seconds
-        self.pending_events = {} # path -> asyncio.Handle
-
+        # self.debounce_seconds = debounce_seconds
+        # self.pending_events = {} # path -> asyncio.Handle
         # TODO also handle when the events are done but the ipfs file hasn't propagated
-
         # TODO self.newjson_callback or similar
-
-    def is_subscribed_mockchain_event(self, event):
-        "Is the event creation/edit of a new json in a subscribed channel dir?"
-        if event.is_directory:
-            return False
-        regex = '^data/(' + '|'.join(self.valid_channels) + ')/[0-9]{3}.json$'
-        match = re.match(regex, event.src_path)
-        return match
+        # self.loop = loop # TODO what's this for?
 
     def on_created(self, event):
-        if self.is_subscribed_mockchain_event(event):
-            self.on_subscribed_mockchain_event(event)
+        parsed = self.parse_subscribed_json(event)
+        if parsed is not None:
+            self.on_subscribed_json(parsed)
 
     def on_modified(self, event):
-        if self.is_subscribed_mockchain_event(event):
-            self.on_subscribed_mockchain_event(event)
+        parsed = self.parse_subscribed_json(event)
+        if parsed is not None:
+            self.on_subscribed_json(parsed)
 
-    def on_subscribed_mockchain_event(self, event):
-        path = event.src_path
-        print(f'on_subscribed_mockchain_event {event}')
+    def subscribed_json_regex(self):
+        return (
+            '^' +
+            self.mockchain_dir +
+            '/(' + '|'.join(self.channel_state.keys()) +
+            ')/([0-9]{1,}).json$'
+        )
 
+    def next_json_index(self, channel_name):
+        "What should be the index of the next event?"
+        return self.channel_state[channel_name] + 1
+
+    def parse_subscribed_json(self, event) -> dict:
+        regex = self.subscribed_json_regex()
+        try:
+            match = re.match(regex, event.src_path)
+            channel = match.group(1)
+            index = int(match.group(2))
+            parsed = {
+                'mockchain_channel': channel,
+                'mockchain_index': index
+            }
+
+            # TODO if this isn't true, we need to go back and read the prev event
+            #      but also not lose this one. so store it in a queue?
+            #      or just attempt to parse the prev one first now?
+            assert index == self.next_json_index(channel)
+
+            with open(event.src_path, 'r') as f:
+                parsed.update(json.load(f))
+            self.channel_state[channel] += 1
+            return parsed
+        except:
+            return None
+
+    def on_subscribed_json(self, obj):
+        print(f'on_subscribed_json {obj}')
         # TODO and how do we handle it now?
         #      probably a delayed/debounced callback?
 
