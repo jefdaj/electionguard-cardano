@@ -81,6 +81,8 @@ class MockchainSubscriber(FileSystemEventHandler):
         obj = self.parse_mockchain_json(channel, index)
         self.channel_state[channel] += 1
         pprint(obj)
+        if obj['action'] == 'create_mockchain_channel':
+            self.create_mockchain_channel(obj)
         # TODO actually handle message here
 
     def parse_mockchain_json(self, channel: str, index: int) -> dict:
@@ -89,6 +91,15 @@ class MockchainSubscriber(FileSystemEventHandler):
         with open(path, 'r') as f:
             parsed.update(json.load(f))
         return parsed
+
+    def create_mockchain_channel(self, obj: dict):
+        print(f'create_mockchain_channel {obj}')
+        channel = obj['new_channel_name']
+        channel_dir = join(self.mockchain_dir, channel)
+        os.makedirs(channel_dir, exist_ok=True)
+        if channel in self.channel_state.keys():
+            raise Exception(f'channel already exists: {channel}')
+        self.channel_state[channel] = 0
 
 
 if __name__ == '__main__':
