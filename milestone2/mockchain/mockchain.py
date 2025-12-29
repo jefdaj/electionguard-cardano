@@ -13,10 +13,18 @@ from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
 class MockchainSubscriber(FileSystemEventHandler):
-    def __init__(self, loop, mockchain_dir, debounce_seconds=1.0, *args, **kwargs):
+    def __init__(self, loop, mockchain_dir, debounce_seconds=1.0, mockchain_event_handlers={}, *args, **kwargs):
         super(MockchainSubscriber, self).__init__(*args, **kwargs)
 
         self.mockchain_dir = mockchain_dir
+
+        # map of action name -> callback
+        # callbacks should accept an event object
+        self.mockchain_event_handlers = {
+            'new_mockchain_channel': self.new_mockchain_channel
+            # TODO close channels too?
+        }
+        self.mockchain_event_handlers.update(mockchain_event_handlers)
 
         # map of valid channels -> index of latest json parsed from that channel
         self.channel_state = {'admin': 0}
@@ -100,9 +108,14 @@ class MockchainSubscriber(FileSystemEventHandler):
         self.channel_state[channel] += 1
         obj = self.parse_mockchain_json(channel, index)
         # pprint(obj)
-        if obj['action'] == 'new_mockchain_channel':
-            self.new_mockchain_channel(obj)
-        # TODO actually handle message here
+        try:
+            handler = self.mockchain_event_handlers[obj['action']]
+        except KeyError:
+            print(f'error: unknown action {obj}')
+        try:
+            handler(obj)
+        except Exception as e:
+            print(f'error handling {obj}: {e}')
 
     def parse_mockchain_json(self, channel: str, index: int) -> dict:
         parsed = {'mockchain_channel': channel, 'mockchain_index': index}
