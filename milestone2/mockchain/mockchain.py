@@ -71,19 +71,16 @@ class MockchainSubscriber(FileSystemEventHandler):
     def on_mockchain_event(self, channel: str, index: int):
         if not channel in self.channel_state.keys():
             raise Exception(f'invalid mockchain_channel {channel}')
-        if index < self.next_json_index(channel):
-            msg = f'invalid mockchain_index for {channel}: {index}'
-            raise Exception(msg)
-        if index > self.next_json_index(channel):
-            # TODO in this case, try to parse the earlier presumably missed message first?
-            msg = f'invalid mockchain_index for {channel}: {index}'
+        expected = self.next_json_index(channel)
+        if index != expected:
+            msg = f'{self.channel_state} | invalid index for {channel} channel: got {index}, should be {expected}'
             raise Exception(msg)
         obj = self.parse_mockchain_json(channel, index)
-        self.channel_state[channel] += 1
-        pprint(obj)
-        if obj['action'] == 'create_mockchain_channel':
-            self.create_mockchain_channel(obj)
+        # pprint(obj)
+        if obj['action'] == 'new_mockchain_channel':
+            self.new_mockchain_channel(obj)
         # TODO actually handle message here
+        self.channel_state[channel] += 1
 
     def parse_mockchain_json(self, channel: str, index: int) -> dict:
         parsed = {'mockchain_channel': channel, 'mockchain_index': index}
@@ -92,8 +89,8 @@ class MockchainSubscriber(FileSystemEventHandler):
             parsed.update(json.load(f))
         return parsed
 
-    def create_mockchain_channel(self, obj: dict):
-        print(f'create_mockchain_channel {obj}')
+    def new_mockchain_channel(self, obj: dict):
+        print(f'{self.channel_state} | new_mockchain_channel {obj}')
         channel = obj['new_channel_name']
         channel_dir = join(self.mockchain_dir, channel)
         os.makedirs(channel_dir, exist_ok=True)
