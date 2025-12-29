@@ -36,10 +36,12 @@
       ];
 
       egsyncPyPkgList = ps: with ps; [
+        # ipfshttpclient
+        aioipfs
         flask
-        ipfshttpclient
-        requests
         pydantic
+        requests
+        watchdog
       ];
 
       # based on https://stackoverflow.com/a/78450917
