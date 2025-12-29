@@ -22,11 +22,13 @@ class MockchainSubscriber(FileSystemEventHandler):
         self.channel_state = {'admin': 0}
 
         # for json files that may be partially written or just have multiple fs events
-        # self.debounce_seconds = debounce_seconds
-        # self.pending_events = {} # path -> asyncio.Handle
+        self.debounce_seconds = debounce_seconds
+        self.pending_events = {} # path -> asyncio.Handle?
         # TODO also handle when the events are done but the ipfs file hasn't propagated
         # TODO self.newjson_callback or similar
-        # self.loop = loop # TODO what's this for?
+
+        # For delayed responses
+        self.loop = loop
 
     def on_created(self, event):
         return self.on_fs_event(event)
@@ -35,10 +37,10 @@ class MockchainSubscriber(FileSystemEventHandler):
         return self.on_fs_event(event)
 
     def on_fs_event(self, event):
-        info = self.mockchain_event_info(event)
-        if info is not None:
+        args = self.mockchain_event_args(event)
+        if args is not None:
             try:
-                return self.on_mockchain_event(**info)
+                self.schedule_response(**args)
             except Exception as e:
                 print(e)
 
@@ -57,7 +59,7 @@ class MockchainSubscriber(FileSystemEventHandler):
         "What should be the index of the next event?"
         return self.channel_state[channel_name] + 1
 
-    def mockchain_event_info(self, event):
+    def mockchain_event_args(self, event):
         try:
             match = re.match(self.subscribed_json_regex(), event.src_path)
             return {
@@ -68,19 +70,39 @@ class MockchainSubscriber(FileSystemEventHandler):
             # print(f'{event} -> {e}')
             return None
 
+    def schedule_response(self, channel: str, index: int):
+        print(f'schedule_response {channel} {index}')
+
+        # Cancel existing pending response if any
+        args = (channel, index)
+        if args in self.pending_events:
+            self.pending_events[args].cancel()
+
+        async def delayed_response():
+            await asyncio.sleep(self.debounce_seconds)
+            await self.on_mockchain_event(*args)
+            self.pending_events.pop(args, None)
+
+        # Use call_soon_threadsafe to schedule from another thread
+        future = asyncio.run_coroutine_threadsafe(
+            delayed_response(),
+            self.loop
+        )
+        self.pending_events[args] = future
+
     def on_mockchain_event(self, channel: str, index: int):
         if not channel in self.channel_state.keys():
             raise Exception(f'invalid mockchain_channel {channel}')
         expected = self.next_json_index(channel)
         if index != expected:
-            msg = f'{self.channel_state} | invalid index for {channel} channel: got {index}, should be {expected}'
+            msg = f'invalid index for {channel} channel: got {index}, should be {expected}'
             raise Exception(msg)
+        self.channel_state[channel] += 1
         obj = self.parse_mockchain_json(channel, index)
         # pprint(obj)
         if obj['action'] == 'new_mockchain_channel':
             self.new_mockchain_channel(obj)
         # TODO actually handle message here
-        self.channel_state[channel] += 1
 
     def parse_mockchain_json(self, channel: str, index: int) -> dict:
         parsed = {'mockchain_channel': channel, 'mockchain_index': index}
@@ -90,7 +112,7 @@ class MockchainSubscriber(FileSystemEventHandler):
         return parsed
 
     def new_mockchain_channel(self, obj: dict):
-        print(f'{self.channel_state} | new_mockchain_channel {obj}')
+        print(f'new_mockchain_channel {obj}')
         channel = obj['new_channel_name']
         channel_dir = join(self.mockchain_dir, channel)
         os.makedirs(channel_dir, exist_ok=True)
