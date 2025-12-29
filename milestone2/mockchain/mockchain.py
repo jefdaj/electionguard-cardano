@@ -46,7 +46,6 @@ class MockchainSubscriber(FileSystemEventHandler):
         return (
             '^' +
             self.mockchain_dir +
-            # '/(' + '|'.join(self.channel_state.keys()) +
             '/([^/]*)'
             '/([0-9]{1,}).json$'
         )
@@ -62,31 +61,31 @@ class MockchainSubscriber(FileSystemEventHandler):
         try:
             match = re.match(self.subscribed_json_regex(), event.src_path)
             return {
-                'mockchain_channel': match.group(1),
-                'mockchain_index': int(match.group(2))
+                'channel': match.group(1),
+                'index': int(match.group(2))
             }
         except Exception as e:
             # print(f'{event} -> {e}')
             return None
 
-    def on_mockchain_event(self, mockchain_channel: str, mockchain_index: int):
-        if not mockchain_channel in self.channel_state.keys():
-            raise Exception(f'invalid mockchain_channel {mockchain_channel}')
-        if mockchain_index < self.next_json_index(mockchain_channel):
-            msg = f'invalid mockchain_index for {mockchain_channel}: {mockchain_index}'
+    def on_mockchain_event(self, channel: str, index: int):
+        if not channel in self.channel_state.keys():
+            raise Exception(f'invalid mockchain_channel {channel}')
+        if index < self.next_json_index(channel):
+            msg = f'invalid mockchain_index for {channel}: {index}'
             raise Exception(msg)
-        if mockchain_index > self.next_json_index(mockchain_channel):
+        if index > self.next_json_index(channel):
             # TODO in this case, try to parse the earlier presumably missed message first?
-            msg = f'invalid mockchain_index for {mockchain_channel}: {mockchain_index}'
+            msg = f'invalid mockchain_index for {channel}: {index}'
             raise Exception(msg)
-        obj = self.parse_mockchain_json(mockchain_channel, mockchain_index)
-        self.channel_state[mockchain_channel] += 1
+        obj = self.parse_mockchain_json(channel, index)
+        self.channel_state[channel] += 1
         pprint(obj)
         # TODO actually handle message here
 
-    def parse_mockchain_json(self, mockchain_channel: str, mockchain_index: int) -> dict:
-        parsed = {'mockchain_channel': mockchain_channel, 'mockchain_index': mockchain_index}
-        path = self.subscribed_json_path(mockchain_channel, mockchain_index)
+    def parse_mockchain_json(self, channel: str, index: int) -> dict:
+        parsed = {'mockchain_channel': channel, 'mockchain_index': index}
+        path = self.subscribed_json_path(channel, index)
         with open(path, 'r') as f:
             parsed.update(json.load(f))
         return parsed
