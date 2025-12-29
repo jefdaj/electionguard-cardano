@@ -8,7 +8,7 @@ import re
 import json
 
 from pprint import pprint
-from os.path import basename, dirname
+from os.path import basename, dirname, join
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
@@ -29,54 +29,68 @@ class MockchainSubscriber(FileSystemEventHandler):
         # self.loop = loop # TODO what's this for?
 
     def on_created(self, event):
-        parsed = self.parse_subscribed_json(event)
-        if parsed is not None:
-            self.on_subscribed_json(parsed)
+        return self.on_fs_event(event)
 
     def on_modified(self, event):
-        parsed = self.parse_subscribed_json(event)
-        if parsed is not None:
-            self.on_subscribed_json(parsed)
+        return self.on_fs_event(event)
+
+    def on_fs_event(self, event):
+        info = self.mockchain_event_info(event)
+        if info is not None:
+            try:
+                return self.on_mockchain_event(**info)
+            except Exception as e:
+                print(e)
 
     def subscribed_json_regex(self):
         return (
             '^' +
             self.mockchain_dir +
-            '/(' + '|'.join(self.channel_state.keys()) +
-            ')/([0-9]{1,}).json$'
+            # '/(' + '|'.join(self.channel_state.keys()) +
+            '/([^/]*)'
+            '/([0-9]{1,}).json$'
         )
+
+    def subscribed_json_path(self, channel: str, index: int) -> str:
+        return join(self.mockchain_dir, channel, f'{index:03d}.json')
 
     def next_json_index(self, channel_name):
         "What should be the index of the next event?"
         return self.channel_state[channel_name] + 1
 
-    def parse_subscribed_json(self, event) -> dict:
-        regex = self.subscribed_json_regex()
+    def mockchain_event_info(self, event):
         try:
-            match = re.match(regex, event.src_path)
-            channel = match.group(1)
-            index = int(match.group(2))
-            parsed = {
-                'mockchain_channel': channel,
-                'mockchain_index': index
+            match = re.match(self.subscribed_json_regex(), event.src_path)
+            return {
+                'mockchain_channel': match.group(1),
+                'mockchain_index': int(match.group(2))
             }
-
-            # TODO if this isn't true, we need to go back and read the prev event
-            #      but also not lose this one. so store it in a queue?
-            #      or just attempt to parse the prev one first now?
-            assert index == self.next_json_index(channel)
-
-            with open(event.src_path, 'r') as f:
-                parsed.update(json.load(f))
-            self.channel_state[channel] += 1
-            return parsed
-        except:
+        except Exception as e:
+            # print(f'{event} -> {e}')
             return None
 
-    def on_subscribed_json(self, obj):
-        print(f'on_subscribed_json {obj}')
-        # TODO and how do we handle it now?
-        #      probably a delayed/debounced callback?
+    def on_mockchain_event(self, mockchain_channel: str, mockchain_index: int):
+        if not mockchain_channel in self.channel_state.keys():
+            raise Exception(f'invalid mockchain_channel {mockchain_channel}')
+        if mockchain_index < self.next_json_index(mockchain_channel):
+            msg = f'invalid mockchain_index for {mockchain_channel}: {mockchain_index}'
+            raise Exception(msg)
+        if mockchain_index > self.next_json_index(mockchain_channel):
+            # TODO in this case, try to parse the earlier presumably missed message first?
+            msg = f'invalid mockchain_index for {mockchain_channel}: {mockchain_index}'
+            raise Exception(msg)
+        obj = self.parse_mockchain_json(mockchain_channel, mockchain_index)
+        self.channel_state[mockchain_channel] += 1
+        pprint(obj)
+        # TODO actually handle message here
+
+    def parse_mockchain_json(self, mockchain_channel: str, mockchain_index: int) -> dict:
+        parsed = {'mockchain_channel': mockchain_channel, 'mockchain_index': mockchain_index}
+        path = self.subscribed_json_path(mockchain_channel, mockchain_index)
+        with open(path, 'r') as f:
+            parsed.update(json.load(f))
+        return parsed
+
 
 if __name__ == '__main__':
     mockchain_dir = sys.argv[1]
