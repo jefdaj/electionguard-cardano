@@ -96,7 +96,7 @@ def egsync_api_url(cfg, container_role, container_number):
       cfg['arion']['project_name'] + \
       '-' + container_role + str(container_number) + '-egsync-1'
     api_url = f'http://{egsync_container}:5000/api' # TODO no /api? TODO 5001?
-    print(f'api_url: {api_url}')
+    # print(f'api_url: {api_url}')
     return api_url
 
 def explain_step(fn):
