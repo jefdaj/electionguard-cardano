@@ -13,6 +13,7 @@ from utils import (
     load_spoiled_results,
     load_guardian_pubkeys,
     load_spoiled_ballots,
+    mint_channel,
     to_public_record,
     from_public_record,
     CaptureLog,
@@ -83,13 +84,7 @@ def MintChannelCommand(
     """Mint a new pubsub channel.
     For now, these are implemented as <mockchain_dir>/<channel_name>/*.json
     """
-
-    mint_channel = {
-        'action': 'post_public_record',
-        'record_type': 'mint_channel',
-        'channel_name': channel_name # TODO disambiguate from posting channel (admin_1) better?
-    }
-    to_public_record(egsync_api, 'admin_1', 'mint_channel', mint_channel)
+    mint_channel(egsync_api, 'admin_1', channel_name)
 
 
 @click.command("build-manifest")

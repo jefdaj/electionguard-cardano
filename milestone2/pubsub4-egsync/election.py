@@ -161,16 +161,17 @@ def teardown(cfg, log):
 
 ### election ###
 
-@explain_step
-def mint_admin_channel(cfg, log):
-    run_in_container(
-        cfg, log, "admin.py", "admin", 1,
-        [
-            "mint-channel",
-            "--egsync-api", egsync_api_url(cfg, 'admin', 1),
-            "--channel-name", 'admin_1',
-        ]
-    )
+# TODO remove?
+# @explain_step
+# def mint_admin_channel(cfg, log):
+#     run_in_container(
+#         cfg, log, "admin.py", "admin", 1,
+#         [
+#             "mint-channel",
+#             "--egsync-api", egsync_api_url(cfg, 'admin', 1),
+#             "--channel-name", 'admin_1',
+#         ]
+#     )
 
 @explain_step
 def build_manifest(cfg, log):
@@ -469,7 +470,6 @@ def attack_all(cfg, log, step):
 
 def election(cfg, log) -> int:
     try:
-        mint_main_channel(cfg, log) # TODO skip this one?
         build_manifest(cfg, log)        ; attack_all(cfg, log, 'build_manifest')
         mint_guardian_channels(cfg, log)
         announce_key_ceremony(cfg, log) ; attack_all(cfg, log, 'announce_key_ceremony')

@@ -68,11 +68,6 @@ PRIVATE_RECORDS = {
 
 # TODO fix local-election scripts to use ballot_id rather than obj.whatever_id
 PUBLIC_RECORDS = {
-    'mint_channel': (
-        dict, # TODO make a type
-        None, # TODO handle None in these
-        None
-    ),
     'manifest': (
         Manifest,
         '1_config/1_announce',
@@ -178,16 +173,12 @@ PUBLIC_RECORDS = {
 def record_basename(record_type:str, **fmtargs):
     'So far, only used to simplify verifier summary json keys'
     (_, _, fstr) = PUBLIC_RECORDS[record_type]
-    if fstr is None:
-        return None
     fname = fstr.format(**fmtargs)
     return fname
 
 # you probably want the public/private specialized versions below
 def record_path(records_map, root_dir:str, record_type: str, **fmtargs):
     (_, dname, fstr) = records_map[record_type]
-    if fstr is None:
-        return None
     dpath = join(root_dir, dname)
     makedirs(dpath, exist_ok=True) # TODO make the dir here?
     fname = fstr.format(**fmtargs)
@@ -199,6 +190,16 @@ def private_path(private_dir: str, record_type: str, **fmtargs):
 # def public_path(public_dir: str, record_type: str, **fmtargs):
 #     return record_path(PUBLIC_RECORDS, public_dir, record_type, **fmtargs)
 
+
+### mint channel ###
+
+def mint_channel(egsync_api: str, sender_channel: str, new_channel_name: str, **fmtargs):
+    url = f"{egsync_api}/channels"
+    fmtargs['channel'] = sender_channel
+    fmtargs['new_channel_name'] = new_channel_name
+    url = f"{url}?{urlencode(fmtargs)}"
+    resp = requests.post(url, timeout=5) # TODO is some payload required?
+    resp.raise_for_status()  # raise if 4xx/5xx
 
 ### load and save single files ###
 
@@ -252,11 +253,10 @@ def from_public_record(egsync_api: str, record_type: str, **fmtargs):
     obj = serialize.from_raw(rtype, raw)
     return obj
 
+# TODO is this broken?
 # you probably want the public or private versions below
 def to_record(records_map, egsync_api: str, record_type: str, obj, **fmtargs):
     (_, dname, fstr) = records_map[record_type]
-    if fstr is None:
-        return
     # dpath = join(public_dir, dname)
     # makedirs(dpath, exist_ok=True)
     # fmtargs['obj'] = obj # so we can use its fields too
@@ -266,8 +266,6 @@ def to_record(records_map, egsync_api: str, record_type: str, obj, **fmtargs):
 # you probably want the public or private versions below
 def from_record(records_map, public_dir: str, record_type: str, **fmtargs):
     (rtype, dname, fstr) = records_map[record_type]
-    if fstr is None:
-        raise Exception(f'from_record called with {record_type}, which is not saved')
     dpath = join(public_dir, dname)
     fname = fstr.format(**fmtargs) + '.json'
     fpath = join(dpath, fname)

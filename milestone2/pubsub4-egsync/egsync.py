@@ -56,11 +56,6 @@ PUBLIC_RECORDS_DIR = os.environ['PUBLIC_RECORDS_DIR']; info(f'PUBLIC_RECORDS_DIR
 # TODO actually though, egpy only needs to know the types right?
 # TODO wait do we NOT need the types here? and not need to have electionguard installed?
 PUBLIC_RECORDS = {
-    'mint_channel': (
-        # dict, # TODO make a type
-        None, # TODO handle None in these
-        None
-    ),
     'manifest': (
         # Manifest,
         '1_config/1_announce',
@@ -162,8 +157,6 @@ PUBLIC_RECORDS = {
 
 def record_path(records_map, root_dir:str, record_type: str, **fmtargs):
     (dname, fstr) = records_map[record_type]
-    if fstr is None:
-        return None
     dpath = join(root_dir, dname)
     makedirs(dpath, exist_ok=True) # TODO make the dir here?
     fname = fstr.format(**fmtargs)
@@ -171,17 +164,14 @@ def record_path(records_map, root_dir:str, record_type: str, **fmtargs):
 
 def to_record(records_map, record_type: str, obj, **fmtargs) -> str:
     fpath = record_path(PUBLIC_RECORDS, PUBLIC_RECORDS_DIR, record_type, **fmtargs)
-    if fpath is not None:
-        with open(fpath, 'w') as f:
-            json.dump(obj, f)
-        info(f'saved {record_type} to {fpath}')
+    with open(fpath, 'w') as f:
+        json.dump(obj, f)
+    info(f'saved {record_type} to {fpath}')
     return fpath
 
 # TODO separate into the json part (here) and the typed part (still in util.py?)
 def from_record(records_map, record_type: str, **fmtargs):
     (dname, fstr) = records_map[record_type]
-    if fstr is None:
-        return None
     dpath = join(PUBLIC_RECORDS_DIR, dname)
     fname = fstr.format(**fmtargs) + '.json'
     fpath = join(dpath, fname)
@@ -203,9 +193,8 @@ async def to_public_record(
     ):
     # TODO if adding the file fails, what then? remove locally? retry?
     fpath = to_record(PUBLIC_RECORDS, record_type, obj, **fmtargs)
-    if fpath is not None:
-        cid = await publish_on_ipfs(ipfs, obj)
-        fmtargs['cid'] = cid
+    cid = await publish_on_ipfs(ipfs, obj)
+    fmtargs['cid'] = cid
     mockchain_post_public_record(channel, record_type, **fmtargs)
     # TODO return something? cid, bool, res
 
@@ -241,14 +230,18 @@ def next_json_path(channel: str) -> str:
 
 # TODO how to post a list of records rather than just one? need some kind of queue?
 # TODO cid type?
-def mockchain_post_public_record(channel: str, record_type: str, **fmtargs):
+def mockchain_post_public_record(channel: str, record_type: str, **post_json):
+    post_json['record_type'] = record_type
+    mockchain_post_json(channel, 'post_public_record', **post_json)
+
+def mockchain_mint_channel(channel: str, new_channel_name: str, **post_json):
+    post_json['new_channel_name'] = new_channel_name
+    mockchain_post_json(channel, 'mint_channel', **post_json)
+
+def mockchain_post_json(channel: str, action_type: str, **post_json):
     json_path = next_json_path(channel)
     info(f'json_path: {json_path}')
-    post_json = {
-        'action': 'post_public_record',
-        'record_type': record_type,
-        **fmtargs
-    }
+    post_json['action'] = action_type
     makedirs(dirname(json_path), exist_ok=True)
     with open(json_path, 'w') as f:
         json.dump(post_json, f) # TODO pydantic here?
@@ -256,11 +249,9 @@ def mockchain_post_public_record(channel: str, record_type: str, **fmtargs):
 async def fetch_public_record(ipfs: AsyncIPFS, obj):
     info(f'fetch_public_record {obj}')
     record_type = obj.pop('record_type')
+    cid = obj.pop('cid')
     fpath = record_path(PUBLIC_RECORDS, PUBLIC_RECORDS_DIR, record_type, **obj)
-    if fpath is not None:
-        # mint_channel is the only one so far that has no cid
-        cid = obj.pop('cid')
-        await fetch_cid_to_file(ipfs, cid, fpath)
+    await fetch_cid_to_file(ipfs, cid, fpath)
 
 
 ### mockchain ###
@@ -388,12 +379,12 @@ class MockchainSubscriber(FileSystemEventHandler):
 
     def mint_channel(self, obj: dict):
         info(f'mint_channel {obj}')
-        channel = obj['channel_name']
-        channel_dir = join(self.mockchain_dir, channel)
-        makedirs(channel_dir, exist_ok=True)
-        if channel in self.channel_state.keys():
-            raise Exception(f'channel already exists: {channel}')
-        self.channel_state[channel] = 0
+        new_channel = obj['new_channel_name']
+        new_channel_dir = join(self.mockchain_dir, new_channel)
+        makedirs(new_channel_dir, exist_ok=True)
+        if new_channel in self.channel_state.keys():
+            raise Exception(f'new_channel already exists: {new_channel}')
+        self.channel_state[new_channel] = 0
 
 
 ### flask routes ###
@@ -417,6 +408,23 @@ class MockchainSubscriber(FileSystemEventHandler):
 # @app.route("/")
 # async def index():
 #     return render_template_string(INDEX_TEMPLATE)
+
+@app.route("/api/channels", methods=["POST"])
+async def mint_channel():
+    fmtargs = request.args.to_dict()
+    info(f'mint_channel fmtargs: {fmtargs}')
+    try:
+        sender_channel = fmtargs.pop('channel')
+    except:
+        abort(400, description="Expected sender channel")
+    try:
+        new_channel_name = fmtargs.pop('new_channel_name')
+    except:
+        abort(400, description="Expected new channel_name")
+    # TODO actually do stuff here
+    info(f'mint_channel new_channel_name: {new_channel_name}')
+    mockchain_mint_channel(sender_channel, new_channel_name, **fmtargs)
+    return "", 204
 
 # TODO add an arg or url part for channel
 @app.route("/api/public_records/<record_type>", methods=["POST"])
@@ -445,7 +453,7 @@ async def save_public_record(record_type):
     # obj = serialize.from_raw(rtype, raw)
 
     # 4. Extra format args come from query params (guardian_id, ballot_id, etc.)
-    fmtargs = request.args.to_dict() # TODO await?
+    fmtargs = request.args.to_dict()
     info(f'save_public_record fmtargs: {fmtargs}')
 
     try:
