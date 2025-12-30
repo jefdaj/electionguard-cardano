@@ -511,6 +511,7 @@ def SummaryCommand(
 def cli() -> None:
     pass
 
+cli.add_command(MintChannelCommand)
 cli.add_command(BuildManifestCommand)
 cli.add_command(AnnounceKeyCeremonyCommand)
 cli.add_command(PublishJointKeyCommand)

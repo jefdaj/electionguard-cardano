@@ -162,13 +162,13 @@ def teardown(cfg, log):
 ### election ###
 
 @explain_step
-def mint_main_channel(cfg, log):
+def mint_admin_channel(cfg, log):
     run_in_container(
         cfg, log, "admin.py", "admin", 1,
         [
             "mint-channel",
             "--egsync-api", egsync_api_url(cfg, 'admin', 1),
-            "--channel-name", channel_name,
+            "--channel-name", 'admin_1',
         ]
     )
 
@@ -263,7 +263,7 @@ def mint_device_channels(cfg, log):
             [
                 "mint-channel",
                 "--egsync-api", egsync_api_url(cfg, 'admin', 1),
-                "--channel-name", 'device' + str(device_number)
+                "--channel-name", 'device_' + str(device_number)
             ]
         )
 

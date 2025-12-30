@@ -56,6 +56,11 @@ PUBLIC_RECORDS_DIR = os.environ['PUBLIC_RECORDS_DIR']; info(f'PUBLIC_RECORDS_DIR
 # TODO actually though, egpy only needs to know the types right?
 # TODO wait do we NOT need the types here? and not need to have electionguard installed?
 PUBLIC_RECORDS = {
+    'mint_channel': (
+        # dict, # TODO make a type
+        None, # TODO handle None in these
+        None
+    ),
     'manifest': (
         # Manifest,
         '1_config/1_announce',
@@ -164,14 +169,17 @@ def record_path(records_map, root_dir:str, record_type: str, **fmtargs):
 
 def to_record(records_map, record_type: str, obj, **fmtargs) -> str:
     fpath = record_path(PUBLIC_RECORDS, PUBLIC_RECORDS_DIR, record_type, **fmtargs)
-    with open(fpath, 'w') as f:
-        json.dump(obj, f)
-    info(f'saved {record_type} to {fpath}')
+    if fpath is not None:
+        with open(fpath, 'w') as f:
+            json.dump(obj, f)
+        info(f'saved {record_type} to {fpath}')
     return fpath
 
 # TODO separate into the json part (here) and the typed part (still in util.py?)
 def from_record(records_map, record_type: str, **fmtargs):
     (dname, fstr) = records_map[record_type]
+    if fstr is None:
+        return None
     dpath = join(PUBLIC_RECORDS_DIR, dname)
     fname = fstr.format(**fmtargs) + '.json'
     fpath = join(dpath, fname)
@@ -192,7 +200,9 @@ async def to_public_record(
         **fmtargs
     ):
     # TODO if adding the file fails, what then? remove locally? retry?
-    fpath = to_record(PUBLIC_RECORDS, record_type, obj, **fmtargs)
+    # fpath = to_record(PUBLIC_RECORDS, record_type, obj, **fmtargs)
+    # if fpath is None:
+    #     return
     # cid = asyncio.run(
     cid = await publish_on_ipfs(ipfs, obj)
     # )
@@ -249,7 +259,8 @@ async def fetch_public_record(ipfs: AsyncIPFS, obj):
     cid = obj.pop('cid')
     record_type = obj.pop('record_type')
     fpath = record_path(PUBLIC_RECORDS, PUBLIC_RECORDS_DIR, record_type, **obj)
-    await fetch_cid_to_file(ipfs, cid, fpath)
+    if fpath is not None:
+        await fetch_cid_to_file(ipfs, cid, fpath)
 
 
 ### mockchain ###
@@ -273,13 +284,13 @@ class MockchainSubscriber(FileSystemEventHandler):
         # map of action name -> callback
         # callbacks should accept an event object
         self.mockchain_event_handlers = {
-            'new_mockchain_channel': self.new_mockchain_channel
+            'mint_channel': self.mint_channel
             # TODO close channels too?
         }
         self.mockchain_event_handlers.update(mockchain_event_handlers)
 
         # map of valid channels -> index of latest json parsed from that channel
-        self.channel_state = {'admin1': 0}
+        self.channel_state = {'admin_1': 0}
 
     def on_created(self, event):
         self.on_fs_event(event)
@@ -375,9 +386,9 @@ class MockchainSubscriber(FileSystemEventHandler):
             parsed.update(json.load(f))
         return parsed
 
-    def new_mockchain_channel(self, obj: dict):
-        info(f'new_mockchain_channel {obj}')
-        channel = obj['new_channel_name']
+    def mint_channel(self, obj: dict):
+        info(f'mint_channel {obj}')
+        channel = obj['channel_name']
         channel_dir = join(self.mockchain_dir, channel)
         makedirs(channel_dir, exist_ok=True)
         if channel in self.channel_state.keys():
