@@ -12,7 +12,10 @@ import sys
 import threading
 import time
 
-from flask import Flask, jsonify, render_template_string, request, abort
+# from flask import Flask, jsonify, render_template_string, request, abort
+from quart import Quart, request, abort, jsonify
+from hypercorn.config import Config
+from hypercorn.asyncio import serve
 from os import makedirs
 from os.path import basename, dirname, join, exists
 from pathlib import Path
@@ -35,7 +38,7 @@ logging.basicConfig(
 )
 
 # TODO start app later and just init logger on its own here?
-app = Flask(__name__)
+app = Quart(__name__)
 info = app.logger.info
 
 
@@ -182,7 +185,7 @@ def from_record(records_map, record_type: str, **fmtargs):
 
 # TODO separate the code for actually saving the file from the ipfs code
 # TODO would it be better to save to a temporary location and let ipfs put the file in place?
-def to_public_record(
+async def to_public_record(
         channel: str,
         record_type: str,
         obj,
@@ -191,9 +194,9 @@ def to_public_record(
     # TODO if adding the file fails, what then? remove locally? retry?
     fpath = to_record(PUBLIC_RECORDS, record_type, obj, **fmtargs)
     # cid = asyncio.run(
-    cid = publish_on_ipfs(obj)
+    cid = await publish_on_ipfs(obj)
     # )
-    post_public_record(channel, record_type, cid, **fmtargs)
+    mockchain_post_public_record(channel, record_type, cid, **fmtargs)
     # TODO return something? cid, bool, res
 
 def from_public_record(record_type: str, **fmtargs):
@@ -213,10 +216,10 @@ async def fetch_cid_to_file(cid: str, filename: str):
     async with aiofiles.open(filename, "wb") as f:
         await f.write(data)
 
-def publish_on_ipfs(obj: dict) -> str:
-    added_file = asyncio.run(IPFS_CLIENT.add_json(obj))
+async def publish_on_ipfs(obj: dict) -> str:
+    added_file = await IPFS_CLIENT.add_json(obj)
     cid = added_file['Hash'] # TODO is this a dict in this aioipfs version?
-    IPFS_CLIENT.pin.add(cid)
+    IPFS_CLIENT.pin.add(cid) # TODO await?
     return cid
 
 # TODO should this go through MockchainSubscriber instead? or is separate more robust?
@@ -233,7 +236,7 @@ def next_json_path(channel: str) -> str:
 
 # TODO how to post a list of records rather than just one? need some kind of queue?
 # TODO cid type?
-def post_public_record(channel: str, record_type: str, cid: str, **fmtargs):
+def mockchain_post_public_record(channel: str, record_type: str, cid: str, **fmtargs):
     print('locals:'); pprint(locals())
     json_path = next_json_path(channel)
     post_json = {
@@ -438,42 +441,40 @@ def mockchain_subscribe_loop():
 
 ### flask routes ###
 
-INDEX_TEMPLATE = """
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>egsync</title>
-  <!-- htmx from CDN; you can vendor it if you prefer -->
-  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-</head>
-<body>
-  <h1>egsync</h1>
-</body>
-</html>
-"""
+# INDEX_TEMPLATE = """
+# <!doctype html>
+# <html>
+# <head>
+#   <meta charset="utf-8">
+#   <title>egsync</title>
+#   <!-- htmx from CDN; you can vendor it if you prefer -->
+#   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+# </head>
+# <body>
+#   <h1>egsync</h1>
+# </body>
+# </html>
+# """
 
 # TODO remove?
-@app.route("/")
-def index():
-    return render_template_string(INDEX_TEMPLATE)
+# @app.route("/")
+# async def index():
+#     return render_template_string(INDEX_TEMPLATE)
 
 # TODO add an arg or url part for channel
 @app.route("/api/public_records/<record_type>", methods=["POST"])
-def save_public_record(record_type):
+async def save_public_record(record_type):
     info(f'save_public_record record_type: {record_type}')
 
     # 1. Validate record_type
     if record_type not in PUBLIC_RECORDS:
         abort(404, description=f"Unknown record_type '{record_type}'")
 
-    # rtype, _, _ = PUBLIC_RECORDS[record_type]
-
     # 2. Require JSON
     if not request.is_json:
         abort(400, description="Expected JSON body")
 
-    raw = request.get_json()
+    raw = await request.get_json()
 
     # 3. Convert JSON → Python object using your serialization layer
     # Adjust these helpers to whatever electionguard.serialize actually provides.
@@ -487,7 +488,8 @@ def save_public_record(record_type):
     # obj = serialize.from_raw(rtype, raw)
 
     # 4. Extra format args come from query params (guardian_id, ballot_id, etc.)
-    fmtargs = request.args.to_dict()
+    fmtargs = request.args.to_dict() # TODO await?
+    info(f'save_public_record fmtargs: {fmtargs}')
 
     try:
         channel = fmtargs.pop('channel')
@@ -495,17 +497,17 @@ def save_public_record(record_type):
         abort(400, description="Expected channel")
 
     # 5. Delegate file-writing to your helper
-    to_public_record(channel, record_type, raw, **fmtargs)
+    await to_public_record(channel, record_type, raw, **fmtargs)
 
     return "", 204
 
 @app.route("/api/public_records/<record_type>", methods=["GET"])
-def load_public_record(record_type):
+async def load_public_record(record_type):
     if record_type not in PUBLIC_RECORDS:
         abort(404, description=f"Unknown record_type '{record_type}'")
 
-    rtype, _, _ = PUBLIC_RECORDS[record_type]
     fmtargs = request.args.to_dict()
+    info(f'load_public_record fmtargs: {fmtargs}')
 
     try:
         obj = from_public_record(PUBLIC_RECORDS_DIR, record_type, **fmtargs)
@@ -530,6 +532,12 @@ def load_public_record(record_type):
 def start_background_thread():
     t = threading.Thread(target=mockchain_subscribe_loop, daemon=True)
     t.start()
+
+async def main():
+    config = Config()
+    config.bind = ["0.0.0.0:5000"]
+    config.workers = 1 # TODO remove for production?
+    await server(app, config)
 
 if __name__ == "__main__":
     # Start background sync thread, then run Flask dev server
