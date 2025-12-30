@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+set -x
 sudo ./election.py --project-config election.json --logfile election.log --random-seed 1 --single-step teardown
 sudo rm -rf data election.log
 sudo ./election.py --project-config election.json --logfile election.log --random-seed 1 --single-step setup

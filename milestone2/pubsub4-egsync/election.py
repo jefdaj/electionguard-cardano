@@ -162,6 +162,17 @@ def teardown(cfg, log):
 ### election ###
 
 @explain_step
+def mint_main_channel(cfg, log):
+    run_in_container(
+        cfg, log, "admin.py", "admin", 1,
+        [
+            "mint-channel",
+            "--egsync-api", egsync_api_url(cfg, 'admin', 1),
+            "--channel-name", channel_name,
+        ]
+    )
+
+@explain_step
 def build_manifest(cfg, log):
     run_in_container(
         cfg, log, "admin.py", "admin", 1,
@@ -171,6 +182,18 @@ def build_manifest(cfg, log):
             "--referendum-question", cfg.votes[0].question,
         ]
     )
+
+@explain_step
+def mint_guardian_channels(cfg, log):
+    for guardian_id in cfg.election.guardians.ids:
+        run_in_container(
+            cfg, log, "admin.py", "admin", 1,
+            [
+                "mint-channel",
+                "--egsync-api", egsync_api_url(cfg, 'admin', 1),
+                "--channel-name", guardian_id
+            ]
+        )
 
 @explain_step
 def announce_key_ceremony(cfg, log):
@@ -231,6 +254,18 @@ def build_election(cfg, log):
             "--egsync-api", egsync_api_url(cfg, 'admin', 1),
         ]
     )
+
+@explain_step
+def mint_device_channels(cfg, log):
+    for device_number in range(1, cfg.election.devices.count + 1):
+        run_in_container(
+            cfg, log, "admin.py", "admin", 1,
+            [
+                "mint-channel",
+                "--egsync-api", egsync_api_url(cfg, 'admin', 1),
+                "--channel-name", 'device' + str(device_number)
+            ]
+        )
 
 def add_device(cfg, log, device_number):
     run_in_container(
@@ -434,14 +469,16 @@ def attack_all(cfg, log, step):
 
 def election(cfg, log) -> int:
     try:
-        # TODO need an initial open_channel action here
+        mint_main_channel(cfg, log) # TODO skip this one?
         build_manifest(cfg, log)        ; attack_all(cfg, log, 'build_manifest')
+        mint_guardian_channels(cfg, log)
         announce_key_ceremony(cfg, log) ; attack_all(cfg, log, 'announce_key_ceremony')
         key_ceremony_round1(cfg, log)   ; attack_all(cfg, log, 'key_ceremony_round1')
         key_ceremony_round2(cfg, log)   ; attack_all(cfg, log, 'key_ceremony_round2')
         key_ceremony_round3(cfg, log)   ; attack_all(cfg, log, 'key_ceremony_round3')
         publish_joint_key(cfg, log)     ; attack_all(cfg, log, 'publish_joint_key')
         build_election(cfg, log)        ; attack_all(cfg, log, 'build_election')
+        mint_device_channels(cfg, log) # TODO should this happen earlier?
         add_devices(cfg, log)           ; attack_all(cfg, log, 'add_devices')
         ids = vote_commit_all(cfg, log) ; attack_all(cfg, log, 'vote_commit_all')
         vote_reveal_all(cfg, log, ids)  ; attack_all(cfg, log, 'vote_reveal_all')

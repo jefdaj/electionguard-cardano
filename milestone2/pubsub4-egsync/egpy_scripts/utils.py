@@ -68,6 +68,11 @@ PRIVATE_RECORDS = {
 
 # TODO fix local-election scripts to use ballot_id rather than obj.whatever_id
 PUBLIC_RECORDS = {
+    'mint_channel': (
+        dict, # TODO make a type
+        None, # TODO handle None in these
+        None
+    ),
     'manifest': (
         Manifest,
         '1_config/1_announce',
@@ -173,12 +178,16 @@ PUBLIC_RECORDS = {
 def record_basename(record_type:str, **fmtargs):
     'So far, only used to simplify verifier summary json keys'
     (_, _, fstr) = PUBLIC_RECORDS[record_type]
+    if fstr is None:
+        return None
     fname = fstr.format(**fmtargs)
     return fname
 
 # you probably want the public/private specialized versions below
 def record_path(records_map, root_dir:str, record_type: str, **fmtargs):
     (_, dname, fstr) = records_map[record_type]
+    if fstr is None:
+        return None
     dpath = join(root_dir, dname)
     makedirs(dpath, exist_ok=True) # TODO make the dir here?
     fname = fstr.format(**fmtargs)
@@ -246,15 +255,19 @@ def from_public_record(egsync_api: str, record_type: str, **fmtargs):
 # you probably want the public or private versions below
 def to_record(records_map, egsync_api: str, record_type: str, obj, **fmtargs):
     (_, dname, fstr) = records_map[record_type]
+    if fstr is None:
+        return
     # dpath = join(public_dir, dname)
     # makedirs(dpath, exist_ok=True)
     # fmtargs['obj'] = obj # so we can use its fields too
     # fname = fstr.format(**fmtargs)
-    raw = serialize.to_raw(obj, fname, dpath)
+    serialize.to_raw(obj, fname, dpath)
 
 # you probably want the public or private versions below
 def from_record(records_map, public_dir: str, record_type: str, **fmtargs):
     (rtype, dname, fstr) = records_map[record_type]
+    if fstr is None:
+        raise Exception(f'from_record called with {record_type}, which is not saved')
     dpath = join(public_dir, dname)
     fname = fstr.format(**fmtargs) + '.json'
     fpath = join(dpath, fname)

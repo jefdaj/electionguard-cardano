@@ -63,6 +63,34 @@ from electionguard.decryption_mediator import DecryptionMediator
 from electionguard_cli.cli_steps.cli_step_base import CliStepBase
 from electionguard.tally import PlaintextTally
 
+@click.command("mint-channel")
+@click.option(
+    "--egsync-api",
+    prompt="Base URL of the egsync API",
+    help="The URL of the public records API. ",
+    type=click.STRING,
+)
+@click.option(
+    "--channel-name",
+    prompt="Channel name",
+    help="The name (id?) of the channel to mint.",
+    type=click.STRING,
+)
+def MintChannelCommand(
+    egsync_api: str,
+    channel_name: str,
+) -> None:
+    """Mint a new pubsub channel.
+    For now, these are implemented as <mockchain_dir>/<channel_name>/*.json
+    """
+
+    mint_channel = {
+        'action': 'post_public_record',
+        'record_type': 'mint_channel',
+        'channel_name': channel_name # TODO disambiguate from posting channel (admin1) better?
+    }
+    to_public_record(egsync_api, 'admin1', 'mint_channel', mint_channel)
+
 
 @click.command("build-manifest")
 @click.option(
