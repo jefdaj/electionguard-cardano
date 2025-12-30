@@ -162,6 +162,8 @@ PUBLIC_RECORDS = {
 
 def record_path(records_map, root_dir:str, record_type: str, **fmtargs):
     (dname, fstr) = records_map[record_type]
+    if fstr is None:
+        return None
     dpath = join(root_dir, dname)
     makedirs(dpath, exist_ok=True) # TODO make the dir here?
     fname = fstr.format(**fmtargs)
@@ -200,13 +202,11 @@ async def to_public_record(
         **fmtargs
     ):
     # TODO if adding the file fails, what then? remove locally? retry?
-    # fpath = to_record(PUBLIC_RECORDS, record_type, obj, **fmtargs)
-    # if fpath is None:
-    #     return
-    # cid = asyncio.run(
-    cid = await publish_on_ipfs(ipfs, obj)
-    # )
-    mockchain_post_public_record(channel, record_type, cid, **fmtargs)
+    fpath = to_record(PUBLIC_RECORDS, record_type, obj, **fmtargs)
+    if fpath is not None:
+        cid = await publish_on_ipfs(ipfs, obj)
+        fmtargs['cid'] = cid
+    mockchain_post_public_record(channel, record_type, **fmtargs)
     # TODO return something? cid, bool, res
 
 def from_public_record(record_type: str, **fmtargs):
@@ -241,13 +241,12 @@ def next_json_path(channel: str) -> str:
 
 # TODO how to post a list of records rather than just one? need some kind of queue?
 # TODO cid type?
-def mockchain_post_public_record(channel: str, record_type: str, cid: str, **fmtargs):
+def mockchain_post_public_record(channel: str, record_type: str, **fmtargs):
     json_path = next_json_path(channel)
     info(f'json_path: {json_path}')
     post_json = {
         'action': 'post_public_record',
         'record_type': record_type,
-        'cid': cid,
         **fmtargs
     }
     makedirs(dirname(json_path), exist_ok=True)
@@ -256,10 +255,11 @@ def mockchain_post_public_record(channel: str, record_type: str, cid: str, **fmt
 
 async def fetch_public_record(ipfs: AsyncIPFS, obj):
     info(f'fetch_public_record {obj}')
-    cid = obj.pop('cid')
     record_type = obj.pop('record_type')
     fpath = record_path(PUBLIC_RECORDS, PUBLIC_RECORDS_DIR, record_type, **obj)
     if fpath is not None:
+        # mint_channel is the only one so far that has no cid
+        cid = obj.pop('cid')
         await fetch_cid_to_file(ipfs, cid, fpath)
 
 
