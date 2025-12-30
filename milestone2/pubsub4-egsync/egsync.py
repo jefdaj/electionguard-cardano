@@ -23,8 +23,6 @@ from typing import List, Callable, TextIO
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
-from pprint import pprint
-
 
 ### logging ###
 
@@ -237,7 +235,6 @@ def next_json_path(channel: str) -> str:
 # TODO how to post a list of records rather than just one? need some kind of queue?
 # TODO cid type?
 def mockchain_post_public_record(channel: str, record_type: str, cid: str, **fmtargs):
-    print('locals:'); pprint(locals())
     json_path = next_json_path(channel)
     post_json = {
         'action': 'post_public_record',
@@ -254,33 +251,6 @@ async def fetch_public_record(obj):
     record_type = obj['record_type']
     fpath = record_path(PUBLIC_RECORDS, PUBLIC_RECORDS_DIR, record_type, **fmtargs)
     await fetch_cid_to_file(cid, fpath)
-
-# IPFS_API_ADDR = os.getenv("IPFS_API_ADDR", "/ip4/127.0.0.1/tcp/5001")
-# CID_PROVIDER_URL = os.getenv("CID_PROVIDER_URL", "http://localhost:8080/cids")
-# CID_POLL_INTERVAL = float(os.getenv("CID_POLL_INTERVAL", "30.0"))
-
-# Global state for demo purposes; in real apps use something more robust.
-# state = {
-#     "pinned_cids": set(),
-#     "last_sync": None,
-#     "sync_errors": [],
-# }
-
-# def fetch_cids_from_provider() -> List[str]:
-#     """
-#     Fetch a list of CIDs from an external service.
-#     Expected response: JSON list of strings, e.g. ["Qm...", "bafy..."].
-#     """
-#     resp = requests.get(CID_PROVIDER_URL, timeout=10)
-#     resp.raise_for_status()
-#     data = resp.json()
-#     if not isinstance(data, list):
-#         raise ValueError("CID provider must return a JSON list")
-#     return [str(cid).strip() for cid in data if cid]
-
-# def pin_cid(cid: str) -> None:
-#     info(f"Pinning CID: {cid}")
-#     IPFS_CLIENT.pin.add(cid)
 
 
 ### mockchain ###
@@ -415,30 +385,6 @@ class MockchainSubscriber(FileSystemEventHandler):
             raise Exception(f'channel already exists: {channel}')
         self.channel_state[channel] = 0
 
-# def mockchain_subscribe_loop():
-#     mockchain_dir = 'data/mockchain' # TODO pass arg
-#     os.makedirs(mockchain_dir, exist_ok=True)
-#     # loop = asyncio.new_event_loop()
-#     # asyncio.set_event_loop(loop)
-#     observer = Observer() # TODO what does this do?
-#     handlers = {
-#         'post_public_record': fetch_public_record
-#     }
-#     subscriber = MockchainSubscriber(
-#         loop,
-#         mockchain_dir,
-#         mockchain_event_handlers=handlers
-#     )
-#     observer.schedule(subscriber, path=mockchain_dir, recursive=True)
-#     info('starting observer')
-#     try:
-#         observer.start()
-#         loop.run_forever()
-#     except:
-#         observer.stop()
-#         observer.join()
-#         loop.close()
-
 
 ### flask routes ###
 
@@ -529,12 +475,6 @@ async def load_public_record(record_type):
 
 ### main ###
 
-# if __name__ == "__main__":
-#     # Start background sync thread, then run Flask dev server
-#     start_background_thread()
-#     # app.run(host="0.0.0.0", port=5000, debug=True)
-#     main()
-
 @app.before_serving
 async def startup():
     # Get the main asyncio loop used by Quart/Hypercorn
@@ -571,11 +511,6 @@ async def shutdown():
     if observer is not None:
         observer.stop()
         observer.join()
-
-# TODO move to mockchain section?
-# def start_background_thread():
-#     t = threading.Thread(target=mockchain_subscribe_loop, daemon=True)
-#     t.start()
 
 async def main():
     config = Config()
