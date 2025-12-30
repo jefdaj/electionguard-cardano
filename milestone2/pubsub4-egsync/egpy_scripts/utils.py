@@ -203,11 +203,9 @@ def mint_channel(egsync_api: str, sender_channel: str, new_channel_name: str, **
 
 ### load and save single files ###
 
-def _public_record_url(egsync_api: str, channel: str, record_type: str, **fmtargs) -> str:
+def _public_record_url(egsync_api: str, record_type: str, **fmtargs) -> str:
     url = f"{egsync_api}/public_records/{record_type}"
-    fmtargs['channel'] = channel # TODO is this a good way to do it?
-    # if fmtargs:
-    url = f"{url}?{urlencode(fmtargs)}"
+    url = f"{url}?{urlencode(fmtargs)}" # TODO ok if no fmtargs?
     return url
 
 def to_jsonable(obj):
@@ -230,7 +228,8 @@ def to_public_record(egsync_api: str, channel: str, record_type: str, obj, **fmt
     # pprint(egsync_api)
     # pprint(payload)
 
-    url = _public_record_url(egsync_api, channel, record_type, **fmtargs)
+    fmtargs['channel'] = channel
+    url = _public_record_url(egsync_api, record_type, **fmtargs)
     # print(url)
     resp = requests.post(url, json=payload, timeout=5)
     resp.raise_for_status()  # raise if 4xx/5xx
@@ -245,9 +244,11 @@ def from_public_record(egsync_api: str, record_type: str, **fmtargs):
         return None  # or raise a custom exception
     resp.raise_for_status()
 
-    raw = resp.json()
+    # raw = resp.json()
+    # print('resp json:'); pprint(raw)
+    raw = resp.text
+    print('resp text:'); pprint(resp.text)
 
-    # If you have PUBLIC_RECORDS here too, you can reconstruct proper types:
     rtype, _, _ = PUBLIC_RECORDS[record_type]
     # obj = serialize.from_dict(rtype, raw)
     obj = serialize.from_raw(rtype, raw)
@@ -255,24 +256,24 @@ def from_public_record(egsync_api: str, record_type: str, **fmtargs):
 
 # TODO is this broken?
 # you probably want the public or private versions below
-def to_record(records_map, egsync_api: str, record_type: str, obj, **fmtargs):
+def to_record(records_map, records_dir: str, record_type: str, obj, **fmtargs):
     (_, dname, fstr) = records_map[record_type]
-    # dpath = join(public_dir, dname)
-    # makedirs(dpath, exist_ok=True)
+    dpath = join(records_dir, dname)
+    makedirs(dpath, exist_ok=True)
     # fmtargs['obj'] = obj # so we can use its fields too
-    # fname = fstr.format(**fmtargs)
-    serialize.to_raw(obj, fname, dpath)
+    fname = fstr.format(**fmtargs)
+    serialize.to_file(obj, fname, dpath)
 
 # you probably want the public or private versions below
-def from_record(records_map, public_dir: str, record_type: str, **fmtargs):
+def from_record(records_map, records_dir: str, record_type: str, **fmtargs):
     (rtype, dname, fstr) = records_map[record_type]
-    dpath = join(public_dir, dname)
+    dpath = join(records_dir, dname)
     fname = fstr.format(**fmtargs) + '.json'
     fpath = join(dpath, fname)
     return serialize.from_file(rtype, fpath)
 
 # def to_public_record(egsync_api: str, record_type: str, obj, **fmtargs):
-#     return to_record(egsync_api, record_type, obj, **fmtargs)
+#     return to_record(egsync_api, <records_dir here>, record_type, obj, **fmtargs)
 
 def to_private_record(private_dir: str, record_type: str, obj, **fmtargs):
     return to_record(PRIVATE_RECORDS, private_dir, record_type, obj, **fmtargs)

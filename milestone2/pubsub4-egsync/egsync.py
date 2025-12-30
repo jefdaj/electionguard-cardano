@@ -180,7 +180,9 @@ def from_record(records_map, record_type: str, **fmtargs):
     # but for the API we need JSON.
     # TODO have another step for converting the reply to the type
     # return serialize.from_file(rtype, fpath)
-    return json.load(fpath)
+    with open(fpath, 'r') as f:
+        # return json.load(f)
+        return f.read()
 
 # TODO separate the code for actually saving the file from the ipfs code
 # TODO would it be better to save to a temporary location and let ipfs put the file in place?
@@ -475,7 +477,7 @@ async def load_public_record(record_type):
     info(f'load_public_record fmtargs: {fmtargs}')
 
     try:
-        obj = from_public_record(PUBLIC_RECORDS_DIR, record_type, **fmtargs)
+        return from_public_record(record_type, **fmtargs)
     except FileNotFoundError:
         abort(404, description="Record not found")
 
@@ -487,8 +489,8 @@ async def load_public_record(record_type):
     # raw = serialize.to_dict(obj)
     # return jsonify(raw)
 
-    raw = serialize.to_raw(obj)
-    return raw
+    # raw = serialize.to_raw(obj)
+    # return raw
 
 
 ### main ###

@@ -6,9 +6,11 @@ sudo rm -rf data election.log
 sudo ./election.py --project-config election.json --logfile election.log --random-seed 1 --single-step setup
 sleep 10
 sudo ./election.py --project-config election.json --logfile election.log --random-seed 1 --single-step build_manifest
-sleep 3
+sleep 10
 sudo ./election.py --project-config election.json --logfile election.log --random-seed 1 --single-step mint_guardian_channels
-sleep 3
+sleep 10
 sudo ./election.py --project-config election.json --logfile election.log --random-seed 1 --single-step announce_key_ceremony
-sleep 3
+sleep 10
+sudo ./election.py --project-config election.json --logfile election.log --random-seed 1 --single-step key_ceremony_round1
+sleep 10
 sudo ./election.py --project-config election.json --logfile election.log --random-seed 1 --single-step teardown
