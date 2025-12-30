@@ -290,9 +290,16 @@ class MockchainSubscriber(FileSystemEventHandler):
                  debounce_seconds=1.0, mockchain_event_handlers={},
                  *args, **kwargs):
         info('init MockchainSubscriber')
-        super(MockchainSubscriber, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.mockchain_dir = mockchain_dir
+
+        # For delayed responses
+        self.loop = loop
+        self.debounce_seconds = debounce_seconds
+
+        # (channel, index) -> concurrent.futures.Future
+        self.pending_events = {}
 
         # map of action name -> callback
         # callbacks should accept an event object
@@ -305,20 +312,11 @@ class MockchainSubscriber(FileSystemEventHandler):
         # map of valid channels -> index of latest json parsed from that channel
         self.channel_state = {'admin1': 0}
 
-        # for json files that may be partially written or just have multiple fs events
-        self.debounce_seconds = debounce_seconds
-        self.pending_events = {} # path -> asyncio.Handle?
-        # TODO also handle when the events are done but the ipfs file hasn't propagated
-        # TODO self.newjson_callback or similar
-
-        # For delayed responses
-        self.loop = loop
-
     def on_created(self, event):
-        return self.on_fs_event(event)
+        self.on_fs_event(event)
 
     def on_modified(self, event):
-        return self.on_fs_event(event)
+        self.on_fs_event(event)
 
     def on_fs_event(self, event):
         args = self.mockchain_event_args(event)
@@ -357,24 +355,25 @@ class MockchainSubscriber(FileSystemEventHandler):
     def schedule_response(self, channel: str, index: int):
         info(f'schedule_response {channel} {index}')
 
-        # Cancel existing pending response if any
         args = (channel, index)
-        if args in self.pending_events:
-            self.pending_events[args].cancel()
+
+        # Cancel existing pending response if any
+        future = self.pending_events.get(args)
+        if future is not None and not future.done():
+            future.cancel()
 
         async def delayed_response():
             await asyncio.sleep(self.debounce_seconds)
             await self.on_mockchain_event(*args)
             self.pending_events.pop(args, None)
 
-        # Use call_soon_threadsafe to schedule from another thread
         future = asyncio.run_coroutine_threadsafe(
             delayed_response(),
-            self.loop
+            self.loop,
         )
         self.pending_events[args] = future
 
-    def on_mockchain_event(self, channel: str, index: int):
+    async def on_mockchain_event(self, channel: str, index: int):
         if not channel in self.channel_state.keys():
             raise Exception(f'invalid mockchain_channel {channel}')
         expected = self.next_json_index(channel)
@@ -384,17 +383,19 @@ class MockchainSubscriber(FileSystemEventHandler):
         self.channel_state[channel] += 1
         obj = self.parse_mockchain_json(channel, index)
         # info(obj)
+
         try:
             action = obj['action']
             handler = self.mockchain_event_handlers[action]
         except KeyError:
             info(f'error: unknown action {action} in {obj}')
             return
+
         try:
-            return asyncio.run_coroutine_threadsafe(
-                handler(obj),
-                self.loop
-            )
+            # handler can be sync or async
+            result = handler(obj)
+            if asyncio.iscoroutine(result):
+                await result
         except Exception as e:
             info(f'error handling {obj}: {e}')
 
@@ -414,29 +415,29 @@ class MockchainSubscriber(FileSystemEventHandler):
             raise Exception(f'channel already exists: {channel}')
         self.channel_state[channel] = 0
 
-def mockchain_subscribe_loop():
-    mockchain_dir = 'data/mockchain' # TODO pass arg
-    os.makedirs(mockchain_dir, exist_ok=True)
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    observer = Observer() # TODO what does this do?
-    handlers = {
-        'post_public_record': fetch_public_record
-    }
-    subscriber = MockchainSubscriber(
-        loop,
-        mockchain_dir,
-        mockchain_event_handlers=handlers
-    )
-    observer.schedule(subscriber, path=mockchain_dir, recursive=True)
-    info('starting observer')
-    try:
-        observer.start()
-        loop.run_forever()
-    except:
-        observer.stop()
-        observer.join()
-        loop.close()
+# def mockchain_subscribe_loop():
+#     mockchain_dir = 'data/mockchain' # TODO pass arg
+#     os.makedirs(mockchain_dir, exist_ok=True)
+#     # loop = asyncio.new_event_loop()
+#     # asyncio.set_event_loop(loop)
+#     observer = Observer() # TODO what does this do?
+#     handlers = {
+#         'post_public_record': fetch_public_record
+#     }
+#     subscriber = MockchainSubscriber(
+#         loop,
+#         mockchain_dir,
+#         mockchain_event_handlers=handlers
+#     )
+#     observer.schedule(subscriber, path=mockchain_dir, recursive=True)
+#     info('starting observer')
+#     try:
+#         observer.start()
+#         loop.run_forever()
+#     except:
+#         observer.stop()
+#         observer.join()
+#         loop.close()
 
 
 ### flask routes ###
@@ -528,18 +529,55 @@ async def load_public_record(record_type):
 
 ### main ###
 
+# if __name__ == "__main__":
+#     # Start background sync thread, then run Flask dev server
+#     start_background_thread()
+#     # app.run(host="0.0.0.0", port=5000, debug=True)
+#     main()
+
+@app.before_serving
+async def startup():
+    # Get the main asyncio loop used by Quart/Hypercorn
+    loop = asyncio.get_running_loop()
+
+    mockchain_dir = 'data/mockchain'
+    os.makedirs(mockchain_dir, exist_ok=True)
+
+    handlers = {
+        'post_public_record': fetch_public_record,  # async function
+    }
+
+    observer = Observer()
+    subscriber = MockchainSubscriber(
+        loop=loop,
+        mockchain_dir=mockchain_dir,
+        mockchain_event_handlers=handlers,
+    )
+    observer.schedule(subscriber, path=mockchain_dir, recursive=True)
+    observer.start()
+
+    # Keep references so we can stop cleanly later
+    app.mockchain_observer = observer
+    app.mockchain_subscriber = subscriber
+
+@app.after_serving
+async def shutdown():
+    # Stop the observer on shutdown
+    observer = getattr(app, "mockchain_observer", None)
+    if observer is not None:
+        observer.stop()
+        observer.join()
+
 # TODO move to mockchain section?
-def start_background_thread():
-    t = threading.Thread(target=mockchain_subscribe_loop, daemon=True)
-    t.start()
+# def start_background_thread():
+#     t = threading.Thread(target=mockchain_subscribe_loop, daemon=True)
+#     t.start()
 
 async def main():
     config = Config()
     config.bind = ["0.0.0.0:5000"]
     config.workers = 1 # TODO remove for production?
-    await server(app, config)
+    await serve(app, config)
 
 if __name__ == "__main__":
-    # Start background sync thread, then run Flask dev server
-    start_background_thread()
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    asyncio.run(main())
