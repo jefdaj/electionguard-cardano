@@ -167,7 +167,7 @@ def to_record(records_map, record_type: str, obj, **fmtargs) -> str:
     fpath = record_path(PUBLIC_RECORDS, PUBLIC_RECORDS_DIR, record_type, **fmtargs)
     with open(fpath, 'w') as f:
         json.dump(obj, f)
-    info(f'dumped {record_type} to {fpath}')
+    info(f'saved {record_type} to {fpath}')
     return fpath
 
 # TODO separate into the json part (here) and the typed part (still in util.py?)
@@ -205,7 +205,7 @@ def from_public_record(record_type: str, **fmtargs):
 
 ### ipfs ###
 
-IPFS_CLIENT = aioipfs.AsyncIPFS(maddr=IPFS_API_ADDR); info(f'IPFS_CLIENT: {IPFS_CLIENT}')
+IPFS_CLIENT = None # will be created in Quart startup hook
 
 async def fetch_cid_to_file(cid: str, filename: str):
     async with aioipfs.AsyncIPFS() as client:
@@ -539,6 +539,10 @@ async def load_public_record(record_type):
 async def startup():
     # Get the main asyncio loop used by Quart/Hypercorn
     loop = asyncio.get_running_loop()
+
+    # TODO any reason this needs to be global now?
+    global IPFS_CLIENT
+    IPFS_CLIENT = aioipfs.AsyncIPFS(maddr=IPFS_API_ADDR); info(f'IPFS_CLIENT: {IPFS_CLIENT}')
 
     mockchain_dir = 'data/mockchain'
     os.makedirs(mockchain_dir, exist_ok=True)
