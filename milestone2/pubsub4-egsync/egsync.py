@@ -223,33 +223,33 @@ async def publish_on_ipfs(obj: dict) -> str:
 # TODO should this go through MockchainSubscriber instead? or is separate more robust?
 def next_json_path(channel: str) -> str:
     channel_dir = join(MOCKCHAIN_JSON_DIR, channel)
-    if not exists(channel_dir):
-        return 0 # TODO exception instead?
     index = 1
     while True:
         json_path = join(channel_dir, f'{index:03d}.json')
-        if not exists(path):
-            return path
+        if not exists(json_path):
+            return json_path
         index += 1
 
 # TODO how to post a list of records rather than just one? need some kind of queue?
 # TODO cid type?
 def mockchain_post_public_record(channel: str, record_type: str, cid: str, **fmtargs):
     json_path = next_json_path(channel)
+    info(f'json_path: {json_path}')
     post_json = {
         'action': 'post_public_record',
         'record_type': record_type,
         'cid': cid,
         **fmtargs
     }
+    makedirs(dirname(json_path), exist_ok=True)
     with open(json_path, 'w') as f:
         json.dump(post_json, f) # TODO pydantic here?
 
 async def fetch_public_record(obj):
     info(f'fetch_public_record {obj}')
-    cid = obj['cid']
-    record_type = obj['record_type']
-    fpath = record_path(PUBLIC_RECORDS, PUBLIC_RECORDS_DIR, record_type, **fmtargs)
+    cid = obj.pop('cid')
+    record_type = obj.pop('record_type')
+    fpath = record_path(PUBLIC_RECORDS, PUBLIC_RECORDS_DIR, record_type, **obj)
     await fetch_cid_to_file(cid, fpath)
 
 

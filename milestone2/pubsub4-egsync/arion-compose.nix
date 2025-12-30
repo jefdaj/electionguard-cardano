@@ -161,7 +161,7 @@ let
     ];
  
     service.environment = {
-      IPFS_LOGGING = "info";
+      IPFS_LOGGING = "fatal";
     };
   };
 
