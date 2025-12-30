@@ -13,6 +13,7 @@ import threading
 import time
 
 # from flask import Flask, jsonify, render_template_string, request, abort
+from aioipfs import AsyncIPFS
 from quart import Quart, request, abort, jsonify
 from hypercorn.config import Config
 from hypercorn.asyncio import serve
@@ -184,6 +185,7 @@ def from_record(records_map, record_type: str, **fmtargs):
 # TODO separate the code for actually saving the file from the ipfs code
 # TODO would it be better to save to a temporary location and let ipfs put the file in place?
 async def to_public_record(
+        ipfs: AsyncIPFS,
         channel: str,
         record_type: str,
         obj,
@@ -192,7 +194,7 @@ async def to_public_record(
     # TODO if adding the file fails, what then? remove locally? retry?
     fpath = to_record(PUBLIC_RECORDS, record_type, obj, **fmtargs)
     # cid = asyncio.run(
-    cid = await publish_on_ipfs(obj)
+    cid = await publish_on_ipfs(ipfs, obj)
     # )
     mockchain_post_public_record(channel, record_type, cid, **fmtargs)
     # TODO return something? cid, bool, res
@@ -203,21 +205,18 @@ def from_public_record(record_type: str, **fmtargs):
 
 ### ipfs ###
 
-IPFS_CLIENT = None # will be created in Quart startup hook
-
-async def fetch_cid_to_file(cid: str, filename: str):
-    async with aioipfs.AsyncIPFS() as client:
-        # Get the raw bytes for the CID
-        data = await client.cat(cid)
+async def fetch_cid_to_file(ipfs: AsyncIPFS, cid: str, filename: str):
+    # Get the raw bytes for the CID
+    data = await ipfs.cat(cid)
     # Save to your chosen filename
     # TODO if there are issues with lots of fs events, save to a tmpdir and move atomically instead
     async with aiofiles.open(filename, "wb") as f:
         await f.write(data)
 
-async def publish_on_ipfs(obj: dict) -> str:
-    added_file = await IPFS_CLIENT.add_json(obj)
+async def publish_on_ipfs(ipfs: AsyncIPFS, obj: dict) -> str:
+    added_file = await ipfs.add_json(obj)
     cid = added_file['Hash'] # TODO is this a dict in this aioipfs version?
-    IPFS_CLIENT.pin.add(cid) # TODO await?
+    ipfs.pin.add(cid) # TODO await?
     return cid
 
 # TODO should this go through MockchainSubscriber instead? or is separate more robust?
@@ -245,12 +244,12 @@ def mockchain_post_public_record(channel: str, record_type: str, cid: str, **fmt
     with open(json_path, 'w') as f:
         json.dump(post_json, f) # TODO pydantic here?
 
-async def fetch_public_record(obj):
+async def fetch_public_record(ipfs: AsyncIPFS, obj):
     info(f'fetch_public_record {obj}')
     cid = obj.pop('cid')
     record_type = obj.pop('record_type')
     fpath = record_path(PUBLIC_RECORDS, PUBLIC_RECORDS_DIR, record_type, **obj)
-    await fetch_cid_to_file(cid, fpath)
+    await fetch_cid_to_file(ipfs, cid, fpath)
 
 
 ### mockchain ###
@@ -444,7 +443,7 @@ async def save_public_record(record_type):
         abort(400, description="Expected channel")
 
     # 5. Delegate file-writing to your helper
-    await to_public_record(channel, record_type, raw, **fmtargs)
+    await to_public_record(app.ipfs_client, channel, record_type, raw, **fmtargs)
 
     return "", 204
 
@@ -481,14 +480,17 @@ async def startup():
     loop = asyncio.get_running_loop()
 
     # TODO any reason this needs to be global now?
-    global IPFS_CLIENT
-    IPFS_CLIENT = aioipfs.AsyncIPFS(maddr=IPFS_API_ADDR); info(f'IPFS_CLIENT: {IPFS_CLIENT}')
+    # TODO is the client actually trying to connect to localhost:5001 instead of the other container?
+    # TODO maybe the difference is dns4 vs ip4? ask ai
+    # TODO also see if you can add a test call that always runs and waits until a response before continuing
+    ipfs_client = AsyncIPFS(maddr=IPFS_API_ADDR); info(f'ipfs_client: {ipfs_client}')
 
     mockchain_dir = 'data/mockchain'
     os.makedirs(mockchain_dir, exist_ok=True)
 
+    # I think these can be sync or async functions? Haven't tried sync yet.
     handlers = {
-        'post_public_record': fetch_public_record,  # async function
+        'post_public_record': lambda obj: fetch_public_record(ipfs_client, obj),
     }
 
     observer = Observer()
@@ -503,6 +505,7 @@ async def startup():
     # Keep references so we can stop cleanly later
     app.mockchain_observer = observer
     app.mockchain_subscriber = subscriber
+    app.ipfs_client = ipfs_client
 
 @app.after_serving
 async def shutdown():
@@ -511,6 +514,7 @@ async def shutdown():
     if observer is not None:
         observer.stop()
         observer.join()
+        # TODO stop ipfs client?
 
 async def main():
     config = Config()
