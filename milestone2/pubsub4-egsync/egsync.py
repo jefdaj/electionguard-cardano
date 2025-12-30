@@ -514,7 +514,9 @@ async def shutdown():
     if observer is not None:
         observer.stop()
         observer.join()
-        # TODO stop ipfs client?
+    ipfs_client = getattr(app, "ipfs_client", None)
+    if ipfs_client is not None:
+        await ipfs_client.close()
 
 async def main():
     config = Config()
