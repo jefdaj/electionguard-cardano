@@ -272,9 +272,6 @@ def from_record(records_map, records_dir: str, record_type: str, **fmtargs):
     fpath = join(dpath, fname)
     return serialize.from_file(rtype, fpath)
 
-# def to_public_record(egsync_api: str, record_type: str, obj, **fmtargs):
-#     return to_record(egsync_api, <records_dir here>, record_type, obj, **fmtargs)
-
 def to_private_record(private_dir: str, record_type: str, obj, **fmtargs):
     return to_record(PRIVATE_RECORDS, private_dir, record_type, obj, **fmtargs)
 

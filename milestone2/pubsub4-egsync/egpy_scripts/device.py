@@ -77,7 +77,8 @@ def add_device(device_number, egsync_api):
         device_number * 45678, # launch code (TODO what's this?)
         POLLING_PLACE,
     )
-    to_public_record(egsync_api, 'device', device, device_number=device_number)
+    device_id = 'device_' + str(device_number)
+    to_public_record(egsync_api, device_id, 'device', device, device_number=device_number)
 
 def vote_commit(egsync_api, private_dir, device_number, candidate):
 
@@ -116,8 +117,9 @@ def vote_commit(egsync_api, private_dir, device_number, candidate):
     )
     assert ballot_submitted.nonce is None
     ballot_id = ballot_submitted.object_id
+    device_id = 'device_' + str(device_number)
     to_public_record(
-        egsync_api, 'ballot_submitted', ballot_submitted,
+        egsync_api, device_number, 'ballot_submitted', ballot_submitted,
         ballot_id=ballot_id
     )
 
@@ -128,6 +130,9 @@ def vote_commit(egsync_api, private_dir, device_number, candidate):
 def vote_reveal(egsync_api, private_dir, device_number, ballot_id, spoil):
 
     # store = DataStore() # for cast + spoiled ballots. will not be used again
+
+
+    device_id = 'device_' + str(device_number)
 
     if spoil:
 
@@ -171,7 +176,7 @@ def vote_reveal(egsync_api, private_dir, device_number, ballot_id, spoil):
         ballot_spoiled.state = BallotBoxState.SPOILED
 
         to_public_record(
-            egsync_api, 'ballot_spoiled', ballot_spoiled,
+            egsync_api, device_id, 'ballot_spoiled', ballot_spoiled,
             ballot_id=ballot_spoiled.object_id
         )
 
@@ -199,8 +204,10 @@ def vote_reveal(egsync_api, private_dir, device_number, ballot_id, spoil):
             cast_at=datetime.utcnow()
         )
 
+        device_id = 'device_' + str(device_number)
+
         to_public_record(
-            egsync_api, 'cast_notice', cast_notice,
+            egsync_api, device_id, 'cast_notice', cast_notice,
             ballot_id=cast_notice.ballot_id
         )
 

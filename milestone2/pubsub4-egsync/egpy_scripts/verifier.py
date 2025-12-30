@@ -855,7 +855,7 @@ def summarize_results(
         tally_header  : tally_summary,
         spoiled_header: spoiled_summaries,
     }
-    to_public_record(egsync_api, 'summary', summary, verifier_id=verifier_id)
+    to_public_record(egsync_api, verifier_id, 'summary', summary, verifier_id=verifier_id)
     log.info('')
 
     if n_errors == 0:
