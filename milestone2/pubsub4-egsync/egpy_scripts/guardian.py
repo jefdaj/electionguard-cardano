@@ -245,17 +245,21 @@ def DecryptSharesCommand(
     try:
         tally = from_public_record(egsync_api, 'ciphertext_tally')
         tally_share = guardian.compute_tally_share(tally, context)
-        # print(f'computed {guardian_id} decryption share of election tally', flush=True)
         assert tally_share is not None
+        print(f'computed {guardian_id} decryption share of election tally', flush=True)
+    except Exception as e:
+        print(e)
+        print('Failed to compute tally share')
+    try:
         to_public_record(
             egsync_api, guardian_id, 'tally_share', tally_share,
             guardian_id=guardian_id
         )
     except Exception as e:
         print(e)
-        print('Failed to compute tally share')
+        print('Failed to upload tally share')
 
-    # compute ballot shares
+    # compute spoiled ballot shares (we don't decrypt cast ballots)
     try:
         spoiled_ballots = load_spoiled_ballots(egsync_api)
         assert len(spoiled_ballots) > 0 # TODO count to see how many there should be?
@@ -264,18 +268,22 @@ def DecryptSharesCommand(
             = guardian.compute_ballot_shares(spoiled_ballots, context)
         for (spoiled_id, spoiled_share) in spoiled_shares.items():
             try:
-                # print(f'computed {guardian_id} decryption share of {spoiled_id}', flush=True)
+                print(f'computed {guardian_id} decryption share of {spoiled_id}', flush=True)
                 assert spoiled_share is not None
+            except Exception as e:
+                print(e)
+                print(f'Failed to compute spoiled_share for {spoiled_id}')
+            try:
                 to_public_record(
                     egsync_api, guardian_id, 'spoiled_share', spoiled_share,
                     spoiled_id=spoiled_id, guardian_id=guardian_id
                 )
             except Exception as e:
                 print(e)
-                print(f'Failed to compute ballot share for {spoiled_id}')
+                print(f'Failed to upload spoiled_share for {spoiled_id}')
     except Exception as e:
         print(e)
-        print('Failed to compute ballot shares')
+        print('Failed to compute (or upload) ballot shares')
 
     # print(flush=True)
 
