@@ -21,4 +21,6 @@ sudo ./election.py --project-config election.json --logfile election.log --rando
 sleep 10
 sudo ./election.py --project-config election.json --logfile election.log --random-seed 1 --single-step build_election
 sleep 10
+sudo ./election.py --project-config election.json --logfile election.log --random-seed 1 --single-step mint_device_channels
+sleep 10
 sudo ./election.py --project-config election.json --logfile election.log --random-seed 1 --single-step teardown

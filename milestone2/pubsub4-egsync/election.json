@@ -10,7 +10,7 @@
   },
   "election": {
     "guardians": {"count": 3, "quorum": 2},
-    "devices": {"count": 1},
+    "devices": {"count": 4},
     "verifiers": {"count": 1}
   },
   "votes": [{
