@@ -252,7 +252,6 @@ def from_public_record(egsync_api: str, record_type: str, **fmtargs):
     obj = serialize.from_raw(rtype, raw)
     return obj
 
-# TODO is this broken?
 # you probably want the public or private versions below
 def to_record(records_map, records_dir: str, record_type: str, obj, **fmtargs):
     (_, dname, fstr) = records_map[record_type]
@@ -282,14 +281,16 @@ def from_private_record(private_dir: str, record_type: str, **fmtargs):
 
 ### list all expected fmtargs for artifacts of a given type ###
 
-# TODO rewrite with api
+# TODO should you add a public record listing this directly? or an api endpoint maybe?
 def list_device_numbers(egsync_api: str):
-    # TODO list the IDs instead?
-    device_dir = join(public_dir, PUBLIC_RECORDS['device'][1])
-    # TODO can this fail? there should always be at least one device
-    names = [splitext(n)[0].split('_')[-1] for n in listdir(device_dir)]
-    numbers = [int(name) for name in names]
-    return sorted(numbers)
+    n = 1
+    while True:
+        try:
+            device = from_public_record(egsync_api, 'device', device_number=n)
+            n += 1
+        except Exception as e:
+            print(e)
+            return list(range(1, n))
 
 # TODO rewrite with api
 def list_ballot_ids(id_list_dir):
