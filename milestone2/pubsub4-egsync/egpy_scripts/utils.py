@@ -412,33 +412,13 @@ def load_spoiled_results(public_dir: str) -> List[PlaintextTally]:
     ]
     return spoiled_results
 
-# def load_guardian_pubkeys(public_dir: str) -> List[ElectionPublicKey]:
-#     # for now, we just assume they're named sequentially
-#     # TODO come up with a cleaner way
-#     guardian_pubkeys: List[ElectionPublicKey] = []
-#     guardian_number = 0
-#     while True:
-#         guardian_number += 1
-#         print('trying to get guardian ' + str(guardian_number) + ' pubkey')
-#         try:
-#             pubkey = from_public_record(
-#                 public_dir, 'guardian_pubkey',
-#                 guardian_id=f'guardian_{guardian_number}'
-#             )
-#             guardian_pubkeys.append(pubkey)
-#         except Exception as e:
-#             print(e)
-#             break
-#     assert len(guardian_pubkeys) > 0
-#     return guardian_pubkeys
-
 def load_guardian_pubkeys(public_dir: str) -> List[ElectionPublicKey]:
     ceremony_details: CeremonyDetails = from_public_record(public_dir, 'ceremony_details')
     guardian_pubkeys: List[ElectionPublicKey] = []
-    for n in range(1, ceremony_details.number_of_guardians+1):
+    for guardian_number in range(1, ceremony_details.number_of_guardians+1):
         pubkey = from_public_record(
             public_dir, 'guardian_pubkey',
-            guardian_id=f'guardian_{n}'
+            guardian_id=f'guardian_{guardian_number}'
         )
         guardian_pubkeys.append(pubkey)
     assert len(guardian_pubkeys) == ceremony_details.number_of_guardians
@@ -449,27 +429,21 @@ def load_guardian_pubkeys_dict(public_dir: str) -> Dict[GuardianId, ElectionPubl
     pubkeys_dict = {key.owner_id: key for key in pubkeys_list}
     return pubkeys_dict
 
-def load_designated_backups(
-        public_dir: str,
-        guardian_id: GuardianId) -> Dict[str, ElectionPartialKeyBackup]:
-    # same as above: assume they're named sequentially
+def load_designated_backups(public_dir: str, guardian_id: GuardianId) -> Dict[str, ElectionPartialKeyBackup]:
+    ceremony_details: CeremonyDetails = from_public_record(public_dir, 'ceremony_details')
     designated_backups: Dict[str, ElectionPartialKeyBackup] = {}
     guardian_number = int(guardian_id.split('_')[-1])
-    backup_order = 0
-    while True:
-        backup_order += 1
+    for backup_order in range(1, ceremony_details.number_of_guardians+1):
         if backup_order == guardian_number:
             continue # skip self
-        try:
-            backup = from_public_record(
-                public_dir, 'guardian_backup',
-                guardian_id=f'guardian_{backup_order}',
-                backup_order=guardian_number
-            )
-            designated_backups[backup.owner_id] = backup
-        except FileNotFoundError:
-            break
-    assert len(designated_backups) > 0
+        backup = from_public_record(
+            public_dir, 'guardian_backup',
+            guardian_id=f'guardian_{backup_order}',
+            backup_order=guardian_number
+        )
+        print(f'backup {guardian_id} {backup_order}: {backup}')
+        designated_backups[backup.owner_id] = backup
+    # assert len(designated_backups) == ceremony_details.number_of_guardians - 1
     return designated_backups
 
 # you probably want the tally or spoiled ballot specific versions below
