@@ -254,6 +254,30 @@ class RetryingIPFS:
     async def cat(self, *args, **kwargs):
         return await self._retry(lambda: self._client.cat(*args, **kwargs))
 
+    @property
+    def pin(self):
+        client_pin = self._client.pin
+
+        class _PinProxy:
+            def __init__(_self, outer, inner):
+                _self._outer = outer
+                _self._inner = inner
+
+            async def add(_self, *args, **kwargs):
+                return await _self._outer._retry(
+                    lambda: _self._inner.add(*args, **kwargs)
+                )
+
+            async def rm(_self, *args, **kwargs):
+                return await _self._outer._retry(
+                    lambda: _self._inner.rm(*args, **kwargs)
+                )
+
+            def __getattr__(_self, name):
+                return getattr(_self._inner, name)
+
+        return _PinProxy(self, client_pin)
+
     # Fallback for anything else – no retries by default:
     def __getattr__(self, name):
         return getattr(self._client, name)

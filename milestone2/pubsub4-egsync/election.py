@@ -503,7 +503,7 @@ def election(cfg, log) -> int:
 
         # not yet working:
         time.sleep(10); decrypt_shares(cfg, log)        ; attack_all(cfg, log, 'decrypt_shares')
-        time.sleep(10); decrypt_results(cfg, log)       ; attack_all(cfg, log, 'decrypt_results')
+        # time.sleep(10); decrypt_results(cfg, log)       ; attack_all(cfg, log, 'decrypt_results')
 
     except Exception as e:
         print(e)
