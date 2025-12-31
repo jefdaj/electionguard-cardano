@@ -187,9 +187,6 @@ def record_path(records_map, root_dir:str, record_type: str, **fmtargs):
 def private_path(private_dir: str, record_type: str, **fmtargs):
     return record_path(PUBLIC_RECORDS, private_dir, record_type, **fmtargs)
 
-# def public_path(public_dir: str, record_type: str, **fmtargs):
-#     return record_path(PUBLIC_RECORDS, public_dir, record_type, **fmtargs)
-
 
 ### mint channel ###
 
@@ -285,6 +282,7 @@ def from_private_record(private_dir: str, record_type: str, **fmtargs):
 
 ### list all expected fmtargs for artifacts of a given type ###
 
+# TODO rewrite with api
 def list_device_numbers(egsync_api: str):
     # TODO list the IDs instead?
     device_dir = join(public_dir, PUBLIC_RECORDS['device'][1])
@@ -293,6 +291,7 @@ def list_device_numbers(egsync_api: str):
     numbers = [int(name) for name in names]
     return sorted(numbers)
 
+# TODO rewrite with api
 def list_ballot_ids(id_list_dir):
     # TODO catch FileNotFoundError here? may not always want to swallow it
     return [
@@ -301,6 +300,7 @@ def list_ballot_ids(id_list_dir):
         if n.startswith('ballot-') # TODO remove? may only be relevant for vim swapfiles
     ]
 
+# TODO rewrite with api
 def list_submitted_ballot_fmtargs(public_dir):
     submitted_dir = join(public_dir, PUBLIC_RECORDS['ballot_submitted'][1])
     try:
@@ -310,6 +310,7 @@ def list_submitted_ballot_fmtargs(public_dir):
         ids = []
     return [{'ballot_id': i} for i in ids]
 
+# TODO rewrite with api
 def list_cast_ballot_fmtargs(public_dir):
     cast_dir = join(public_dir, PUBLIC_RECORDS['cast_notice'][1])
     try:
@@ -319,6 +320,7 @@ def list_cast_ballot_fmtargs(public_dir):
         ids = []
     return [{'ballot_id': i} for i in ids]
 
+# TODO rewrite with api
 def list_spoiled_ballot_fmtargs(public_dir):
     spoiled_dir = join(public_dir, PUBLIC_RECORDS['ballot_spoiled'][1])
     try:
@@ -328,12 +330,14 @@ def list_spoiled_ballot_fmtargs(public_dir):
         ids = []
     return [{'ballot_id': i} for i in ids]
 
+# TODO rewrite with api
 def list_guardian_pubkey_fmtargs(public_dir, n_guardians):
     fmtargs_list = []
     for n in range(1, n_guardians+1):
         fmtargs_list.append({'guardian_id': f'guardian_{n}'})
     return fmtargs_list
 
+# TODO rewrite with api
 def list_guardian_backup_fmtargs(public_dir, n_guardians):
     fmtargs_list = []
     for n in range(1, n_guardians+1):
@@ -347,12 +351,14 @@ def list_guardian_backup_fmtargs(public_dir, n_guardians):
             })
     return fmtargs_list
 
+# TODO rewrite with api
 def list_guardian_verification_fmtargs(public_dir, n_guardians):
     return list_guardian_backup_fmtargs(public_dir, n_guardians)
 
 
 ### load sets of files ###
 
+# TODO rewrite with api
 # you probably want the cast or spoiled versions below
 def load_ballots(
         public_dir: str,
@@ -370,6 +376,7 @@ def load_ballots(
             b.state = state
     return ballots
 
+# TODO rewrite with api
 # mainly for checking that the cast + spoiled ones add up to the total
 def load_submitted_ballots(public_dir: str) -> List[SubmittedBallot]:
     submitted_dir = join(public_dir, PUBLIC_RECORDS['ballot_submitted'][1])
@@ -379,6 +386,7 @@ def load_submitted_ballots(public_dir: str) -> List[SubmittedBallot]:
         # probably no submitted ballots
         return []
 
+# TODO rewrite with api
 def load_cast_ballots(public_dir: str) -> List[SubmittedBallot]:
     cast_dir = join(public_dir, PUBLIC_RECORDS['cast_notice'][1])
     try:
@@ -387,6 +395,7 @@ def load_cast_ballots(public_dir: str) -> List[SubmittedBallot]:
         # no cast ballots
         return []
 
+# TODO rewrite with api
 # TODO load these directly from spoiled_ballots dir? or check that == submitted?
 def load_spoiled_ballots(public_dir: str) -> List[SubmittedBallot]:
     spoiled_dir = join(public_dir, PUBLIC_RECORDS['ballot_spoiled'][1])
@@ -396,6 +405,7 @@ def load_spoiled_ballots(public_dir: str) -> List[SubmittedBallot]:
         # no spoiled ballots
         return []
 
+# TODO rewrite with api
 def load_spoiled_results(public_dir: str) -> List[PlaintextTally]:
     spoiled_dir = join(public_dir, PUBLIC_RECORDS['spoiled_result'][1])
     try:
@@ -412,32 +422,32 @@ def load_spoiled_results(public_dir: str) -> List[PlaintextTally]:
     ]
     return spoiled_results
 
-def load_guardian_pubkeys(public_dir: str) -> List[ElectionPublicKey]:
-    ceremony_details: CeremonyDetails = from_public_record(public_dir, 'ceremony_details')
+def load_guardian_pubkeys(egsync_api: str) -> List[ElectionPublicKey]:
+    ceremony_details: CeremonyDetails = from_public_record(egsync_api, 'ceremony_details')
     guardian_pubkeys: List[ElectionPublicKey] = []
     for guardian_number in range(1, ceremony_details.number_of_guardians+1):
         pubkey = from_public_record(
-            public_dir, 'guardian_pubkey',
+            egsync_api, 'guardian_pubkey',
             guardian_id=f'guardian_{guardian_number}'
         )
         guardian_pubkeys.append(pubkey)
     assert len(guardian_pubkeys) == ceremony_details.number_of_guardians
     return guardian_pubkeys
 
-def load_guardian_pubkeys_dict(public_dir: str) -> Dict[GuardianId, ElectionPublicKey]:
-    pubkeys_list = load_guardian_pubkeys(public_dir)
+def load_guardian_pubkeys_dict(egsync_api: str) -> Dict[GuardianId, ElectionPublicKey]:
+    pubkeys_list = load_guardian_pubkeys(egsync_api)
     pubkeys_dict = {key.owner_id: key for key in pubkeys_list}
     return pubkeys_dict
 
-def load_designated_backups(public_dir: str, guardian_id: GuardianId) -> Dict[str, ElectionPartialKeyBackup]:
-    ceremony_details: CeremonyDetails = from_public_record(public_dir, 'ceremony_details')
+def load_designated_backups(egsync_api: str, guardian_id: GuardianId) -> Dict[str, ElectionPartialKeyBackup]:
+    ceremony_details: CeremonyDetails = from_public_record(egsync_api, 'ceremony_details')
     designated_backups: Dict[str, ElectionPartialKeyBackup] = {}
     guardian_number = int(guardian_id.split('_')[-1])
     for backup_order in range(1, ceremony_details.number_of_guardians+1):
         if backup_order == guardian_number:
             continue # skip self
         backup = from_public_record(
-            public_dir, 'guardian_backup',
+            egsync_api, 'guardian_backup',
             guardian_id=f'guardian_{backup_order}',
             backup_order=guardian_number
         )
@@ -449,7 +459,7 @@ def load_designated_backups(public_dir: str, guardian_id: GuardianId) -> Dict[st
 # you probably want the tally or spoiled ballot specific versions below
 def load_decryption_shares(
         share_type: str,
-        public_dir: str,
+        egsync_api: str,
         guardian_count: int,
         **fmtargs
     ) -> Dict[GuardianId, DecryptionShare]:
@@ -460,7 +470,7 @@ def load_decryption_shares(
         guardian_id = f'guardian_{n}'
         try:
             share = from_public_record(
-                public_dir, share_type,
+                egsync_api, share_type,
                 guardian_id=guardian_id,
                 **fmtargs
             )
@@ -480,14 +490,14 @@ def load_decryption_shares(
 
     return shares
 
-def load_tally_shares(public_dir, guardian_count):
+def load_tally_shares(egsync_api, guardian_count):
     return load_decryption_shares(
-        'tally_share', public_dir, guardian_count
+        'tally_share', egsync_api, guardian_count
     )
 
-def load_spoiled_shares(public_dir, guardian_count, spoiled_id):
+def load_spoiled_shares(egsync_api, guardian_count, spoiled_id):
     return load_decryption_shares(
-        'spoiled_share', public_dir, guardian_count,
+        'spoiled_share', egsync_api, guardian_count,
         spoiled_id=spoiled_id
     )
 

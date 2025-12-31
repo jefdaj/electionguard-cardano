@@ -17,4 +17,6 @@ sudo ./election.py --project-config election.json --logfile election.log --rando
 sleep 10
 sudo ./election.py --project-config election.json --logfile election.log --random-seed 1 --single-step key_ceremony_round3
 sleep 10
+sudo ./election.py --project-config election.json --logfile election.log --random-seed 1 --single-step publish_joint_key
+sleep 10
 sudo ./election.py --project-config election.json --logfile election.log --random-seed 1 --single-step teardown
