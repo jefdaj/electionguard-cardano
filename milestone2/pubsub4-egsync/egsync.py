@@ -23,6 +23,10 @@ from pathlib import Path
 from typing import List, Callable, TextIO
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
+from glob import glob
+
+import string
+from typing import Dict, Callable, Pattern, Any
 
 
 ### logging ###
@@ -197,6 +201,79 @@ async def to_public_record(
 
 def from_public_record(record_type: str, **fmtargs):
     return from_record(PUBLIC_RECORDS, record_type, **fmtargs)
+
+def format_to_regex(
+    fmt: str,
+    field_patterns: Dict[str, str] | None = None,
+    suffix: str = r'\.json$',
+) -> Pattern:
+    """
+    Turn a format string like
+      '.../{guardian_id}_backup_{backup_order}'
+    into a regex with named groups.
+
+    `field_patterns` can override the pattern for specific fields.
+    """
+    formatter = string.Formatter()
+    field_patterns = field_patterns or {}
+
+    regex_parts = []
+
+    for literal_text, field_name, format_spec, conversion in formatter.parse(fmt):
+        # Escape literal parts
+        if literal_text:
+            regex_parts.append(re.escape(literal_text))
+
+        if field_name is None:
+            continue  # no more fields
+
+        # Pattern for this field: custom or default
+        pat = field_patterns.get(field_name, r'[^/]+')
+        regex_parts.append(f"(?P<{field_name}>{pat})")
+
+    # Add optional suffix, e.g. file extension
+    if suffix:
+        regex_parts.append(suffix)
+
+    return re.compile("".join(regex_parts))
+
+def parse_paths(
+    fmt: str,
+    paths,
+    field_patterns: Dict[str, str] | None = None,
+    converters: Dict[str, Callable[[str], Any]] | None = None,
+    suffix: str = r'\.json$',
+):
+    """
+    Parse a list of paths according to `fmt`, returning list[dict].
+    """
+    converters = converters or {}
+    regex = format_to_regex(fmt, field_patterns=field_patterns, suffix=suffix)
+
+    results = []
+    for p in paths:
+        m = regex.match(p)
+        if not m:
+            continue
+        d = m.groupdict()
+        for k, fn in converters.items():
+            if k in d:
+                d[k] = fn(d[k])
+        results.append(d)
+    return results
+
+def list_record_fmtargs(record_type):
+    (fdir, fbase) = PUBLIC_RECORDS[record_type]
+    fstr = join(PUBLIC_RECORDS_DIR, fdir, fbase)
+    gstr = re.sub('{.*?}', '*', fstr)
+    paths = sorted(glob(gstr))
+    # TODO move converters to PUBLIC_RECORDS as a new field?
+    default_converters = {
+        'backup_order': int,
+        'device_number': int,
+    }
+    fmtargs = parse_paths(fstr, paths, converters=default_converters)
+    return fmtargs
 
 
 ### ipfs ###
@@ -477,6 +554,22 @@ async def load_public_record(record_type):
         print(e)
         abort(404, description="Record not found")
 
+
+# TODO should this be an official part of your electionguard protocol?
+@app.route("/api/counts/<record_type>", methods=["GET"])
+async def count_records(record_type):
+    """How many of a given record type should be expected?
+    Useful when verifying or iterating for other reasons.
+    Note that not all of them will be numbered sequentially.
+    For example ballots have UUIDs rather than indexes.
+    """
+    try:
+        (dname, fstr) = PUBLIC_RECORDS[record_type]
+    except KeyError:
+        abort(404, description="Record not found")
+    fglob = re.sub('{.*?}', '*', fstr)
+    paths = glob(join(dname, fglob))
+    return len(paths)
 
 ### main ###
 

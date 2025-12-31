@@ -281,16 +281,14 @@ def from_private_record(private_dir: str, record_type: str, **fmtargs):
 
 ### list all expected fmtargs for artifacts of a given type ###
 
-# TODO should you add a public record listing this directly? or an api endpoint maybe?
-def list_device_numbers(egsync_api: str):
-    n = 1
-    while True:
-        try:
-            device = from_public_record(egsync_api, 'device', device_number=n)
-            n += 1
-        except Exception as e:
-            print(e)
-            return list(range(1, n))
+# TODO rewrite using list_record_fmtargs? or just replace its usage?
+def count_records(egsync_api: str, record_type: str) -> int:
+    url = f"{egsync_api}/counts/{record_type}"
+    resp = requests.get(url, timeout=5)
+    if resp.status_code == 404:
+        return None  # or raise a custom exception
+    resp.raise_for_status()
+    return int(resp.text) # TODO is that right?
 
 # TODO rewrite with api
 def list_ballot_ids(id_list_dir):

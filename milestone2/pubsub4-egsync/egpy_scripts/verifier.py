@@ -18,7 +18,7 @@ from utils import (
     from_public_record,
     to_public_record,
     CaptureLog,
-    list_device_numbers,
+    list_record_fmtargs,
     record_basename,
     init_log,
 )
@@ -191,7 +191,8 @@ def verify_device(results, egsync_api, log, device_number) -> EncryptionDevice:
     )
 
 def verify_all_devices(results, egsync_api, log) -> List[EncryptionDevice]:
-    device_numbers = list_device_numbers(egsync_api)
+    device_fmtargs = list_record_fmtargs(egsync_api, 'device')
+    device_numbers: List[int] = [f['device_number'] for f in device_fmtargs]
     log.info(f'\nVerifying {len(device_numbers)} encryption devices:')
     deps = verify_deps(**{
         f'device_{n}': verify(results, egsync_api, log, 'device', device_number=n)
