@@ -226,6 +226,17 @@ def list_record_fmtargs(record_type):
 
 ### ipfs ###
 
+async def wait_for_ipfs(ipfs, timeout=60):
+    end = asyncio.get_event_loop().time() + timeout
+    while True:
+        try:
+            await ipfs._client.version()  # raw client, single call
+            return
+        except (ClientConnectorError, ClientConnectorDNSError):
+            if asyncio.get_event_loop().time() > end:
+                raise
+            await asyncio.sleep(1)
+
 class RetryingIPFS:
     def __init__(self, client, retries=10, delay=1.0, backoff=1.5):
         self._client = client
@@ -237,6 +248,7 @@ class RetryingIPFS:
         delay = self._delay
         for attempt in range(self._retries):
             try:
+                await wait_for_ipfs(self) # TODO make it a method?
                 return await coro_factory()
             except (ClientConnectorError, ClientConnectorDNSError) as e:
                 if attempt == self._retries - 1:
@@ -629,17 +641,6 @@ async def record_fmtargs(record_type):
 
 ### main ###
 
-async def wait_for_ipfs(ipfs, timeout=60):
-    end = asyncio.get_event_loop().time() + timeout
-    while True:
-        try:
-            await ipfs._client.version()  # raw client, single call
-            return
-        except (ClientConnectorError, ClientConnectorDNSError):
-            if asyncio.get_event_loop().time() > end:
-                raise
-            await asyncio.sleep(1)
-
 @app.before_serving
 async def startup():
     # Get the main asyncio loop used by Quart/Hypercorn
@@ -650,7 +651,7 @@ async def startup():
     # TODO maybe the difference is dns4 vs ip4? ask ai
     # TODO also see if you can add a test call that always runs and waits until a response before continuing
     ipfs_client = RetryingIPFS(AsyncIPFS(maddr=IPFS_API_ADDR)); info(f'ipfs_client: {ipfs_client}')
-    await wait_for_ipfs(ipfs_client)
+    # await wait_for_ipfs(ipfs_client)
 
     mockchain_dir = 'data/mockchain'
     os.makedirs(mockchain_dir, exist_ok=True)

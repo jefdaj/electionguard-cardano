@@ -11,9 +11,6 @@ from typing import Any, Union, Optional, Callable, List, Dict, Tuple
 
 from utils import (
     build_election,
-    list_cast_ballot_fmtargs,
-    list_spoiled_ballot_fmtargs,
-    list_guardian_backup_fmtargs,
     from_public_record,
     to_public_record,
     CaptureLog,
@@ -376,7 +373,7 @@ def verify_all_ballots_submitted(results, egsync_api, log) -> List[SubmittedBall
     return deps.values()
 
 def verify_all_ballots_spoiled(results, egsync_api, log) -> List[SubmittedBallot]:
-    fmtargs_list = list_spoiled_ballot_fmtargs(egsync_api)
+    fmtargs_list = list_record_fmtargs(egsync_api, 'ballot_spoiled')
     log.info(f'\nVerifying {len(fmtargs_list)} spoiled ballots:')
     deps = verify_deps(**{
         fmtargs['ballot_id']: verify(results, egsync_api, log, 'ballot_spoiled', **fmtargs)
@@ -385,7 +382,7 @@ def verify_all_ballots_spoiled(results, egsync_api, log) -> List[SubmittedBallot
     return deps.values()
 
 def verify_all_ballots_cast(results, egsync_api, log) -> List[SubmittedBallot]:
-    fmtargs_list = list_cast_ballot_fmtargs(egsync_api)
+    fmtargs_list = list_record_fmtargs(egsync_api, 'cast_notice')
     log.info(f'\nVerifying {len(fmtargs_list)} cast ballots:')
     deps = verify_deps(**{
         fmtargs['ballot_id']: verify(results, egsync_api, log, 'ballot_cast', **fmtargs)
@@ -394,7 +391,7 @@ def verify_all_ballots_cast(results, egsync_api, log) -> List[SubmittedBallot]:
     return deps.values()
 
 def verify_all_spoiled_results(results, egsync_api, log) -> List[PlaintextTally]:
-    fmtargs_list = list_spoiled_ballot_fmtargs(egsync_api)
+    fmtargs_list = list_record_fmtargs(egsync_api, 'ballot_spoiled')
     log.info(f'\nVerifying {len(fmtargs_list)} spoiled ballot decyptions:')
     deps = verify_deps(**{
         fmtargs['ballot_id']: verify(results, egsync_api, log, 'spoiled_result', **fmtargs)
@@ -451,8 +448,8 @@ def verify_all_guardian_backups(results, egsync_api, log) -> List[ElectionPartia
     deps1 = verify_deps(
         ceremony_details = verify(results, egsync_api, log, 'ceremony_details'),
     )
-    n_guardians = deps1['ceremony_details'].number_of_guardians
-    fmtargs_list = list_guardian_backup_fmtargs(egsync_api, n_guardians)
+    # n_guardians = deps1['ceremony_details'].number_of_guardians # TODO remove?
+    fmtargs_list = list_record_fmtargs(egsync_api, 'guardian_backup')
     deps2 = verify_deps(**{
         record_basename('guardian_backup', **fmtargs):
             verify(results, egsync_api, log, 'guardian_backup', **fmtargs)

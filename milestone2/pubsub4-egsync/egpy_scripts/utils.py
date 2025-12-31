@@ -330,52 +330,6 @@ def list_record_fmtargs(egsync_api: str, record_type: str) -> List[dict]:
 #         if n.startswith('ballot-') # TODO remove? may only be relevant for vim swapfiles
 #     ]
 
-# TODO rewrite with api
-def list_cast_ballot_fmtargs(public_dir):
-    cast_dir = join(public_dir, PUBLIC_RECORDS['cast_notice'][1])
-    try:
-        ids = list_ballot_ids(cast_dir)
-    except FileNotFoundError:
-        # probably there were no cast ballots
-        ids = []
-    return [{'ballot_id': i} for i in ids]
-
-# TODO rewrite with api
-def list_spoiled_ballot_fmtargs(public_dir):
-    spoiled_dir = join(public_dir, PUBLIC_RECORDS['ballot_spoiled'][1])
-    try:
-        ids = list_ballot_ids(spoiled_dir)
-    except FileNotFoundError:
-        # probably there were no spoiled ballots
-        ids = []
-    return [{'ballot_id': i} for i in ids]
-
-# TODO rewrite with api
-def list_guardian_pubkey_fmtargs(public_dir, n_guardians):
-    fmtargs_list = []
-    for n in range(1, n_guardians+1):
-        fmtargs_list.append({'guardian_id': f'guardian_{n}'})
-    return fmtargs_list
-
-# TODO rewrite with api
-def list_guardian_backup_fmtargs(public_dir, n_guardians):
-    fmtargs_list = []
-    for n in range(1, n_guardians+1):
-        guardian_id = f'guardian_{n}'
-        for backup_order in range(1, n_guardians+1):
-            if backup_order == n:
-                continue
-            fmtargs_list.append({
-                'guardian_id': guardian_id,
-                'backup_order': backup_order
-            })
-    return fmtargs_list
-
-# TODO rewrite with api
-def list_guardian_verification_fmtargs(public_dir, n_guardians):
-    return list_guardian_backup_fmtargs(public_dir, n_guardians)
-
-
 ### load sets of files ###
 
 # TODO rewrite with api

@@ -10,8 +10,6 @@ from utils import (
     init_log,
     public_path,
     list_record_fmtargs,
-    list_cast_ballot_fmtargs,
-    list_spoiled_ballot_fmtargs,
     from_private_record,
 )
 import re
