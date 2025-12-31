@@ -470,21 +470,26 @@ def attack_all(cfg, log, step):
 
 def election(cfg, log) -> int:
     try:
-        build_manifest(cfg, log)        ; attack_all(cfg, log, 'build_manifest')
-        mint_guardian_channels(cfg, log)
-        announce_key_ceremony(cfg, log) ; attack_all(cfg, log, 'announce_key_ceremony')
-        key_ceremony_round1(cfg, log)   ; attack_all(cfg, log, 'key_ceremony_round1')
-        key_ceremony_round2(cfg, log)   ; attack_all(cfg, log, 'key_ceremony_round2')
-        key_ceremony_round3(cfg, log)   ; attack_all(cfg, log, 'key_ceremony_round3')
-        publish_joint_key(cfg, log)     ; attack_all(cfg, log, 'publish_joint_key')
-        build_election(cfg, log)        ; attack_all(cfg, log, 'build_election')
-        mint_device_channels(cfg, log) # TODO should this happen earlier?
-        add_devices(cfg, log)           ; attack_all(cfg, log, 'add_devices')
-        ids = vote_commit_all(cfg, log) ; attack_all(cfg, log, 'vote_commit_all')
-        vote_reveal_all(cfg, log, ids)  ; attack_all(cfg, log, 'vote_reveal_all')
-        tally(cfg, log)                 ; attack_all(cfg, log, 'tally')
-        decrypt_shares(cfg, log)        ; attack_all(cfg, log, 'decrypt_shares')
-        decrypt_results(cfg, log)       ; attack_all(cfg, log, 'decrypt_results')
+
+        # working:
+        time.sleep(10); build_manifest(cfg, log)        ; attack_all(cfg, log, 'build_manifest')
+        time.sleep(10); mint_guardian_channels(cfg, log)
+        time.sleep(10); announce_key_ceremony(cfg, log) ; attack_all(cfg, log, 'announce_key_ceremony')
+        time.sleep(10); key_ceremony_round1(cfg, log)   ; attack_all(cfg, log, 'key_ceremony_round1')
+        time.sleep(10); key_ceremony_round2(cfg, log)   ; attack_all(cfg, log, 'key_ceremony_round2')
+        time.sleep(10); key_ceremony_round3(cfg, log)   ; attack_all(cfg, log, 'key_ceremony_round3')
+        time.sleep(10); publish_joint_key(cfg, log)     ; attack_all(cfg, log, 'publish_joint_key')
+        time.sleep(10); build_election(cfg, log)        ; attack_all(cfg, log, 'build_election')
+        time.sleep(10); mint_device_channels(cfg, log) # TODO should this happen earlier?
+        time.sleep(10); add_devices(cfg, log)           ; attack_all(cfg, log, 'add_devices')
+        time.sleep(10); ids = vote_commit_all(cfg, log) ; attack_all(cfg, log, 'vote_commit_all')
+
+        # not yet working:
+        time.sleep(10); vote_reveal_all(cfg, log, ids)  ; attack_all(cfg, log, 'vote_reveal_all')
+        time.sleep(10); tally(cfg, log)                 ; attack_all(cfg, log, 'tally')
+        time.sleep(10); decrypt_shares(cfg, log)        ; attack_all(cfg, log, 'decrypt_shares')
+        time.sleep(10); decrypt_results(cfg, log)       ; attack_all(cfg, log, 'decrypt_results')
+
     except Exception as e:
         print(e)
     finally:
