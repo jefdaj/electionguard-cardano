@@ -321,90 +321,76 @@ def list_record_fmtargs(egsync_api: str, record_type: str) -> List[dict]:
     resp.raise_for_status()
     return resp.json()
 
-# TODO rewrite with api
-# def list_ballot_ids(id_list_dir):
-#     # TODO catch FileNotFoundError here? may not always want to swallow it
-#     return [
-#         splitext(n)[0]
-#         for n in listdir(id_list_dir)
-#         if n.startswith('ballot-') # TODO remove? may only be relevant for vim swapfiles
-#     ]
+def load_records(egsync_api: str, record_type: str):
+    "List all records of a particular record_type"
+    record_fmtargs = list_record_fmtargs(egsync_api, record_type)
+    records = []
+    for fmtargs in record_fmtargs:
+        record = from_public_record(egsync_api, record_type, **fmtargs)
+        records.append(record)
+    assert len(records) == len(record_fmtargs)
+    return records
+
 
 ### load sets of files ###
 
-# TODO rewrite with api
-# you probably want the cast or spoiled versions below
-def load_ballots(
-        public_dir: str,
-        id_list_dir: str,
-        state: Optional[BallotBoxState]
-        ) -> List[SubmittedBallot]:
-    ballot_ids = list_ballot_ids(id_list_dir)
-    ballots = [
-        from_public_record(public_dir, 'ballot_submitted', ballot_id=bid)
-        for bid in ballot_ids
-    ]
-    # TODO is this right? seems too simple and hacky
-    if state is not None:
-        for b in ballots:
-            b.state = state
+# mainly for checking that the cast + spoiled ones add up to the total
+def load_submitted_ballots(egsync_api: str) -> List[SubmittedBallot]:
+    ballots: List[SubmittedBallot] = load_records(egsync_api, 'ballot_submitted')
+    return ballots
+
+def load_cast_ballots(egsync_api: str) -> List[SubmittedBallot]:
+    # cast_dir = join(public_dir, PUBLIC_RECORDS['cast_notice'][1])
+    # try:
+    #     return load_ballots(public_dir, cast_dir, BallotBoxState.CAST)
+    # except FileNotFoundError:
+    #     # no cast ballots
+    #     return []
+    ballots: List[SubmittedBallot] = load_records(egsync_api, 'cast_notice')
+    # TODO need to do some conversion after loading here?
     return ballots
 
 # TODO rewrite with api
-# mainly for checking that the cast + spoiled ones add up to the total
-def load_submitted_ballots(public_dir: str) -> List[SubmittedBallot]:
-    submitted_dir = join(public_dir, PUBLIC_RECORDS['ballot_submitted'][1])
-    try:
-        return load_ballots(public_dir, submitted_dir, None)
-    except FileNotFoundError:
-        # probably no submitted ballots
-        return []
-
-# TODO rewrite with api
-def load_cast_ballots(public_dir: str) -> List[SubmittedBallot]:
-    cast_dir = join(public_dir, PUBLIC_RECORDS['cast_notice'][1])
-    try:
-        return load_ballots(public_dir, cast_dir, BallotBoxState.CAST)
-    except FileNotFoundError:
-        # no cast ballots
-        return []
-
-# TODO rewrite with api
 # TODO load these directly from spoiled_ballots dir? or check that == submitted?
-def load_spoiled_ballots(public_dir: str) -> List[SubmittedBallot]:
-    spoiled_dir = join(public_dir, PUBLIC_RECORDS['ballot_spoiled'][1])
-    try:
-        return load_ballots(public_dir, spoiled_dir, BallotBoxState.SPOILED)
-    except FileNotFoundError:
-        # no spoiled ballots
-        return []
+def load_spoiled_ballots(egsync_api: str) -> List[SubmittedBallot]:
+    # spoiled_dir = join(public_dir, PUBLIC_RECORDS['ballot_spoiled'][1])
+    # try:
+    #     return load_ballots(public_dir, spoiled_dir, BallotBoxState.SPOILED)
+    # except FileNotFoundError:
+    #     # no spoiled ballots
+    #     return []
+    ballots: List[SubmittedBallot] = load_records(egsync_api, 'ballot_spoiled')
+    # TODO need to do some conversion after loading here?
+    return ballots
 
-# TODO rewrite with api
-def load_spoiled_results(public_dir: str) -> List[PlaintextTally]:
-    spoiled_dir = join(public_dir, PUBLIC_RECORDS['spoiled_result'][1])
-    try:
-        spoiled_ids = [
-            splitext(n)[0]
-            for n in listdir(spoiled_dir)
-            if n.startswith('ballot-')
-        ]
-    except FileNotFoundError:
-        spoiled_ids = []
-    spoiled_results = [
-        from_public_record(public_dir, 'spoiled_result', ballot_id=i)
-        for i in spoiled_ids
-    ]
+def load_spoiled_results(egsync_api: str) -> List[PlaintextTally]:
+    # spoiled_dir = join(public_dir, PUBLIC_RECORDS['spoiled_result'][1])
+    # try:
+    #     spoiled_ids = [
+    #         splitext(n)[0]
+    #         for n in listdir(spoiled_dir)
+    #         if n.startswith('ballot-')
+    #     ]
+    # except FileNotFoundError:
+    #     spoiled_ids = []
+    # spoiled_results = [
+    #     from_public_record(public_dir, 'spoiled_result', ballot_id=i)
+    #     for i in spoiled_ids
+    # ]
+    # return spoiled_results
+    spoiled_results: List[PlaintextTally] = load_records(egsync_api, 'spoiled_result')
     return spoiled_results
 
 def load_guardian_pubkeys(egsync_api: str) -> List[ElectionPublicKey]:
     ceremony_details: CeremonyDetails = from_public_record(egsync_api, 'ceremony_details')
-    guardian_pubkeys: List[ElectionPublicKey] = []
-    for guardian_number in range(1, ceremony_details.number_of_guardians+1):
-        pubkey = from_public_record(
-            egsync_api, 'guardian_pubkey',
-            guardian_id=f'guardian_{guardian_number}'
-        )
-        guardian_pubkeys.append(pubkey)
+    # guardian_pubkeys: List[ElectionPublicKey] = []
+    # for guardian_number in range(1, ceremony_details.number_of_guardians+1):
+    #     pubkey = from_public_record(
+    #         egsync_api, 'guardian_pubkey',
+    #         guardian_id=f'guardian_{guardian_number}'
+    #     )
+    #     guardian_pubkeys.append(pubkey)
+    guardian_pubkeys: List[ElectionPublicKey] = load_records(egsync_api, 'guardian_pubkey')
     assert len(guardian_pubkeys) == ceremony_details.number_of_guardians
     return guardian_pubkeys
 
@@ -413,6 +399,7 @@ def load_guardian_pubkeys_dict(egsync_api: str) -> Dict[GuardianId, ElectionPubl
     pubkeys_dict = {key.owner_id: key for key in pubkeys_list}
     return pubkeys_dict
 
+# TODO rewrite this
 def load_designated_backups(egsync_api: str, guardian_id: GuardianId) -> Dict[str, ElectionPartialKeyBackup]:
     ceremony_details: CeremonyDetails = from_public_record(egsync_api, 'ceremony_details')
     designated_backups: Dict[str, ElectionPartialKeyBackup] = {}
