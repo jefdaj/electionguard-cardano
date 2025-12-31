@@ -133,6 +133,9 @@ let
   ipfsContainer = mode: private_dir: n: {
     service.image = "ipfs/kubo:v0.34.1";
 
+    # TODO does this fix intermittent panics?
+    service.restart = "always";
+
     # one IPFS repo per logical node
     service.volumes = [
       "${private_dir}/${mode}_${builtins.toString n}/ipfs:/data/ipfs"

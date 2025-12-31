@@ -361,6 +361,7 @@ def vote_reveal_all(cfg, log, ballot_ids):
 
     for contest in cfg.votes:
         for (candidate, n_votes) in contest.answers.items():
+            time.sleep(3) # TODO remove
 
             for _ in range(n_votes.spoil):
                 device_number = votes_so_far % cfg.election.devices.count + 1
@@ -501,8 +502,8 @@ def election(cfg, log) -> int:
         time.sleep(10); tally(cfg, log)                 ; attack_all(cfg, log, 'tally')
 
         # not yet working:
-        # time.sleep(10); decrypt_shares(cfg, log)        ; attack_all(cfg, log, 'decrypt_shares')
-        # time.sleep(10); decrypt_results(cfg, log)       ; attack_all(cfg, log, 'decrypt_results')
+        time.sleep(10); decrypt_shares(cfg, log)        ; attack_all(cfg, log, 'decrypt_shares')
+        time.sleep(10); decrypt_results(cfg, log)       ; attack_all(cfg, log, 'decrypt_results')
 
     except Exception as e:
         print(e)

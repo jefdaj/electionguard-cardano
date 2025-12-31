@@ -28,6 +28,8 @@ from glob import glob
 import string
 from typing import Dict, Callable, Pattern, Any
 
+from aiohttp import ClientConnectorError, ClientConnectorDNSError
+
 
 ### logging ###
 
@@ -183,10 +185,83 @@ def from_record(records_map, record_type: str, **fmtargs) -> str:
     with open(fpath, 'r') as f:
         return f.read()
 
+def parse_paths(
+    fmt: str,
+    paths,
+    field_patterns: Dict[str, str] | None = None,
+    converters: Dict[str, Callable[[str], Any]] | None = None,
+    suffix: str = r'\.json$',
+):
+    """
+    Parse a list of paths according to `fmt`, returning list[dict].
+    """
+    converters = converters or {}
+    regex = format_to_regex(fmt, field_patterns=field_patterns, suffix=suffix)
+
+    results = []
+    for p in paths:
+        m = regex.match(p)
+        if not m:
+            continue
+        d = m.groupdict()
+        for k, fn in converters.items():
+            if k in d:
+                d[k] = fn(d[k])
+        results.append(d)
+    return results
+
+def list_record_fmtargs(record_type):
+    (fdir, fbase) = PUBLIC_RECORDS[record_type]
+    fstr = join(PUBLIC_RECORDS_DIR, fdir, fbase)
+    gstr = re.sub('{.*?}', '*', fstr)
+    paths = sorted(glob(gstr))
+    # TODO move converters to PUBLIC_RECORDS as a new field?
+    default_converters = {
+        'backup_order': int,
+        'device_number': int,
+    }
+    fmtargs = parse_paths(fstr, paths, converters=default_converters)
+    return fmtargs
+
+
+### ipfs ###
+
+class RetryingIPFS:
+    def __init__(self, client, retries=10, delay=1.0, backoff=1.5):
+        self._client = client
+        self._retries = retries
+        self._delay = delay
+        self._backoff = backoff
+
+    async def _retry(self, coro_factory):
+        delay = self._delay
+        for attempt in range(self._retries):
+            try:
+                return await coro_factory()
+            except (ClientConnectorError, ClientConnectorDNSError) as e:
+                if attempt == self._retries - 1:
+                    raise
+                await asyncio.sleep(delay)
+                delay *= self._backoff
+
+    # Wrap only what you need, e.g. add, cat, pin, etc.
+    async def add(self, *args, **kwargs):
+        return await self._retry(lambda: self._client.add(*args, **kwargs))
+
+    async def add_json(self, *args, **kwargs):
+        return await self._retry(lambda: self._client.add_json(*args, **kwargs))
+
+    async def cat(self, *args, **kwargs):
+        return await self._retry(lambda: self._client.cat(*args, **kwargs))
+
+    # Fallback for anything else – no retries by default:
+    def __getattr__(self, name):
+        return getattr(self._client, name)
+
 # TODO separate the code for actually saving the file from the ipfs code
 # TODO would it be better to save to a temporary location and let ipfs put the file in place?
 async def to_public_record(
-        ipfs: AsyncIPFS,
+        ipfs: RetryingIPFS,
         channel: str,
         record_type: str,
         obj,
@@ -237,48 +312,7 @@ def format_to_regex(
 
     return re.compile("".join(regex_parts))
 
-def parse_paths(
-    fmt: str,
-    paths,
-    field_patterns: Dict[str, str] | None = None,
-    converters: Dict[str, Callable[[str], Any]] | None = None,
-    suffix: str = r'\.json$',
-):
-    """
-    Parse a list of paths according to `fmt`, returning list[dict].
-    """
-    converters = converters or {}
-    regex = format_to_regex(fmt, field_patterns=field_patterns, suffix=suffix)
-
-    results = []
-    for p in paths:
-        m = regex.match(p)
-        if not m:
-            continue
-        d = m.groupdict()
-        for k, fn in converters.items():
-            if k in d:
-                d[k] = fn(d[k])
-        results.append(d)
-    return results
-
-def list_record_fmtargs(record_type):
-    (fdir, fbase) = PUBLIC_RECORDS[record_type]
-    fstr = join(PUBLIC_RECORDS_DIR, fdir, fbase)
-    gstr = re.sub('{.*?}', '*', fstr)
-    paths = sorted(glob(gstr))
-    # TODO move converters to PUBLIC_RECORDS as a new field?
-    default_converters = {
-        'backup_order': int,
-        'device_number': int,
-    }
-    fmtargs = parse_paths(fstr, paths, converters=default_converters)
-    return fmtargs
-
-
-### ipfs ###
-
-async def fetch_cid_to_file(ipfs: AsyncIPFS, cid: str, filename: str):
+async def fetch_cid_to_file(ipfs: RetryingIPFS, cid: str, filename: str):
     # Get the raw bytes for the CID
     data = await ipfs.cat(cid)
     # Save to your chosen filename
@@ -286,9 +320,10 @@ async def fetch_cid_to_file(ipfs: AsyncIPFS, cid: str, filename: str):
     async with aiofiles.open(filename, "wb") as f:
         await f.write(data)
 
-async def publish_on_ipfs(ipfs: AsyncIPFS, obj: dict) -> str:
+async def publish_on_ipfs(ipfs: RetryingIPFS, obj: dict) -> str:
     added_file = await ipfs.add_json(obj)
     cid = added_file['Hash'] # TODO is this a dict in this aioipfs version?
+    # TODO does this also need to be wrapped in retry logic? or is that not important?
     ipfs.pin.add(cid) # TODO await?
     return cid
 
@@ -320,7 +355,7 @@ def mockchain_post_json(channel: str, action_type: str, **post_json):
     with open(json_path, 'w') as f:
         json.dump(post_json, f) # TODO pydantic here?
 
-async def fetch_public_record(ipfs: AsyncIPFS, obj):
+async def fetch_public_record(ipfs: RetryingIPFS, obj):
     info(f'fetch_public_record {obj}')
     record_type = obj.pop('record_type')
     cid = obj.pop('cid')
@@ -570,6 +605,17 @@ async def record_fmtargs(record_type):
 
 ### main ###
 
+async def wait_for_ipfs(ipfs, timeout=60):
+    end = asyncio.get_event_loop().time() + timeout
+    while True:
+        try:
+            await ipfs._client.version()  # raw client, single call
+            return
+        except (ClientConnectorError, ClientConnectorDNSError):
+            if asyncio.get_event_loop().time() > end:
+                raise
+            await asyncio.sleep(1)
+
 @app.before_serving
 async def startup():
     # Get the main asyncio loop used by Quart/Hypercorn
@@ -579,7 +625,8 @@ async def startup():
     # TODO is the client actually trying to connect to localhost:5001 instead of the other container?
     # TODO maybe the difference is dns4 vs ip4? ask ai
     # TODO also see if you can add a test call that always runs and waits until a response before continuing
-    ipfs_client = AsyncIPFS(maddr=IPFS_API_ADDR); info(f'ipfs_client: {ipfs_client}')
+    ipfs_client = RetryingIPFS(AsyncIPFS(maddr=IPFS_API_ADDR)); info(f'ipfs_client: {ipfs_client}')
+    await wait_for_ipfs(ipfs_client)
 
     mockchain_dir = 'data/mockchain'
     os.makedirs(mockchain_dir, exist_ok=True)

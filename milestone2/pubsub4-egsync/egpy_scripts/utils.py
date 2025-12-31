@@ -193,7 +193,7 @@ def private_path(private_dir: str, record_type: str, **fmtargs):
 ### misc ###
 
 def make_session_with_retry(
-    total=5,
+    total=10,
     backoff_factor=0.5,
     status_forcelist=(404, 500, 502, 503, 504),
 ):
