@@ -197,6 +197,19 @@ def mint_guardian_channels(cfg, log):
         )
 
 @explain_step
+def mint_verifier_channels(cfg, log):
+    for n in range(1, cfg.election.verifiers.count+1):
+        verifier_id = 'verifier_' + str(n)
+        run_in_container(
+            cfg, log, "admin.py", "admin", 1,
+            [
+                "mint-channel",
+                "--egsync-api", egsync_api_url(cfg, 'admin', 1),
+                "--channel-name", verifier_id
+            ]
+        )
+
+@explain_step
 def announce_key_ceremony(cfg, log):
     run_in_container(
         cfg, log, "admin.py", "admin", 1,
@@ -474,6 +487,7 @@ def election(cfg, log) -> int:
         # working:
         time.sleep(10); build_manifest(cfg, log)        ; attack_all(cfg, log, 'build_manifest')
         time.sleep(10); mint_guardian_channels(cfg, log)
+        time.sleep(10); mint_verifier_channels(cfg, log)
         time.sleep(10); announce_key_ceremony(cfg, log) ; attack_all(cfg, log, 'announce_key_ceremony')
         time.sleep(10); key_ceremony_round1(cfg, log)   ; attack_all(cfg, log, 'key_ceremony_round1')
         time.sleep(10); key_ceremony_round2(cfg, log)   ; attack_all(cfg, log, 'key_ceremony_round2')
@@ -493,7 +507,7 @@ def election(cfg, log) -> int:
     except Exception as e:
         print(e)
     finally:
-        n_errors = verify(cfg, log) ; attack_all(cfg, log, 'verify')
+        time.sleep(10); n_errors = verify(cfg, log) ; attack_all(cfg, log, 'verify')
         return n_errors
 
 def main(cfg, log):

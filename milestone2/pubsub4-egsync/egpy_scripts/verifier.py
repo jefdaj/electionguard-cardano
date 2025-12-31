@@ -904,7 +904,7 @@ def main(egsync_api, log, verifier_id):
     "--egsync-api",
     prompt="Base URL of the egsync API",
     help="The URL of the public records API. ",
-    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+    type=click.STRING
 )
 @click.option(
     "--verifier-id",
