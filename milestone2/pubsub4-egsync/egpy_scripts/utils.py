@@ -33,6 +33,8 @@ from pydantic.json import pydantic_encoder
 import logging
 logging.getLogger('electionguard').setLevel(logging.WARNING)
 
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 @dataclass
 class CastNotice:
@@ -231,12 +233,39 @@ def to_public_record(egsync_api: str, channel: str, record_type: str, obj, **fmt
     resp = requests.post(url, json=payload, timeout=5)
     resp.raise_for_status()  # raise if 4xx/5xx
 
+def make_session_with_retry(
+    total=5,
+    backoff_factor=0.5,
+    status_forcelist=(500, 502, 503, 504),
+):
+    """Add retries with exponential backoff to API requests.
+    Usage:
+      session = make_session_with_retry()
+      resp = session.get(...)
+      resp.raise_for_status()
+    """
+    retry = Retry(
+        total=total,
+        read=total,
+        connect=total,
+        backoff_factor=backoff_factor,
+        status_forcelist=status_forcelist,
+        allowed_methods=frozenset(["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"]),
+        raise_on_status=False,
+    )
+
+    adapter = HTTPAdapter(max_retries=retry)
+    session = requests.Session()
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    return session
+
 def from_public_record(egsync_api: str, record_type: str, **fmtargs):
     """
     Remote version of from_public_record.
     """
     url = _public_record_url(egsync_api, record_type, **fmtargs)
-    resp = requests.get(url, timeout=5)
+    resp = make_session_with_retry().get(url, timeout=5)
     if resp.status_code == 404:
         return None  # or raise a custom exception
     resp.raise_for_status()
@@ -244,8 +273,8 @@ def from_public_record(egsync_api: str, record_type: str, **fmtargs):
     # raw = resp.json()
     # print('resp json:'); pprint(raw)
     raw = resp.text
-    print('raw class:', type(raw))
-    print('resp text:'); pprint(resp.text)
+    # print('raw class:', type(raw))
+    # print('resp text:'); pprint(resp.text)
 
     rtype, _, _ = PUBLIC_RECORDS[record_type]
     # obj = serialize.from_dict(rtype, raw)
@@ -283,7 +312,7 @@ def from_private_record(private_dir: str, record_type: str, **fmtargs):
 
 def list_record_fmtargs(egsync_api: str, record_type: str) -> List[dict]:
     url = f"{egsync_api}/record_fmtargs/{record_type}"
-    resp = requests.get(url, timeout=5)
+    resp = make_session_with_retry().get(url, timeout=5)
     if resp.status_code == 404:
         return None  # or raise a custom exception
     resp.raise_for_status()
@@ -449,7 +478,7 @@ def load_designated_backups(egsync_api: str, guardian_id: GuardianId) -> Dict[st
             guardian_id=f'guardian_{backup_order}',
             backup_order=guardian_number
         )
-        print(f'backup {guardian_id} {backup_order}: {backup}')
+        # print(f'backup {guardian_id} {backup_order}: {backup}')
         designated_backups[backup.owner_id] = backup
     # assert len(designated_backups) == ceremony_details.number_of_guardians - 1
     return designated_backups

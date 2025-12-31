@@ -125,6 +125,7 @@ let
     image.enableRecommendedContents = true; # sh, env, misc lightweight files
     image.contents = [
       flake.packages.x86_64-linux.egsync
+      (pkgs.python312.withPackages (ps: with ps; [requests])) # for debugging
     ];
  
   };
