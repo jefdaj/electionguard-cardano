@@ -119,7 +119,7 @@ def vote_commit(egsync_api, private_dir, device_number, candidate):
     ballot_id = ballot_submitted.object_id
     device_id = 'device_' + str(device_number)
     to_public_record(
-        egsync_api, device_number, 'ballot_submitted', ballot_submitted,
+        egsync_api, device_id, 'ballot_submitted', ballot_submitted,
         ballot_id=ballot_id
     )
 
