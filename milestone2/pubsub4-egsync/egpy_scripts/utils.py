@@ -190,6 +190,36 @@ def private_path(private_dir: str, record_type: str, **fmtargs):
     return record_path(PUBLIC_RECORDS, private_dir, record_type, **fmtargs)
 
 
+### misc ###
+
+def make_session_with_retry(
+    total=5,
+    backoff_factor=0.5,
+    status_forcelist=(404, 500, 502, 503, 504),
+):
+    """Add retries with exponential backoff to API requests.
+    Usage:
+      session = make_session_with_retry()
+      resp = session.get(...)
+      resp.raise_for_status()
+    """
+    retry = Retry(
+        total=total,
+        read=total,
+        connect=total,
+        backoff_factor=backoff_factor,
+        status_forcelist=status_forcelist,
+        allowed_methods=frozenset(["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"]),
+        raise_on_status=False,
+    )
+
+    adapter = HTTPAdapter(max_retries=retry)
+    session = requests.Session()
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    return session
+
+
 ### mint channel ###
 
 def mint_channel(egsync_api: str, sender_channel: str, new_channel_name: str, **fmtargs):
@@ -197,7 +227,7 @@ def mint_channel(egsync_api: str, sender_channel: str, new_channel_name: str, **
     fmtargs['channel'] = sender_channel
     fmtargs['new_channel_name'] = new_channel_name
     url = f"{url}?{urlencode(fmtargs)}"
-    resp = requests.post(url, timeout=5) # TODO is some payload required?
+    resp = make_session_with_retry().post(url, timeout=5) # TODO is some payload required?
     resp.raise_for_status()  # raise if 4xx/5xx
 
 ### load and save single files ###
@@ -230,35 +260,8 @@ def to_public_record(egsync_api: str, channel: str, record_type: str, obj, **fmt
     fmtargs['channel'] = channel
     url = _public_record_url(egsync_api, record_type, **fmtargs)
     # print(url)
-    resp = requests.post(url, json=payload, timeout=5)
+    resp = make_session_with_retry().post(url, json=payload, timeout=5)
     resp.raise_for_status()  # raise if 4xx/5xx
-
-def make_session_with_retry(
-    total=5,
-    backoff_factor=0.5,
-    status_forcelist=(500, 502, 503, 504),
-):
-    """Add retries with exponential backoff to API requests.
-    Usage:
-      session = make_session_with_retry()
-      resp = session.get(...)
-      resp.raise_for_status()
-    """
-    retry = Retry(
-        total=total,
-        read=total,
-        connect=total,
-        backoff_factor=backoff_factor,
-        status_forcelist=status_forcelist,
-        allowed_methods=frozenset(["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"]),
-        raise_on_status=False,
-    )
-
-    adapter = HTTPAdapter(max_retries=retry)
-    session = requests.Session()
-    session.mount("http://", adapter)
-    session.mount("https://", adapter)
-    return session
 
 def from_public_record(egsync_api: str, record_type: str, **fmtargs):
     """
