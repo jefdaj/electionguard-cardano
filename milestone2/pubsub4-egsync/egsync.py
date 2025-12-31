@@ -556,20 +556,17 @@ async def load_public_record(record_type):
 
 
 # TODO should this be an official part of your electionguard protocol?
-@app.route("/api/counts/<record_type>", methods=["GET"])
-async def count_records(record_type):
-    """How many of a given record type should be expected?
-    Useful when verifying or iterating for other reasons.
-    Note that not all of them will be numbered sequentially.
-    For example ballots have UUIDs rather than indexes.
+@app.route("/api/record_fmtargs/<record_type>", methods=["GET"])
+async def record_fmtargs(record_type):
+    """Returns a list of dicts with fmtargs for all records of a given type.
     """
     try:
-        (dname, fstr) = PUBLIC_RECORDS[record_type]
+        (_, _) = PUBLIC_RECORDS[record_type]
     except KeyError:
         abort(404, description="Record not found")
-    fglob = re.sub('{.*?}', '*', fstr)
-    paths = glob(join(dname, fglob))
-    return len(paths)
+    fmtargs = list_record_fmtargs(record_type)
+    info(f'record_fmtargs {record_type} -> {fmtargs}')
+    return jsonify(fmtargs)
 
 ### main ###
 

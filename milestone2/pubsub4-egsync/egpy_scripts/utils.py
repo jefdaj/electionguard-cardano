@@ -281,14 +281,13 @@ def from_private_record(private_dir: str, record_type: str, **fmtargs):
 
 ### list all expected fmtargs for artifacts of a given type ###
 
-# TODO rewrite using list_record_fmtargs? or just replace its usage?
-def count_records(egsync_api: str, record_type: str) -> int:
-    url = f"{egsync_api}/counts/{record_type}"
+def list_record_fmtargs(egsync_api: str, record_type: str) -> List[dict]:
+    url = f"{egsync_api}/record_fmtargs/{record_type}"
     resp = requests.get(url, timeout=5)
     if resp.status_code == 404:
         return None  # or raise a custom exception
     resp.raise_for_status()
-    return int(resp.text) # TODO is that right?
+    return resp.json()
 
 # TODO rewrite with api
 def list_ballot_ids(id_list_dir):
