@@ -169,19 +169,14 @@ def to_record(records_map, record_type: str, obj, **fmtargs) -> str:
     info(f'saved {record_type} to {fpath}')
     return fpath
 
-# TODO separate into the json part (here) and the typed part (still in util.py?)
-def from_record(records_map, record_type: str, **fmtargs):
+def from_record(records_map, record_type: str, **fmtargs) -> str:
     (dname, fstr) = records_map[record_type]
     dpath = join(PUBLIC_RECORDS_DIR, dname)
     fname = fstr.format(**fmtargs) + '.json'
     fpath = join(dpath, fname)
 
-    # This returns a Python object of the correct type,
-    # but for the API we need JSON.
-    # TODO have another step for converting the reply to the type
-    # return serialize.from_file(rtype, fpath)
+    # This returns json text rather than json for use with serialize.from_raw
     with open(fpath, 'r') as f:
-        # return json.load(f)
         return f.read()
 
 # TODO separate the code for actually saving the file from the ipfs code
@@ -478,19 +473,9 @@ async def load_public_record(record_type):
 
     try:
         return from_public_record(record_type, **fmtargs)
-    except FileNotFoundError:
+    except Exception as e:
+        print(e)
         abort(404, description="Record not found")
-
-    # Convert Python object → JSON-serializable structure
-    #
-    # Again, adapt to your real helpers:
-    #   raw = serialize.to_dict(obj)
-    #   raw = obj.to_dict()
-    # raw = serialize.to_dict(obj)
-    # return jsonify(raw)
-
-    # raw = serialize.to_raw(obj)
-    # return raw
 
 
 ### main ###

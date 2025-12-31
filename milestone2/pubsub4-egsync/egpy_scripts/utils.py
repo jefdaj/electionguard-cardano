@@ -247,6 +247,7 @@ def from_public_record(egsync_api: str, record_type: str, **fmtargs):
     # raw = resp.json()
     # print('resp json:'); pprint(raw)
     raw = resp.text
+    print('raw class:', type(raw))
     print('resp text:'); pprint(resp.text)
 
     rtype, _, _ = PUBLIC_RECORDS[record_type]
@@ -411,22 +412,36 @@ def load_spoiled_results(public_dir: str) -> List[PlaintextTally]:
     ]
     return spoiled_results
 
+# def load_guardian_pubkeys(public_dir: str) -> List[ElectionPublicKey]:
+#     # for now, we just assume they're named sequentially
+#     # TODO come up with a cleaner way
+#     guardian_pubkeys: List[ElectionPublicKey] = []
+#     guardian_number = 0
+#     while True:
+#         guardian_number += 1
+#         print('trying to get guardian ' + str(guardian_number) + ' pubkey')
+#         try:
+#             pubkey = from_public_record(
+#                 public_dir, 'guardian_pubkey',
+#                 guardian_id=f'guardian_{guardian_number}'
+#             )
+#             guardian_pubkeys.append(pubkey)
+#         except Exception as e:
+#             print(e)
+#             break
+#     assert len(guardian_pubkeys) > 0
+#     return guardian_pubkeys
+
 def load_guardian_pubkeys(public_dir: str) -> List[ElectionPublicKey]:
-    # for now, we just assume they're named sequentially
-    # TODO come up with a cleaner way
+    ceremony_details: CeremonyDetails = from_public_record(public_dir, 'ceremony_details')
     guardian_pubkeys: List[ElectionPublicKey] = []
-    guardian_number = 0
-    while True:
-        guardian_number += 1
-        try:
-            pubkey = from_public_record(
-                public_dir, 'guardian_pubkey',
-                guardian_id=f'guardian_{guardian_number}'
-            )
-            guardian_pubkeys.append(pubkey)
-        except FileNotFoundError:
-            break
-    assert len(guardian_pubkeys) > 0
+    for n in range(1, ceremony_details.number_of_guardians+1):
+        pubkey = from_public_record(
+            public_dir, 'guardian_pubkey',
+            guardian_id=f'guardian_{n}'
+        )
+        guardian_pubkeys.append(pubkey)
+    assert len(guardian_pubkeys) == ceremony_details.number_of_guardians
     return guardian_pubkeys
 
 def load_guardian_pubkeys_dict(public_dir: str) -> Dict[GuardianId, ElectionPublicKey]:
