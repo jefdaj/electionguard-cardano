@@ -11,7 +11,6 @@ from typing import Any, Union, Optional, Callable, List, Dict, Tuple
 
 from utils import (
     build_election,
-    list_submitted_ballot_fmtargs,
     list_cast_ballot_fmtargs,
     list_spoiled_ballot_fmtargs,
     list_guardian_backup_fmtargs,
@@ -368,7 +367,7 @@ def verify_all_guardian_pubkeys(results, egsync_api, log) -> Dict[GuardianId, El
     return deps2
 
 def verify_all_ballots_submitted(results, egsync_api, log) -> List[SubmittedBallot]:
-    fmtargs_list = list_submitted_ballot_fmtargs(egsync_api)
+    fmtargs_list = list_record_fmtargs(egsync_api, 'ballot_submitted')
     log.info(f'\nVerifying {len(fmtargs_list)} submitted ballots:')
     deps = verify_deps(**{
         fmtargs['ballot_id']: verify(results, egsync_api, log, 'ballot_submitted', **fmtargs)

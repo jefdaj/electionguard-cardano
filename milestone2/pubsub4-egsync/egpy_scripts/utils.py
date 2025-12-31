@@ -322,23 +322,13 @@ def list_record_fmtargs(egsync_api: str, record_type: str) -> List[dict]:
     return resp.json()
 
 # TODO rewrite with api
-def list_ballot_ids(id_list_dir):
-    # TODO catch FileNotFoundError here? may not always want to swallow it
-    return [
-        splitext(n)[0]
-        for n in listdir(id_list_dir)
-        if n.startswith('ballot-') # TODO remove? may only be relevant for vim swapfiles
-    ]
-
-# TODO rewrite with api
-def list_submitted_ballot_fmtargs(public_dir):
-    submitted_dir = join(public_dir, PUBLIC_RECORDS['ballot_submitted'][1])
-    try:
-        ids = list_ballot_ids(submitted_dir)
-    except FileNotFoundError:
-        # probably there were no ballots at all
-        ids = []
-    return [{'ballot_id': i} for i in ids]
+# def list_ballot_ids(id_list_dir):
+#     # TODO catch FileNotFoundError here? may not always want to swallow it
+#     return [
+#         splitext(n)[0]
+#         for n in listdir(id_list_dir)
+#         if n.startswith('ballot-') # TODO remove? may only be relevant for vim swapfiles
+#     ]
 
 # TODO rewrite with api
 def list_cast_ballot_fmtargs(public_dir):

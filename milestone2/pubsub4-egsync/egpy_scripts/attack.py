@@ -9,10 +9,9 @@ from typing import Optional, List
 from utils import (
     init_log,
     public_path,
-    list_submitted_ballot_fmtargs,
+    list_record_fmtargs,
     list_cast_ballot_fmtargs,
     list_spoiled_ballot_fmtargs,
-    list_ballot_ids,
     from_private_record,
 )
 import re
@@ -100,12 +99,13 @@ def edit_random_matching_crypto_value_in_place(
 
 def mutate_public_record_crypto_in_place(
     log: logging.Logger,
-    pubdir: str,
+    egsync_api: str,
     record_type: str,
     keys: List[str],
     **fmtargs
 ):
-    json_path = public_path(pubdir, record_type, **fmtargs)
+    # TODO rewrite this
+    json_path = public_path(egsync_api, record_type, **fmtargs)
     log.info(f'targeting {json_path}')
     edit_random_matching_crypto_value_in_place(log, json_path, keys)
 
@@ -121,6 +121,14 @@ def announce_attack(fn):
             log.error(f'ERROR: {e}')
             raise
     return decorated_fn
+
+def list_ballot_ids(id_list_dir):
+    # TODO catch FileNotFoundError here? may not always want to swallow it
+    return [
+        splitext(n)[0]
+        for n in listdir(id_list_dir)
+        if n.startswith('ballot-') # TODO remove? may only be relevant for vim swapfiles
+    ]
 
 def list_own_ballot_fmtargs(privdir):
     "List fmtargs only of ballots created by this device"
@@ -138,18 +146,19 @@ def list_own_ballot_fmtargs(privdir):
 
 # TODO put back? short-circuits most of the election
 @announce_attack
-def admin_withhold_manifest(log, pubdir, privdir, step):
+def admin_withhold_manifest(log, egsync_api, privdir, step):
     "A silly attack that's fast to debug because it targets the first step."
     log.info(f'running during {step} step')
-    manifest_path = public_path(pubdir, 'manifest')
+    # TODO rewrite this
+    manifest_path = public_path(egsync_api, 'manifest')
     log.info(f'removing {manifest_path}')
     os.remove(manifest_path)
 
 # TODO should the protocol be expected to catch this? it doesn't so far
-def admin_mutate_constants(log, pubdir, privdir, step):
+def admin_mutate_constants(log, egsync_api, privdir, step):
     log.info(f'running during {step} step')
     mutate_public_record_crypto_in_place(
-        log, pubdir, 'constants',
+        log, egsync_api, 'constants',
         [
             'large_prime',
             'small_prime',
@@ -159,7 +168,7 @@ def admin_mutate_constants(log, pubdir, privdir, step):
     )
 
 @announce_attack
-def device_withhold_submitted_ballot(log, pubdir, privdir, step):
+def device_withhold_submitted_ballot(log, egsync_api, privdir, step):
     """Prevent a ballot from being initially submitted. This would be caught in
     the current ElectionGuard setup by a voter checking the official website
     after they finish voting, or in the ideal blockchain setup by checking the
@@ -171,18 +180,19 @@ def device_withhold_submitted_ballot(log, pubdir, privdir, step):
     except IndexError:
         log.error('no ballots submitted. abort attack')
         return
-    ballot_path = public_path(pubdir, 'ballot_submitted', **ballot_fmtargs)
+    # TODO rewrite this:
+    ballot_path = public_path(egsync_api, 'ballot_submitted', **ballot_fmtargs)
     log.info(f'removing {ballot_path}')
     os.remove(ballot_path)
 
 @announce_attack
-def device_mutate_submitted_ballot(log, pubdir, privdir, step):
-    submitted_ballots = set(d['ballot_id'] for d in list_submitted_ballot_fmtargs(pubdir))
+def device_mutate_submitted_ballot(log, egsync_api, privdir, step):
+    submitted_ballots = set(d['ballot_id'] for d in list_record_fmtargs(egsync_api, 'ballot_submitted'))
     own_ballots       = set(d['ballot_id'] for d in list_own_ballot_fmtargs(privdir))
     valid_choices = [{'ballot_id': i} for i in own_ballots.intersection(submitted_ballots)]
     ballot_fmtargs = random.choice(valid_choices)
     mutate_public_record_crypto_in_place(
-        log, pubdir, 'ballot_submitted',
+        log, egsync_api, 'ballot_submitted',
         [
             # 'description_hash',
             # 'manifest_hash',
@@ -201,8 +211,8 @@ def device_mutate_submitted_ballot(log, pubdir, privdir, step):
     )
 
 @announce_attack
-def device_mutate_spoiled_ballot(log, pubdir, privdir, step):
-    spoiled_ballots = set(d['ballot_id'] for d in list_spoiled_ballot_fmtargs(pubdir))
+def device_mutate_spoiled_ballot(log, egsync_api, privdir, step):
+    spoiled_ballots = set(d['ballot_id'] for d in list_record_fmtargs(egsync_api, 'ballot_spoiled'))
     own_ballots     = set(d['ballot_id'] for d in list_own_ballot_fmtargs(privdir))
     valid_choices = [{'ballot_id': i} for i in own_ballots.intersection(spoiled_ballots)]
     try:
@@ -210,7 +220,7 @@ def device_mutate_spoiled_ballot(log, pubdir, privdir, step):
     except IndexError:
         raise Exception('abort because this device has no spoiled ballots')
     mutate_public_record_crypto_in_place(
-        log, pubdir, 'ballot_spoiled',
+        log, egsync_api, 'ballot_spoiled',
         [
             # 'description_hash',
             # 'manifest_hash',
@@ -238,7 +248,7 @@ def device_mutate_spoiled_ballot(log, pubdir, privdir, step):
 
 
 @announce_attack
-def device_withhold_cast_ballot(log, pubdir, privdir, step):
+def device_withhold_cast_ballot(log, egsync_api, privdir, step):
     """Prevent a cast notice from being published. This would make it appear
     that the voter never said whether to cast or spoil, but is targeted to the
     case when they actually cast. They would notice if they tried to look up
@@ -248,19 +258,20 @@ def device_withhold_cast_ballot(log, pubdir, privdir, step):
     """
     log.info(f'running during {step} step')
     own_ballots   = set(d['ballot_id'] for d in list_own_ballot_fmtargs(privdir))
-    cast_ballots  = set(d['ballot_id'] for d in list_cast_ballot_fmtargs(pubdir))
+    cast_ballots  = set(d['ballot_id'] for d in list_record_fmtargs(egsync_api, 'cast_notice'))
     valid_choices = [{'ballot_id': i} for i in own_ballots.intersection(cast_ballots)]
     try:
         ballot_fmtargs = random.choice(valid_choices)
     except IndexError:
         log.error('abort because this device has no cast ballots to withhold')
         return
-    ballot_path = public_path(pubdir, 'cast_notice', **ballot_fmtargs)
+    # TODO rewrite this:
+    ballot_path = public_path(egsync_api, 'cast_notice', **ballot_fmtargs)
     log.info(f'removing {ballot_path}')
     os.remove(ballot_path)
 
 @announce_attack
-def device_withhold_spoiled_ballot(log, pubdir, privdir, step):
+def device_withhold_spoiled_ballot(log, egsync_api, privdir, step):
     """Prevent a spoiled ballot from being published. This would make it appear
     that the voter never said whether to cast or spoil, but is targeted to the
     case when they actually spoiled. They would notice if they tried to look up
@@ -270,19 +281,20 @@ def device_withhold_spoiled_ballot(log, pubdir, privdir, step):
     """
     log.info(f'running during {step} step')
     own_ballots     = set(d['ballot_id'] for d in list_own_ballot_fmtargs(privdir))
-    spoiled_ballots = set(d['ballot_id'] for d in list_spoiled_ballot_fmtargs(pubdir))
+    spoiled_ballots = set(d['ballot_id'] for d in list_record_fmtargs(egsync_api, 'ballot_spoiled'))
     valid_choices   = [{'ballot_id': i} for i in own_ballots.intersection(spoiled_ballots)]
     try:
         ballot_fmtargs = random.choice(valid_choices)
     except IndexError:
         log.error('abort because this device has no spoiled ballots to withhold')
         return
-    ballot_path = public_path(pubdir, 'ballot_spoiled', **ballot_fmtargs)
+    # TODO rewrite this:
+    ballot_path = public_path(egsync, 'ballot_spoiled', **ballot_fmtargs)
     log.info(f'removing {ballot_path}')
     os.remove(ballot_path)
 
 @announce_attack
-def admin_ghost_after_vote(log, pubdir, privdir, step):
+def admin_ghost_after_vote(log, egsync_api, privdir, step):
     """This simulates the election authority becoming non-cooperative after
     they see that the voting is going in a direction they don't like. (There's
     no defense against them quitting earlier during the setup phase, and no
@@ -301,14 +313,16 @@ def admin_ghost_after_vote(log, pubdir, privdir, step):
     #      or is that an accurate description of admin not being there for either?
 
     if step == 'tally':
-        tally_path = public_path(pubdir, 'ciphertext_tally')
+        # TODO rewrite this
+        tally_path = public_path(egsync_api, 'ciphertext_tally')
         log.info(f'removing {tally_path}')
         os.remove(tally_path)
 
     elif step == 'decrypt_results':
-        ballot_fmtargs = list_spoiled_ballot_fmtargs(pubdir)
+        # TODO rewrite this
+        ballot_fmtargs = list_record_fmtargs(egsync_api, 'ballot_spoiled')
         for fmtargs in ballot_fmtargs:
-            ballot_path = public_path(pubdir, 'spoiled_result', **fmtargs)
+            ballot_path = public_path(egsync_api, 'spoiled_result', **fmtargs)
             log.info(f'removing {ballot_path}')
             os.remove(ballot_path)
 
@@ -316,7 +330,7 @@ def admin_ghost_after_vote(log, pubdir, privdir, step):
         raise Exception(f'unexpected step {step}')
 
 @announce_attack
-def guardian_withhold_tally_share(log, pubdir, privdir, step):
+def guardian_withhold_tally_share(log, egsync_api, privdir, step):
     """Simulates one of the guardians refusing to decrypt their share of the
     tally. This is a realistic possibility if the guardian is a partisan upset
     at how the election seems to be going. In the full protocol there's a
@@ -325,14 +339,15 @@ def guardian_withhold_tally_share(log, pubdir, privdir, step):
     Doesn't seem important for the demo anyway. So for now, we just let the
     election fail.
     """
+    # TODO rewrite this
     own_key_pair: ElectionKeyPair = from_private_record(privdir, 'election_key_pair')
     fmtargs = {'guardian_id': own_key_pair.owner_id}
-    json_path = public_path(pubdir, 'tally_share', **fmtargs)
+    json_path = public_path(egsync_api, 'tally_share', **fmtargs)
     log.info(f'removing {json_path}')
     os.remove(json_path)
 
 @announce_attack
-def guardian_withhold_spoiled_share(log, pubdir, privdir, step):
+def guardian_withhold_spoiled_share(log, egsync_api, privdir, step):
     """Simulates one of the guardians refusing to decrypt their share of an
     an individual ballot.
     """
@@ -343,7 +358,7 @@ def guardian_withhold_spoiled_share(log, pubdir, privdir, step):
 
     # choose a spoiled ballot to mess up
     try:
-        ballot_fmtargs = random.choice(list_spoiled_ballot_fmtargs(pubdir))
+        ballot_fmtargs = random.choice(list_record_fmtargs(egsync_api, 'ballot_spoiled'))
     except IndexError:
         raise Exception('abort because there are no spoiled ballots')
 
@@ -352,7 +367,8 @@ def guardian_withhold_spoiled_share(log, pubdir, privdir, step):
     # TODO name it ballot_id here too?
     fmtargs['spoiled_id'] = ballot_fmtargs['ballot_id']
 
-    json_path = public_path(pubdir, 'spoiled_share', **fmtargs)
+    # TODO rewrite this
+    json_path = public_path(egsync_api, 'spoiled_share', **fmtargs)
     log.info(f'removing {json_path}')
     os.remove(json_path)
 
