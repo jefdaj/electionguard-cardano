@@ -4,7 +4,7 @@
     "data_dir": "./data",
     "bind_mounts": {
       "scripts": "/scripts",
-      "onchain": "/data/onchain",
+      "mockchain": "/data/mockchain",
       "private": "/data/private"
     }
   },

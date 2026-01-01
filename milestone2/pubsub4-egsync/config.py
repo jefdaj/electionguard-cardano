@@ -37,7 +37,7 @@ class BindMountsConfig(dict):
     def __init__(self):
         super(BindMountsConfig, self).__init__()
         self["scripts"] = "/scripts"
-        self["onchain"] = "/data/onchain"
+        self["mockchain"] = "/data/mockchain"
         self["private"] = "/data/private"
 
 class ArionConfig(dict):
