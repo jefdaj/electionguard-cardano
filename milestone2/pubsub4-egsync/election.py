@@ -777,18 +777,14 @@ def election_verified(testdir: str, verifier_id: str) -> bool:
 # TODO rename something less confusing?
 @given_honest_election()
 def test_honest_always_verified(testdir: ElectionTestDir):
-    # TODO get via api instead
-    # TODO also this is going to load all the verifications multiple times until you do
-    json_paths = glob(join(testdir, 'data/private/*/egsync/4_verify/*.json'))
+    json_paths = glob(join(testdir, 'data/private/verifier_1/egsync/4_verify/*.json'))
     n_verifications = len(json_paths)
     assert n_verifications > 0
 
 @given_honest_election()
 def test_honest_all_verifiers_agree_exactly(testdir: ElectionTestDir):
     first_summary: Optional[dict] = None
-    # TODO get via api instead
-    # TODO also this is going to load all the verifications multiple times until you do
-    json_paths = glob(join(testdir, 'data/private/*/egsync/4_verify/*.json'))
+    json_paths = glob(join(testdir, 'data/private/verifier_1/egsync/4_verify/*.json'))
     for json_path in json_paths:
         summary = load_json(json_path)
         if first_summary is None:
@@ -804,7 +800,7 @@ def test_honest_n_verifications_matches_cfg(testdir: ElectionTestDir):
         config['election']['guardians']['count'],
         config['election']['verifiers']['count'],
     ])
-    json_paths = glob(join(testdir, 'data/private/*/egsync/4_verify/*.json'))
+    json_paths = glob(join(testdir, 'data/private/verifier_1/egsync/4_verify/*.json'))
     n_actual = len(json_paths)
     assert n_actual == n_expected
 
@@ -892,7 +888,7 @@ def test_honest_spoiled_votes_match_config(testdir: ElectionTestDir):
 def assert_verifiers_verified(testdir: ElectionTestDir, target_name: str, expected: bool = True):
     # TODO get via api instead
     # TODO also this is going to load all the verifications multiple times until you do
-    json_paths = sorted(glob(join(testdir, 'data/private/*/4_verify/*.json')))
+    json_paths = glob(join(testdir, 'data/private/verifier_1/egsync/4_verify/*.json'))
     assert len(json_paths) > 0 # exact number tested separately
     for json_path in json_paths:
         summary = load_json(json_path)
