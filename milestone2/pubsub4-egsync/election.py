@@ -500,10 +500,8 @@ def election(cfg, log) -> int:
         time.sleep(10); ids = vote_commit_all(cfg, log) ; attack_all(cfg, log, 'vote_commit_all')
         time.sleep(10); vote_reveal_all(cfg, log, ids)  ; attack_all(cfg, log, 'vote_reveal_all')
         time.sleep(10); tally(cfg, log)                 ; attack_all(cfg, log, 'tally')
-
-        # not yet working:
         time.sleep(10); decrypt_shares(cfg, log)        ; attack_all(cfg, log, 'decrypt_shares')
-        # time.sleep(10); decrypt_results(cfg, log)       ; attack_all(cfg, log, 'decrypt_results')
+        time.sleep(10); decrypt_results(cfg, log)       ; attack_all(cfg, log, 'decrypt_results')
 
     except Exception as e:
         print(e)
