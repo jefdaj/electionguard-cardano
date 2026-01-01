@@ -557,7 +557,7 @@ class MockchainSubscriber(FileSystemEventHandler):
 @app.route("/api/channels", methods=["POST"])
 async def mint_channel():
     fmtargs = request.args.to_dict()
-    info(f'mint_channel fmtargs: {fmtargs}')
+    info(f'mint_channel {fmtargs}')
     try:
         sender_channel = fmtargs.pop('channel')
     except:
@@ -574,7 +574,6 @@ async def mint_channel():
 # TODO add an arg or url part for channel
 @app.route("/api/public_records/<record_type>", methods=["POST"])
 async def save_public_record(record_type):
-    info(f'save_public_record record_type: {record_type}')
 
     # 1. Validate record_type
     if record_type not in PUBLIC_RECORDS:
@@ -599,7 +598,7 @@ async def save_public_record(record_type):
 
     # 4. Extra format args come from query params (guardian_id, ballot_id, etc.)
     fmtargs = request.args.to_dict()
-    info(f'save_public_record fmtargs: {fmtargs}')
+    info(f'save_public_record {record_type} {fmtargs} {raw}')
 
     try:
         channel = fmtargs.pop('channel')
@@ -617,7 +616,7 @@ async def load_public_record(record_type):
         abort(404, description=f"Unknown record_type '{record_type}'")
 
     fmtargs = request.args.to_dict()
-    info(f'load_public_record fmtargs: {fmtargs}')
+    info(f'load_public_record {record_type} {fmtargs}')
 
     try:
         return from_public_record(record_type, **fmtargs)

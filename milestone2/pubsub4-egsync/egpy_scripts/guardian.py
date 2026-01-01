@@ -247,17 +247,17 @@ def DecryptSharesCommand(
         tally_share = guardian.compute_tally_share(tally, context)
         assert tally_share is not None
         print(f'computed {guardian_id} decryption share of election tally', flush=True)
+        try:
+            to_public_record(
+                egsync_api, guardian_id, 'tally_share', tally_share,
+                guardian_id=guardian_id
+            )
+        except Exception as e:
+            print(e)
+            print('Failed to upload tally share')
     except Exception as e:
         print(e)
         print('Failed to compute tally share')
-    try:
-        to_public_record(
-            egsync_api, guardian_id, 'tally_share', tally_share,
-            guardian_id=guardian_id
-        )
-    except Exception as e:
-        print(e)
-        print('Failed to upload tally share')
 
     # compute spoiled ballot shares (we don't decrypt cast ballots)
     try:

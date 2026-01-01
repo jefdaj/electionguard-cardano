@@ -332,14 +332,19 @@ def TallyCommand(
     cast_ballots    = load_cast_ballots(egsync_api)
     spoiled_ballots = load_spoiled_ballots(egsync_api)
 
+    # TODO these should all be SubmittedBallot type, right? double check that in load fns
+    # TODO how does the tally of spoiled ones work again?
+    n = 0
     for ballot in cast_ballots + spoiled_ballots:
+        n += 1 # TODO remove
         with CaptureLog(level=logging.WARNING) as log:
             try:
                 # TODO is assert the best way to write this?
                 assert(tally.append(ballot, should_validate=True))
-            except AssertionError:
+            except:
                 # msgs = [str(e)]
                 msg = log.getvalue().strip()
+                msg += f'\nballot that failed to append: {ballot} ({type(ballot)}, index {n})'
                 print(msg)
                 # print(f'err during {verify_fn.__name__}: "{result}"')
 

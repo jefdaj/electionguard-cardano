@@ -339,29 +339,37 @@ def load_submitted_ballots(egsync_api: str) -> List[SubmittedBallot]:
     ballots: List[SubmittedBallot] = load_records(egsync_api, 'ballot_submitted')
     return ballots
 
+# TODO dry this out
 def load_cast_ballots(egsync_api: str) -> List[SubmittedBallot]:
-    # cast_dir = join(public_dir, PUBLIC_RECORDS['cast_notice'][1])
-    # try:
-    #     return load_ballots(public_dir, cast_dir, BallotBoxState.CAST)
-    # except FileNotFoundError:
-    #     # no cast ballots
-    #     return []
-    ballots: List[SubmittedBallot] = load_records(egsync_api, 'cast_notice')
-    # TODO need to do some conversion after loading here?
-    return ballots
+    # Steps to load cast ballots:
+    # 1. load 'cast_notice' objects and get their 'ballot_id's
+    # 2. load 'ballot_submitted' objects for those ids
+    # 3. set their states to CAST
+    cast_notices: List[CastNotice] = load_records(egsync_api, 'cast_notice')
+    cast_ballot_ids: List[str] = [cn.ballot_id for cn in cast_notices]
+    cast_ballots: List[SubmittedBallot] = [
+        from_public_record(egsync_api, 'ballot_submitted', ballot_id=cbi)
+        for cbi in cast_ballot_ids
+    ]
+    for ballot in cast_ballots:
+        ballot.state = BallotBoxState.CAST
+    return cast_ballots
 
-# TODO rewrite with api
-# TODO load these directly from spoiled_ballots dir? or check that == submitted?
+# TODO dry this out
 def load_spoiled_ballots(egsync_api: str) -> List[SubmittedBallot]:
-    # spoiled_dir = join(public_dir, PUBLIC_RECORDS['ballot_spoiled'][1])
-    # try:
-    #     return load_ballots(public_dir, spoiled_dir, BallotBoxState.SPOILED)
-    # except FileNotFoundError:
-    #     # no spoiled ballots
-    #     return []
-    ballots: List[SubmittedBallot] = load_records(egsync_api, 'ballot_spoiled')
-    # TODO need to do some conversion after loading here?
-    return ballots
+    # Steps to load spoiled ballots:
+    # 1. load 'ballot_spoiled' records and get their 'ballot_id's
+    # 2. load 'ballot_submitted' objects for those ids
+    # 3. set their states to SPOILED
+    spoiled_ballots: List[CiphertextBallot] = load_records(egsync_api, 'ballot_spoiled')
+    spoiled_ballot_ids: List[str] = [sb.object_id for sb in spoiled_ballots]
+    submitted_ballots: List[SubmittedBallot] = [
+        from_public_record(egsync_api, 'ballot_submitted', ballot_id=sbi)
+        for sbi in spoiled_ballot_ids
+    ]
+    for ballot in submitted_ballots:
+        ballot.state = BallotBoxState.SPOILED
+    return submitted_ballots
 
 def load_spoiled_results(egsync_api: str) -> List[PlaintextTally]:
     # spoiled_dir = join(public_dir, PUBLIC_RECORDS['spoiled_result'][1])
