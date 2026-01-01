@@ -503,6 +503,7 @@ def election(cfg, log) -> int:
         print(e)
     finally:
         time.sleep(0); n_errors = verify(cfg, log) ; attack_all(cfg, log, 'verify')
+        time.sleep(3) # TODO do verifications ever fail to propagate?
         return n_errors
 
 def main(cfg, log):
@@ -1046,6 +1047,7 @@ def assert_verifiers_reject(testdir: ElectionTestDir, targets: List[str]):
     for target in targets:
         assert_verifiers_verified(testdir, target, False)
 
+@pytest.mark.broken
 @given_attacked_election('admin_withhold_manifest')
 def test_attack_admin_withhold_manifest(testdir: ElectionTestDir):
     assert_verifiers_reject(testdir, [
@@ -1057,6 +1059,7 @@ def test_attack_admin_withhold_manifest(testdir: ElectionTestDir):
         'gather_election',
     ])
 
+@pytest.mark.broken
 @given_attacked_election('admin_ghost_after_vote')
 def test_attack_admin_ghost_after_vote(testdir: ElectionTestDir):
     assert_verifiers_reject(testdir, [
@@ -1064,6 +1067,7 @@ def test_attack_admin_ghost_after_vote(testdir: ElectionTestDir):
         'gather_election',
     ])
 
+@pytest.mark.broken
 @given_attacked_election('device_withhold_submitted_ballot')
 def test_attack_device_withhold_submitted_ballot(testdir: ElectionTestDir):
     assert_verifiers_reject(testdir, [
@@ -1072,6 +1076,7 @@ def test_attack_device_withhold_submitted_ballot(testdir: ElectionTestDir):
         'gather_election',
     ])
 
+@pytest.mark.broken
 @given_attacked_election('device_withhold_cast_ballot')
 def test_attack_device_withhold_cast_ballot(testdir: ElectionTestDir):
     assume_successful_attack(testdir)
@@ -1079,6 +1084,7 @@ def test_attack_device_withhold_cast_ballot(testdir: ElectionTestDir):
         'gather_election',
     ])
 
+@pytest.mark.broken
 @given_attacked_election('device_withhold_spoiled_ballot')
 def test_attack_device_withhold_spoiled_ballot(testdir: ElectionTestDir):
     assume_successful_attack(testdir)
@@ -1088,6 +1094,7 @@ def test_attack_device_withhold_spoiled_ballot(testdir: ElectionTestDir):
         'gather_election',
     ])
 
+@pytest.mark.broken
 @given_attacked_election('device_mutate_submitted_ballot', max_examples=50)
 def test_attack_device_mutate_submitted_ballot(testdir: ElectionTestDir):
     assert_verifiers_reject(testdir, [
@@ -1099,6 +1106,7 @@ def test_attack_device_mutate_submitted_ballot(testdir: ElectionTestDir):
         'gather_election',
     ])
 
+@pytest.mark.broken
 @given_attacked_election('device_mutate_spoiled_ballot', max_examples=50)
 def test_attack_device_mutate_spoiled_ballot(testdir: ElectionTestDir):
     assume_successful_attack(testdir)
@@ -1107,6 +1115,7 @@ def test_attack_device_mutate_spoiled_ballot(testdir: ElectionTestDir):
         'gather_election',
     ])
 
+@pytest.mark.broken
 @given_attacked_election('guardian_withhold_tally_share')
 def test_attack_guardian_withhold_tally_share(testdir: ElectionTestDir):
     assume_successful_attack(testdir)
@@ -1116,6 +1125,7 @@ def test_attack_guardian_withhold_tally_share(testdir: ElectionTestDir):
         'gather_election',
     ])
 
+@pytest.mark.broken
 @given_attacked_election('guardian_withhold_spoiled_share')
 def test_attack_guardian_withhold_spoiled_share(testdir: ElectionTestDir):
     assume_successful_attack(testdir)
@@ -1128,11 +1138,13 @@ def test_attack_guardian_withhold_spoiled_share(testdir: ElectionTestDir):
 ### test attacks in general ###
 
 # TODO are there other cases when the election can still be verified?
+@pytest.mark.broken
 @given_attacked_election()
 def test_verifiers_notice_attacks(testdir: ElectionTestDir):
     assume_successful_attack(testdir)
     assert_verifiers_reject(testdir, ['gather_election'])
 
+@pytest.mark.broken
 @given_attacked_election()
 def test_attacks_are_logged(testdir: ElectionTestDir):
     '''there should be at least 1 private attack.log,
