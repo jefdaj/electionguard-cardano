@@ -2,6 +2,8 @@
 
 Just some initial ideas...
 
+[CLI Print and scan QR Codes](./qrcodes.md)
+
 ## Networks
 
 These images could be arranged into all the things I know I'll want so far.
