@@ -11,7 +11,7 @@ Looks like it shouldn't be a problem! Here's a quick mockup with scripts:
 * [create-test-gpgkey.sh](create-test-gpgkey.sh)
 * [sign-and-print-json-qrcode.sh](sign-and-print-json-qrcode.sh)
 * [scan-qrcode.py](scan-qrcode.py)
-* [scan-and-verify-qrcode.sh](sign-and-verify-qrcode.sh)
+* [scan-and-verify-qrcode.sh](scan-and-verify-qrcode.sh)
 
 ```
 $ ./create-test-gpgkey.sh
