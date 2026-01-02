@@ -40,3 +40,7 @@ msg+=$'\n\n'"$(cat "$JSON" | jq)"
 printf '%s\n' "$msg" |
   gpg --homedir "$GPG_HOME" --clearsign - |
   qrencode -t ANSIUTF8
+
+# version that works for overlaying a big garish logo:
+# OUT="$(basename "$JSON" | sed 's/.json/.png/g')"
+# add these qrencode args: -o "$OUT" -l H -v 5 -s 5
