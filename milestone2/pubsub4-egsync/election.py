@@ -759,14 +759,14 @@ def load_config_json(testdir: str) -> dict:
     return json_dict
 
 # TODO get via api instead
-def load_summary_json(testdir: str, verifier_id: str) -> dict:
+def load_verifier_json(testdir: str, verifier_id: str) -> dict:
     # TODO get via api instead
-    json_path = join(testdir, f'data/private/verifier_{verifier_id}/egsync/4_verify/{verifier_id}.json')
+    json_path = join(testdir, f'data/private/{verifier_id}/egsync/4_verify/{verifier_id}.json')
     return load_json(json_path)
 
 def election_verified(testdir: str, verifier_id: str) -> bool:
     try:
-        summary = load_summary_json(testdir, verifier_id)
+        summary = load_verifier_json(testdir, verifier_id)
         return summary['Verified']['gather_election']
     except:
         return False
@@ -774,17 +774,20 @@ def election_verified(testdir: str, verifier_id: str) -> bool:
 
 ### honest election property tests ###
 
+def verifier_json_paths(testdir):
+    return sorted(glob(join(testdir, 'data/private/verifier_1/egsync/4_verify/*.json')))
+
 # TODO rename something less confusing?
 @given_honest_election()
 def test_honest_always_verified(testdir: ElectionTestDir):
-    json_paths = glob(join(testdir, 'data/private/verifier_1/egsync/4_verify/*.json'))
+    json_paths = verifier_json_paths(testdir)
     n_verifications = len(json_paths)
     assert n_verifications > 0
 
 @given_honest_election()
 def test_honest_all_verifiers_agree_exactly(testdir: ElectionTestDir):
     first_summary: Optional[dict] = None
-    json_paths = glob(join(testdir, 'data/private/verifier_1/egsync/4_verify/*.json'))
+    json_paths = verifier_json_paths(testdir)
     for json_path in json_paths:
         summary = load_json(json_path)
         if first_summary is None:
@@ -800,7 +803,7 @@ def test_honest_n_verifications_matches_cfg(testdir: ElectionTestDir):
         config['election']['guardians']['count'],
         config['election']['verifiers']['count'],
     ])
-    json_paths = glob(join(testdir, 'data/private/verifier_1/egsync/4_verify/*.json'))
+    json_paths = verifier_json_paths(testdir)
     n_actual = len(json_paths)
     assert n_actual == n_expected
 
@@ -844,7 +847,7 @@ def test_honest_cast_votes_match_config(testdir: ElectionTestDir):
     expected_cast_totals = cast_vote_totals_from_config(cfg)
 
     # admin isn't special here; could use any verifier
-    summary = load_summary_json(testdir, 'admin_1')
+    summary = load_verifier_json(testdir, 'verifier_1')
     actual_cast_totals = sorted(summary['Final tally of cast ballots'])
 
     assert len(expected_cast_totals) == len(actual_cast_totals)
@@ -876,7 +879,7 @@ def test_honest_spoiled_votes_match_config(testdir: ElectionTestDir):
     note(f'expected_spoiled_totals: {expected_spoiled_totals}')
 
     # admin isn't special here; could use any verifier
-    summary = load_summary_json(testdir, 'admin_1')
+    summary = load_verifier_json(testdir, 'verifier_1')
     actual_spoiled_totals = spoiled_vote_totals_from_summary(summary)
     note(f'actual_spoiled_totals: {actual_spoiled_totals}')
 
@@ -888,7 +891,7 @@ def test_honest_spoiled_votes_match_config(testdir: ElectionTestDir):
 def assert_verifiers_verified(testdir: ElectionTestDir, target_name: str, expected: bool = True):
     # TODO get via api instead
     # TODO also this is going to load all the verifications multiple times until you do
-    json_paths = glob(join(testdir, 'data/private/verifier_1/egsync/4_verify/*.json'))
+    json_paths = verifier_json_paths(testdir)
     assert len(json_paths) > 0 # exact number tested separately
     for json_path in json_paths:
         summary = load_json(json_path)
@@ -1043,7 +1046,7 @@ def assert_verifiers_reject(testdir: ElectionTestDir, targets: List[str]):
     for target in targets:
         assert_verifiers_verified(testdir, target, False)
 
-@pytest.mark.broken
+@pytest.mark.skip
 @given_attacked_election('admin_withhold_manifest')
 def test_attack_admin_withhold_manifest(testdir: ElectionTestDir):
     assert_verifiers_reject(testdir, [
@@ -1055,7 +1058,7 @@ def test_attack_admin_withhold_manifest(testdir: ElectionTestDir):
         'gather_election',
     ])
 
-@pytest.mark.broken
+@pytest.mark.skip
 @given_attacked_election('admin_ghost_after_vote')
 def test_attack_admin_ghost_after_vote(testdir: ElectionTestDir):
     assert_verifiers_reject(testdir, [
@@ -1063,7 +1066,7 @@ def test_attack_admin_ghost_after_vote(testdir: ElectionTestDir):
         'gather_election',
     ])
 
-@pytest.mark.broken
+@pytest.mark.skip
 @given_attacked_election('device_withhold_submitted_ballot')
 def test_attack_device_withhold_submitted_ballot(testdir: ElectionTestDir):
     assert_verifiers_reject(testdir, [
@@ -1072,7 +1075,7 @@ def test_attack_device_withhold_submitted_ballot(testdir: ElectionTestDir):
         'gather_election',
     ])
 
-@pytest.mark.broken
+@pytest.mark.skip
 @given_attacked_election('device_withhold_cast_ballot')
 def test_attack_device_withhold_cast_ballot(testdir: ElectionTestDir):
     assume_successful_attack(testdir)
@@ -1080,7 +1083,7 @@ def test_attack_device_withhold_cast_ballot(testdir: ElectionTestDir):
         'gather_election',
     ])
 
-@pytest.mark.broken
+@pytest.mark.skip
 @given_attacked_election('device_withhold_spoiled_ballot')
 def test_attack_device_withhold_spoiled_ballot(testdir: ElectionTestDir):
     assume_successful_attack(testdir)
@@ -1090,7 +1093,7 @@ def test_attack_device_withhold_spoiled_ballot(testdir: ElectionTestDir):
         'gather_election',
     ])
 
-@pytest.mark.broken
+@pytest.mark.skip
 @given_attacked_election('device_mutate_submitted_ballot', max_examples=50)
 def test_attack_device_mutate_submitted_ballot(testdir: ElectionTestDir):
     assert_verifiers_reject(testdir, [
@@ -1102,7 +1105,7 @@ def test_attack_device_mutate_submitted_ballot(testdir: ElectionTestDir):
         'gather_election',
     ])
 
-@pytest.mark.broken
+@pytest.mark.skip
 @given_attacked_election('device_mutate_spoiled_ballot', max_examples=50)
 def test_attack_device_mutate_spoiled_ballot(testdir: ElectionTestDir):
     assume_successful_attack(testdir)
@@ -1111,7 +1114,7 @@ def test_attack_device_mutate_spoiled_ballot(testdir: ElectionTestDir):
         'gather_election',
     ])
 
-@pytest.mark.broken
+@pytest.mark.skip
 @given_attacked_election('guardian_withhold_tally_share')
 def test_attack_guardian_withhold_tally_share(testdir: ElectionTestDir):
     assume_successful_attack(testdir)
@@ -1121,7 +1124,7 @@ def test_attack_guardian_withhold_tally_share(testdir: ElectionTestDir):
         'gather_election',
     ])
 
-@pytest.mark.broken
+@pytest.mark.skip
 @given_attacked_election('guardian_withhold_spoiled_share')
 def test_attack_guardian_withhold_spoiled_share(testdir: ElectionTestDir):
     assume_successful_attack(testdir)
@@ -1134,13 +1137,13 @@ def test_attack_guardian_withhold_spoiled_share(testdir: ElectionTestDir):
 ### test attacks in general ###
 
 # TODO are there other cases when the election can still be verified?
-@pytest.mark.broken
+@pytest.mark.skip
 @given_attacked_election()
 def test_verifiers_notice_attacks(testdir: ElectionTestDir):
     assume_successful_attack(testdir)
     assert_verifiers_reject(testdir, ['gather_election'])
 
-@pytest.mark.broken
+@pytest.mark.skip
 @given_attacked_election()
 def test_attacks_are_logged(testdir: ElectionTestDir):
     '''there should be at least 1 private attack.log,
