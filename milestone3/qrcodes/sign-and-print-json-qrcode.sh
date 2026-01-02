@@ -9,11 +9,13 @@ JSON="$1"
 GPG_HOME="./test-gpg-home"
 [[ ! -d "$GPG_HOME" ]] && echo "must create gpg key first" && exit 1
 
+deadline="$(date -d "1 hour" '+%Y-%m-%d %H:%M %Z')"
+
 # 1) Define the content (no leading blank line)
-read -r -d '' content << 'EOF'
-This is a message
-that spans multiple lines.
-It has a nice border.
+read -r -d '' content << EOF
+This JSON will be posted on chain with the next batch of ballots, and the
+encrypted ballot with the CID below will be published via IPFS. If either fails
+to appear by $deadline, submit this yourself for a 10,000 tADA reward.
 EOF
 
 # 2) Compute width (max line length)
