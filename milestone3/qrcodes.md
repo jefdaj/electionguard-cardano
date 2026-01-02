@@ -32,6 +32,8 @@ nix-shell -p qrencode
 █████████████████████████████████████████████
 ```
 
+(This looks good in the terminal; it's only messed up in the markdown render.)
+
 Reading them is a little weirder, but not bad.
 I had to try a bunch of variations before finding one that will reliably kill it after one line:
 
