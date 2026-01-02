@@ -110,7 +110,7 @@ jyFa49LaZwqkaTPAX9Lx5xCo3oBluwM=
 -----END PGP SIGNATURE-----
 ```
 
-It even still works when overlaying a big garish logo, as long as you tune the args a bit.
+It even still works when overlaying a logo, as long as you tune the args a bit.
 For this one I used `-l H -v 5 -s 5`:
 
 ![](./ballot-with-logo.png)
