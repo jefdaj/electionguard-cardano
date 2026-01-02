@@ -13,6 +13,8 @@ Looks like it shouldn't be a problem! Here's a quick mockup with scripts:
 * [scan-qrcode.py](scan-qrcode.py)
 * [scan-and-verify-qrcode.sh](scan-and-verify-qrcode.sh)
 
+Note that the real version will probably use a Cardano wallet to sign rather than a GPG key.
+
 ```
 $ ./create-test-gpgkey.sh
 gpg: keybox '/home/jefdaj/myrepos/electionguard-cardano/milestone3/qrcodes/./test-gpg-home/pubring.kbx' created
