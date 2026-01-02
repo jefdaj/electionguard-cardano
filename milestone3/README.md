@@ -2,7 +2,7 @@
 
 Just some initial ideas...
 
-[CLI Print and scan QR Codes](./qrcodes.md)
+[CLI Print and scan QR Codes](./qrcodes)
 
 ## Networks
 

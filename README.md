@@ -40,4 +40,4 @@ Current status as of 2026-01-01:
 
 - [Milestone 3](./milestone3/) (ElectionGuard + Cardano integration):
   * Starting to plan demos
-  * Started experimenting with [printing and scanning QR codes](./milestone3/qrcodes.md)
+  * Started experimenting with [printing and scanning QR codes](./milestone3/qrcodes)
