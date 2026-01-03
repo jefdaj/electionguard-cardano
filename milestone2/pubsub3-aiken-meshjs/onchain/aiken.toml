@@ -1,18 +1,18 @@
 name = "jefdaj/pubsub"
 version = "0.0.0"
-compiler = "v1.1.19"
+compiler = "v1.1.21"
 plutus = "v3"
-license = "Apache-2.0"
-description = "Aiken contracts for project 'jefdaj/pubsub'"
+license = "Apache-2.0" # TODO fix
+description = "Aiken contracts for 'jefdaj/electionguard-cardano pubsub3'"
 
 [repository]
 user = "jefdaj"
-project = "pubsub"
+project = "electionguard-cardano"
 platform = "github"
 
 [[dependencies]]
 name = "aiken-lang/stdlib"
-version = "2.2.0"
+version = "v3.0.0"
 source = "github"
 
 # [[dependencies]]
