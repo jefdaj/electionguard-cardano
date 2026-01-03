@@ -38,7 +38,10 @@
               pname = "pubsub";
               version = "0.0.1";
               src = ./pubsub;
-              npmDepsHash = "sha256-/wYaQX79UubJuPao7qBzj9RHeYzE2b2R9ZJhcaky8OA=";
+
+              # use to update hash:
+              # npmDepsHash = pkgs.lib.fakeHash;
+              npmDepsHash = "sha256-rqKjXApp9XCRVyNBB3xGwjpkd5mgeRr1ktSi2JiWsq4=";
 
               buildInputs = with pkgs; [
                 nodejs
@@ -46,9 +49,6 @@
                 # nodePackages.typescript
                 # nodePackages.ts-node
               ];
-
-              # use to update hash:
-              # npmDepsHash = pkgs.lib.fakeHash;
 
               # prevent packages (node-datachannel so far) from attempting network access during build
               npmFlags = [ "--ignore-scripts" ];
@@ -66,10 +66,10 @@
                 # copy sources or build artifacts
                 cp -r . $out/app
                 # create an executable wrapper
-                cat > $out/bin/pubsub <<'EOF'
+                cat > $out/bin/pubsub <<EOF
                 #!${pkgs.bash}/bin/bash
                 # run via node from Nix store
-                exec ${pkgs.nodejs}/bin/node $out/app/src/index.js "\$@"
+                exec ${pkgs.nodejs}/bin/node $out/app/dist/index.js "\$@"
                 EOF
                 chmod +x $out/bin/pubsub
               '';
