@@ -58,7 +58,8 @@
               installPhase = ''
                 mkdir -p $out/bin
                 # copy sources or build artifacts
-                cp -r . $out/app
+                mkdir -p $out/app
+                cp -r dist node_modules $out/app/
                 # create an executable wrapper
                 cat > $out/bin/pubsub <<EOF
                 #!${pkgs.bash}/bin/bash
