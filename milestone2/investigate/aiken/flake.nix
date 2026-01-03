@@ -1,8 +1,8 @@
 {
   description = "Aiken test env";
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
-    aiken.url = "github:aiken-lang/aiken/v1.1.10";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+    aiken.url = "github:aiken-lang/aiken/v1.1.21";
   };
   outputs = { self, nixpkgs, aiken, ... }: {
     pkgs = nixpkgs.legacyPackages.x86_64-linux;
