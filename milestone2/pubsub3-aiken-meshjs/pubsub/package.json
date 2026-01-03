@@ -5,14 +5,14 @@
   "description": "pubsub dApp test #3: ipfs, aiken, meshjs",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx index.ts",
-    "start": "node dist/index.js",
+    "dev": "npm dev",
+    "build": "npm install",
+    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@meshsdk/core": "^1.9.0-beta.90",
-    "tsx": "^4.21.0"
+    "@meshsdk/core": "^1.9.0-beta.90"
   }
 }

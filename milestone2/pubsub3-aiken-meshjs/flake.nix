@@ -38,7 +38,20 @@
               pname = "pubsub";
               version = "0.0.1";
               src = ./pubsub;
-              npmDepsHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+              npmDepsHash = "sha256-/wYaQX79UubJuPao7qBzj9RHeYzE2b2R9ZJhcaky8OA=";
+
+              buildInputs = with pkgs; [
+                nodejs
+                nodePackages.npm
+                # nodePackages.typescript
+                # nodePackages.ts-node
+              ];
+
+              # use to update hash:
+              # npmDepsHash = pkgs.lib.fakeHash;
+
+              # prevent packages (node-datachannel so far) from attempting network access during build
+              npmFlags = [ "--ignore-scripts" ];
 
               # TODO buildInputs?
 
@@ -56,7 +69,7 @@
                 cat > $out/bin/pubsub <<'EOF'
                 #!${pkgs.bash}/bin/bash
                 # run via node from Nix store
-                exec ${pkgs.nodejs}/bin/node $out/app/src/index.ts "\$@"
+                exec ${pkgs.nodejs}/bin/node $out/app/src/index.js "\$@"
                 EOF
                 chmod +x $out/bin/pubsub
               '';
@@ -85,6 +98,9 @@
               packages = devPkgList pkgs ++ (with pkgs; [
                 nodejs
                 nodePackages.npm
+                # nodePackages.typescript
+                # nodePackages.ts-node
+                # TODO nodePackages.typescript-language-server?
               ]);
               shellHook = ''
                 echo "running devShells.x86_64-linux.pubsub shellHook"
