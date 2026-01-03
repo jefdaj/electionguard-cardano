@@ -41,7 +41,7 @@ let
 in
 buildPythonPackage rec {
   pname = "pycardano";
-  version = "0.14.0";
+  version = "0.19.0";
   pyproject = true;
 
   src = fetchFromGitHub {
@@ -80,6 +80,7 @@ buildPythonPackage rec {
   ];
 
   pythonRelaxDeps = [
+    "cachetools"
     "ogmios"
     "websockets"
   ];

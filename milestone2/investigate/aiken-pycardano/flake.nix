@@ -2,8 +2,8 @@
   description = "hello world with aiken + pycardano";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
-    aiken.url   = "github:aiken-lang/aiken/v1.1.19";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+    aiken.url   = "github:aiken-lang/aiken/v1.1.21";
   };
 
   outputs = { self, nixpkgs, aiken }@inputs:
