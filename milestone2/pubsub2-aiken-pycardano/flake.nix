@@ -10,8 +10,20 @@
   outputs = { self, nixpkgs, aiken, arion }@inputs:
     let
 
-      # This is an actual output; see note below.
-      pkgs = nixpkgs.legacyPackages.x86_64-linux.extend py312Overlay;
+      basePkgs = import nixpkgs {
+        system = "x86_64-linux";
+        config = {
+          permittedInsecurePackages = [
+
+            # This is a problem for any production use of PyCardano as far as I can tell.
+            # TODO either fix it here: github.com/TimothyClaeys/pycose/issues/97
+            # TODO or remove cose in favor of something like python-cwt
+            # TODO or rewrite TX building in MeshJS rather than PyCardano
+            "python3.12-ecdsa-0.19.1"
+
+          ];
+        };
+      };
 
       py312Overlay = self: super: {
         python312 = super.python312.override {
@@ -24,6 +36,9 @@
           };
         };
       };
+
+      # This is an actual output; see note below.
+      pkgs = basePkgs.extend py312Overlay;
 
       devPkgList = ps: with ps; [
         arion.packages.x86_64-linux.arion
