@@ -3,7 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
-    aiken.url   = "github:aiken-lang/aiken/v1.1.19";
+    aiken.url   = "github:aiken-lang/aiken/v1.1.21";
     arion.url   = "github:jefdaj/arion/rm-obsolete-version-attribute";
   };
 
