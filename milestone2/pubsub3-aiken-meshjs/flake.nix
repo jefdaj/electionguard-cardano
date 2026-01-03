@@ -1,5 +1,5 @@
 {
-  description = "pubsub dApp test #3: ipfs, aiken, pycardano";
+  description = "pubsub dApp test #3: ipfs, aiken, meshjs";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
