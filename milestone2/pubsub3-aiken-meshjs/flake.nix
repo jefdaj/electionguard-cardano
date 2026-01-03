@@ -33,6 +33,35 @@
           packages.x86_64-linux = rec {
             # publisher  = singleScriptPyPkg ./publisher/publish.py    "0.1" pubPyPkgList;
             # subscriber = singleScriptPyPkg ./subscriber/subscribe.py "0.1" subPyPkgList;
+
+            pubsub = pkgs.buildNpmPackage {
+              pname = "pubsub";
+              version = "0.0.1";
+              src = ./pubsub;
+              npmDepsHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+
+              # TODO buildInputs?
+
+              # Optional: if you have a build step (e.g. tsc):
+              # buildPhase = ''
+              #   npm run build
+              # '';
+
+              # TODO clean up or replace with something more idiomatic
+              installPhase = ''
+                mkdir -p $out/bin
+                # copy sources or build artifacts
+                cp -r . $out/app
+                # create an executable wrapper
+                cat > $out/bin/pubsub <<'EOF'
+                #!${pkgs.bash}/bin/bash
+                # run via node from Nix store
+                exec ${pkgs.nodejs}/bin/node $out/app/src/index.ts "\$@"
+                EOF
+                chmod +x $out/bin/pubsub
+              '';
+
+            };
           };
 
           # `nix develop .#onchain` etc
@@ -53,13 +82,15 @@
             };
 
             pubsub = pkgs.mkShell {
-              nativeBuildInputs = devPkgList pkgs ++ (with pkgs; [
+              packages = devPkgList pkgs ++ (with pkgs; [
                 nodejs
+                nodePackages.npm
               ]);
               shellHook = ''
                 echo "running devShells.x86_64-linux.pubsub shellHook"
                 cd pubsub
-                echo "npm: $(npm --version)"
+                echo "Dev shell: Node $(node -v)"
+                echo "Use: npm run dev"
               '';
             };
 
