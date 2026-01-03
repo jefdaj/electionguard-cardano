@@ -29,14 +29,16 @@
           # See https://github.com/hercules-ci/arion/issues/247
           inherit pkgs;
 
-          # `nix build .#publisher` (or subscriber etc)
+          # `nix build .#onchain` etc
           packages.x86_64-linux = rec {
             # publisher  = singleScriptPyPkg ./publisher/publish.py    "0.1" pubPyPkgList;
             # subscriber = singleScriptPyPkg ./subscriber/subscribe.py "0.1" subPyPkgList;
           };
 
-          # `nix develop .#onchain` (or publisher, subscriber, etc)
+          # `nix develop .#onchain` etc
           devShells.x86_64-linux = {
+
+            # TODO choose one of onchain, pubsub as default shell?
 
             onchain = pkgs.mkShell {
               nativeBuildInputs = devPkgList pkgs ++ (with pkgs; [
@@ -50,32 +52,14 @@
               '';
             };
 
-            publisher = pkgs.mkShell {
-              nativeBuildInputs = (devPkgList pkgs) ++ [
-                aiken.packages.x86_64-linux.aiken
-                # (pkgs.python312.withPackages pubPyPkgList)
-              ];
-              shellHook = ''
-                echo "running devShells.x86_64-linux.publisher shellHook"
-                cd publisher
-              '';
-            };
-
-            subscriber = pkgs.mkShell {
+            pubsub = pkgs.mkShell {
               nativeBuildInputs = devPkgList pkgs ++ (with pkgs; [
-                # (pkgs.python312.withPackages subPyPkgList)
+                nodejs
               ]);
               shellHook = ''
-                echo "running devShells.x86_64-linux.subscriber shellHook"
-                cd subscriber
-              '';
-            };
-
-            # `nix develop`
-            default = pkgs.mkShell {
-              nativeBuildInputs = devPkgList pkgs;
-              shellHook = ''
-                echo "running devShells.x86_64-linux.default shellHook"
+                echo "running devShells.x86_64-linux.pubsub shellHook"
+                cd pubsub
+                echo "npm: $(npm --version)"
               '';
             };
 
