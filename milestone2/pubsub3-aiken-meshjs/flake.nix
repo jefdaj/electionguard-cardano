@@ -30,10 +30,8 @@
           inherit pkgs;
 
           # `nix build .#onchain` etc
-          packages.x86_64-linux = rec {
-            # publisher  = singleScriptPyPkg ./publisher/publish.py    "0.1" pubPyPkgList;
-            # subscriber = singleScriptPyPkg ./subscriber/subscribe.py "0.1" subPyPkgList;
-
+          packages.x86_64-linux = {
+            # TODO pick a default build?
             pubsub = pkgs.buildNpmPackage {
               pname = "pubsub";
               version = "0.0.1";
@@ -46,19 +44,15 @@
               buildInputs = with pkgs; [
                 nodejs
                 nodePackages.npm
-                # nodePackages.typescript
-                # nodePackages.ts-node
               ];
 
-              # prevent packages (node-datachannel so far) from attempting network access during build
+              # prevent packages (node-datachannel) from attempting network access during build
               npmFlags = [ "--ignore-scripts" ];
 
-              # TODO buildInputs?
-
-              # Optional: if you have a build step (e.g. tsc):
-              # buildPhase = ''
-              #   npm run build
-              # '';
+              # TODO remove? seems to work with or without equally well
+              buildPhase = ''
+                npm run build
+              '';
 
               # TODO clean up or replace with something more idiomatic
               installPhase = ''
@@ -73,7 +67,6 @@
                 EOF
                 chmod +x $out/bin/pubsub
               '';
-
             };
           };
 
