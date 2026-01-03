@@ -96,17 +96,15 @@
 
             pubsub = pkgs.mkShell {
               packages = devPkgList pkgs ++ (with pkgs; [
-                nodejs
-                nodePackages.npm
-                # nodePackages.typescript
-                # nodePackages.ts-node
-                # TODO nodePackages.typescript-language-server?
+                # TODO? nodePackages.typescript-language-server
+                nodejs_24 # lts as of spring 2026
+                nodePackages.typescript
               ]);
               shellHook = ''
                 echo "running devShells.x86_64-linux.pubsub shellHook"
                 cd pubsub
-                echo "Dev shell: Node $(node -v)"
-                echo "Use: npm run dev"
+                echo "Node version: $(node --version)"
+                echo "TypeScript version: $(tsc --version)"
               '';
             };
 
