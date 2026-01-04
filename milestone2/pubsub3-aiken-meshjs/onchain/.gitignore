@@ -6,3 +6,6 @@ build/
 docs/
 # Nix
 result*
+
+# Keys (doesn't really matter; they're only for tests)
+keys/
