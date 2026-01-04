@@ -11,16 +11,23 @@ Dev
 ---
 
 ```
-nix build .#pubsub
-./result/bin/pubsub
+nix develop
+npm run build
+npm start
+npm run dev
+# etc
 ```
 
 ```
-nix develop .#pubsub
-npm run build
-npm run dev
-npm install
+nix develop .#onchain
+aiken check
+aiken build
 # etc
+```
+
+```
+nix build
+./result/bin/pubsub
 ```
 
 

@@ -31,82 +31,74 @@
           # See https://github.com/hercules-ci/arion/issues/247
           inherit pkgs;
 
-          # `nix build .#onchain` etc
-          packages.x86_64-linux = {
-            # TODO pick a default build?
-            pubsub = pkgs.buildNpmPackage {
-              pname = "pubsub";
-              version = "0.0.1";
-              src = ./pubsub;
+          # There's only one final package, but two dev shells
+          # TODO how to make a package for the aiken code? is it even helpful?
+          packages.x86_64-linux.default = pkgs.buildNpmPackage {
+            pname = "pubsub";
+            version = "0.0.1";
 
-              # use to update hash:
-              # npmDepsHash = pkgs.lib.fakeHash;
-              npmDepsHash = "sha256-rqKjXApp9XCRVyNBB3xGwjpkd5mgeRr1ktSi2JiWsq4=";
+            # use to update hash:
+            # npmDepsHash = pkgs.lib.fakeHash;
+            npmDepsHash = "sha256-rqKjXApp9XCRVyNBB3xGwjpkd5mgeRr1ktSi2JiWsq4=";
 
-              buildInputs = with pkgs; [
-                myNode
-                nodePackages.npm
-              ];
+            # TODO filter src?
+            src = ./.;
 
-              # prevent packages (node-datachannel) from attempting network access during build
-              npmFlags = [ "--ignore-scripts" ];
+            buildInputs = with pkgs; [
+              myNode
+              nodePackages.npm
+            ];
 
-              # TODO remove? seems to work with or without equally well
-              buildPhase = ''
-                npm run build
-              '';
+            # prevent packages (node-datachannel) from attempting network access during build
+            npmFlags = [ "--ignore-scripts" ];
 
-              # TODO clean up or replace with something more idiomatic
-              installPhase = ''
-                mkdir -p $out/bin
-                # copy sources or build artifacts
-                mkdir -p $out/app
-                cp -r dist node_modules $out/app/
-                # create an executable wrapper
-                cat > $out/bin/pubsub <<EOF
-                #!${pkgs.bash}/bin/bash
-                # run via node from Nix store
-                exec ${myNode}/bin/node $out/app/dist/index.js "\$@"
-                EOF
-                chmod +x $out/bin/pubsub
-              '';
-            };
+            # TODO remove? seems to work with or without equally well
+            buildPhase = ''
+              npm run build
+            '';
+
+            # TODO clean up or replace with something more idiomatic
+            installPhase = ''
+              mkdir -p $out/bin
+              # copy sources or build artifacts
+              mkdir -p $out/app
+              cp -r dist node_modules $out/app/
+              # create an executable wrapper
+              cat > $out/bin/pubsub <<EOF
+              #!${pkgs.bash}/bin/bash
+              # run via node from Nix store
+              exec ${myNode}/bin/node $out/app/dist/index.js "\$@"
+              EOF
+              chmod +x $out/bin/pubsub
+            '';
           };
 
-          # `nix develop .#onchain` etc
-          devShells.x86_64-linux = {
-
-            # TODO choose one of onchain, pubsub as default shell?
-
-            onchain = pkgs.mkShell {
-              nativeBuildInputs = devPkgList pkgs ++ (with pkgs; [
-                aiken.packages.x86_64-linux.aiken
-                myNode
-                nodePackages.typescript # TODO is this needed?
-              ]);
-              shellHook = ''
-                echo "running devShells.x86_64-linux.onchain shellHook"
-                cd onchain
-                aiken --version
-                echo "Node version: $(node --version)"
-                echo "TypeScript version: $(tsc --version)"
-              '';
-            };
-
+          devShells.x86_64-linux = rec {
+            default = pubsub;
             pubsub = pkgs.mkShell {
-              packages = devPkgList pkgs ++ (with pkgs; [
+              nativeBuildInputs = devPkgList pkgs ++ (with pkgs; [
                 # TODO? nodePackages.typescript-language-server
                 myNode
                 nodePackages.typescript
               ]);
               shellHook = ''
                 echo "running devShells.x86_64-linux.pubsub shellHook"
-                cd pubsub
                 echo "Node version: $(node --version)"
                 echo "TypeScript version: $(tsc --version)"
               '';
             };
-
+            onchain = pkgs.mkShell {
+              nativeBuildInputs = pubsub.nativeBuildInputs ++ (with pkgs; [
+                aiken.packages.x86_64-linux.aiken
+              ]);
+              shellHook = ''
+                echo "running devShells.x86_64-linux.onchain shellHook"
+                cd onchain
+                echo "Aiken version: $(aiken --version)"
+                echo "Node version: $(node --version)"
+                echo "TypeScript version: $(tsc --version)"
+              '';
+            };
           };
       };
 }
