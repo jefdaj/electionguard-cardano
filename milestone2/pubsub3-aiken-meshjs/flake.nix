@@ -14,6 +14,8 @@
       # pkgs = nixpkgs.legacyPackages.x86_64-linux.extend py312Overlay;
       pkgs = nixpkgs.legacyPackages.x86_64-linux;
 
+      myNode = pkgs.nodejs_24; # LTS as of Spring 2026
+
       devPkgList = ps: with ps; [
         arion.packages.x86_64-linux.arion
         file
@@ -42,7 +44,7 @@
               npmDepsHash = "sha256-rqKjXApp9XCRVyNBB3xGwjpkd5mgeRr1ktSi2JiWsq4=";
 
               buildInputs = with pkgs; [
-                nodejs
+                myNode
                 nodePackages.npm
               ];
 
@@ -64,7 +66,7 @@
                 cat > $out/bin/pubsub <<EOF
                 #!${pkgs.bash}/bin/bash
                 # run via node from Nix store
-                exec ${pkgs.nodejs}/bin/node $out/app/dist/index.js "\$@"
+                exec ${myNode}/bin/node $out/app/dist/index.js "\$@"
                 EOF
                 chmod +x $out/bin/pubsub
               '';
@@ -79,19 +81,22 @@
             onchain = pkgs.mkShell {
               nativeBuildInputs = devPkgList pkgs ++ (with pkgs; [
                 aiken.packages.x86_64-linux.aiken
-                # (pkgs.python312.withPackages onchainPyPkgList)
+                myNode
+                nodePackages.typescript # TODO is this needed?
               ]);
               shellHook = ''
                 echo "running devShells.x86_64-linux.onchain shellHook"
                 cd onchain
                 aiken --version
+                echo "Node version: $(node --version)"
+                echo "TypeScript version: $(tsc --version)"
               '';
             };
 
             pubsub = pkgs.mkShell {
               packages = devPkgList pkgs ++ (with pkgs; [
                 # TODO? nodePackages.typescript-language-server
-                nodejs_24 # lts as of spring 2026
+                myNode
                 nodePackages.typescript
               ]);
               shellHook = ''
