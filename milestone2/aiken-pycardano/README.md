@@ -1,21 +1,34 @@
-# hello-pycardano
+hello-pycardano
+===============
 
-Following the [Aiken + PyCardano hello-world](https://aiken-lang.org/example--hello-world/end-to-end/pycardano)
+Based on [Aiken + PyCardano hello-world](https://aiken-lang.org/example--hello-world/end-to-end/pycardano).
+
+Initial setup
+-------------
 
 ```bash
-nix develop
-
-# only the first time
+$ nix develop
 $ mkdir keys
 $ python generate-credentials.py
 $ tree keys
 keys
 ├── me.addr
 └── me.sk
+```
 
-1 directory, 2 files
+Request test ADA from faucet page -> `me.addr`.
 
-$ # request test ADA from faucet page -> me.addr
+Setup each time
+---------------
+
+Start [Cardano node + Ogmios](../cardano-node-ogmios) and wait for it to sync.
+It should be available on <http://localhost:1337>.
+
+Lock and unlock tADA
+--------------------
+
+```
+$ nix develop
 
 $ ./hello-world-lock.py 
 2 tADA locked into the contract
