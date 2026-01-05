@@ -2,7 +2,7 @@
   description = "pubsub dApp test #2: ipfs, aiken, pycardano";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
     aiken.url   = "github:aiken-lang/aiken/v1.1.21";
     arion.url   = "github:jefdaj/arion/rm-obsolete-version-attribute";
   };
