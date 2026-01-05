@@ -35,12 +35,16 @@ validator pubsub(channel_name: ByteArray, oneshot_ref: OutputReference) {
     expect Some(PubsubConfig { publisher }) = datum
     when redeemer is {
       PsOpen -> {
-        /// TODO None during PsOpen?
-        /// expect True = list.any(
-        ///   self.inputs,
-        ///   fn(i) { i.output_reference == oneshot_ref }
-        /// )
-        /// expect Some(own_input) = transaction.find_input(self.inputs, own_ref)
+
+        // TODO None during PsOpen?
+
+        // expect True = list.any(
+        //   self.inputs,
+        //   fn(i) { i.output_reference == oneshot_ref }
+        // )
+
+        // expect Some(own_input) = transaction.find_input(self.inputs, own_ref)
+
         expect Some(own_input) = u.find_tx_input(self, own_ref)
         expect Script(policy_id) = own_input.output.address.payment_credential
         and {
