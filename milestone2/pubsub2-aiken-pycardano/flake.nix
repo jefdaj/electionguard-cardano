@@ -2,7 +2,8 @@
   description = "pubsub dApp test #2: ipfs, aiken, pycardano";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+    # TODO update python packages for 25.11 (not urgent)
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
     aiken.url   = "github:aiken-lang/aiken/v1.1.21";
     arion.url   = "github:jefdaj/arion/rm-obsolete-version-attribute";
   };
@@ -19,6 +20,7 @@
             # TODO either fix it here: github.com/TimothyClaeys/pycose/issues/97
             # TODO or remove cose in favor of something like python-cwt
             # TODO or rewrite TX building in MeshJS rather than PyCardano
+            # TODO or rely on physical mitigations
             "python3.12-ecdsa-0.19.1"
 
           ];
