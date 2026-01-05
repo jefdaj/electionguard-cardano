@@ -17,12 +17,22 @@ class HelloWorldRedeemer(PlutusData):
     msg: bytes
 
 def read_validator() -> dict:
+
     with open("plutus.json", "r") as f:
         validator = json.load(f)
+
     script_bytes = PlutusV3Script(
-        bytes.fromhex(validator["validators"][0]["compiledCode"])
+        bytes.fromhex(
+            validator["validators"][0]["compiledCode"]
+        )
     )
-    script_hash = ScriptHash(bytes.fromhex(validator["validators"][0]["hash"]))
+
+    script_hash = ScriptHash(
+        bytes.fromhex(
+            validator["validators"][0]["hash"]
+        )
+    )
+
     return {
         "type": "PlutusV3",
         "script_bytes": script_bytes,
@@ -38,6 +48,7 @@ def unlock(
     owner: VerificationKeyHash,
     context: OgmiosV6ChainContext,
 ) -> TransactionId:
+
     # read addresses
     with open(addr_path, "r") as f:
         input_address = Address.from_primitive(f.read())
@@ -75,7 +86,7 @@ def get_utxo_from_str(context, tx_id: str, contract_address: Address) -> UTxO:
 
 def main(tx_id: str):
     # TODO thread host and port from top level arion-compose
-    context = OgmiosV6ChainContext("172.13.0.3", 1337)
+    context = OgmiosV6ChainContext("localhost", 1337)
     signing_key = PaymentSigningKey.load("keys/me.sk")
     validator = read_validator()
     utxo = get_utxo_from_str(context, tx_id, Address(

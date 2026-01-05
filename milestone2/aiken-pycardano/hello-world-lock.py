@@ -20,12 +20,22 @@ class HelloWorldDatum(PlutusData):
     owner: bytes
 
 def read_validator() -> dict:
+
     with open("plutus.json", "r") as f:
         validator = json.load(f)
+
     script_bytes = PlutusV3Script(
-        bytes.fromhex(validator["validators"][0]["compiledCode"])
+        bytes.fromhex(
+            validator["validators"][0]["compiledCode"]
+        )
     )
-    script_hash = ScriptHash(bytes.fromhex(validator["validators"][0]["hash"]))
+
+    script_hash = ScriptHash(
+        bytes.fromhex(
+            validator["validators"][0]["hash"]
+        )
+    )
+
     return {
         "type": "PlutusV3",
         "script_bytes": script_bytes,
@@ -40,6 +50,7 @@ def lock(
     signing_key: PaymentSigningKey,
     context: OgmiosV6ChainContext,
 ) -> TransactionId:
+
     # read addresses
     with open(addr_path, "r") as f:
         input_address = Address.from_primitive(f.read())
@@ -70,7 +81,7 @@ def lock(
 
 def main():
     # TODO thread host and port from top level arion-compose
-    context = OgmiosV6ChainContext("172.13.0.3", 1337)
+    context = OgmiosV6ChainContext("localhost", 1337)
     signing_key = PaymentSigningKey.load("keys/me.sk")
     owner = PaymentVerificationKey.from_signing_key(signing_key).hash()
     datum = HelloWorldDatum(owner=owner.to_primitive())
@@ -83,7 +94,6 @@ def main():
         signing_key=signing_key,
         context=context,
     )
-    # TODO why is Tx ID None? The script seems to work otherwise. Maybe needs a delay?
     print(
         f"2 tADA locked into the contract\n\tTx ID: {tx_hash}\n\tDatum: {datum.to_cbor_hex()}"
     )
