@@ -29,11 +29,11 @@ Current status as of 2026-01-01:
     - Set up a [Nix environment](./milestone1/nix-environment.md)
 
 - [Milestone 2](./milestone2/) (Cardano stuff) in progress:
-  * [Cardano node + Ogmios](./milestone2/investigate/cardano-node-ogmios/) works
-  * [Kupo](./milestone2/investigate/kupo/) works
-  * [ipfs-cluster](./milestone2/investigate/ipfs-cluster/) works
-  * [Aiken](./milestone2/investigate/aiken/) works
-  * [PyCardano](./milestone2/investigate/aiken-pycardano) looks promising
+  * [Cardano node + Ogmios](./milestone2/cardano-node-ogmios/) works
+  * [Kupo](./milestone2/kupo/) works
+  * [ipfs-cluster](./milestone2/ipfs-cluster/) works
+  * [Aiken](./milestone2/aiken/) works
+  * [PyCardano](./milestone2/aiken-pycardano) looks promising
   * Working on the [smart contract architecture](./milestone2/smart-contract-architecture.md)
   * Working on a small [pubsub dApp](./milestone2/pubsub1-ipfs) to test my ideas + dev stack
   * [An IPFS-ified version of the 1.1 tests codebase](./milestone2/mockchain-local-ipfs) works
