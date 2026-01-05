@@ -6,3 +6,6 @@ build/
 docs/
 # Nix
 result*
+
+# Saved parameterized validators
+plutus-*.json
