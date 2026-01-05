@@ -289,7 +289,7 @@ def main(channel_name: str):
 
     print('### main ###')
 
-    ctx  = OgmiosV6ChainContext("172.13.0.3", 1337)
+    ctx  = OgmiosV6ChainContext("localhost", 1337)
     sk   = PaymentSigningKey.load("keys/me.sk")
     # vk = PaymentVerificationKey.from_signing_key(sk).hash()
 
@@ -328,14 +328,14 @@ def main(channel_name: str):
     wait_for_tx_to_confirm()
 
     # for now, just publish 3 little CID lists
-    for n in range(1, 6, 2):
-        try:
-            cids = [f'cid {n}'.encode(), f'cid {n+1}'.encode()]
-            publish_cids(ctx, sk, addr, script, channel_bytes, cids)
-        except Exception as e:
-            print('ERROR:', str(e))
-        finally:
-            wait_for_tx_to_confirm()
+    # for n in range(1, 6, 2):
+    #     try:
+    #         cids = [f'cid {n}'.encode(), f'cid {n+1}'.encode()]
+    #         publish_cids(ctx, sk, addr, script, channel_bytes, cids)
+    #     except Exception as e:
+    #         print('ERROR:', str(e))
+    #     finally:
+    #         wait_for_tx_to_confirm()
 
     close_channel(ctx, sk, addr, script, mint_fn, channel_bytes)
 
