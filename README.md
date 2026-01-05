@@ -36,8 +36,8 @@ Current status as of 2026-01-05:
     - [ipfs-cluster](./milestone2/ipfs-cluster/) works
     - [Aiken](./milestone2/aiken/) works
     - [PyCardano](./milestone2/aiken-pycardano) looks promising
-    - Working on the [smart contract architecture](./milestone2/smart-contract-architecture.md)
-    - Working on a small [pubsub dApp](./milestone2/pubsub1-ipfs) to test my ideas + dev stack
+  * Working on the [smart contract architecture](./milestone2/smart-contract-architecture.md)
+  * Working on a small [pubsub dApp](./milestone2/pubsub1-ipfs) to test my ideas + dev stack
 
 - [Milestone 3](./milestone3/) (ElectionGuard + Cardano integration):
   * Starting to plan demos
