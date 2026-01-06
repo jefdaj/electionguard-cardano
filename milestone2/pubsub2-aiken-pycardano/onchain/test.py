@@ -18,6 +18,8 @@ from pycardano.hash import (
     ScriptHash,
 )
 
+# from pprint import pprint
+
 # This is a temporary hack for use with `aiken blueprint apply`
 # See https://github.com/Python-Cardano/pycardano/issues/439
 # TODO revisit once native apply_params support is released
@@ -190,12 +192,35 @@ def find_channel_state(
         if utxo_contains_channel_nft(policy_id, channel_bytes, u)
     ))
 
-def wait_for_tx_to_confirm():
-    # TODO maybe retry this periodically?
-    delay_sec = 60
-    print(f'waiting {delay_sec} seconds for tx to be confirmed...', end='', flush=True)
-    time.sleep(delay_sec)
-    print('ok')
+# TODO get this working for the case where the utxo is confirmed + consumed between polls
+def wait_for_tx_to_confirm(ctx, tx_id: TransactionId, max_seconds: int = 300, interval_seconds: int = 10):
+    print(f'tx_id: ({type(tx_id)}) = {tx_id}')
+    tx_id = str(tx_id)
+    print(f'tx_id: ({type(tx_id)}) = {tx_id}')
+    waited_seconds = 0
+    print('step 0')
+    while True:
+        print('step 1')
+        time.sleep(interval_seconds)
+        waited_seconds += interval_seconds
+        print('step 2')
+
+        utxo = ctx.utxo_by_tx_id(tx_id, 0)
+        print('step 3')
+        if utxo is None:
+            print('step 3')
+            print(f"Transaction not found after {waited_seconds} seconds")
+            print('step 5')
+            if waited_seconds >= max_seconds:
+                print('step 6')
+                raise Exception(f'TX still not confirmed after {waited_seconds} seconds: {tx_id}')
+            continue
+        else:
+            print('step 4')
+            print(f'TX confirmed after {waited_seconds} seconds: {tx_id}')
+            print(f'utxo: {utxo}')
+            print('step 7')
+            return
 
 def publish_cids(
     ctx: OgmiosV6ChainContext,
@@ -324,8 +349,8 @@ def main(channel_name: str):
 
     mint_fn = channel_nft_minter(script, channel_bytes)
 
-    open_channel(ctx, sk, addr, script, mint_fn, oneshot_utxo)
-    wait_for_tx_to_confirm()
+    open_txid = open_channel(ctx, sk, addr, script, mint_fn, oneshot_utxo)
+    wait_for_tx_to_confirm(ctx, open_txid)
 
     # for now, just publish 3 little CID lists
     # for n in range(1, 6, 2):

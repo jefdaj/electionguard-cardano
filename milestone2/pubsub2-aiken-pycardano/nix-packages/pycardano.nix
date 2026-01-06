@@ -81,7 +81,7 @@ buildPythonPackage rec {
 
   pythonRelaxDeps = [
     "cachetools"
-    "ogmios"
+    # "ogmios"
     "websockets"
   ];
 
