@@ -9,3 +9,5 @@ result*
 
 # Saved parameterized validators
 plutus-*.json
+
+__pycache__/

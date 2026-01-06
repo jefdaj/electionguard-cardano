@@ -124,6 +124,7 @@ def utxo_to_ref_hex(utxo):
     )
     return ref.to_cbor().hex()
 
+# TODO wait could the problem be that the NFT is being given to my wallet rather than the script?
 def open_channel(
     ctx: OgmiosV6ChainContext,
     sk: PaymentSigningKey,
@@ -140,8 +141,22 @@ def open_channel(
     assets = mint_fn(1)
     print(f'assets={assets}')
 
+    # Lock the NFT at the script address
+    script_addr = Address(payment_part=plutus_script_hash(script), network=Network.TESTNET)
+    lock_output = TransactionOutput(
+        address=script_addr,
+        amount=Value(
+            2_000_000,   # min ADA with your NFT; adjust as needed
+            assets       # the minted NFT
+        ),
+        # optionally include datum / inline datum here
+        # datum=..., or datum_hash=...
+    )
+
+    # TODO is the problem that you're sending the NFT to the wrong place here?
     mint_tx = (
         TransactionBuilder(ctx, mint=assets)
+        .add_output(lock_output)
         .add_minting_script(script=script, redeemer=action)
         .add_input(oneshot_utxo)
         .add_input_address(addr)
@@ -170,7 +185,7 @@ def channel_nft_minter(script: PlutusV3Script, channel_bytes: bytes):
         return assets
     return channel_nft_assets
 
-def utxo_contains_channel_nft(
+def utxo_contains_channel_state_nft(
     policy_id: str,
     channel_bytes: bytes,
     utxo: TransactionOutput
@@ -181,16 +196,24 @@ def utxo_contains_channel_nft(
         # print('error:', str(e))
         return False
 
-def find_channel_state(
+# TODO start factoring out some utils/lib?
+def find_channel_state_utxo(
     ctx: OgmiosV6ChainContext,
-    addr: Address,
     policy_id: ScriptHash,
     channel_bytes: bytes
 ):
-    return next((
-        u for u in ctx.utxos(addr)
-        if utxo_contains_channel_nft(policy_id, channel_bytes, u)
-    ))
+    script_addr = Address(payment_part=policy_id, network=Network.TESTNET)
+    matches = list(
+        u for u in ctx.utxos(script_addr)
+        if utxo_contains_channel_state_nft(policy_id, channel_bytes, u)
+    )
+    if len(matches) == 0:
+        print('no such state utxo')
+        return None
+    elif len(matches) > 1:
+        raise Exception(f'found multiple state utxos: {matches}')
+    else:
+        return matches[0]
 
 # TODO get this working for the case where the utxo is confirmed + consumed between polls
 def wait_for_tx_confirmation(ctx, tx_id: TransactionId, max_seconds: int = 300, interval_seconds: int = 5):
@@ -224,9 +247,10 @@ def publish_cids(
     action = Redeemer(data=PsPublish(cids))
     print(f'action={action}')
 
-    policy_id = plutus_script_hash(script)
+    policy_id: ScriptHash = plutus_script_hash(script)
+    print(f'policy_id={policy_id}')
 
-    state_utxo = find_channel_state(ctx, addr, policy_id, channel_bytes)
+    state_utxo = find_channel_state_utxo(ctx, policy_id, channel_bytes)
     print(f'state_utxo={state_utxo}')
 
     # Check UTxO creation details
@@ -239,15 +263,17 @@ def publish_cids(
     print(f"UTxO Assets: {state_utxo.output.amount}")
 
     # Check for the state NFT
-    state_nft = state_utxo.output.amount.multi_asset.get(policy_id)
-    if state_nft:
-        print(f"State NFT found: {state_nft}")
+    # TODO do we also need to drill down to channel name before saying we found it?
+    # state_nft = state_utxo.output.amount.multi_asset.get(policy_id)
+    # if state_nft:
+    #     print(f"State NFT found: {state_nft}")
 
     # TODO is withdrawal script the right idea? see videos and specs if needed
+    # TODO best guess at what's wrong for tonight: you need to send the NFT -> the script address, not keep it when opening
     publish_tx = (
         TransactionBuilder(ctx)
-        .add_script_input(state_utxo, script=script, redeemer=action)
-        .add_input_address(addr)
+        .add_script_input(state_utxo, script=script, redeemer=action) # TODO aha! address error thing happens here
+        .add_input_address(addr) # TODO is this needed for fees? what about once you add a pool of funds for that?
     )
 
     # TODO why isn't there a simple method for this like mint and withdrawal?
@@ -282,7 +308,7 @@ def close_channel(
     policy_id = plutus_script_hash(script)
     print(f'policy_id={policy_id}')
 
-    state_utxo = find_channel_state(ctx, addr, policy_id, channel_bytes)
+    state_utxo = find_channel_state_utxo(ctx, policy_id, channel_bytes)
     print(f'state_utxo={state_utxo}')
 
     burn_tx = (
@@ -324,6 +350,7 @@ def main(channel_name: str):
     print(f'oneshot_hex={oneshot_hex}')
 
     # now we can fully specify the validator,
+    # TODO should oneshot come before channel name?
     script_json = aiken_blueprint_apply_hex_params(
         './plutus.json',
         [channel_hex, oneshot_hex]
@@ -335,6 +362,7 @@ def main(channel_name: str):
         print(f'saved final plutus script to {script_out_path}')
 
     script = PlutusV3Script(validator_bytes_and_hash(script_json)['script_bytes'])
+    print(f'script: {script}')
 
     mint_fn = channel_nft_minter(script, channel_bytes)
 
@@ -342,15 +370,18 @@ def main(channel_name: str):
     wait_for_tx_confirmation(ctx, open_txid)
 
     # for now, just publish 3 little CID lists
-    # for n in range(1, 6, 2):
+    # for n in range(1, 3, 2):
     #     try:
     #         cids = [f'cid {n}'.encode(), f'cid {n+1}'.encode()]
-    #         publish_cids(ctx, sk, addr, script, channel_bytes, cids)
+    #         # TODO should addr here be the script addr rather than mine?
+    #         pub_txid = publish_cids(ctx, sk, addr, script, channel_bytes, cids)
+    #         wait_for_tx_confirmation(ctx, pub_txid)
     #     except Exception as e:
-    #         print('ERROR:', str(e))
-    #     finally:
-    #         wait_for_tx_confirmation()
+    #         print(f'ERROR: {e}')
+    #         time.sleep(300) # TODO does this help the burn tx go thru in case of exceptions?
+    input('ready to close the channel?')
 
+    # TODO addr here must be correct, right?
     close_txid = close_channel(ctx, sk, addr, script, mint_fn, channel_bytes)
     wait_for_tx_confirmation(ctx, close_txid)
 
