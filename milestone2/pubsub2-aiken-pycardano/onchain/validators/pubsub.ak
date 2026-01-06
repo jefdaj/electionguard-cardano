@@ -6,7 +6,7 @@ use cardano/transaction
 use cardano/transaction.{OutputReference, Transaction}
 use pubsub/utils as u
 use pubsub/types.{
-  PsClose, PsOpen, PsPublish, PubsubAction, PubsubConfig,
+  PsClose, PsOpen, PubsubAction, PubsubConfig,
 }
 
 // TODO publisher isn't necessarily owner of ADA when doing multi-tiered channels
@@ -20,7 +20,7 @@ validator pubsub(channel_name: ByteArray, oneshot_ref: OutputReference) {
       // and only during the initial deployment (enforced via oneshot_ref).
       // TODO let a separate admin own and mint it? or similar mechanism
       PsOpen -> {
-        expect Some(_oneshot_input) = transaction.find_input(self.inputs, oneshot_ref)
+        // expect Some(_oneshot_input) = transaction.find_input(self.inputs, oneshot_ref)
         u.tx_mints(self, policy_id, channel_name, 1)
       }
 
@@ -28,10 +28,11 @@ validator pubsub(channel_name: ByteArray, oneshot_ref: OutputReference) {
       // but they can do it any time.
       PsClose -> u.tx_mints(self, policy_id, channel_name, -1)
 
-      _ -> fail
+      // _ -> fail
     }
   }
 
+  // TODO can the open and close cases be delegated to the mint fn here?
   spend(
     datum: Option<PubsubConfig>,
     redeemer: PubsubAction,
@@ -46,10 +47,11 @@ validator pubsub(channel_name: ByteArray, oneshot_ref: OutputReference) {
 	// TODO along with some ADA?
 
         // Must use the oneshot_ref as an input.
-        expect True = list.any(
-          self.inputs,
-          fn(i) { i.output_reference == oneshot_ref }
-        )
+        // expect True = list.any(
+        //   self.inputs,
+        //   fn(i) { i.output_reference == oneshot_ref }
+        // )
+	expect Some(_oref) = u.find_tx_input(self, oneshot_ref)
 
         // expect Some(own_input) = transaction.find_input(self.inputs, own_ref)
         expect Some(own_input) = u.find_tx_input(self, own_ref)
@@ -61,30 +63,31 @@ validator pubsub(channel_name: ByteArray, oneshot_ref: OutputReference) {
 	  // TODO is this redundant since it's already checked in mint() above?
           u.tx_mints(self, policy_id, channel_name, 1),
 
-	  // TODO is this not really required because the channel can be opened by admin rather than publisher?
+	  // TODO allow admin to open channel for separate publisher
           u.tx_signed_by(self, publisher),
         }
 
-        // TODO aha! have to send the NFT to the script here? i guess it defaults to the wallet otherwise?
-
       }
 
-      PsPublish { cids } -> and {
+      // PsPublish { cids } -> and {
 
-        u.tx_signed_by(self, publisher),
-        list.length(cids) > 0,
+      //  u.tx_signed_by(self, publisher),
+      //  list.length(cids) > 0,
         /// todo @"cids are the right format",
         /// todo @"an output goes back to validator addr",
         /// todo @"validator output gets the state nft",
         /// todo @"publisher is unchanged",
 
-      }
+      //}
 
       // PsCollect ->
           // u.tx_signed_by(self, publisher)
           /// todo @"datum goes back to the validator unchanged",
           /// todo @"all collected assets go to the publisher",
 
+
+      // This is kept intentionally minimal for now, because I don't want bugs
+      // interfering with burning all the test NFTs.
       PsClose -> {
 
         // TODO this is redundant because it's already checked in the mint, right?
@@ -96,7 +99,9 @@ validator pubsub(channel_name: ByteArray, oneshot_ref: OutputReference) {
         // }
 
         u.tx_signed_by(self, publisher)
-        /// todo @"all collected assets go to the publisher",
+
+        // todo @"all collected assets go to the publisher",
+
       }
 
     }

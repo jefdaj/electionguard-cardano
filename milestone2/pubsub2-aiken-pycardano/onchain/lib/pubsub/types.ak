@@ -23,7 +23,7 @@ pub type PubsubAction {
   PsOpen
 
   /// Announce publication of the corresponding IPFS files.
-  PsPublish { cids: List<CID> }
+  // PsPublish { cids: List<CID> }
 
   /// Collect ADA and/or other tokens sent to the validator.
   /// TODO sending ADA to the contract is always valid, right?
