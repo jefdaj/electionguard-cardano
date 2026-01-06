@@ -193,33 +193,22 @@ def find_channel_state(
     ))
 
 # TODO get this working for the case where the utxo is confirmed + consumed between polls
-def wait_for_tx_to_confirm(ctx, tx_id: TransactionId, max_seconds: int = 300, interval_seconds: int = 10):
-    print(f'tx_id: ({type(tx_id)}) = {tx_id}')
-    tx_id = str(tx_id)
-    print(f'tx_id: ({type(tx_id)}) = {tx_id}')
+def wait_for_tx_confirmation(ctx, tx_id: TransactionId, max_seconds: int = 300, interval_seconds: int = 5):
+    tx_id = str(tx_id) # TODO is this the right way?
+    print(f'tx {tx_id} waiting up to {max_seconds} seconds for confirmation', end='', flush=True)
     waited_seconds = 0
-    print('step 0')
     while True:
-        print('step 1')
         time.sleep(interval_seconds)
         waited_seconds += interval_seconds
-        print('step 2')
-
+        print('.', end='', flush=True)
         utxo = ctx.utxo_by_tx_id(tx_id, 0)
-        print('step 3')
         if utxo is None:
-            print('step 3')
-            print(f"Transaction not found after {waited_seconds} seconds")
-            print('step 5')
             if waited_seconds >= max_seconds:
-                print('step 6')
-                raise Exception(f'TX still not confirmed after {waited_seconds} seconds: {tx_id}')
+                print(' FAIL', flush=True)
+                raise Exception(f'tx {tx_id} still not confirmed after {waited_seconds} seconds')
             continue
         else:
-            print('step 4')
-            print(f'TX confirmed after {waited_seconds} seconds: {tx_id}')
-            print(f'utxo: {utxo}')
-            print('step 7')
+            print(f' confirmed after {waited_seconds} seconds', flush=True)
             return
 
 def publish_cids(
@@ -350,7 +339,7 @@ def main(channel_name: str):
     mint_fn = channel_nft_minter(script, channel_bytes)
 
     open_txid = open_channel(ctx, sk, addr, script, mint_fn, oneshot_utxo)
-    wait_for_tx_to_confirm(ctx, open_txid)
+    wait_for_tx_confirmation(ctx, open_txid)
 
     # for now, just publish 3 little CID lists
     # for n in range(1, 6, 2):
@@ -360,9 +349,10 @@ def main(channel_name: str):
     #     except Exception as e:
     #         print('ERROR:', str(e))
     #     finally:
-    #         wait_for_tx_to_confirm()
+    #         wait_for_tx_confirmation()
 
-    close_channel(ctx, sk, addr, script, mint_fn, channel_bytes)
+    close_txid = close_channel(ctx, sk, addr, script, mint_fn, channel_bytes)
+    wait_for_tx_confirmation(ctx, close_txid)
 
 if __name__ == '__main__':
     channel_name = sys.argv[1]
