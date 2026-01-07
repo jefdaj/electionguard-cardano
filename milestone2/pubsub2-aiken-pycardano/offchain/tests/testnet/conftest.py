@@ -13,7 +13,7 @@ def chain_context():
 @pytest.fixture(scope="session")
 def publisher_key():
     """Load test publisher signing key."""
-    return load_signing_key("keys/publisher.skey")
+    return load_signing_key()
 
 @pytest.fixture
 def funded_address(chain_context, publisher_key):
