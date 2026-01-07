@@ -20,4 +20,6 @@ source = "github"
 # version = "0.1.11"
 # source = "github"
 
-[config]
+[config.default.stt_name]
+encoding = "utf-8"
+bytes = "pubsub2-channel-state-token"

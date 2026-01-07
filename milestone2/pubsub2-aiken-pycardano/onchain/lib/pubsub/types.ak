@@ -1,6 +1,5 @@
-use aiken/crypto.{VerificationKeyHash}
-
 use aiken/builtin
+use aiken/crypto.{VerificationKeyHash}
 
 /// IPFS content identifier
 // Note that Kubo currently defaults to v0, but the devs expect to move to v1 "soon",

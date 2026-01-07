@@ -1,3 +1,42 @@
+use cardano/transaction.{OutputReference, Transaction}
+use cardano/assets.{PolicyId}
+use config
+use pubsub/types.{
+  PubsubConfig, PubsubAction, PsOpen, PsClose
+}
+use pubsub/utils as utils
+
+validator pubsub(oneshot_ref: OutputReference) {
+
+  mint(
+    redeemer: PubsubAction,
+    policy_id: PolicyId,
+    self: Transaction
+  ) {
+    when redeemer is {
+      PsOpen  -> {
+        expect Some(_oneshot_input) = transaction.find_input(self.inputs, oneshot_ref)
+        utils.tx_mints(self, policy_id, config.stt_name,  1)
+      }
+      PsClose -> utils.tx_mints(self, policy_id, config.stt_name, -1)
+    }
+  }
+
+  spend(
+    datum: Option<PubsubConfig>,
+    redeemer: PubsubAction,
+    _own_ref: OutputReference,
+    self: Transaction,
+  ) {
+    expect Some(PubsubConfig { publisher }) = datum
+    when redeemer is {
+      PsOpen  -> utils.tx_signed_by(self, publisher)
+      PsClose -> utils.tx_signed_by(self, publisher)
+    }
+  }
+
+}
+
 // OLD CODE
 // use aiken/collection/list
 // use cardano/address.{Script}
