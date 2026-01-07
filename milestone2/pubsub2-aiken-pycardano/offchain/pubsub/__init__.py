@@ -1,2 +1,2 @@
-from .types import CID, PubsubAction
+from .types import CIDv1, PubsubAction
 from .utils import *

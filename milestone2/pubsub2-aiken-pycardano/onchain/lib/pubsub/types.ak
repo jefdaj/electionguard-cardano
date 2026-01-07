@@ -1,9 +1,13 @@
 use aiken/crypto.{VerificationKeyHash}
 
+// TODO set my kubo containers to use v1:
+//      ipfs config --json Import.CidVersion 1
+//      ipfs add --cid-version=1 myfile.txt
+
 /// IPFS content identifier
-/// TODO can they be restricted to the proper size or format?
-/// TODO longer, more descriptive name?
-pub type CID =
+// Note that Kubo currently defaults to v0, but the devs expect to move to v1 "soon",
+// so I'm telling all the relevant containers to use it now.
+pub type CIDv1 =
   ByteArray
 
 pub type PubsubConfig {
@@ -23,7 +27,7 @@ pub type PubsubAction {
   PsOpen
 
   /// Announce publication of the corresponding IPFS files.
-  // PsPublish { cids: List<CID> }
+  // PsPublish { cids: List<CIDv1> }
 
   /// Collect ADA and/or other tokens sent to the validator.
   /// TODO sending ADA to the contract is always valid, right?

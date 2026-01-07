@@ -44,15 +44,6 @@
 # #     return validator_bytes_and_hash(validator)
 # 
  
-# # Examples of creating different variants
-# # open_action = PubsubAction.ps_open()
-# # publish_action = PubsubAction.ps_publish([
-# #   b'cid1',
-# #   b'cid2'
-# # ])
-# # collect_action = PubsubAction.ps_collect()
-# # close_action = PubsubAction.ps_close()
-# 
 # def utxo_to_ref_hex(utxo):
 #     ref = OutputReferenceHack(
 #         utxo.input.transaction_id.to_cbor(),
