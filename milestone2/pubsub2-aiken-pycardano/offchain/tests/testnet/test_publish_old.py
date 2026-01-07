@@ -43,23 +43,7 @@
 # #         validator = json.load(f)
 # #     return validator_bytes_and_hash(validator)
 # 
-# @dataclass
-# class PsOpen(PlutusData):
-#     CONSTR_ID = 0
-# 
-# @dataclass
-# class PsPublish(PlutusData):
-#     CONSTR_ID = 1
-#     cids: List[bytes]
-# 
-# # @dataclass
-# # class PsCollect(PlutusData):
-# #     CONSTR_ID = 2
-# 
-# @dataclass
-# class PsClose(PlutusData):
-#     CONSTR_ID = 2
-# 
+ 
 # # Examples of creating different variants
 # # open_action = PubsubAction.ps_open()
 # # publish_action = PubsubAction.ps_publish([
