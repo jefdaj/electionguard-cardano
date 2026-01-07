@@ -1,6 +1,9 @@
+import subprocess
+
 from dataclasses import dataclass
 from pycardano import PlutusData
 from typing import List
+from tempfile import NamedTemporaryFile
 
 # This is a temporary hack for use with `aiken blueprint apply`
 # See https://github.com/Python-Cardano/pycardano/issues/439
@@ -11,6 +14,7 @@ class OutputReferenceHack(PlutusData):
     transaction_id: bytes
     index: int
 
+# TODO move to different util module?
 def pick_oneshot_utxo(context, addr):
     # No particular logic to max here; any UTXO should work for the initial tests
     utxos = context.utxos(addr)
@@ -18,6 +22,13 @@ def pick_oneshot_utxo(context, addr):
         raise Exception(f'addr {addr} has no UTXOs')
     utxo = max(utxos, key=lambda utxo: utxo.output.amount.coin)
     return utxo
+
+def utxo_to_ref_hex(utxo):
+    ref = OutputReferenceHack(
+        utxo.input.transaction_id.to_cbor(),
+        utxo.input.index
+    )
+    return ref.to_cbor().hex()
 
 def aiken_blueprint_apply_hex_params(plutus_json_path: str, hex_params: List[str]) -> dict:
     """
@@ -33,7 +44,7 @@ def aiken_blueprint_apply_hex_params(plutus_json_path: str, hex_params: List[str
         >>> oref = OutputReferenceHack(utxo.input.transaction_id.to_cbor(), utxo.input.index)
         >>> blueprint = aiken_blueprint_apply_hex_params('./plutus.json', [desc, oref])
     """
-    with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.json') as temp_out:
+    with NamedTemporaryFile(mode='w+', delete=False, suffix='.json') as temp_out:
         temp_out_path = temp_out.name
         current_blueprint_path = plutus_json_path
         for hex_param in hex_params:

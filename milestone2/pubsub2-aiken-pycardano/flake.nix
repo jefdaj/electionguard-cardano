@@ -90,7 +90,7 @@
             };
 
             offchain = pkgs.mkShell {
-              nativeBuildInputs = (devPkgList pkgs) ++ [
+              nativeBuildInputs = onchain.nativeBuildInputs ++ [
                 (pkgs.python312.withPackages offchainPyPkgList)
               ];
               shellHook = ''

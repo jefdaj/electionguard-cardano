@@ -1,0 +1,44 @@
+import json
+
+from ..utils import utxo_to_ref_hex, aiken_blueprint_apply_hex_params
+from os import makedirs
+from pathlib import Path
+from pycardano import PlutusV3Script, ScriptHash, UTxO, Address
+from pycardano import Network
+
+class PubsubScript:
+
+    def __init__(self, raw_plutus_json_path: str, oneshot_utxo: UTxO):
+        self._raw_plutus_json_path = Path(raw_plutus_json_path)
+        self.oneshot_utxo = oneshot_utxo
+        self.oneshot_hex = utxo_to_ref_hex(self.oneshot_utxo)
+        self._json_dict = self.apply_params()
+        self.bytes = PlutusV3Script( bytes.fromhex(self._json_dict["validators"][0]["compiledCode"] ))
+        self.hash  = ScriptHash(     bytes.fromhex(self._json_dict["validators"][0]["hash"        ] ))
+        self.address = Address(payment_part=self.hash, network=Network.TESTNET)
+        # self.policy_id = plutus_script_hash(self.bytes) # TODO redundant with hash?
+
+    @property
+    def policy_id(self):
+        return self.hash
+
+    def __repr__(self) -> str:
+        # TODO include oneshot_utxo, address, json path
+        return f"PubsubScript(hash={self.policy_id[:16]}...)"
+
+    def apply_params(self) -> dict:
+        params = [self.oneshot_hex]
+        return aiken_blueprint_apply_hex_params(self._raw_plutus_json_path, params)
+
+    def default_json_path(self) -> Path:
+        p = self._raw_plutus_json_path
+        json_path = p.parent / p.stem + '-' + self.oneshot_hex + p.suffix
+        return json_path
+
+    def save_json(self, plutus_json_path: Path = None):
+        if plutus_json_path is None:
+            plutus_json_path = self.default_json_path()
+        makedirs(plutus_json_path.parent, exist_ok=True)
+        with open(plutus_json_path, 'w') as f:
+            json.dump(self.json_dict, f, indent=2) # TODO pydantic style?
+        print(f'saved script json to {plutus_json_path}')

@@ -26,31 +26,11 @@
 #     with open(addr_path, "r") as f:
 #         return Address.from_primitive(f.read())
 # 
-# # TODO are the bytes ever used, or just the hash?
-# def validator_bytes_and_hash(validator: dict) -> dict:
-#     script_bytes = PlutusV3Script(
-#         bytes.fromhex(validator["validators"][0]["compiledCode"])
-#     )
-#     script_hash = ScriptHash(bytes.fromhex(validator["validators"][0]["hash"]))
-#     return {
-#         "type": "PlutusV3",
-#         "script_bytes": script_bytes,
-#         "script_hash": script_hash,
-#     }
-# 
-# # def read_validator_path(plutus_json_path: str) -> dict:
-# #     with open(plutus_json_path, "r") as f:
-# #         validator = json.load(f)
-# #     return validator_bytes_and_hash(validator)
-# 
- 
-# def utxo_to_ref_hex(utxo):
-#     ref = OutputReferenceHack(
-#         utxo.input.transaction_id.to_cbor(),
-#         utxo.input.index
-#     )
-#     return ref.to_cbor().hex()
-# 
+# def read_validator_path(plutus_json_path: str) -> dict:
+#     with open(plutus_json_path, "r") as f:
+#         validator = json.load(f)
+#     return validator_info(validator)
+
 # # TODO wait could the problem be that the NFT is being given to my wallet rather than the script?
 # def open_channel(
 #     ctx: OgmiosV6ChainContext,
@@ -266,33 +246,25 @@
 #     # this is used to parameterize the validator,
 #     # and also to name the channel nft
 #     # TODO is it not needed as a parameter? maybe only oneshot_ref is ok
-#     channel_bytes = channel_name.encode()
-#     print(f'channel_bytes={channel_bytes}')
-# 
-#     channel_hex = cbor2.dumps(channel_bytes).hex()
-#     print(f'channel_hex={channel_hex}')
-# 
-#     oneshot_utxo = pick_oneshot_utxo(ctx, addr)
-#     oneshot_hex = utxo_to_ref_hex(oneshot_utxo)
-#     print(f'oneshot_hex={oneshot_hex}')
-# 
-#     # now we can fully specify the validator,
-#     # TODO should oneshot come before channel name?
-#     script_json = aiken_blueprint_apply_hex_params(
-#         './plutus.json',
-#         [channel_hex, oneshot_hex]
-#     )
-#     # TODO is saving it also useful?
-#     script_out_path = f'plutus-{channel_name}.json'
-#     with open(script_out_path, 'w') as f:
-#         json.dump(script_json, f, indent=2)
-#         print(f'saved final plutus script to {script_out_path}')
-# 
-#     script = PlutusV3Script(validator_bytes_and_hash(script_json)['script_bytes'])
-#     print(f'script: {script}')
-# 
+
+channel_bytes = channel_name.encode()
+channel_hex = cbor2.dumps(channel_bytes).hex()
+oneshot_utxo = pick_oneshot_utxo(ctx, addr)
+oneshot_hex = utxo_to_ref_hex(oneshot_utxo)
+script_json = aiken_blueprint_apply_hex_params(
+    './plutus.json',
+    [channel_hex, oneshot_hex]
+)
+# TODO is saving it also useful?
+script_out_path = f'plutus-{channel_name}.json'
+with open(script_out_path, 'w') as f:
+    json.dump(script_json, f, indent=2)
+    print(f'saved final plutus script to {script_out_path}')
+script = PlutusV3Script(validator_bytes_and_hash(script_json)['script_bytes'])
+
+script = PubsubContract(plutus_json_path='./plutus.json', oneshot_utxo=oneshot_utxo)
+
 #     mint_fn = channel_nft_minter(script, channel_bytes)
-# 
 #     open_txid = open_channel(ctx, sk, addr, script, mint_fn, oneshot_utxo)
 #     wait_for_tx_confirmation(ctx, open_txid)
 # 
