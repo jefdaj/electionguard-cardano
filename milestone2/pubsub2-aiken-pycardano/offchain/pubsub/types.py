@@ -7,11 +7,11 @@ class CIDv1(PlutusData):
     """
     Constructs an IPFS CID to match onchain/lib/pubsub/types.ak::CIDv1.
     Note that Kubo currently defaults to v0, but the devs expect to move to v1 "soon",
-    so I'm telling all the relevant containers to use it now.
+    so I'm standardizing on it now. I'm also assuming SHA256.
 
     Examples:
         # From IPFS string
-        >>> cid1 = CIDv1.from_string('TODO fill in')
+        >>> cid1 = CIDv1.from_string('bafkreif3ndgroyswbk7nts7xroxklqa2xyjijiqil3eiczvhvehep6vdue')
 
         # From raw bytes (e.g., from chain)
         >>> cid2 = CIDv1(cid=bytes_from_datum)
@@ -27,30 +27,26 @@ class CIDv1(PlutusData):
     cid: bytes
 
     def __post_init__(self):
-        """Validate the raw CIDv1 bytes."""
+        """Validate the raw CID bytes."""
         if len(self.cid) != 36:
             raise ValueError(f"CIDv1 must be exactly 36 bytes, got {len(self.cid)}")
+
         if self.cid[0] != 0x01:
-            raise ValueError("Must be CIDv1")
+            raise ValueError(f"Must be CIDv1, got version {self.cid[0]:#x}")
+
         if self.cid[2] != 0x12 or self.cid[3] != 0x20:
-            raise ValueError("Must use SHA-256")
+            raise ValueError(f"Must use SHA-256, got hash type {self.cid[2]:#x} length {self.cid[3]:#x}")
 
     @classmethod
     def from_string(cls, cid_string: str) -> 'CIDv1':
-        """Parse a CIDv1 from its string representation."""
+        """Parse a CID from its string representation."""
         c = make_cid(cid_string)
-        return cls(cid=c.encode())  # .encode() gives raw bytes
+        return cls(cid=c.buffer)  # ← Use .buffer for 36-byte raw CID
 
     def to_string(self) -> str:
         """Convert to base32 string representation."""
         c = make_cid(self.cid)
-        return str(c)  # Returns base32 by default for CIDv1
-
-    @classmethod
-    def from_multihash(cls, multihash: bytes, codec: str = 'dag-pb') -> 'CIDv1':
-        """Create a CIDv1 from a multihash and codec."""
-        c = CIDv1(codec, multihash)
-        return cls(cid=c.encode())
+        return str(c)
 
 @dataclass
 class PubsubAction(PlutusData):

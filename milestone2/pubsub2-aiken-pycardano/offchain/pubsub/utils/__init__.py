@@ -1,2 +1,2 @@
-from blueprint import OutputReferenceHack, pick_oneshot_utxo, aiken_blueprint_apply_hex_params
-from keys import generate_keys, load_test_wallet_addr, load_test_wallet_signing_key
+from .blueprint import OutputReferenceHack, pick_oneshot_utxo, aiken_blueprint_apply_hex_params
+from .keys import generate_keys, load_test_wallet_addr, load_test_wallet_signing_key
