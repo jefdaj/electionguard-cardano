@@ -166,6 +166,7 @@ let
  
     service.environment = {
       IPFS_LOGGING = "fatal";
+      IPFS_IMPORT_CIDVERSION = "1";
     };
   };
 

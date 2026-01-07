@@ -258,9 +258,11 @@ class RetryingIPFS:
 
     # Wrap only what you need, e.g. add, cat, pin, etc.
     async def add(self, *args, **kwargs):
+        kwargs.setdefault('cid_version', 1)
         return await self._retry(lambda: self._client.add(*args, **kwargs))
 
     async def add_json(self, *args, **kwargs):
+        kwargs.setdefault('cid_version', 1)
         return await self._retry(lambda: self._client.add_json(*args, **kwargs))
 
     async def cat(self, *args, **kwargs):
