@@ -6,8 +6,8 @@ from os.path import join, exists
 KEYS_DIR = './keys'
 makedirs(KEYS_DIR, exist_ok=True)
 
-MY_SIGNING_KEY = join(KEYS_DIR, 'me.sk')
-MY_PUBLIC_ADDR = join(KEYS_DIR, 'me.addr')
+MY_SIGNING_KEY = join(KEYS_DIR, 'pubsub2.sk')
+MY_PUBLIC_ADDR = join(KEYS_DIR, 'pubsub2.addr')
  
 if exists(MY_SIGNING_KEY):
     print(f'found existing signing key {MY_SIGNING_KEY}')

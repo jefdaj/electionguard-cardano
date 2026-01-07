@@ -1,3 +1,4 @@
+// OLD CODE
 // use cardano/address
 // use cardano/assets
 // use cardano/assets.{PolicyId}
@@ -5,7 +6,7 @@
 // use pubsub
 // use pubsub/types.{PubsubConfig, PsOpen}
 // use pubsub/utils as u
-
+//
 // const cfg1: PubsubConfig =
 //   PubsubConfig { publisher: #"00000000000000000000000000000000000000000000000000000000" }
 // 
@@ -46,5 +47,5 @@
 // 
 //   )
 // }
-
-/// TODO can mint and spend be tested together, or are they two tests?
+//
+// TODO can mint and spend be tested together, or are they two tests?

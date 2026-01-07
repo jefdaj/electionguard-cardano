@@ -1,0 +1,9 @@
+# Python
+.venv/
+__pycache__/
+
+# Nix
+result*
+
+# cardano preview wallet
+keys/
