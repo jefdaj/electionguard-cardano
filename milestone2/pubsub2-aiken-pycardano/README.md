@@ -83,3 +83,40 @@ pip install -r requirements.txt
 # then send tADA from faucet -> keys/me.addr
 ./generate-keys.py
 ```
+
+
+| Location | Purpose | Testing Strategy |
+|----------|---------|------------------|
+| **`pubsub/types/`** | PlutusData classes mirroring Aiken types | Unit tests verify serialization/deserialization |
+| **`pubsub/builders/`** | Pure transaction construction functions | Unit tests inspect TransactionBuilder objects without submission |
+| **`pubsub/utils/`** | Helper functions (keys, IPFS, serialization) | Unit tests with mocks |
+| **`pubsub/client.py`** | High-level API combining all components | Integration tests using real blockchain |
+| **`scripts/`** | Executable CLI tools using the client | Manual testing + optional integration tests |
+| **`tests/unit/`** | Fast, pure logic tests (no I/O) | Run on every commit, part of Nix build |
+| **`tests/integration/`** | Slow, blockchain-dependent tests | Run manually before releases |
+
+
+## Additional Recommendations
+
+### Use Type Hints Everywhere
+
+PyCardano works great with mypy. Add to your dev dependencies:
+
+```bash
+pip install mypy
+mypy offchain/pubsub --strict
+```
+
+Also Black?
+
+TODO
+----
+
+1. **Set up the package structure** with `pyproject.toml` and empty `__init__.py` files
+2. **Create your first Aiken type** (e.g., `ChannelDatum`) and its Python mirror
+3. **Write unit tests** for that type's serialization
+4. **Build a simple transaction builder** for publishing
+5. **Add integration tests** once you have a deployed validator on Preview
+6. **Create the client API** to tie everything together
+7. **Write your CLI scripts** using the client
+

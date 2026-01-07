@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pubsub"
+version = "0.1.0"
+description = "Cardano IPFS pubsub smart contract"
+requires-python = ">=3.9"
+dependencies = [
+    "pycardano>=0.9.0",
+    "aioipfs",
+    "cbor2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio",
+    "pytest-mock",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pubsub*"]
