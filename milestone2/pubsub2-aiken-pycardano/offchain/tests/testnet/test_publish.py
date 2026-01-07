@@ -1,6 +1,6 @@
 import pytest
-from pubsub.types.datums import ChannelDatum
-from pubsub.builders.publish import build_publish_tx
+from pubsub.types import ChannelDatum
+from pubsub.builders import build_publish_tx
 
 @pytest.mark.integration
 @pytest.mark.slow

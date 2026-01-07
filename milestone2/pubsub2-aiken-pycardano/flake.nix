@@ -60,6 +60,7 @@
         pycardano
         pygments
         watchdog
+        pytest
       ];
 
       in
@@ -97,6 +98,9 @@
                 cd offchain
                 python --version
               '';
+
+              # TODO is this worth the speed tradeoff?
+              PYTHONDONTWRITEBYTECODE = true;
             };
 
           };

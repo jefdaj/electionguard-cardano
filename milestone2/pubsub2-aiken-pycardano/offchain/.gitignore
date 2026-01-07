@@ -6,4 +6,4 @@ __pycache__/
 result*
 
 # cardano preview wallet
-keys/
+pubsub/utilskeys/

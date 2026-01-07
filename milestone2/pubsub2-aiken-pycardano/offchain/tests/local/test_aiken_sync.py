@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from pubsub.types.datums import ChannelDatum
+from pubsub.types import ChannelDatum
 
 def test_channel_datum_matches_plutus_json():
     """Ensure Python types match the compiled Aiken output."""
