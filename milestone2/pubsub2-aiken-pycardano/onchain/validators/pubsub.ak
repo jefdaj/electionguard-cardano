@@ -1,4 +1,4 @@
-use cardano/transaction.{InlineDatum, OutputReference, Transaction, find_input}
+use cardano/transaction.{OutputReference, Transaction, find_input}
 use cardano/address.{Script}
 use cardano/assets.{PolicyId}
 use config
@@ -6,7 +6,7 @@ use pubsub/types.{
   PubsubConfig, PubsubAction, PsOpen, PsPublish, PsClose,
   validate_cids
 }
-use pubsub/utils.{tx_mints, tx_signed_by, tx_sends_token_to_addr}
+use pubsub/utils.{tx_mints, tx_signed_by, tx_sends_token_to_addr, publisher_unchanged}
 
 validator pubsub(oneshot_ref: OutputReference) {
 
@@ -54,19 +54,13 @@ validator pubsub(oneshot_ref: OutputReference) {
 
       PsPublish { cids } -> {
         let pub_signed = tx_signed_by(self, publisher) ?
-	let cids_valid = validate_cids(cids) ?
-
-	// Make sure publisher is unchanged
-	// TODO factor out into a util function
         expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, config.stt_name, script_addr, 1)
-	expect InlineDatum(raw_datum) = stt_output.datum
-	expect out_config: PubsubConfig = raw_datum
-	let same_publisher = (out_config.publisher == publisher) ?
-
+        let pub_unchanged = publisher_unchanged(publisher, stt_output) ?
+	let cids_valid = validate_cids(cids) ?
         and {
           pub_signed,
-	  cids_valid,
-	  same_publisher
+	  pub_unchanged,
+	  cids_valid
         }
       }
 
