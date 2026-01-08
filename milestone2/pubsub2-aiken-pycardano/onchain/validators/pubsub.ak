@@ -6,7 +6,7 @@ use pubsub/types.{
 }
 use pubsub/utils as utils
 
-validator pubsub(oneshot_ref: OutputReference) {
+validator pubsub(oneshot_oref: OutputReference) {
 
   mint(
     redeemer: PubsubAction,
@@ -15,7 +15,7 @@ validator pubsub(oneshot_ref: OutputReference) {
   ) {
     when redeemer is {
       PsOpen  -> {
-        expect Some(_oneshot_input) = transaction.find_input(self.inputs, oneshot_ref)
+        expect Some(_oneshot_input) = transaction.find_input(self.inputs, oneshot_oref)
         utils.tx_mints(self, policy_id, config.stt_name,  1)
       }
       PsClose -> utils.tx_mints(self, policy_id, config.stt_name, -1)
@@ -51,16 +51,16 @@ validator pubsub(oneshot_ref: OutputReference) {
 // 
 // // TODO publisher isn't necessarily owner of ADA when doing multi-tiered channels
 // 
-// validator pubsub(channel_name: ByteArray, oneshot_ref: OutputReference) {
+// validator pubsub(channel_name: ByteArray, oneshot_oref: OutputReference) {
 // 
 //   mint(redeemer: PubsubAction, policy_id: PolicyId, self: Transaction) {
 //     when redeemer is {
 // 
 //       // Only the publisher can mint the channel_nft,
-//       // and only during the initial deployment (enforced via oneshot_ref).
+//       // and only during the initial deployment (enforced via oneshot_oref).
 //       // TODO let a separate admin own and mint it? or similar mechanism
 //       PsOpen -> {
-//         // expect Some(_oneshot_input) = transaction.find_input(self.inputs, oneshot_ref)
+//         // expect Some(_oneshot_input) = transaction.find_input(self.inputs, oneshot_oref)
 //         u.tx_mints(self, policy_id, channel_name, 1)
 //       }
 // 
@@ -86,12 +86,12 @@ validator pubsub(oneshot_ref: OutputReference) {
 //         // Publisher mints channel_nft and sends it to the script.
 // 	// TODO along with some ADA?
 // 
-//         // Must use the oneshot_ref as an input.
+//         // Must use the oneshot_oref as an input.
 //         // expect True = list.any(
 //         //   self.inputs,
-//         //   fn(i) { i.output_reference == oneshot_ref }
+//         //   fn(i) { i.output_reference == oneshot_oref }
 //         // )
-// 	expect Some(_oref) = u.find_tx_input(self, oneshot_ref)
+// 	expect Some(_oref) = u.find_tx_input(self, oneshot_oref)
 // 
 //         // expect Some(own_input) = transaction.find_input(self.inputs, own_ref)
 //         expect Some(own_input) = u.find_tx_input(self, own_ref)

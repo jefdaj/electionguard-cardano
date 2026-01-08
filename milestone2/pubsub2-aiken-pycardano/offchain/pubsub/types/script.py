@@ -1,10 +1,10 @@
 import json
 
-from ..utils import utxo_to_ref_hex, aiken_blueprint_apply_hex_params
 from os import makedirs
 from pathlib import Path
-from pycardano import PlutusV3Script, ScriptHash, UTxO, Address
-from pycardano import Network
+from pycardano import PlutusV3Script, ScriptHash, UTxO, Address, Network
+
+from ..utils import utxo_to_ref_hex, aiken_blueprint_apply_hex_params
 
 class PubsubScript:
 
@@ -20,19 +20,19 @@ class PubsubScript:
 
     @property
     def policy_id(self):
-        return self.hash
+        return str(self.hash) # TODO is this right?
 
     def __repr__(self) -> str:
         # TODO include oneshot_utxo, address, json path
-        return f"PubsubScript(hash={self.policy_id[:16]}...)"
+        return f"PubsubScript(oneshot_hex={self.oneshot_hex[:16]}..., policy_id={self.policy_id[:16]}...)"
 
     def apply_params(self) -> dict:
-        params = [self.oneshot_hex]
-        return aiken_blueprint_apply_hex_params(self._raw_plutus_json_path, params)
+        hex_params = [self.oneshot_hex]
+        return aiken_blueprint_apply_hex_params(self._raw_plutus_json_path, hex_params)
 
     def default_json_path(self) -> Path:
         p = self._raw_plutus_json_path
-        json_path = p.parent / p.stem + '-' + self.oneshot_hex + p.suffix
+        json_path = p.parent / ('pubsub2-' + self.oneshot_hex + '-plutus.json')
         return json_path
 
     def save_json(self, plutus_json_path: Path = None):
@@ -40,5 +40,5 @@ class PubsubScript:
             plutus_json_path = self.default_json_path()
         makedirs(plutus_json_path.parent, exist_ok=True)
         with open(plutus_json_path, 'w') as f:
-            json.dump(self.json_dict, f, indent=2) # TODO pydantic style?
-        print(f'saved script json to {plutus_json_path}')
+            json.dump(self._json_dict, f, indent=2) # TODO pydantic style?
+        print(f'saved {plutus_json_path}')

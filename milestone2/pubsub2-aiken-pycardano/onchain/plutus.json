@@ -21,7 +21,7 @@
       },
       "parameters": [
         {
-          "title": "oneshot_ref",
+          "title": "oneshot_oref",
           "schema": {
             "$ref": "#/definitions/cardano~1transaction~1OutputReference"
           }
@@ -46,7 +46,7 @@
       },
       "parameters": [
         {
-          "title": "oneshot_ref",
+          "title": "oneshot_oref",
           "schema": {
             "$ref": "#/definitions/cardano~1transaction~1OutputReference"
           }
@@ -62,7 +62,7 @@
       },
       "parameters": [
         {
-          "title": "oneshot_ref",
+          "title": "oneshot_oref",
           "schema": {
             "$ref": "#/definitions/cardano~1transaction~1OutputReference"
           }
