@@ -1,11 +1,11 @@
-use cardano/transaction.{OutputReference, Transaction}
+use cardano/transaction.{OutputReference, Transaction, find_input}
 use cardano/address.{Script}
 use cardano/assets.{PolicyId}
 use config
 use pubsub/types.{
   PubsubConfig, PubsubAction, PsOpen, PsClose
 }
-use pubsub/utils as utils
+use pubsub/utils.{tx_mints, tx_signed_by, tx_sends_token_to_addr}
 
 validator pubsub(oneshot_ref: OutputReference) {
 
@@ -16,10 +16,15 @@ validator pubsub(oneshot_ref: OutputReference) {
   ) {
     when redeemer is {
       PsOpen  -> {
-        expect Some(_oneshot_input) = transaction.find_input(self.inputs, oneshot_ref)
-        utils.tx_mints(self, policy_id, config.stt_name,  1)
+        // TODO anything else needed to trace here, or does expect do it already?
+        expect Some(_oneshot_input) = self.inputs |> find_input(oneshot_ref)
+        let stt_minted = tx_mints(self, policy_id, config.stt_name, 1) ?
+        stt_minted
       }
-      PsClose -> utils.tx_mints(self, policy_id, config.stt_name, -1)
+      PsClose -> {
+        let stt_burned = tx_mints(self, policy_id, config.stt_name, -1) ?
+        stt_burned
+      }
     }
   }
 
@@ -29,20 +34,33 @@ validator pubsub(oneshot_ref: OutputReference) {
     own_ref: OutputReference,
     self: Transaction,
   ) {
+
     expect Some(PubsubConfig { publisher }) = datum
-    expect Some(own_input) = transaction.find_input(self.inputs, own_ref)
+    expect Some(own_input) = self.inputs |> find_input(own_ref)
     expect Script(policy_id) = own_input.output.address.payment_credential
     let script_addr = own_input.output.address
     when redeemer is {
-      PsOpen -> and {
-        utils.tx_signed_by(self, publisher),
-        utils.tx_mints(self, policy_id, config.stt_name, 1),
-        utils.tx_sends_token_to_addr(self, policy_id, config.stt_name, script_addr, 1)
+
+      PsOpen -> {
+        let pub_signed    = tx_signed_by(self, publisher) ?
+        let stt_minted    = tx_mints(self, policy_id, config.stt_name, 1) ?
+        let stt_to_script = tx_sends_token_to_addr(self, policy_id, config.stt_name, script_addr, 1) ?
+        and {
+          pub_signed,
+          stt_minted,
+          stt_to_script
+        }
       }
-      PsClose -> and {
-        utils.tx_signed_by(self, publisher),
-        utils.tx_mints(self, policy_id, config.stt_name, -1)
+
+      PsClose -> {
+        let pub_signed = tx_signed_by(self, publisher) ?
+        let stt_burned = tx_mints(self, policy_id, config.stt_name, -1) ?
+        and {
+          pub_signed,
+          stt_burned
+        }
       }
+
     }
   }
 
@@ -95,14 +113,14 @@ validator pubsub(oneshot_ref: OutputReference) {
 // 
 //       PsOpen -> {
 //         // Publisher mints channel_nft and sends it to the script.
-// 	// TODO along with some ADA?
+//     // TODO along with some ADA?
 // 
 //         // Must use the oneshot_ref as an input.
 //         // expect True = list.any(
 //         //   self.inputs,
 //         //   fn(i) { i.output_reference == oneshot_ref }
 //         // )
-// 	expect Some(_oref) = u.find_tx_input(self, oneshot_ref)
+//     expect Some(_oref) = u.find_tx_input(self, oneshot_ref)
 // 
 //         // expect Some(own_input) = transaction.find_input(self.inputs, own_ref)
 //         expect Some(own_input) = u.find_tx_input(self, own_ref)
@@ -111,10 +129,10 @@ validator pubsub(oneshot_ref: OutputReference) {
 //         // TODO Must send the NFT back to our own script address.
 // 
 //         and {
-// 	  // TODO is this redundant since it's already checked in mint() above?
+//       // TODO is this redundant since it's already checked in mint() above?
 //           u.tx_mints(self, policy_id, channel_name, 1),
 // 
-// 	  // TODO allow admin to open channel for separate publisher
+//       // TODO allow admin to open channel for separate publisher
 //           u.tx_signed_by(self, publisher),
 //         }
 // 
