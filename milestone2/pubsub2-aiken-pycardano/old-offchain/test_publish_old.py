@@ -30,19 +30,6 @@
 #     with open(plutus_json_path, "r") as f:
 #         validator = json.load(f)
 #     return validator_info(validator)
-
-# def utxo_contains_channel_state_nft(
-#     policy_id: str,
-#     channel_bytes: bytes,
-#     utxo: TransactionOutput
-# ) -> bool:
-#     try:
-#         return utxo.output.amount.multi_asset[policy_id].get(AssetName(channel_bytes), 0) == 1
-#     except Exception as e:
-#         # print('error:', str(e))
-#         return False
-# 
-
 # def publish_cids(
 #     ctx: OgmiosV6ChainContext,
 #     sk: PaymentSigningKey,
