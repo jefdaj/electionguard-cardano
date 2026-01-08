@@ -1,9 +1,10 @@
-use cardano/transaction.{OutputReference, Transaction, find_input}
+use cardano/transaction.{InlineDatum, OutputReference, Transaction, find_input}
 use cardano/address.{Script}
 use cardano/assets.{PolicyId}
 use config
 use pubsub/types.{
-  PubsubConfig, PubsubAction, PsOpen, PsClose
+  PubsubConfig, PubsubAction, PsOpen, PsPublish, PsClose,
+  validate_cids
 }
 use pubsub/utils.{tx_mints, tx_signed_by, tx_sends_token_to_addr}
 
@@ -20,6 +21,7 @@ validator pubsub(oneshot_ref: OutputReference) {
         let stt_minted = tx_mints(self, policy_id, config.stt_name, 1) ?
         stt_minted
       }
+      PsPublish { .. } -> fail
       PsClose -> {
         let stt_burned = tx_mints(self, policy_id, config.stt_name, -1) ?
         stt_burned
@@ -41,13 +43,30 @@ validator pubsub(oneshot_ref: OutputReference) {
     when redeemer is {
 
       PsOpen -> {
-        let pub_signed    = tx_signed_by(self, publisher) ?
-        let stt_minted    = tx_mints(self, policy_id, config.stt_name, 1) ?
-        let stt_to_script = tx_sends_token_to_addr(self, policy_id, config.stt_name, script_addr, 1) ?
+        let pub_signed = tx_signed_by(self, publisher) ?
+        let stt_minted = tx_mints(self, policy_id, config.stt_name, 1) ?
+        expect Some(_stt_output) = tx_sends_token_to_addr(self, policy_id, config.stt_name, script_addr, 1)
         and {
           pub_signed,
-          stt_minted, // TODO could this be removed, since mint() checks it too?
-          stt_to_script
+          stt_minted // TODO could this be removed, since mint() checks it too?
+        }
+      }
+
+      PsPublish { cids } -> {
+        let pub_signed = tx_signed_by(self, publisher) ?
+	let cids_valid = validate_cids(cids) ?
+
+	// Make sure publisher is unchanged
+	// TODO factor out into a util function
+        expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, config.stt_name, script_addr, 1)
+	expect InlineDatum(raw_datum) = stt_output.datum
+	expect out_config: PubsubConfig = raw_datum
+	let same_publisher = (out_config.publisher == publisher) ?
+
+        and {
+          pub_signed,
+	  cids_valid,
+	  same_publisher
         }
       }
 
@@ -136,17 +155,6 @@ validator pubsub(oneshot_ref: OutputReference) {
 //         }
 // 
 //       }
-// 
-//       // PsPublish { cids } -> and {
-// 
-//       //  u.tx_signed_by(self, publisher),
-//       //  list.length(cids) > 0,
-//         /// todo @"cids are the right format",
-//         /// todo @"an output goes back to validator addr",
-//         /// todo @"validator output gets the state nft",
-//         /// todo @"publisher is unchanged",
-// 
-//       //}
 // 
 //       // PsCollect ->
 //           // u.tx_signed_by(self, publisher)

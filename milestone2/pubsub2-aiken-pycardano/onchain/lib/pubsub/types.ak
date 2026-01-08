@@ -1,3 +1,4 @@
+use aiken/collection/list
 use aiken/builtin
 use aiken/crypto.{VerificationKeyHash}
 
@@ -10,7 +11,7 @@ pub type CIDv1 =
 // CIDv1 with SHA-256
 // Structure: [version(1)][codec(1)][hash_type(1)][hash_length(1)][hash(32)]
 // Common: 0x01 0x70 0x12 0x20 [32-byte SHA-256]
-pub fn validate_cid(cid: ByteArray) -> Bool {
+pub fn validate_cid(cid: CIDv1) -> Bool {
   let length  = builtin.length_of_bytearray(cid)
   let version     = builtin.index_bytearray(cid, 0)
   let hash_type   = builtin.index_bytearray(cid, 2)
@@ -21,6 +22,10 @@ pub fn validate_cid(cid: ByteArray) -> Bool {
     hash_type   == 0x12, // SHA-256
     hash_length == 0x20  // 32 bytes
   }
+}
+
+pub fn validate_cids(cids: List<CIDv1>) -> Bool {
+  list.all(cids, validate_cid)
 }
 
 // TODO set my kubo containers to use v1:
@@ -44,7 +49,7 @@ pub type PubsubAction {
   PsOpen
 
   /// Announce publication of the corresponding IPFS files.
-  // PsPublish { cids: List<CIDv1> }
+  PsPublish { cids: List<CIDv1> }
 
   /// Collect ADA and/or other tokens sent to the validator.
   /// TODO sending ADA to the contract is always valid, right?

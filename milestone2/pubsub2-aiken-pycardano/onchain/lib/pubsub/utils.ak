@@ -49,15 +49,11 @@ pub fn tx_sends_token_to_addr(
   policy_id: PolicyId,
   token_name: ByteArray,
   addr: Address,
-  min_amount: Int // TODO require exact amount?
-) -> Bool {
-  list.any(
-    tx.outputs,
-    fn(output: Output) {
-      and {
-        output.address == addr,
-        assets.quantity_of(output.value, policy_id, token_name) >= min_amount,
-      }
-    },
-  )
+  min_quantity: Int // TODO require exact quantity?
+) -> Option<Output> {
+  tx.outputs 
+  |> list.find(fn(output) {
+       output.address == addr && 
+       assets.quantity_of(output.value, policy_id, token_name) >= min_quantity
+     })
 }
