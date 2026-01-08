@@ -2,14 +2,16 @@ import pytest
 
 from pathlib import Path
 from pycardano import OgmiosV6ChainContext, Network, SigningKey
+from os.path import realpath
 
 from pubsub import load_test_wallet_signing_key, PubsubClient
 
 @pytest.fixture(scope="session")
 def ctx():
     """Shared Ogmios connection for all testnet tests."""
-    ctx = OgmiosChainContext(
-        ws_url="ws://localhost:1337", # TODO http too, or instead?
+    ctx = OgmiosV6ChainContext(
+        host='localhost',
+        port=1337,
         network=Network.TESTNET
     )
     try:
@@ -26,14 +28,14 @@ def sk():
 
 # TODO separate fixture for the test wallet addr?
 
-@pytest.fixture(scope="test")
+@pytest.fixture(scope="function")
 def ps(ctx: OgmiosV6ChainContext, sk: SigningKey):
     """Load a fresh PubsubClient"""
-    path = Path(__file__) / "../../../onchain/plutus.json" # TODO export as a constant, but where?
+    path = realpath(Path(__file__).parent / "../../../onchain/plutus.json") # TODO export as a constant, but where?
     return PubsubClient(
         chain_context=ctx,
-        plutus_json_path=path,
-        signing_key=sk
+        raw_plutus_json_path=path,
+        publisher_signing_key=sk
         # ipfs_client=IPFSClient()
     )
 

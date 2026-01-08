@@ -1,3 +1,5 @@
+# TODO rename utils.keys -> keys?
+
 from os import makedirs
 from os.path import basename, exists, join, realpath
 from pathlib import Path
@@ -8,7 +10,7 @@ SIGNING_KEY = join(KEYS_DIR, 'pubsub2.sk')
 PUBLIC_ADDR = join(KEYS_DIR, 'pubsub2.addr')
 
 def addr_for_signing_key(sk: PaymentSigningKey) -> Address:
-    verification_key = PaymentVerificationKey.for_signing_key(signing_key)
+    verification_key = PaymentVerificationKey.from_signing_key(sk)
     address = Address(payment_part=verification_key.hash(), network=Network.TESTNET)
     return address
 

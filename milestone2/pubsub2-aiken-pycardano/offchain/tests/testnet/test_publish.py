@@ -1,12 +1,11 @@
 import pytest
 
 from pathlib import Path
-from pycardano import OgmiosChainContext, Network
 
 # from pubsub import IPFSClient
 from pubsub import PubsubClient, load_test_wallet_signing_key
 
-@pytest.mark.integration
+@pytest.mark.testnet
 @pytest.mark.slow
 def test_open_and_close_channel(ps: PubsubClient):
 

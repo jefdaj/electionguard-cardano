@@ -1,3 +1,5 @@
+# TODO rename utils.blueprint -> plutus? could put all plutus + aiken related constants here too?
+
 import json
 import subprocess
 
@@ -15,7 +17,7 @@ def pick_oneshot_utxo(context, addr):
     utxo = max(utxos, key=lambda utxo: utxo.output.amount.coin)
     return utxo
 
-# This is a temporary hack for use with `aiken blueprint apply`
+ # This is a temporary hack for use with `aiken blueprint apply`
 # See https://github.com/Python-Cardano/pycardano/issues/439
 # TODO revisit once native apply_params support is released
 @dataclass

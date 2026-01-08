@@ -42,26 +42,7 @@
 #         # print('error:', str(e))
 #         return False
 # 
-# # TODO start factoring out some utils/lib?
-# def find_channel_state_utxo(
-#     ctx: OgmiosV6ChainContext,
-#     policy_id: ScriptHash,
-#     channel_bytes: bytes
-# ):
-#     script_addr = Address(payment_part=policy_id, network=Network.TESTNET)
-#     matches = list(
-#         u for u in ctx.utxos(script_addr)
-#         if utxo_contains_channel_state_nft(policy_id, channel_bytes, u)
-#     )
-#     if len(matches) == 0:
-#         print('no such state utxo')
-#         return None
-#     elif len(matches) > 1:
-#         raise Exception(f'found multiple state utxos: {matches}')
-#     else:
-#         return matches[0]
-# 
- 
+
 # def publish_cids(
 #     ctx: OgmiosV6ChainContext,
 #     sk: PaymentSigningKey,
@@ -117,42 +98,7 @@
 #     print(f'submitted publish tx with id={publish_tx_signed.id}')
 #     return publish_tx_signed.id
 # 
-# def close_channel(
-#     ctx: OgmiosV6ChainContext,
-#     sk: PaymentSigningKey,
-#     addr: Address,
-#     script: PlutusV3Script,
-#     mint_fn, # TODO type
-#     channel_bytes: bytes
-# ):
-#     print('\n### close_channel ###')
-# 
-#     action = Redeemer(data=PsClose())
-#     print(f'action={action}')
-# 
-#     assets = mint_fn(-1)
-#     print(f'assets={assets}')
-# 
-#     policy_id = plutus_script_hash(script)
-#     print(f'policy_id={policy_id}')
-# 
-#     state_utxo = find_channel_state_utxo(ctx, policy_id, channel_bytes)
-#     print(f'state_utxo={state_utxo}')
-# 
-#     burn_tx = (
-#         TransactionBuilder(ctx, mint=assets)
-#         .add_minting_script(script=script, redeemer=action)
-#         .add_input(state_utxo)
-#         .add_input_address(addr)
-#     )
-# 
-#     burn_tx_signed = burn_tx.build_and_sign([sk], change_address=addr)
-# 
-#     ctx.submit_tx(burn_tx_signed)
-# 
-#     print(f'submitted burn tx with id={burn_tx_signed.id}')
-#     return burn_tx_signed.id
-# 
+ 
 # def main(channel_name: str):
 # 
 #     print('### main ###')

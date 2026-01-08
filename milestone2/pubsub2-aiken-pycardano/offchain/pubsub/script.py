@@ -22,7 +22,7 @@ class PubsubScript:
 
     @property
     def policy_id(self):
-        return str(self.hash) # TODO is this right?
+        return self.hash
 
     def __repr__(self) -> str:
         # TODO include oneshot_utxo, address, json path

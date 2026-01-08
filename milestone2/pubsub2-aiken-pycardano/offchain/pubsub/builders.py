@@ -1,6 +1,6 @@
 # Pure functions that construct transactions but don't submit them.
 
-from pycardano import OgmiosV6ChainContext, PaymentSigningKey, Address, PlutusV3Script, TransactionBuilder, TransactionOutput, UTxO, ScriptHash
+from pycardano import *
 
 from .script import PubsubScript
 from .types import PubsubAction, PsOpen, PsClose
@@ -20,7 +20,7 @@ def channel_nft_minter(policy_id: ScriptHash):
         asset = Asset()
         asset[channel_nft] = n_to_mint
         assets = MultiAsset()
-        assets[policy_id] = asset
+        assets[policy_id] = asset # TODO str here is invalid?
         return assets
     return channel_nft_assets
 
@@ -57,3 +57,42 @@ def build_psopen_tx(
     )
 
     return mint_tx
+
+def find_channel_state_utxo(
+    ctx: OgmiosV6ChainContext,
+    policy_id: ScriptHash,
+):
+    script_addr = Address(payment_part=policy_id, network=Network.TESTNET)
+    matches = list(
+        u for u in ctx.utxos(script_addr)
+        if utxo_contains_channel_state_nft(policy_id, STT_NAME, u)
+    )
+    if len(matches) == 0:
+        print('no state utxo found')
+        return None
+    elif len(matches) > 1:
+        raise Exception(f'found multiple state utxos: {matches}')
+    else:
+        return matches[0]
+
+def build_psclose_tx(
+    ctx: OgmiosV6ChainContext,
+    addr: Address,
+    script: PubsubScript
+):
+
+    action = Redeemer(data=PsClose())
+
+    mint_fn = channel_nft_minter(script.policy_id)
+    assets = mint_fn(-1)
+
+    state_utxo = find_channel_state_utxo(ctx, script.policy_id)
+
+    burn_tx = (
+        TransactionBuilder(ctx, mint=assets)
+        .add_minting_script(script=script.bytes, redeemer=action)
+        .add_input(state_utxo)
+        .add_input_address(addr)
+    )
+
+    return burn_tx
