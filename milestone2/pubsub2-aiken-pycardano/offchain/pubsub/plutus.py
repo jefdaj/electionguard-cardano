@@ -41,9 +41,10 @@ class OutputReferenceHack(PlutusData):
     transaction_id: bytes
     index: int
 
+# TODO is this not working? that would explain the oneshot ref error
 def utxo_to_ref_hex(utxo):
     ref = OutputReferenceHack(
-        utxo.input.transaction_id.to_cbor(),
+        utxo.input.transaction_id.payload,
         utxo.input.index
     )
     return ref.to_cbor().hex()
@@ -59,7 +60,7 @@ def aiken_blueprint_apply_hex_params(plutus_json_path: str, hex_params: List[str
     **Example**::
 
         >>> desc = cbor2.dumps(b'my cool validator').hex()
-        >>> oref = OutputReferenceHack(utxo.input.transaction_id.to_cbor(), utxo.input.index)
+        >>> oref = OutputReferenceHack(utxo.input.transaction_id.payload, utxo.input.index)
         >>> blueprint = aiken_blueprint_apply_hex_params('./plutus.json', [desc, oref])
     """
     with NamedTemporaryFile(mode='w+', delete=False, suffix='.json') as temp_out:

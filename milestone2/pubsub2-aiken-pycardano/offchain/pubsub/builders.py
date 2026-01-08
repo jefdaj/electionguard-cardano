@@ -3,11 +3,11 @@
 from pycardano import *
 
 from .script import PubsubScript
-from .types import PubsubAction, PsOpen, PsClose
+from .types import PubsubAction, PsOpen, PsClose, PubsubConfig
 
 # Should match config.default.stt_name in aiken.toml
 # TODO is there a good way to keep them in sync?
-STT_NAME = b"pubsub2-channel-state-token"
+STT_NAME = b"pubsub2-channel-stt"
 
 # TODO get this from somewhere official?
 MIN_ADA = 2_000_000
@@ -23,12 +23,14 @@ def mint_channel_stt_assets(policy_id: ScriptHash, n_to_mint: int):
 
 def build_psopen_tx(
     ctx: OgmiosV6ChainContext,
-    addr: Address,
+    pub_addr: Address,
+    pub_vkh: VerificationKeyHash,
     script: PubsubScript,
     oneshot_utxo: UTxO,
 ):
-    action = Redeemer(data=PsOpen())
+    mint_redeemer = Redeemer(data=PsOpen())
     assets = mint_channel_stt_assets(script.policy_id, 1)
+    cfg = PubsubConfig(pub_vkh.payload) # TODO is there a cleaner way to get .payload?
     # Lock the STT at the script address
     # script_addr = Address(payment_part=plutus_script_hash(script), network=Network.TESTNET)
     stt_output = TransactionOutput(
@@ -38,15 +40,16 @@ def build_psopen_tx(
             assets   # the minted STT
         ),
         # optionally include datum / inline datum here
-        # datum=..., or datum_hash=...
+        datum=cfg
     )
     mint_tx = (
         TransactionBuilder(ctx, mint=assets)
-        .add_output(stt_output)
-        .add_minting_script(script=script.bytes, redeemer=action)
         .add_input(oneshot_utxo)
-        .add_input_address(addr)
+        .add_input_address(pub_addr)
+        .add_minting_script(script=script.mint_script, redeemer=mint_redeemer)
+        .add_output(stt_output)
     )
+    mint_tx.required_signers = [pub_vkh] # TODO is this needed?
     return mint_tx
 
 def utxo_contains_channel_stt(
@@ -79,16 +82,22 @@ def find_channel_stt_utxo(
 
 def build_psclose_tx(
     ctx: OgmiosV6ChainContext,
-    addr: Address,
+    pub_addr: Address,
+    pub_vkh: VerificationKeyHash,
     script: PubsubScript
 ):
-    action = Redeemer(data=PsClose())
+
+    # These must be separate because pycardano will tag them each with a purpose (mint or spend)
+    mint_redeemer  = Redeemer(data=PsClose())
+    spend_redeemer = Redeemer(data=PsClose())
+
     assets = mint_channel_stt_assets(script.policy_id, -1)
     state_utxo = find_channel_stt_utxo(ctx, script.policy_id)
     burn_tx = (
         TransactionBuilder(ctx, mint=assets)
-        .add_minting_script(script=script.bytes, redeemer=action)
-        .add_input(state_utxo)
-        .add_input_address(addr)
+        .add_minting_script(script=script.mint_script, redeemer=mint_redeemer)
+        .add_script_input(state_utxo, script=script.spend_script, redeemer=spend_redeemer)
+        .add_input_address(pub_addr)
     )
+    burn_tx.required_signers = [pub_vkh] # TODO is this needed?
     return burn_tx

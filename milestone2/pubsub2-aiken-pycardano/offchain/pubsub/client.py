@@ -3,9 +3,9 @@ import time
 from pathlib import Path
 from pycardano import UTxO, OgmiosV6ChainContext, SigningKey, Transaction
 
-from .builders import build_psopen_tx
+from .builders import build_psopen_tx, build_psclose_tx
 from .types import PubsubAction, PsOpen, PsClose
-from .keys import addr_for_signing_key
+from .keys import addr_for_signing_key, vkh_for_signing_key
 from .script import PubsubScript
 from .plutus import pick_oneshot_utxo
 
@@ -19,6 +19,7 @@ class PubsubClient:
     ):
         self.chain_context = chain_context
         self.publisher_signing_key = publisher_signing_key
+        self.publisher_verification_key_hash = vkh_for_signing_key(self.publisher_signing_key)
         self.publisher_address = addr_for_signing_key(self.publisher_signing_key)
         self.oneshot_utxo = pick_oneshot_utxo(chain_context, self.publisher_address)
         self.pubsub_script = PubsubScript(self.oneshot_utxo)
@@ -56,18 +57,18 @@ class PubsubClient:
         tx = build_psopen_tx(
             self.chain_context,
             self.publisher_address,
+            self.publisher_verification_key_hash,
             self.pubsub_script,
             self.oneshot_utxo,
         )
-        self.sign_and_submit(tx)
-        # TODO return anything?
+        return self.sign_and_submit(tx)
 
     def close_channel(self):
         # TODO prevent if already closed?
-        tx = build_psclose(
+        tx = build_psclose_tx(
             self.chain_context,
             self.publisher_address,
+            self.publisher_verification_key_hash,
             self.pubsub_script,
         )
-        self.sign_and_submit(tx)
-        # TODO return anything?
+        return self.sign_and_submit(tx)

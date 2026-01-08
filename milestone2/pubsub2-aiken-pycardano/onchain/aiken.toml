@@ -22,4 +22,4 @@ source = "github"
 
 [config.default.stt_name]
 encoding = "utf-8"
-bytes = "pubsub2-channel-state-token"
+bytes = "pubsub2-channel-stt"
