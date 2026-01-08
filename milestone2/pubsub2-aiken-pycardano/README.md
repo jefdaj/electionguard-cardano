@@ -1,5 +1,35 @@
 # pubsub2: post CIDs to preview testnet using ipfs, aiken, pycardano
 
+Tests
+-----
+
+The `testnet` tests will actually post Preview network transactions.
+For example this one...
+
+```
+$ ./test.sh 
++ EXTRA_ARGS=
++ pytest
++ tee test.log
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-8.3.5, pluggy-1.5.0
+rootdir: /home/jefdaj/myrepos/electionguard-cardano/milestone2/pubsub2-aiken-pycardano/offchain
+configfile: pyproject.toml
+plugins: typeguard-4.4.2
+collected 1 item
+
+tests/testnet/test_publish.py .                                          [100%]
+
+============================== 1 passed in 43.64s ==============================
+```
+
+... [minted](https://preview.cardanoscan.io/transaction/7ed43c6d4122f20946fc9a322e42d1aeb390806fc7e8f7efb379384747c0fbe1?tab=tokenmint)
+a state thread token and then
+[burned it](https://preview.cardanoscan.io/transaction/a8ca16af59691e2c81a5755afd04f0c5ff98d6edb3a9cfb5837b93dfead00af4?tab=tokenmint).
+
+
+Format
+------
 
 Instead of `new_cids.txt`, this version will post CIDs on the preview testnet:
 
