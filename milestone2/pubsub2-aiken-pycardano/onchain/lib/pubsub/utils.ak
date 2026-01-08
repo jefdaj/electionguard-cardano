@@ -3,7 +3,7 @@ use aiken/collection/list
 use aiken/crypto.{VerificationKeyHash}
 use cardano/address.{Script, Address}
 use cardano/assets.{PolicyId}
-use cardano/transaction.{Transaction}
+use cardano/transaction.{Transaction, Output}
 
 // Whether a transaction was signed by the required key.
 pub fn tx_signed_by(tx: Transaction, signer: VerificationKeyHash) -> Bool {
@@ -42,4 +42,22 @@ pub fn scriptAddress(hash: ByteArray) -> Address {
     stake_credential: None,
   }
   addr
+}
+
+pub fn tx_sends_token_to_addr(
+  tx: Transaction,
+  policy_id: PolicyId,
+  token_name: ByteArray,
+  addr: Address,
+  min_amount: Int // TODO require exact amount?
+) -> Bool {
+  list.any(
+    tx.outputs,
+    fn(output: Output) {
+      and {
+        output.address == addr,
+        assets.quantity_of(output.value, policy_id, token_name) >= min_amount,
+      }
+    },
+  )
 }

@@ -1,4 +1,5 @@
 use cardano/transaction.{OutputReference, Transaction}
+use cardano/address.{Script}
 use cardano/assets.{PolicyId}
 use config
 use pubsub/types.{
@@ -6,7 +7,7 @@ use pubsub/types.{
 }
 use pubsub/utils as utils
 
-validator pubsub(oneshot_oref: OutputReference) {
+validator pubsub(oneshot_ref: OutputReference) {
 
   mint(
     redeemer: PubsubAction,
@@ -15,7 +16,7 @@ validator pubsub(oneshot_oref: OutputReference) {
   ) {
     when redeemer is {
       PsOpen  -> {
-        expect Some(_oneshot_input) = transaction.find_input(self.inputs, oneshot_oref)
+        expect Some(_oneshot_input) = transaction.find_input(self.inputs, oneshot_ref)
         utils.tx_mints(self, policy_id, config.stt_name,  1)
       }
       PsClose -> utils.tx_mints(self, policy_id, config.stt_name, -1)
@@ -25,13 +26,23 @@ validator pubsub(oneshot_oref: OutputReference) {
   spend(
     datum: Option<PubsubConfig>,
     redeemer: PubsubAction,
-    _own_ref: OutputReference,
+    own_ref: OutputReference,
     self: Transaction,
   ) {
     expect Some(PubsubConfig { publisher }) = datum
+    expect Some(own_input) = transaction.find_input(self.inputs, own_ref)
+    expect Script(policy_id) = own_input.output.address.payment_credential
+    let script_addr = own_input.output.address
     when redeemer is {
-      PsOpen  -> utils.tx_signed_by(self, publisher)
-      PsClose -> utils.tx_signed_by(self, publisher)
+      PsOpen -> and {
+        utils.tx_signed_by(self, publisher),
+        utils.tx_mints(self, policy_id, config.stt_name, 1),
+        utils.tx_sends_token_to_addr(self, policy_id, config.stt_name, script_addr, 1)
+      }
+      PsClose -> and {
+        utils.tx_signed_by(self, publisher),
+        utils.tx_mints(self, policy_id, config.stt_name, -1)
+      }
     }
   }
 
@@ -51,16 +62,16 @@ validator pubsub(oneshot_oref: OutputReference) {
 // 
 // // TODO publisher isn't necessarily owner of ADA when doing multi-tiered channels
 // 
-// validator pubsub(channel_name: ByteArray, oneshot_oref: OutputReference) {
+// validator pubsub(channel_name: ByteArray, oneshot_ref: OutputReference) {
 // 
 //   mint(redeemer: PubsubAction, policy_id: PolicyId, self: Transaction) {
 //     when redeemer is {
 // 
 //       // Only the publisher can mint the channel_nft,
-//       // and only during the initial deployment (enforced via oneshot_oref).
+//       // and only during the initial deployment (enforced via oneshot_ref).
 //       // TODO let a separate admin own and mint it? or similar mechanism
 //       PsOpen -> {
-//         // expect Some(_oneshot_input) = transaction.find_input(self.inputs, oneshot_oref)
+//         // expect Some(_oneshot_input) = transaction.find_input(self.inputs, oneshot_ref)
 //         u.tx_mints(self, policy_id, channel_name, 1)
 //       }
 // 
@@ -86,12 +97,12 @@ validator pubsub(oneshot_oref: OutputReference) {
 //         // Publisher mints channel_nft and sends it to the script.
 // 	// TODO along with some ADA?
 // 
-//         // Must use the oneshot_oref as an input.
+//         // Must use the oneshot_ref as an input.
 //         // expect True = list.any(
 //         //   self.inputs,
-//         //   fn(i) { i.output_reference == oneshot_oref }
+//         //   fn(i) { i.output_reference == oneshot_ref }
 //         // )
-// 	expect Some(_oref) = u.find_tx_input(self, oneshot_oref)
+// 	expect Some(_oref) = u.find_tx_input(self, oneshot_ref)
 // 
 //         // expect Some(own_input) = transaction.find_input(self.inputs, own_ref)
 //         expect Some(own_input) = u.find_tx_input(self, own_ref)
