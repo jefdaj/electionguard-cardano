@@ -3,15 +3,21 @@ import pytest
 from pathlib import Path
 from pycardano import OgmiosV6ChainContext, Network, SigningKey
 
-from pubsub.utils.keys import load_test_wallet_signing_key, PubsubClient
+from pubsub import load_test_wallet_signing_key, PubsubClient
 
 @pytest.fixture(scope="session")
 def ctx():
     """Shared Ogmios connection for all testnet tests."""
-    return OgmiosChainContext(
+    ctx = OgmiosChainContext(
         ws_url="ws://localhost:1337", # TODO http too, or instead?
         network=Network.TESTNET
     )
+    try:
+        # TODO is there a cleaner way?
+        assert ctx.last_block_slot > 101181854
+        return ctx
+    except:
+        raise Exception('Ogmios not up?')
 
 @pytest.fixture(scope="session")
 def sk():

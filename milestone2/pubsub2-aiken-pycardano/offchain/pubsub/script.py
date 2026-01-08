@@ -4,7 +4,9 @@ from os import makedirs
 from pathlib import Path
 from pycardano import PlutusV3Script, ScriptHash, UTxO, Address, Network
 
-from ..utils import utxo_to_ref_hex, aiken_blueprint_apply_hex_params
+from .utils import utxo_to_ref_hex, aiken_blueprint_apply_hex_params
+
+# TODO hold up this doesn't go in types
 
 class PubsubScript:
 

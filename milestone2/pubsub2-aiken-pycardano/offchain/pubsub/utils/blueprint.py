@@ -6,15 +6,6 @@ from pycardano import PlutusData
 from typing import List
 from tempfile import NamedTemporaryFile
 
-# This is a temporary hack for use with `aiken blueprint apply`
-# See https://github.com/Python-Cardano/pycardano/issues/439
-# TODO revisit once native apply_params support is released
-@dataclass
-class OutputReferenceHack(PlutusData):
-    CONSTR_ID = 0
-    transaction_id: bytes
-    index: int
-
 # TODO move to different util module?
 def pick_oneshot_utxo(context, addr):
     # No particular logic to max here; any UTXO should work for the initial tests
@@ -23,6 +14,15 @@ def pick_oneshot_utxo(context, addr):
         raise Exception(f'addr {addr} has no UTXOs')
     utxo = max(utxos, key=lambda utxo: utxo.output.amount.coin)
     return utxo
+
+# This is a temporary hack for use with `aiken blueprint apply`
+# See https://github.com/Python-Cardano/pycardano/issues/439
+# TODO revisit once native apply_params support is released
+@dataclass
+class OutputReferenceHack(PlutusData):
+    CONSTR_ID = 0
+    transaction_id: bytes
+    index: int
 
 def utxo_to_ref_hex(utxo):
     ref = OutputReferenceHack(

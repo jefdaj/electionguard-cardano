@@ -31,67 +31,6 @@
 #         validator = json.load(f)
 #     return validator_info(validator)
 
-# # TODO wait could the problem be that the NFT is being given to my wallet rather than the script?
-# def open_channel(
-#     ctx: OgmiosV6ChainContext,
-#     sk: PaymentSigningKey,
-#     addr: Address,
-#     script: PlutusV3Script,
-#     mint_fn, # TODO type
-#     oneshot_utxo: UTxO,
-# ):
-#     print('\n### open_channel ###')
-# 
-#     action = Redeemer(data=PsOpen())
-#     print(f'action={action}')
-# 
-#     assets = mint_fn(1)
-#     print(f'assets={assets}')
-# 
-#     # Lock the NFT at the script address
-#     script_addr = Address(payment_part=plutus_script_hash(script), network=Network.TESTNET)
-#     lock_output = TransactionOutput(
-#         address=script_addr,
-#         amount=Value(
-#             2_000_000,   # min ADA with your NFT; adjust as needed
-#             assets       # the minted NFT
-#         ),
-#         # optionally include datum / inline datum here
-#         # datum=..., or datum_hash=...
-#     )
-# 
-#     # TODO is the problem that you're sending the NFT to the wrong place here?
-#     mint_tx = (
-#         TransactionBuilder(ctx, mint=assets)
-#         .add_output(lock_output)
-#         .add_minting_script(script=script, redeemer=action)
-#         .add_input(oneshot_utxo)
-#         .add_input_address(addr)
-#     )
-# 
-#     mint_tx_signed = mint_tx.build_and_sign([sk], change_address=addr)
-# 
-#     ctx.submit_tx(mint_tx_signed)
-# 
-#     print(f'submitted mint tx with id={mint_tx_signed.id}')
-#     return mint_tx_signed.id
-# 
-# # usage:
-# #   mint_fn = channel_nft_minter(script, channel_bytes)
-# #   mint_assets = mint_fn(1)
-# #   burn_assets = mint_fn(-1)
-# def channel_nft_minter(script: PlutusV3Script, channel_bytes: bytes):
-#     def channel_nft_assets(n_to_mint: int):
-#         # the quicker from_primitive way has some normalize error here
-#         channel_nft = AssetName(channel_bytes)
-#         asset = Asset()
-#         asset[channel_nft] = n_to_mint
-#         assets = MultiAsset()
-#         policy_id = script_hash(script)
-#         assets[policy_id] = asset
-#         return assets
-#     return channel_nft_assets
-# 
 # def utxo_contains_channel_state_nft(
 #     policy_id: str,
 #     channel_bytes: bytes,
@@ -122,25 +61,7 @@
 #     else:
 #         return matches[0]
 # 
-# # TODO get this working for the case where the utxo is confirmed + consumed between polls
-# def wait_for_tx_confirmation(ctx, tx_id: TransactionId, max_seconds: int = 300, interval_seconds: int = 5):
-#     tx_id = str(tx_id) # TODO is this the right way?
-#     print(f'tx {tx_id} waiting up to {max_seconds} seconds for confirmation', end='', flush=True)
-#     waited_seconds = 0
-#     while True:
-#         time.sleep(interval_seconds)
-#         waited_seconds += interval_seconds
-#         print('.', end='', flush=True)
-#         utxo = ctx.utxo_by_tx_id(tx_id, 0)
-#         if utxo is None:
-#             if waited_seconds >= max_seconds:
-#                 print(' FAIL', flush=True)
-#                 raise Exception(f'tx {tx_id} still not confirmed after {waited_seconds} seconds')
-#             continue
-#         else:
-#             print(f' confirmed after {waited_seconds} seconds', flush=True)
-#             return
-# 
+ 
 # def publish_cids(
 #     ctx: OgmiosV6ChainContext,
 #     sk: PaymentSigningKey,
