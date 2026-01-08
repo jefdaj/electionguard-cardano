@@ -7,6 +7,11 @@ KEYS_DIR = Path(__file__).parent / '../../keys'
 SIGNING_KEY = join(KEYS_DIR, 'pubsub2.sk')
 PUBLIC_ADDR = join(KEYS_DIR, 'pubsub2.addr')
 
+def addr_for_signing_key(sk: PaymentSigningKey) -> Address:
+    verification_key = PaymentVerificationKey.for_signing_key(signing_key)
+    address = Address(payment_part=verification_key.hash(), network=Network.TESTNET)
+    return address
+
 def generate_keys():
     if exists(SIGNING_KEY):
         assert exists(PUBLIC_ADDR)
@@ -14,8 +19,7 @@ def generate_keys():
     makedirs(KEYS_DIR, exist_ok=True)
     signing_key = PaymentSigningKey.generate()
     signing_key.save(SIGNING_KEY)
-    verification_key = PaymentVerificationKey.from_signing_key(signing_key)
-    address = Address(payment_part=verification_key.hash(), network=Network.TESTNET)
+    address = addr_for_signing_key(signing_key)
     with open(PUBLIC_ADDR, "w") as f:
         f.write(str(address))
     msg = f'''

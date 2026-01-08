@@ -1,2 +1,10 @@
 # Facade that combines everything
-# TODO should this be two separate things, publish and subscribe?
+
+# usage:
+# client = PubSubClient(
+#   chain_context=ctx,
+#   raw_plutus_json_path="../onchain/plutus.json",
+#   # ipfs_client=IPFSClient()
+# )
+
+class PubsubClient:
