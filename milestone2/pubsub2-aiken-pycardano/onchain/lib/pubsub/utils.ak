@@ -3,7 +3,7 @@ use aiken/collection/list
 use aiken/crypto.{VerificationKeyHash}
 use cardano/address.{Script, Address}
 use cardano/assets.{PolicyId}
-use cardano/transaction.{Transaction, Output}
+use cardano/transaction.{Transaction, Input, Output, OutputReference}
 
 // Whether a transaction was signed by the required key.
 pub fn tx_signed_by(tx: Transaction, signer: VerificationKeyHash) -> Bool {
@@ -12,10 +12,10 @@ pub fn tx_signed_by(tx: Transaction, signer: VerificationKeyHash) -> Bool {
 
 // Whether a transaction consumes (includes as input) the required oref.
 // TODO is this redundant with transaction.find_input?
-// pub fn find_tx_input(tx: Transaction, oref: OutputReference) -> Option<Input> {
-//   let Transaction { inputs, .. } = tx
-//   list.find(inputs, fn(i) { i.output_reference == oref })
-// }
+pub fn find_tx_input(tx: Transaction, oref: OutputReference) -> Option<Input> {
+  let Transaction { inputs, .. } = tx
+  list.find(inputs, fn(i) { i.output_reference == oref })
+}
 
 // Whether a transaction mints the required amount of a token.
 pub fn tx_mints(

@@ -1,3 +1,4 @@
+// use aiken/collection/list
 use cardano/transaction.{OutputReference, Transaction, find_input}
 use cardano/address.{Script}
 use cardano/assets.{PolicyId}
@@ -16,8 +17,17 @@ validator pubsub(oneshot_ref: OutputReference) {
   ) {
     when redeemer is {
       PsOpen  -> {
-        // TODO anything else needed to trace here, or does expect do it already?
+
+        // appears to be ok; error is in the python code?
         expect Some(_oneshot_input) = self.inputs |> find_input(oneshot_ref)
+
+	// also compiles, also fails at runtime the same way:
+        // expect Some(_oneshot_input) = find_tx_input(self, oneshot_ref)
+
+	// also compiles, also fails at runtime the same way:
+        // let Transaction{ inputs, .. } = self
+	// let oneshot = list.any(inputs, fn(i) { i.output_reference == oneshot_ref }) ?
+
         let stt_minted = tx_mints(self, policy_id, config.stt_name, 1) ?
         stt_minted
       }
@@ -47,7 +57,7 @@ validator pubsub(oneshot_ref: OutputReference) {
         let stt_to_script = tx_sends_token_to_addr(self, policy_id, config.stt_name, script_addr, 1) ?
         and {
           pub_signed,
-          stt_minted,
+          stt_minted, // TODO could this be removed, since mint() checks it too?
           stt_to_script
         }
       }

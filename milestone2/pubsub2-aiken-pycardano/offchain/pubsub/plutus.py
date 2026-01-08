@@ -26,6 +26,7 @@ else:
 def pick_oneshot_utxo(context, addr):
     # No particular logic to max here; any UTXO should work for the initial tests
     utxos = context.utxos(addr)
+    print(f'pick_oneshot_utxo addr:{addr} utxos:{utxos}')
     if not utxos:
         raise Exception(f'addr {addr} has no UTXOs')
     utxo = max(utxos, key=lambda utxo: utxo.output.amount.coin)

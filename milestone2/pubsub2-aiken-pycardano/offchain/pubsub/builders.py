@@ -8,6 +8,9 @@ from .types import PubsubAction, PsOpen, PsClose
 # Should match config.default.stt_name in aiken.toml
 # TODO is there a good way to keep them in sync?
 STT_NAME = b"pubsub2-channel-state-token"
+
+# TODO get this from somewhere official?
+MIN_ADA = 2_000_000
  
 def mint_channel_stt_assets(policy_id: ScriptHash, n_to_mint: int):
     # the quicker from_primitive way has some normalize error here
@@ -31,8 +34,8 @@ def build_psopen_tx(
     stt_output = TransactionOutput(
         address=script.address,
         amount=Value(
-            2_000_000, # min ADA; adjust as needed
-            assets     # the minted STT
+            MIN_ADA, # TODO add more for future txs?
+            assets   # the minted STT
         ),
         # optionally include datum / inline datum here
         # datum=..., or datum_hash=...
