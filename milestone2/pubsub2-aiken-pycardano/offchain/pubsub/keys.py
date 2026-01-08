@@ -1,11 +1,9 @@
-# TODO rename utils.keys -> keys?
-
 from os import makedirs
 from os.path import basename, exists, join, realpath
 from pathlib import Path
 from pycardano import Address, Network, SigningKey, PaymentSigningKey, PaymentVerificationKey
 
-KEYS_DIR = Path(__file__).parent / '../../keys'
+KEYS_DIR = Path(__file__).parent / '../keys'
 SIGNING_KEY = join(KEYS_DIR, 'pubsub2.sk')
 PUBLIC_ADDR = join(KEYS_DIR, 'pubsub2.addr')
 

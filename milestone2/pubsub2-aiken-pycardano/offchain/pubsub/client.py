@@ -5,15 +5,15 @@ from pycardano import UTxO, OgmiosV6ChainContext, SigningKey, Transaction
 
 from .builders import build_psopen_tx
 from .types import PubsubAction, PsOpen, PsClose
-from .utils import addr_for_signing_key, pick_oneshot_utxo
+from .keys import addr_for_signing_key
 from .script import PubsubScript
+from .plutus import pick_oneshot_utxo
 
 class PubsubClient:
 
     def __init__(
         self,
         chain_context: OgmiosV6ChainContext,
-        raw_plutus_json_path: Path, # TODO where to load this from?
         publisher_signing_key: SigningKey,
         # TODO ipfs_client
     ):
@@ -21,7 +21,7 @@ class PubsubClient:
         self.publisher_signing_key = publisher_signing_key
         self.publisher_address = addr_for_signing_key(self.publisher_signing_key)
         self.oneshot_utxo = pick_oneshot_utxo(chain_context, self.publisher_address)
-        self.pubsub_script = PubsubScript(raw_plutus_json_path, self.oneshot_utxo)
+        self.pubsub_script = PubsubScript(self.oneshot_utxo)
 
     def sign_and_submit(self, tx: Transaction):
         tx_signed = tx.build_and_sign(

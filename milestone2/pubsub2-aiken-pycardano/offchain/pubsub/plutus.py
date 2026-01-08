@@ -1,12 +1,26 @@
-# TODO rename utils.blueprint -> plutus? could put all plutus + aiken related constants here too?
-
 import json
 import subprocess
+import sys
 
 from dataclasses import dataclass
 from pycardano import PlutusData
 from typing import List
 from tempfile import NamedTemporaryFile
+from pathlib import Path
+from os.path import realpath
+
+PLUTUS_JSON_PATH_PROD   = realpath(Path(__file__).parent / '../../onchain/pubsub2-plutus.json')
+PLUTUS_JSON_PATH_TRACED = PLUTUS_JSON_PATH_PROD.replace('.json', '-traced.json')
+
+# TODO is this reliable?
+IS_TEST_ENV = "pytest" in sys.modules
+if IS_TEST_ENV:
+    PLUTUS_JSON_PATH = PLUTUS_JSON_PATH_TRACED
+else:
+    PLUTUS_JSON_PATH = PLUTUS_JSON_PATH_PROD
+
+# print(f'is test env? {IS_TEST_ENV}')
+# print(f'PLUTUS_JSON_PATH: {PLUTUS_JSON_PATH}')
 
 # TODO move to different util module?
 def pick_oneshot_utxo(context, addr):

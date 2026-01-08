@@ -31,10 +31,8 @@ def sk():
 @pytest.fixture(scope="function")
 def ps(ctx: OgmiosV6ChainContext, sk: SigningKey):
     """Load a fresh PubsubClient"""
-    path = realpath(Path(__file__).parent / "../../../onchain/plutus.json") # TODO export as a constant, but where?
     return PubsubClient(
         chain_context=ctx,
-        raw_plutus_json_path=path,
         publisher_signing_key=sk
         # ipfs_client=IPFSClient()
     )

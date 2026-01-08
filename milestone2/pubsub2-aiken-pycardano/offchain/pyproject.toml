@@ -30,3 +30,6 @@ markers = [
   "local: marks tests as local (not requiring testnet) tests",
   "testnet: marks tests as testnet tests",
 ]
+log_cli = true
+log_cli_level = "INFO"
+log_level = "INFO"

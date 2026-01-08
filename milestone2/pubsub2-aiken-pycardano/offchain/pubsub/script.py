@@ -4,14 +4,11 @@ from os import makedirs
 from pathlib import Path
 from pycardano import PlutusV3Script, ScriptHash, UTxO, Address, Network
 
-from .utils import utxo_to_ref_hex, aiken_blueprint_apply_hex_params
-
-# TODO hold up this doesn't go in types
+from .plutus import PLUTUS_JSON_PATH, utxo_to_ref_hex, aiken_blueprint_apply_hex_params
 
 class PubsubScript:
 
-    def __init__(self, raw_plutus_json_path: str, oneshot_utxo: UTxO):
-        self._raw_plutus_json_path = Path(raw_plutus_json_path)
+    def __init__(self, oneshot_utxo: UTxO):
         self.oneshot_utxo = oneshot_utxo
         self.oneshot_hex = utxo_to_ref_hex(self.oneshot_utxo)
         self._json_dict = self.apply_params()
@@ -30,12 +27,10 @@ class PubsubScript:
 
     def apply_params(self) -> dict:
         hex_params = [self.oneshot_hex]
-        return aiken_blueprint_apply_hex_params(self._raw_plutus_json_path, hex_params)
+        return aiken_blueprint_apply_hex_params(PLUTUS_JSON_PATH, hex_params)
 
     def default_json_path(self) -> Path:
-        p = self._raw_plutus_json_path
-        json_path = p.parent / ('pubsub2-' + self.oneshot_hex + '-plutus.json')
-        return json_path
+        return PLUTUS_JSON_PATH.replace('.json', '-' + self.oneshot_hex + '.json')
 
     def save_json(self, plutus_json_path: Path = None):
         if plutus_json_path is None:
