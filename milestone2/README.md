@@ -1,35 +1,18 @@
 milestone 2
 ===========
 
-This has been lots of experimenting with various dev tools so far,
-and one working demo:
+Here are some works in progress using dev tools I've settled on:
 
-* [run elections + tests via mockchain + local IPFS](./mockchain-local-ipfs)
+* [Cardano node + Ogmios](./cardano-node-ogmios)
+* [pubsub with IPFS + simple mockchain](./pubsub1-ipfs)
+* [elections with IPFS + multi-party mockchain](./mockchain-local-ipfs)
+* [pubsub with IPFS + Aiken + PyCardano](./pubsub2-aiken-pycardano)
 
-Investigate dev stacks
-----------------------
+And here are the other tools I've looked into but am not using yet:
 
-Work in progress:
-
-- [x] Aiken + Nix
-- [ ] Aiken + Nix + MeshJS
-- [ ] Aiken + Nix + PyCardano
-- [x] Arion
-- [x] Cardano Node + Docker
-- [x] Cardano Node + Docker + Ogmios
-- [x] Kupo + Docker
-- [ ] IPFS + Docker
-- [x] IPFS cluster + Docker
-- [ ] Lucid + Kupmios
-- [ ] MeshJS + Yaci
-- [ ] Typescript + Nix
+- [x] [Kupo + Docker](./kupo)
+- [~] Aiken + Nix + MeshJS
+- [~] Lucid + Kupmios
+- [~] MeshJS + Yaci
+- [~] Typescript + Nix
 - [ ] [ThreadDB](https://docs.textile.io/threads/)
-
-pubsub
-------
-
-I've been working on a small "pubsub" project to test the components I
-think I want to use in the main ElectionGuard project:
-
-1. [file syncing via IPFS](./pubsub1-ipfs)
-2. [Aiken validator(s) + PyCardano](./pubsub2-aiken-pycardano)

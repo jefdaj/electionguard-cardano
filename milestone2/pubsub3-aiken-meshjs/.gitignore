@@ -1,7 +1,0 @@
-# Cardano preview wallet keys with tADA from the faucet
-onchain/keys/
-
-node_modules/
-
-# TODO version this?
-dist/

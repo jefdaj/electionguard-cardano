@@ -11,7 +11,7 @@ ElectionGuard + Cardano
 
 Work in progress on [the Catalyst fund13 project](https://milestones.projectcatalyst.io/projects/1300090).
 
-Current status as of 2026-01-05:
+Current status as of 2026-01-09:
 
 - All Milestones (1, 2, and 3) approved
 
@@ -29,16 +29,22 @@ Current status as of 2026-01-05:
     - Set up a [Nix environment](./milestone1/nix-environment.md)
 
 - [Milestone 2](./milestone2/) (Cardano stuff) in progress:
+
   * [An IPFS-ified version of the 1.1 tests codebase](./milestone2/mockchain-local-ipfs) works
-  * Investigating various dev stack options:
+
+  * Working on a small pubsub dApp to test my ideas + dev stack:
+    - [mockchain version with IPFS only](./milestone2/pubsub1-ipfs) works
+    - [Aiken + PyCardano version](./milestone2/pubsub2-aiken-pycardano) in progress
+
+  * Investigating dev tools:
     - [Cardano node + Ogmios](./milestone2/cardano-node-ogmios/) works
-    - [Kupo](./milestone2/kupo/) works
     - [ipfs-cluster](./milestone2/ipfs-cluster/) works
-    - [Aiken](./milestone2/aiken/) works
-    - [PyCardano](./milestone2/aiken-pycardano) looks promising
+    - [Kupo](./milestone2/kupo/) works
+
   * Working on the [smart contract architecture](./milestone2/smart-contract-architecture.md)
-  * Working on a small [pubsub dApp](./milestone2/pubsub1-ipfs) to test my ideas + dev stack
 
 - [Milestone 3](./milestone3/) (ElectionGuard + Cardano integration):
+
   * Starting to plan demos
+
   * Started experimenting with [printing and scanning QR codes](./milestone3/qrcodes)
