@@ -11,8 +11,8 @@ Here are some works in progress using dev tools I've settled on:
 And here are the other tools I've looked into but am not using yet:
 
 - [x] [Kupo + Docker](./kupo)
-- [~] Aiken + Nix + MeshJS
-- [~] Lucid + Kupmios
-- [~] MeshJS + Yaci
-- [~] Typescript + Nix
+- [x] ~~Aiken + Nix + MeshJS~~
+- [x] ~~Lucid + Kupmios~~
+- [x] ~~MeshJS + Yaci~~
+- [x] ~~Typescript + Nix~~
 - [ ] [ThreadDB](https://docs.textile.io/threads/)
