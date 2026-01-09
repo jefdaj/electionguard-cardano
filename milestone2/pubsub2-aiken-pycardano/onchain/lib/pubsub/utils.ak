@@ -36,6 +36,16 @@ pub fn tx_mints(
   }
 }
 
+// TODO name something better
+pub fn tx_does_not_mint(
+  tx: Transaction,
+  policy_id: PolicyId
+) -> Bool {
+  let Transaction { mint, .. } = tx
+  let minted = mint |> assets.tokens(policy_id) |> dict.to_pairs()
+  minted == []
+}
+
 // From Rhys's Aiken Language Test Lib 3/5 video
 pub fn scriptAddress(hash: ByteArray) -> Address {
   let addr = Address {
@@ -52,9 +62,9 @@ pub fn tx_sends_token_to_addr(
   addr: Address,
   min_quantity: Int // TODO require exact quantity?
 ) -> Option<Output> {
-  tx.outputs 
+  tx.outputs
   |> list.find(fn(output) {
-       output.address == addr && 
+       output.address == addr &&
        assets.quantity_of(output.value, policy_id, token_name) >= min_quantity
      })
 }

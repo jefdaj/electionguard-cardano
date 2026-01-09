@@ -4,7 +4,7 @@ from pathlib import Path
 from pycardano import OgmiosV6ChainContext, Network, SigningKey
 from os.path import realpath
 
-from pubsub import load_test_wallet_signing_key, PubsubClient
+from pubsub import load_test_wallet_signing_key, PubsubClient, CIDv1
 
 @pytest.fixture(scope="session")
 def ctx():
@@ -36,6 +36,18 @@ def ps(ctx: OgmiosV6ChainContext, sk: SigningKey):
         publisher_signing_key=sk
         # ipfs_client=IPFSClient()
     )
+
+@pytest.fixture(scope="function")
+def cids():
+    """A few example CIDs"""
+    return [
+      CIDv1.from_string(s)
+      for s in [
+        'bafkreib37tosipox6e34euegwwvfdggokcsjklzhpkhx5sbmbbdyece6qy',
+        'bafkreieykytgkz3wk5pwe7xlh7rg3zpifje5aopy535r2ptu5p25sr43fm',
+        'bafkreihsol6yrmc7lyydvv6ctmvgz54yznsoo5qxybab5p4nzrtyahtsi4'
+      ]
+    ]
 
 # @pytest.fixture
 # def funded_address(chain_context, publisher_key):

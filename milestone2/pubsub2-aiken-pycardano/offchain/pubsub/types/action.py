@@ -1,6 +1,7 @@
 from .cid import CIDv1
 from dataclasses import dataclass
 from pycardano import PlutusData
+from typing import List
 
 @dataclass
 class PubsubAction(PlutusData):
@@ -14,15 +15,14 @@ class PsOpen(PubsubAction):
     """
     CONSTR_ID = 0
 
-# TODO put back after building out the test framework with just open + close
-# @dataclass
-# class PsPublish(PubsubAction):
-#     """
-#     Examples:
-#         >>> publish_action = PubsubAction.ps_publish([b'cid1', b'cid2'])
-#     """
-#     CONSTR_ID = 1
-#     cids: List[CIDv1]
+@dataclass
+class PsPublish(PubsubAction):
+    """
+    Examples:
+        >>> TODO fill in
+    """
+    CONSTR_ID = 1
+    cids: List[CIDv1]
 
 # TODO remove?
 # @dataclass
@@ -35,4 +35,4 @@ class PsClose(PubsubAction):
     Examples:
         >>> close_action = PsClose()
     """
-    CONSTR_ID = 1 # TODO will be 2 once PsPublish is added
+    CONSTR_ID = 2

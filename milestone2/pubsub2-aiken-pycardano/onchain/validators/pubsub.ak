@@ -1,3 +1,4 @@
+// use aiken/collection/list
 use cardano/transaction.{OutputReference, Transaction, find_input}
 use cardano/address.{Script}
 use cardano/assets.{PolicyId}
@@ -6,7 +7,7 @@ use pubsub/types.{
   PubsubConfig, PubsubAction, PsOpen, PsPublish, PsClose,
   validate_cids
 }
-use pubsub/utils.{tx_mints, tx_signed_by, tx_sends_token_to_addr, publisher_unchanged}
+use pubsub/utils.{tx_mints, tx_does_not_mint, tx_signed_by, tx_sends_token_to_addr, publisher_unchanged}
 
 validator pubsub(oneshot_ref: OutputReference) {
 
@@ -21,7 +22,10 @@ validator pubsub(oneshot_ref: OutputReference) {
         let stt_minted = tx_mints(self, policy_id, config.stt_name, 1) ?
         stt_minted
       }
-      PsPublish { .. } -> fail
+      PsPublish { .. } -> {
+        let no_mints = tx_does_not_mint(self, policy_id) ?
+        no_mints
+      }
       PsClose -> {
         let stt_burned = tx_mints(self, policy_id, config.stt_name, -1) ?
         stt_burned
@@ -53,14 +57,52 @@ validator pubsub(oneshot_ref: OutputReference) {
       }
 
       PsPublish { cids } -> {
+
         let pub_signed = tx_signed_by(self, publisher) ?
         expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, config.stt_name, script_addr, 1)
         let pub_unchanged = publisher_unchanged(publisher, stt_output) ?
-	let cids_valid = validate_cids(cids) ?
+        let cids_valid = validate_cids(cids) ?
+
+        // trace @"=== START PsPublish ==="
+        // trace @"publisher from datum": publisher
+        // trace @"script_addr": script_addr
+        // trace @"policy_id": policy_id
+        // trace @"cids count": list.length(cids)
+        
+        // Check signature first (most common issue)
+        // trace @"Checking signature..."
+        // let pub_signed_result = tx_signed_by(self, publisher)
+        // trace @"pub_signed_result": pub_signed_result
+        // let pub_signed = pub_signed_result ?
+        // trace @"Signature OK"
+        
+        // Check STT output
+        // trace @"Checking STT output..."
+        // let stt_output_result = tx_sends_token_to_addr(self, policy_id, config.stt_name, script_addr, 1)
+        // trace @"stt_output_result": stt_output_result
+        // expect Some(stt_output) = stt_output_result
+        // trace @"STT output found"
+        
+        // Check publisher unchanged
+        // trace @"Checking publisher unchanged..."
+        // let pub_unchanged_result = publisher_unchanged(publisher, stt_output)
+        // trace @"pub_unchanged_result": pub_unchanged_result
+        // let pub_unchanged = pub_unchanged_result ?
+        // trace @"Publisher unchanged OK"
+        
+        // Check CIDs validity
+        // trace @"Checking CIDs..."
+        // let cids_valid_result = validate_cids(cids)
+        // trace @"cids_valid_result": cids_valid_result
+        // let cids_valid = cids_valid_result ?
+        // trace @"CIDs valid"
+        
+        // trace @"=== All checks passed ==="
+
         and {
           pub_signed,
-	  pub_unchanged,
-	  cids_valid
+          pub_unchanged,
+          cids_valid
         }
       }
 
