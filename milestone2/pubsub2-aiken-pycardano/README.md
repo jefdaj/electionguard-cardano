@@ -97,6 +97,9 @@ arion logs --follow
 
 ## TODO
 
+- [ ] publish lists/batches of "events" rather than CIDs: an event can be a subchannel open/close, or a public record
+- [ ] publisher -> list of publishers, allowing a verifications channel?
+- [ ] later, allow force inclusion of msgs signed by one of the publishers and submitted by any wallet
 - [ ] are there any existing Cardano pubsub examples?
 - [ ] should there be a channel NFT?
 - [ ] is sending money to the validator an action, or separate?
