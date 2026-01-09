@@ -1,4 +1,3 @@
-from .cid import CIDv1
 from dataclasses import dataclass
 from pycardano import PlutusData
 from typing import List
@@ -22,7 +21,7 @@ class PsPublish(PubsubAction):
         >>> TODO fill in
     """
     CONSTR_ID = 1
-    cids: List[CIDv1]
+    cids: List[bytes] # CIDv1 just converts str <--> bytes now
 
 # TODO remove?
 # @dataclass
