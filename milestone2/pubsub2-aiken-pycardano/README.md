@@ -1,12 +1,59 @@
 # pubsub2: post CIDs to preview testnet using ipfs, aiken, pycardano
 
-Tests
+Build
 -----
 
-The `testnet` tests will actually post Preview network transactions.
-For example this one...
+There are two versions of `plutus.json`: traced and production.
+The Python code automatically uses the traced one when called via
+pytest.
 
 ```
+$ nix develop .#onchain
+$ ./build.sh
+++ dirname ./build.sh
++ cd .
++ aiken build --out pubsub2-plutus.json
+    Compiling jefdaj/electionguard-cardano-pubsub2 0.0.1 (.)
+    Compiling aiken-lang/stdlib 3.0.0 (./build/packages/aiken-lang-stdlib)
+   Generating project's blueprint (pubsub2-plutus.json)
+      Summary 0 errors, 0 warnings
++ aiken build --out pubsub2-plutus-traced.json --trace-level verbose
+    Compiling jefdaj/electionguard-cardano-pubsub2 0.0.1 (.)
+    Compiling aiken-lang/stdlib 3.0.0 (./build/packages/aiken-lang-stdlib)
+   Generating project's blueprint (pubsub2-plutus-traced.json)
+      Summary 0 errors, 0 warnings
+```
+
+Test
+----
+
+All I've done so far are 2 minimal `testnet` tests, which post transactions
+to the Preview network.
+
+```python
+@pytest.mark.testnet
+@pytest.mark.slow
+def test_publish_cids(ps: PubsubClient, cids: List[CIDv1]):
+
+    # open channel
+    open_tx = ps.open_channel()
+    ps.wait_for_confirmation(open_tx)
+
+    # publish cids
+    pub1_tx = ps.publish_cids(cids)
+    ps.wait_for_confirmation(pub1_tx)
+
+    # again, to be sure chaining them works
+    pub2_tx = ps.publish_cids(cids)
+    ps.wait_for_confirmation(pub2_tx)
+
+    # close channel
+    close_tx = ps.close_channel()
+    ps.wait_for_confirmation(close_tx)
+```
+
+```
+$ nix develop .#offchain
 $ ./test.sh 
 + EXTRA_ARGS=
 + pytest
@@ -16,17 +63,19 @@ platform linux -- Python 3.12.12, pytest-8.3.5, pluggy-1.5.0
 rootdir: /home/jefdaj/myrepos/electionguard-cardano/milestone2/pubsub2-aiken-pycardano/offchain
 configfile: pyproject.toml
 plugins: typeguard-4.4.2
-collected 1 item
+collected 2 items
 
-tests/testnet/test_publish.py .                                          [100%]
+tests/testnet/test_publish.py ..                                         [100%]
 
-============================== 1 passed in 43.64s ==============================
+======================== 2 passed in 140.76s (0:02:20) =========================
+
+real    2m21.038s
+user    0m2.198s
+sys     0m0.140s
 ```
 
-... [minted](https://preview.cardanoscan.io/transaction/7ed43c6d4122f20946fc9a322e42d1aeb390806fc7e8f7efb379384747c0fbe1?tab=tokenmint)
-a state thread token and then
-[burned it](https://preview.cardanoscan.io/transaction/a8ca16af59691e2c81a5755afd04f0c5ff98d6edb3a9cfb5837b93dfead00af4?tab=tokenmint).
-
+I'm planning to add some faster, simpler ones for things like round-tripping to
+JSON too of course.
 
 Format
 ------

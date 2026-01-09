@@ -120,7 +120,7 @@
       "anyOf": [
         {
           "title": "PsOpen",
-          "description": "Open the channel, minting the state NFT and funding with some ADA.\n TODO is the ADA optional beyond the blockchain-enforced min?",
+          "description": "Open the channel, minting the STT and funding with min ADA.",
           "dataType": "constructor",
           "index": 0,
           "fields": []
@@ -139,7 +139,7 @@
         },
         {
           "title": "PsClose",
-          "description": "Collect ADA and/or other tokens sent to the validator.\n TODO sending ADA to the contract is always valid, right?\n Close the channel, burning the NFT and recovering any ADA.\n The publisher can choose whether to collect other tokens here too.\n TODO if not, are they basically burned/frozen at the validator address?\n TODO should it require exlicitly burning any assets you don't want?",
+          "description": "Close the channel, burning the STT and recovering any ADA.\n The publisher can choose whether to collect other tokens here too.",
           "dataType": "constructor",
           "index": 2,
           "fields": []
@@ -156,7 +156,6 @@
           "fields": [
             {
               "title": "publisher",
-              "description": "TODO nft: ???,\n State NFT uniquely identifying the channel.\n All transactions must be signed by this key.\n It could be removed in favor of tracking NFT ownership,\n but for the ElectionGuard use case I don't want state\n NFTs to be transferrable.",
               "$ref": "#/definitions/aiken~1crypto~1VerificationKeyHash"
             }
           ]
