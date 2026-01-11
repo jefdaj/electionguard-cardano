@@ -1,6 +1,6 @@
 services:
   kupo:
-    image: cardanosolutions/kupo:latest
+    image: cardanosolutions/kupo:latest # TODO pin to working hash
     logging:
       driver: "json-file"
       options:
