@@ -24,7 +24,8 @@ services:
       - shared-net
 
   ogmios:
-    image: cardanosolutions/ogmios:latest # TODO pin
+    # TODO does ktorz normally publish "latest" from the dev branch?
+    image: cardanosolutions/ogmios:v6.14.0
     restart: on-failure
     command: [
       "--host", "0.0.0.0",
