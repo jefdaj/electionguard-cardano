@@ -63,6 +63,8 @@
         pytest
       ];
 
+      kupo = pkgs.callPackage ./nix/kupo.nix {};
+
       in
         {
 
@@ -85,18 +87,21 @@
               shellHook = ''
                 echo "running devShells.x86_64-linux.onchain shellHook"
                 cd onchain
-                aiken --version
+                echo "aiken version: $(aiken --version)"
               '';
             };
 
             offchain = pkgs.mkShell {
               nativeBuildInputs = onchain.nativeBuildInputs ++ [
                 (pkgs.python312.withPackages offchainPyPkgList)
+                kupo
               ];
               shellHook = ''
                 echo "running devShells.x86_64-linux.offchain shellHook"
                 cd offchain
-                python --version
+                echo "python version: $(python --version)"
+                echo "aiken version: $(aiken --version)"
+                echo "kupo version: $(kupo --version)"
               '';
 
               # TODO is this worth the speed tradeoff?

@@ -2,6 +2,9 @@
 
 set -x
 
+# UPDATE: this won't work; Kupo does not support changes or restarts.
+# New strategy: run it as a subprocess in the egsync container.
+
 # Kupo seems to be set up for indexing static parameters known at startup.
 # Since we won't know what policy_id to index or which slot or block height to
 # start from until the user scans a QR code, the simplest working solution is to
