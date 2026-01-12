@@ -6,6 +6,7 @@ from os.path import realpath
 
 from pubsub import load_test_wallet_signing_key, PubsubClient, CIDv1
 
+# TODO deduplicate with ogmios.py
 @pytest.fixture(scope="session")
 def ctx():
     """Shared Ogmios connection for all testnet tests."""
@@ -15,7 +16,7 @@ def ctx():
         network=Network.TESTNET
     )
     try:
-        # TODO is there a cleaner way?
+        # TODO just query tip and assert that it's a good response
         assert ctx.last_block_slot > 101181854
         return ctx
     except:
@@ -37,6 +38,11 @@ def ps(ctx: OgmiosV6ChainContext, sk: SigningKey):
         # ipfs_client=IPFSClient()
     )
 
+# TODO example files fixture
+
+# TODO make this depend on the example files and calculate CIDs from them
+# TODO then make the subscriber test(s) depend on both the files + cids? or make this a map of cid -> path (or vice versa)
+# TODO ah, by combining that with a dependency on test_publish_cids, it should work!
 @pytest.fixture(scope="function")
 def cids():
     """A few example CIDs"""
