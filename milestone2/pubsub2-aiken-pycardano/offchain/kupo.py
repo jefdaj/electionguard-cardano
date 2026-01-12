@@ -12,6 +12,7 @@ import sys
 import threading
 import time
 
+from pprint import pprint
 from typing import Any, Dict, List, Optional
 
 # ------------------ Configuration ------------------
@@ -83,7 +84,7 @@ def start_kupo_if_needed(policy_id: str, start_slot: int, block_hash: str) -> No
         "--host", KUPO_HOST,
         "--port", str(KUPO_PORT),
 
-        "--prune-utxo",
+        # "--prune-utxo",
 
         # TODO is any margin needed in this case?
         # "--safety-margin", "100",
@@ -142,7 +143,14 @@ def kupo_matches_url() -> str:
     return f"http://{KUPO_HOST}:{KUPO_PORT}/v1/matches"
 
 
-def handle_match(utxo: Dict[str, Any]) -> None:
+def fetch_datum(session: requests.Session, datum_hash: str) -> Any:
+    url = f"http://{KUPO_HOST}:{KUPO_PORT}/v1/datums/{datum_hash}"
+    resp = session.get(url, timeout=10)
+    resp.raise_for_status()
+    return resp.json()
+
+
+def handle_match(utxo: Dict[str, Any], session: requests.Session) -> None:
     """
     `utxo` looks like the Kupo object you printed.
     For now, just log some key fields. Later you can:
@@ -171,6 +179,14 @@ def handle_match(utxo: Dict[str, Any]) -> None:
     # For debugging, print the full object:
     dbg = json.dumps(utxo, indent=2)
     log_info("Full UTxO:\n{}", dbg)
+
+    if datum_hash:
+        try:
+            datum = fetch_datum(session, datum_hash)
+            log_info("Fetched datum for {}: {}", datum_hash, json.dumps(datum, indent=2))
+            # Later: decode IPFS CIDs from `datum` here.
+        except Exception as e:
+            log_error("Failed to fetch datum {}: {}", datum_hash, e)
 
 
 def _watch_kupo(policy_id: str) -> None:
@@ -206,7 +222,7 @@ def _watch_kupo(policy_id: str) -> None:
                     _seen_tx_ids.add(key)
 
                 try:
-                    handle_match(utxo)
+                    handle_match(utxo, session)
                 except Exception as e:
                     log_error("Error in handle_match: {}", e)
 
