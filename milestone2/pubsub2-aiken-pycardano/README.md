@@ -56,22 +56,25 @@ def test_publish_cids(ps: PubsubClient, cids: List[CIDv1]):
 $ nix develop .#offchain
 $ ./test.sh 
 + EXTRA_ARGS=
-+ pytest
++ pytest -vv
 + tee test.log
 ============================= test session starts ==============================
-platform linux -- Python 3.12.12, pytest-8.3.5, pluggy-1.5.0
-rootdir: /home/jefdaj/myrepos/electionguard-cardano/milestone2/pubsub2-aiken-pycardano/offchain
-configfile: pyproject.toml
-plugins: typeguard-4.4.2
-collected 2 items
+...
+collecting ... collected 7 items
 
-tests/testnet/test_publish.py ..                                         [100%]
+tests/test_publish.py::test_open PASSED                                  [ 14%]
+tests/test_publish.py::test_close_nopub PASSED                           [ 28%]
+tests/test_publish.py::test_publish_one PASSED                           [ 42%]
+tests/test_publish.py::test_close_pub1 PASSED                            [ 57%]
+tests/test_publish.py::test_publish_two PASSED                           [ 71%]
+tests/test_publish.py::test_publish_all PASSED                           [ 85%]
+tests/test_serialization.py::test_load_election_records PASSED           [100%]
 
-======================== 2 passed in 140.76s (0:02:20) =========================
+======================== 7 passed in 838.54s (0:13:58) =========================
 
-real    2m21.038s
-user    0m2.198s
-sys     0m0.140s
+real    13m59.566s
+user    0m19.783s
+sys     0m0.290s
 ```
 
 I'm planning to add some faster, simpler ones for things like round-tripping to
