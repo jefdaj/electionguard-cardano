@@ -45,13 +45,15 @@ def pub_closed(pub_open: Publisher):
     return pub
 
 @pytest.fixture(scope="function")
-def pub_pub1(pub_open: Publisher, example_files):
+def pub_pub1(pub_open: Publisher, election_records: list[tuple[Path, bytes]]):
     "Yields a publisher with 1 list of CIDs published, then closes it after the test"
     # TODO is this how the multiple yields should work?
     pub = pub_open
 
-    # TODO publish cids here
-    # TODO which means load example files first
+    cids = list(v for (k, v) in election_records[:3])
+    # TODO also publish the files via IPFS here
+    tx = pub.publish_cids(cids)
+    pub.wait_for_confirmation(tx)
 
     # tests using this fixture happen here
     yield pub
@@ -62,10 +64,11 @@ def pub_pub1(pub_open: Publisher, example_files):
         pub.wait_for_confirmation(close_tx)
 
 @pytest.fixture(scope="function")
-def pub_pub2(pub_pub1: Publisher, example_files):
+def pub_pub2(pub_pub1: Publisher, election_records: list[tuple[Path, bytes]]):
     "Yields (TODO returns?) a publisher with 2 lists of CIDs published, then closes it after the test"
     pub = pub_pub1
-    tx = pub.publish_cids([])
+    cids = list(v for (k, v) in election_records[3:6]) # TODO off by one?
+    tx = pub.publish_cids(cids)
     pub.wait_for_confirmation(tx)
     yield pub
     # TODO will it return to pub_pub1 and close itself here?
@@ -85,6 +88,18 @@ def test_close_nopub(pub_closed: Publisher):
 
 @pytest.mark.testnet
 @pytest.mark.slow
+def test_publish_one(pub_open: Publisher, election_records: list[tuple[Path, bytes]]):
+    "Publish the first file to an open channel"
+    pub = pub_open
+    assert pub.channel_state == 'open'
+    cids = list(v for (k, v) in election_records[:3])
+    # TODO also publish the files via IPFS here
+    tx = pub.publish_cids(cids)
+    pub.wait_for_confirmation(tx)
+    assert pub.channel_state == 'published'
+
+@pytest.mark.testnet
+@pytest.mark.slow
 def test_close_pub1(pub_pub1: Publisher):
     pub = pub_pub1
     assert pub.channel_state == 'published'
@@ -94,22 +109,31 @@ def test_close_pub1(pub_pub1: Publisher):
 
 @pytest.mark.testnet
 @pytest.mark.slow
-def test_publish_one(pub_open: Publisher, cids):
-    "Publish the first file to an open channel"
-    pub = pub_open
-    assert pub.channel_state == 'open'
-    # TODO pass example file(s) with expected CIDs
+def test_publish_two(pub_pub1: Publisher, election_records: list[tuple[Path, bytes]]):
+    "Publish a 2nd list of CIDs to a channel that already published one"
+    pub = pub_pub1
+    assert pub.channel_state == 'published'
+    cids = list(v for (k, v) in election_records[3:6]) # TODO off by one?
+    # TODO also publish the files via IPFS here
     tx = pub.publish_cids(cids)
     pub.wait_for_confirmation(tx)
     assert pub.channel_state == 'published'
 
+def chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
 @pytest.mark.testnet
 @pytest.mark.slow
-def test_publish_two(pub_pub1: Publisher, cids):
-    "Publish a 2nd list of CIDs to a channel that already published one"
+def test_publish_all(pub_open: Publisher, election_records: list[tuple[Path, bytes]]):
+    "Publish an entire election worth of CIDs in chunks of 10"
+    # TODO shorten this? currently takes ~ 7 min
     pub = pub_open
-    assert pub.channel_state == 'published'
-    # TODO pass example file(s) with expected CIDs
-    tx = pub.publish_cids(cids)
-    pub.wait_for_confirmation(tx)
-    assert pub.channel_state == 'published'
+    assert pub.channel_state == 'open'
+    for chunk in chunks(election_records, 10):
+        cids = list(v for (k, v) in chunk)
+        # TODO also publish the files via IPFS here
+        tx = pub.publish_cids(cids)
+        pub.wait_for_confirmation(tx)
+        assert pub.channel_state == 'published'

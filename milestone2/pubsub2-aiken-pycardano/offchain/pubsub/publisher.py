@@ -71,7 +71,7 @@ class Publisher:
         return tx
 
     def publish_cids(self, cids: List[CIDv1]) -> Transaction:
-        if self.channel_state != 'open':
+        if not self.channel_state in ['open', 'published']:
             raise Exception('publish_cids requires an open channel')
         tx = build_pspublish_tx(
             self.chain_context,

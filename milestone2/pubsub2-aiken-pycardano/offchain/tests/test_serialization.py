@@ -1,13 +1,13 @@
 from os.path import exists
 from pathlib import Path
-from typing import Dict
+from typing import List
 
-def test_load_election_records(election_records: Dict[Path, bytes]):
-    assert isinstance(election_records, Dict)
+def test_load_election_records(election_records: list[tuple[Path, bytes]]):
+    assert isinstance(election_records, List)
     assert all(
         isinstance(k, Path) and isinstance(v, bytes) # CIDv1 == bytes
-        for k, v in election_records.items()
+        for (k, v) in election_records
     )
     assert all(
-        exists(k) for k in election_records.keys()
+        exists(k) for (k, v) in election_records
     )

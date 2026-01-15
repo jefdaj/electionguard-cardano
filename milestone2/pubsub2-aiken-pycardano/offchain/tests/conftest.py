@@ -15,16 +15,20 @@ from pubsub import load_test_wallet_signing_key, Publisher, CIDv1, OGMIOS_CTX
 def data_dir() -> Path:
     return Path(__file__).parent / "data"
 
+# TODO remove?
+ElectionRecord  = tuple[Path, bytes]
+ElectionRecords = list[ElectionRecord]
+
 @pytest.fixture
-def election_records(data_dir: Path) -> Dict[Path, CIDv1]:
+def election_records(data_dir: Path) -> ElectionRecords:
     records_dir = data_dir / "election_records_flat"
     json_path   = data_dir / "election_records_flat_cids.json"
     with open(json_path, 'r') as f:
         data = json.load(f)
-    data = {
-        Path(join(records_dir, k + '.json')) : CIDv1.from_string(v)
+    data = [
+        (Path(join(records_dir, k + '.json')), CIDv1.from_string(v))
         for k, v in data.items()
-    }
+    ]
     return data
 
 @pytest.fixture(scope="session")
@@ -45,21 +49,3 @@ def sk():
     return load_test_wallet_signing_key()
 
 # TODO separate fixture for the test wallet addr?
-
-
-# TODO example files fixture
-
-# TODO make this depend on the example files and calculate CIDs from them
-# TODO then make the subscriber test(s) depend on both the files + cids? or make this a map of cid -> path (or vice versa)
-# TODO ah, by combining that with a dependency on test_publish_cids, it should work!
-@pytest.fixture(scope="function")
-def cids():
-    """A few example CIDs"""
-    return [
-      CIDv1.from_string(s)
-      for s in [
-        'bafkreib37tosipox6e34euegwwvfdggokcsjklzhpkhx5sbmbbdyece6qy',
-        'bafkreieykytgkz3wk5pwe7xlh7rg3zpifje5aopy535r2ptu5p25sr43fm',
-        'bafkreihsol6yrmc7lyydvv6ctmvgz54yznsoo5qxybab5p4nzrtyahtsi4'
-      ]
-    ]
