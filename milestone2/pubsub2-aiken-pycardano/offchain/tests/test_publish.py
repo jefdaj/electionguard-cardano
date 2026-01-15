@@ -84,7 +84,8 @@ def test_open(pub_open: Publisher):
 @pytest.mark.testnet
 @pytest.mark.slow
 def test_close_nopub(pub_closed: Publisher):
-    assert pub_open.channel_state == 'closed'
+    pub = pub_closed
+    assert pub.channel_state == 'closed'
 
 @pytest.mark.testnet
 @pytest.mark.slow
