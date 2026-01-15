@@ -2,9 +2,10 @@ import pytest
 
 from pathlib import Path
 from typing import List
+from pycardano import *
 
 # from pubsub import IPFSClient
-from pubsub import PubsubClient, load_test_wallet_signing_key, CIDv1
+from pubsub import Publisher, load_test_wallet_signing_key, CIDv1
 
 
 ### fixtures ###
@@ -21,44 +22,44 @@ def pub_new(ogmios: OgmiosV6ChainContext, sk: SigningKey):
 @pytest.fixture(scope="function")
 def pub_open(pub_new: Publisher):
     "Yields a publisher with an open channel, then closes it after the test"
-    ps = pub_new
+    pub = pub_new
 
     # open channel
-    open_tx = ps.open_channel()
-    ps.wait_for_confirmation(open_tx)
+    open_tx = pub.open_channel()
+    pub.wait_for_confirmation(open_tx)
 
     # tests using this fixture happen here
-    yield ps
+    yield pub
 
     # close channel
-    if ps.channel_state != 'closed':
-        close_tx = ps.close_channel()
-        ps.wait_for_confirmation(close_tx)
+    if pub.channel_state != 'closed':
+        close_tx = pub.close_channel()
+        pub.wait_for_confirmation(close_tx)
 
 @pytest.fixture(scope="function")
 def pub_closed(pub_open: Publisher):
     "Returns a publisher with an already-closed channel"
-    ps = pub_open
-    close_tx = ps.close_channel()
-    ps.wait_for_confirmation(close_tx)
-    return ps
+    pub = pub_open
+    close_tx = pub.close_channel()
+    pub.wait_for_confirmation(close_tx)
+    return pub
 
 @pytest.fixture(scope="function")
 def pub_pub1(pub_open: Publisher, example_files):
     "Yields a publisher with 1 list of CIDs published, then closes it after the test"
     # TODO is this how the multiple yields should work?
-    ps = pub_open
+    pub = pub_open
 
     # TODO publish cids here
     # TODO which means load example files first
 
     # tests using this fixture happen here
-    yield ps
+    yield pub
 
     # close channel
-    if ps.channel_state != 'closed':
-        close_tx = ps.close_channel()
-        ps.wait_for_confirmation(close_tx)
+    if pub.channel_state != 'closed':
+        close_tx = pub.close_channel()
+        pub.wait_for_confirmation(close_tx)
 
 @pytest.fixture(scope="function")
 def pub_pub2(pub_pub1: Publisher, example_files):
@@ -74,17 +75,17 @@ def pub_pub2(pub_pub1: Publisher, example_files):
 
 @pytest.mark.testnet
 @pytest.mark.slow
-def test_open(pub_open: PubsubClient):
+def test_open(pub_open: Publisher):
     assert pub_open.channel_state == 'open'
 
 @pytest.mark.testnet
 @pytest.mark.slow
-def test_close_nopub(pub_closed: PubsubClient):
+def test_close_nopub(pub_closed: Publisher):
     assert pub_open.channel_state == 'closed'
 
 @pytest.mark.testnet
 @pytest.mark.slow
-def test_close_pub1(pub_pub1: PubsubClient):
+def test_close_pub1(pub_pub1: Publisher):
     pub = pub_pub1
     assert pub.channel_state == 'published'
     tx = pub.close_channel()
@@ -93,7 +94,7 @@ def test_close_pub1(pub_pub1: PubsubClient):
 
 @pytest.mark.testnet
 @pytest.mark.slow
-def test_publish_one(pub_open: PubsubClient, cids):
+def test_publish_one(pub_open: Publisher, cids):
     "Publish the first file to an open channel"
     pub = pub_open
     assert pub.channel_state == 'open'
@@ -104,7 +105,7 @@ def test_publish_one(pub_open: PubsubClient, cids):
 
 @pytest.mark.testnet
 @pytest.mark.slow
-def test_publish_two(pub_pub1: PubsubClient, cids):
+def test_publish_two(pub_pub1: Publisher, cids):
     "Publish a 2nd list of CIDs to a channel that already published one"
     pub = pub_open
     assert pub.channel_state == 'published'

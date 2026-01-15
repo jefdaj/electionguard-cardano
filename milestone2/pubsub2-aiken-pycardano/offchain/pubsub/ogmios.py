@@ -1,13 +1,21 @@
 import websockets
 
 from typing import Any, Dict
+from pycardano import OgmiosV6ChainContext, Network
 
 # TODO load these from somewhere?
+
 OGMIOS_HOST = "localhost"
 OGMIOS_PORT = 1337
+OGMIOS_CTX = OgmiosV6ChainContext(
+    host=OGMIOS_HOST,
+    port=OGMIOS_PORT,
+    network=Network.TESTNET
+)
 
-async def query_network_tip(host: str, port: int) -> Dict[str, Any]:
-    url = f"ws://{host}:{port}" # TODO would http work just as well here?
+async def query_network_tip() -> Dict[str, Any]:
+    # TODO is there an equivalent context function?
+    url = f"ws://{OGMIOS_HOST}:{OGMIOS_PORT}"
     async with websockets.connect(url) as ws:
         request = {
             "jsonrpc": "2.0",
@@ -28,5 +36,3 @@ async def query_network_tip(host: str, port: int) -> Dict[str, Any]:
             raise RuntimeError(f"Unexpected Ogmios response: {response}")
 
         return result  # {"slot": ..., "id": ...}
-
-

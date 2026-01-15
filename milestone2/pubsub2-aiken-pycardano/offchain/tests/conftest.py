@@ -1,10 +1,10 @@
 import pytest
 
 from pathlib import Path
-from pycardano import OgmiosV6ChainContext, Network, SigningKey
+from pycardano import OgmiosV6ChainContext, SigningKey
 from os.path import realpath
 
-from pubsub import load_test_wallet_signing_key, Publisher, CIDv1
+from pubsub import load_test_wallet_signing_key, Publisher, CIDv1, OGMIOS_CTX
 
 # TODO is it better to put all fixtures here, or spread them over the relevant test files?
 
@@ -16,15 +16,10 @@ def election_public_records_flat(data_path: Path) -> [Path]:
     pubdir = data_path / "election-public-records-flat"
     return 
 
-# TODO deduplicate with ogmios.py
 @pytest.fixture(scope="session")
-def ogmios():
+def ogmios() -> OgmiosV6ChainContext:
     """Shared Ogmios connection for all testnet tests."""
-    ogmios = OgmiosV6ChainContext(
-        host='localhost',
-        port=1337,
-        network=Network.TESTNET
-    )
+    ogmios = OGMIOS_CTX
     try:
         # TODO just query tip and assert that it's a good response
         assert ogmios.last_block_slot > 101181854
