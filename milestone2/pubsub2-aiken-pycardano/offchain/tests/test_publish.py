@@ -63,6 +63,22 @@ def pub_pub1(pub_open: Publisher, election_records: list[tuple[Path, bytes]]):
         close_tx = pub.close_channel()
         pub.wait_for_confirmation(close_tx)
 
+# TODO shorten? currently takes about 7 min
+@pytest.fixture(scope="function")
+def pub_all(pub_open: Publisher, election_records: list[tuple[Path, bytes]]):
+
+    pub = pub_open
+    assert pub.channel_state == 'open'
+
+    for chunk in chunks(election_records, 10):
+        cids = list(v for (k, v) in chunk)
+        # TODO also publish the files via IPFS here
+        tx = pub.publish_cids(cids)
+        pub.wait_for_confirmation(tx)
+        # assert pub.channel_state == 'published'
+
+    yield pub # TODO will this cause a proper close tx?
+
 @pytest.fixture(scope="function")
 def pub_pub2(pub_pub1: Publisher, election_records: list[tuple[Path, bytes]]):
     "Yields (TODO returns?) a publisher with 2 lists of CIDs published, then closes it after the test"
@@ -98,6 +114,7 @@ def test_publish_one(pub_open: Publisher, election_records: list[tuple[Path, byt
     tx = pub.publish_cids(cids)
     pub.wait_for_confirmation(tx)
     assert pub.channel_state == 'published'
+    assert pub.published_cids == cids
 
 @pytest.mark.testnet
 @pytest.mark.slow
@@ -107,6 +124,12 @@ def test_close_pub1(pub_pub1: Publisher):
     tx = pub.close_channel()
     pub.wait_for_confirmation(tx)
     assert pub.channel_state == 'closed'
+
+# TODO move to a util module?
+def is_suffix(suffix, full):
+    if len(suffix) > len(full):
+        return False
+    return full[-len(suffix):] == suffix
 
 @pytest.mark.testnet
 @pytest.mark.slow
@@ -119,7 +142,9 @@ def test_publish_two(pub_pub1: Publisher, election_records: list[tuple[Path, byt
     tx = pub.publish_cids(cids)
     pub.wait_for_confirmation(tx)
     assert pub.channel_state == 'published'
+    assert is_suffix(cids, pub.published_cids)
 
+# TODO move to a utils module?
 def chunks(lst, n):
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):
@@ -127,14 +152,10 @@ def chunks(lst, n):
 
 @pytest.mark.testnet
 @pytest.mark.slow
-def test_publish_all(pub_open: Publisher, election_records: list[tuple[Path, bytes]]):
+def test_publish_all(pub_all: Publisher, election_records: list[tuple[Path, bytes]]):
     "Publish an entire election worth of CIDs in chunks of 10"
-    # TODO shorten this? currently takes ~ 7 min
-    pub = pub_open
-    assert pub.channel_state == 'open'
-    for chunk in chunks(election_records, 10):
-        cids = list(v for (k, v) in chunk)
-        # TODO also publish the files via IPFS here
-        tx = pub.publish_cids(cids)
-        pub.wait_for_confirmation(tx)
-        assert pub.channel_state == 'published'
+    pub = pub_all
+    assert pub.channel_state == 'published'
+    actual = pub.published_cids
+    expected = [v for (k, v) in election_records]
+    assert actual == expected

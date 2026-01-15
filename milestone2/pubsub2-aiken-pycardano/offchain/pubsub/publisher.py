@@ -8,7 +8,6 @@ from .wallet import addr_for_signing_key, vkh_for_signing_key
 from .plutus import (
     pick_oneshot_utxo,
     PubsubScript, PubsubAction, PsOpen, PsPublish, PsClose,
-    CIDv1,
     build_psopen_tx, build_pspublish_tx, build_psclose_tx
 )
 
@@ -27,6 +26,7 @@ class Publisher:
         self.oneshot_utxo = pick_oneshot_utxo(chain_context, self.publisher_address)
         self.pubsub_script = PubsubScript(self.oneshot_utxo)
         self.channel_state: Optional[str] = None # TODO formalize a type
+        self.published_cids = []
 
     def sign_and_submit(self, tx: Transaction):
         tx_signed = tx.build_and_sign(
@@ -70,7 +70,7 @@ class Publisher:
         self.channel_state = 'open'
         return tx
 
-    def publish_cids(self, cids: List[CIDv1]) -> Transaction:
+    def publish_cids(self, cids: List[bytes]) -> Transaction:
         if not self.channel_state in ['open', 'published']:
             raise Exception('publish_cids requires an open channel')
         tx = build_pspublish_tx(
@@ -82,6 +82,7 @@ class Publisher:
         )
         tx = self.sign_and_submit(tx)
         self.channel_state = 'published'
+        self.published_cids += cids
         return tx
 
     def close_channel(self) -> Transaction:
