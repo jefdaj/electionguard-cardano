@@ -5,6 +5,7 @@
 # $ docker run --name ipfs -p 4001:4001 -p 5001:5001 -p 8080:8080 ipfs/kubo:v0.34.1
 # $ nix develop .#offchain
 # $ ./dev/map_election_records_cids.py
+# then manually remove the final dir hash from the json
 
 from pathlib import Path
 import asyncio
