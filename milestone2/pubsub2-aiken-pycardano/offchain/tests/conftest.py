@@ -1,8 +1,11 @@
+import json
 import pytest
 
 from pathlib import Path
 from pycardano import OgmiosV6ChainContext, SigningKey
-from os.path import realpath
+from os.path import realpath, join
+
+from typing import Dict
 
 from pubsub import load_test_wallet_signing_key, Publisher, CIDv1, OGMIOS_CTX
 
@@ -12,9 +15,17 @@ from pubsub import load_test_wallet_signing_key, Publisher, CIDv1, OGMIOS_CTX
 def data_dir() -> Path:
     return Path(__file__).parent / "data"
 
-def election_public_records_flat(data_path: Path) -> [Path]:
-    pubdir = data_path / "election-public-records-flat"
-    return 
+@pytest.fixture
+def election_records(data_dir: Path) -> Dict[Path, CIDv1]:
+    records_dir = data_dir / "election_records_flat"
+    json_path   = data_dir / "election_records_flat_cids.json"
+    with open(json_path, 'r') as f:
+        data = json.load(f)
+    data = {
+        Path(join(records_dir, k + '.json')) : CIDv1.from_string(v)
+        for k, v in data.items()
+    }
+    return data
 
 @pytest.fixture(scope="session")
 def ogmios() -> OgmiosV6ChainContext:
