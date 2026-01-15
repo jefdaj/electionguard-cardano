@@ -1,0 +1,114 @@
+import pytest
+
+from pathlib import Path
+from typing import List
+
+# from pubsub import IPFSClient
+from pubsub import PubsubClient, load_test_wallet_signing_key, CIDv1
+
+
+### fixtures ###
+
+@pytest.fixture(scope="function")
+def pub_new(ogmios: OgmiosV6ChainContext, sk: SigningKey):
+    "Load a new Publisher without doing any channel actions"
+    return Publisher(
+        chain_context=ogmios,
+        publisher_signing_key=sk
+        # ipfs_client=IPFSClient()
+    )
+
+@pytest.fixture(scope="function")
+def pub_open(pub_new: Publisher):
+    "Yields a publisher with an open channel, then closes it after the test"
+    ps = pub_new
+
+    # open channel
+    open_tx = ps.open_channel()
+    ps.wait_for_confirmation(open_tx)
+
+    # tests using this fixture happen here
+    yield ps
+
+    # close channel
+    if ps.channel_state != 'closed':
+        close_tx = ps.close_channel()
+        ps.wait_for_confirmation(close_tx)
+
+@pytest.fixture(scope="function")
+def pub_closed(pub_open: Publisher):
+    "Returns a publisher with an already-closed channel"
+    ps = pub_open
+    close_tx = ps.close_channel()
+    ps.wait_for_confirmation(close_tx)
+    return ps
+
+@pytest.fixture(scope="function")
+def pub_pub1(pub_open: Publisher, example_files):
+    "Yields a publisher with 1 list of CIDs published, then closes it after the test"
+    # TODO is this how the multiple yields should work?
+    ps = pub_open
+
+    # TODO publish cids here
+    # TODO which means load example files first
+
+    # tests using this fixture happen here
+    yield ps
+
+    # close channel
+    if ps.channel_state != 'closed':
+        close_tx = ps.close_channel()
+        ps.wait_for_confirmation(close_tx)
+
+@pytest.fixture(scope="function")
+def pub_pub2(pub_pub1: Publisher, example_files):
+    "Yields (TODO returns?) a publisher with 2 lists of CIDs published, then closes it after the test"
+    pub = pub_pub1
+    tx = pub.publish_cids([])
+    pub.wait_for_confirmation(tx)
+    yield pub
+    # TODO will it return to pub_pub1 and close itself here?
+
+
+### tests ###
+
+@pytest.mark.testnet
+@pytest.mark.slow
+def test_open(pub_open: PubsubClient):
+    assert pub_open.channel_state == 'open'
+
+@pytest.mark.testnet
+@pytest.mark.slow
+def test_close_nopub(pub_closed: PubsubClient):
+    assert pub_open.channel_state == 'closed'
+
+@pytest.mark.testnet
+@pytest.mark.slow
+def test_close_pub1(pub_pub1: PubsubClient):
+    pub = pub_pub1
+    assert pub.channel_state == 'published'
+    tx = pub.close_channel()
+    pub.wait_for_confirmation(tx)
+    assert pub.channel_state == 'closed'
+
+@pytest.mark.testnet
+@pytest.mark.slow
+def test_publish_one(pub_open: PubsubClient, cids):
+    "Publish the first file to an open channel"
+    pub = pub_open
+    assert pub.channel_state == 'open'
+    # TODO pass example file(s) with expected CIDs
+    tx = pub.publish_cids(cids)
+    pub.wait_for_confirmation(tx)
+    assert pub.channel_state == 'published'
+
+@pytest.mark.testnet
+@pytest.mark.slow
+def test_publish_two(pub_pub1: PubsubClient, cids):
+    "Publish a 2nd list of CIDs to a channel that already published one"
+    pub = pub_open
+    assert pub.channel_state == 'published'
+    # TODO pass example file(s) with expected CIDs
+    tx = pub.publish_cids(cids)
+    pub.wait_for_confirmation(tx)
+    assert pub.channel_state == 'published'

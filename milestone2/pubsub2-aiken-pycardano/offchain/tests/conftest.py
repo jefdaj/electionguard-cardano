@@ -4,24 +4,35 @@ from pathlib import Path
 from pycardano import OgmiosV6ChainContext, Network, SigningKey
 from os.path import realpath
 
-from pubsub import load_test_wallet_signing_key, PubsubClient, CIDv1
+from pubsub import load_test_wallet_signing_key, Publisher, CIDv1
+
+# TODO is it better to put all fixtures here, or spread them over the relevant test files?
+
+@pytest.fixture
+def data_dir() -> Path:
+    return Path(__file__).parent / "data"
+
+def election_public_records_flat(data_path: Path) -> [Path]:
+    pubdir = data_path / "election-public-records-flat"
+    return 
 
 # TODO deduplicate with ogmios.py
 @pytest.fixture(scope="session")
-def ctx():
+def ogmios():
     """Shared Ogmios connection for all testnet tests."""
-    ctx = OgmiosV6ChainContext(
+    ogmios = OgmiosV6ChainContext(
         host='localhost',
         port=1337,
         network=Network.TESTNET
     )
     try:
         # TODO just query tip and assert that it's a good response
-        assert ctx.last_block_slot > 101181854
-        return ctx
+        assert ogmios.last_block_slot > 101181854
+        return ogmios
     except:
         raise Exception('Ogmios not up?')
 
+# TODO rename -> wallet and also include addr here?
 @pytest.fixture(scope="session")
 def sk():
     """Load test publisher signing key."""
@@ -29,14 +40,6 @@ def sk():
 
 # TODO separate fixture for the test wallet addr?
 
-@pytest.fixture(scope="function")
-def ps(ctx: OgmiosV6ChainContext, sk: SigningKey):
-    """Load a fresh PubsubClient"""
-    return PubsubClient(
-        chain_context=ctx,
-        publisher_signing_key=sk
-        # ipfs_client=IPFSClient()
-    )
 
 # TODO example files fixture
 
@@ -54,12 +57,3 @@ def cids():
         'bafkreihsol6yrmc7lyydvv6ctmvgz54yznsoo5qxybab5p4nzrtyahtsi4'
       ]
     ]
-
-# @pytest.fixture
-# def funded_address(chain_context, publisher_key):
-#     """Ensure test address has funds before each test."""
-#     address = publisher_key.to_verification_key().hash().to_address()
-#     utxos = chain_context.utxos(address)
-#     if not utxos:
-#         pytest.skip("Test address needs funding on Preview testnet")
-#     return address
