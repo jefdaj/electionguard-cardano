@@ -10,9 +10,6 @@ from .types import PubsubAction, PsOpen, PsPublish, PsClose, PubsubState, CIDv1
 # TODO is there a good way to keep them in sync?
 STT_NAME = b"pubsub2-channel-stt"
 
-# TODO get this from somewhere official?
-MIN_ADA = 2_000_000
- 
 def mint_channel_stt_assets(policy_id: ScriptHash, n_to_mint: int) -> MultiAsset:
     # the quicker from_primitive way has some normalize error here
     channel_stt = AssetName(STT_NAME)
@@ -22,6 +19,7 @@ def mint_channel_stt_assets(policy_id: ScriptHash, n_to_mint: int) -> MultiAsset
     assets[policy_id] = asset
     return assets
 
+# TODO add option for how many publish TXs to fund initially?
 def build_psopen_tx(
     ctx: OgmiosV6ChainContext,
     pub_addr: Address,
@@ -37,17 +35,29 @@ def build_psopen_tx(
         [],
         0
     )
+
+    current_value = Value(
+        0, # start with 0, then top up to min below
+        assets   # the minted STT
+    )
+
     # Lock the STT at the script address
-    # script_addr = Address(payment_part=plutus_script_hash(script), network=Network.TESTNET)
     stt_output = TransactionOutput(
         address=script.address,
-        amount=Value(
-            MIN_ADA, # TODO add more for future txs?
-            assets   # the minted STT
-        ),
-        # optionally include datum / inline datum here
+        amount=current_value,
         datum=state
     )
+
+    # top up to min ada
+    current_value.coin += min_lovelace(ctx, stt_output)
+
+    # TODO is restating it with new current_value required?
+    stt_output = TransactionOutput(
+        address=script.address,
+        amount=current_value,
+        datum=state
+    )
+
     mint_tx = (
         TransactionBuilder(ctx, mint=assets)
         .add_input(oneshot_utxo)
@@ -111,9 +121,28 @@ def build_pspublish_tx(
         old_state.seq + 1
     )
 
+    # We need the old_value unmutated because PyCardano will use it to calculate the inputs,
+    # so create a separate new_value to top up.
+    old_value = state_utxo.output.amount
+    new_value = Value.from_primitive(old_value.to_primitive())  # deep copy
+
+    # only used for calculating required_min_ada below
+    tmp_output = TransactionOutput(
+        address=script.address,
+        amount=old_value,
+        datum=new_state
+    )
+
+    # top up with ADA as needed
+    required_min_ada = min_lovelace(ctx, tmp_output)
+    old_ada = int(old_value.coin)
+    if old_ada < required_min_ada:
+        delta = required_min_ada - old_ada
+        new_value.coin = old_value.coin + delta
+
     stt_output = TransactionOutput(
         address=script.address,
-        amount=state_utxo.output.amount, # unchanged (so far; may use ADA for fees later)
+        amount=new_value,
         datum=new_state
     )
 

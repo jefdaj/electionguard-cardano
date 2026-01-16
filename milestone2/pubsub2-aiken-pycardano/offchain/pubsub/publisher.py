@@ -1,7 +1,7 @@
 import time
 
 from pathlib import Path
-from pycardano import UTxO, OgmiosV6ChainContext, SigningKey, Transaction
+from pycardano import UTxO, OgmiosV6ChainContext, SigningKey, Transaction, TransactionBuilder
 from typing import List, Optional
 
 from .wallet import addr_for_signing_key, vkh_for_signing_key
@@ -30,8 +30,8 @@ class Publisher:
         self.published_cids = []
         self.tip_before_open: Optional[tuple[int, str]] = None
 
-    def sign_and_submit(self, tx: Transaction):
-        tx_signed = tx.build_and_sign(
+    def sign_and_submit(self, txb: TransactionBuilder):
+        tx_signed = txb.build_and_sign(
             [self.publisher_signing_key],
             change_address=self.publisher_address
         )
@@ -63,28 +63,28 @@ class Publisher:
             raise Exception('open_channel requires no existing channel')
         # for use with kupo --since in the subscriber later
         self.tip_before_open = query_network_tip_sync()
-        tx = build_psopen_tx(
+        txb = build_psopen_tx(
             self.chain_context,
             self.publisher_address,
             self.publisher_verification_key_hash,
             self.pubsub_script,
             self.oneshot_utxo,
         )
-        tx = self.sign_and_submit(tx)
+        tx = self.sign_and_submit(txb)
         self.channel_state = 'open'
         return tx
 
     def publish_cids(self, cids: List[bytes]) -> Transaction:
         if not self.channel_state in ['open', 'published']:
             raise Exception('publish_cids requires an open channel')
-        tx = build_pspublish_tx(
+        txb = build_pspublish_tx(
             self.chain_context,
             self.pubsub_script,
             self.publisher_address,
             self.publisher_verification_key_hash,
             cids
         )
-        tx = self.sign_and_submit(tx)
+        tx = self.sign_and_submit(txb)
         self.channel_state = 'published'
         self.published_cids += cids
         return tx
@@ -92,12 +92,12 @@ class Publisher:
     def close_channel(self) -> Transaction:
         if not self.channel_state in ['open', 'published']:
             raise Exception('close_channel requires an open channel')
-        tx = build_psclose_tx(
+        txb = build_psclose_tx(
             self.chain_context,
             self.publisher_address,
             self.publisher_verification_key_hash,
             self.pubsub_script,
         )
-        tx = self.sign_and_submit(tx)
+        tx = self.sign_and_submit(txb)
         self.channel_state = 'closed'
         return tx

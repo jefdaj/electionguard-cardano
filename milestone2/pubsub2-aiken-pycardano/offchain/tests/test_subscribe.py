@@ -19,13 +19,13 @@ def sub_closed(pub_closed: Publisher):
     cfg = SubscriberConfig(
         since['slot'],
         since['block_hash'],
-        since['slot'] + 60,
+        since['slot'] + 600, # ~10min
         pub_closed.pubsub_script.policy_id
     )
     sub = Subscriber(cfg, handle_match)
     sub.start() # TODO should this happen automatically?
     # TODO how to properly run it and await result?
-    sleep(60)
+    sleep(120) # 2min
     sub.stop()
     return sub
 
@@ -42,7 +42,7 @@ def sub_pub1(pub_pub1: Publisher):
     sub = Subscriber(cfg, handle_match)
     sub.start() # TODO should this happen automatically?
     # TODO how to properly run it and await result?
-    sleep(60)
+    sleep(120)
     sub.stop()
     return sub
 
@@ -56,10 +56,10 @@ def sub_pub1(pub_pub1: Publisher):
 def cfg_all() -> SubscriberConfig:
     "Config for subscribing to a historical channel with 81 published CIDs"
     return SubscriberConfig(
-        since_slot=101928497,
-        since_block='8be5d7eafdf72404b2792f6f1b90e762a488b8c19607e4b5ec0814d7eca904c0',
+        since_slot=101944891,
+        since_block='3b4820fb7a9ccd8a4efa61c37e6795212f5d64e788356cad41af752a3010dfb4',
         policy_id='987d259dc8ef371e6245a65228a15f80ce922b1a4d0c13b53bc56c34',
-        until_slot=101929000
+        until_slot=101944891 + 600
         # TODO until_slot not needed because we know this one was closed?
     )
 
