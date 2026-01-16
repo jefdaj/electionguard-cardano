@@ -47,20 +47,25 @@ validator pubsub(oneshot_ref: OutputReference) {
 
       PsOpen -> {
 
-        expect None = datum // TODO is this right?
+	// This is currently true, but remember to remove it if we run into a
+	// use case for opening a channel starting from another script.
+	// TODO remove anyway, since it's not technically required?
+	expect None = datum
 
         expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, config.stt_name, script_addr, 1)
 	// TODO can this be condensed down to Some(PubsubConfig {...}) = stt_output.datum?
         expect InlineDatum(new_datum) = stt_output.datum
         expect new_cfg: PubsubConfig = new_datum
         let pub_signed = tx_signed_by(self, new_cfg.publisher) ?
-        let stt_minted = tx_mints(self, policy_id, config.stt_name, 1) ?
+
+	// TODO any reason to check this here as well as in mint validator?
+        // let stt_minted = tx_mints(self, policy_id, config.stt_name, 1) ?
+
 	let cids_empty = (list.length(new_cfg.cids) == 0) ?
 	let seq_zero   = (new_cfg.seq == 0) ?
 
         and {
           pub_signed,
-          stt_minted, // TODO could this be removed, since mint() checks it too?
 	  cids_empty,
 	  seq_zero
         }
@@ -76,7 +81,6 @@ validator pubsub(oneshot_ref: OutputReference) {
         let pub_unchanged = (new_cfg.publisher == publisher) ?
 	let seq_incremented = (new_cfg.seq == seq + 1) ?
         let cids_valid = validate_cids(new_cfg.cids) ?
-	// TODO test no stt mint here too? or is that redundant?
         and {
           pub_signed,
           pub_unchanged,
@@ -88,13 +92,16 @@ validator pubsub(oneshot_ref: OutputReference) {
       PsClose -> {
         expect Some(PubsubConfig { publisher, .. }) = datum
         let pub_signed = tx_signed_by(self, publisher) ?
-        let stt_burned = tx_mints(self, policy_id, config.stt_name, -1) ?
+
+	// TODO any reason to check this here as well as in mint validator?
+        // let stt_burned = tx_mints(self, policy_id, config.stt_name, -1) ?
+
 	// no stt_output when closing
 	// TODO does that need an explicit check?
-        and {
-          pub_signed,
-          stt_burned
-        }
+
+        // and {
+        pub_signed
+        // }
       }
 
     }
