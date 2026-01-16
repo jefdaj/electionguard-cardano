@@ -11,3 +11,5 @@ def test_load_election_records(election_records: list[tuple[Path, bytes]]):
     assert all(
         exists(k) for (k, v) in election_records
     )
+
+# TODO test round-tripping PubsubAction types <--> CBOR

@@ -52,8 +52,31 @@ def sub_pub1(pub_pub1: Publisher):
 # TODO sub_pub2
 # TODO sub_all
 
+@pytest.fixture
+def cfg_all() -> SubscriberConfig:
+    "Config for subscribing to a historical channel with 81 published CIDs"
+    return SubscriberConfig(
+        since_slot=101928497,
+        since_block='8be5d7eafdf72404b2792f6f1b90e762a488b8c19607e4b5ec0814d7eca904c0',
+        policy_id='987d259dc8ef371e6245a65228a15f80ce922b1a4d0c13b53bc56c34',
+        until_slot=101929000
+        # TODO until_slot not needed because we know this one was closed?
+    )
 
 ### tests ###
+
+# TODO separate mark for subscribe vs publish?
+@pytest.mark.testnet
+@pytest.mark.slow
+def test_subscribe_all_hardcoded(cfg_all: SubscriberConfig):
+    "Subscribe to a hardcoded channel with all 81 election record CIDs"
+    sub = Subscriber(cfg_all, handle_match)
+    sub.start()
+    for n in range(0, 60, 10):
+        sleep(10)
+        print(sub.subscribed_cids)
+    sub.stop()
+    assert len(sub.subscribed_cids) > 50
 
 # TODO double check pytest isn't creating two different pub_closed instances here
 @pytest.mark.slow

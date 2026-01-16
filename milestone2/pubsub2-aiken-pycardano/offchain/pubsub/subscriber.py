@@ -14,14 +14,15 @@ from dataclasses import dataclass
 from os import environ
 from pprint import pprint
 from typing import Any, Callable, Dict, List, Optional
+from pycardano import *
 
 from .ogmios import OGMIOS_HOST, OGMIOS_PORT
-from .plutus import PubsubAction, PsPublish
+from .plutus import PubsubConfig, PubsubAction, PsOpen, PsPublish, PsClose
 
 
 KUPO_HOST = environ.get("KUPO_HOST", "127.0.0.1")
 KUPO_PORT = int(environ.get("KUPO_PORT", "1442"))
-KUPO_MATCHES_URL = f"http://{KUPO_HOST}:{KUPO_PORT}/v1/matches"
+# KUPO_MATCHES_URL = f"http://{KUPO_HOST}:{KUPO_PORT}/v1/matches?resolve_datums=true&with_spent=true"
 KUPO_POLL_SEC = 2.0
 
 
@@ -36,14 +37,15 @@ NODE_CONFIG = environ.get("NODE_CONFIG", "../../cardano-node-ogmios/config/netwo
 # OGMIOS_PORT = int(os.environ.get("OGMIOS_PORT", "1337"))
 
 
+# TODO remove?
 def log_info(msg: str, *args: Any) -> None:
     print("[INFO] " + msg.format(*args), file=sys.stderr, flush=True)
 
-
+# TODO remove?
 def log_warn(msg: str, *args: Any) -> None:
     print("[WARN] " + msg.format(*args), file=sys.stderr, flush=True)
 
-
+# TODO remove?
 def log_error(msg: str, *args: Any) -> None:
     print("[ERROR] " + msg.format(*args), file=sys.stderr, flush=True)
 
@@ -52,15 +54,15 @@ def log_error(msg: str, *args: Any) -> None:
 class SubscriberConfig:
     since_slot: int  # For kupo --since
     since_block: str # For kupo --since
-    until_slot: Optional[int] # For kupo --until, to prevent open-ended scans during tests
     policy_id: str # For kupo --match TODO remove?
+    until_slot: Optional[int] = None # For kupo --until, to prevent open-ended scans during tests
 
 
 # TODO is this how you define a type?
 # TODO can the response type be more specific than dict?
 # Handles a single kupo match response json obj.
 # I think kupo yields an iterator of these? TODO check that
-SubscriberMatchCallback = Callable[[dict, requests.Session], None]
+SubscriberActionCallback = Callable[[dict, requests.Session], Optional[PubsubAction]]
 
 
 def fetch_datum(session: requests.Session, datum_hash: str) -> Any:
@@ -68,7 +70,6 @@ def fetch_datum(session: requests.Session, datum_hash: str) -> Any:
     resp = session.get(url, timeout=10)
     resp.raise_for_status()
     return resp.json()
-
 
 def handle_match(utxo: Dict[str, Any], session: requests.Session) -> Optional[PubsubAction]:
     """
@@ -106,12 +107,12 @@ def handle_match(utxo: Dict[str, Any], session: requests.Session) -> Optional[Pu
             datum = fetch_datum(session, datum_hash)
             log_info("Fetched datum for {}: {}", datum_hash, json.dumps(datum, indent=2))
 
-            assert isinstance(datum, InlineDatum)
-            raw: RawPlutusData = datum.data
-            cbor_bytes: bytes = raw.to_cbor()
-            action: PubsubAction = PubsubAction.from_cbor(cbor_bytes)
-            log_info(f"Decoded datum to {action}")
-            return action
+            # TODO any need for this yet? probably at some point soon...
+            cfg = PubsubConfig.from_cbor(datum['datum'])
+            log_info(f"Decoded datum to {cfg} ({type(cfg)})")
+
+            log_info(f"Decoded datum to {cfg}")
+            # return cfg
 
             # Later: decode IPFS CIDs from `datum` here.
         except Exception as e:
@@ -129,7 +130,7 @@ class Subscriber:
     def __init__(
             self,
             config: SubscriberConfig,
-            on_match: SubscriberMatchCallback
+            on_match: SubscriberActionCallback
         ):
 
         self.config = config
@@ -155,7 +156,7 @@ class Subscriber:
             return
 
         # os.makedirs(KUPO_WORKDIR, exist_ok=True)
-        since_arg = f"{self.config.since_slot}.{self.config._since_block}"
+        since_arg = f"{self.config.since_slot}.{self.config.since_block}"
 
         cmd = [
 
@@ -180,6 +181,8 @@ class Subscriber:
 
             "--host", KUPO_HOST,
             "--port", str(KUPO_PORT),
+
+            "--log-level", "Notice"
 
             # "--prune-utxo",
 
@@ -235,6 +238,12 @@ class Subscriber:
                 proc.kill()
         self._kupo_proc = None
 
+    def kupo_matches_url(self):
+        policy_id = self.config.policy_id
+        # TODO proper encoding here rather than direct interpolation
+        url = f"http://{KUPO_HOST}:{KUPO_PORT}/v1/matches/{policy_id}/*?resolve_datums=true&with_spent=true"
+        return url
+
 
     # def _watch_kupo(policy_id: str) -> None:
     def _watch_kupo(self) -> None:
@@ -246,7 +255,7 @@ class Subscriber:
 
         while not self._watcher_stop.is_set():
             try:
-                resp = session.get(KUPO_MATCHES_URL, timeout=10)
+                resp = session.get(self.kupo_matches_url(), timeout=10)
                 resp.raise_for_status()
                 data = resp.json()
 
@@ -265,10 +274,10 @@ class Subscriber:
 
                     # Use (tx_id, out_ix) as unique key
                     key = (tx_id, out_ix)
-                    if tx_id and key in _seen_tx_ids:
+                    if tx_id and key in self._seen_tx_ids:
                         continue
                     if tx_id:
-                        _seen_tx_ids.add(key)
+                        self._seen_tx_ids.add(key)
 
                     try:
 
