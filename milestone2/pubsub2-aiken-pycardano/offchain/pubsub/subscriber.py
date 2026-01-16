@@ -10,12 +10,13 @@ import sys
 import threading
 import time
 
-from dataclass import dataclass
+from dataclasses import dataclass
 from os import environ
 from pprint import pprint
 from typing import Any, Callable, Dict, List, Optional
 
 from .ogmios import OGMIOS_HOST, OGMIOS_PORT
+from .plutus import PubsubAction, PsPublish
 
 
 KUPO_HOST = environ.get("KUPO_HOST", "127.0.0.1")
@@ -48,7 +49,7 @@ def log_error(msg: str, *args: Any) -> None:
 
 
 @dataclass
-class KupoConfig:
+class SubscriberConfig:
     since_slot: int  # For kupo --since
     since_block: str # For kupo --since
     until_slot: Optional[int] # For kupo --until, to prevent open-ended scans during tests
@@ -59,7 +60,7 @@ class KupoConfig:
 # TODO can the response type be more specific than dict?
 # Handles a single kupo match response json obj.
 # I think kupo yields an iterator of these? TODO check that
-KupoMatchCallback = Callable[[dict], None]
+SubscriberMatchCallback = Callable[[dict, requests.Session], None]
 
 
 def fetch_datum(session: requests.Session, datum_hash: str) -> Any:
@@ -69,7 +70,7 @@ def fetch_datum(session: requests.Session, datum_hash: str) -> Any:
     return resp.json()
 
 
-def handle_match(utxo: Dict[str, Any], session: requests.Session) -> None:
+def handle_match(utxo: Dict[str, Any], session: requests.Session) -> Optional[PubsubAction]:
     """
     `utxo` looks like the Kupo object you printed.
     For now, just log some key fields. Later you can:
@@ -99,16 +100,25 @@ def handle_match(utxo: Dict[str, Any], session: requests.Session) -> None:
     dbg = json.dumps(utxo, indent=2)
     log_info("Full UTxO:\n{}", dbg)
 
+    # TODO do PsOpen and PsClose have datum hashes?
     if datum_hash:
         try:
             datum = fetch_datum(session, datum_hash)
             log_info("Fetched datum for {}: {}", datum_hash, json.dumps(datum, indent=2))
+
+            assert isinstance(datum, InlineDatum)
+            raw: RawPlutusData = datum.data
+            cbor_bytes: bytes = raw.to_cbor()
+            action: PubsubAction = PubsubAction.from_cbor(cbor_bytes)
+            log_info(f"Decoded datum to {action}")
+            return action
+
             # Later: decode IPFS CIDs from `datum` here.
         except Exception as e:
             log_error("Failed to fetch datum {}: {}", datum_hash, e)
 
 
-class KupoSubscriberThread:
+class Subscriber:
     """
     Runs kupo and feeds matches to a callback.
     Note that since_slot and since_block should be figured out *before* deploying the contract,
@@ -118,12 +128,13 @@ class KupoSubscriberThread:
 
     def __init__(
             self,
-            config: KupoConfig,
-            on_match: KupoMatchCallback
+            config: SubscriberConfig,
+            on_match: SubscriberMatchCallback
         ):
 
         self.config = config
         self.on_match = on_match
+        self.subscribed_cids: List[bytes] = []
 
         self._kupo_proc: Optional[subprocess.Popen] = None
         self._watcher_thread: Optional[threading.Thread] = None
@@ -158,6 +169,13 @@ class KupoSubscriberThread:
             "--in-memory",
 
             "--since", since_arg,
+        ]
+
+        if self.config.until_slot is not None:
+            cmd += ["--until", str(self.config.until_slot)]
+
+        cmd += [
+
             "--match", f"{self.config.policy_id}/*",
 
             "--host", KUPO_HOST,
@@ -228,7 +246,7 @@ class KupoSubscriberThread:
 
         while not self._watcher_stop.is_set():
             try:
-                resp = session.get(KUPO_MATCHES_URL), timeout=10)
+                resp = session.get(KUPO_MATCHES_URL, timeout=10)
                 resp.raise_for_status()
                 data = resp.json()
 
@@ -253,8 +271,16 @@ class KupoSubscriberThread:
                         _seen_tx_ids.add(key)
 
                     try:
-                        # handle_match(utxo, session)
-                        self.on_match(utxo, session)
+
+                        action = self.on_match(utxo, session)
+                        log_info(f'action: {action} ({type(action)})')
+
+                        if isinstance(action, PsPublish):
+                            self.subscribed_cids += action.cids
+
+                        if isinstance(action, PsClose):
+                            self.stop()
+
                     except Exception as e:
                         log_error("Error in self.on_match: {}", e)
 
@@ -270,8 +296,8 @@ class KupoSubscriberThread:
         log_info("Watcher thread exiting")
 
 
-    # def start_watcher(policy_id: str, start_slot: int, block_hash: str) -> None:
-    def start_watcher(self) -> None:
+    # def start_subscription(policy_id: str, start_slot: int, block_hash: str) -> None:
+    def start(self) -> None:
         # global _watcher_thread
         self._watcher_stop.clear()
 
@@ -291,7 +317,7 @@ class KupoSubscriberThread:
         self._watcher_thread.start()
 
 
-    def stop_watcher(self) -> None:
+    def stop(self) -> None:
         # global _watcher_thread
         self._watcher_stop.set()
         if self._watcher_thread and self._watcher_thread.is_alive():
@@ -310,8 +336,6 @@ class KupoSubscriberThread:
 #     parser.add_argument("--start-slot", type=int, required=True, help="Start slot")
 #     parser.add_argument("--block-hash", required=True, help="Block hash (hex)")
 #     return parser.parse_args()
-
-
 # def main() -> None:
 #     args = parse_args()
 # 
@@ -320,14 +344,14 @@ class KupoSubscriberThread:
 # 
 #     def handle_sigint(sig, frame):
 #         log_info("Signal {} received, shutting down...", sig)
-#         stop_watcher()
+#         stop_subscription()
 #         stop_kupo()
 #         sys.exit(0)
 # 
 #     signal.signal(signal.SIGINT, handle_sigint)
 #     signal.signal(signal.SIGTERM, handle_sigint)
 # 
-#     start_watcher(args.policy_id, args.start_slot, args.block_hash)
+#     start_subscription(args.policy_id, args.start_slot, args.block_hash)
 # 
 #     # Just sleep until interrupted
 #     try:
@@ -335,7 +359,6 @@ class KupoSubscriberThread:
 #             time.sleep(1)
 #     except KeyboardInterrupt:
 #         handle_sigint(signal.SIGINT, None)
-
-
-if __name__ == "__main__":
-    main()
+#
+# if __name__ == "__main__":
+#     main()

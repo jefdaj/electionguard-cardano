@@ -1,3 +1,5 @@
+import asyncio
+import json
 import websockets
 
 from typing import Any, Dict
@@ -13,7 +15,9 @@ OGMIOS_CTX = OgmiosV6ChainContext(
     network=Network.TESTNET
 )
 
-async def query_network_tip() -> Dict[str, Any]:
+# TODO rename to make it more obvious this is for the --since args?
+# TODO and also to check if ogmios is up I guess
+async def query_network_tip() -> dict:
     # TODO is there an equivalent context function?
     url = f"ws://{OGMIOS_HOST}:{OGMIOS_PORT}"
     async with websockets.connect(url) as ws:
@@ -35,4 +39,13 @@ async def query_network_tip() -> Dict[str, Any]:
         if not isinstance(result, dict) or "slot" not in result or "id" not in result:
             raise RuntimeError(f"Unexpected Ogmios response: {response}")
 
-        return result  # {"slot": ..., "id": ...}
+        # make it more obvious for my kupo --since use case
+        slot = result["slot"]
+        result["block_hash"] = result["id"]
+        del result["id"]
+        return result
+        # return json.dumps(result, indent=2)
+
+# TODO what's the proper idiom for this?
+def query_network_tip_sync() -> dict:
+    return asyncio.run(query_network_tip())

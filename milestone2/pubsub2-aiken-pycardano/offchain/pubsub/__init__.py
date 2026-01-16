@@ -1,4 +1,4 @@
-# from .kupo import KupoSubscriber, KupoConfig
+from .subscriber import Subscriber, SubscriberConfig, handle_match
 from .ogmios import OGMIOS_CTX, query_network_tip
 from .plutus import *
 from .publisher import Publisher

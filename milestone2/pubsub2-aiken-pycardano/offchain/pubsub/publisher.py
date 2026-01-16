@@ -2,7 +2,7 @@ import time
 
 from pathlib import Path
 from pycardano import UTxO, OgmiosV6ChainContext, SigningKey, Transaction
-from typing import List
+from typing import List, Optional
 
 from .wallet import addr_for_signing_key, vkh_for_signing_key
 from .plutus import (
@@ -10,6 +10,7 @@ from .plutus import (
     PubsubScript, PubsubAction, PsOpen, PsPublish, PsClose,
     build_psopen_tx, build_pspublish_tx, build_psclose_tx
 )
+from .ogmios import query_network_tip_sync
 
 class Publisher:
 
@@ -27,6 +28,7 @@ class Publisher:
         self.pubsub_script = PubsubScript(self.oneshot_utxo)
         self.channel_state: Optional[str] = None # TODO formalize a type
         self.published_cids = []
+        self.tip_before_open: Optional[tuple[int, str]] = None
 
     def sign_and_submit(self, tx: Transaction):
         tx_signed = tx.build_and_sign(
@@ -59,6 +61,8 @@ class Publisher:
     def open_channel(self) -> Transaction:
         if self.channel_state is not None:
             raise Exception('open_channel requires no existing channel')
+        # for use with kupo --since in the subscriber later
+        self.tip_before_open = query_network_tip_sync()
         tx = build_psopen_tx(
             self.chain_context,
             self.publisher_address,
