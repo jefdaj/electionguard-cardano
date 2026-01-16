@@ -35,9 +35,18 @@ pub fn validate_cids(cids: List<CIDv1>) -> Bool {
 //      ipfs add --cid-version=1 myfile.txt
 
 pub type PubsubConfig {
+
   // All transactions must be signed by the publisher's key.
   // TODO allow the channel to be created by a separate admin
   publisher: VerificationKeyHash,
+
+  // Just the latest batch of CIDs; have to watch the chain to get the full history.
+  // Should be set to [] when doing any non-publish transaction (open/close).
+  // TODO rename latest_cids?
+  cids: List<CIDv1>,
+
+  // Optional, but may be helpful detecting rollbacks or errors?
+  seq: Int
 }
 
 pub type PubsubAction {
@@ -46,8 +55,8 @@ pub type PubsubAction {
   // TODO also send extra ADA to pay publishing fees?
   PsOpen
 
-  /// Announce publication of the corresponding IPFS files.
-  PsPublish { cids: List<CIDv1> }
+  /// Announce publication of new latest_cids.
+  PsPublish
 
   // Collect ADA and/or other tokens sent to the validator.
   // TODO sending ADA to the contract is always valid, right?

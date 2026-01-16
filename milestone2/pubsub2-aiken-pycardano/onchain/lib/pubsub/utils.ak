@@ -77,3 +77,12 @@ pub fn publisher_unchanged(
   expect new_config: PubsubConfig = new_datum
   new_config.publisher == old_publisher
 }
+
+pub fn sequence_incremented(
+  old_seq: Int,
+  stt_output: Output
+) -> Bool {
+  expect InlineDatum(new_datum) = stt_output.datum
+  expect new_config: PubsubConfig = new_datum
+  new_config.seq == (old_seq + 1)
+}
