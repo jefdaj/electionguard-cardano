@@ -4,7 +4,7 @@ from pycardano import *
 from typing import List
 
 from .script import PubsubScript
-from .types import PubsubAction, PsOpen, PsPublish, PsClose, PubsubConfig, CIDv1
+from .types import PubsubAction, PsOpen, PsPublish, PsClose, PubsubState, CIDv1
 
 # Should match config.default.stt_name in aiken.toml
 # TODO is there a good way to keep them in sync?
@@ -32,7 +32,11 @@ def build_psopen_tx(
 
     mint_redeemer = Redeemer(data=PsOpen())
     assets = mint_channel_stt_assets(script.policy_id, 1)
-    cfg = PubsubConfig(pub_vkh.payload) # TODO is there a cleaner way to get .payload?
+    state = PubsubState(
+        pub_vkh.payload, # TODO is there a cleaner way to get .payload?
+        [],
+        0
+    )
     # Lock the STT at the script address
     # script_addr = Address(payment_part=plutus_script_hash(script), network=Network.TESTNET)
     stt_output = TransactionOutput(
@@ -42,7 +46,7 @@ def build_psopen_tx(
             assets   # the minted STT
         ),
         # optionally include datum / inline datum here
-        datum=cfg
+        datum=state
     )
     mint_tx = (
         TransactionBuilder(ctx, mint=assets)
@@ -92,22 +96,25 @@ def build_pspublish_tx(
 ) -> TransactionBuilder:
 
     state_utxo = find_channel_stt_utxo(ctx, script.policy_id)
-    spend_redeemer = Redeemer(data=PsPublish(cids))
+    spend_redeemer = Redeemer(data=PsPublish())
 
     # TODO remove
-    print(f"Amount type: {type(state_utxo.output.amount)}")
-    print(f"Amount value: {state_utxo.output.amount}")
-    print(f"Amount coin: {state_utxo.output.amount.coin}")
-    print(f"Amount multi_asset: {state_utxo.output.amount.multi_asset}")
+    # print(f"Amount type: {type(state_utxo.output.amount)}")
+    # print(f"Amount value: {state_utxo.output.amount}")
+    # print(f"Amount coin: {state_utxo.output.amount.coin}")
+    # print(f"Amount multi_asset: {state_utxo.output.amount.multi_asset}")
 
-    # unchanged, but still have to round-trip it I guess
-    # cfg = PubsubConfig.from_cbor(state_utxo.output.datum.cbor)
-    cfg = PubsubConfig(pub_vkh.payload)
+    old_state = PubsubState.from_cbor(state_utxo.output.datum.cbor)
+    new_state = PubsubState(
+        pub_vkh.payload,
+        cids,
+        old_state.seq + 1
+    )
 
     stt_output = TransactionOutput(
         address=script.address,
         amount=state_utxo.output.amount, # unchanged (so far; may use ADA for fees later)
-        datum=cfg
+        datum=new_state
     )
 
     print(f"Script address from Python: {script.address}")

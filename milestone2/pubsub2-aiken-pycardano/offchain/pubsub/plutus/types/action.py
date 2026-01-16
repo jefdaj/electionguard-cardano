@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import ClassVar, Dict, Type, List
+from typing import ClassVar, Dict, Type
 from pycardano import PlutusData, RawPlutusData
 
 # Apparently there's no built in way in PyCardano to decode a superclass; you
@@ -60,10 +60,12 @@ class PsOpen(PubsubAction):
 class PsPublish(PubsubAction):
     """
     Examples:
-        >>> TODO fill in
+        >>> publish_action = PsPublish()
     """
     CONSTR_ID = 1
-    cids: List[bytes] # CIDv1 just converts str <--> bytes now
+
+    # Note: old CIDS here moved to PubsubState for easier Kupo indexing
+    # cids: List[bytes] # CIDv1 just converts str <--> bytes now
 
 # TODO remove?
 # @dataclass

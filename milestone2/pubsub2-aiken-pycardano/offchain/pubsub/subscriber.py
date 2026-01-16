@@ -17,7 +17,7 @@ from typing import Any, Callable, Dict, List, Optional
 from pycardano import *
 
 from .ogmios import OGMIOS_HOST, OGMIOS_PORT
-from .plutus import PubsubConfig, PubsubAction, PsOpen, PsPublish, PsClose
+from .plutus import PubsubState, PubsubAction, PsOpen, PsPublish, PsClose
 
 
 KUPO_HOST = environ.get("KUPO_HOST", "127.0.0.1")
@@ -108,7 +108,7 @@ def handle_match(utxo: Dict[str, Any], session: requests.Session) -> Optional[Pu
             log_info("Fetched datum for {}: {}", datum_hash, json.dumps(datum, indent=2))
 
             # TODO any need for this yet? probably at some point soon...
-            cfg = PubsubConfig.from_cbor(datum['datum'])
+            cfg = PubsubState.from_cbor(datum['datum'])
             log_info(f"Decoded datum to {cfg} ({type(cfg)})")
 
             log_info(f"Decoded datum to {cfg}")
