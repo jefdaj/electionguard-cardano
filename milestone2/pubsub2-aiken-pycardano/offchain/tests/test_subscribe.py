@@ -56,10 +56,10 @@ def sub_pub1(pub_pub1: Publisher):
 def cfg_all() -> SubscriberConfig:
     "Config for subscribing to a historical channel with 81 published CIDs"
     return SubscriberConfig(
-        since_slot=101944891,
-        since_block='3b4820fb7a9ccd8a4efa61c37e6795212f5d64e788356cad41af752a3010dfb4',
-        policy_id='987d259dc8ef371e6245a65228a15f80ce922b1a4d0c13b53bc56c34',
-        until_slot=101944891 + 600
+        since_slot=101947668,
+        since_block='c6860b74b0602981b3e5790f47d081382cdc49ca34c445b9f0e9723a03251626',
+        policy_id='9e31dca6f8b69d15d883d0a6db36f4ecaae2cef5db22ad8ccf0ffb4e',
+        until_slot=101947752 + 600
         # TODO until_slot not needed because we know this one was closed?
     )
 
@@ -68,69 +68,73 @@ def cfg_all() -> SubscriberConfig:
 # TODO separate mark for subscribe vs publish?
 @pytest.mark.testnet
 @pytest.mark.slow
-def test_subscribe_all_hardcoded(cfg_all: SubscriberConfig):
+def test_subscribe_all_hardcoded(
+    cfg_all: SubscriberConfig,
+    election_records: list[tuple[Path, bytes]]
+):
     "Subscribe to a hardcoded channel with all 81 election record CIDs"
     sub = Subscriber(cfg_all, handle_match)
     sub.start()
-    for n in range(0, 60, 10):
-        sleep(10)
-        print(sub.subscribed_cids)
+    # TODO come up with a better wait mechanism
+    # while not sub._watcher_stop.is_set():
+    sleep(30)
     sub.stop()
-    assert len(sub.subscribed_cids) > 50
+    cids = list(v for (k, v) in election_records)
+    assert sub.subscribed_cids() == cids, "Subscriber CIDs should match election_records"
 
 # TODO double check pytest isn't creating two different pub_closed instances here
 @pytest.mark.slow
 @pytest.mark.testnet
 def test_subscribe_closed(
-        sub_closed: Subscriber,
-        pub_closed: Publisher
-    ):
+    sub_closed: Subscriber,
+    pub_closed: Publisher
+):
     "Subscribe to a channel that was opened + closed immediately"
     assert pub_closed.published_cids  == []
-    assert sub_closed.subscribed_cids == []
+    assert sub_closed.subscribed_cids() == []
 
 # TODO double check pytest isn't creating two different pub_pub1 instances here
 @pytest.mark.slow
 @pytest.mark.testnet
 def test_subscribe_one(
-        sub_pub1: Subscriber,
-        pub_pub1: Publisher,
-        election_records: list[tuple[Path, bytes]]
-    ):
+    sub_pub1: Subscriber,
+    pub_pub1: Publisher,
+    election_records: list[tuple[Path, bytes]]
+):
     "Subscribe to a channel with 1 test TX (3 CIDs)"
     tx = pub_pub1.close_channel()
     pub_pub1.wait_for_confirmation(tx)
     # TODO and wait for subscriber to finish here too?
     cids = list(v for (k, v) in election_records[:3])
     assert pub_pub1.published_cids  == cids, "published CIDs should match" # TODO this works,
-    assert sub_pub1.subscribed_cids == cids, "subscribed CIDs should match" # TODO but not this?
+    assert sub_pub1.subscribed_cids() == cids, "subscribed CIDs should match" # TODO but not this?
 
 @pytest.mark.slow
 @pytest.mark.testnet
 def test_subscribe_two(
-        pub_pub2: Publisher,
-        sub_pub2: Subscriber,
-        election_records: list[tuple[Path, bytes]]
-    ):
+    pub_pub2: Publisher,
+    sub_pub2: Subscriber,
+    election_records: list[tuple[Path, bytes]]
+):
     "Subscribe to a channel with 2 test TXs (6 CIDs)"
     tx = pub_pub2.close_channel()
     pub_pub2.wait_for_confirmation(tx)
     # TODO and wait for subscriber to finish here too?
     cids = list(v for (k, v) in election_records[:6])
     assert pub_pub1.published_cids  == cids
-    assert sub_pub1.subscribed_cids == cids
+    assert sub_pub1.subscribed_cids() == cids
 
 @pytest.mark.slow
 @pytest.mark.testnet
 def test_subscribe_all(
-        pub_all: Publisher,
-        sub_all: Subscriber,
-        election_records: list[tuple[Path, bytes]]
-    ):
+    pub_all: Publisher,
+    sub_all: Subscriber,
+    election_records: list[tuple[Path, bytes]]
+):
     "Subscribe to a channel with all 81 election record CIDs"
     tx = pub_all.close_channel()
     pub_all.wait_for_confirmation(tx)
     # TODO and wait for subscriber to finish here too?
     cids = list(v for (k, v) in election_records)
     assert pub_all.published_cids  == cids
-    assert sub_all.subscribed_cids == cids
+    assert sub_all.subscribed_cids() == cids

@@ -101,22 +101,26 @@ def handle_match(utxo: Dict[str, Any], session: requests.Session) -> Optional[Pu
     dbg = json.dumps(utxo, indent=2)
     log_info("Full UTxO:\n{}", dbg)
 
-    # TODO do PsOpen and PsClose have datum hashes?
-    if datum_hash:
+    if not datum_hash:
+        # TODO what if this appears out of order?
+        # should be PsClose
+        # TODO is there a better way to check that?
+        return None # TODO better stop signal?
+
+    else:
+        # PsOpen or PsPublish, both of which should have CID lists (PsOpen's is empty)
         try:
             datum = fetch_datum(session, datum_hash)
             log_info("Fetched datum for {}: {}", datum_hash, json.dumps(datum, indent=2))
 
-            # TODO any need for this yet? probably at some point soon...
-            cfg = PubsubState.from_cbor(datum['datum'])
-            log_info(f"Decoded datum to {cfg} ({type(cfg)})")
-
-            log_info(f"Decoded datum to {cfg}")
-            # return cfg
+            state = PubsubState.from_cbor(datum['datum'])
+            log_info(f"Decoded datum to {type(state)}")
+            return state
 
             # Later: decode IPFS CIDs from `datum` here.
         except Exception as e:
             log_error("Failed to fetch datum {}: {}", datum_hash, e)
+            raise
 
 
 class Subscriber:
@@ -135,7 +139,7 @@ class Subscriber:
 
         self.config = config
         self.on_match = on_match
-        self.subscribed_cids: List[bytes] = []
+        self.cids_by_seq: Mapping[int, List[bytes]] = {}
 
         self._kupo_proc: Optional[subprocess.Popen] = None
         self._watcher_thread: Optional[threading.Thread] = None
@@ -172,6 +176,7 @@ class Subscriber:
             "--since", since_arg,
         ]
 
+        # TODO is kupo ignoring this?
         if self.config.until_slot is not None:
             cmd += ["--until", str(self.config.until_slot)]
 
@@ -241,7 +246,10 @@ class Subscriber:
     def kupo_matches_url(self):
         policy_id = self.config.policy_id
         # TODO proper encoding here rather than direct interpolation
-        url = f"http://{KUPO_HOST}:{KUPO_PORT}/v1/matches/{policy_id}/*?resolve_datums=true&with_spent=true"
+        # url = f"http://{KUPO_HOST}:{KUPO_PORT}/v1/matches/{policy_id}/*?resolve_datums=true&with_spent=true"
+        # TODO is resolve_datums doing anything?
+        # url = f"http://{KUPO_HOST}:{KUPO_PORT}/v1/matches?resolve_datums=true&with_spent=true"
+        url = f"http://{KUPO_HOST}:{KUPO_PORT}/v1/matches"
         return url
 
 
@@ -281,14 +289,20 @@ class Subscriber:
 
                     try:
 
-                        action = self.on_match(utxo, session)
-                        log_info(f'action: {action} ({type(action)})')
+                        new_state = self.on_match(utxo, session)
+                        # log_info(f'new_state: {new_state} ({type(new_state)})')
 
-                        if isinstance(action, PsPublish):
-                            self.subscribed_cids += action.cids
+                        if new_state is None:
+                            # should be a PsClose, signaling end of subscription
+                            log_info("new_state is None, signaling PsClose")
+                            # self.stop()
+                            # TODO is there anything good we can do here, since this appears out of order?
+                            # TODO ah, could add a seq to open, publish, close and use that
 
-                        if isinstance(action, PsClose):
-                            self.stop()
+                        else:
+                            assert isinstance(new_state, PubsubState), "Each TX should have a PubsubState"
+                            if len(new_state.cids) > 0:
+                                self.cids_by_seq[new_state.seq] = new_state.cids
 
                     except Exception as e:
                         log_error("Error in self.on_match: {}", e)
@@ -304,6 +318,14 @@ class Subscriber:
 
         log_info("Watcher thread exiting")
 
+
+    # TODO better name?
+    # TODO exception if there's a missing seq?
+    def subscribed_cids(self):
+        cids = []
+        for seq in sorted(self.cids_by_seq.keys()):
+            cids += self.cids_by_seq[seq]
+        return cids
 
     # def start_subscription(policy_id: str, start_slot: int, block_hash: str) -> None:
     def start(self) -> None:
