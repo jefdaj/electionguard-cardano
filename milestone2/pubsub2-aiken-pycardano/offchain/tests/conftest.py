@@ -184,25 +184,3 @@ def sub1(pub1: Publisher):
 # TODO sub_open
 # TODO sub2
 # TODO sub_all
-
-# TODO name with 'historical' or 'hardcoded' or similar?
-@pytest.fixture(scope='session')
-def cfg_all_hardcoded() -> SubscriberConfig:
-    'Config for subscribing to a historical channel with 81 published CIDs'
-    return SubscriberConfig(
-        since_slot=101947668,
-        since_block='c6860b74b0602981b3e5790f47d081382cdc49ca34c445b9f0e9723a03251626',
-        policy_id='9e31dca6f8b69d15d883d0a6db36f4ecaae2cef5db22ad8ccf0ffb4e',
-        until_slot=101947752 + 600
-        # TODO until_slot not needed because we know this one was closed?
-    )
-
-@pytest.fixture(scope='module')
-def sub_all_hardcoded(cfg_all_hardcoded: SubscriberConfig) -> Subscriber:
-    sub = Subscriber(cfg_all, handle_match)
-    sub.start()
-    # TODO come up with a better wait mechanism
-    # while not sub._watcher_stop.is_set():
-    sleep(30)
-    sub.stop()
-    return sub
