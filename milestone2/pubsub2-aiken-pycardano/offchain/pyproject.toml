@@ -27,9 +27,8 @@ include = ["pubsub*"]
 [tool.pytest.ini_options]
 
 markers = [
-  "slow: marks tests as slow tests",
   "local: marks tests as local (not requiring testnet) tests",
-  "testnet: marks tests as testnet tests",
+  "testnet: marks tests as (slow) testnet tests",
 ]
 
 log_cli = false
