@@ -91,20 +91,20 @@ $ ./test.sh
 
 tests/test_publish_0.py::test_pub0_open PASSED                           [  7%]
 tests/test_publish_0.py::test_pub0_closed PASSED                         [ 14%]
-tests/test_publish_0.py::test_sub0 PASSED                                [ 21%]
+tests/test_publish_0.py::test_sub0_closed PASSED                         [ 21%]
 tests/test_publish_1.py::test_pub1_open PASSED                           [ 28%]
 tests/test_publish_1.py::test_pub1_closed PASSED                         [ 35%]
-tests/test_publish_1.py::test_sub1 PASSED                                [ 42%]
+tests/test_publish_1.py::test_sub1_closed PASSED                         [ 42%]
 tests/test_publish_2.py::test_pub2_open PASSED                           [ 50%]
 tests/test_publish_2.py::test_pub2_closed PASSED                         [ 57%]
-tests/test_publish_2.py::test_sub2 PASSED                                [ 64%]
+tests/test_publish_2.py::test_sub2_closed PASSED                         [ 64%]
 tests/test_publish_all.py::test_sub_all_hist PASSED                      [ 71%]
 tests/test_publish_all.py::test_pub_all_open PASSED                      [ 78%]
 tests/test_publish_all.py::test_pub_all_closed PASSED                    [ 85%]
-tests/test_publish_all.py::test_sub_all PASSED                           [ 92%]
+tests/test_publish_all.py::test_sub_all_closed PASSED                    [ 92%]
 tests/test_records.py::test_load_election_records PASSED                 [100%]
 
-======================== 14 passed in 855.36s (0:14:15) ========================
+======================== 14 passed in 587.18s (0:09:47) ========================
 ```
 
 ## Usage
