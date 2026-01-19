@@ -3,28 +3,6 @@ from time import sleep
 from pubsub import *
 from .conftest import *
 
-# TODO shorten? currently takes about 7 min
-@pytest.fixture(scope='module')
-def pub_all_open(pub0_open: Publisher, cids_all: CIDs) -> Publisher:
-    'Publisher with all 81 CIDs published in chunks of 10'
-    pub = pub0_open
-    for cids in chunks(cids_all, 10):
-        tx = pub.publish_cids(cids)
-        pub.wait_for_confirmation(tx)
-    return pub
-
-@pytest.fixture(scope='module')
-def pub_all_closed(pub_all_open: Publisher) -> Publisher:
-    pub = pub_all_open
-    close_tx = pub.close_channel()
-    pub.wait_for_confirmation(close_tx)
-    return pub
-
-@pytest.mark.testnet
-def test_pub_all_closed(pub_all_closed: Publisher, cids_all: CIDs):
-    assert pub_all_closed.channel_state == 'closed', "channel should be closed"
-    assert pub_all_closed.published_cids == cids_all, "all CIDs should be published"
-
 @pytest.fixture(scope='session')
 def cfg_all_hist() -> SubscriberConfig:
     'Config for subscribing to a historical channel with all 81 published CIDs'
@@ -51,3 +29,25 @@ def test_sub_all_hist(sub_all_hist: Subscriber, cids_all: CIDs):
     sub = sub_all_hist
     assert sub.subscribed_cids() == cids_all, "all CIDs should be subscribed"
     # TODO assert subscriber is done/stopped
+
+# TODO shorten? currently takes about 7 min
+@pytest.fixture(scope='module')
+def pub_all_open(pub0_open: Publisher, cids_all: CIDs) -> Publisher:
+    'Publisher with all 81 CIDs published in chunks of 10'
+    pub = pub0_open
+    for cids in chunks(cids_all, 10):
+        tx = pub.publish_cids(cids)
+        pub.wait_for_confirmation(tx)
+    return pub
+
+@pytest.fixture(scope='module')
+def pub_all_closed(pub_all_open: Publisher) -> Publisher:
+    pub = pub_all_open
+    close_tx = pub.close_channel()
+    pub.wait_for_confirmation(close_tx)
+    return pub
+
+@pytest.mark.testnet
+def test_pub_all_closed(pub_all_closed: Publisher, cids_all: CIDs):
+    assert pub_all_closed.channel_state == 'closed', "channel should be closed"
+    assert pub_all_closed.published_cids == cids_all, "all CIDs should be published"
