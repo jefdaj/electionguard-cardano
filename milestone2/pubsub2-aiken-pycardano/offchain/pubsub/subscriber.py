@@ -21,7 +21,7 @@ from .plutus import PubsubState, PubsubAction, PsOpen, PsPublish, PsClose
 
 KUPO_HOST = environ.get('KUPO_HOST', '127.0.0.1')
 KUPO_PORT = int(environ.get('KUPO_PORT', '1442'))
-KUPO_MATCHES_URL = f'http://{KUPO_HOST}:{KUPO_PORT}/v1/matches?order=oldest_first' # ?resolve_datums=true&with_spent=true'
+KUPO_MATCHES_URL = f'http://{KUPO_HOST}:{KUPO_PORT}/v1/matches'
 KUPO_POLL_SEC = 2.0
 
 NODE_SOCKET = environ.get('CARDANO_NODE_SOCKET_PATH', '../../cardano-node-ogmios/data/node-ipc/node.socket')
@@ -49,7 +49,7 @@ class SubscriberConfig:
 # Handles a single kupo match response json obj.
 # I think kupo yields an iterator of these? TODO check that
 # TODO can the response type be more specific than dict?
-SubscriberActionCallback = Callable[[dict, requests.Session], Optional[PubsubAction]]
+SubscriberActionCallback = Callable[[dict, requests.Session], PubsubAction]
 
 def fetch_datum(session: requests.Session, datum_hash: str) -> Any:
     url = f'http://{KUPO_HOST}:{KUPO_PORT}/v1/datums/{datum_hash}' # TODO global var?
@@ -57,7 +57,11 @@ def fetch_datum(session: requests.Session, datum_hash: str) -> Any:
     resp.raise_for_status()
     return resp.json()
 
-def handle_match(utxo: Dict[str, Any], session: requests.Session) -> Optional[PubsubAction]:
+def handle_close(utxo: Dict[str, Any], session: requests.Session) -> PubsubAction:
+    log_info('Channel closed')
+    return PsClose()
+
+def handle_match(utxo: Dict[str, Any], session: requests.Session) -> PubsubAction:
     '''
     `utxo` looks like the Kupo object you printed.
     For now, just log some key fields. Later you can:
@@ -122,17 +126,26 @@ class Subscriber:
     def __init__(
             self,
             config: SubscriberConfig,
-            on_match: SubscriberActionCallback
+            on_match: SubscriberActionCallback,
+            on_close: SubscriberActionCallback,
         ):
 
         self.config = config
         self.on_match = on_match
+        self.on_close = on_close
         self.cids_by_seq: Mapping[int, List[bytes]] = {}
 
         self._kupo_proc: Optional[subprocess.Popen] = None
         self._watcher_thread: Optional[threading.Thread] = None
         self._watcher_stop = threading.Event()
         self._seen_tx_ids: set[str] = set()
+
+        # We check whether this was spent without any new match to confirm a PsClose.
+        self._last_tx_key = None # TODO type?
+
+        self.session = requests.Session()
+        self.session.headers.update({'Accept': 'application/json'})
+
 
     def start_kupo_if_needed(self) -> None:
         '''
@@ -209,6 +222,7 @@ class Subscriber:
             log_info('[KUPO] {}', line)
             if proc.poll() is not None:
                 break
+        # TODO why does this seem to happen immediately?
         log_info('Kupo subprocess output thread terminating')
 
     def stop_kupo(self) -> None:
@@ -225,25 +239,55 @@ class Subscriber:
                 proc.kill()
         self._kupo_proc = None
 
-    def _watch_kupo(self) -> None:
-        policy_id = self.config.policy_id
-        log_info('Watcher thread started for policy_id={}', policy_id)
+    def check_if_channel_closed(self):
+        # log_info('check_if_channel_closed')
+        (tx_id, output_ix) = self._last_tx_key
+        resp = self.session.get(KUPO_MATCHES_URL + f'/{output_ix}@{tx_id}') # TODO params? timeout?
+        if resp.status_code == 200:
+            utxos = resp.json()
+            # log_info('utxos type: {}', type(utxos))
+            # log_info('utxos: {}', utxos)
+            assert isinstance(utxos, list), "expected a list of UTXOs"
+            for utxo in utxos:
+                # There should only be one
+                # log_info(f'utxo: {type(utxo)}')
+                # log_info(f'utxo keys: {utxo.keys()}')
+                if 'spent_at' in utxo:
+                    # Confirmed spent
+                    # log_info(f'spent_at: {utxo['spent_at']}')
+                    self.on_close(utxo, self.session)
+                    self.stop()
+                    return
+        # log_info(f'Probably not closed? {resp}')
 
-        session = requests.Session() # TODO store in self?
-        session.headers.update({'Accept': 'application/json'})
+    def _watch_kupo(self) -> None:
+        log_info('Watcher thread started for policy_id={}', self.config.policy_id)
 
         while not self._watcher_stop.is_set():
             try:
-                resp = session.get(KUPO_MATCHES_URL, timeout=10)
+                resp = self.session.get(
+                    KUPO_MATCHES_URL,
+                    timeout=10,
+                    params={
+                        'with_spent': 'false',
+                        'order': 'oldest_first',
+                        # TODO resolve_datums?
+                    }
+                )
                 resp.raise_for_status()
-                data = resp.json()
+                unspent_utxos = resp.json()
 
-                if not isinstance(data, list):
-                    raise Exception(f'Unexpected Kupo response type: {type(data)}')
+                if not isinstance(unspent_utxos, list):
+                    raise Exception(f'Unexpected Kupo response type: {type(unspent_utxos)}')
                     # time.sleep(KUPO_POLL_SEC)
                     # continue
 
-                for utxo in data:
+                # pprint(f'unspent_utxos: {unspent_utxos}')
+                # print(flush=True)
+
+                any_new_utxo = False
+
+                for utxo in unspent_utxos:
                     if not isinstance(utxo, dict):
                         # continue
                         raise Exception(f'Unexpected utxo format {type(utxo)}:\n{utxo}')
@@ -256,33 +300,31 @@ class Subscriber:
                     if tx_id and key in self._seen_tx_ids:
                         continue
                     if tx_id:
+                        # log_info(f'last_tx_key: {key}')
                         self._seen_tx_ids.add(key)
+                        self._last_tx_key = key
+                        any_new_utxo = True
 
                     try:
 
-                        new_state = self.on_match(utxo, session)
+                        new_state = self.on_match(utxo, self.session)
                         # log_info(f'new_state: {new_state} ({type(new_state)})')
 
-                        if new_state is None:
-                            # should be a PsClose, signaling end of subscription
-                            log_info('new_state is None, signaling PsClose')
-                            # self.stop()
-                            # TODO is there anything good we can do here, since this appears out of order?
-                            # TODO ah, could add a seq to open, publish, close and use that
-
-                        else:
-                            assert isinstance(new_state, PubsubState), 'Each TX should have a PubsubState'
-                            if len(new_state.cids) > 0:
-                                self.cids_by_seq[new_state.seq] = new_state.cids
+                        assert isinstance(new_state, PubsubState), 'Each TX should have a PubsubState'
+                        if len(new_state.cids) > 0:
+                            self.cids_by_seq[new_state.seq] = new_state.cids
 
                     except Exception as e:
                         log_error('Error in self.on_match: {}', e)
+
+                if not any_new_utxo:
+                    self.check_if_channel_closed()
 
             except requests.RequestException as e:
                 log_warn('Kupo polling error: {}', e)
                 time.sleep(5)
             except Exception as e:
-                log_error('Unexpected error in watcher: {}', e)
+                log_error('Unexpected error in watcher: {} {}', e, type(e))
                 time.sleep(5)
 
             time.sleep(KUPO_POLL_SEC)
@@ -312,9 +354,18 @@ class Subscriber:
         )
         self._watcher_thread.start()
 
+    def join(self):
+        # TODO is this how this works?
+        self._watcher_thread.join(timeout=5)
+
     def stop(self) -> None:
+        self.stop_kupo()
         self._watcher_stop.set()
         if self._watcher_thread and self._watcher_thread.is_alive():
             log_info('Waiting for watcher thread to exit...')
-            self._watcher_thread.join(timeout=5)
+            try:
+                self._watcher_thread.join(timeout=5)
+            except Exception as e:
+                if not 'cannot join current thread' in str(e):
+                    raise
         self._watcher_thread = None

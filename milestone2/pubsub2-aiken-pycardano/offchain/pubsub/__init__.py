@@ -1,4 +1,4 @@
-from .subscriber import Subscriber, SubscriberConfig, handle_match
+from .subscriber import Subscriber, SubscriberConfig, handle_match, handle_close
 from .ogmios import OGMIOS_CTX, query_network_tip
 from .plutus import *
 from .publisher import Publisher

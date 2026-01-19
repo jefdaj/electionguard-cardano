@@ -156,11 +156,9 @@ def sub_closed(pub_closed: Publisher):
         since['slot'] + 30,
         pub_closed.pubsub_script.policy_id
     )
-    sub = Subscriber(cfg, handle_match)
+    sub = Subscriber(cfg, handle_match, handle_close)
     sub.start() # TODO should this happen automatically?
-    # TODO how to properly run it and await result?
-    sleep(30) # 2min
-    sub.stop()
+    sub.join()  # TODO should there also be a timeout in case it fails?
     return sub
 
 @pytest.fixture(scope='module')
@@ -176,8 +174,7 @@ def sub1(pub1: Publisher):
     sub = Subscriber(cfg, handle_match)
     sub.start() # TODO should this happen automatically?
     # TODO how to properly run it and await result?
-    sleep(30)
-    sub.stop()
+    sub.join()  # TODO should there also be a timeout in case it fails?
     return sub
 
 
