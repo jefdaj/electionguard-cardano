@@ -27,54 +27,19 @@ $ ./build.sh
 Test
 ----
 
-All I've done so far are 2 minimal `testnet` tests, which post transactions
-to the Preview network.
-
-```python
-@pytest.mark.testnet
-@pytest.mark.slow
-def test_publish_cids(ps: PubsubClient, cids: List[CIDv1]):
-
-    # open channel
-    open_tx = ps.open_channel()
-    ps.wait_for_confirmation(open_tx)
-
-    # publish cids
-    pub1_tx = ps.publish_cids(cids)
-    ps.wait_for_confirmation(pub1_tx)
-
-    # again, to be sure chaining them works
-    pub2_tx = ps.publish_cids(cids)
-    ps.wait_for_confirmation(pub2_tx)
-
-    # close channel
-    close_tx = ps.close_channel()
-    ps.wait_for_confirmation(close_tx)
-```
-
 ```
 $ nix develop .#offchain
 $ ./test.sh 
-+ EXTRA_ARGS=
-+ pytest -vv
-+ tee test.log
 ============================= test session starts ==============================
-...
-collecting ... collected 7 items
 
-tests/test_publish.py::test_open PASSED                                  [ 14%]
-tests/test_publish.py::test_close_nopub PASSED                           [ 28%]
-tests/test_publish.py::test_publish_one PASSED                           [ 42%]
-tests/test_publish.py::test_close_pub1 PASSED                            [ 57%]
-tests/test_publish.py::test_publish_two PASSED                           [ 71%]
-tests/test_publish.py::test_publish_all PASSED                           [ 85%]
-tests/test_serialization.py::test_load_election_records PASSED           [100%]
+tests/test_publish_0.py::test_close_nopub PASSED                         [ 16%]
+tests/test_publish_1.py::test_pub1_closed PASSED                         [ 33%]
+tests/test_publish_2.py::test_pub2_closed PASSED                         [ 50%]
+tests/test_publish_all.py::test_sub_all_hist PASSED                      [ 66%]
+tests/test_publish_all.py::test_pub_all_closed PASSED                    [ 83%]
+tests/test_records.py::test_load_election_records PASSED                 [100%]
 
-======================== 7 passed in 838.54s (0:13:58) =========================
-
-real    13m59.566s
-user    0m19.783s
-sys     0m0.290s
+======================== 6 passed in 551.63s (0:09:11) =========================
 ```
 
 I'm planning to add some faster, simpler ones for things like round-tripping to
