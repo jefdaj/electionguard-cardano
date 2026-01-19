@@ -100,7 +100,7 @@ class Subscriber:
             on_match: SubscriberActionCallback,
             on_close: SubscriberActionCallback,
         ):
-        log_info('[Sub] init')
+        log_info('[sub] init')
 
         self.config = config
         self.on_match = on_match
@@ -124,7 +124,7 @@ class Subscriber:
         Start Kupo as a subprocess if it's not already running.
         Uses `--since {slot}.{hash}` and `--match '{policy_id}/*'`.
         '''
-        log_info('[Sub] start_kupo_if_needed')
+        log_info('[sub] start_kupo_if_needed')
 
         if self._kupo_proc is not None and self._kupo_proc.poll() is None:
             log_info('Kupo already running (pid={})', self._kupo_proc.pid)
@@ -167,7 +167,7 @@ class Subscriber:
 
         ]
 
-        log_info('Starting Kupo: {}', ' '.join(cmd))
+        log_info('[sub] Starting Kupo: {}', ' '.join(cmd))
         self._kupo_proc = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
@@ -184,7 +184,7 @@ class Subscriber:
         ).start()
 
     def _log_kupo_output(self) -> None:
-        log_info('[Sub] _log_kupo_output')
+        log_info('[sub] _log_kupo_output')
         proc = self._kupo_proc
         if proc.stdout is None:
             return
@@ -192,50 +192,47 @@ class Subscriber:
             line = line.rstrip('\n')
             if not line:
                 continue
-            log_info('[KUPO] {}', line)
+            log_info('[kupo] {}', line)
             if proc.poll() is not None:
                 break
         # TODO why does this seem to happen immediately?
-        log_info('Kupo subprocess output thread terminating')
+        log_info('[sub] Kupo subprocess output thread terminating')
 
     def stop_kupo(self) -> None:
-        log_info('[Sub] stop_kupo')
+        log_info('[sub] stop_kupo')
         proc = self._kupo_proc
         if proc is None:
             return
         if proc.poll() is None:
-            log_info('Terminating Kupo (pid={})', proc.pid)
+            log_info('[sub] Terminating Kupo (pid={})', proc.pid)
             proc.terminate()
             try:
                 proc.wait(timeout=10)
             except subprocess.TimeoutExpired:
-                log_warn('Kupo did not exit in time, killing...')
+                log_warn('[sub] Kupo did not exit in time, killing...')
                 proc.kill()
         self._kupo_proc = None
 
     def check_if_channel_closed(self):
-        log_info('[Sub] check_if_channel_closed')
+        log_info('[sub] check_if_channel_closed')
         (tx_id, output_ix) = self._last_tx_key
         resp = self.session.get(KUPO_MATCHES_URL + f'/{output_ix}@{tx_id}') # TODO params? timeout?
         if resp.status_code == 200:
             utxos = resp.json()
-            # log_info('utxos type: {}', type(utxos))
-            # log_info('utxos: {}', utxos)
             assert isinstance(utxos, list), "expected a list of UTXOs"
             for utxo in utxos:
                 # There should only be one
-                # log_info(f'utxo: {type(utxo)}')
-                # log_info(f'utxo keys: {utxo.keys()}')
                 if 'spent_at' in utxo:
                     # Confirmed spent
-                    # log_info(f'spent_at: {utxo['spent_at']}')
+                    log_info(f'[sub] STT UTXO spent without creating a new one')
+                    # for some reason, actually printing spent_at here produces errors
                     self.on_close(utxo, self.session)
                     self.stop()
                     return
         # log_info(f'Probably not closed? {resp}')
 
     def _watch_kupo(self) -> None:
-        log_info('Watcher thread started for policy_id={}', self.config.policy_id)
+        log_info('[sub] Watcher thread started for policy_id={}', self.config.policy_id)
 
         while not self._watcher_stop.is_set():
             try:
@@ -252,7 +249,7 @@ class Subscriber:
                 unspent_utxos = resp.json()
 
                 if not isinstance(unspent_utxos, list):
-                    raise Exception(f'Unexpected Kupo response type: {type(unspent_utxos)}')
+                    raise Exception(f'[sub] Unexpected Kupo response type: {type(unspent_utxos)}')
                     # time.sleep(KUPO_POLL_SEC)
                     # continue
 
@@ -264,7 +261,7 @@ class Subscriber:
                 for utxo in unspent_utxos:
                     if not isinstance(utxo, dict):
                         # continue
-                        raise Exception(f'Unexpected utxo format {type(utxo)}:\n{utxo}')
+                        raise Exception(f'[sub] Unexpected utxo format {type(utxo)}:\n{utxo}')
 
                     # skip already-processed transactions
                     # TODO is this ever actually needed?
@@ -288,21 +285,21 @@ class Subscriber:
                         self.cids_by_seq[new_state.seq] = new_state.cids
 
                     except Exception as e:
-                        log_error('Error in self.on_match: {}', e)
+                        log_error('[sub] Error in self.on_match: {}', e)
 
                 if not any_new_utxo:
                     self.check_if_channel_closed()
 
             except requests.RequestException as e:
-                log_warn('Kupo polling error: {}', e)
+                log_warn('[sub] Kupo polling error: {}', e)
                 time.sleep(5)
             except Exception as e:
-                log_error('Unexpected error in watcher: {} {}', e, type(e))
+                log_error('[sub] Unexpected error in watcher: {} {}', e, type(e))
                 time.sleep(5)
 
             time.sleep(KUPO_POLL_SEC)
 
-        log_info('Watcher thread exiting')
+        log_info('[sub] Watcher thread exiting')
 
     def subscribed_cids(self):
         cids = []
@@ -312,7 +309,7 @@ class Subscriber:
         return cids
 
     def start(self) -> None:
-        log_info('[Sub] start')
+        log_info('[sub] start')
         self._watcher_stop.clear()
 
         def _start_and_watch() -> None:
@@ -329,17 +326,17 @@ class Subscriber:
         self._watcher_thread.start()
 
     def join(self):
-        log_info('[Sub] join')
+        log_info('[sub] join')
         # TODO how is this actually supposed to be done?
         while not self.is_done():
             time.sleep(1)
 
     def stop(self) -> None:
-        log_info('[Sub] stop')
+        log_info('[sub] stop')
         self.stop_kupo()
         self._watcher_stop.set()
         if self._watcher_thread and self._watcher_thread.is_alive():
-            log_info('Waiting for watcher thread to exit...')
+            log_info('[sub] Waiting for watcher thread to exit...')
             try:
                 self._watcher_thread.join(timeout=5)
             except Exception as e:
