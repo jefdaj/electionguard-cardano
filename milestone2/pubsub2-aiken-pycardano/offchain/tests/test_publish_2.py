@@ -30,7 +30,7 @@ def test_pub2_closed(pub2_closed: Publisher, cids1: CIDs, cids2: CIDs):
     assert pub2_closed.published_cids == cids, 'first 2 batches of CIDs should be published'
 
 @pytest.fixture(scope='module')
-def sub2(pub2_closed: Publisher) -> Subscriber:
+def sub2_closed(pub2_closed: Publisher) -> Subscriber:
     since = pub2_closed.tip_before_open
     assert isinstance(since, dict)
     cfg = SubscriberConfig(
@@ -45,7 +45,7 @@ def sub2(pub2_closed: Publisher) -> Subscriber:
     return sub
 
 @pytest.mark.testnet
-def test_sub2(sub2: Subscriber, cids1: CIDs, cids2: CIDs):
+def test_sub2_closed(sub2_closed: Subscriber, cids1: CIDs, cids2: CIDs):
     cids = cids1 + cids2
-    assert sub2.is_done(), 'subscriber should be done'
-    assert sub2.subscribed_cids() == cids, 'first two batches of CIDs should be fetched'
+    assert sub2_closed.is_done(), 'subscriber should be done'
+    assert sub2_closed.subscribed_cids() == cids, 'first two batches of CIDs should be fetched'

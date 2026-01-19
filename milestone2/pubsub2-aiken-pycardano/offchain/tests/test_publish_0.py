@@ -19,7 +19,7 @@ def test_pub0_closed(pub0_closed: Publisher):
     assert pub0_closed.published_cids == [], 'no CIDs should be published'
 
 @pytest.fixture(scope='module')
-def sub0(pub0_closed: Publisher) -> Subscriber:
+def sub0_closed(pub0_closed: Publisher) -> Subscriber:
     since = pub0_closed.tip_before_open
     assert isinstance(since, dict)
     cfg = SubscriberConfig(
@@ -34,7 +34,7 @@ def sub0(pub0_closed: Publisher) -> Subscriber:
     return sub
 
 @pytest.mark.testnet
-def test_sub0(sub0: Subscriber):
-    assert sub0.is_done(), 'subscriber should be done'
-    assert sub0.subscribed_cids() == [], 'no CIDs should be fetched'
+def test_sub0_closed(sub0_closed: Subscriber):
+    assert sub0_closed.is_done(), 'subscriber should be done'
+    assert sub0_closed.subscribed_cids() == [], 'no CIDs should be fetched'
     # TODO how to test that there's no zombie kupo process?
