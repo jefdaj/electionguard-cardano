@@ -22,7 +22,7 @@ from .plutus import PubsubState, PubsubAction, PsOpen, PsPublish, PsClose
 KUPO_HOST = environ.get('KUPO_HOST', '127.0.0.1')
 KUPO_PORT = int(environ.get('KUPO_PORT', '1442'))
 KUPO_MATCHES_URL = f'http://{KUPO_HOST}:{KUPO_PORT}/v1/matches'
-KUPO_POLL_SEC = 2.0
+KUPO_POLL_SEC = 0.5 # TODO what's reasonable during live operation?
 
 NODE_SOCKET = environ.get('CARDANO_NODE_SOCKET_PATH', '../../cardano-node-ogmios/data/node-ipc/node.socket')
 NODE_CONFIG = environ.get('NODE_CONFIG', '../../cardano-node-ogmios/config/network/preview/cardano-node/config.json')
