@@ -11,6 +11,11 @@ def pub1_closed(pub1_open: Publisher):
     return pub
 
 @pytest.mark.testnet
-def test_pub1_closed(pub1_closed: Publisher, election_records: ElectionRecords):
-    assert pub1_closed.channel_state == 'closed', "channel should be closed"
-    assert len(pub1_closed.published_cids) == 3, "3 CIDs should be published"
+def test_pub1_open(pub1_open: Publisher, cids1: CIDs):
+    assert pub1_closed.channel_state == 'open', 'channel should be open'
+    assert pub1_closed.published_cids == cids1, 'first batch of CIDs should be published'
+
+@pytest.mark.testnet
+def test_pub1_closed(pub1_closed: Publisher, cids1: CIDs):
+    assert pub1_closed.channel_state == 'closed', 'channel should be closed'
+    assert pub1_closed.published_cids == cids1, 'first batch of CIDs should be published'

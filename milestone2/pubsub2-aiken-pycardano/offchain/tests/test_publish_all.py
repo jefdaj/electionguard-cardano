@@ -3,6 +3,9 @@ from time import sleep
 from pubsub import *
 from .conftest import *
 
+
+### hardcoded historical channel ###
+
 @pytest.fixture(scope='session')
 def cfg_all_hist() -> SubscriberConfig:
     'Config for subscribing to a historical channel with all 81 published CIDs'
@@ -27,8 +30,11 @@ def sub_all_hist(cfg_all_hist: SubscriberConfig) -> Subscriber:
 @pytest.mark.testnet
 def test_sub_all_hist(sub_all_hist: Subscriber, cids_all: CIDs):
     sub = sub_all_hist
-    assert sub.subscribed_cids() == cids_all, "all CIDs should be subscribed"
+    assert sub.subscribed_cids() == cids_all, 'all CIDs should be subscribed'
     # TODO assert subscriber is done/stopped
+
+
+### live new channel ###
 
 # TODO shorten? currently takes about 7 min
 @pytest.fixture(scope='module')
@@ -48,6 +54,11 @@ def pub_all_closed(pub_all_open: Publisher) -> Publisher:
     return pub
 
 @pytest.mark.testnet
+def test_pub_all_open(pub_all_open: Publisher, cids_all: CIDs):
+    assert pub_all_open.channel_state == 'open', 'channel should be open'
+    assert pub_all_open.published_cids == cids_all, 'all CIDs should be published'
+
+@pytest.mark.testnet
 def test_pub_all_closed(pub_all_closed: Publisher, cids_all: CIDs):
-    assert pub_all_closed.channel_state == 'closed', "channel should be closed"
-    assert pub_all_closed.published_cids == cids_all, "all CIDs should be published"
+    assert pub_all_closed.channel_state == 'closed', 'channel should be closed'
+    assert pub_all_closed.published_cids == cids_all, 'all CIDs should be published'
