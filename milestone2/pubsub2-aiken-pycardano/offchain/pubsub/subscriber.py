@@ -79,7 +79,7 @@ def handle_match(utxo: Dict[str, Any], session: requests.Session) -> PubsubActio
     try:
         datum = fetch_datum(session, datum_hash)
         state = PubsubState.from_cbor(datum['datum'])
-        log_info(f'[match] Decoded state {state.seq} with {len(state.cids)} new CIDs')
+        log_info(f'[match] decoded state {state.seq}: {state}')
         return state
 
     except Exception as e:
@@ -237,7 +237,7 @@ class Subscriber:
                 # There should only be one
                 if 'spent_at' in utxo:
                     # Confirmed spent
-                    log_info(f'[sub] STT UTXO spent without creating a new one')
+                    log_info(f'[sub] confirmed: STT UTXO spent without creating a new one')
                     # for some reason, actually printing spent_at here produces errors
                     self.on_close(utxo, self.session)
                     self.stop()
@@ -255,7 +255,6 @@ class Subscriber:
                     params={
                         'with_spent': 'false',
                         'order': 'oldest_first',
-                        # TODO resolve_datums?
                     }
                 )
                 resp.raise_for_status()
@@ -297,6 +296,7 @@ class Subscriber:
                         log_error('[sub] Error in self.on_match: {}', e)
 
                 if not any_new_utxo:
+                    log_info('[sub] no new UTXOs')
                     self.check_if_channel_closed()
 
             except requests.RequestException as e:
