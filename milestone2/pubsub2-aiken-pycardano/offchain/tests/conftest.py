@@ -125,49 +125,5 @@ def pub1_open(pub0_open: Publisher, cids1: CIDs) -> Publisher:
     pub.wait_for_confirmation(tx)
     return pub
 
-@pytest.fixture(scope='module')
-def pub2_open(pub1_open: Publisher, cids2: CIDs) -> Publisher:
-    'A publisher with 2 lists of CIDs published'
-    pub = pub1_open
-    tx = pub.publish_cids(cids2)
-    pub.wait_for_confirmation(tx)
-    return pub
-
 
 ### subscriber fixtures ###
-
-@pytest.fixture(scope='module')
-def sub_closed(pub_closed: Publisher):
-    since = pub_closed.tip_before_open
-    assert isinstance(since, dict)
-    cfg = SubscriberConfig(
-        since['slot'],
-        since['block_hash'],
-        since['slot'] + 30,
-        pub_closed.pubsub_script.policy_id
-    )
-    sub = Subscriber(cfg, handle_match, handle_close)
-    sub.start() # TODO should this happen automatically?
-    sub.join()  # TODO should there also be a timeout in case it fails?
-    return sub
-
-@pytest.fixture(scope='module')
-def sub1(pub1: Publisher):
-    since = pub1.tip_before_open
-    assert isinstance(since, dict)
-    cfg = SubscriberConfig(
-        since['slot'],
-        since['block_hash'],
-        since['slot'] + 30,
-        pub1.pubsub_script.policy_id
-    )
-    sub = Subscriber(cfg, handle_match)
-    sub.start() # TODO should this happen automatically?
-    # TODO how to properly run it and await result?
-    sub.join()  # TODO should there also be a timeout in case it fails?
-    return sub
-
-
-# TODO sub_open
-# TODO sub2
-# TODO sub_all

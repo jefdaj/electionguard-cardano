@@ -152,7 +152,6 @@ class Subscriber:
         Start Kupo as a subprocess if it's not already running.
         Uses `--since {slot}.{hash}` and `--match '{policy_id}/*'`.
         '''
-        # global _kupo_proc
 
         if self._kupo_proc is not None and self._kupo_proc.poll() is None:
             log_info('Kupo already running (pid={})', self._kupo_proc.pid)
@@ -355,8 +354,9 @@ class Subscriber:
         self._watcher_thread.start()
 
     def join(self):
-        # TODO is this how this works?
-        self._watcher_thread.join(timeout=5)
+        # TODO how is this actually supposed to be done?
+        while not self.is_done():
+            time.sleep(1)
 
     def stop(self) -> None:
         self.stop_kupo()
@@ -369,3 +369,7 @@ class Subscriber:
                 if not 'cannot join current thread' in str(e):
                     raise
         self._watcher_thread = None
+
+    def is_done(self):
+        return self._watcher_stop.is_set() \
+           and self._watcher_thread is None
