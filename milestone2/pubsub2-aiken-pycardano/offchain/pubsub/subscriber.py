@@ -178,6 +178,7 @@ class Subscriber:
         log_info('[sub] Starting Kupo: {}', ' '.join(cmd))
         self._kupo_proc = subprocess.Popen(
             cmd,
+            preexec_fn=os.setsid, # makes handling signals more reliable
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
@@ -185,11 +186,14 @@ class Subscriber:
         )
 
         # Log Kupo output in a helper thread
+        # TODO does this really need a separate thread?
         threading.Thread(
             target=self._log_kupo_output,
             args=(),
             daemon=True,
         ).start()
+
+        time.sleep(0.1) # prevents polling error during startup
 
     def _log_kupo_output(self) -> None:
         log_info('[sub] _log_kupo_output')
@@ -215,10 +219,11 @@ class Subscriber:
             log_info('[sub] Terminating Kupo (pid={})', proc.pid)
             proc.terminate()
             try:
-                proc.wait(timeout=10)
+                proc.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 log_warn('[sub] Kupo did not exit in time, killing...')
                 proc.kill()
+                proc.wait() # TODO remove?
         self._kupo_proc = None
 
     def check_if_channel_closed(self):
@@ -319,14 +324,20 @@ class Subscriber:
         def _start_and_watch() -> None:
             try:
                 self._start_kupo()
-                time.sleep(1) # prevents polling error during startup
                 self._watch_kupo()
             except Exception as e:
                 log_error('Error in watcher: {}', e)
 
+        def handle_sigint(sig, frame):
+            log_info('[sigint] signal {} recieved, shutting down...', sig)
+            self.stop()
+
+        signal.signal(signal.SIGINT , handle_sigint)
+        signal.signal(signal.SIGTERM, handle_sigint)
+
         self._kupo_thread = threading.Thread(
             target=_start_and_watch,
-            daemon=True,
+            daemon=False,
         )
         self._kupo_thread.start()
 
