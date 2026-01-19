@@ -49,7 +49,7 @@ class SubscriberConfig:
 # Handles a single kupo match response json obj.
 # I think kupo yields an iterator of these? TODO check that
 # TODO can the response type be more specific than dict?
-SubscriberActionCallback = Callable[[dict, requests.Session], PubsubAction]
+SubscriberCallback = Callable[[dict, requests.Session], PubsubAction]
 
 def fetch_datum(session: requests.Session, datum_hash: str) -> Any:
     url = f'http://{KUPO_HOST}:{KUPO_PORT}/v1/datums/{datum_hash}' # TODO global var?
@@ -97,36 +97,44 @@ class Subscriber:
     def __init__(
             self,
             config: SubscriberConfig,
-            on_match: SubscriberActionCallback,
-            on_close: SubscriberActionCallback,
+            on_match: SubscriberCallback,
+            on_close: SubscriberCallback,
         ):
+
         log_info('[sub] init')
 
         self.config = config
         self.on_match = on_match
         self.on_close = on_close
+
+        # used to reconstruct subscribed_cids() on demand
         self.cids_by_seq: Mapping[int, List[bytes]] = {}
 
-        self._kupo_proc: Optional[subprocess.Popen] = None
-        self._watcher_thread: Optional[threading.Thread] = None
-        self._watcher_stop = threading.Event()
+        # for managing the kupo process
+        self._kupo_proc:   Optional[subprocess.Popen] = None
+        self._kupo_thread: Optional[threading.Thread] = None
+        self._kupo_stop = threading.Event()
+
+        # to prevent duplicate processing of the same transactions
         self._seen_tx_ids: set[str] = set()
 
-        # We check whether this was spent without any new match to confirm a PsClose.
-        self._last_tx_key = None # TODO type?
-
+        # for http requests to the kupo process
         self.session = requests.Session()
         self.session.headers.update({'Accept': 'application/json'})
 
+        # we check whether this was spent without any new match to confirm a PsClose
+        self._last_tx_key = None # TODO type?
 
-    def start_kupo_if_needed(self) -> None:
+
+    def _start_kupo(self) -> None:
         '''
-        Start Kupo as a subprocess if it's not already running.
+        Start Kupo as a subprocess.
         Uses `--since {slot}.{hash}` and `--match '{policy_id}/*'`.
         '''
-        log_info('[sub] start_kupo_if_needed')
+        log_info('[sub] _start_kupo')
 
         if self._kupo_proc is not None and self._kupo_proc.poll() is None:
+            # TODO error here?
             log_info('Kupo already running (pid={})', self._kupo_proc.pid)
             return
 
@@ -229,12 +237,12 @@ class Subscriber:
                     self.on_close(utxo, self.session)
                     self.stop()
                     return
-        # log_info(f'Probably not closed? {resp}')
+        log_info(f'[sub] channel not yet closed {resp}')
 
     def _watch_kupo(self) -> None:
         log_info('[sub] Watcher thread started for policy_id={}', self.config.policy_id)
 
-        while not self._watcher_stop.is_set():
+        while not self._kupo_stop.is_set():
             try:
                 resp = self.session.get(
                     KUPO_MATCHES_URL,
@@ -250,11 +258,6 @@ class Subscriber:
 
                 if not isinstance(unspent_utxos, list):
                     raise Exception(f'[sub] Unexpected Kupo response type: {type(unspent_utxos)}')
-                    # time.sleep(KUPO_POLL_SEC)
-                    # continue
-
-                # pprint(f'unspent_utxos: {unspent_utxos}')
-                # print(flush=True)
 
                 any_new_utxo = False
 
@@ -265,6 +268,7 @@ class Subscriber:
 
                     # skip already-processed transactions
                     # TODO is this ever actually needed?
+                    # TODO is this wrong in case of a roll-back?
                     tx_id = utxo.get('transaction_id')
                     out_ix = utxo.get('output_index')
                     key = (tx_id, out_ix)
@@ -310,20 +314,20 @@ class Subscriber:
 
     def start(self) -> None:
         log_info('[sub] start')
-        self._watcher_stop.clear()
+        self._kupo_stop.clear()
 
         def _start_and_watch() -> None:
             try:
-                self.start_kupo_if_needed()
+                self._start_kupo()
                 self._watch_kupo()
             except Exception as e:
                 log_error('Error in watcher: {}', e)
 
-        self._watcher_thread = threading.Thread(
+        self._kupo_thread = threading.Thread(
             target=_start_and_watch,
             daemon=True,
         )
-        self._watcher_thread.start()
+        self._kupo_thread.start()
 
     def join(self):
         log_info('[sub] join')
@@ -334,16 +338,16 @@ class Subscriber:
     def stop(self) -> None:
         log_info('[sub] stop')
         self.stop_kupo()
-        self._watcher_stop.set()
-        if self._watcher_thread and self._watcher_thread.is_alive():
+        self._kupo_stop.set()
+        if self._kupo_thread and self._kupo_thread.is_alive():
             log_info('[sub] Waiting for watcher thread to exit...')
             try:
-                self._watcher_thread.join(timeout=5)
+                self._kupo_thread.join(timeout=5)
             except Exception as e:
                 if not 'cannot join current thread' in str(e):
                     raise
-        self._watcher_thread = None
+        self._kupo_thread = None
 
     def is_done(self):
-        return self._watcher_stop.is_set() \
-           and self._watcher_thread is None
+        return self._kupo_stop.is_set() \
+           and self._kupo_thread is None
