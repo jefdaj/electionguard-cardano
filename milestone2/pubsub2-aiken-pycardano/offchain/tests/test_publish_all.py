@@ -21,10 +21,7 @@ def cfg_all_hist() -> SubscriberConfig:
 def sub_all_hist(cfg_all_hist: SubscriberConfig) -> Subscriber:
     sub = Subscriber(cfg_all_hist, handle_match, handle_close)
     sub.start()
-    # TODO come up with a better wait mechanism
-    # while not sub._watcher_stop.is_set():
-    sleep(30)
-    sub.stop()
+    sub.join()
     return sub
 
 @pytest.mark.testnet
