@@ -53,22 +53,16 @@ SubscriberActionCallback = Callable[[dict, requests.Session], PubsubAction]
 
 def fetch_datum(session: requests.Session, datum_hash: str) -> Any:
     url = f'http://{KUPO_HOST}:{KUPO_PORT}/v1/datums/{datum_hash}' # TODO global var?
+    log_info('[match] fetching datum {}', datum_hash)
     resp = session.get(url, timeout=10)
     resp.raise_for_status()
     return resp.json()
 
 def handle_close(utxo: Dict[str, Any], session: requests.Session) -> PubsubAction:
-    log_info('Channel closed')
+    log_info('[close] Channel closed')
     return PsClose()
 
 def handle_match(utxo: Dict[str, Any], session: requests.Session) -> PubsubAction:
-    '''
-    `utxo` looks like the Kupo object you printed.
-    For now, just log some key fields. Later you can:
-      - fetch the datum by `datum_hash`
-      - decode it to IPFS CIDs
-      - pull from IPFS and store locally
-    '''
     tx_id = utxo.get('transaction_id')
     out_ix = utxo.get('output_index')
     datum_hash = utxo.get('datum_hash')
@@ -77,43 +71,20 @@ def handle_match(utxo: Dict[str, Any], session: requests.Session) -> PubsubActio
     slot_no = created.get('slot_no')
     header_hash = created.get('header_hash')
 
-    # log_info(
-    #     'UTxO: tx_id={}#{} slot={} header_hash={} datum_type={} datum_hash={}',
-    #     tx_id,
-    #     out_ix,
-    #     slot_no,
-    #     header_hash,
-    #     datum_type,
-    #     datum_hash,
-    # )
-
-    # For debugging, print the full object:
     # dbg = json.dumps(utxo, indent=2)
     # log_info('Full UTxO:\n{}', dbg)
 
-    if not datum_hash:
-        # TODO what if this appears out of order?
-        # should be PsClose
-        # TODO is there a better way to check that?
-        log_info('Hit PsClose')
-        log_info('Full UTxO:\n{}', dbg)
-        return None # TODO better stop signal?
+    assert datum_hash
 
-    else:
-        # PsOpen or PsPublish, both of which should have CID lists (PsOpen's is empty)
-        try:
-            datum = fetch_datum(session, datum_hash)
-            # log_info('Fetched datum for {}: {}', datum_hash, json.dumps(datum, indent=2))
+    try:
+        datum = fetch_datum(session, datum_hash)
+        state = PubsubState.from_cbor(datum['datum'])
+        log_info(f'[match] Decoded state {state.seq} with {len(state.cids)} new CIDs')
+        return state
 
-            state = PubsubState.from_cbor(datum['datum'])
-            # log_info(f'Decoded datum to {type(state)}')
-            log_info(f'Decoded state {state.seq} ({len(state.cids)} new CIDs)')
-            return state
-
-            # Later: decode IPFS CIDs from `datum` here.
-        except Exception as e:
-            log_error('Failed to fetch datum {}: {}', datum_hash, e)
-            raise
+    except Exception as e:
+        log_error('[match] Failed to fetch datum {}: {}', datum_hash, e)
+        raise
 
 class Subscriber:
     '''
@@ -129,6 +100,7 @@ class Subscriber:
             on_match: SubscriberActionCallback,
             on_close: SubscriberActionCallback,
         ):
+        log_info('[Sub] init')
 
         self.config = config
         self.on_match = on_match
@@ -152,6 +124,7 @@ class Subscriber:
         Start Kupo as a subprocess if it's not already running.
         Uses `--since {slot}.{hash}` and `--match '{policy_id}/*'`.
         '''
+        log_info('[Sub] start_kupo_if_needed')
 
         if self._kupo_proc is not None and self._kupo_proc.poll() is None:
             log_info('Kupo already running (pid={})', self._kupo_proc.pid)
@@ -211,6 +184,7 @@ class Subscriber:
         ).start()
 
     def _log_kupo_output(self) -> None:
+        log_info('[Sub] _log_kupo_output')
         proc = self._kupo_proc
         if proc.stdout is None:
             return
@@ -225,6 +199,7 @@ class Subscriber:
         log_info('Kupo subprocess output thread terminating')
 
     def stop_kupo(self) -> None:
+        log_info('[Sub] stop_kupo')
         proc = self._kupo_proc
         if proc is None:
             return
@@ -239,7 +214,7 @@ class Subscriber:
         self._kupo_proc = None
 
     def check_if_channel_closed(self):
-        # log_info('check_if_channel_closed')
+        log_info('[Sub] check_if_channel_closed')
         (tx_id, output_ix) = self._last_tx_key
         resp = self.session.get(KUPO_MATCHES_URL + f'/{output_ix}@{tx_id}') # TODO params? timeout?
         if resp.status_code == 200:
@@ -310,8 +285,7 @@ class Subscriber:
                         # log_info(f'new_state: {new_state} ({type(new_state)})')
 
                         assert isinstance(new_state, PubsubState), 'Each TX should have a PubsubState'
-                        if len(new_state.cids) > 0:
-                            self.cids_by_seq[new_state.seq] = new_state.cids
+                        self.cids_by_seq[new_state.seq] = new_state.cids
 
                     except Exception as e:
                         log_error('Error in self.on_match: {}', e)
@@ -330,14 +304,15 @@ class Subscriber:
 
         log_info('Watcher thread exiting')
 
-    # TODO exception if there's a missing seq?
     def subscribed_cids(self):
         cids = []
-        for seq in sorted(self.cids_by_seq.keys()):
+        for seq in range(0, len(self.cids_by_seq)):
+            assert seq in self.cids_by_seq, f'Missing CID batch {seq}'
             cids += self.cids_by_seq[seq]
         return cids
 
     def start(self) -> None:
+        log_info('[Sub] start')
         self._watcher_stop.clear()
 
         def _start_and_watch() -> None:
@@ -354,11 +329,13 @@ class Subscriber:
         self._watcher_thread.start()
 
     def join(self):
+        log_info('[Sub] join')
         # TODO how is this actually supposed to be done?
         while not self.is_done():
             time.sleep(1)
 
     def stop(self) -> None:
+        log_info('[Sub] stop')
         self.stop_kupo()
         self._watcher_stop.set()
         if self._watcher_thread and self._watcher_thread.is_alive():
