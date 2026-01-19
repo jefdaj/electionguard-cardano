@@ -319,6 +319,7 @@ class Subscriber:
         def _start_and_watch() -> None:
             try:
                 self._start_kupo()
+                time.sleep(1) # prevents polling error during startup
                 self._watch_kupo()
             except Exception as e:
                 log_error('Error in watcher: {}', e)
