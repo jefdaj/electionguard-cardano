@@ -7,56 +7,6 @@ Instead of `new_cids.txt`, this version posts CIDs on the preview testnet:
 2. They're checked onchain by the Aiken validator.
 3. Subscribers fetch CIDs via Kupo.
 
-onchain code
-------------
-
-- only one "publisher" role
-- phase 1: open channel (publish validator), fund it with tADA
-- phase 2: post a batch of IPFS CIDs in a TX
-    * repeat as needed
-    * should also be able to top up the tADA as needed
-- phase 3: close channel and get remaining tADA back
-
-Opening a channel should mean both minting a channel NFT and funding it with
-some tADA.
-
-Posting files takes the channel NFT + old datum + tADA fund as input, returns
-the NFT + remaining tADA + a new datum as outputs. The new datum will have a
-list of the new CIDs.
-
-Topping up can be done just by sending tADA to the contract with no action?
-
-Closing a channel means getting any remaining tADA back and burning the
-NFT.
-
-offchain code
--------------
-
-- all apps run in docker containers
-- containers are managed by one top level arion-compose file
-- each participant should have network access to a shared cardano-node-ogmios instance
-- publisher needs an address with tADA from the faucet
-- publisher runs:
-    * ipfs-cluster to pin CIDs when publishing them
-    * a Python app to construct and submit TXs via PyCardano, control ipfs-cluster
-- subscribers run:
-    * Kupo to scan for published CIDs
-    * an IPFS node (or single-node cluster?) to pin CIDs and fetch files
-    * a Python app to keep a folder in sync with the channel, control IPFS + Kupo
-- should the ipfs-cluster also be shared for now?
-
-TODO
-----
-
-[x] 1. Set up the package structure with `pyproject.toml` and empty `__init__.py` files
-[x] 2. Create a first Aiken type (e.g., `ChannelDatum`) and its Python mirror
-[x] 3. Write unit tests for that type's serialization
-[x] 4. Build a simple transaction builder for publishing
-[x] 5. Add integration tests once we have a deployed validator on Preview
-[ ] 6. Create the client API to tie everything together
-[ ] 7. Write CLI scripts using the client
-[ ] ?. Use type hints everywhwere (Mypy, Black?)
-
 Build
 -----
 
@@ -107,18 +57,39 @@ tests/test_records.py::test_load_election_records PASSED                 [100%]
 ======================== 14 passed in 587.18s (0:09:47) ========================
 ```
 
-## Usage
+onchain code
+------------
 
-```bash
-./up.sh
-arion logs --follow
-```
+- only one "publisher" role
+- phase 1: open channel (publish validator), fund it with tADA
+- phase 2: post a batch of IPFS CIDs in a TX
+    * repeat as needed
+    * should also be able to top up the tADA as needed
+- phase 3: close channel and get remaining tADA back
 
-### Use Type Hints Everywhere
+Opening a channel means minting a channel NFT and funding it with some tADA.
 
-PyCardano works great with mypy. Add to your dev dependencies:
+Posting files takes the channel NFT + old datum + tADA fund as input, returns
+the NFT + remaining tADA + a new datum as outputs. The new datum will have a
+list of the new CIDs.
 
-```bash
-pip install mypy
-mypy offchain/pubsub --strict
-```
+Topping up can be done just by sending tADA to the contract with no action?
+
+Closing a channel means getting any remaining tADA back and burning the
+NFT.
+
+offchain code
+-------------
+
+- all apps run in docker containers
+- containers are managed by one top level arion-compose file
+- each participant should have network access to a shared cardano-node-ogmios instance
+- publisher needs an address with tADA from the faucet
+- publisher runs:
+    * ipfs-cluster to pin CIDs when publishing them
+    * a Python app to construct and submit TXs via PyCardano, control ipfs-cluster
+- subscribers run:
+    * Kupo to scan for published CIDs
+    * an IPFS node (or single-node cluster?) to pin CIDs and fetch files
+    * a Python app to keep a folder in sync with the channel, control IPFS + Kupo
+- should the ipfs-cluster also be shared for now?
