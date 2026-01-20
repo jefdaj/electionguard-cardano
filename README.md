@@ -11,7 +11,7 @@ ElectionGuard + Cardano
 
 Work in progress on [the Catalyst fund13 project](https://milestones.projectcatalyst.io/projects/1300090).
 
-Current status as of 2026-01-09:
+Current status as of 2026-01-20:
 
 - All Milestones (1, 2, and 3) approved
 
@@ -32,14 +32,9 @@ Current status as of 2026-01-09:
 
   * [An IPFS-ified version of the 1.1 tests codebase](./milestone2/mockchain-local-ipfs) works
 
-  * Working on a small pubsub dApp to test my ideas + dev stack:
-    - [mockchain version with IPFS only](./milestone2/pubsub1-ipfs) works
-    - [Aiken + PyCardano version](./milestone2/pubsub2-aiken-pycardano) in progress
-
-  * Investigating dev tools:
-    - [Cardano node + Ogmios](./milestone2/cardano-node-ogmios/) works
-    - [ipfs-cluster](./milestone2/ipfs-cluster/) works
-    - [Kupo](./milestone2/kupo/) works
+  * A minimal "pubsub" example shows that the plan for the election dApp is viable:
+    - [mockchain version with IPFS only](./milestone2/pubsub1-ipfs) syncs files given CIDs
+    - [Aiken + PyCardano + Kupo version](./milestone2/pubsub2-aiken-pycardano-kupo) syncs CIDs via Preview testnet
 
   * Working on the [smart contract architecture](./milestone2/smart-contract-architecture.md)
 
