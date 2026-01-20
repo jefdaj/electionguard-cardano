@@ -7,10 +7,14 @@ Instead of `new_cids.txt`, this version posts CIDs on the preview testnet:
 2. They're checked onchain by the Aiken validator.
 3. Subscribers fetch CIDs via Kupo.
 
+It's not one of the milestone deliverables, so it doesn't need a standalone main script.
+Instead it just tests each component with pytest.
+
 Build
 -----
 
-There are two versions of `plutus.json`: traced and production.
+Before running the tests, you need to build the validator with Aiken.
+There will be two versions of `plutus.json`: traced and production.
 The Python code automatically uses the traced one when called via
 pytest.
 
@@ -34,6 +38,45 @@ $ ./build.sh
 Test
 ----
 
+The tests cover opening a new channel on testnet, publishing 0, 1, 2, or all
+(81) static election artifacts from a previous election run, and closing the
+channel. There's a [Publisher](./offhchain/pubsub/publisher.py) that submits
+the transactions, a [validator](./onchain/validators/pubsub.ak) that checks
+them on chain, and a [subscriber](./offchain/pubsub/subscriber.py) that
+reconstructs them from the on-chain datums. Then the tests assert that the
+reconstructed CID lists match the originals.
+
+Before running them, make sure:
+
+1. You have [Cardano node + Ogmios](../cardano-node-ogmios/) running and synced up
+2. You've generated a keypair and funded it with tADA (see below)
+
+```
+$ nix develop .#offchain
+$ python
+Python 3.12.12 (main, Oct  9 2025, 11:07:00) [GCC 14.3.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import pubsub
+>>> pubsub.generate_keys()
+
+    Your new Preview testnet keys are here:
+
+    /home/jefdaj/myrepos/electionguard-cardano/milestone2/pubsub2-aiken-pycardano-kupo/offchain/keys/pubsub2.sk
+    /home/jefdaj/myrepos/electionguard-cardano/milestone2/pubsub2-aiken-pycardano-kupo/offchain/keys/pubsub2.addr
+
+    Your public address (2nd file) is: addr_test1vr93qqyu30r5c7snd4wp8wu243st2xz8605yea78hgyg6uckjakk5
+
+    Before continuing, fund that address with tADA from the faucet:
+    https://docs.cardano.org/cardano-testnets/tools/faucet
+
+    If you don't, local tests will still work but testnet tests will fail.
+
+>>> 
+```
+
+You can watch that address accumulate transactions on CardanoScan or ADAstat
+during the tests if you want, and track mint + burn of various `pubsub2-channel-stt` tokens.
+
 ```
 $ nix develop .#offchain
 $ ./test.sh 
@@ -56,40 +99,3 @@ tests/test_records.py::test_load_election_records PASSED                 [100%]
 
 ======================== 14 passed in 587.18s (0:09:47) ========================
 ```
-
-onchain code
-------------
-
-- only one "publisher" role
-- phase 1: open channel (publish validator), fund it with tADA
-- phase 2: post a batch of IPFS CIDs in a TX
-    * repeat as needed
-    * should also be able to top up the tADA as needed
-- phase 3: close channel and get remaining tADA back
-
-Opening a channel means minting a channel NFT and funding it with some tADA.
-
-Posting files takes the channel NFT + old datum + tADA fund as input, returns
-the NFT + remaining tADA + a new datum as outputs. The new datum will have a
-list of the new CIDs.
-
-Topping up can be done just by sending tADA to the contract with no action?
-
-Closing a channel means getting any remaining tADA back and burning the
-NFT.
-
-offchain code
--------------
-
-- all apps run in docker containers
-- containers are managed by one top level arion-compose file
-- each participant should have network access to a shared cardano-node-ogmios instance
-- publisher needs an address with tADA from the faucet
-- publisher runs:
-    * ipfs-cluster to pin CIDs when publishing them
-    * a Python app to construct and submit TXs via PyCardano, control ipfs-cluster
-- subscribers run:
-    * Kupo to scan for published CIDs
-    * an IPFS node (or single-node cluster?) to pin CIDs and fetch files
-    * a Python app to keep a folder in sync with the channel, control IPFS + Kupo
-- should the ipfs-cluster also be shared for now?

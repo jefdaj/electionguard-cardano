@@ -1,7 +1,11 @@
 # Cardano node + ogmios
 
-```bash
-docker compose up -d
-```
+I've been running this separately from the other infrastructure for each of my
+test codebases so I only have to keep one copy of the node data. Here's how to
+start it.
 
-There's also a Nix flake version in [pubsub2-aiken](../../pubsub2-aiken/node/arion.nix).
+```bash
+$ nix develop
+$ docker compose up -d
+$ docker compose logs --follow
+```
