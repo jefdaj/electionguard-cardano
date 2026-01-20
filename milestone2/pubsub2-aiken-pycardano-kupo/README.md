@@ -40,7 +40,7 @@ Test
 
 The tests cover opening a new channel on testnet, publishing 0, 1, 2, or all
 (81) static election artifacts from a previous election run, and closing the
-channel. There's a [Publisher](./offhchain/pubsub/publisher.py) that submits
+channel. There's a [publisher](./offchain/pubsub/publisher.py) that submits
 the transactions, a [validator](./onchain/validators/pubsub.ak) that checks
 them on chain, and a [subscriber](./offchain/pubsub/subscriber.py) that
 reconstructs them from the on-chain datums. Then the tests assert that the
