@@ -37,6 +37,7 @@ pub fn tx_mints(
 }
 
 // TODO name something better
+// TODO implement in terms of tx_mints?
 pub fn tx_does_not_mint(
   tx: Transaction,
   policy_id: PolicyId

@@ -53,20 +53,14 @@ validator pubsub(oneshot_ref: OutputReference) {
 	expect None = datum
 
         expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, config.stt_name, script_addr, 1)
-	// TODO can this be condensed down to Some(PubsubConfig {...}) = stt_output.datum?
         expect InlineDatum(new_datum) = stt_output.datum
         expect new_cfg: PubsubConfig = new_datum
         let pub_signed = tx_signed_by(self, new_cfg.publisher) ?
-
-	// TODO any reason to check this here as well as in mint validator?
-        // let stt_minted = tx_mints(self, policy_id, config.stt_name, 1) ?
-
-	let cids_empty = (list.length(new_cfg.cids) == 0) ?
-	let seq_zero   = (new_cfg.seq == 0) ?
-
+	let new_cids_empty = (list.length(new_cfg.new_cids) == 0) ?
+	let seq_zero = (new_cfg.seq == 0) ?
         and {
           pub_signed,
-	  cids_empty,
+	  new_cids_empty,
 	  seq_zero
         }
       }
@@ -77,31 +71,22 @@ validator pubsub(oneshot_ref: OutputReference) {
         expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, config.stt_name, script_addr, 1)
         expect InlineDatum(new_datum) = stt_output.datum
         expect new_cfg: PubsubConfig = new_datum
-        // let pub_unchanged = publisher_unchanged(publisher, stt_output) ?
         let pub_unchanged = (new_cfg.publisher == publisher) ?
 	let seq_incremented = (new_cfg.seq == seq + 1) ?
-        let cids_valid = validate_cids(new_cfg.cids) ?
+        let new_cids_valid = validate_cids(new_cfg.new_cids) ?
         and {
           pub_signed,
           pub_unchanged,
           seq_incremented,
-          cids_valid
+          new_cids_valid
         }
       }
 
       PsClose -> {
         expect Some(PubsubConfig { publisher, .. }) = datum
         let pub_signed = tx_signed_by(self, publisher) ?
-
-	// TODO any reason to check this here as well as in mint validator?
-        // let stt_burned = tx_mints(self, policy_id, config.stt_name, -1) ?
-
-	// no stt_output when closing
-	// TODO does that need an explicit check?
-
-        // and {
         pub_signed
-        // }
+	// TODO require ADA goes back to publisher or main channel
       }
 
     }

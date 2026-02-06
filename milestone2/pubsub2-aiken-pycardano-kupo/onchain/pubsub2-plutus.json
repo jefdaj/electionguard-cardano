@@ -127,7 +127,7 @@
         },
         {
           "title": "PsPublish",
-          "description": "Announce publication of new latest_cids.",
+          "description": "Announce publication of some new_cids.",
           "dataType": "constructor",
           "index": 1,
           "fields": []
@@ -154,7 +154,7 @@
               "$ref": "#/definitions/aiken~1crypto~1VerificationKeyHash"
             },
             {
-              "title": "cids",
+              "title": "new_cids",
               "$ref": "#/definitions/List<pubsub~1types~1CIDv1>"
             },
             {

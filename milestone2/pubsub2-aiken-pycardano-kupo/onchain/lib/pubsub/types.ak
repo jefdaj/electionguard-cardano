@@ -30,20 +30,15 @@ pub fn validate_cids(cids: List<CIDv1>) -> Bool {
   list.all(cids, validate_cid)
 }
 
-// TODO set my kubo containers to use v1:
-//      ipfs config --json Import.CidVersion 1
-//      ipfs add --cid-version=1 myfile.txt
-
 pub type PubsubConfig {
 
   // All transactions must be signed by the publisher's key.
   // TODO allow the channel to be created by a separate admin
   publisher: VerificationKeyHash,
 
-  // Just the latest batch of CIDs; have to watch the chain to get the full history.
-  // Should be set to [] when doing any non-publish transaction (open/close).
-  // TODO rename latest_cids?
-  cids: List<CIDv1>,
+  // Just the latest batch of CIDs; have to index the STT asset history to get the full list.
+  // Should be set to [] when doing any non-publish transaction.
+  new_cids: List<CIDv1>,
 
   // Optional, but may be helpful detecting rollbacks or errors?
   seq: Int
@@ -55,7 +50,7 @@ pub type PubsubAction {
   // TODO also send extra ADA to pay publishing fees?
   PsOpen
 
-  /// Announce publication of new latest_cids.
+  /// Announce publication of some new_cids.
   PsPublish
 
   // Collect ADA and/or other tokens sent to the validator.
@@ -67,4 +62,5 @@ pub type PubsubAction {
   // TODO if not, are they basically burned/frozen at the validator address?
   // TODO should it require exlicitly burning any assets you don't want?
   PsClose
+
 }
