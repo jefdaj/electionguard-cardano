@@ -4,7 +4,7 @@ use cardano/address.{Script}
 use cardano/assets.{PolicyId}
 use config
 use election/types.{
-  ElectionConfig, ElectionAction, PsOpen, PsPublish, PsClose,
+  ElectionState, ElectionAction, OpenChannel, PostPublicRecords, CloseChannel,
   validate_cids
 }
 use election/utils.{tx_mints, tx_does_not_mint, tx_signed_by, tx_sends_token_to_addr}
@@ -17,16 +17,16 @@ validator election(oneshot_ref: OutputReference) {
     self: Transaction
   ) {
     when redeemer is {
-      PsOpen  -> {
+      OpenChannel  -> {
         expect Some(_oneshot_input) = self.inputs |> find_input(oneshot_ref)
         let stt_minted = tx_mints(self, policy_id, config.stt_name, 1) ?
         stt_minted
       }
-      PsPublish { .. } -> {
+      PostPublicRecords { .. } -> {
         let no_mints = tx_does_not_mint(self, policy_id) ?
         no_mints
       }
-      PsClose -> {
+      CloseChannel -> {
         let stt_burned = tx_mints(self, policy_id, config.stt_name, -1) ?
         stt_burned
       }
@@ -34,7 +34,7 @@ validator election(oneshot_ref: OutputReference) {
   }
 
   spend(
-    datum: Option<ElectionConfig>,
+    datum: Option<ElectionState>,
     redeemer: ElectionAction,
     own_ref: OutputReference,
     self: Transaction,
@@ -45,7 +45,7 @@ validator election(oneshot_ref: OutputReference) {
     let script_addr = own_input.output.address
     when redeemer is {
 
-      PsOpen -> {
+      OpenChannel -> {
 
 	// This is currently true, but remember to remove it if we run into a
 	// use case for opening a channel starting from another script.
@@ -54,36 +54,36 @@ validator election(oneshot_ref: OutputReference) {
 
         expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, config.stt_name, script_addr, 1)
         expect InlineDatum(new_datum) = stt_output.datum
-        expect new_cfg: ElectionConfig = new_datum
+        expect new_cfg: ElectionState = new_datum
         let pub_signed = tx_signed_by(self, new_cfg.publisher) ?
-	let new_cids_empty = (list.length(new_cfg.new_cids) == 0) ?
+	let new_records_empty = (list.length(new_cfg.new_records) == 0) ?
 	let seq_zero = (new_cfg.seq == 0) ?
         and {
           pub_signed,
-	  new_cids_empty,
+	  new_records_empty,
 	  seq_zero
         }
       }
 
-      PsPublish -> {
-        expect Some(ElectionConfig { publisher, seq, .. }) = datum
+      PostPublicRecords -> {
+        expect Some(ElectionState { publisher, seq, .. }) = datum
         let pub_signed = tx_signed_by(self, publisher) ?
         expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, config.stt_name, script_addr, 1)
         expect InlineDatum(new_datum) = stt_output.datum
-        expect new_cfg: ElectionConfig = new_datum
+        expect new_cfg: ElectionState = new_datum
         let pub_unchanged = (new_cfg.publisher == publisher) ?
 	let seq_incremented = (new_cfg.seq == seq + 1) ?
-        let new_cids_valid = validate_cids(new_cfg.new_cids) ?
+        let new_records_valid = validate_cids(new_cfg.new_records) ?
         and {
           pub_signed,
           pub_unchanged,
           seq_incremented,
-          new_cids_valid
+          new_records_valid
         }
       }
 
-      PsClose -> {
-        expect Some(ElectionConfig { publisher, .. }) = datum
+      CloseChannel -> {
+        expect Some(ElectionState { publisher, .. }) = datum
         let pub_signed = tx_signed_by(self, publisher) ?
         pub_signed
 	// TODO require ADA goes back to publisher or main channel

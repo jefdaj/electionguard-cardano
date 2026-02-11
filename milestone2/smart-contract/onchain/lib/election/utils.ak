@@ -4,7 +4,7 @@ use aiken/crypto.{VerificationKeyHash}
 use cardano/address.{Script, Address}
 use cardano/assets.{PolicyId}
 use cardano/transaction.{Transaction, Input, InlineDatum, Output, OutputReference}
-use election/types.{ElectionConfig}
+use election/types.{ElectionState}
 
 // Whether a transaction was signed by the required key.
 pub fn tx_signed_by(tx: Transaction, signer: VerificationKeyHash) -> Bool {
@@ -75,7 +75,7 @@ pub fn publisher_unchanged(
   stt_output: Output
 ) -> Bool {
   expect InlineDatum(new_datum) = stt_output.datum
-  expect new_config: ElectionConfig = new_datum
+  expect new_config: ElectionState = new_datum
   new_config.publisher == old_publisher
 }
 
@@ -84,6 +84,6 @@ pub fn sequence_incremented(
   stt_output: Output
 ) -> Bool {
   expect InlineDatum(new_datum) = stt_output.datum
-  expect new_config: ElectionConfig = new_datum
+  expect new_config: ElectionState = new_datum
   new_config.seq == (old_seq + 1)
 }

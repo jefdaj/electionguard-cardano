@@ -30,7 +30,7 @@ pub fn validate_cids(cids: List<CIDv1>) -> Bool {
   list.all(cids, validate_cid)
 }
 
-pub type ElectionConfig {
+pub type ElectionState {
 
   // All transactions must be signed by the publisher's key.
   // TODO allow the channel to be created by a separate admin
@@ -38,7 +38,7 @@ pub type ElectionConfig {
 
   // Just the latest batch of CIDs; have to index the STT asset history to get the full list.
   // Should be set to [] when doing any non-publish transaction.
-  new_cids: List<CIDv1>,
+  new_records: List<CIDv1>,
 
   // Optional, but may be helpful detecting rollbacks or errors?
   seq: Int
@@ -48,19 +48,19 @@ pub type ElectionAction {
 
   /// Open the channel, minting the STT and funding with min ADA.
   // TODO also send extra ADA to pay publishing fees?
-  PsOpen
+  OpenChannel
 
-  /// Announce publication of some new_cids.
-  PsPublish
+  /// Announce publication of some new_records.
+  PostPublicRecords
 
   // Collect ADA and/or other tokens sent to the validator.
   // TODO sending ADA to the contract is always valid, right?
-  // PsCollect
+  // Collect
 
   /// Close the channel, burning the STT and recovering any ADA.
   /// The publisher can choose whether to collect other tokens here too.
   // TODO if not, are they basically burned/frozen at the validator address?
   // TODO should it require exlicitly burning any assets you don't want?
-  PsClose
+  CloseChannel
 
 }

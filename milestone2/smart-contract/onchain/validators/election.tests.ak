@@ -4,11 +4,11 @@
 // use cardano/assets.{PolicyId}
 // use cardano/transaction.{Transaction, Input, Output, OutputReference, NoDatum}
 // use election
-// use election/types.{ElectionConfig, PsOpen}
+// use election/types.{ElectionState, OpenChannel}
 // use election/utils as u
 //
-// const cfg1: ElectionConfig =
-//   ElectionConfig { publisher: #"00000000000000000000000000000000000000000000000000000000" }
+// const cfg1: ElectionState =
+//   ElectionState { publisher: #"00000000000000000000000000000000000000000000000000000000" }
 // 
 // const oneshot_hash: ByteArray = #"1234"
 // 
@@ -37,7 +37,7 @@
 //     oneshot_utxo,
 // 
 //     /// mint args
-//     PsOpen,
+//     OpenChannel,
 //     oneshot_hash, // TODO have to make this match the oneshot_utxo right?
 //     Transaction {
 //       ..transaction.placeholder,
