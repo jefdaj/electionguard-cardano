@@ -1,5 +1,5 @@
 {
-  description = "Election via IPFS + JSON channels";
+  description = "pubsub via mockchain + local IPFS";
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
   inputs.arion.url = "github:jefdaj/arion/rm-obsolete-version-attribute";
 
@@ -12,9 +12,9 @@
       py312Overlay = self: super: {
         python312 = super.python312.override {
           packageOverrides = pyself: pysuper: {
-            pytest-runner       = pyself.callPackage ./python-packages/pytest-runner.nix       {};
-            py-multiformats-cid = pyself.callPackage ./python-packages/py-multiformats-cid.nix {};
-            aioipfs             = pyself.callPackage ./python-packages/aioipfs.nix             {};
+            pytest-runner       = pyself.callPackage ./nix/pytest-runner.nix       {};
+            py-multiformats-cid = pyself.callPackage ./nix/py-multiformats-cid.nix {};
+            aioipfs             = pyself.callPackage ./nix/aioipfs.nix             {};
           };
         };
       };
@@ -27,7 +27,7 @@
         tree
       ];
 
-      toplevelPyPkgList = ps: with ps; [
+      mainPyPkgList = ps: with ps; [
         click
         click-default-group
         dotmap
@@ -73,12 +73,12 @@
 
       devShells.x86_64-linux = rec {
 
-        default = toplevel;
+        default = main;
 
         # TODO better name for this one?
-        toplevel = pkgs.mkShell {
+        main = pkgs.mkShell {
           nativeBuildInputs = devPkgList pkgs ++ [
-            (pkgs.python312.withPackages toplevelPyPkgList)
+            (pkgs.python312.withPackages mainPyPkgList)
           ];
           PYTHONDONTWRITEBYTECODE = true;
         };
