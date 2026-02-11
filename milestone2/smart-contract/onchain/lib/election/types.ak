@@ -36,6 +36,8 @@ pub type ElectionState {
   // TODO allow the channel to be created by a separate admin
   publisher: VerificationKeyHash,
 
+  // TODO subchannels
+
   // Just the latest batch of CIDs; have to index the STT asset history to get the full list.
   // Should be set to [] when doing any non-publish transaction.
   new_records: List<CIDv1>,
@@ -50,12 +52,16 @@ pub type ElectionAction {
   // TODO also send extra ADA to pay publishing fees?
   OpenChannel
 
+  // TODO OpenSubChannel
+
   /// Announce publication of some new_records.
   PostPublicRecords
 
   // Collect ADA and/or other tokens sent to the validator.
   // TODO sending ADA to the contract is always valid, right?
   // Collect
+
+  // TODO CloseSubChannel? (or is that handled by CloseChannel?)
 
   /// Close the channel, burning the STT and recovering any ADA.
   /// The publisher can choose whether to collect other tokens here too.
