@@ -12,12 +12,12 @@ test invalid_hex_segment_test() {
   ballot_id.is_hex_segment(test_bytes, 0, 9) == False
 }
 
-test validate_uuid_format_test() {
+test valid_uuid_test() {
   let valid_uuid = "9ceb80e2-0797-11f1-b45b-beb24183d45a"
   ballot_id.validate_uuid_format(valid_uuid) == True
 }
 
-test validate_ballot_id_test() {
+test valid_ballot_id_test() {
   let valid_id = "ballot-9ceb80e2-0797-11f1-b45b-beb24183d45a"
   ballot_id.validate_ballot_id(valid_id) == True
 }

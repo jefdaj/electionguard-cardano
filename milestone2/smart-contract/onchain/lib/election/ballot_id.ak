@@ -1,3 +1,4 @@
+use aiken/builtin
 use aiken/primitive/bytearray
 
 // This is probably excessive for an initial mainnet demo,
@@ -7,8 +8,8 @@ use aiken/primitive/bytearray
 pub fn validate_ballot_id(id: ByteArray) -> Bool {
 
   // Check if starts with "ballot-"
-  let prefix = bytearray.slice(id, 0, 7)
-  let has_valid_prefix = prefix == "ballot-"
+  let prefix = bytearray.slice(id, 0, 6)
+  let has_valid_prefix = prefix == builtin.encode_utf8(@"ballot-")
 
   // Check if the rest matches UUID format
   when has_valid_prefix is {
