@@ -24,7 +24,7 @@ pub fn validate_cid(cid: CIDv1) -> Bool {
   }
 }
 
-/// Validate a list of CIDs
+/// Validate a list of records
 pub fn validate_records(cids: List<CIDv1>) -> Bool {
   trace @"validate_records"
   list.all(cids, validate_cid)
@@ -44,6 +44,57 @@ pub type ElectionState {
 
   // For detecting rollbacks or errors
   seq: Int
+}
+
+pub type PublicRecordMetadata {
+  Manifest
+  CeremonyDetails
+  GuardianPubkey {
+    guardian_number: Int,
+  }
+  GuardianBackup {
+    guardian_number: Int,
+    backup_order: Int
+  }
+  GuardianVerification {
+    guardian_number: Int,
+    backup_order: Int
+  }
+  JointKey
+  Constants
+  Device {
+    device_number: Int
+  }
+  BallotSubmitted {
+    ballot_id: ByteArray
+  }
+  CastNotice {
+    ballot_id: ByteArray
+  }
+  BallotSpoiled {
+    ballot_id: ByteArray
+  }
+  CiphertextTally
+  TallyShare {
+    guardian_number: Int
+  }
+  SpoiledShare {
+    spoiled_id: ByteArray,
+    guardian_number: Int
+  }
+  PlaintextTally
+  SpoiledResult {
+    ballot_id: ByteArray
+  }
+  Summary {
+    verifier_number: Int
+  }
+}
+
+// TODO does this conflict with any built-in type name?
+pub type PublicRecord {
+  cid: CIDv1,
+  metadata: PublicRecordMetadata
 }
 
 pub type ElectionAction {
