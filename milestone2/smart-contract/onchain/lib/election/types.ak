@@ -25,8 +25,8 @@ pub fn validate_cid(cid: CIDv1) -> Bool {
 }
 
 /// Validate a list of CIDs
-pub fn validate_cids(cids: List<CIDv1>) -> Bool {
-  trace @"validate_cids"
+pub fn validate_records(cids: List<CIDv1>) -> Bool {
+  trace @"validate_records"
   list.all(cids, validate_cid)
 }
 
@@ -38,11 +38,11 @@ pub type ElectionState {
 
   // TODO subchannels
 
-  // Just the latest batch of CIDs; have to index the STT asset history to get the full list.
+  // Just the latest batch of records; have to index the STT asset history to get the full list.
   // Should be set to [] when doing any non-publish transaction.
   new_records: List<CIDv1>,
 
-  // Optional, but may be helpful detecting rollbacks or errors?
+  // For detecting rollbacks or errors
   seq: Int
 }
 
@@ -52,7 +52,7 @@ pub type ElectionAction {
   // TODO also send extra ADA to pay publishing fees?
   OpenChannel
 
-  // TODO OpenSubChannel
+  // TODO ForkSubChannel
 
   /// Announce publication of some new_records.
   PostPublicRecords
@@ -61,7 +61,7 @@ pub type ElectionAction {
   // TODO sending ADA to the contract is always valid, right?
   // Collect
 
-  // TODO CloseSubChannel? (or is that handled by CloseChannel?)
+  // TODO JoinSubChannel? (or is that handled by CloseChannel?)
 
   /// Close the channel, burning the STT and recovering any ADA.
   /// The publisher can choose whether to collect other tokens here too.

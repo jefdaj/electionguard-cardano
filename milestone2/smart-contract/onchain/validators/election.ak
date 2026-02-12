@@ -5,7 +5,7 @@ use cardano/assets.{PolicyId}
 use config
 use election/types.{
   ElectionState, ElectionAction, OpenChannel, PostPublicRecords, CloseChannel,
-  validate_cids
+  validate_records
 }
 use election/utils.{tx_mints, tx_does_not_mint, tx_signed_by, tx_sends_token_to_addr}
 
@@ -73,7 +73,7 @@ validator election(oneshot_ref: OutputReference) {
         expect new_cfg: ElectionState = new_datum
         let pub_unchanged = (new_cfg.publisher == publisher) ?
 	let seq_incremented = (new_cfg.seq == seq + 1) ?
-        let new_records_valid = validate_cids(new_cfg.new_records) ?
+        let new_records_valid = validate_records(new_cfg.new_records) ?
         and {
           pub_signed,
           pub_unchanged,
