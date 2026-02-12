@@ -12,11 +12,17 @@ pub type CIDv1 =
 pub fn validate_cid(cid: CIDv1) -> Bool {
   let length  = builtin.length_of_bytearray(cid)
   let version     = builtin.index_bytearray(cid, 0)
+
+  // use dag-pb codec (Kubo default) for now
+  // TODO would it make sense to switch to 0x71 (dag-cbor) later?
+  let codec       = builtin.index_bytearray(cid, 1)
+
   let hash_type   = builtin.index_bytearray(cid, 2)
   let hash_length = builtin.index_bytearray(cid, 3)
   and {
     length      == 36,
     version     == 0x01, // CIDv1
+    codec       == 0x70, // dag-pb
     hash_type   == 0x12, // SHA-256
     hash_length == 0x20  // 32 bytes
   }
