@@ -24,10 +24,15 @@ pub fn validate_cid(cid: CIDv1) -> Bool {
   }
 }
 
+pub fn validate_record(record: PublicRecord) -> Bool {
+  validate_cid(record.cid)
+  // TODO validate metadata?
+}
+
 /// Validate a list of records
-pub fn validate_records(cids: List<CIDv1>) -> Bool {
+pub fn validate_records(records: List<PublicRecord>) -> Bool {
   trace @"validate_records"
-  list.all(cids, validate_cid)
+  list.all(records, validate_record)
 }
 
 pub type ElectionState {
@@ -40,7 +45,7 @@ pub type ElectionState {
 
   // Just the latest batch of records; have to index the STT asset history to get the full list.
   // Should be set to [] when doing any non-publish transaction.
-  new_records: List<CIDv1>,
+  new_records: List<PublicRecord>,
 
   // For detecting rollbacks or errors
   seq: Int
