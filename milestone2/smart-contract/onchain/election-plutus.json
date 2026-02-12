@@ -16,7 +16,7 @@
       "redeemer": {
         "title": "redeemer",
         "schema": {
-          "$ref": "#/definitions/election~1types~1ElectionAction"
+          "$ref": "#/definitions/election~1action~1ElectionAction"
         }
       },
       "parameters": [
@@ -35,13 +35,13 @@
       "datum": {
         "title": "datum",
         "schema": {
-          "$ref": "#/definitions/election~1types~1ElectionState"
+          "$ref": "#/definitions/election~1state~1ElectionState"
         }
       },
       "redeemer": {
         "title": "redeemer",
         "schema": {
-          "$ref": "#/definitions/election~1types~1ElectionAction"
+          "$ref": "#/definitions/election~1action~1ElectionAction"
         }
       },
       "parameters": [
@@ -80,10 +80,10 @@
     "Int": {
       "dataType": "integer"
     },
-    "List<election/types/PublicRecord>": {
+    "List<election/record/PublicRecord>": {
       "dataType": "list",
       "items": {
-        "$ref": "#/definitions/election~1types~1PublicRecord"
+        "$ref": "#/definitions/election~1record~1PublicRecord"
       }
     },
     "aiken/crypto/VerificationKeyHash": {
@@ -111,11 +111,7 @@
         }
       ]
     },
-    "election/types/CIDv1": {
-      "title": "CIDv1",
-      "dataType": "bytes"
-    },
-    "election/types/ElectionAction": {
+    "election/action/ElectionAction": {
       "title": "ElectionAction",
       "anyOf": [
         {
@@ -141,31 +137,11 @@
         }
       ]
     },
-    "election/types/ElectionState": {
-      "title": "ElectionState",
-      "anyOf": [
-        {
-          "title": "ElectionState",
-          "dataType": "constructor",
-          "index": 0,
-          "fields": [
-            {
-              "title": "publisher",
-              "$ref": "#/definitions/aiken~1crypto~1VerificationKeyHash"
-            },
-            {
-              "title": "new_records",
-              "$ref": "#/definitions/List<election~1types~1PublicRecord>"
-            },
-            {
-              "title": "seq",
-              "$ref": "#/definitions/Int"
-            }
-          ]
-        }
-      ]
+    "election/cid/CIDv1": {
+      "title": "CIDv1",
+      "dataType": "bytes"
     },
-    "election/types/PublicRecord": {
+    "election/record/PublicRecord": {
       "title": "PublicRecord",
       "anyOf": [
         {
@@ -175,17 +151,17 @@
           "fields": [
             {
               "title": "cid",
-              "$ref": "#/definitions/election~1types~1CIDv1"
+              "$ref": "#/definitions/election~1cid~1CIDv1"
             },
             {
               "title": "metadata",
-              "$ref": "#/definitions/election~1types~1PublicRecordMetadata"
+              "$ref": "#/definitions/election~1record~1PublicRecordMetadata"
             }
           ]
         }
       ]
     },
-    "election/types/PublicRecordMetadata": {
+    "election/record/PublicRecordMetadata": {
       "title": "PublicRecordMetadata",
       "anyOf": [
         {
@@ -353,6 +329,30 @@
           "fields": [
             {
               "title": "verifier_number",
+              "$ref": "#/definitions/Int"
+            }
+          ]
+        }
+      ]
+    },
+    "election/state/ElectionState": {
+      "title": "ElectionState",
+      "anyOf": [
+        {
+          "title": "ElectionState",
+          "dataType": "constructor",
+          "index": 0,
+          "fields": [
+            {
+              "title": "publisher",
+              "$ref": "#/definitions/aiken~1crypto~1VerificationKeyHash"
+            },
+            {
+              "title": "new_records",
+              "$ref": "#/definitions/List<election~1record~1PublicRecord>"
+            },
+            {
+              "title": "seq",
               "$ref": "#/definitions/Int"
             }
           ]

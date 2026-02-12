@@ -3,8 +3,7 @@ use aiken/collection/list
 use aiken/crypto.{VerificationKeyHash}
 use cardano/address.{Script, Address}
 use cardano/assets.{PolicyId}
-use cardano/transaction.{Transaction, Input, InlineDatum, Output, OutputReference}
-use election/types.{ElectionState}
+use cardano/transaction.{Transaction, Input, Output, OutputReference}
 
 // Whether a transaction was signed by the required key.
 pub fn tx_signed_by(tx: Transaction, signer: VerificationKeyHash) -> Bool {
@@ -68,22 +67,4 @@ pub fn tx_sends_token_to_addr(
        output.address == addr &&
        assets.quantity_of(output.value, policy_id, token_name) >= min_quantity
      })
-}
-
-pub fn publisher_unchanged(
-  old_publisher: VerificationKeyHash,
-  stt_output: Output
-) -> Bool {
-  expect InlineDatum(new_datum) = stt_output.datum
-  expect new_config: ElectionState = new_datum
-  new_config.publisher == old_publisher
-}
-
-pub fn sequence_incremented(
-  old_seq: Int,
-  stt_output: Output
-) -> Bool {
-  expect InlineDatum(new_datum) = stt_output.datum
-  expect new_config: ElectionState = new_datum
-  new_config.seq == (old_seq + 1)
 }

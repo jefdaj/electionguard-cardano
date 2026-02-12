@@ -3,10 +3,10 @@ use cardano/transaction.{OutputReference, Transaction, InlineDatum, find_input}
 use cardano/address.{Script}
 use cardano/assets.{PolicyId}
 use config
-use election/types.{
-  ElectionState, ElectionAction, OpenChannel, PostPublicRecords, CloseChannel,
-  validate_records
-}
+
+use election/action.{ElectionAction, OpenChannel, PostPublicRecords, CloseChannel}
+use election/record.{validate_records}
+use election/state.{ElectionState}
 use election/utils.{tx_mints, tx_does_not_mint, tx_signed_by, tx_sends_token_to_addr}
 
 validator election(oneshot_ref: OutputReference) {
