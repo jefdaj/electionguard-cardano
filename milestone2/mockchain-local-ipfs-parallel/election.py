@@ -227,18 +227,6 @@ def teardown(cfg, log):
 
 ### election ###
 
-# TODO remove?
-# @explain_step
-# def mint_admin_channel(cfg, log):
-#     run_in_container(
-#         cfg, log, "admin.py", "admin", 1,
-#         [
-#             "mint-channel",
-#             "--egsync-api", egsync_api_url(cfg, 'admin', 1),
-#             "--channel-name", 'admin_1',
-#         ]
-#     )
-
 @explain_step
 def build_manifest(cfg, log):
     run_in_container(
@@ -288,19 +276,39 @@ def announce_key_ceremony(cfg, log):
     )
 
 def key_ceremony_round(cfg, log, ceremony_round):
-    for guardian_id, sequence_order in \
-            zip(cfg.election.guardians.ids, cfg.election.guardians.sequence_order):
-        run_in_container(
-            cfg, log, "guardian.py", "guardian", sequence_order,
-            [
-                "key-ceremony",
-                "--egsync-api", egsync_api_url(cfg, 'guardian', sequence_order),
-                "--private-dir", cfg.arion.bind_mounts.private,
-                "--ceremony-round", str(ceremony_round),
-                "--guardian-id", guardian_id,
-                "--guardian-sequence-order", str(sequence_order),
-            ]
+    tasks = []
+    for guardian_id, sequence_order in zip(
+        cfg.election.guardians.ids,
+        cfg.election.guardians.sequence_order,
+    ):
+        tasks.append(
+            ContainerTask(
+                script_name="guardian.py",
+                container_role="guardian",
+                container_number=sequence_order,
+                args=[
+                    "key-ceremony",
+                    "--egsync-api", egsync_api_url(cfg, "guardian", sequence_order),
+                    "--private-dir", cfg.arion.bind_mounts.private,
+                    "--ceremony-round", str(ceremony_round),
+                    "--guardian-id", guardian_id,
+                    "--guardian-sequence-order", str(sequence_order),
+                ],
+            )
         )
+
+    results = run_many_in_containers(cfg, log, tasks)
+
+    # Optional: check return codes
+    for (guardian_id, seq), rc in zip(
+        zip(cfg.election.guardians.ids, cfg.election.guardians.sequence_order),
+        results,
+    ):
+        if rc != 0:
+            log.warning(
+                f"key ceremony round {ceremony_round} failed for guardian "
+                f"{guardian_id} (sequence {seq}) with return code {rc}"
+            )
 
 @explain_step
 def key_ceremony_round1(cfg, log):
@@ -348,19 +356,39 @@ def mint_device_channels(cfg, log):
         )
 
 def add_device(cfg, log, device_number):
-    run_in_container(
+    return run_in_container(
         cfg, log, "device.py", "device", device_number,
         [
             "add-device",
-            "--egsync-api", egsync_api_url(cfg, 'device', device_number),
+            "--egsync-api", egsync_api_url(cfg, "device", device_number),
             "--device-number", str(device_number),
-        ]
+        ],
     )
 
 @explain_step
 def add_devices(cfg, log):
-    for n in range(1, cfg.election.devices.count + 1):
-        add_device(cfg, log, n)
+    tasks = []
+    for device_number in range(1, cfg.election.devices.count + 1):
+        tasks.append(
+            ContainerTask(
+                script_name="device.py",
+                container_role="device",
+                container_number=device_number,
+                args=[
+                    "add-device",
+                    "--egsync-api", egsync_api_url(cfg, "device", device_number),
+                    "--device-number", str(device_number),
+                ],
+            )
+        )
+
+    results = run_many_in_containers(cfg, log, tasks)
+
+    for device_number, rc in zip(
+        range(1, cfg.election.devices.count + 1), results
+    ):
+        if rc != 0:
+            log.warning(f"add-device failed for device {device_number} with return code {rc}")
 
 def vote_commit(cfg, log, device_number, candidate, spoil=False):
     "submit a ballot but don't say whether it's being cast or spoiled yet"
