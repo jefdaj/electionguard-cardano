@@ -390,68 +390,69 @@ def add_devices(cfg, log):
         if rc != 0:
             log.warning(f"add-device failed for device {device_number} with return code {rc}")
 
-def vote_commit(cfg, log, device_number, candidate, spoil=False):
-    "submit a ballot but don't say whether it's being cast or spoiled yet"
-    ballot_id = run_in_container(
-        cfg, log, "device.py", "device", device_number,
-        [
+def vote_commit_task(cfg, device_number, candidate) -> ContainerTask:
+    return ContainerTask(
+        script_name="device.py",
+        container_role="device",
+        container_number=device_number,
+        args=[
             "vote_commit",
-            "--egsync-api", egsync_api_url(cfg, 'device', device_number),
+            "--egsync-api", egsync_api_url(cfg, "device", device_number),
             "--private-dir", cfg.arion.bind_mounts.private,
             "--device-number", str(device_number),
             "--candidate", candidate,
         ],
-        return_stdout=True
+        kwargs={"return_stdout": True},   # optional; can also pass via run_many_in_containers
     )
-    return ballot_id
 
-def vote_reveal(cfg, log, device_number, ballot_id, spoil=False):
-    "cast or spoil a previously submitted ballot"
-    run_in_container(
-        cfg, log, "device.py", "device", device_number,
-        [
+def vote_reveal_task(cfg, device_number, ballot_id, spoil=False) -> ContainerTask:
+    return ContainerTask(
+        script_name="device.py",
+        container_role="device",
+        container_number=device_number,
+        args=[
             "vote_reveal",
-            "--egsync-api", egsync_api_url(cfg, 'device', device_number),
+            "--egsync-api", egsync_api_url(cfg, "device", device_number),
             "--private-dir", cfg.arion.bind_mounts.private,
             "--device-number", str(device_number),
             "--ballot-id", ballot_id,
             "--spoil", str(spoil),
-        ]
+        ],
     )
 
 @explain_step
 def vote_commit_all(cfg, log):
     votes_so_far = 0
-    ballot_ids = []
+    tasks = []
 
     for contest in cfg.votes:
-
-        # remember a "candidate" might also be an answer to a referendum question!
-        # TODO have they come up with a better name for that in the 2.0 spec?
         for (candidate, n_votes) in contest.answers.items():
 
             for _ in range(n_votes.spoil):
-                # hack to iterate over devices, just to show there can be more than one
                 device_number = votes_so_far % cfg.election.devices.count + 1
-                ballot_id = vote_commit(cfg, log, device_number, candidate, spoil=True)
-                assert len(ballot_id) > 0
+                tasks.append(vote_commit_task(cfg, device_number, candidate))
                 votes_so_far += 1
-                ballot_ids.append(ballot_id)
 
             for _ in range(n_votes.cast):
                 device_number = votes_so_far % cfg.election.devices.count + 1
-                ballot_id = vote_commit(cfg, log, device_number, candidate)
-                assert len(ballot_id) > 0
+                tasks.append(vote_commit_task(cfg, device_number, candidate))
                 votes_so_far += 1
-                ballot_ids.append(ballot_id)
+
+    ballot_ids = run_many_in_containers(
+        cfg, log, tasks,
+        return_stdout=True,   # also set in kwargs above; either is fine
+    )
+
+    for i, ballot_id in enumerate(ballot_ids):
+        assert ballot_id, f"Empty ballot_id at index {i}"
 
     return ballot_ids
 
+
 @explain_step
 def vote_reveal_all(cfg, log, ballot_ids):
-
-    # this time we use this to index in ballot_ids too
     votes_so_far = 0
+    tasks = []
 
     for contest in cfg.votes:
         for (candidate, n_votes) in contest.answers.items():
@@ -459,16 +460,22 @@ def vote_reveal_all(cfg, log, ballot_ids):
             for _ in range(n_votes.spoil):
                 device_number = votes_so_far % cfg.election.devices.count + 1
                 ballot_id = ballot_ids[votes_so_far]
-                vote_reveal(cfg, log, device_number, ballot_id, spoil=True)
+                tasks.append(vote_reveal_task(cfg, device_number, ballot_id, spoil=True))
                 votes_so_far += 1
 
             for _ in range(n_votes.cast):
                 device_number = votes_so_far % cfg.election.devices.count + 1
                 ballot_id = ballot_ids[votes_so_far]
-                vote_reveal(cfg, log, device_number, ballot_id, spoil=False)
+                tasks.append(vote_reveal_task(cfg, device_number, ballot_id, spoil=False))
                 votes_so_far += 1
 
     assert votes_so_far == len(ballot_ids)
+
+    results = run_many_in_containers(cfg, log, tasks)
+
+    for i, rc in enumerate(results):
+        if rc is not None and rc != 0:
+            log.warning(f"vote_reveal failed for index {i} with return code {rc}")
 
 @explain_step
 def tally(cfg, log):
