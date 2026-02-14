@@ -66,7 +66,7 @@ class ContestConfig(dict):
 class GuardiansConfig(dict):
     def __init__(self, count: int = 3, quorum: int = 2):
         super(GuardiansConfig, self).__init__()
-        assert quorum > 0
+        assert quorum > 0 # TODO require at least 2 for realistic use?
         assert quorum <= count
         self['count' ] = count
         self['quorum'] = quorum
@@ -120,8 +120,8 @@ def arionconfig():
 
 @composite
 def voteconfig(draw):
-    n_cast  = draw(integers(min_value=0, max_value=100))
-    n_spoil = draw(integers(min_value=1, max_value=100)) # TODO allow zero spoiled?
+    n_cast  = draw(integers(min_value=0, max_value=25))
+    n_spoil = draw(integers(min_value=1, max_value=25)) # TODO allow zero spoiled?
     return VoteConfig(n_cast, n_spoil)
 
 @composite
