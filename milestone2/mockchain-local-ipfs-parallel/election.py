@@ -26,6 +26,11 @@ from config import *
 # TODO remove, or leave in for debugging?
 from hypothesis import note
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
+from threading import Lock
+from collections import defaultdict
+
 
 ### utilities ###
 
@@ -89,6 +94,67 @@ def run_in_container(
         if len(stdout) > 0:
             log.info(stdout + '\n')
         return proc.returncode
+
+@dataclass
+class ContainerTask:
+    script_name: str
+    container_role: str
+    container_number: int
+    args: list
+    kwargs: dict | None = None   # extra kwargs for run_in_container if needed
+
+def run_many_in_containers(
+    cfg,
+    log,
+    tasks,
+    max_workers=None,
+    return_stdout=False,
+):
+    """
+    Run a batch of run_in_container calls in parallel, but serialize tasks
+    per (container_role, container_number).
+    """
+    tasks = list(tasks)
+
+    # One lock per container -> ensures only one task per container at a time
+    container_locks: dict[tuple[str, int], Lock] = defaultdict(Lock)
+
+    # If no max_workers specified, default to number of distinct containers
+    if max_workers is None:
+        containers = {
+            (t.container_role, t.container_number)
+            for t in tasks
+        }
+        max_workers = len(containers) or 1
+
+    def _worker(t: ContainerTask):
+        key = (t.container_role, t.container_number)
+        lock = container_locks[key]
+
+        with lock:   # serialize all tasks for this container
+            kw = dict(t.kwargs or {})
+            kw.setdefault("return_stdout", return_stdout)
+            return run_in_container(
+                cfg,
+                log,
+                t.script_name,
+                t.container_role,
+                t.container_number,
+                t.args,
+                **kw,
+            )
+
+    results = [None] * len(tasks)
+
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        futures = {pool.submit(_worker, t): idx for idx, t in enumerate(tasks)}
+
+        for fut in as_completed(futures):
+            idx = futures[fut]
+            results[idx] = fut.result()
+
+    return results
+
 
 # TODO where should this go? utils.py?
 def egsync_api_url(cfg, container_role, container_number):
@@ -410,36 +476,42 @@ def decrypt_results(cfg, log):
         ]
     )
 
-# TODO remove? Seems redundant with 4_verify/admin_1.json
-# @explain_step
-# def summary(cfg):
-#     run_in_container(
-#         cfg, "admin", 1,
-#         [
-#             "summary",
-#             "--egsync-api", egsync_api_url(cfg, 'admin', 1)
-#         ]
-#     )
-
 @explain_step
 def verify(cfg, log):
     verifiers = sorted(
-        [('verifier', n) for n in range(1, cfg.election.verifiers.count+1)] + \
-        [('guardian', n) for n in range(1, cfg.election.guardians.count+1)] + \
+        [('verifier', n) for n in range(1, cfg.election.verifiers.count + 1)] +
+        [('guardian', n) for n in range(1, cfg.election.guardians.count + 1)] +
         [('admin', 1)]
     )
+
+    tasks = []
     for (container_role, container_number) in verifiers:
         verifier_id = f'{container_role}_{container_number}'
-        logfile = join(cfg.arion.bind_mounts.private, 'verify.log')
-        run_in_container(
-            cfg, log, "verifier.py", container_role, container_number,
-            [
-                "verify",
-                "--egsync-api", egsync_api_url(cfg, container_role, container_number),
-                "--verifier-id", verifier_id,
-                "--logfile", logfile,
-            ]
+        logfile = join(
+            cfg.arion.bind_mounts.private,
+            f'{verifier_id}_verify.log'
         )
+
+        tasks.append(
+            ContainerTask(
+                script_name="verifier.py",
+                container_role=container_role,
+                container_number=container_number,
+                args=[
+                    "verify",
+                    "--egsync-api", egsync_api_url(cfg, container_role, container_number),
+                    "--verifier-id", verifier_id,
+                    "--logfile", logfile,
+                ],
+            )
+        )
+
+    # By default, max_workers == number of distinct containers in `tasks`
+    results = run_many_in_containers(cfg, log, tasks)
+
+    for (role, num), rc in zip(verifiers, results):
+        if rc != 0:
+            log.warning(f"verify failed for {role} {num} with return code {rc}")
 
 @explain_step
 def attack(cfg, log: logging.Logger, fn_name: str, role: str, step: str, seed: int):
