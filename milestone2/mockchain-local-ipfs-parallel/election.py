@@ -614,7 +614,7 @@ def election(cfg, log) -> int:
         time.sleep(0); mint_guardian_channels(cfg, log)
         time.sleep(0); mint_verifier_channels(cfg, log)
         time.sleep(0); announce_key_ceremony(cfg, log) ; attack_all(cfg, log, 'announce_key_ceremony')
-        time.sleep(0); key_ceremony_round1(cfg, log)   ; attack_all(cfg, log, 'key_ceremony_round1')
+        time.sleep(3); key_ceremony_round1(cfg, log)   ; attack_all(cfg, log, 'key_ceremony_round1')
         time.sleep(3); key_ceremony_round2(cfg, log)   ; attack_all(cfg, log, 'key_ceremony_round2')
         time.sleep(3); key_ceremony_round3(cfg, log)   ; attack_all(cfg, log, 'key_ceremony_round3')
         time.sleep(0); publish_joint_key(cfg, log)     ; attack_all(cfg, log, 'publish_joint_key')

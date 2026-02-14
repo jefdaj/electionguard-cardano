@@ -226,7 +226,7 @@ def list_record_fmtargs(record_type):
 
 ### ipfs ###
 
-async def wait_for_ipfs(ipfs, timeout=60):
+async def wait_for_ipfs(ipfs, timeout=10):
     end = asyncio.get_event_loop().time() + timeout
     while True:
         try:
