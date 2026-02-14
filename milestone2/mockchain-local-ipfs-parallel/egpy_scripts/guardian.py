@@ -246,7 +246,7 @@ def DecryptSharesCommand(
         tally = from_public_record(egsync_api, 'ciphertext_tally')
         tally_share = guardian.compute_tally_share(tally, context)
         assert tally_share is not None
-        print(f'computed {guardian_id} decryption share of election tally', flush=True)
+        # print(f'computed {guardian_id} decryption share of election tally', flush=True)
         try:
             to_public_record(
                 egsync_api, guardian_id, 'tally_share', tally_share,
@@ -268,7 +268,7 @@ def DecryptSharesCommand(
             = guardian.compute_ballot_shares(spoiled_ballots, context)
         for (spoiled_id, spoiled_share) in spoiled_shares.items():
             try:
-                print(f'computed {guardian_id} decryption share of {spoiled_id}', flush=True)
+                # print(f'computed {guardian_id} decryption share of {spoiled_id}', flush=True)
                 assert spoiled_share is not None
             except Exception as e:
                 print(e)

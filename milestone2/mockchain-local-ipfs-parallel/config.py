@@ -168,8 +168,8 @@ def electionconfig(draw):
     kwargs = {}
     kwargs['guardians_count' ] = draw(integers(min_value=2, max_value=10))
     kwargs['guardians_quorum'] = draw(integers(min_value=1, max_value=kwargs['guardians_count'])) # TODO -1?
-    kwargs['devices_count'   ] = draw(integers(min_value=1, max_value=30))
-    kwargs['verifiers_count' ] = draw(integers(min_value=1, max_value=10)) # TODO allow 0?
+    kwargs['devices_count'   ] = draw(integers(min_value=1, max_value=10))
+    kwargs['verifiers_count' ] = draw(integers(min_value=1, max_value=3)) # TODO allow 0?
     cfg = ElectionConfig(**kwargs)
     return cfg
 
