@@ -314,7 +314,6 @@ def key_ceremony_round(cfg, log, ceremony_round):
 def key_ceremony_round1(cfg, log):
     key_ceremony_round(cfg, log, 1)
 
-
 @explain_step
 def key_ceremony_round2(cfg, log):
     key_ceremony_round(cfg, log, 2)
@@ -487,19 +486,40 @@ def tally(cfg, log):
         ]
     )
 
+def decrypt_shares_task(cfg, guardian_id, sequence_order) -> ContainerTask:
+    return ContainerTask(
+        script_name="guardian.py",
+        container_role="guardian",
+        container_number=sequence_order,
+        args=[
+            "decrypt-shares",
+            "--egsync-api", egsync_api_url(cfg, "guardian", sequence_order),
+            "--private-dir", cfg.arion.bind_mounts.private,
+            "--guardian-id", guardian_id,
+        ],
+    )
+
 @explain_step
 def decrypt_shares(cfg, log):
-    for guardian_id, sequence_order in \
-            zip(cfg.election.guardians.ids, cfg.election.guardians.sequence_order):
-        run_in_container(
-            cfg, log, "guardian.py", "guardian", sequence_order,
-            [
-                "decrypt-shares",
-                "--egsync-api", egsync_api_url(cfg, 'guardian', sequence_order),
-                "--private-dir", cfg.arion.bind_mounts.private,
-                "--guardian-id", guardian_id,
-            ]
-        )
+    tasks = []
+    for guardian_id, sequence_order in zip(
+        cfg.election.guardians.ids,
+        cfg.election.guardians.sequence_order,
+    ):
+        tasks.append(decrypt_shares_task(cfg, guardian_id, sequence_order))
+
+    results = run_many_in_containers(cfg, log, tasks)
+
+    # Optional: check return codes
+    for (guardian_id, sequence_order), rc in zip(
+        zip(cfg.election.guardians.ids, cfg.election.guardians.sequence_order),
+        results,
+    ):
+        if rc != 0:
+            log.warning(
+                f"decrypt-shares failed for guardian {guardian_id} "
+                f"(sequence {sequence_order}) with return code {rc}"
+            )
 
 @explain_step
 def decrypt_results(cfg, log):
