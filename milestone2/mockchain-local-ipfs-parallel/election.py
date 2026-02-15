@@ -153,6 +153,10 @@ def run_many_in_containers(
             idx = futures[fut]
             results[idx] = fut.result()
 
+    # allow time for files to propagate
+    # TODO does this help?
+    time.sleep(3)
+
     return results
 
 
@@ -208,7 +212,10 @@ def setup(cfg, log):
 
     # For some reason this occassionally fails with a Docker "network not found" error.
     # The hacky solution seems to work: turning it off and on again.
-    time.sleep(2)
+
+    # TODO does this help?
+    time.sleep(3)
+
     for retry in range(1, 4):
         time.sleep(retry * 2) # delay 2, 4, 6, 8 sec
         try:
@@ -218,6 +225,9 @@ def setup(cfg, log):
             log.error(f'arion up failed {retry+1} times: {e}')
             teardown(cfg, log)
     raise Exception('arion up failed too many times')
+
+    # TODO does this help?
+    time.sleep(3)
 
 @explain_step
 def teardown(cfg, log):
@@ -568,69 +578,73 @@ def verify(cfg, log):
         if rc != 0:
             log.warning(f"verify failed for {role} {num} with return code {rc}")
 
-@explain_step
-def attack(cfg, log: logging.Logger, fn_name: str, role: str, step: str, seed: int):
-    # attack specifies a role, but not the exact container
-    # so we choose which one to corrupt randomly here
-    counts = {
-        'admin'    : 1,
-        'verifier' : cfg.election.verifiers.count,
-        'guardian' : cfg.election.guardians.count,
-        'device'   : cfg.election.devices.count,
-    }
-    n = random.randint(1, counts[role])
-    logfile = join(cfg.arion.bind_mounts.private, 'attack.log')
-    run_in_container(
-        cfg, log, "attack.py", role, n,
-        [
-            "attack",
-            "--egsync-api", egsync_api_url(cfg, role, n),
-            "--private-dir", cfg.arion.bind_mounts.private,
-            "--logfile", logfile,
-            "--attack-fn", fn_name,
-            "--step", step,
-            "--random-seed", str(seed),
-        ]
-    )
+# removed until I think how (or whether) to integrate attacks with ipfs + on-chain files
+# @explain_step
+# def attack(cfg, log: logging.Logger, fn_name: str, role: str, step: str, seed: int):
+#     # attack specifies a role, but not the exact container
+#     # so we choose which one to corrupt randomly here
+#     counts = {
+#         'admin'    : 1,
+#         'verifier' : cfg.election.verifiers.count,
+#         'guardian' : cfg.election.guardians.count,
+#         'device'   : cfg.election.devices.count,
+#     }
+#     n = random.randint(1, counts[role])
+#     logfile = join(cfg.arion.bind_mounts.private, 'attack.log')
+#     run_in_container(
+#         cfg, log, "attack.py", role, n,
+#         [
+#             "attack",
+#             "--egsync-api", egsync_api_url(cfg, role, n),
+#             "--private-dir", cfg.arion.bind_mounts.private,
+#             "--logfile", logfile,
+#             "--attack-fn", fn_name,
+#             "--step", step,
+#             "--random-seed", str(seed),
+#         ]
+#     )
 
-def attack_all(cfg, log, step):
-    "Run any attack functions that target the current step"
-    for i in range(1, len(cfg.attacks) + 1):
-        fn_name = cfg.attacks[i-1]
-        attack_cfg = ATTACKS[fn_name]
-        if not step in attack_cfg['when']:
-            continue
-
-        # TODO is this reasonable?
-        # we mainly want to make sure that when the same attack is repeated in the same config,
-        # it doesn't use the same seed
-        seed = cfg.random_seed + i
-
-        attack(cfg, log, fn_name, attack_cfg['who'], step, seed)
+# removed until I think how (or whether) to integrate attacks with ipfs + on-chain files
+# def attack_all(cfg, log, step):
+#     "Run any attack functions that target the current step"
+#     for i in range(1, len(cfg.attacks) + 1):
+#         fn_name = cfg.attacks[i-1]
+#         attack_cfg = ATTACKS[fn_name]
+#         if not step in attack_cfg['when']:
+#             continue
+#
+#         # TODO is this reasonable?
+#         # we mainly want to make sure that when the same attack is repeated in the same config,
+#         # it doesn't use the same seed
+#         seed = cfg.random_seed + i
+#
+#         attack(cfg, log, fn_name, attack_cfg['who'], step, seed)
 
 def election(cfg, log) -> int:
     try:
-        time.sleep(10); build_manifest(cfg, log)        ; attack_all(cfg, log, 'build_manifest')
-        time.sleep(0); mint_guardian_channels(cfg, log)
-        time.sleep(0); mint_verifier_channels(cfg, log)
-        time.sleep(0); announce_key_ceremony(cfg, log) ; attack_all(cfg, log, 'announce_key_ceremony')
-        time.sleep(10); key_ceremony_round1(cfg, log)   ; attack_all(cfg, log, 'key_ceremony_round1')
-        time.sleep(10); key_ceremony_round2(cfg, log)   ; attack_all(cfg, log, 'key_ceremony_round2')
-        time.sleep(10); key_ceremony_round3(cfg, log)   ; attack_all(cfg, log, 'key_ceremony_round3')
-        time.sleep(0); publish_joint_key(cfg, log)     ; attack_all(cfg, log, 'publish_joint_key')
-        time.sleep(0); build_election(cfg, log)        ; attack_all(cfg, log, 'build_election')
-        time.sleep(0); mint_device_channels(cfg, log) # TODO should this happen earlier?
-        time.sleep(0); add_devices(cfg, log)           ; attack_all(cfg, log, 'add_devices')
-        time.sleep(0); ids = vote_commit_all(cfg, log) ; attack_all(cfg, log, 'vote_commit_all')
-        time.sleep(10); vote_reveal_all(cfg, log, ids)  ; attack_all(cfg, log, 'vote_reveal_all')
-        time.sleep(10); tally(cfg, log)                 ; attack_all(cfg, log, 'tally')
-        time.sleep(10); decrypt_shares(cfg, log)        ; attack_all(cfg, log, 'decrypt_shares')
-        time.sleep(10); decrypt_results(cfg, log)       ; attack_all(cfg, log, 'decrypt_results')
+        # TODO when should these happen?
+        # TODO should they all be one mint_channels step?
+        mint_guardian_channels(cfg, log)
+        mint_verifier_channels(cfg, log)
+        mint_device_channels(cfg, log)
+
+        build_manifest(cfg, log)        # ; attack_all(cfg, log, 'build_manifest')
+        announce_key_ceremony(cfg, log) # ; attack_all(cfg, log, 'announce_key_ceremony')
+        key_ceremony_round1(cfg, log)   # ; attack_all(cfg, log, 'key_ceremony_round1')
+        key_ceremony_round2(cfg, log)   # ; attack_all(cfg, log, 'key_ceremony_round2')
+        key_ceremony_round3(cfg, log)   # ; attack_all(cfg, log, 'key_ceremony_round3')
+        publish_joint_key(cfg, log)     # ; attack_all(cfg, log, 'publish_joint_key')
+        build_election(cfg, log)        # ; attack_all(cfg, log, 'build_election')
+        add_devices(cfg, log)           # ; attack_all(cfg, log, 'add_devices')
+        ids = vote_commit_all(cfg, log) # ; attack_all(cfg, log, 'vote_commit_all')
+        vote_reveal_all(cfg, log, ids)  # ; attack_all(cfg, log, 'vote_reveal_all')
+        tally(cfg, log)                 # ; attack_all(cfg, log, 'tally')
+        decrypt_shares(cfg, log)        # ; attack_all(cfg, log, 'decrypt_shares')
+        decrypt_results(cfg, log)       # ; attack_all(cfg, log, 'decrypt_results')
     except Exception as e:
         print(e)
     finally:
-        time.sleep(0); n_errors = verify(cfg, log) ; attack_all(cfg, log, 'verify')
-        time.sleep(10) # TODO do verifications ever fail to propagate?
+        n_errors = verify(cfg, log) # ; attack_all(cfg, log, 'verify')
         return n_errors
 
 def main(cfg, log):
@@ -695,7 +709,7 @@ def ElectionCommand(
     log = init_log(cfg, logfile, logging.INFO)
     if single_step:
         run_single_step(cfg, log, single_step)
-        attack_all(cfg, log, single_step)
+        # attack_all(cfg, log, single_step)
     else:
         main(cfg, log)
 
