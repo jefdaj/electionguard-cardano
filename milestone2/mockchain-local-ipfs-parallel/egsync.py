@@ -31,6 +31,7 @@ from typing import Dict, Callable, Pattern, Any
 from aiohttp import ClientConnectorError, ClientConnectorDNSError
 
 import tempfile
+import random
 
 ### logging ###
 
@@ -428,6 +429,10 @@ async def fetch_public_record(ipfs: RetryingIPFS, obj):
 
 ### mockchain ###
 
+
+def jitter_delay(max_seconds=1):
+    time.sleep(random.uniform(0, max_seconds))
+
 class MockchainSubscriber(FileSystemEventHandler):
     def __init__(self, loop, mockchain_dir,
                  debounce_seconds=1.0, mockchain_event_handlers={},
@@ -464,6 +469,7 @@ class MockchainSubscriber(FileSystemEventHandler):
     def on_fs_event(self, event):
         args = self.mockchain_event_args(event)
         if args is not None:
+            jitter_delay() # prevent all IPFS containers doing IO at once
             try:
                 self.schedule_response(**args)
             except Exception as e:
