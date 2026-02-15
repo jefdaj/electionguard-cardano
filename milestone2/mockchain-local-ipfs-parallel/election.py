@@ -633,6 +633,7 @@ def election(cfg, log) -> int:
         print(e)
     finally:
         n_errors = verify(cfg, log) # ; attack_all(cfg, log, 'verify')
+        time.sleep(3) # TODO do verifications ever fail to propagate?
         return n_errors
 
 def main(cfg, log):
