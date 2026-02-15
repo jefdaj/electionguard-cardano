@@ -30,6 +30,7 @@ from typing import Dict, Callable, Pattern, Any
 
 from aiohttp import ClientConnectorError, ClientConnectorDNSError
 
+import tempfile
 
 ### logging ###
 
@@ -353,10 +354,34 @@ def format_to_regex(
 async def fetch_cid_to_file(ipfs: RetryingIPFS, cid: str, filename: str):
     # Get the raw bytes for the CID
     data = await ipfs.cat(cid)
-    # Save to your chosen filename
-    # TODO if there are issues with lots of fs events, save to a tmpdir and move atomically instead
-    async with aiofiles.open(filename, "wb") as f:
-        await f.write(data)
+
+    # Ensure parent dir exists
+    dir_name = os.path.dirname(filename) or "."
+    os.makedirs(dir_name, exist_ok=True)
+
+    # Create a temp file in the same directory
+    fd, tmp_path = tempfile.mkstemp(
+        dir=dir_name,
+        prefix=".tmp_",
+        suffix=".part"
+    )
+    os.close(fd)  # we'll reopen it with aiofiles
+
+    try:
+        # Write to temp file
+        async with aiofiles.open(tmp_path, "wb") as f:
+            await f.write(data)
+            await f.flush()
+
+        # Atomically replace the target file
+        os.replace(tmp_path, filename)
+    finally:
+        # Clean up temp file if anything went wrong before replace
+        if os.path.exists(tmp_path):
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
 
 async def publish_on_ipfs(ipfs: RetryingIPFS, obj: dict) -> str:
     added_file = await ipfs.add_json(obj)
