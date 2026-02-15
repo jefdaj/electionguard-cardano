@@ -182,8 +182,7 @@ def electionconfig(draw):
     # TODO bias the tests towards more to speed up parallel voting?
     kwargs['devices_count'   ] = draw(integers(min_value=1, max_value=100))
 
-    # 0 should work, but have to refactor to use a different role for tests first
-    kwargs['verifiers_count' ] = draw(integers(min_value=1, max_value=10)) # TODO allow 0?
+    kwargs['verifiers_count' ] = draw(integers(min_value=0, max_value=10))
 
     # TODO are tests failing because my laptop can't handle so many containers?
     n_containers = \

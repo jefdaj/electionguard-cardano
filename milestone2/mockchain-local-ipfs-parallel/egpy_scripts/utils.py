@@ -269,7 +269,7 @@ def from_public_record(egsync_api: str, record_type: str, **fmtargs):
     Remote version of from_public_record.
     """
     url = _public_record_url(egsync_api, record_type, **fmtargs)
-    resp = make_session_with_retry().get(url, timeout=30)
+    resp = make_session_with_retry().get(url, timeout=5)
     if resp.status_code == 404:
         return None  # or raise a custom exception
     resp.raise_for_status()

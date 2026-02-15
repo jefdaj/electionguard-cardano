@@ -425,12 +425,13 @@ async def fetch_public_record(ipfs: RetryingIPFS, obj):
     cid = obj.pop('cid')
     fpath = record_path(PUBLIC_RECORDS, PUBLIC_RECORDS_DIR, record_type, **obj)
     await fetch_cid_to_file(ipfs, cid, fpath)
+    await ipfs.pin.add(cid)
 
 
 ### mockchain ###
 
 
-def jitter_delay(max_seconds=1):
+def jitter_delay(max_seconds=1.0):
     time.sleep(random.uniform(0, max_seconds))
 
 class MockchainSubscriber(FileSystemEventHandler):

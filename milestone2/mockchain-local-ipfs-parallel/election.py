@@ -905,7 +905,8 @@ def election_verified(testdir: str, verifier_id: str) -> bool:
 ### honest election property tests ###
 
 def verifier_json_paths(testdir):
-    return sorted(glob(join(testdir, 'data/private/verifier_1/egsync/4_verify/*.json')))
+    # guardian_1 isn't special here; could use any verifier
+    return sorted(glob(join(testdir, 'data/private/guardian_1/egsync/4_verify/*.json')))
 
 # TODO rename something less confusing?
 @given_honest_election()
@@ -976,8 +977,8 @@ def test_honest_cast_votes_match_config(testdir: ElectionTestDir):
     cfg = load_config_json(testdir)
     expected_cast_totals = cast_vote_totals_from_config(cfg)
 
-    # admin isn't special here; could use any verifier
-    summary = load_verifier_json(testdir, 'verifier_1')
+    # guardian_1 isn't special here; could use any verifier
+    summary = load_verifier_json(testdir, 'guardian_1')
     actual_cast_totals = sorted(summary['Final tally of cast ballots'])
 
     assert len(expected_cast_totals) == len(actual_cast_totals)
@@ -1008,8 +1009,8 @@ def test_honest_spoiled_votes_match_config(testdir: ElectionTestDir):
     expected_spoiled_totals = spoiled_vote_totals_from_config(cfg)
     note(f'expected_spoiled_totals: {expected_spoiled_totals}')
 
-    # admin isn't special here; could use any verifier
-    summary = load_verifier_json(testdir, 'verifier_1')
+    # guardian_1 isn't special here; could use any verifier
+    summary = load_verifier_json(testdir, 'guardian_1')
     actual_spoiled_totals = spoiled_vote_totals_from_summary(summary)
     note(f'actual_spoiled_totals: {actual_spoiled_totals}')
 

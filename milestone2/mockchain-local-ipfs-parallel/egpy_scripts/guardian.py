@@ -67,7 +67,6 @@ def round1(guardian_id, sequence_order, egsync_api, private_dir):
     to_private_record(private_dir, 'election_key_pair', election_key_pair)
 
     # share the public key (and other info)
-    # TODO why not publish_record here? I guess that's later after backups?
     public_key: ElectionPublicKey = election_key_pair.share()
     to_public_record(
         egsync_api, guardian_id, 'guardian_pubkey', public_key,
