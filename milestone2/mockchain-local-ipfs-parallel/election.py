@@ -153,10 +153,6 @@ def run_many_in_containers(
             idx = futures[fut]
             results[idx] = fut.result()
 
-    # allow time for files to propagate
-    # TODO does this help?
-    time.sleep(3)
-
     return results
 
 
@@ -213,9 +209,6 @@ def setup(cfg, log):
     # For some reason this occassionally fails with a Docker "network not found" error.
     # The hacky solution seems to work: turning it off and on again.
 
-    # TODO does this help?
-    time.sleep(3)
-
     for retry in range(1, 4):
         time.sleep(retry * 2) # delay 2, 4, 6, 8 sec
         try:
@@ -226,14 +219,9 @@ def setup(cfg, log):
             teardown(cfg, log)
     raise Exception('arion up failed too many times')
 
-    # TODO does this help?
-    time.sleep(3)
-
 @explain_step
 def teardown(cfg, log):
     run_process(cfg, log, ['arion', 'down'])
-    # time.sleep(3) # TODO is this necessary?
-
 
 ### election ###
 

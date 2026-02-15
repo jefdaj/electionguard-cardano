@@ -430,8 +430,8 @@ async def fetch_public_record(ipfs: RetryingIPFS, obj):
 ### mockchain ###
 
 
-async def jitter_delay(max_seconds=1):
-    await asyncio.sleep(random.uniform(0, max_seconds))
+def jitter_delay(max_seconds=1):
+    time.sleep(random.uniform(0, max_seconds))
 
 class MockchainSubscriber(FileSystemEventHandler):
     def __init__(self, loop, mockchain_dir,
@@ -522,7 +522,7 @@ class MockchainSubscriber(FileSystemEventHandler):
         self.pending_events[args] = future
 
     async def on_mockchain_event(self, channel: str, index: int):
-        await jitter_delay() # prevent all IPFS containers doing IO at once
+        jitter_delay() # prevent all IPFS containers doing IO at once
         if not channel in self.channel_state.keys():
             raise Exception(f'invalid mockchain_channel {channel}')
         expected = self.next_json_index(channel)

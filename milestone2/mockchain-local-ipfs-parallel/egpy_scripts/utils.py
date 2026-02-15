@@ -28,6 +28,7 @@ from dataclasses import dataclass, field
 import requests
 from urllib.parse import urlencode
 from pydantic.json import pydantic_encoder
+import time
 
 # hide INFO dumps of crypto from elgamal.py
 import logging
@@ -313,22 +314,42 @@ def from_private_record(private_dir: str, record_type: str, **fmtargs):
 
 ### list all expected fmtargs for artifacts of a given type ###
 
-def list_record_fmtargs(egsync_api: str, record_type: str) -> List[dict]:
+def list_record_fmtargs(egsync_api: str, record_type: str, n_expected=None, n_retries=3) -> List[dict]:
     url = f"{egsync_api}/record_fmtargs/{record_type}"
     resp = make_session_with_retry().get(url, timeout=5)
     if resp.status_code == 404:
         return None  # or raise a custom exception
     resp.raise_for_status()
-    return resp.json()
+    lst = resp.json()
+    # print(f'lst: {lst}')
+    if n_expected is not None:
+        n_actual = len(lst)
+        # print(f'n_actual: {n_actual} n_expected: {n_expected}')
+        if n_actual > n_expected:
+            raise Exception(f'list_record_fmtargs expected {n_expected} records, but got {n_actual}')
+        if n_actual < n_expected:
+            if n_retries < 1:
+                raise Exception(f'list_record_fmtargs expected {n_expected} records, but got {n_actual}')
+            else:
+                time.sleep(3)
+                return list_record_fmtargs(
+                    egsync_api,
+                    record_type,
+                    n_expected=n_expected,
+                    n_retries=n_retries-1
+                )
+    return lst
 
-def load_records(egsync_api: str, record_type: str):
+def load_records(egsync_api: str, record_type: str, n_expected=None):
     "List all records of a particular record_type"
-    record_fmtargs = list_record_fmtargs(egsync_api, record_type)
+    record_fmtargs = list_record_fmtargs(egsync_api, record_type, n_expected=n_expected)
     records = []
     for fmtargs in record_fmtargs:
         record = from_public_record(egsync_api, record_type, **fmtargs)
         records.append(record)
     assert len(records) == len(record_fmtargs)
+    if n_expected is not None:
+        assert len(records) == n_expected
     return records
 
 
@@ -391,15 +412,13 @@ def load_spoiled_results(egsync_api: str) -> List[PlaintextTally]:
 
 def load_guardian_pubkeys(egsync_api: str) -> List[ElectionPublicKey]:
     ceremony_details: CeremonyDetails = from_public_record(egsync_api, 'ceremony_details')
-    # guardian_pubkeys: List[ElectionPublicKey] = []
-    # for guardian_number in range(1, ceremony_details.number_of_guardians+1):
-    #     pubkey = from_public_record(
-    #         egsync_api, 'guardian_pubkey',
-    #         guardian_id=f'guardian_{guardian_number}'
-    #     )
-    #     guardian_pubkeys.append(pubkey)
-    guardian_pubkeys: List[ElectionPublicKey] = load_records(egsync_api, 'guardian_pubkey')
-    assert len(guardian_pubkeys) == ceremony_details.number_of_guardians
+    n_guardians: int = ceremony_details.number_of_guardians
+    guardian_pubkeys: List[ElectionPublicKey] = load_records(
+        egsync_api,
+        'guardian_pubkey',
+        n_expected=n_guardians
+    )
+    assert len(guardian_pubkeys) == n_guardians
     return guardian_pubkeys
 
 def load_guardian_pubkeys_dict(egsync_api: str) -> Dict[GuardianId, ElectionPublicKey]:
