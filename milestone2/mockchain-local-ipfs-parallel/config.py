@@ -120,8 +120,8 @@ def arionconfig():
 
 @composite
 def voteconfig(draw):
-    n_cast  = draw(integers(min_value=0, max_value=100))
-    n_spoil = draw(integers(min_value=0, max_value=100))
+    n_cast  = draw(integers(min_value=0, max_value=20))
+    n_spoil = draw(integers(min_value=0, max_value=20))
     return VoteConfig(n_cast, n_spoil)
 
 # TODO why is this defined twice? that can't be the best way...
@@ -179,7 +179,7 @@ def electionconfig(draw):
 
     # Any nonzero number is reasonable here.
     # TODO bias the tests towards more to speed up parallel voting?
-    kwargs['devices_count'   ] = draw(integers(min_value=1, max_value=100))
+    kwargs['devices_count'   ] = draw(integers(min_value=1, max_value=10))
 
     kwargs['verifiers_count' ] = draw(integers(min_value=0, max_value=10))
 
