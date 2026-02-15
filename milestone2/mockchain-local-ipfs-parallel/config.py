@@ -120,13 +120,13 @@ def arionconfig():
 
 @composite
 def voteconfig(draw):
-    n_cast  = draw(integers(min_value=0, max_value=25))
-    n_spoil = draw(integers(min_value=1, max_value=25)) # TODO allow zero spoiled?
+    n_cast  = draw(integers(min_value=0, max_value=100))
+    n_spoil = draw(integers(min_value=0, max_value=100))
     return VoteConfig(n_cast, n_spoil)
 
+# TODO why is this defined twice? that can't be the best way...
 @composite
 def contestconfig(draw):
-    # TODO do we need to assume there's at least one vote per contest?
     return ContestConfig(
         question = 'Should pineapple be banned on pizza?',
         answers = {
@@ -166,10 +166,34 @@ def contestsconfig(draw):
 @composite
 def electionconfig(draw):
     kwargs = {}
-    kwargs['guardians_count' ] = draw(integers(min_value=2, max_value=10))
-    kwargs['guardians_quorum'] = draw(integers(min_value=1, max_value=kwargs['guardians_count'])) # TODO -1?
-    kwargs['devices_count'   ] = draw(integers(min_value=1, max_value=10))
-    kwargs['verifiers_count' ] = draw(integers(min_value=1, max_value=3)) # TODO allow 0?
+
+    # If there's only one guardian you might as well have it be centralized
+    # (ElectionGuard has a setting for that), but I haven't implemented that setting
+    # so it is a reasonable way to use EGC for now in test environments.
+    # There's no maximum, but the number of messages grows quadratically.
+    kwargs['guardians_count' ] = draw(integers(min_value=1, max_value=10))
+
+    # Both 1 and n_guardians are bad settings for quorum,
+    # but we leave them here just to make sure nothing breaks.
+    # In reality you want >2 and <n_guardians-1.
+    kwargs['guardians_quorum'] = draw(integers(min_value=1, max_value=kwargs['guardians_count']))
+
+    # Any nonzero number is reasonable here.
+    # TODO bias the tests towards more to speed up parallel voting?
+    kwargs['devices_count'   ] = draw(integers(min_value=1, max_value=100))
+
+    # 0 should work, but have to refactor to use a different role for tests first
+    kwargs['verifiers_count' ] = draw(integers(min_value=1, max_value=10)) # TODO allow 0?
+
+    # TODO are tests failing because my laptop can't handle so many containers?
+    n_containers = \
+       kwargs['guardians_count'] * 3 + \
+       kwargs['devices_count'  ] * 3 + \
+       kwargs['verifiers_count'] * 3 + \
+       1 * 3 # admin
+    assume(n_containers < 40) # TODO tune this
+    # print(f'n_containers: {n_containers}')
+
     cfg = ElectionConfig(**kwargs)
     return cfg
 

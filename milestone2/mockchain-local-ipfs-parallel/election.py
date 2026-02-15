@@ -107,7 +107,7 @@ def run_many_in_containers(
     cfg,
     log,
     tasks,
-    max_workers=None,
+    max_workers=16,
     return_stdout=False,
 ):
     """
@@ -611,17 +611,17 @@ def attack_all(cfg, log, step):
 def election(cfg, log) -> int:
     try:
         time.sleep(10); build_manifest(cfg, log)        ; attack_all(cfg, log, 'build_manifest')
-        time.sleep(10); mint_guardian_channels(cfg, log)
-        time.sleep(10); mint_verifier_channels(cfg, log)
-        time.sleep(10); announce_key_ceremony(cfg, log) ; attack_all(cfg, log, 'announce_key_ceremony')
+        time.sleep(0); mint_guardian_channels(cfg, log)
+        time.sleep(0); mint_verifier_channels(cfg, log)
+        time.sleep(0); announce_key_ceremony(cfg, log) ; attack_all(cfg, log, 'announce_key_ceremony')
         time.sleep(10); key_ceremony_round1(cfg, log)   ; attack_all(cfg, log, 'key_ceremony_round1')
         time.sleep(10); key_ceremony_round2(cfg, log)   ; attack_all(cfg, log, 'key_ceremony_round2')
         time.sleep(10); key_ceremony_round3(cfg, log)   ; attack_all(cfg, log, 'key_ceremony_round3')
-        time.sleep(10); publish_joint_key(cfg, log)     ; attack_all(cfg, log, 'publish_joint_key')
-        time.sleep(10); build_election(cfg, log)        ; attack_all(cfg, log, 'build_election')
-        time.sleep(10); mint_device_channels(cfg, log) # TODO should this happen earlier?
-        time.sleep(10); add_devices(cfg, log)           ; attack_all(cfg, log, 'add_devices')
-        time.sleep(10); ids = vote_commit_all(cfg, log) ; attack_all(cfg, log, 'vote_commit_all')
+        time.sleep(0); publish_joint_key(cfg, log)     ; attack_all(cfg, log, 'publish_joint_key')
+        time.sleep(0); build_election(cfg, log)        ; attack_all(cfg, log, 'build_election')
+        time.sleep(0); mint_device_channels(cfg, log) # TODO should this happen earlier?
+        time.sleep(0); add_devices(cfg, log)           ; attack_all(cfg, log, 'add_devices')
+        time.sleep(0); ids = vote_commit_all(cfg, log) ; attack_all(cfg, log, 'vote_commit_all')
         time.sleep(10); vote_reveal_all(cfg, log, ids)  ; attack_all(cfg, log, 'vote_reveal_all')
         time.sleep(10); tally(cfg, log)                 ; attack_all(cfg, log, 'tally')
         time.sleep(10); decrypt_shares(cfg, log)        ; attack_all(cfg, log, 'decrypt_shares')
@@ -629,7 +629,7 @@ def election(cfg, log) -> int:
     except Exception as e:
         print(e)
     finally:
-        time.sleep(10); n_errors = verify(cfg, log) ; attack_all(cfg, log, 'verify')
+        time.sleep(0); n_errors = verify(cfg, log) ; attack_all(cfg, log, 'verify')
         time.sleep(10) # TODO do verifications ever fail to propagate?
         return n_errors
 
