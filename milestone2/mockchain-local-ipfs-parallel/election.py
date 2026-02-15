@@ -107,7 +107,7 @@ def run_many_in_containers(
     cfg,
     log,
     tasks,
-    max_workers=16,
+    max_workers=16, # TODO default to nproc? nproc/2?
     return_stdout=False,
 ):
     """
