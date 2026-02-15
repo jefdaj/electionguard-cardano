@@ -167,11 +167,10 @@ def contestsconfig(draw):
 def electionconfig(draw):
     kwargs = {}
 
-    # If there's only one guardian you might as well have it be centralized
-    # (ElectionGuard has a setting for that), but I haven't implemented that setting
-    # so it is a reasonable way to use EGC for now in test environments.
-    # There's no maximum, but the number of messages grows quadratically.
-    kwargs['guardians_count' ] = draw(integers(min_value=1, max_value=10))
+    # I haven't figured out what the key ceremony should look like with only one guardian,
+    # and it would be a silly way to deploy real elections, so for now the min is 2.
+    # There's no real maximum, but the number of messages grows quadratically.
+    kwargs['guardians_count' ] = draw(integers(min_value=2, max_value=10))
 
     # Both 1 and n_guardians are bad settings for quorum,
     # but we leave them here just to make sure nothing breaks.
