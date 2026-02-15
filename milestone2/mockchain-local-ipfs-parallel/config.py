@@ -13,22 +13,22 @@ from typing import Callable, Dict, List
 # (they live in egpy_scripts/attack.py) because they run in electionguard-python
 # containers, whereas this runs on the host system and will not necessarily be
 # able to import the electionguard module.
-ATTACKS = {
-
-    'admin_ghost_after_vote'           : {'who': 'admin', 'when': ['tally', 'decrypt_results']},
-    'admin_withhold_manifest'          : {'who': 'admin', 'when': ['build_manifest']},
-    'device_mutate_spoiled_ballot'     : {'who': 'device', 'when': ['vote_reveal_all']},
-    'device_mutate_submitted_ballot'   : {'who': 'device', 'when': ['vote_commit_all']},
-    'device_withhold_cast_ballot'      : {'who': 'device', 'when': ['vote_reveal_all']},
-    'device_withhold_spoiled_ballot'   : {'who': 'device', 'when': ['vote_reveal_all']},
-    'device_withhold_submitted_ballot' : {'who': 'device', 'when': ['vote_commit_all']},
-    'guardian_withhold_spoiled_share'  : {'who': 'guardian', 'when': ['decrypt_shares']},
-    'guardian_withhold_tally_share'    : {'who': 'guardian', 'when': ['decrypt_shares']},
-
-    # Things NOT checked/caught in the current implementation:
-    # 'admin_mutate_constants' : {'who': 'admin' , 'when': ['build_election']},
-
-}
+# ATTACKS = {
+#
+#     'admin_ghost_after_vote'           : {'who': 'admin', 'when': ['tally', 'decrypt_results']},
+#     'admin_withhold_manifest'          : {'who': 'admin', 'when': ['build_manifest']},
+#     'device_mutate_spoiled_ballot'     : {'who': 'device', 'when': ['vote_reveal_all']},
+#     'device_mutate_submitted_ballot'   : {'who': 'device', 'when': ['vote_commit_all']},
+#     'device_withhold_cast_ballot'      : {'who': 'device', 'when': ['vote_reveal_all']},
+#     'device_withhold_spoiled_ballot'   : {'who': 'device', 'when': ['vote_reveal_all']},
+#     'device_withhold_submitted_ballot' : {'who': 'device', 'when': ['vote_commit_all']},
+#     'guardian_withhold_spoiled_share'  : {'who': 'guardian', 'when': ['decrypt_shares']},
+#     'guardian_withhold_tally_share'    : {'who': 'guardian', 'when': ['decrypt_shares']},
+#
+#     # Things NOT checked/caught in the current implementation:
+#     # 'admin_mutate_constants' : {'who': 'admin' , 'when': ['build_election']},
+#
+# }
 
 
 ### config classes ###
@@ -95,13 +95,13 @@ class ElectionConfig(dict):
         self['verifiers'] = VerifiersConfig(verifiers_count)
 
 # name of an attack function
-AttackFnName = str
+# AttackFnName = str
 
-class AttackConfig(list):
-    def __init__(self, attacks: List[AttackFnName]):
-        super(AttackConfig, self).__init__()
-        for fn_name in attacks:
-            self.append(fn_name)
+# class AttackConfig(list):
+#     def __init__(self, attacks: List[AttackFnName]):
+#         super(AttackConfig, self).__init__()
+#         for fn_name in attacks:
+#             self.append(fn_name)
 
 class RunConfig(dict):
     def __init__(self, arion_cfg, election_cfg, votes_cfg, attack_cfg):
@@ -195,35 +195,35 @@ def electionconfig(draw):
     cfg = ElectionConfig(**kwargs)
     return cfg
 
-@composite
-def attackconfig(draw, explicit_cfg=None):
-    if explicit_cfg is not None:
-        return explicit_cfg
-    attacks = draw(lists(
-        sampled_from(list(ATTACKS.keys())),
-        min_size=1,
-
-        # TODO how many would be useful? at least 3-4 right?
-        #      but only with enough examples to catch unusual combinations
-        max_size=2
-    ))
-    cfg = AttackConfig(attacks=attacks)
-    return cfg
+# @composite
+# def attackconfig(draw, explicit_cfg=None):
+#     if explicit_cfg is not None:
+#         return explicit_cfg
+#     attacks = draw(lists(
+#         sampled_from(list(ATTACKS.keys())),
+#         min_size=1,
+#
+#         # TODO how many would be useful? at least 3-4 right?
+#         #      but only with enough examples to catch unusual combinations
+#         max_size=2
+#     ))
+#     cfg = AttackConfig(attacks=attacks)
+#     return cfg
 
 # Messed up election with attacks
-@composite
-def attackrun(draw, explicit_cfg=None):
-    arion_cfg    = arionconfig()
-    election_cfg = draw(electionconfig())
-    votes_cfg    = draw(contestsconfig())
-    attack_cfg   = draw(attackconfig(explicit_cfg=explicit_cfg))
-    cfg = RunConfig(
-        arion_cfg=arion_cfg,
-        election_cfg=election_cfg,
-        votes_cfg=votes_cfg,
-        attack_cfg=attack_cfg
-    )
-    return cfg
+# @composite
+# def attackrun(draw, explicit_cfg=None):
+#     arion_cfg    = arionconfig()
+#     election_cfg = draw(electionconfig())
+#     votes_cfg    = draw(contestsconfig())
+#     attack_cfg   = draw(attackconfig(explicit_cfg=explicit_cfg))
+#     cfg = RunConfig(
+#         arion_cfg=arion_cfg,
+#         election_cfg=election_cfg,
+#         votes_cfg=votes_cfg,
+#         attack_cfg=attack_cfg
+#     )
+#     return cfg
 
 # Honest/clean election (no attacks)
 # TODO dry this out more?
@@ -232,7 +232,6 @@ def honestrun(draw):
     arion_cfg    = arionconfig()
     election_cfg = draw(electionconfig())
     votes_cfg    = draw(contestsconfig())
-    attack_cfg  = draw(attackconfig())
     cfg = RunConfig(
         arion_cfg=arion_cfg,
         election_cfg=election_cfg,
@@ -264,17 +263,17 @@ def test_json_contestconfig(cfg: ContestConfig):
 def test_json_electionconfig(cfg: ElectionConfig):
     assert_json_roundtrip(cfg)
 
-@given(cfg=attackconfig())
-@settings(max_examples=1_000)
-def test_json_attackcfg(cfg: AttackConfig):
-    assert_json_roundtrip(cfg)
+# @given(cfg=attackconfig())
+# @settings(max_examples=1_000)
+# def test_json_attackcfg(cfg: AttackConfig):
+#     assert_json_roundtrip(cfg)
 
 @given(cfg=honestrun())
 @settings(max_examples=1_000)
 def test_json_honestrun(cfg: RunConfig):
     assert_json_roundtrip(cfg)
 
-@given(cfg=attackrun())
-@settings(max_examples=1_000)
-def test_json_attackrun(cfg: RunConfig):
-    assert_json_roundtrip(cfg)
+# @given(cfg=attackrun())
+# @settings(max_examples=1_000)
+# def test_json_attackrun(cfg: RunConfig):
+#     assert_json_roundtrip(cfg)

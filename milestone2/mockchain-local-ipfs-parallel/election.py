@@ -844,36 +844,36 @@ def given_honest_election(max_examples=10):
         max_examples=max_examples
     )
 
-def given_attacked_election(
-    attack: Optional[str] = None,
-    max_examples: Optional[int] = None
-):
-
-    # Override attack_cfg if given explicitly.
-    # See test_withhold_manifest_attack below for an example.
-    if attack is None:
-
-        if max_examples is None:
-            max_examples = 10
-
-        def attackrun2(*args, **kwargs):
-            return attackrun(*args, **kwargs)
-
-    else:
-
-        # since we're only dealing with one attack,
-        # we probably don't need as many examples
-        if max_examples is None:
-            max_examples = 3
-
-        def attackrun2(*args, **kwargs):
-            kwargs.update(explicit_cfg=[attack])
-            return attackrun(*args, **kwargs)
-
-    return given_election(
-        attackrun2,
-        max_examples=max_examples
-    )
+# def given_attacked_election(
+#     attack: Optional[str] = None,
+#     max_examples: Optional[int] = None
+# ):
+#
+#     # Override attack_cfg if given explicitly.
+#     # See test_withhold_manifest_attack below for an example.
+#     if attack is None:
+#
+#         if max_examples is None:
+#             max_examples = 10
+#
+#         def attackrun2(*args, **kwargs):
+#             return attackrun(*args, **kwargs)
+#
+#     else:
+#
+#         # since we're only dealing with one attack,
+#         # we probably don't need as many examples
+#         if max_examples is None:
+#             max_examples = 3
+#
+#         def attackrun2(*args, **kwargs):
+#             kwargs.update(explicit_cfg=[attack])
+#             return attackrun(*args, **kwargs)
+#
+#     return given_election(
+#         attackrun2,
+#         max_examples=max_examples
+#     )
 
 
 ### misc small test helpers ###
@@ -1156,132 +1156,132 @@ def test_honest_gather_election_verified(testdir: ElectionTestDir):
 
 ### test specific attacks ###
 
-def assume_successful_attack(testdir: ElectionTestDir):
-    """Assume that the attack(s) went through and should have some affect on
-    the results. Sometimes an attack is aborted instead, and then we wouldn't
-    expect the verifiers to notice anything. For example if it targets spoiled
-    votes and there weren't any broadcast from the corrupted device.
-    """
-    # TODO double check that all attacks print 'aborted' when they abort
-    attack_logs = glob(join(testdir, 'data/private/*/attack.log'))
-    n_non_aborted = 0
-    for attack_log in attack_logs:
-        with open(attack_log, 'r') as f:
-            txt = f.read()
-            if not 'abort' in txt:
-                n_non_aborted += 1
-    assume(n_non_aborted > 0)
-
-def assert_verifiers_reject(testdir: ElectionTestDir, targets: List[str]):
-    "Assert that the test election verifiers did not verify any of these targets"
-    for target in targets:
-        assert_verifiers_verified(testdir, target, False)
-
-@pytest.mark.skip
-@given_attacked_election('admin_withhold_manifest')
-def test_attack_admin_withhold_manifest(testdir: ElectionTestDir):
-    assert_verifiers_reject(testdir, [
-        'manifest',
-        # ...
-        # other things should fail too,
-        # but we don't need to put them all
-        # ...
-        'gather_election',
-    ])
-
-@pytest.mark.skip
-@given_attacked_election('admin_ghost_after_vote')
-def test_attack_admin_ghost_after_vote(testdir: ElectionTestDir):
-    assert_verifiers_reject(testdir, [
-        'ciphertext_tally',
-        'gather_election',
-    ])
-
-@pytest.mark.skip
-@given_attacked_election('device_withhold_submitted_ballot')
-def test_attack_device_withhold_submitted_ballot(testdir: ElectionTestDir):
-    assert_verifiers_reject(testdir, [
-        'set_cast_spoiled_submitted',
-        'ballot_sets',
-        'gather_election',
-    ])
-
-@pytest.mark.skip
-@given_attacked_election('device_withhold_cast_ballot')
-def test_attack_device_withhold_cast_ballot(testdir: ElectionTestDir):
-    assume_successful_attack(testdir)
-    assert_verifiers_reject(testdir, [
-        'gather_election',
-    ])
-
-@pytest.mark.skip
-@given_attacked_election('device_withhold_spoiled_ballot')
-def test_attack_device_withhold_spoiled_ballot(testdir: ElectionTestDir):
-    assume_successful_attack(testdir)
-    assert_verifiers_reject(testdir, [
-        'set_cast_spoiled_submitted',
-        'ballot_sets',
-        'gather_election',
-    ])
-
-@pytest.mark.skip
-@given_attacked_election('device_mutate_submitted_ballot', max_examples=50)
-def test_attack_device_mutate_submitted_ballot(testdir: ElectionTestDir):
-    assert_verifiers_reject(testdir, [
-        'all_ballots_submitted',
-
-        # The tally will still validate if the mutated ballot was spoiled rather than cast
-        # 'ciphertext_tally',
-
-        'gather_election',
-    ])
-
-@pytest.mark.skip
-@given_attacked_election('device_mutate_spoiled_ballot', max_examples=50)
-def test_attack_device_mutate_spoiled_ballot(testdir: ElectionTestDir):
-    assume_successful_attack(testdir)
-    assert_verifiers_reject(testdir, [
-        # TODO others
-        'gather_election',
-    ])
-
-@pytest.mark.skip
-@given_attacked_election('guardian_withhold_tally_share')
-def test_attack_guardian_withhold_tally_share(testdir: ElectionTestDir):
-    assume_successful_attack(testdir)
-    assert_verifiers_reject(testdir, [
-        'plaintext_tally',
-        'tally_decryption',
-        'gather_election',
-    ])
-
-@pytest.mark.skip
-@given_attacked_election('guardian_withhold_spoiled_share')
-def test_attack_guardian_withhold_spoiled_share(testdir: ElectionTestDir):
-    assume_successful_attack(testdir)
-    assert_verifiers_reject(testdir, [
-        'all_spoiled_results',
-        'gather_election',
-    ])
-
-
-### test attacks in general ###
-
-# TODO are there other cases when the election can still be verified?
-@pytest.mark.skip
-@given_attacked_election()
-def test_verifiers_notice_attacks(testdir: ElectionTestDir):
-    assume_successful_attack(testdir)
-    assert_verifiers_reject(testdir, ['gather_election'])
-
-@pytest.mark.skip
-@given_attacked_election()
-def test_attacks_are_logged(testdir: ElectionTestDir):
-    '''there should be at least 1 private attack.log,
-    and at least one attack mentioned in the main election.log
-    '''
-    attack_logs = glob(join(testdir, 'data/private/*/attack.log'))
-    assert len(attack_logs) > 0
-    with open(join(testdir, 'election.log'), 'r') as f:
-        main_log_txt = f.read() # TODO need to decode as utf-8?
-    assert 'attack.py' in main_log_txt
+# def assume_successful_attack(testdir: ElectionTestDir):
+#     """Assume that the attack(s) went through and should have some affect on
+#     the results. Sometimes an attack is aborted instead, and then we wouldn't
+#     expect the verifiers to notice anything. For example if it targets spoiled
+#     votes and there weren't any broadcast from the corrupted device.
+#     """
+#     # TODO double check that all attacks print 'aborted' when they abort
+#     attack_logs = glob(join(testdir, 'data/private/*/attack.log'))
+#     n_non_aborted = 0
+#     for attack_log in attack_logs:
+#         with open(attack_log, 'r') as f:
+#             txt = f.read()
+#             if not 'abort' in txt:
+#                 n_non_aborted += 1
+#     assume(n_non_aborted > 0)
+#
+# def assert_verifiers_reject(testdir: ElectionTestDir, targets: List[str]):
+#     "Assert that the test election verifiers did not verify any of these targets"
+#     for target in targets:
+#         assert_verifiers_verified(testdir, target, False)
+#
+# @pytest.mark.skip
+# @given_attacked_election('admin_withhold_manifest')
+# def test_attack_admin_withhold_manifest(testdir: ElectionTestDir):
+#     assert_verifiers_reject(testdir, [
+#         'manifest',
+#         # ...
+#         # other things should fail too,
+#         # but we don't need to put them all
+#         # ...
+#         'gather_election',
+#     ])
+#
+# @pytest.mark.skip
+# @given_attacked_election('admin_ghost_after_vote')
+# def test_attack_admin_ghost_after_vote(testdir: ElectionTestDir):
+#     assert_verifiers_reject(testdir, [
+#         'ciphertext_tally',
+#         'gather_election',
+#     ])
+#
+# @pytest.mark.skip
+# @given_attacked_election('device_withhold_submitted_ballot')
+# def test_attack_device_withhold_submitted_ballot(testdir: ElectionTestDir):
+#     assert_verifiers_reject(testdir, [
+#         'set_cast_spoiled_submitted',
+#         'ballot_sets',
+#         'gather_election',
+#     ])
+#
+# @pytest.mark.skip
+# @given_attacked_election('device_withhold_cast_ballot')
+# def test_attack_device_withhold_cast_ballot(testdir: ElectionTestDir):
+#     assume_successful_attack(testdir)
+#     assert_verifiers_reject(testdir, [
+#         'gather_election',
+#     ])
+#
+# @pytest.mark.skip
+# @given_attacked_election('device_withhold_spoiled_ballot')
+# def test_attack_device_withhold_spoiled_ballot(testdir: ElectionTestDir):
+#     assume_successful_attack(testdir)
+#     assert_verifiers_reject(testdir, [
+#         'set_cast_spoiled_submitted',
+#         'ballot_sets',
+#         'gather_election',
+#     ])
+#
+# @pytest.mark.skip
+# @given_attacked_election('device_mutate_submitted_ballot', max_examples=50)
+# def test_attack_device_mutate_submitted_ballot(testdir: ElectionTestDir):
+#     assert_verifiers_reject(testdir, [
+#         'all_ballots_submitted',
+#
+#         # The tally will still validate if the mutated ballot was spoiled rather than cast
+#         # 'ciphertext_tally',
+#
+#         'gather_election',
+#     ])
+#
+# @pytest.mark.skip
+# @given_attacked_election('device_mutate_spoiled_ballot', max_examples=50)
+# def test_attack_device_mutate_spoiled_ballot(testdir: ElectionTestDir):
+#     assume_successful_attack(testdir)
+#     assert_verifiers_reject(testdir, [
+#         # TODO others
+#         'gather_election',
+#     ])
+#
+# @pytest.mark.skip
+# @given_attacked_election('guardian_withhold_tally_share')
+# def test_attack_guardian_withhold_tally_share(testdir: ElectionTestDir):
+#     assume_successful_attack(testdir)
+#     assert_verifiers_reject(testdir, [
+#         'plaintext_tally',
+#         'tally_decryption',
+#         'gather_election',
+#     ])
+#
+# @pytest.mark.skip
+# @given_attacked_election('guardian_withhold_spoiled_share')
+# def test_attack_guardian_withhold_spoiled_share(testdir: ElectionTestDir):
+#     assume_successful_attack(testdir)
+#     assert_verifiers_reject(testdir, [
+#         'all_spoiled_results',
+#         'gather_election',
+#     ])
+#
+#
+# ### test attacks in general ###
+#
+# # TODO are there other cases when the election can still be verified?
+# @pytest.mark.skip
+# @given_attacked_election()
+# def test_verifiers_notice_attacks(testdir: ElectionTestDir):
+#     assume_successful_attack(testdir)
+#     assert_verifiers_reject(testdir, ['gather_election'])
+#
+# @pytest.mark.skip
+# @given_attacked_election()
+# def test_attacks_are_logged(testdir: ElectionTestDir):
+#     '''there should be at least 1 private attack.log,
+#     and at least one attack mentioned in the main election.log
+#     '''
+#     attack_logs = glob(join(testdir, 'data/private/*/attack.log'))
+#     assert len(attack_logs) > 0
+#     with open(join(testdir, 'election.log'), 'r') as f:
+#         main_log_txt = f.read() # TODO need to decode as utf-8?
+#     assert 'attack.py' in main_log_txt
