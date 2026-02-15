@@ -387,8 +387,6 @@ async def fetch_cid_to_file(ipfs: RetryingIPFS, cid: str, filename: str):
 async def publish_on_ipfs(ipfs: RetryingIPFS, obj: dict) -> str:
     added_file = await ipfs.add_json(obj)
     cid = added_file['Hash'] # TODO is this a dict in this aioipfs version?
-    # TODO does this also need to be wrapped in retry logic? or is that not important?
-    ipfs.pin.add(cid) # TODO await?
     return cid
 
 # TODO should this go through MockchainSubscriber instead? or is separate more robust?
