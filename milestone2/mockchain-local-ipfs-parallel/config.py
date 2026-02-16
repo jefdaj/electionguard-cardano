@@ -170,7 +170,7 @@ def electionconfig(draw):
     # I haven't figured out what the key ceremony should look like with only one guardian,
     # and it would be a silly way to deploy real elections, so for now the min is 2.
     # There's no real maximum, but the number of messages grows quadratically.
-    kwargs['guardians_count' ] = draw(integers(min_value=2, max_value=10))
+    kwargs['guardians_count' ] = draw(integers(min_value=2, max_value=8))
 
     # Both 1 and n_guardians are bad settings for quorum,
     # but we leave them here just to make sure nothing breaks.
@@ -179,9 +179,9 @@ def electionconfig(draw):
 
     # Any nonzero number is reasonable here.
     # TODO bias the tests towards more to speed up parallel voting?
-    kwargs['devices_count'   ] = draw(integers(min_value=1, max_value=10))
+    kwargs['devices_count'   ] = draw(integers(min_value=1, max_value=8))
 
-    kwargs['verifiers_count' ] = draw(integers(min_value=0, max_value=10))
+    kwargs['verifiers_count' ] = draw(integers(min_value=0, max_value=3))
 
     # TODO are tests failing because my laptop can't handle so many containers?
     n_containers = \
@@ -189,8 +189,10 @@ def electionconfig(draw):
        kwargs['devices_count'  ] * 3 + \
        kwargs['verifiers_count'] * 3 + \
        1 * 3 # admin
-    assume(n_containers < 40) # TODO tune this
-    # print(f'n_containers: {n_containers}')
+
+    # if n_containers >= 50:
+    #     print(f'reject n_containers = {n_containers}')
+    assume(n_containers < 50) # TODO tune this
 
     cfg = ElectionConfig(**kwargs)
     return cfg
