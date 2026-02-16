@@ -6,6 +6,11 @@ It isn't required for anything in the fund13 project, but will be useful for tes
 I'm making a little detour to work on it now because I suspect it will also help clarify the [smart contract](../smart-contract) design.
 
 The answer is... yes!
+It turns out to be pretty straightforward and works the way I expected: all
+containers can do a given protocol step in parallel, as long as they wait
+before doing the next step. There are some actions (for example minting
+channels and posting cast/spoil notices) that could also be extended outside
+their given step, but that's for later.
 
 ```
 ============================= test session starts ==============================
