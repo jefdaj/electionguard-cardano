@@ -177,18 +177,21 @@ def electionconfig(draw):
     # In reality you want >2 and <n_guardians-1.
     kwargs['guardians_quorum'] = draw(integers(min_value=1, max_value=kwargs['guardians_count']))
 
-    # Any nonzero number is reasonable here.
+    # Any nonzero number is reasonable here, but in real deployments you
+    # probably want to keep it low enough that each batch of CIDs posted is a
+    # relatively large anonymity set. One "device" can service many voting
+    # machines.
     # TODO bias the tests towards more to speed up parallel voting?
     kwargs['devices_count'   ] = draw(integers(min_value=1, max_value=8))
 
     kwargs['verifiers_count' ] = draw(integers(min_value=0, max_value=3))
 
-    # TODO are tests failing because my laptop can't handle so many containers?
     n_containers = 3 * (
        kwargs['guardians_count'] +
        kwargs['devices_count'  ] +
        kwargs['verifiers_count'] +
-       1) # admin
+       1 # admin
+    )
 
     # if n_containers >= 50:
     #     print(f'reject n_containers = {n_containers}')
