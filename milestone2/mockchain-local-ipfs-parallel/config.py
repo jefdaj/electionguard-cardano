@@ -184,11 +184,11 @@ def electionconfig(draw):
     kwargs['verifiers_count' ] = draw(integers(min_value=0, max_value=3))
 
     # TODO are tests failing because my laptop can't handle so many containers?
-    n_containers = \
-       kwargs['guardians_count'] * 3 + \
-       kwargs['devices_count'  ] * 3 + \
-       kwargs['verifiers_count'] * 3 + \
-       1 * 3 # admin
+    n_containers = 3 * (
+       kwargs['guardians_count'] +
+       kwargs['devices_count'  ] +
+       kwargs['verifiers_count'] +
+       1) # admin
 
     # if n_containers >= 50:
     #     print(f'reject n_containers = {n_containers}')
