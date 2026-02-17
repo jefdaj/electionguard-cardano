@@ -1,0 +1,13 @@
+<li>
+  <details {% if node.expanded %}open{% endif %}>
+    <summary>{{ node.label }}</summary>
+    {% if node.children %}
+      <ul>
+        {% for child in node.children %}
+          {% set node = child %}
+          {% include "partials/_state_node.html" %}
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </details>
+</li>

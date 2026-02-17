@@ -1,0 +1,20 @@
+<div class="modal" hx-on="click: event.target.classList.contains('modal') && this.remove()">
+  <div class="modal-content">
+    <h3>{{ form.title }}</h3>
+    <form
+      hx-post="{{ url_for('submit_action', action_id=form.id) }}"
+      hx-target="#modal-root"
+      hx-swap="innerHTML">
+      {% for field in form.fields %}
+        <label>
+          {{ field.label }}
+          <input type="{{ field.type }}" name="{{ field.name }}" value="{{ field.default or '' }}">
+        </label>
+      {% endfor %}
+      <button type="submit">Submit</button>
+      <button type="button" onclick="document.getElementById('modal-root').innerHTML=''">
+        Cancel
+      </button>
+    </form>
+  </div>
+</div>
