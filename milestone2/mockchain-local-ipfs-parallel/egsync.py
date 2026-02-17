@@ -724,5 +724,4 @@ async def main():
     await serve(app, config)
 
 if __name__ == "__main__":
-    time.sleep(10) # TODO does this help connect to ipfs?
     asyncio.run(main())
