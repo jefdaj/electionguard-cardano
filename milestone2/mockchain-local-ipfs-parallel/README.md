@@ -55,5 +55,5 @@ election.py::test_honest_gather_tally_verified PASSED                    [ 94%]
 election.py::test_honest_gather_decryptions_verified PASSED              [ 97%]
 election.py::test_honest_gather_election_verified PASSED                 [100%]
 
-======================= 38 passed in 2029.72s (0:33:49) ========================
+======================= 38 passed in 1699.57s (0:28:19) ========================
 ```
