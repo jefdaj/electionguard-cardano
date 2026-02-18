@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pubsub"
+version = "0.1.0"
+description = "Cardano IPFS pubsub smart contract"
+requires-python = ">=3.9"
+dependencies = [
+    "pycardano>=0.9.0",
+    "aioipfs",
+    "cbor2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio",
+    "pytest-mock",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pubsub*"]
+
+[tool.pytest.ini_options]
+
+markers = [
+  "local: marks tests as local (not requiring testnet) tests",
+  "testnet: marks tests as (slow) testnet tests",
+]
+
+log_cli = false
+
+# Write all logs to a file
+log_file = "pytest.log"
+log_file_level = "INFO" # or "DEBUG"
+log_format = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+log_date_format = "%Y-%m-%d %H:%M:%S"

@@ -1,0 +1,25 @@
+name = "jefdaj/electionguard-cardano-pubsub2"
+version = "0.0.1"
+compiler = "v1.1.21"
+plutus = "v3"
+license = "Apache-2.0"
+description = "Aiken contracts for project 'jefdaj/electionguard-cardano-pubsub2'"
+
+[repository]
+user = "jefdaj"
+project = "electionguard-cardano"
+platform = "github"
+
+[[dependencies]]
+name = "aiken-lang/stdlib"
+version = "3.0.0"
+source = "github"
+
+# [[dependencies]]
+# name = "sidan-lab/vodka"
+# version = "0.1.11"
+# source = "github"
+
+[config.default.stt_name]
+encoding = "utf-8"
+bytes = "pubsub2-channel-stt"
