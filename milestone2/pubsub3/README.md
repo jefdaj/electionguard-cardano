@@ -15,6 +15,11 @@ $ nix develop .#onchain
 $ ./build.sh
 ++ dirname ./build.sh
 + cd .
++ aiken check
+    Compiling jefdaj/electionguard-cardano-pubsub3 0.0.1 (.)
+    Compiling aiken-lang/stdlib 3.0.0 (./build/packages/aiken-lang-stdlib)
+   Collecting all tests scenarios across all modules
+      Summary 0 errors, 0 warnings
 + aiken build --out pubsub3-plutus.json
     Compiling jefdaj/electionguard-cardano-pubsub3 0.0.1 (.)
     Compiling aiken-lang/stdlib 3.0.0 (./build/packages/aiken-lang-stdlib)
@@ -63,16 +68,21 @@ Type "help", "copyright", "credits" or "license" for more information.
 
     If you don't, local tests will still work but testnet tests will fail.
 
->>> 
+>>>
 ```
 
-You can watch that address accumulate transactions on CardanoScan or ADAstat
+You can watch that address accumulate transactions on CardanoScan
 during the tests if you want, and track mint + burn of various `pubsub3-channel-stt` tokens.
 
 ```
 $ nix develop .#offchain
-$ ./test.sh 
+$ ./test.sh
++ EXTRA_ARGS=
++ pytest -vv
++ tee test.log
 ============================= test session starts ==============================
+...
+collecting ... collected 14 items
 
 tests/test_publish_0.py::test_pub0_open PASSED                           [  7%]
 tests/test_publish_0.py::test_pub0_closed PASSED                         [ 14%]
@@ -89,5 +99,6 @@ tests/test_publish_all.py::test_pub_all_closed PASSED                    [ 85%]
 tests/test_publish_all.py::test_sub_all_closed PASSED                    [ 92%]
 tests/test_records.py::test_load_election_records PASSED                 [100%]
 
-======================== 14 passed in 587.18s (0:09:47) ========================
+======================== 14 passed in 810.86s (0:13:30) ========================
+[INFO] [sub] Watcher thread exiting
 ```
