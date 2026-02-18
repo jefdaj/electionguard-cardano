@@ -17,7 +17,7 @@ class PubsubAction(PlutusData):
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         if cls is not PubsubAction and hasattr(cls, "CONSTR_ID"):
-            cid = cls.CONSTR_ID
+            cid = cls.CONSTR_ID # TODO less confusing name
             if cid in PubsubAction._registry:
                 raise ValueError(
                     f"Duplicate CONSTR_ID {cid} for {cls} "
