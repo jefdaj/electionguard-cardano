@@ -1,0 +1,17 @@
+<table class="log">
+  <thead>
+    <tr><th>Height</th><th>Type</th><th>Details</th><th>Time</th></tr>
+  </thead>
+  <tbody>
+    {% for e in entries %}
+      <tr>
+        <td>{{ e.height }}</td>
+        <td>{{ e.type }}</td>
+        <td>{{ e.summary }}</td>
+        <td>{{ e.timestamp }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="4">No entries yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
