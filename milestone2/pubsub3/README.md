@@ -15,15 +15,15 @@ $ nix develop .#onchain
 $ ./build.sh
 ++ dirname ./build.sh
 + cd .
-+ aiken build --out pubsub2-plutus.json
-    Compiling jefdaj/electionguard-cardano-pubsub2 0.0.1 (.)
++ aiken build --out pubsub3-plutus.json
+    Compiling jefdaj/electionguard-cardano-pubsub3 0.0.1 (.)
     Compiling aiken-lang/stdlib 3.0.0 (./build/packages/aiken-lang-stdlib)
-   Generating project's blueprint (pubsub2-plutus.json)
+   Generating project's blueprint (pubsub3-plutus.json)
       Summary 0 errors, 0 warnings
-+ aiken build --out pubsub2-plutus-traced.json --trace-level verbose
-    Compiling jefdaj/electionguard-cardano-pubsub2 0.0.1 (.)
++ aiken build --out pubsub3-plutus-traced.json --trace-level verbose
+    Compiling jefdaj/electionguard-cardano-pubsub3 0.0.1 (.)
     Compiling aiken-lang/stdlib 3.0.0 (./build/packages/aiken-lang-stdlib)
-   Generating project's blueprint (pubsub2-plutus-traced.json)
+   Generating project's blueprint (pubsub3-plutus-traced.json)
       Summary 0 errors, 0 warnings
 ```
 
@@ -53,8 +53,8 @@ Type "help", "copyright", "credits" or "license" for more information.
 
     Your new Preview testnet keys are here:
 
-    /home/jefdaj/myrepos/electionguard-cardano/milestone2/pubsub2-aiken-pycardano-kupo/offchain/keys/pubsub2.sk
-    /home/jefdaj/myrepos/electionguard-cardano/milestone2/pubsub2-aiken-pycardano-kupo/offchain/keys/pubsub2.addr
+    /home/jefdaj/myrepos/electionguard-cardano/milestone2/pubsub3-aiken-pycardano-kupo/offchain/keys/pubsub3.sk
+    /home/jefdaj/myrepos/electionguard-cardano/milestone2/pubsub3-aiken-pycardano-kupo/offchain/keys/pubsub3.addr
 
     Your public address (2nd file) is: addr_test1vr93qqyu30r5c7snd4wp8wu243st2xz8605yea78hgyg6uckjakk5
 
@@ -67,7 +67,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 ```
 
 You can watch that address accumulate transactions on CardanoScan or ADAstat
-during the tests if you want, and track mint + burn of various `pubsub2-channel-stt` tokens.
+during the tests if you want, and track mint + burn of various `pubsub3-channel-stt` tokens.
 
 ```
 $ nix develop .#offchain

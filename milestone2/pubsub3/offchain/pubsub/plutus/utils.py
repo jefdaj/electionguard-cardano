@@ -9,7 +9,7 @@ from tempfile import NamedTemporaryFile
 from pathlib import Path
 from os.path import realpath
 
-PLUTUS_JSON_PATH_PROD   = realpath(Path(__file__).parent / '../../../onchain/pubsub2-plutus.json')
+PLUTUS_JSON_PATH_PROD   = realpath(Path(__file__).parent / '../../../onchain/pubsub3-plutus.json')
 PLUTUS_JSON_PATH_TRACED = PLUTUS_JSON_PATH_PROD.replace('.json', '-traced.json')
 
 # TODO is this reliable?

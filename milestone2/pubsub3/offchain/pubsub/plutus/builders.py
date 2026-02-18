@@ -8,7 +8,7 @@ from .types import PubsubAction, PsOpen, PsPublish, PsClose, PubsubState, CIDv1
 
 # Should match config.default.stt_name in aiken.toml
 # TODO is there a good way to keep them in sync?
-STT_NAME = b"pubsub2-channel-stt"
+STT_NAME = b"pubsub3-channel-stt"
 
 def mint_channel_stt_assets(policy_id: ScriptHash, n_to_mint: int) -> MultiAsset:
     # the quicker from_primitive way has some normalize error here

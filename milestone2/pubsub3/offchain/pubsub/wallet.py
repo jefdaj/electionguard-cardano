@@ -4,8 +4,8 @@ from pathlib import Path
 from pycardano import Address, Network, SigningKey, PaymentSigningKey, PaymentVerificationKey, VerificationKeyHash
 
 KEYS_DIR = Path(__file__).parent / '../keys'
-SIGNING_KEY = join(KEYS_DIR, 'pubsub2.sk')
-PUBLIC_ADDR = join(KEYS_DIR, 'pubsub2.addr')
+SIGNING_KEY = join(KEYS_DIR, 'pubsub3.sk')
+PUBLIC_ADDR = join(KEYS_DIR, 'pubsub3.addr')
 
 def vkh_for_signing_key(sk: PaymentSigningKey) -> VerificationKeyHash:
     verification_key = PaymentVerificationKey.from_signing_key(sk)

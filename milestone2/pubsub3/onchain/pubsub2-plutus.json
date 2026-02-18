@@ -1,7 +1,7 @@
 {
   "preamble": {
-    "title": "jefdaj/electionguard-cardano-pubsub2",
-    "description": "Aiken contracts for project 'jefdaj/electionguard-cardano-pubsub2'",
+    "title": "jefdaj/electionguard-cardano-pubsub3",
+    "description": "Aiken contracts for project 'jefdaj/electionguard-cardano-pubsub3'",
     "version": "0.0.1",
     "plutusVersion": "v3",
     "compiler": {

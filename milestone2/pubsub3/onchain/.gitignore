@@ -7,4 +7,4 @@ docs/
 # Nix
 result*
 # Saved parameterized validators
-pubsub2-plutus-traced-*.json
+pubsub3-plutus-traced-*.json

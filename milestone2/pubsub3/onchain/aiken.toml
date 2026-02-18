@@ -1,9 +1,9 @@
-name = "jefdaj/electionguard-cardano-pubsub2"
+name = "jefdaj/electionguard-cardano-pubsub3"
 version = "0.0.1"
 compiler = "v1.1.21"
 plutus = "v3"
 license = "Apache-2.0"
-description = "Aiken contracts for project 'jefdaj/electionguard-cardano-pubsub2'"
+description = "Aiken contracts for project 'jefdaj/electionguard-cardano-pubsub3'"
 
 [repository]
 user = "jefdaj"
@@ -22,4 +22,4 @@ source = "github"
 
 [config.default.stt_name]
 encoding = "utf-8"
-bytes = "pubsub2-channel-stt"
+bytes = "pubsub3-channel-stt"
