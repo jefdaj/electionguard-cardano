@@ -1,6 +1,19 @@
 pubsub3
 =======
 
+TODO:
+
+* [ ] plain CIDs -> records with metadata
+* [ ] have each container generate its own keypair
+* [ ] share addrs with admin (via top level script and bind mounts for now)
+* [ ] contract includes minting + burning subchannels
+* [ ] contract holds and distributes tADA to cover posting fees
+* [ ] contract returns tADA to admin when closing main channel
+* [ ] all channels can be minted or burned at once?
+* [ ] contract has an explicit election step/stage/phase variable
+* [ ] contract syncs main channel with subchannels on (some) transitions
+* [ ] egsync should track and report election info: n each role, phase, n ballots, ...
+
 Build
 -----
 

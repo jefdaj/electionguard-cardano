@@ -51,7 +51,7 @@ pub type PublicRecordMetadata {
     ballot_id: ByteArray
   }
   Summary {
-    verifier_number: Int
+    verifier_number: Int // TODO nope, could be anyone not just verifiers, so need bytearray
   }
 }
 
