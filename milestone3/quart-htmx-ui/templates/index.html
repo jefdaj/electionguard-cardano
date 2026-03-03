@@ -1,27 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="layout">
-  <div class="left-pane">
-    <h2>Chain Log</h2>
-    <div id="log-container"
-         hx-get="{{ url_for('log_fragment') }}"
-         hx-trigger="load, every 3s"
-         hx-target="#log-container"
-         hx-swap="innerHTML">
-      <!-- log fragment injected here -->
-    </div>
 
-    <h2>State</h2>
-    <div id="state-container"
-         hx-get="{{ url_for('state_fragment') }}"
-         hx-trigger="load, every 5s"
-         hx-target="#state-container"
-         hx-swap="innerHTML">
-      <!-- state tree fragment -->
-    </div>
-  </div>
-
-  <div class="right-pane">
+  <div class="top-bar">
     <h2>Filter</h2>
     <form id="filter-form"
           hx-get="{{ url_for('filtered_fragments') }}"
@@ -31,17 +12,44 @@
       <input type="text" name="q" placeholder="Search artifacts / state…">
       <!-- extra filters as needed -->
     </form>
+  </div>
 
-    <!-- <h2>Actions</h2>
+  <div class="main-area">
+    <h2>Log</h2>
+    <div id="log-container"
+         hx-get="{{ url_for('log_fragment') }}"
+         hx-trigger="load, every 3s"
+         hx-target="#log-container"
+         hx-swap="innerHTML">
+      <!-- log fragment injected here -->
+    </div>
+  </div>
+</div>
+
+    {#
+    <h2>State</h2>
+    <div id="state-container"
+         hx-get="{{ url_for('state_fragment') }}"
+         hx-trigger="load, every 5s"
+         hx-target="#state-container"
+         hx-swap="innerHTML">
+      <!-- state tree fragment -->
+    </div>
+  </div>
+  #}
+
+  {#
+  <div class="bottom-bar">
+    <h2>Actions</h2>
     <div id="actions-container"
          hx-get=" url_for('actions_fragment') "
          hx-trigger="load"
          hx-target="#actions-container"
          hx-swap="innerHTML">
       -- role-based actions --
-    </div> -->
+    </div>
   </div>
-</div>
+  #}
 
 <div id="modal-root">
   <!-- modal forms injected here -->

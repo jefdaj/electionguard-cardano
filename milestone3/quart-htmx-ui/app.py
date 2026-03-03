@@ -9,11 +9,6 @@ def get_log_entries(query=None):
     # will come from kupo indexer
     return []
 
-# Query format should match get_log_entries so they can be filtered together.
-def get_state_tree(query=None):
-    # server-side parse of chain
-    return None
-
 app = Quart(__name__)
 
 @app.get("/")
@@ -25,10 +20,17 @@ async def log_fragment():
     entries = get_log_entries()
     return await render_template("partials/log.html", entries=entries)
 
-@app.get("/state")
-async def state_fragment():
-    state = get_state_tree()
-    return await render_template("partials/state_tree.html", node=state)
+# State tree commented because I want to build the log + filter first
+
+# Query format should match get_log_entries so they can be filtered together.
+# def get_state_tree(query=None):
+#     # server-side parse of chain
+#     return None
+
+# @app.get("/state")
+# async def state_fragment():
+#     state = get_state_tree()
+#     return await render_template("partials/state_tree.html", node=state)
 
 # Because we want to filter both the log and tree at once, we return the two
 # divs wrapped in filter_result. Then each is swapped with its correct div
@@ -38,11 +40,11 @@ async def state_fragment():
 async def filtered_fragments():
     q = request.args.get("q", "").strip()
     log_entries = get_log_entries(query=q)
-    state = get_state_tree(query=q)
+    # state = get_state_tree(query=q)
     return await render_template(
         "partials/filter_result.html",
         entries=log_entries,
-        state=state,
+        # state=state,
     )
 
 # Action code commented because I want to build the observer UI first:
