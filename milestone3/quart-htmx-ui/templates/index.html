@@ -3,23 +3,19 @@
 <div class="layout">
 
   <div class="top-bar">
-    <h2>Filter</h2>
     <input 
       type="text" 
       name="filter" 
       id="filter-input"
       hx-get="{{ url_for('filter_results') }}"
-      hx-trigger="keyup changed delay:500ms"
+      hx-trigger="keyup changed delay:200ms"
       hx-target="#filter-results"
       hx-swap="innerHTML"
-      placeholder="Filter items...">
+      placeholder="Filter log entries...">
   </div>
 
   <div class="main-area">
-    <h2>Log</h2>
     <div id="log-container"
-         hx-get="{{ url_for('log_fragment') }}"
-         hx-trigger="load, every 3s"
          hx-target="#log-container"
          hx-ext="morph"
          hx-swap="morph">
@@ -61,7 +57,7 @@
 <div id="filter-results" 
      class="hidden"
      hx-get="{{ url_for('filter_results') }}" {# TODO remove? #}
-     hx-trigger="every 2s [!document.activeElement.matches('#filter-input')]"
+     hx-trigger="load, every 5s [!document.activeElement.matches('#filter-input')]"
      hx-include="[name='filter']"
      hx-swap="innerHTML"
      hx-sync="this:replace">
