@@ -37,12 +37,12 @@ async def log_fragment():
 # client side using hx-swap-oob.
 # TODO does specifying hx-swap-oob in the returned html like this work?
 @app.get("/filter")
-async def filtered_fragments():
+async def filter_results():
     q = request.args.get("q", "").strip()
     log_entries = get_log_entries(query=q)
     # state = get_state_tree(query=q)
     return await render_template(
-        "partials/filter_result.html",
+        "partials/filter_results.html",
         entries=log_entries,
         # state=state,
     )

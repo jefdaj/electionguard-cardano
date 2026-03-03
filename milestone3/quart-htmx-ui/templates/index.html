@@ -4,14 +4,15 @@
 
   <div class="top-bar">
     <h2>Filter</h2>
-    <form id="filter-form"
-          hx-get="{{ url_for('filtered_fragments') }}"
-          hx-target="#fragments-root"
-          hx-include="#filter-form"
-          hx-push-url="true">
-      <input type="text" name="q" placeholder="Search artifacts / state…">
-      <!-- extra filters as needed -->
-    </form>
+    <input 
+      type="text" 
+      name="filter" 
+      id="filter-input"
+      hx-get="{{ url_for('filter_results') }}"
+      hx-trigger="keyup changed delay:500ms"
+      hx-target="#filter-results"
+      hx-swap="innerHTML"
+      placeholder="Filter items...">
   </div>
 
   <div class="main-area">
@@ -55,7 +56,13 @@
   <!-- modal forms injected here -->
 </div>
 
-<div id="fragments-root" class="hidden">
-  <!-- wrapper for updating log+state together via filter -->
+<div id="filter-results" 
+     class="hidden"
+     hx-get="{{ url_for('filter_results') }}" {# TODO remove? #}
+     hx-trigger="every 2s [!document.activeElement.matches('#filter-input')]"
+     hx-include="[name='filter']"
+     hx-swap="innerHTML"
+     hx-sync="this:replace">
+  <!-- log+state results appear here and are moved via oob-swap -->
 </div>
 {% endblock %}
