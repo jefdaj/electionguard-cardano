@@ -32,14 +32,14 @@
       <!-- extra filters as needed -->
     </form>
 
-    <h2>Actions</h2>
+    <!-- <h2>Actions</h2>
     <div id="actions-container"
-         hx-get="{{ url_for('actions_fragment') }}"
+         hx-get=" url_for('actions_fragment') "
          hx-trigger="load"
          hx-target="#actions-container"
          hx-swap="innerHTML">
-      <!-- role-based actions -->
-    </div>
+      -- role-based actions --
+    </div> -->
   </div>
 </div>
 
@@ -48,6 +48,6 @@
 </div>
 
 <div id="fragments-root" class="hidden">
-  <!-- optional: wrapper if you update log+state together via filter -->
+  <!-- wrapper for updating log+state together via filter -->
 </div>
 {% endblock %}
