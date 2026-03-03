@@ -21,8 +21,10 @@
          hx-get="{{ url_for('log_fragment') }}"
          hx-trigger="load, every 3s"
          hx-target="#log-container"
-         hx-swap="innerHTML">
+         hx-ext="morph"
+         hx-swap="morph">
       <!-- log fragment injected here -->
+      Loading...
     </div>
   </div>
 </div>
