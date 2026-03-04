@@ -20,7 +20,7 @@ use election/state.{
 use election/utils.{tx_mints, tx_signed_by, tx_sends_token_to_addr}
 
 pub fn validate_admin_mint(
-  action: AdminAction, // RegularActions don't mint or burn
+  action: AdminAction, // regular actions don't mint or burn
   policy_id: PolicyId,
   self: Transaction,
   oneshot_ref: OutputReference
@@ -40,6 +40,7 @@ pub fn validate_admin_mint(
 }
 
 // This is defined by the redeemer; the datum can be a regular or admin state.
+// (But the datum can't be None)
 pub fn validate_regular_spend(
   datum: ChannelState,
   redeemer: RegularAction,
@@ -53,43 +54,37 @@ pub fn validate_regular_spend(
   expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, stt_name, script_addr, 1)
   expect InlineDatum(new_datum) = stt_output.datum
 
+  // TODO back to a when clause once there's more than one regular action
   let PostPublicRecords = redeemer
-  // TODO back to a when clause once there's more than one regular action:
-  // when redeemer is {
-  //   PostPublicRecords -> {
 
-  // TODO can the redundant checks in these branches be DRYed up?
-  when datum is {
-    AdminChannel(AdminChannelState { admin, seq, .. }) -> {
+  let (old_vkh, old_seq) = when datum is {
+    AdminChannel(AdminChannelState { admin, seq, .. }) -> (admin, seq)
+    SubChannel(SubChannelState { publisher, seq, .. }) -> (publisher, seq)
+  }
+
+  let (new_vkh, new_seq, new_records) = when datum is {
+    AdminChannel(_) -> {
       expect new_state: AdminChannelState = new_datum
-      let pub_signed = tx_signed_by(self, admin) ?
-      let pub_unchanged = new_state.admin == admin
-      let seq_incremented = (new_state.seq == seq + 1) ?
-      let new_records_valid = validate_records(new_state.new_records) ?
-      and {
-        pub_signed,
-        pub_unchanged,
-        seq_incremented,
-        new_records_valid
-      }
+      (new_state.admin, new_state.seq, new_state.new_records)
     }
-    SubChannel(SubChannelState { publisher, seq, .. }) -> {
+    SubChannel(_) -> {
       expect new_state: SubChannelState = new_datum
-      let pub_signed = tx_signed_by(self, publisher) ?
-      let pub_unchanged = new_state.publisher == publisher
-      let seq_incremented = (new_state.seq == seq + 1) ?
-      let new_records_valid = validate_records(new_state.new_records) ?
-      and {
-        pub_signed,
-        pub_unchanged,
-        seq_incremented,
-        new_records_valid
-      }
+      (new_state.publisher, new_state.seq, new_state.new_records)
     }
   }
 
-    // }
-  // }
+  let vkh_signed = tx_signed_by(self, old_vkh) ?
+  let vkh_unchanged = new_vkh == old_vkh
+  let seq_incremented = (new_seq == old_seq + 1) ?
+  let new_records_valid = validate_records(new_records) ?
+
+  and {
+    vkh_signed,
+    vkh_unchanged,
+    seq_incremented,
+    new_records_valid
+  }
+
 }
 
 // This is defined by the redeemer; the datum may be none or an admin state.
