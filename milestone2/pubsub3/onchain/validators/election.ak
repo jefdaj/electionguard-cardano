@@ -96,34 +96,33 @@ pub fn validate_admin_spend(
   stt_name: ByteArray,
   script_addr: Address
 ) -> Bool {
-  // TODO should this also handle PostPublicRecords?
   when redeemer is {
-      OpenChannel -> {
+    OpenChannel -> {
 
-        // This is currently true, but remember to remove it if we run into a
-        // use case for opening a channel starting from another script.
-        // TODO remove anyway, since it's not technically required?
-        expect None = datum
+      // This is currently true, but remember to remove it if we run into a
+      // use case for opening a channel starting from another script.
+      // TODO remove anyway, since it's not technically required?
+      expect None = datum
 
-        expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, stt_name, script_addr, 1)
-        expect InlineDatum(new_datum) = stt_output.datum
-        expect new_state: AdminChannelState = new_datum
-        let pub_signed = tx_signed_by(self, new_state.admin) ?
-        let new_records_empty = (list.length(new_state.new_records) == 0) ?
-        let seq_zero = (new_state.seq == 0) ?
-        and {
-          pub_signed,
-          new_records_empty,
-          seq_zero
-        }
+      expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, stt_name, script_addr, 1)
+      expect InlineDatum(new_datum) = stt_output.datum
+      expect new_state: AdminChannelState = new_datum
+      let pub_signed = tx_signed_by(self, new_state.admin) ?
+      let new_records_empty = (list.length(new_state.new_records) == 0) ?
+      let seq_zero = (new_state.seq == 0) ?
+      and {
+        pub_signed,
+        new_records_empty,
+        seq_zero
       }
+    }
 
-      CloseChannel -> {
-        expect Some(AdminChannelState { admin, .. }) = datum
-        let pub_signed = tx_signed_by(self, admin) ?
-        pub_signed
-        // TODO require ADA goes back to admin or main channel
-      }
+    CloseChannel -> {
+      expect Some(AdminChannelState { admin, .. }) = datum
+      let pub_signed = tx_signed_by(self, admin) ?
+      pub_signed
+      // TODO require ADA goes back to admin or main channel
+    }
   }
 }
 
@@ -135,10 +134,8 @@ validator election(oneshot_ref: OutputReference) {
     self: Transaction
   ) {
     when redeemer is {
-      AdminAct(action) -> {
-        validate_admin_mint(action, policy_id, self, oneshot_ref)
-      }
-      RegularAct(_) -> False // subchannel publishers don't mint or burn anything
+      AdminAct(action) -> validate_admin_mint(action, policy_id, self, oneshot_ref)
+      RegularAct(_) -> False // regular actions don't mint or burn
     }
   }
 
@@ -157,14 +154,15 @@ validator election(oneshot_ref: OutputReference) {
     when redeemer is {
       AdminAct(admin_act) -> {
         // for admin action:
-	// - could have none, or some prev admin channel state
+        // - may have none, or some prev admin channel state
+        // - but may not have prev subchannel state
         let admin_state: Option<AdminChannelState> = extract_admin_state(datum)
         validate_admin_spend(admin_state, admin_act, self, policy_id, stt_name, script_addr)
       }
       RegularAct(reg_act) -> {
         // for regular action:
-	// - could have admin or subchannel state
-	// - but must have some prev channel state
+        // - may have admin or subchannel state
+        // - but must have some prev channel state
         expect Some(state) = datum
         validate_regular_spend(state, reg_act, self, policy_id, stt_name, script_addr)
       }
