@@ -1,12 +1,23 @@
 pubsub3
 =======
 
+This is the main codebase for all the M2 deliverables.
+It will have:
+
+1. a focus on documenting the Aiken contract
+2. an election script that uploads artifacts to Cardano + IPFS
+3. a verifier script that downloads and verifies them
+
 TODO:
 
 * [ ] plain CIDs -> records with metadata
 * [ ] have each container generate its own keypair
+* [ ] all eg nodes share one cardano node for now
 * [ ] share addrs with admin (via top level script and bind mounts for now)
 * [ ] contract includes minting + burning subchannels
+* [ ] each subchannel has one authorized publisher for now
+* [ ] admin is the only one who can close channels
+* [ ] subchannels are just a different thing for now, rather than nested "regular" channels
 * [ ] contract holds and distributes tADA to cover posting fees
 * [ ] contract returns tADA to admin when closing main channel
 * [ ] all channels can be minted or burned at once?
