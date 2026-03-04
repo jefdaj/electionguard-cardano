@@ -4,11 +4,11 @@
 // use cardano/assets.{PolicyId}
 // use cardano/transaction.{Transaction, Input, Output, OutputReference, NoDatum}
 // use election
-// use election/types.{ElectionState, OpenChannel}
+// use election/types.{ChannelState, OpenChannel}
 // use election/utils as u
 //
-// const cfg1: ElectionState =
-//   ElectionState { publisher: #"00000000000000000000000000000000000000000000000000000000" }
+// const state1: ChannelState =
+//   ChannelState { publisher: #"00000000000000000000000000000000000000000000000000000000" }
 // 
 // const oneshot_hash: ByteArray = #"1234"
 // 
@@ -42,7 +42,7 @@
 //     Transaction {
 //       ..transaction.placeholder,
 //       inputs: [oneshot_input],
-//       extra_signatories: [cfg1.publisher]
+//       extra_signatories: [state1.publisher]
 //     },
 // 
 //   )

@@ -7,7 +7,7 @@ use config
 
 use election/action.{ElectionAction, OpenChannel, PostPublicRecords, CloseChannel}
 use election/record.{validate_records}
-use election/state.{ElectionState}
+use election/state.{ChannelState}
 use election/utils.{tx_mints, tx_does_not_mint, tx_signed_by, tx_sends_token_to_addr}
 
 validator election(oneshot_ref: OutputReference) {
@@ -36,7 +36,7 @@ validator election(oneshot_ref: OutputReference) {
   }
 
   spend(
-    datum: Option<ElectionState>,
+    datum: Option<ChannelState>,
     redeemer: ElectionAction,
     own_ref: OutputReference,
     self: Transaction,
@@ -57,10 +57,10 @@ validator election(oneshot_ref: OutputReference) {
 
         expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, stt_name, script_addr, 1)
         expect InlineDatum(new_datum) = stt_output.datum
-        expect new_cfg: ElectionState = new_datum
-        let pub_signed = tx_signed_by(self, new_cfg.publisher) ?
-	let new_records_empty = (list.length(new_cfg.new_records) == 0) ?
-	let seq_zero = (new_cfg.seq == 0) ?
+        expect new_state: ChannelState = new_datum
+        let pub_signed = tx_signed_by(self, new_state.publisher) ?
+	let new_records_empty = (list.length(new_state.new_records) == 0) ?
+	let seq_zero = (new_state.seq == 0) ?
         and {
           pub_signed,
 	  new_records_empty,
@@ -69,14 +69,14 @@ validator election(oneshot_ref: OutputReference) {
       }
 
       PostPublicRecords -> {
-        expect Some(ElectionState { publisher, seq, .. }) = datum
+        expect Some(ChannelState { publisher, seq, .. }) = datum
         let pub_signed = tx_signed_by(self, publisher) ?
         expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, stt_name, script_addr, 1)
         expect InlineDatum(new_datum) = stt_output.datum
-        expect new_cfg: ElectionState = new_datum
-        let pub_unchanged = (new_cfg.publisher == publisher) ?
-	let seq_incremented = (new_cfg.seq == seq + 1) ?
-        let new_records_valid = validate_records(new_cfg.new_records) ?
+        expect new_state: ChannelState = new_datum
+        let pub_unchanged = (new_state.publisher == publisher) ?
+	let seq_incremented = (new_state.seq == seq + 1) ?
+        let new_records_valid = validate_records(new_state.new_records) ?
         and {
           pub_signed,
           pub_unchanged,
@@ -86,7 +86,7 @@ validator election(oneshot_ref: OutputReference) {
       }
 
       CloseChannel -> {
-        expect Some(ElectionState { publisher, .. }) = datum
+        expect Some(ChannelState { publisher, .. }) = datum
         let pub_signed = tx_signed_by(self, publisher) ?
         pub_signed
 	// TODO require ADA goes back to publisher or main channel

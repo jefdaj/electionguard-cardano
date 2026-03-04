@@ -3,7 +3,7 @@ use cardano/transaction.{InlineDatum, Output}
 
 use election/record.{PublicRecord}
 
-pub type ElectionState {
+pub type ChannelState {
 
   // All transactions must be signed by the admin's key.
   // TODO allow the channel to be created by a separate admin
@@ -24,7 +24,7 @@ pub fn publisher_unchanged(
   stt_output: Output
 ) -> Bool {
   expect InlineDatum(new_datum) = stt_output.datum
-  expect new_config: ElectionState = new_datum
+  expect new_config: ChannelState = new_datum
   new_config.publisher == old_publisher
 }
 
@@ -33,6 +33,6 @@ pub fn sequence_incremented(
   stt_output: Output
 ) -> Bool {
   expect InlineDatum(new_datum) = stt_output.datum
-  expect new_config: ElectionState = new_datum
+  expect new_config: ChannelState = new_datum
   new_config.seq == (old_seq + 1)
 }
