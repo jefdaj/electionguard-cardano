@@ -43,6 +43,20 @@ pub type SubChannelState {
   seq: Int
 }
 
+pub fn extract_admin_state(state: ChannelState) -> Option<AdminChannelState> {
+  when state is {
+    AdminChannel(admin_state) -> Some(admin_state)
+    SubChannel(_) -> None
+  }
+}
+
+pub fn extract_subchannel_state(state: ChannelState) -> Option<SubChannelState> {
+  when state is {
+    SubChannel(subchannel_state) -> Some(subchannel_state)
+    AdminChannel(_) -> None
+  }
+}
+
 // TODO remove this fn for now since it's not helping DRY anything out
 // TODO rename old_publisher to reflect admin/publisher fields?
 // pub fn publisher_unchanged(
