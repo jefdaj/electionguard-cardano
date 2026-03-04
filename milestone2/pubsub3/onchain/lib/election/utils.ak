@@ -1,3 +1,4 @@
+use aiken/primitive/bytearray
 use aiken/collection/dict
 use aiken/collection/list
 use aiken/crypto.{VerificationKeyHash}
@@ -67,4 +68,20 @@ pub fn tx_sends_token_to_addr(
        output.address == addr &&
        assets.quantity_of(output.value, policy_id, token_name) >= min_quantity
      })
+}
+
+// like string.join, but for bytearrays
+pub fn bytearray_join(
+  bytearrays: List<ByteArray>,
+  delimiter: ByteArray,
+) -> ByteArray {
+  when bytearrays is {
+    [] -> #""
+    [first, ..rest] ->
+      list.foldl(
+        rest,
+        first,
+        fn(acc, item) { bytearray.concat(bytearray.concat(acc, delimiter), item) },
+      )
+  }
 }

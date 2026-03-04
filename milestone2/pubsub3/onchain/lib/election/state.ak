@@ -3,6 +3,10 @@ use aiken/crypto.{VerificationKeyHash}
 
 use election/record.{PublicRecord}
 
+use election/utils.{bytearray_join}
+
+use config
+
 pub type ChannelId = ByteArray
 
 pub type ChannelState {
@@ -14,6 +18,7 @@ pub type AdminChannelState {
 
   // There can only be one admin channel per election.
   // It has the implicit channel_id "admin".
+  // TODO any reason to add an actual channel_id field here too?
 
   // This is its "publisher" key, but also allows other admin actions.
   admin: VerificationKeyHash,
@@ -43,13 +48,30 @@ pub type SubChannelState {
   seq: Int
 }
 
-pub fn extract_admin_state(state: ChannelState) -> Option<AdminChannelState> {
+pub fn get_channel_id(state: Option<ChannelState>) -> ChannelId {
   when state is {
-    AdminChannel(admin_state) -> Some(admin_state)
-    SubChannel(_) -> None
+    None -> "admin"
+    Some(AdminChannel(_)) -> "admin"
+    Some(SubChannel(sub_state)) -> sub_state.channel_id
   }
 }
 
+// TODO use this
+pub fn get_stt_name(state: Option<ChannelState>) -> ByteArray {
+  let channel_name = get_channel_id(state)
+  bytearray_join([config.stt_prefix, channel_name, "channel"], "-")
+}
+
+// TODO remove?
+pub fn extract_admin_state(state: Option<ChannelState>) -> Option<AdminChannelState> {
+  when state is {
+    None -> None
+    Some(AdminChannel(admin_state)) -> Some(admin_state)
+    Some(SubChannel(_)) -> None
+  }
+}
+
+// TODO remove?
 pub fn extract_subchannel_state(state: ChannelState) -> Option<SubChannelState> {
   when state is {
     SubChannel(subchannel_state) -> Some(subchannel_state)
