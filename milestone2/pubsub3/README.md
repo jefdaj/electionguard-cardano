@@ -14,7 +14,8 @@ on-chain code
 
 TODO:
 
-* [ ] plain CIDs -> records with metadata
+* [x] plain CIDs -> records with metadata
+* [ ] custom STT names including election name + channel name (egc-test1234-admin-stt etc)
 * [ ] contract includes minting + burning subchannels
 * [ ] each subchannel has one authorized publisher for now
 * [ ] admin is the only one who can close channels
