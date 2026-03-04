@@ -15,7 +15,7 @@ pub type RegularAction {
 // TODO remove?
 pub fn extract_admin_action(action: ElectionAction) -> Option<AdminAction> {
   when action is {
-    AdminAct(admin_action) -> Some(admin_action)
+    AdminAct(admin_act) -> Some(admin_act)
     RegularAct(_) -> None
   }
 }

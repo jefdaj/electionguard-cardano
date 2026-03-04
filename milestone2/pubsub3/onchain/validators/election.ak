@@ -58,11 +58,7 @@ pub fn validate_regular_spend(
   script_addr: Address,
 ) -> Bool {
 
-  // expect Some(own_input) = self.inputs |> find_input(own_ref)
-  // expect Script(policy_id) = own_input.output.address.payment_credential
-  // let script_addr = own_input.output.address
-  // let stt_name = get_stt_name(datum)
-
+  // regular actions must always preserve the STT
   expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, stt_name, script_addr, 1)
   expect InlineDatum(new_datum) = stt_output.datum
 
@@ -112,8 +108,9 @@ pub fn validate_admin_spend(
   stt_name: ByteArray, // TODO only pass the prefix, and concat on our own channel id
   script_addr: Address
 ) -> Bool {
-  when redeemer is {
-      AdminAct(OpenChannel) -> {
+  expect AdminAct(admin_act) = redeemer
+  when admin_act is {
+      OpenChannel -> {
 
         // This is currently true, but remember to remove it if we run into a
         // use case for opening a channel starting from another script.
@@ -133,7 +130,7 @@ pub fn validate_admin_spend(
         }
       }
 
-      AdminAct(CloseChannel) -> {
+      CloseChannel -> {
         expect Some(AdminChannelState { admin, .. }) = datum
         let pub_signed = tx_signed_by(self, admin) ?
         pub_signed
@@ -164,26 +161,23 @@ validator election(oneshot_ref: OutputReference) {
     self: Transaction,
   ) {
 
-  let stt_name = get_stt_name(datum)
-  expect Some(own_input) = self.inputs |> find_input(own_ref)
-  expect Script(policy_id) = own_input.output.address.payment_credential
-  let script_addr = own_input.output.address
+    let stt_name = get_stt_name(datum)
+    expect Some(own_input) = self.inputs |> find_input(own_ref)
+    expect Script(policy_id) = own_input.output.address.payment_credential
+    let script_addr = own_input.output.address
 
-  when redeemer is {
-    AdminAct(admin_act) -> {
-      let admin_state: Option<AdminChannelState> = extract_admin_state(datum)
-      validate_admin_spend(admin_state, admin_act, self, policy_id, stt_name, script_addr)
+    when redeemer is {
+      AdminAct(admin_act) -> {
+        // for admin action, must also have admin channel state
+        let admin_state: Option<AdminChannelState> = extract_admin_state(datum)
+        validate_admin_spend(admin_state, AdminAct(admin_act), self, policy_id, stt_name, script_addr)
+      }
+      RegularAct(regular_act) -> {
+        // for regular action, could have admin or subchannel state
+        expect Some(channel_state) = datum
+        validate_regular_spend(channel_state, regular_act, self, policy_id, stt_name, script_addr)
+      }
     }
-    RegularAct(regular_act) -> {
-      validate_regular_spend(datum, redeemer, self, policy_id, stt_name, script_addr)
-    }
-  }
-    //   AdminAction(admin_action) -> {
-    //     expect Some(state) = datum // TODO is this OK for OpenChannel?
-    //     validate_admin_spend(state, admin_action, self, policy_id, stt_name, script_addr)
-    //   }
-    //   RegularAction(_) -> todo @"validate_subchannel_spend"
-    // }
   }
 
 }
