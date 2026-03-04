@@ -15,6 +15,6 @@ name = "aiken-lang/stdlib"
 version = "3.0.0"
 source = "github"
 
-[config.default.stt_name]
+[config.default.stt_prefix]
 encoding = "utf-8"
-bytes = "electionguard-cardano-channel-stt"
+bytes = "egc-election"

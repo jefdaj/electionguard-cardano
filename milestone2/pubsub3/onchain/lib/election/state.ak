@@ -5,7 +5,7 @@ use election/record.{PublicRecord}
 
 pub type ElectionState {
 
-  // All transactions must be signed by the publisher's key.
+  // All transactions must be signed by the admin's key.
   // TODO allow the channel to be created by a separate admin
   publisher: VerificationKeyHash,
 

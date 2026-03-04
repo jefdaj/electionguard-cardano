@@ -1,3 +1,4 @@
+use aiken/primitive/bytearray
 use aiken/collection/list
 use cardano/transaction.{OutputReference, Transaction, InlineDatum, find_input}
 use cardano/address.{Script}
@@ -16,10 +17,11 @@ validator election(oneshot_ref: OutputReference) {
     policy_id: PolicyId,
     self: Transaction
   ) {
+    let stt_name = bytearray.concat(config.stt_prefix, "-admin-channel")
     when redeemer is {
       OpenChannel  -> {
         expect Some(_oneshot_input) = self.inputs |> find_input(oneshot_ref)
-        let stt_minted = tx_mints(self, policy_id, config.stt_name, 1) ?
+        let stt_minted = tx_mints(self, policy_id, stt_name, 1) ?
         stt_minted
       }
       PostPublicRecords { .. } -> {
@@ -27,7 +29,7 @@ validator election(oneshot_ref: OutputReference) {
         no_mints
       }
       CloseChannel -> {
-        let stt_burned = tx_mints(self, policy_id, config.stt_name, -1) ?
+        let stt_burned = tx_mints(self, policy_id, stt_name, -1) ?
         stt_burned
       }
     }
@@ -43,6 +45,7 @@ validator election(oneshot_ref: OutputReference) {
     expect Some(own_input) = self.inputs |> find_input(own_ref)
     expect Script(policy_id) = own_input.output.address.payment_credential
     let script_addr = own_input.output.address
+    let stt_name = bytearray.concat(config.stt_prefix, "-admin-channel")
     when redeemer is {
 
       OpenChannel -> {
@@ -52,7 +55,7 @@ validator election(oneshot_ref: OutputReference) {
 	// TODO remove anyway, since it's not technically required?
 	expect None = datum
 
-        expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, config.stt_name, script_addr, 1)
+        expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, stt_name, script_addr, 1)
         expect InlineDatum(new_datum) = stt_output.datum
         expect new_cfg: ElectionState = new_datum
         let pub_signed = tx_signed_by(self, new_cfg.publisher) ?
@@ -68,7 +71,7 @@ validator election(oneshot_ref: OutputReference) {
       PostPublicRecords -> {
         expect Some(ElectionState { publisher, seq, .. }) = datum
         let pub_signed = tx_signed_by(self, publisher) ?
-        expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, config.stt_name, script_addr, 1)
+        expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, stt_name, script_addr, 1)
         expect InlineDatum(new_datum) = stt_output.datum
         expect new_cfg: ElectionState = new_datum
         let pub_unchanged = (new_cfg.publisher == publisher) ?
