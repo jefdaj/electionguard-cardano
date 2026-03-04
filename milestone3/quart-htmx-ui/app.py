@@ -6,6 +6,7 @@ import asyncio
 
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Dict
 
 @dataclass
 class Entry:
@@ -55,6 +56,9 @@ def get_log_entries(query=None):
 
 app = Quart(__name__)
 
+# allow hash() to be used in templates
+app.jinja_env.globals.update(hash=hash)
+
 @app.get("/")
 async def index():
     return await render_template("index.html")
@@ -67,14 +71,21 @@ async def log_fragment():
 # State tree commented because I want to build the log + filter first
 
 # Query format should match get_log_entries so they can be filtered together.
-# def get_state_tree(query=None):
-#     # server-side parse of chain
-#     return None
+def get_state_tree(query=None):
+    # server-side parse of chain
+    state: Dict[str, Dict[str, int]] = {}
+    for e in get_log_entries(query):
+        if not e.type in state:
+            state[e.type] = {}
+        if not e.summary in state[e.type]:
+            state[e.type][e.summary] = 0
+        state[e.type][e.summary] += 1
+    return state
 
 # @app.get("/state")
-# async def state_fragment():
-#     state = get_state_tree()
-#     return await render_template("partials/state_tree.html", node=state)
+async def state_fragment():
+    state = get_state_tree()
+    return await render_template("partials/state_tree.html", state=state)
 
 # Because we want to filter both the log and tree at once, we return the two
 # divs wrapped in filter_result. Then each is swapped with its correct div
@@ -84,11 +95,11 @@ async def log_fragment():
 async def filter_results():
     q = request.args.get("filter", "").strip() # TODO would "query" be more standard?
     log_entries = get_log_entries(query=q)
-    # state = get_state_tree(query=q)
+    state = get_state_tree(query=q)
     return await render_template(
         "partials/filter_results.html",
         entries=log_entries,
-        # state=state,
+        state=state,
     )
 
 # Action code commented because I want to build the observer UI first:

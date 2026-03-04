@@ -16,26 +16,20 @@
 
   <div class="main-area">
     <div id="log-container"
-         hx-target="#log-container"
          hx-ext="morph"
          hx-swap="morph">
       <!-- log fragment injected here -->
       Loading...
     </div>
-  </div>
-</div>
 
-    {#
-    <h2>State</h2>
     <div id="state-container"
-         hx-get="{{ url_for('state_fragment') }}"
-         hx-trigger="load, every 5s"
-         hx-target="#state-container"
-         hx-swap="innerHTML">
+         hx-ext="morph"
+         hx-swap="morph">
       <!-- state tree fragment -->
     </div>
   </div>
-  #}
+
+</div>
 
   {#
   <div class="bottom-bar">
@@ -56,7 +50,7 @@
 
 <div id="filter-results" 
      class="hidden"
-     hx-get="{{ url_for('filter_results') }}" {# TODO remove? #}
+     hx-get="{{ url_for('filter_results') }}"
      hx-trigger="load, every 5s [!document.activeElement.matches('#filter-input')]"
      hx-include="[name='filter']"
      hx-swap="innerHTML"
