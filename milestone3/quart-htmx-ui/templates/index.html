@@ -1,8 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="layout">
 
-  <div class="top-bar">
+  <div id="top-bar">
     <input 
       type="text" 
       name="filter" 
@@ -11,10 +10,10 @@
       hx-trigger="keyup changed delay:200ms"
       hx-target="#filter-results"
       hx-swap="innerHTML"
-      placeholder="Filter log entries...">
+      placeholder="Filter entries...">
   </div>
 
-  <div class="main-area">
+  <div id="main-area">
     <div id="log-container"
          hx-ext="morph"
          hx-swap="morph">
@@ -32,7 +31,7 @@
 </div>
 
   {#
-  <div class="bottom-bar">
+  <div id="bottom-bar">
     <h2>Actions</h2>
     <div id="actions-container"
          hx-get=" url_for('actions_fragment') "
@@ -56,5 +55,4 @@
      hx-swap="innerHTML"
      hx-sync="this:replace">
   <!-- log+state results appear here and are moved via oob-swap -->
-</div>
 {% endblock %}

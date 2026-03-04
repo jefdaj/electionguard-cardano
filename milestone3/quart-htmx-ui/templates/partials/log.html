@@ -1,17 +1,13 @@
-<table class="log">
-  <thead>
-    <tr><th>Height</th><th>Type</th><th>Details</th><th>Time</th></tr>
-  </thead>
-  <tbody> {# TODO list instead? #}
-    {% for e in entries %}
-      <tr class="entry" id="entry-{{ e.id }}">
-        <td>{{ e.height }}</td>
-        <td>{{ e.type }}</td>
-        <td>{{ e.summary }}</td>
-        <td>{{ e.timestamp }}</td>
-      </tr>
-    {% else %}
-      <tr><td colspan="4">No entries yet.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div id="log-container">
+<ul class="log">
+  {% for e in entries %}
+    <li class="entry" id="entry-{{ e.id }}">
+      height: {{ e.height }}
+      type: {{ e.type }}
+      <br/>summary: {{ e.summary }}
+      <br/>timestamp: {{ e.timestamp }}
+    </li>
+  {% else %}
+  {% endfor %}
+</ul>
+</div>

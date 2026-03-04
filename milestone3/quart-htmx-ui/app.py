@@ -54,7 +54,7 @@ def get_log_entries(query=None):
     #     print(repr(e))
     return entries
 
-app = Quart(__name__)
+app = Quart(__name__, static_folder='static', static_url_path='/static')
 
 # allow hash() to be used in templates
 app.jinja_env.globals.update(hash=hash)

@@ -7,6 +7,8 @@
     
     <title>{% block title %}Log with Filter{% endblock %}</title>
     
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+
     <!-- HTMX -->
     {# <script src="https://unpkg.com/htmx.org@1.9.12"></script> #}
     <script src="/static/htmx.min.js"></script>
@@ -54,10 +56,12 @@
         {% endblock %}
     </main>
 
+    {#
     <footer>
         {% block footer %}
         {% endblock %}
     </footer>
+    #}
 
     <!-- Optional: Global HTMX event handlers -->
     {% block scripts %}
