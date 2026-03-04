@@ -43,9 +43,11 @@
   </div>
   #}
 
+{#
 <div id="modal-root">
   <!-- modal forms injected here -->
 </div>
+#}
 
 <div id="filter-results" 
      class="hidden"
@@ -53,6 +55,7 @@
      hx-trigger="load, every 5s [!document.activeElement.matches('#filter-input')]"
      hx-include="[name='filter']"
      hx-swap="innerHTML"
-     hx-sync="this:replace">
-  <!-- log+state results appear here and are moved via oob-swap -->
+     hx-sync="this:replace"
+     hx-on::after-swap="if (!document.getElementById('filter-input').value.trim()) { lc = document.getElementById('log-container'); lc.scrollTop = lc.scrollHeight; }">
+  <!-- filtered log+state injected here and moved via oob-swap -->
 {% endblock %}
