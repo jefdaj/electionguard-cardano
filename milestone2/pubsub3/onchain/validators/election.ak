@@ -19,14 +19,13 @@ use election/state.{
 }
 use election/utils.{tx_mints, tx_signed_by, tx_sends_token_to_addr}
 
-// TODO will mint() be called when a non-admin tries to post public records too?
 pub fn validate_admin_mint(
   action: AdminAction, // RegularActions don't mint or burn
   policy_id: PolicyId,
   self: Transaction,
   oneshot_ref: OutputReference
 ) -> Bool {
-  let stt_name = bytearray.concat(config.stt_prefix, "-admin-channel")
+  let stt_name = bytearray.concat(config.stt_prefix, "-admin-channel") // TODO clean up
   when action is {
     CloseChannel -> {
       let stt_burned = tx_mints(self, policy_id, stt_name, -1) ?
@@ -37,20 +36,13 @@ pub fn validate_admin_mint(
       let stt_minted = tx_mints(self, policy_id, stt_name, 1) ?
       stt_minted
     }
-    // TODO any need to handle other cases here?
-    // TODO extract this part into another fn?
-    // TODO is this ever called
-    // RegularAction(PostPublicRecords { .. }) -> {
-    //   let no_mints = tx_does_not_mint(self, policy_id) ?
-    //   no_mints
-    // }
   }
 }
 
+// This is defined by the redeemer; the datum can be a regular or admin state.
 pub fn validate_regular_spend(
   datum: ChannelState,
   redeemer: RegularAction,
-  // own_ref: OutputReference,
   self: Transaction,
   policy_id: PolicyId,
   stt_name: ByteArray,
@@ -62,6 +54,7 @@ pub fn validate_regular_spend(
   expect InlineDatum(new_datum) = stt_output.datum
 
   let PostPublicRecords = redeemer
+  // TODO back to a when clause once there's more than one regular action:
   // when redeemer is {
   //   PostPublicRecords -> {
 
@@ -99,17 +92,17 @@ pub fn validate_regular_spend(
   // }
 }
 
+// This is defined by the redeemer; the datum may be none or an admin state.
 pub fn validate_admin_spend(
   datum: Option<AdminChannelState>,
-  redeemer: ElectionAction,
-  // own_ref: OutputReference,
+  redeemer: AdminAction,
   self: Transaction,
   policy_id: PolicyId,
-  stt_name: ByteArray, // TODO only pass the prefix, and concat on our own channel id
+  stt_name: ByteArray,
   script_addr: Address
 ) -> Bool {
-  expect AdminAct(admin_act) = redeemer
-  when admin_act is {
+  // TODO should this also handle PostPublicRecords?
+  when redeemer is {
       OpenChannel -> {
 
         // This is currently true, but remember to remove it if we run into a
@@ -167,13 +160,16 @@ validator election(oneshot_ref: OutputReference) {
     let script_addr = own_input.output.address
 
     when redeemer is {
-      AdminAct(act) -> {
-        // for admin action, must also have admin channel state
+      AdminAct(admin_act) -> {
+        // for admin action:
+	// - could have none, or some prev admin channel state
         let admin_state: Option<AdminChannelState> = extract_admin_state(datum)
-        validate_admin_spend(admin_state, AdminAct(act), self, policy_id, stt_name, script_addr)
+        validate_admin_spend(admin_state, admin_act, self, policy_id, stt_name, script_addr)
       }
       RegularAct(reg_act) -> {
-        // for regular action, could have admin or subchannel state
+        // for regular action:
+	// - could have admin or subchannel state
+	// - but must have some prev channel state
         expect Some(state) = datum
         validate_regular_spend(state, reg_act, self, policy_id, stt_name, script_addr)
       }
