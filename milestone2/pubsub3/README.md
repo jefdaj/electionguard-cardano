@@ -37,19 +37,46 @@ $ ./build.sh
 ++ dirname ./build.sh
 + cd .
 + aiken check
-    Compiling jefdaj/electionguard-cardano-pubsub3 0.0.1 (.)
+    Compiling jefdaj/electionguard-cardano 0.0.2 (.)
     Compiling aiken-lang/stdlib 3.0.0 (./build/packages/aiken-lang-stdlib)
    Collecting all tests scenarios across all modules
-      Summary 0 errors, 0 warnings
-+ aiken build --out pubsub3-plutus.json
-    Compiling jefdaj/electionguard-cardano-pubsub3 0.0.1 (.)
+      Testing ...
+
+    ┍━ election/ballot_id.tests ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │ PASS [mem:  59.42 K, cpu:  15.04 M] valid_hex_segment_test
+    │ PASS [mem:  66.53 K, cpu:  16.85 M] invalid_hex_segment_test
+    │ PASS [mem: 238.38 K, cpu:  59.94 M] valid_uuid_test
+    │ PASS [mem: 247.53 K, cpu:  62.28 M] valid_ballot_id_test
+    │ PASS [mem:   5.61 K, cpu:   1.36 M] invalid_prefix_test
+    │ PASS [mem:  10.03 K, cpu:   2.51 M] invalid_format_test
+    ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6 tests | 6 passed | 0 failed
+
+    ┍━ election/cid.tests ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │ PASS [mem:   4.10 K, cpu:   1.02 M] valid_cid_test
+    │ PASS [mem:   4.10 K, cpu:   1.02 M] valid_cid_different_hash_test
+    │ PASS [mem:   4.10 K, cpu:   1.02 M] valid_cid_zeros_test
+    │ PASS [mem:   2.50 K, cpu: 612.24 K] invalid_length_short_test
+    │ PASS [mem:   2.50 K, cpu: 612.24 K] invalid_length_long_test
+    │ PASS [mem:   3.20 K, cpu: 800.29 K] invalid_version_v0_test
+    │ PASS [mem:   3.20 K, cpu: 800.29 K] invalid_version_v2_test
+    │ PASS [mem:   4.60 K, cpu:   1.17 M] invalid_hash_type_test
+    │ PASS [mem:   4.60 K, cpu:   1.17 M] invalid_hash_length_declaration_test
+    │ PASS [mem:   2.50 K, cpu: 612.24 K] invalid_empty_cid_test
+    │ PASS [mem:   3.90 K, cpu: 988.34 K] invalid_codec_test
+    │ PASS [mem:   4.10 K, cpu:   1.02 M] valid_cid_min_values_test
+    │ PASS [mem:   4.10 K, cpu:   1.02 M] valid_cid_max_hash_test
+    ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 13 tests | 13 passed | 0 failed
+
+      Summary 19 checks, 0 errors, 0 warnings
++ aiken build --out election-plutus.json
+    Compiling jefdaj/electionguard-cardano 0.0.2 (.)
     Compiling aiken-lang/stdlib 3.0.0 (./build/packages/aiken-lang-stdlib)
-   Generating project's blueprint (pubsub3-plutus.json)
+   Generating project's blueprint (election-plutus.json)
       Summary 0 errors, 0 warnings
-+ aiken build --out pubsub3-plutus-traced.json --trace-level verbose
-    Compiling jefdaj/electionguard-cardano-pubsub3 0.0.1 (.)
++ aiken build --out election-plutus-traced.json --trace-level verbose
+    Compiling jefdaj/electionguard-cardano 0.0.2 (.)
     Compiling aiken-lang/stdlib 3.0.0 (./build/packages/aiken-lang-stdlib)
-   Generating project's blueprint (pubsub3-plutus-traced.json)
+   Generating project's blueprint (election-plutus-traced.json)
       Summary 0 errors, 0 warnings
 ```
 
