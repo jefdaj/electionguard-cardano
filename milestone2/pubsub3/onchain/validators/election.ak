@@ -9,7 +9,6 @@ use election/action.{
   ElectionAction, AdminAct, RegularAct,
   AdminAction, OpenChannel, CloseChannel,
   RegularAction, PostPublicRecords,
-  extract_admin_action,
 }
 use election/record.{validate_records}
 use election/state.{
@@ -18,7 +17,7 @@ use election/state.{
   SubChannel, SubChannelState,
   extract_admin_state, get_stt_name
 }
-use election/utils.{tx_mints, tx_does_not_mint, tx_signed_by, tx_sends_token_to_addr}
+use election/utils.{tx_mints, tx_signed_by, tx_sends_token_to_addr}
 
 // TODO will mint() be called when a non-admin tries to post public records too?
 pub fn validate_admin_mint(
@@ -62,41 +61,42 @@ pub fn validate_regular_spend(
   expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, stt_name, script_addr, 1)
   expect InlineDatum(new_datum) = stt_output.datum
 
-  when redeemer is {
-    PostPublicRecords -> {
+  let PostPublicRecords = redeemer
+  // when redeemer is {
+  //   PostPublicRecords -> {
 
-      // TODO can the redundant checks in these branches be DRYed up?
-      when datum is {
-        AdminChannel(AdminChannelState { admin, seq, .. }) -> {
-          expect new_state: AdminChannelState = new_datum
-          let pub_signed = tx_signed_by(self, admin) ?
-          let pub_unchanged = new_state.admin == admin
-          let seq_incremented = (new_state.seq == seq + 1) ?
-          let new_records_valid = validate_records(new_state.new_records) ?
-          and {
-            pub_signed,
-            pub_unchanged,
-            seq_incremented,
-            new_records_valid
-          }
-        }
-        SubChannel(SubChannelState { publisher, seq, .. }) -> {
-          expect new_state: SubChannelState = new_datum
-          let pub_signed = tx_signed_by(self, publisher) ?
-          let pub_unchanged = new_state.publisher == publisher
-          let seq_incremented = (new_state.seq == seq + 1) ?
-          let new_records_valid = validate_records(new_state.new_records) ?
-          and {
-            pub_signed,
-            pub_unchanged,
-            seq_incremented,
-            new_records_valid
-          }
-        }
+  // TODO can the redundant checks in these branches be DRYed up?
+  when datum is {
+    AdminChannel(AdminChannelState { admin, seq, .. }) -> {
+      expect new_state: AdminChannelState = new_datum
+      let pub_signed = tx_signed_by(self, admin) ?
+      let pub_unchanged = new_state.admin == admin
+      let seq_incremented = (new_state.seq == seq + 1) ?
+      let new_records_valid = validate_records(new_state.new_records) ?
+      and {
+        pub_signed,
+        pub_unchanged,
+        seq_incremented,
+        new_records_valid
       }
-
+    }
+    SubChannel(SubChannelState { publisher, seq, .. }) -> {
+      expect new_state: SubChannelState = new_datum
+      let pub_signed = tx_signed_by(self, publisher) ?
+      let pub_unchanged = new_state.publisher == publisher
+      let seq_incremented = (new_state.seq == seq + 1) ?
+      let new_records_valid = validate_records(new_state.new_records) ?
+      and {
+        pub_signed,
+        pub_unchanged,
+        seq_incremented,
+        new_records_valid
+      }
     }
   }
+
+    // }
+  // }
 }
 
 pub fn validate_admin_spend(
@@ -167,15 +167,15 @@ validator election(oneshot_ref: OutputReference) {
     let script_addr = own_input.output.address
 
     when redeemer is {
-      AdminAct(admin_act) -> {
+      AdminAct(act) -> {
         // for admin action, must also have admin channel state
         let admin_state: Option<AdminChannelState> = extract_admin_state(datum)
-        validate_admin_spend(admin_state, AdminAct(admin_act), self, policy_id, stt_name, script_addr)
+        validate_admin_spend(admin_state, AdminAct(act), self, policy_id, stt_name, script_addr)
       }
-      RegularAct(regular_act) -> {
+      RegularAct(reg_act) -> {
         // for regular action, could have admin or subchannel state
-        expect Some(channel_state) = datum
-        validate_regular_spend(channel_state, regular_act, self, policy_id, stt_name, script_addr)
+        expect Some(state) = datum
+        validate_regular_spend(state, reg_act, self, policy_id, stt_name, script_addr)
       }
     }
   }
