@@ -7,12 +7,14 @@ It will have:
 * [Documentation of the Aiken contract](./pubsub3/docs/smart-contract.md)
 * An [election script](./pubsub3/election.sh) which uploads, downloads, and verifies in parallel
 
+WARNING: on-chain code is currently ahead of off-chain; the two don't match yet
+
+on-chain code
+-------------
+
 TODO:
 
 * [ ] plain CIDs -> records with metadata
-* [ ] have each container generate its own keypair
-* [ ] all eg nodes share one cardano node for now
-* [ ] share addrs with admin (via top level script and bind mounts for now)
 * [ ] contract includes minting + burning subchannels
 * [ ] each subchannel has one authorized publisher for now
 * [ ] admin is the only one who can close channels
@@ -22,10 +24,6 @@ TODO:
 * [ ] all channels can be minted or burned at once?
 * [ ] contract has an explicit election step/stage/phase variable
 * [ ] contract syncs main channel with subchannels on (some) transitions
-* [ ] egsync should track and report election info: n each role, phase, n ballots, ...
-
-Build
------
 
 Before running the main election script or tests,
 you need to build the validator with Aiken.
@@ -55,8 +53,15 @@ $ ./build.sh
       Summary 0 errors, 0 warnings
 ```
 
-Test
-----
+off-chain code
+--------------
+
+TODO:
+
+* [ ] have each container generate its own keypair
+* [ ] all eg nodes share one cardano node for now
+* [ ] share addrs with admin (via top level script and bind mounts for now)
+* [ ] egsync should track and report election info: n each role, phase, n ballots, ...
 
 The tests cover opening a new channel on testnet, publishing 0, 1, 2, or all
 (81) static election artifacts from a previous election run, and closing the
