@@ -1,12 +1,11 @@
 pubsub3
 =======
 
-This is the main codebase for all the M2 deliverables.
+This is the main codebase for all the M2 outputs.
 It will have:
 
-1. a focus on documenting the Aiken contract
-2. an election script that uploads artifacts to Cardano + IPFS
-3. a verifier script that downloads and verifies them
+* [Documentation of the Aiken contract](./pubsub3/docs/smart-contract.md)
+* An [election script](./pubsub3/election.sh) which uploads, downloads, and verifies in parallel
 
 TODO:
 

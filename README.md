@@ -38,7 +38,7 @@ Current status as of 2026-02-18:
     - [Aiken + PyCardano + Kupo version](./milestone2/pubsub2-aiken-pycardano-kupo) syncs CIDs via Preview testnet
 
   * Working on the actual milestone outputs:
-    - [ ] Output 2.1: [design docs](./milestone2/pubsub3/pubsub3/docs/)
+    - [ ] Output 2.1: [design docs](./milestone2/pubsub3/docs/)
     - [ ] Output 2.2 + 2.3: [pubsub codebase](./milestone2/pubsub3/)
 
 - [Milestone 3](./milestone3/) (ElectionGuard + Cardano integration):
