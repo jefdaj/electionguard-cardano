@@ -4,8 +4,8 @@ pubsub3
 This is the main codebase for all the M2 outputs.
 It will have:
 
-* [Documentation of the Aiken contract](./pubsub3/docs/smart-contract.md)
-* An [election script](./pubsub3/election.sh) which uploads, downloads, and verifies in parallel
+* [Documentation of the Aiken contract](./docs/smart-contract.md)
+* An [election script](./election.sh) which uploads, downloads, and verifies in parallel
 
 WARNING: on-chain code is currently ahead of off-chain; the two don't match yet
 

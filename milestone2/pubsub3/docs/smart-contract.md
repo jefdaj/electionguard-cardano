@@ -21,6 +21,21 @@ An event is either a public election artifact (and IPFS CID + metadata) or a cha
 
 Anyone can also run the same egsync client election actors do to subscribe to messages, download the IPFS files, and confirm whether everything is being done according to the protocol or not. They just can't post messages without being authorized.
 
+Guardian + Encryption Device wallet onboarding
+----------------------------------------------
+
+Here are the steps needed to participate as a guardian or encryption device manager:
+
+1. Generate a Cardano wallet.
+2. Send your public address to the election admin (probably via QR code).
+3. During `ConfigOnboardingPhase`, the admin will mint you a channel token and
+   send you some ADA (~7) to cover smart contract collateral. They will also lock
+   a larger pool of ADA with the channel token to cover TX fees.
+4. You should now be able to post artifacts to your channel for free using your wallet.
+5. If needed, the admin will top up the ADA locked with your channel token periodically.
+6. During `ElectionFinalizePhase` the admin will burn the channel token and recover any remaining locked ADA.
+7. You can keep the collateral, or send it back to the admin yourself.
+
 Future directions
 -----------------
 
