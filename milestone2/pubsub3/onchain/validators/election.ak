@@ -17,7 +17,11 @@ use election/state.{
   SubChannel, SubChannelState,
   extract_admin_state, get_stt_name
 }
-use election/utils.{tx_mints, tx_signed_by, tx_sends_token_to_addr}
+use election/utils.{
+  tx_mints, tx_mints_all,
+  tx_signed_by,
+  tx_sends_token_to_addr,
+}
 
 pub fn validate_admin_mint(
   action: AdminAction, // regular actions don't mint or burn
@@ -34,8 +38,29 @@ pub fn validate_admin_mint(
       stt_minted
     }
 
-    AddSubChannels { .. } -> { todo @"add subchannels" }
-    RmSubChannels  { .. } -> { todo  @"rm subchannels" }
+    AddSubChannels { channels } -> {
+      let admin_stt_unchanged = tx_mints(self, policy_id, stt_name, 0) ?
+      let mints_channel_stts = tx_mints_all(self, policy_id, channels, 1) ?
+      // let state_updated = ...
+      // let unique_channel_ids = ...
+      and {
+        admin_stt_unchanged,
+	mints_channel_stts,
+	// state_updated,
+	// unique_channel_ids,
+      }
+    }
+
+    RmSubChannels { channels } -> {
+      let admin_stt_unchanged = tx_mints(self, policy_id, stt_name, 0) ?
+      let burns_channel_stts = tx_mints_all(self, policy_id, channels, -1) ?
+      // let state_updated = 
+      and {
+        admin_stt_unchanged,
+	burns_channel_stts,
+	// state_updated
+      }
+    }
 
     EndElection -> {
       let stt_burned = tx_mints(self, policy_id, stt_name, -1) ?
@@ -144,7 +169,7 @@ validator election(oneshot_ref: OutputReference) {
   ) {
     when redeemer is {
       AdminAct(action) -> validate_admin_mint(action, policy_id, self, oneshot_ref)
-      RegularAct(_) -> False // regular actions don't mint or burn
+      RegularAct(_) -> False // TODO add code to allow other tokens to be minted/burned, just not ours
     }
   }
 
