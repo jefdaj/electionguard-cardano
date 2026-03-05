@@ -38,18 +38,21 @@ pub fn is_final_phase(phase: ElectionPhase) -> Bool {
   phase == ElectionFinalizePhase
 }
 
-// TODO in InitElection and EndElection, check for initial + final phases respectively
 pub fn is_valid_phase_transition(old: ElectionPhase, new: ElectionPhase) -> Bool {
+  old == new || is_valid_phase_advance(old, new)
+}
+
+fn is_valid_phase_advance(old: ElectionPhase, new: ElectionPhase) -> Bool {
   when old is {
-    ElectionConfigPhase(ConfigAnnouncePhase)  -> new == old || new == ElectionConfigPhase(ConfigChannelsPhase)
-    ElectionConfigPhase(ConfigChannelsPhase)  -> new == old || new == ElectionConfigPhase(ConfigCeremonyPhase)
-    ElectionConfigPhase(ConfigCeremonyPhase)  -> new == old || new == ElectionConfigPhase(ConfigFinalizePhase)
-    ElectionConfigPhase(ConfigFinalizePhase)  -> new == old || new == ElectionBallotsPhase
-    ElectionBallotsPhase                      -> new == old || new == ElectionResultsPhase(ResultsTallyPhase)
-    ElectionResultsPhase(ResultsTallyPhase)   -> new == old || new == ElectionResultsPhase(ResultsDecryptPhase)
-    ElectionResultsPhase(ResultsDecryptPhase) -> new == old || new == ElectionResultsPhase(ResultsSummaryPhase)
-    ElectionResultsPhase(ResultsSummaryPhase) -> new == old || new == ElectionVerifyPhase
-    ElectionVerifyPhase                       -> new == old || new == ElectionFinalizePhase
+    ElectionConfigPhase(ConfigAnnouncePhase)  -> new == ElectionConfigPhase(ConfigChannelsPhase)
+    ElectionConfigPhase(ConfigChannelsPhase)  -> new == ElectionConfigPhase(ConfigCeremonyPhase)
+    ElectionConfigPhase(ConfigCeremonyPhase)  -> new == ElectionConfigPhase(ConfigFinalizePhase)
+    ElectionConfigPhase(ConfigFinalizePhase)  -> new == ElectionBallotsPhase
+    ElectionBallotsPhase                      -> new == ElectionResultsPhase(ResultsTallyPhase)
+    ElectionResultsPhase(ResultsTallyPhase)   -> new == ElectionResultsPhase(ResultsDecryptPhase)
+    ElectionResultsPhase(ResultsDecryptPhase) -> new == ElectionResultsPhase(ResultsSummaryPhase)
+    ElectionResultsPhase(ResultsSummaryPhase) -> new == ElectionVerifyPhase
+    ElectionVerifyPhase                       -> new == ElectionFinalizePhase
     ElectionFinalizePhase                     -> False
   }
 }
