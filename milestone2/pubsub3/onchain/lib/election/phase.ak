@@ -6,6 +6,7 @@ pub type ElectionPhase {
   ElectionBallotsPhase
   ElectionResultsPhase(ResultsPhase)
   ElectionVerifyPhase
+  ElectionFinalizePhase // TODO adjust electionguard code to add this
 }
 
 // TODO adjust electionguard code to reflect ConfigChannelsPhase idea
@@ -29,17 +30,26 @@ pub type ResultsPhase {
   ResultsSummaryPhase // TODO remove as redundant with ElectionVerifyPhase?
 }
 
+pub fn is_initial_phase(phase: ElectionPhase) -> Bool {
+  phase == ElectionConfigPhase(ConfigAnnouncePhase)
+}
+
+pub fn is_final_phase(phase: ElectionPhase) -> Bool {
+  phase == ElectionFinalizePhase
+}
+
 // TODO in InitElection and EndElection, check for initial + final phases respectively
 pub fn is_valid_phase_transition(old: ElectionPhase, new: ElectionPhase) -> Bool {
   when old is {
-    ElectionConfigPhase(ConfigAnnouncePhase)  -> new == ElectionConfigPhase(ConfigChannelsPhase)
-    ElectionConfigPhase(ConfigChannelsPhase)  -> new == ElectionConfigPhase(ConfigCeremonyPhase)
-    ElectionConfigPhase(ConfigCeremonyPhase)  -> new == ElectionConfigPhase(ConfigFinalizePhase)
-    ElectionConfigPhase(ConfigFinalizePhase)  -> new == ElectionBallotsPhase
-    ElectionBallotsPhase                      -> new == ElectionResultsPhase(ResultsTallyPhase)
-    ElectionResultsPhase(ResultsTallyPhase)   -> new == ElectionResultsPhase(ResultsDecryptPhase)
-    ElectionResultsPhase(ResultsDecryptPhase) -> new == ElectionResultsPhase(ResultsSummaryPhase)
-    ElectionResultsPhase(ResultsSummaryPhase) -> new == ElectionVerifyPhase
-    ElectionVerifyPhase -> False
+    ElectionConfigPhase(ConfigAnnouncePhase)  -> new == old || new == ElectionConfigPhase(ConfigChannelsPhase)
+    ElectionConfigPhase(ConfigChannelsPhase)  -> new == old || new == ElectionConfigPhase(ConfigCeremonyPhase)
+    ElectionConfigPhase(ConfigCeremonyPhase)  -> new == old || new == ElectionConfigPhase(ConfigFinalizePhase)
+    ElectionConfigPhase(ConfigFinalizePhase)  -> new == old || new == ElectionBallotsPhase
+    ElectionBallotsPhase                      -> new == old || new == ElectionResultsPhase(ResultsTallyPhase)
+    ElectionResultsPhase(ResultsTallyPhase)   -> new == old || new == ElectionResultsPhase(ResultsDecryptPhase)
+    ElectionResultsPhase(ResultsDecryptPhase) -> new == old || new == ElectionResultsPhase(ResultsSummaryPhase)
+    ElectionResultsPhase(ResultsSummaryPhase) -> new == old || new == ElectionVerifyPhase
+    ElectionVerifyPhase                       -> new == old || new == ElectionFinalizePhase
+    ElectionFinalizePhase                     -> False
   }
 }

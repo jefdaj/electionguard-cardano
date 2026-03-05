@@ -16,6 +16,11 @@ use election/state.{
   extract_admin_state, get_stt_name, get_admin_stt_name,
   add_subchannels, rm_subchannels, post_public_records,
 }
+use election/phase.{
+  ElectionConfigPhase, ConfigChannelsPhase,
+  is_initial_phase, is_final_phase,
+  is_valid_phase_transition,
+}
 use election/utils.{
   tx_mints, tx_mints_all,
   tx_signed_by,
@@ -139,11 +144,13 @@ pub fn validate_admin_spend(
       let new_records_empty = (list.length(new_admin_state.new_records) == 0) ?
       let subchannels_empty = (list.length(new_admin_state.subchannels) == 0) ?
       let seq_zero = (new_admin_state.seq == 0) ?
+      let initial_phase = is_initial_phase(new_admin_state.phase) ?
       and {
         vkh_signed,
         new_records_empty,
         subchannels_empty,
         seq_zero,
+	initial_phase,
       }
     }
 
@@ -156,11 +163,18 @@ pub fn validate_admin_spend(
       let new_channels_unique = are_disjoint(old_admin_state.subchannels, channels)
       let expected_new_admin_state = add_subchannels(old_admin_state, channels)
       let new_state_as_expected = new_admin_state == expected_new_admin_state
+      let valid_old_phase = old_admin_state.phase == ElectionConfigPhase(ConfigChannelsPhase)
+
+      // The new phase could still be ConfigChannelsPhase, or it could advance to ConfigCeremonyPhase
+      let valid_transition = is_valid_phase_transition(old_admin_state.phase, new_admin_state.phase)
+
       and {
         vkh_signed,
         new_channels_valid,
         new_channels_unique,
         new_state_as_expected,
+	valid_old_phase,
+	valid_transition,
       }
     }
 
@@ -168,22 +182,33 @@ pub fn validate_admin_spend(
       expect Some(old_admin_state) = old_state
       expect Some(new_admin_state) = new_state
       let vkh_signed = tx_signed_by(self, new_admin_state.admin) ?
+
+      // This seems like it should work, but only because this is a special case of being in the final phase?
+      // (Otherwise, would need to adjust phase in expected new state)
       let expected_new_admin_state = rm_subchannels(old_admin_state, channels)
       let new_state_as_expected = new_admin_state == expected_new_admin_state
+
+      let valid_transition = is_valid_phase_transition(old_admin_state.phase, new_admin_state.phase)
+      let final_phase = is_final_phase(old_admin_state.phase) ? // TODO allow at other times too?
+
       and {
         vkh_signed,
         new_state_as_expected,
+	valid_transition,
+	final_phase,
       }
     }
 
     EndElection -> {
-      expect Some(AdminChannelState { admin, subchannels, .. }) = old_state
+      expect Some(AdminChannelState { admin, subchannels, phase, .. }) = old_state
       expect None = new_state
       let vkh_signed = tx_signed_by(self, admin) ?
       let subchannels_empty = (list.length(subchannels) == 0) ?
+      let final_phase = is_final_phase(phase) ?
       and {
         vkh_signed,
         subchannels_empty,
+	final_phase,
       }
       // TODO require ADA goes back to admin or main channel
     }

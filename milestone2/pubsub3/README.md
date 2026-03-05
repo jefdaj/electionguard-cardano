@@ -21,9 +21,9 @@ TODO:
 * [x] admin is the only one who can close channels
 * [x] contract includes minting + burning subchannels
 * [x] all channels can be minted or burned at once (except admin)
+* [x] contract has an explicit election step/stage/phase variable
 * [ ] contract holds and distributes tADA to cover posting fees
 * [ ] contract returns tADA to admin when closing main channel
-* [ ] contract has an explicit election step/stage/phase variable
 * [ ] contract syncs main channel with subchannels on (some) transitions?
 
 Before running the main election script or tests,

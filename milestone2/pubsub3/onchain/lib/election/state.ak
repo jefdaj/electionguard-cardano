@@ -2,6 +2,7 @@ use aiken/collection/list
 use aiken/crypto.{VerificationKeyHash}
 // use cardano/transaction.{InlineDatum, Output}
 
+use election/phase.{ElectionPhase}
 use election/record.{PublicRecord}
 
 use election/utils.{bytearray_join, remove_elements}
@@ -32,6 +33,13 @@ pub type AdminChannelState {
   // Just the latest batch of records; have to index the STT asset history to get the full list.
   // Should be set to [] when doing any non-publish transaction.
   new_records: List<PublicRecord>,
+
+  // Tracks the overall phase of the election for display in the UI.
+  // Could be extended later for use in:
+  // - syncing channels at certain points
+  // - restricting what can be posted at which points
+  // - setting min/max time intervals per phase
+  phase: ElectionPhase,
 
   // For detecting rollbacks or errors
   seq: Int
@@ -94,6 +102,7 @@ pub fn add_subchannels(old_state: AdminChannelState, new_channels: List<ChannelI
     old_state.admin, // should be unchanged
     list.concat(new_channels, old_state.subchannels), // TODO sort here?
     [], // should be reset on each non-post tx
+    old_state.phase,
     old_state.seq + 1 // should be incremented
   )
 }
@@ -105,6 +114,7 @@ pub fn rm_subchannels(old_state: AdminChannelState, channels_to_rm: List<Channel
     old_state.admin, // should be unchanged
     remove_elements(old_state.subchannels, channels_to_rm),
     [], // should be reset on each non-post tx
+    old_state.phase,
     old_state.seq + 1 // should be incremented
   )
 }
@@ -117,6 +127,7 @@ pub fn post_public_records(old_state: ChannelState, records: List<PublicRecord>)
       old.admin,
       old.subchannels,
       records, // should replace the old list
+      old.phase, // TODO should this be allowed to transition?
       old.seq + 1, // should be incremented
     ))
     SubChannel(old) -> SubChannel(SubChannelState(
