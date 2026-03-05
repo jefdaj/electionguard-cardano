@@ -146,12 +146,16 @@ pub fn validate_admin_spend(
       // expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, stt_name, script_addr, 1)
       // expect InlineDatum(new_state) = stt_output.datum
       // expect new_state: AdminChannelState = new_state
-      let pub_signed = tx_signed_by(self, new_admin_state.admin) ?
+      let vkh_signed = tx_signed_by(self, new_admin_state.admin) ?
       let new_records_empty = (list.length(new_admin_state.new_records) == 0) ?
+      let subchannels_empty = (list.length(new_admin_state.subchannels) == 0) ?
       let seq_zero = (new_admin_state.seq == 0) ?
-      // and {
-      pub_signed
-      // }
+      and {
+        vkh_signed,
+        new_records_empty,
+        subchannels_empty,
+        seq_zero,
+      }
     }
 
     // TODO write these next
@@ -159,12 +163,15 @@ pub fn validate_admin_spend(
     RmSubChannels  { .. } -> { todo  @"rm subchannels" }
 
     EndElection -> {
-      expect Some(AdminChannelState { admin, .. }) = old_state
+      expect Some(AdminChannelState { admin, subchannels, .. }) = old_state
       expect None = new_state
-      let pub_signed = tx_signed_by(self, admin) ?
-      pub_signed
+      let vkh_signed = tx_signed_by(self, admin) ?
+      let subchannels_empty = (list.length(subchannels) == 0) ?
+      and {
+        vkh_signed,
+        subchannels_empty,
+      }
       // TODO require ADA goes back to admin or main channel
-      // TODO require that channels is empty (burned channel stts already)
     }
   }
 }
