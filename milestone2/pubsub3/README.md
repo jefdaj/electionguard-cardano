@@ -24,7 +24,6 @@ TODO:
 * [x] contract has an explicit election step/stage/phase variable
 * [ ] contract holds and distributes tADA to cover posting fees
 * [ ] contract returns tADA to admin when closing main channel
-* [ ] contract syncs main channel with subchannels on (some) transitions?
 
 Before running the main election script or tests,
 you need to build the validator with Aiken.
