@@ -70,9 +70,9 @@ pub fn validate_admin_mint(
 // This is defined by the redeemer; the datum can be a regular or admin state.
 // (But the datum can't be None)
 pub fn validate_regular_spend(
-  old_datum: ChannelState,
-  new_datum: ChannelState,
-  redeemer: RegularAction,
+  old_state: ChannelState,
+  new_state: ChannelState,
+  action: RegularAction,
   self: Transaction,
   policy_id: PolicyId,
   stt_name: ByteArray,
@@ -81,24 +81,24 @@ pub fn validate_regular_spend(
 
   // regular actions must always preserve the STT
   // expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, stt_name, script_addr, 1)
-  // expect InlineDatum(new_datum) = stt_output.datum
+  // expect InlineDatum(new_state) = stt_output.datum
 
   // TODO back to a when clause once there's more than one regular action
-  let PostPublicRecords = redeemer
+  let PostPublicRecords = action
 
-  let (old_vkh, old_seq) = when old_datum is {
+  let (old_vkh, old_seq) = when old_state is {
     AdminChannel(AdminChannelState { admin, seq, .. }) -> (admin, seq)
     SubChannel(SubChannelState { publisher, seq, .. }) -> (publisher, seq)
   }
 
-  let (new_vkh, new_seq, new_records) = when old_datum is {
+  let (new_vkh, new_seq, new_records) = when old_state is {
     AdminChannel(_) -> {
-      expect AdminChannel(new_state) = new_datum
-      (new_state.admin, new_state.seq, new_state.new_records)
+      expect AdminChannel(new_admin_state) = new_state
+      (new_admin_state.admin, new_admin_state.seq, new_admin_state.new_records)
     }
     SubChannel(_) -> {
-      expect SubChannel(new_state) = new_datum
-      (new_state.publisher, new_state.seq, new_state.new_records)
+      expect SubChannel(new_sub_state) = new_state
+      (new_sub_state.publisher, new_sub_state.seq, new_sub_state.new_records)
     }
   }
 
@@ -120,13 +120,13 @@ pub fn validate_regular_spend(
 pub fn validate_admin_spend(
   old_state: Option<AdminChannelState>,
   new_state: AdminChannelState,
-  redeemer: AdminAction,
+  action: AdminAction,
   self: Transaction,
   // policy_id: PolicyId,
   // stt_name: ByteArray,
   // script_addr: Address
 ) -> Bool {
-  when redeemer is {
+  when action is {
     InitElection -> {
 
       // This is currently true, but remember to remove it if we run into a
