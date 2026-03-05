@@ -17,7 +17,7 @@ use election/state.{
   add_subchannels, rm_subchannels, post_public_records,
 }
 use election/phase.{
-  ElectionConfigPhase, ConfigChannelsPhase,
+  ElectionConfigPhase, ConfigOnboardingPhase,
   is_initial_phase, is_final_phase,
   is_valid_phase_transition,
 }
@@ -163,9 +163,9 @@ pub fn validate_admin_spend(
       let new_channels_unique = are_disjoint(old_admin_state.subchannels, channels)
       let expected_new_admin_state = add_subchannels(old_admin_state, channels)
       let new_state_as_expected = new_admin_state == expected_new_admin_state
-      let valid_old_phase = old_admin_state.phase == ElectionConfigPhase(ConfigChannelsPhase)
+      let valid_old_phase = old_admin_state.phase == ElectionConfigPhase(ConfigOnboardingPhase)
 
-      // The new phase could still be ConfigChannelsPhase, or it could advance to ConfigCeremonyPhase
+      // The new phase could still be ConfigOnboardingPhase, or it could advance to ConfigCeremonyPhase
       let valid_transition = is_valid_phase_transition(old_admin_state.phase, new_admin_state.phase)
 
       and {
