@@ -3,7 +3,7 @@
 // ballots phase we don't need to keep posting the config.
 pub type ElectionPhase {
   ElectionConfigPhase(ConfigPhase)
-  ElectionBallotsPhase
+  ElectionVotingPhase // TODO rename ballots -> voting in electionguard code
   ElectionResultsPhase(ResultsPhase)
   ElectionVerifyPhase
   ElectionFinalizePhase // TODO adjust electionguard code to add this
@@ -47,8 +47,8 @@ fn is_valid_phase_advance(old: ElectionPhase, new: ElectionPhase) -> Bool {
     ElectionConfigPhase(ConfigAnnouncePhase)  -> new == ElectionConfigPhase(ConfigChannelsPhase)
     ElectionConfigPhase(ConfigChannelsPhase)  -> new == ElectionConfigPhase(ConfigCeremonyPhase)
     ElectionConfigPhase(ConfigCeremonyPhase)  -> new == ElectionConfigPhase(ConfigFinalizePhase)
-    ElectionConfigPhase(ConfigFinalizePhase)  -> new == ElectionBallotsPhase
-    ElectionBallotsPhase                      -> new == ElectionResultsPhase(ResultsTallyPhase)
+    ElectionConfigPhase(ConfigFinalizePhase)  -> new == ElectionVotingPhase
+    ElectionVotingPhase                       -> new == ElectionResultsPhase(ResultsTallyPhase)
     ElectionResultsPhase(ResultsTallyPhase)   -> new == ElectionResultsPhase(ResultsDecryptPhase)
     ElectionResultsPhase(ResultsDecryptPhase) -> new == ElectionResultsPhase(ResultsSummaryPhase)
     ElectionResultsPhase(ResultsSummaryPhase) -> new == ElectionVerifyPhase

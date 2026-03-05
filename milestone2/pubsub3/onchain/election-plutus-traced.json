@@ -239,7 +239,7 @@
           ]
         },
         {
-          "title": "ElectionBallotsPhase",
+          "title": "ElectionVotingPhase",
           "dataType": "constructor",
           "index": 1,
           "fields": []
