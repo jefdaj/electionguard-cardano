@@ -35,8 +35,8 @@ pub fn validate_admin_mint(
 
     InitElection -> {
       expect Some(_oneshot_input) = self.inputs |> find_input(oneshot_ref)
-      let stt_minted = tx_mints(self, policy_id, stt_name, 1) ?
-      stt_minted
+      let mints_admin_stt = tx_mints(self, policy_id, stt_name, 1) ?
+      mints_admin_stt
     }
 
     AddSubChannels { channels } -> {
@@ -51,20 +51,27 @@ pub fn validate_admin_mint(
     RmSubChannels { channels } -> {
       let admin_stt_unchanged = tx_mints(self, policy_id, stt_name, 0) ?
       let burns_channel_stts = tx_mints_all(self, policy_id, channels, -1) ?
-      // let state_updated = 
       and {
         admin_stt_unchanged,
         burns_channel_stts,
-        // state_updated
       }
     }
 
     EndElection -> {
-      let stt_burned = tx_mints(self, policy_id, stt_name, -1) ?
-      stt_burned
+      let burns_admin_stt = tx_mints(self, policy_id, stt_name, -1) ?
+      burns_admin_stt
     }
 
   }
+}
+
+pub fn validate_regular_mint(
+  policy_id: PolicyId,
+  self: Transaction,
+) -> Bool {
+  // TODO write this next
+  // TODO just ensure that all the quantities involving our policy_id are 0
+  // TODO probably a good case for a util fn too
 }
 
 // This is defined by the redeemer; the datum can be a regular or admin state.
@@ -119,7 +126,7 @@ pub fn validate_regular_spend(
 // This is defined by the redeemer; the datum may be none or an admin state.
 pub fn validate_admin_spend(
   old_state: Option<AdminChannelState>,
-  new_state: AdminChannelState,
+  new_state: Option<AdminChannelState>,
   action: AdminAction,
   self: Transaction,
   // policy_id: PolicyId,
@@ -134,27 +141,30 @@ pub fn validate_admin_spend(
       // TODO remove anyway, since it's not technically required?
       expect None = old_state
 
+      expect Some(new_admin_state) = new_state
+
       // expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, stt_name, script_addr, 1)
       // expect InlineDatum(new_state) = stt_output.datum
       // expect new_state: AdminChannelState = new_state
-      let pub_signed = tx_signed_by(self, new_state.admin) ?
-      let new_records_empty = (list.length(new_state.new_records) == 0) ?
-      let seq_zero = (new_state.seq == 0) ?
-      and {
-        pub_signed,
-        new_records_empty,
-        seq_zero
-      }
+      let pub_signed = tx_signed_by(self, new_admin_state.admin) ?
+      let new_records_empty = (list.length(new_admin_state.new_records) == 0) ?
+      let seq_zero = (new_admin_state.seq == 0) ?
+      // and {
+      pub_signed
+      // }
     }
 
+    // TODO write these next
     AddSubChannels { .. } -> { todo @"add subchannels" }
     RmSubChannels  { .. } -> { todo  @"rm subchannels" }
 
     EndElection -> {
       expect Some(AdminChannelState { admin, .. }) = old_state
+      expect None = new_state
       let pub_signed = tx_signed_by(self, admin) ?
       pub_signed
       // TODO require ADA goes back to admin or main channel
+      // TODO require that channels is empty (burned channel stts already)
     }
   }
 }
@@ -168,7 +178,7 @@ validator election(oneshot_ref: OutputReference) {
   ) {
     when redeemer is {
       AdminAct(action) -> validate_admin_mint(action, policy_id, self, oneshot_ref)
-      RegularAct(_) -> False // TODO add code to allow other tokens to be minted/burned, just not ours
+      RegularAct(_) -> validate_regular_mint(policy_id, self)
     }
   }
 
@@ -184,27 +194,48 @@ validator election(oneshot_ref: OutputReference) {
     expect Script(policy_id) = own_input.output.address.payment_credential
     let script_addr = own_input.output.address
 
+    // TODO helper fn?
+    // This verifies that any action sends the STT back to the script
+    // TODO need a None case for EndElection?
     expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, stt_name, script_addr, 1)
-    expect InlineDatum(new_datum) = stt_output.datum
+
+    // TODO AH, IS THE ISSUE THAT THIS COULD BE NODATUM? IS THERE A HELPER FOR NODATUM -> NONE?
+    // TODO probably split into admin and regular cases...
+    // expect InlineDatum(new_datum) = stt_output.datum
 
     when redeemer is {
+
       AdminAct(admin_act) -> {
         // for admin action:
-        // - may have none, or some prev admin channel state
-        // - but may not have prev subchannel state
-        let old_state: Option<AdminChannelState> = extract_admin_state(old_datum)
-        expect AdminChannel(new_state) = new_datum
-        validate_admin_spend(old_state, new_state, admin_act, self)
+        // - may be missing the old or new channel state
+        // - can't be missing both, but we don't check that here
+        // - channel state(s) must be admin channel states
+        let old_admin_state: Option<AdminChannelState> = extract_admin_state(old_datum)
+        let new_admin_state: Option<AdminChannelState> =
+          when tx_sends_token_to_addr(self, policy_id, stt_name, script_addr, 1) is {
+            None -> None
+            Some(stt_output) -> {
+              expect InlineDatum(new_datum) = stt_output.datum
+              expect AdminChannel(new_admin_state) = new_datum
+              Some(new_admin_state)
+            }
+          }
+        validate_admin_spend(old_admin_state, new_admin_state, admin_act, self)
       }
+
       RegularAct(reg_act) -> {
         // for regular action:
-        // - may have admin or subchannel state
-        // - but must have some prev channel state
+        // - must have old + new channel state
+        // - the old + new states may be either for a regular or admin channel
+        // - the state types must match, but we don't check that here
+        expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, stt_name, script_addr, 1)
+        expect InlineDatum(new_datum) = stt_output.datum
         expect Some(old_state): Option<ChannelState> = old_datum
         expect Some(new_state): Option<ChannelState> = new_datum
         validate_regular_spend(old_state, new_state, reg_act, self, policy_id, stt_name, script_addr)
       }
-    }
-  }
 
+    }
+
+  }
 }
