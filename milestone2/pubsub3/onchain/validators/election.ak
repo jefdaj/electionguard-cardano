@@ -7,7 +7,7 @@ use config
 
 use election/action.{
   ElectionAction, AdminAct, RegularAct,
-  AdminAction, InitElection, EndElection,
+  AdminAction, InitElection, AddSubChannels, RmSubChannels, EndElection,
   RegularAction, PostPublicRecords,
 }
 use election/record.{validate_records}
@@ -27,15 +27,21 @@ pub fn validate_admin_mint(
 ) -> Bool {
   let stt_name = bytearray.concat(config.stt_prefix, "-admin-channel") // TODO clean up
   when action is {
+
     InitElection -> {
       expect Some(_oneshot_input) = self.inputs |> find_input(oneshot_ref)
       let stt_minted = tx_mints(self, policy_id, stt_name, 1) ?
       stt_minted
     }
+
+    AddSubChannels { .. } -> { todo @"add subchannels" }
+    RmSubChannels  { .. } -> { todo  @"rm subchannels" }
+
     EndElection -> {
       let stt_burned = tx_mints(self, policy_id, stt_name, -1) ?
       stt_burned
     }
+
   }
 }
 
@@ -116,6 +122,9 @@ pub fn validate_admin_spend(
         seq_zero
       }
     }
+
+    AddSubChannels { .. } -> { todo @"add subchannels" }
+    RmSubChannels  { .. } -> { todo  @"rm subchannels" }
 
     EndElection -> {
       expect Some(AdminChannelState { admin, .. }) = datum

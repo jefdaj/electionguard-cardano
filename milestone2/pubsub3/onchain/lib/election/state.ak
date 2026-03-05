@@ -7,6 +7,8 @@ use election/utils.{bytearray_join}
 
 use config
 
+// TODO rename Channel?
+
 pub type ChannelId = ByteArray
 
 pub type ChannelState {
