@@ -106,6 +106,16 @@ pub fn bytearray_join(
 //   }
 // }
 
-pub fn lists_are_disjoint(list1: List<a>, list2: List<a>) -> Bool {
+pub fn are_disjoint(list1: List<a>, list2: List<a>) -> Bool {
   !list.any(list1, fn(x) { list.has(list2, x) })
+}
+
+/// Check if all elements from `subset` are found in `superset`
+// pub fn is_subset(subset: List<a>, superset: List<a>) -> Bool {
+// list.all(subset, fn(element) { list.has(superset, element) })
+// }
+
+/// Remove all occurrences of elements in `to_remove` from `source`
+pub fn remove_elements(source: List<a>, to_remove: List<a>) -> List<a> {
+  list.filter(source, fn(item) { !list.has(to_remove, item) })
 }

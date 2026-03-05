@@ -15,13 +15,14 @@ use election/state.{
   ChannelState,
   AdminChannel, AdminChannelState,
   SubChannel, SubChannelState,
-  extract_admin_state, get_stt_name
+  extract_admin_state, get_stt_name,
+  add_subchannels, rm_subchannels, post_public_records,
 }
 use election/utils.{
   tx_mints, tx_mints_all,
   tx_signed_by,
   tx_sends_token_to_addr,
-  lists_are_disjoint,
+  are_disjoint,
 }
 
 pub fn validate_admin_mint(
@@ -81,9 +82,6 @@ pub fn validate_regular_spend(
   new_state: ChannelState,
   action: RegularAction,
   self: Transaction,
-  policy_id: PolicyId,
-  stt_name: ByteArray,
-  script_addr: Address,
 ) -> Bool {
 
   // regular actions must always preserve the STT
@@ -91,34 +89,34 @@ pub fn validate_regular_spend(
   // expect InlineDatum(new_state) = stt_output.datum
 
   // TODO back to a when clause once there's more than one regular action
+  // TODO should new_records be passed as part of the redeemer here too?
   let PostPublicRecords = action
 
-  let (old_vkh, old_seq) = when old_state is {
-    AdminChannel(AdminChannelState { admin, seq, .. }) -> (admin, seq)
-    SubChannel(SubChannelState { publisher, seq, .. }) -> (publisher, seq)
+  let old_vkh = when old_state is {
+    AdminChannel(AdminChannelState { admin, .. }) -> admin
+    SubChannel(SubChannelState { publisher, .. }) -> publisher
   }
 
-  let (new_vkh, new_seq, new_records) = when old_state is {
+  let new_records = when old_state is {
     AdminChannel(_) -> {
       expect AdminChannel(new_admin_state) = new_state
-      (new_admin_state.admin, new_admin_state.seq, new_admin_state.new_records)
+      new_admin_state.new_records
     }
     SubChannel(_) -> {
       expect SubChannel(new_sub_state) = new_state
-      (new_sub_state.publisher, new_sub_state.seq, new_sub_state.new_records)
+      new_sub_state.new_records
     }
   }
 
   let vkh_signed = tx_signed_by(self, old_vkh) ?
-  let vkh_unchanged = new_vkh == old_vkh
-  let seq_incremented = (new_seq == old_seq + 1) ?
   let new_records_valid = validate_records(new_records) ?
+  let expected_new_state = post_public_records(old_state, new_records)
+  let new_state_as_expected = expected_new_state == new_state
 
   and {
     vkh_signed,
-    vkh_unchanged,
-    seq_incremented,
-    new_records_valid
+    new_records_valid,
+    new_state_as_expected,
   }
 
 }
@@ -129,9 +127,6 @@ pub fn validate_admin_spend(
   new_state: Option<AdminChannelState>,
   action: AdminAction,
   self: Transaction,
-  // policy_id: PolicyId,
-  // stt_name: ByteArray,
-  // script_addr: Address
 ) -> Bool {
   when action is {
     InitElection -> {
@@ -158,9 +153,34 @@ pub fn validate_admin_spend(
       }
     }
 
-    // TODO write these next
-    AddSubChannels { .. } -> { todo @"add subchannels" }
-    RmSubChannels  { .. } -> { todo  @"rm subchannels" }
+    // TODO any reason to check or restrict where the new channel STTs are sent?
+    AddSubChannels { channels } -> {
+      expect Some(old_admin_state) = old_state
+      expect Some(new_admin_state) = new_state
+      let vkh_signed = tx_signed_by(self, new_admin_state.admin) ?
+      let new_channels_valid  = are_disjoint(channels, ["admin"]) // TODO enforce [a-z]*[0-9]*?
+      let new_channels_unique = are_disjoint(old_admin_state.subchannels, channels)
+      let expected_new_admin_state = add_subchannels(old_admin_state, channels)
+      let new_state_as_expected = new_admin_state == expected_new_admin_state
+      and {
+        vkh_signed,
+        new_channels_valid,
+        new_channels_unique,
+        new_state_as_expected,
+      }
+    }
+
+    RmSubChannels { channels } -> {
+      expect Some(old_admin_state) = old_state
+      expect Some(new_admin_state) = new_state
+      let vkh_signed = tx_signed_by(self, new_admin_state.admin) ?
+      let expected_new_admin_state = rm_subchannels(old_admin_state, channels)
+      let new_state_as_expected = new_admin_state == expected_new_admin_state
+      and {
+        vkh_signed,
+        new_state_as_expected,
+      }
+    }
 
     EndElection -> {
       expect Some(AdminChannelState { admin, subchannels, .. }) = old_state
@@ -204,11 +224,7 @@ validator election(oneshot_ref: OutputReference) {
     // TODO helper fn?
     // This verifies that any action sends the STT back to the script
     // TODO need a None case for EndElection?
-    expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, stt_name, script_addr, 1)
-
-    // TODO AH, IS THE ISSUE THAT THIS COULD BE NODATUM? IS THERE A HELPER FOR NODATUM -> NONE?
-    // TODO probably split into admin and regular cases...
-    // expect InlineDatum(new_datum) = stt_output.datum
+    // expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, stt_name, script_addr, 1)
 
     when redeemer is {
 
@@ -217,6 +233,7 @@ validator election(oneshot_ref: OutputReference) {
         // - may be missing the old or new channel state
         // - can't be missing both, but we don't check that here
         // - channel state(s) must be admin channel states
+	// TODO should the STT be tested in validate_admin_spend rather than here?
         let old_admin_state: Option<AdminChannelState> = extract_admin_state(old_datum)
         let new_admin_state: Option<AdminChannelState> =
           when tx_sends_token_to_addr(self, policy_id, stt_name, script_addr, 1) is {
@@ -235,11 +252,12 @@ validator election(oneshot_ref: OutputReference) {
         // - must have old + new channel state
         // - the old + new states may be either for a regular or admin channel
         // - the state types must match, but we don't check that here
+	// TODO should the STT be tested in validate_regular_spend rather than here?
         expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, stt_name, script_addr, 1)
         expect InlineDatum(new_datum) = stt_output.datum
         expect Some(old_state): Option<ChannelState> = old_datum
         expect Some(new_state): Option<ChannelState> = new_datum
-        validate_regular_spend(old_state, new_state, reg_act, self, policy_id, stt_name, script_addr)
+        validate_regular_spend(old_state, new_state, reg_act, self)
       }
 
     }

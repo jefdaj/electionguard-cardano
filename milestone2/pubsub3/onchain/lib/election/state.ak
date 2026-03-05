@@ -1,9 +1,10 @@
+use aiken/collection/list
 use aiken/crypto.{VerificationKeyHash}
 // use cardano/transaction.{InlineDatum, Output}
 
 use election/record.{PublicRecord}
 
-use election/utils.{bytearray_join}
+use election/utils.{bytearray_join, remove_elements}
 
 use config
 
@@ -78,6 +79,47 @@ pub fn extract_subchannel_state(state: ChannelState) -> Option<SubChannelState> 
   when state is {
     SubChannel(subchannel_state) -> Some(subchannel_state)
     AdminChannel(_) -> None
+  }
+}
+
+// Note that this will work even if it makes an invalid list of subchannels.
+// TODO should those checks go here too?
+pub fn add_subchannels(old_state: AdminChannelState, new_channels: List<ChannelId>) -> AdminChannelState {
+  AdminChannelState(
+    old_state.admin, // should be unchanged
+    list.concat(new_channels, old_state.subchannels), // TODO sort here?
+    [], // should be reset on each non-post tx
+    old_state.seq + 1 // should be incremented
+  )
+}
+
+// Note that this doesn't check whether the channels removed make sense.
+// TODO should those checks also go here?
+pub fn rm_subchannels(old_state: AdminChannelState, channels_to_rm: List<ChannelId>) -> AdminChannelState {
+  AdminChannelState(
+    old_state.admin, // should be unchanged
+    remove_elements(old_state.subchannels, channels_to_rm),
+    [], // should be reset on each non-post tx
+    old_state.seq + 1 // should be incremented
+  )
+}
+
+// Note that this doesn't check validity of the records
+// TODO should those checks also go here?
+pub fn post_public_records(old_state: ChannelState, records: List<PublicRecord>) -> ChannelState {
+  when old_state is {
+    AdminChannel(old) -> AdminChannel(AdminChannelState(
+      old.admin,
+      old.subchannels,
+      records, // should replace the old list
+      old.seq + 1, // should be incremented
+    ))
+    SubChannel(old) -> SubChannel(SubChannelState(
+      old.channel_id,
+      old.publisher,
+      records, // should be replaced
+      old.seq + 1, // should be incremented
+    ))
   }
 }
 
