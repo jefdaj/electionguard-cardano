@@ -2,7 +2,7 @@ use aiken/primitive/bytearray
 use aiken/collection/list
 use cardano/transaction.{OutputReference, Transaction, InlineDatum, find_input}
 use cardano/address.{Script, Address}
-use cardano/assets.{PolicyId}
+use cardano/assets.{PolicyId, has_any_nft}
 use config
 
 use election/action.{
@@ -66,13 +66,9 @@ pub fn validate_admin_mint(
   }
 }
 
-pub fn validate_regular_mint(
-  policy_id: PolicyId,
-  self: Transaction,
-) -> Bool {
-  // TODO write this next
-  // TODO just ensure that all the quantities involving our policy_id are 0
-  // TODO probably a good case for a util fn too
+// Regular actions shouldn't mint or burn any of our STTs.
+pub fn validate_regular_mint(policy_id: PolicyId, self: Transaction) -> Bool {
+  ! has_any_nft(self.mint, policy_id) 
 }
 
 // This is defined by the redeemer; the datum can be a regular or admin state.
