@@ -4,8 +4,8 @@ pub type ElectionAction {
 }
 
 pub type AdminAction {
-  OpenChannel  // TODO rename OpenElection?
-  CloseChannel // TODO rename CloseElection?
+  InitElection
+  EndElection
 }
 
 pub type RegularAction {

@@ -4,7 +4,7 @@
 // use cardano/assets.{PolicyId}
 // use cardano/transaction.{Transaction, Input, Output, OutputReference, NoDatum}
 // use election
-// use election/types.{ChannelState, OpenChannel}
+// use election/types.{ChannelState, InitElection}
 // use election/utils as u
 //
 // const state1: ChannelState =
@@ -37,7 +37,7 @@
 //     oneshot_utxo,
 // 
 //     /// mint args
-//     OpenChannel,
+//     InitElection,
 //     oneshot_hash, // TODO have to make this match the oneshot_utxo right?
 //     Transaction {
 //       ..transaction.placeholder,

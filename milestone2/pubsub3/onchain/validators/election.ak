@@ -7,7 +7,7 @@ use config
 
 use election/action.{
   ElectionAction, AdminAct, RegularAct,
-  AdminAction, OpenChannel, CloseChannel,
+  AdminAction, InitElection, EndElection,
   RegularAction, PostPublicRecords,
 }
 use election/record.{validate_records}
@@ -27,14 +27,14 @@ pub fn validate_admin_mint(
 ) -> Bool {
   let stt_name = bytearray.concat(config.stt_prefix, "-admin-channel") // TODO clean up
   when action is {
-    CloseChannel -> {
-      let stt_burned = tx_mints(self, policy_id, stt_name, -1) ?
-      stt_burned
-    }
-    OpenChannel -> {
+    InitElection -> {
       expect Some(_oneshot_input) = self.inputs |> find_input(oneshot_ref)
       let stt_minted = tx_mints(self, policy_id, stt_name, 1) ?
       stt_minted
+    }
+    EndElection -> {
+      let stt_burned = tx_mints(self, policy_id, stt_name, -1) ?
+      stt_burned
     }
   }
 }
@@ -97,7 +97,7 @@ pub fn validate_admin_spend(
   script_addr: Address
 ) -> Bool {
   when redeemer is {
-    OpenChannel -> {
+    InitElection -> {
 
       // This is currently true, but remember to remove it if we run into a
       // use case for opening a channel starting from another script.
@@ -117,7 +117,7 @@ pub fn validate_admin_spend(
       }
     }
 
-    CloseChannel -> {
+    EndElection -> {
       expect Some(AdminChannelState { admin, .. }) = datum
       let pub_signed = tx_signed_by(self, admin) ?
       pub_signed
