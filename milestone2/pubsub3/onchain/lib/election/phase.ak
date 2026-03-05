@@ -8,11 +8,12 @@ pub type ElectionPhase {
   ElectionVerifyPhase
 }
 
+// TODO adjust electionguard code to reflect ConfigChannelsPhase idea
 pub type ConfigPhase {
   ConfigAnnouncePhase
+  ConfigChannelsPhase // mint all channels + announce devices
   ConfigCeremonyPhase
-  ConfigFinalizePhase // TODO is that a good name?
-  ConfigDevicesPhase
+  ConfigFinalizePhase // TODO adjust electionguard code to refer to 3_election this way
 }
 
 // TODO any reason to add detail about these?
@@ -25,5 +26,20 @@ pub type ConfigPhase {
 pub type ResultsPhase {
   ResultsTallyPhase
   ResultsDecryptPhase
-  ResultsSummaryPhase
+  ResultsSummaryPhase // TODO remove as redundant with ElectionVerifyPhase?
+}
+
+// TODO in InitElection and EndElection, check for initial + final phases respectively
+pub fn is_valid_phase_transition(old: ElectionPhase, new: ElectionPhase) -> Bool {
+  when old is {
+    ElectionConfigPhase(ConfigAnnouncePhase)  -> new == ElectionConfigPhase(ConfigChannelsPhase)
+    ElectionConfigPhase(ConfigChannelsPhase)  -> new == ElectionConfigPhase(ConfigCeremonyPhase)
+    ElectionConfigPhase(ConfigCeremonyPhase)  -> new == ElectionConfigPhase(ConfigFinalizePhase)
+    ElectionConfigPhase(ConfigFinalizePhase)  -> new == ElectionBallotsPhase
+    ElectionBallotsPhase                      -> new == ElectionResultsPhase(ResultsTallyPhase)
+    ElectionResultsPhase(ResultsTallyPhase)   -> new == ElectionResultsPhase(ResultsDecryptPhase)
+    ElectionResultsPhase(ResultsDecryptPhase) -> new == ElectionResultsPhase(ResultsSummaryPhase)
+    ElectionResultsPhase(ResultsSummaryPhase) -> new == ElectionVerifyPhase
+    ElectionVerifyPhase -> False
+  }
 }
