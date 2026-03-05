@@ -15,16 +15,16 @@ on-chain code
 TODO:
 
 * [x] plain CIDs -> records with metadata
-* [ ] custom STT names including election name + channel name (egc-test1234-admin-stt etc)
+* [x] custom STT names including election name + channel name (egc-test1234-admin-stt etc)
+* [x] each subchannel has one authorized publisher for now
+* [x] subchannels are just a different thing for now, rather than nested "regular" channels
+* [x] admin is the only one who can close channels
 * [ ] contract includes minting + burning subchannels
-* [ ] each subchannel has one authorized publisher for now
-* [ ] admin is the only one who can close channels
-* [ ] subchannels are just a different thing for now, rather than nested "regular" channels
 * [ ] contract holds and distributes tADA to cover posting fees
 * [ ] contract returns tADA to admin when closing main channel
 * [ ] all channels can be minted or burned at once?
 * [ ] contract has an explicit election step/stage/phase variable
-* [ ] contract syncs main channel with subchannels on (some) transitions
+* [ ] contract syncs main channel with subchannels on (some) transitions?
 
 Before running the main election script or tests,
 you need to build the validator with Aiken.
