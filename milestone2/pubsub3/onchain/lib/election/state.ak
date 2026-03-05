@@ -59,10 +59,15 @@ pub fn get_channel_id(state: Option<ChannelState>) -> ChannelId {
   }
 }
 
-// TODO use this
+// Note that you can set state to None to use this in the admin mint validator.
+// TODO is that weird and confusing?
 pub fn get_stt_name(state: Option<ChannelState>) -> ByteArray {
   let channel_name = get_channel_id(state)
   bytearray_join([config.stt_prefix, channel_name, "channel"], "-")
+}
+
+pub fn get_admin_stt_name() -> ByteArray {
+  get_stt_name(None)
 }
 
 // TODO remove?

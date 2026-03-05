@@ -1,9 +1,7 @@
-use aiken/primitive/bytearray
 use aiken/collection/list
 use cardano/transaction.{OutputReference, Transaction, InlineDatum, find_input}
 use cardano/address.{Script, Address}
 use cardano/assets.{PolicyId, has_any_nft}
-use config
 
 use election/action.{
   ElectionAction, AdminAct, RegularAct,
@@ -15,7 +13,7 @@ use election/state.{
   ChannelState,
   AdminChannel, AdminChannelState,
   SubChannel, SubChannelState,
-  extract_admin_state, get_stt_name,
+  extract_admin_state, get_stt_name, get_admin_stt_name,
   add_subchannels, rm_subchannels, post_public_records,
 }
 use election/utils.{
@@ -31,7 +29,7 @@ pub fn validate_admin_mint(
   self: Transaction,
   oneshot_ref: OutputReference
 ) -> Bool {
-  let stt_name = bytearray.concat(config.stt_prefix, "-admin-channel") // TODO clean up
+  let stt_name = get_admin_stt_name()
   when action is {
 
     InitElection -> {
@@ -216,11 +214,6 @@ validator election(oneshot_ref: OutputReference) {
     expect Some(own_input) = self.inputs |> find_input(own_ref)
     expect Script(policy_id) = own_input.output.address.payment_credential
     let script_addr = own_input.output.address
-
-    // TODO helper fn?
-    // This verifies that any action sends the STT back to the script
-    // TODO need a None case for EndElection?
-    // expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, stt_name, script_addr, 1)
 
     when redeemer is {
 
