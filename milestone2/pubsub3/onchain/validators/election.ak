@@ -21,6 +21,7 @@ use election/utils.{
   tx_mints, tx_mints_all,
   tx_signed_by,
   tx_sends_token_to_addr,
+  lists_are_disjoint,
 }
 
 pub fn validate_admin_mint(
@@ -41,13 +42,9 @@ pub fn validate_admin_mint(
     AddSubChannels { channels } -> {
       let admin_stt_unchanged = tx_mints(self, policy_id, stt_name, 0) ?
       let mints_channel_stts = tx_mints_all(self, policy_id, channels, 1) ?
-      // let state_updated = ...
-      // let unique_channel_ids = ...
       and {
         admin_stt_unchanged,
-	mints_channel_stts,
-	// state_updated,
-	// unique_channel_ids,
+        mints_channel_stts,
       }
     }
 
@@ -57,8 +54,8 @@ pub fn validate_admin_mint(
       // let state_updated = 
       and {
         admin_stt_unchanged,
-	burns_channel_stts,
-	// state_updated
+        burns_channel_stts,
+        // state_updated
       }
     }
 
@@ -73,7 +70,8 @@ pub fn validate_admin_mint(
 // This is defined by the redeemer; the datum can be a regular or admin state.
 // (But the datum can't be None)
 pub fn validate_regular_spend(
-  datum: ChannelState,
+  old_datum: ChannelState,
+  new_datum: ChannelState,
   redeemer: RegularAction,
   self: Transaction,
   policy_id: PolicyId,
@@ -82,24 +80,24 @@ pub fn validate_regular_spend(
 ) -> Bool {
 
   // regular actions must always preserve the STT
-  expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, stt_name, script_addr, 1)
-  expect InlineDatum(new_datum) = stt_output.datum
+  // expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, stt_name, script_addr, 1)
+  // expect InlineDatum(new_datum) = stt_output.datum
 
   // TODO back to a when clause once there's more than one regular action
   let PostPublicRecords = redeemer
 
-  let (old_vkh, old_seq) = when datum is {
+  let (old_vkh, old_seq) = when old_datum is {
     AdminChannel(AdminChannelState { admin, seq, .. }) -> (admin, seq)
     SubChannel(SubChannelState { publisher, seq, .. }) -> (publisher, seq)
   }
 
-  let (new_vkh, new_seq, new_records) = when datum is {
+  let (new_vkh, new_seq, new_records) = when old_datum is {
     AdminChannel(_) -> {
-      expect new_state: AdminChannelState = new_datum
+      expect AdminChannel(new_state) = new_datum
       (new_state.admin, new_state.seq, new_state.new_records)
     }
     SubChannel(_) -> {
-      expect new_state: SubChannelState = new_datum
+      expect SubChannel(new_state) = new_datum
       (new_state.publisher, new_state.seq, new_state.new_records)
     }
   }
@@ -120,12 +118,13 @@ pub fn validate_regular_spend(
 
 // This is defined by the redeemer; the datum may be none or an admin state.
 pub fn validate_admin_spend(
-  datum: Option<AdminChannelState>,
+  old_state: Option<AdminChannelState>,
+  new_state: AdminChannelState,
   redeemer: AdminAction,
   self: Transaction,
-  policy_id: PolicyId,
-  stt_name: ByteArray,
-  script_addr: Address
+  // policy_id: PolicyId,
+  // stt_name: ByteArray,
+  // script_addr: Address
 ) -> Bool {
   when redeemer is {
     InitElection -> {
@@ -133,11 +132,11 @@ pub fn validate_admin_spend(
       // This is currently true, but remember to remove it if we run into a
       // use case for opening a channel starting from another script.
       // TODO remove anyway, since it's not technically required?
-      expect None = datum
+      expect None = old_state
 
-      expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, stt_name, script_addr, 1)
-      expect InlineDatum(new_datum) = stt_output.datum
-      expect new_state: AdminChannelState = new_datum
+      // expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, stt_name, script_addr, 1)
+      // expect InlineDatum(new_state) = stt_output.datum
+      // expect new_state: AdminChannelState = new_state
       let pub_signed = tx_signed_by(self, new_state.admin) ?
       let new_records_empty = (list.length(new_state.new_records) == 0) ?
       let seq_zero = (new_state.seq == 0) ?
@@ -152,7 +151,7 @@ pub fn validate_admin_spend(
     RmSubChannels  { .. } -> { todo  @"rm subchannels" }
 
     EndElection -> {
-      expect Some(AdminChannelState { admin, .. }) = datum
+      expect Some(AdminChannelState { admin, .. }) = old_state
       let pub_signed = tx_signed_by(self, admin) ?
       pub_signed
       // TODO require ADA goes back to admin or main channel
@@ -174,31 +173,36 @@ validator election(oneshot_ref: OutputReference) {
   }
 
   spend(
-    datum: Option<ChannelState>,
+    old_datum: Option<ChannelState>,
     redeemer: ElectionAction,
     own_ref: OutputReference,
     self: Transaction,
   ) {
 
-    let stt_name = get_stt_name(datum)
+    let stt_name = get_stt_name(old_datum)
     expect Some(own_input) = self.inputs |> find_input(own_ref)
     expect Script(policy_id) = own_input.output.address.payment_credential
     let script_addr = own_input.output.address
+
+    expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, stt_name, script_addr, 1)
+    expect InlineDatum(new_datum) = stt_output.datum
 
     when redeemer is {
       AdminAct(admin_act) -> {
         // for admin action:
         // - may have none, or some prev admin channel state
         // - but may not have prev subchannel state
-        let admin_state: Option<AdminChannelState> = extract_admin_state(datum)
-        validate_admin_spend(admin_state, admin_act, self, policy_id, stt_name, script_addr)
+        let old_state: Option<AdminChannelState> = extract_admin_state(old_datum)
+        expect AdminChannel(new_state) = new_datum
+        validate_admin_spend(old_state, new_state, admin_act, self)
       }
       RegularAct(reg_act) -> {
         // for regular action:
         // - may have admin or subchannel state
         // - but must have some prev channel state
-        expect Some(state) = datum
-        validate_regular_spend(state, reg_act, self, policy_id, stt_name, script_addr)
+        expect Some(old_state): Option<ChannelState> = old_datum
+        expect Some(new_state): Option<ChannelState> = new_datum
+        validate_regular_spend(old_state, new_state, reg_act, self, policy_id, stt_name, script_addr)
       }
     }
   }

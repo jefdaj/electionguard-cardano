@@ -105,3 +105,7 @@ pub fn bytearray_join(
 //     None -> None
 //   }
 // }
+
+pub fn lists_are_disjoint(list1: List<a>, list2: List<a>) -> Bool {
+  !list.any(list1, fn(x) { list.has(list2, x) })
+}
