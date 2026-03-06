@@ -81,15 +81,17 @@ pub fn no_mints_for_policy(policy_id: PolicyId, tx: Transaction) -> Bool {
   ! has_any_nft(tx.mint, policy_id)
 }
 
-// In a regular spend both old_state and new_state always exist.
-// Their types must also match: both AdminChannelState or both SubChannelState.
+// In a regular spend both old_state and new_state always exist,
+// but we don't know whether they're admin or subchannel states yet.
 pub fn validate_regular_spend(
   old: ChannelState,
   new: ChannelState,
   act: RegularAction,
 ) -> Bool {
   let PostPublicRecords = act
-  let records = when old is {
+
+  // Old and new types must match: both AdminChannel or both SubChannel
+  let new_records = when old is {
     AdminChannel(_) -> {
       expect AdminChannel(new_admin) = new
       new_admin.new_records
@@ -99,12 +101,17 @@ pub fn validate_regular_spend(
       new_sub.new_records
     }
   }
-  let records_valid = validate_records(records) ?
-  let expected = post_public_records(old, records)
+
+  // New state must be exactly as expected: new_records replaced, seq incremented
+  let expected = post_public_records(old, new_records)
   let state_valid = (expected == new) ?
+
+  // And the new records (or at least their CIDs + metadata) must be valid
+  let records_valid = validate_records(new_records) ?
+
   and {
-    records_valid,
     state_valid,
+    records_valid,
   }
 }
 
