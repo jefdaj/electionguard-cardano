@@ -137,6 +137,7 @@ pub fn validate_admin_spend(
   self: Transaction,
 ) -> Bool {
   when action is {
+
     InitElection -> {
 
       // This is currently true, but remember to remove it if we run into a
@@ -160,7 +161,6 @@ pub fn validate_admin_spend(
         subchannels_empty,
         seq_zero,
 	initial_phase,
-	// todo @"admin channel funds above minimum" // TODO and define a reasonable minimum
       }
     }
 
@@ -185,9 +185,9 @@ pub fn validate_admin_spend(
         new_state_as_expected,
 	valid_old_phase,
 	valid_transition,
-	// todo @"all channel funds above minimum" // TODO and define a reasonable minimum
-        // todo @"channel funds stay with STT",
+	// TODO set a min amount of channel funds to start with? it would work to omit
       }
+
     }
 
     RmSubChannels { channels } -> {

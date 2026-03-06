@@ -21,23 +21,24 @@ pub type AdminAction {
   // Remove one or more subchannels and burn the corresponding STTs.
   RmSubChannels { channels: List<ChannelId> }
 
-  // Advance to the next election phase.
-  // The "only" is because the phase can also be advanced during other
-  // operations, which saves transaction costs:
-  // - AddSubChannels
-  // - RmSubChannesl
-  // - PostPublicRecords (admin only)
-  // In later iterations, most/all of the phases will probably have specific
-  // conditions and transitions can happen automatically once those conditions
-  // are met.
-  AdvancePhaseOnly
-
-  // Rebalance funds without advancing to the next phase.
   // Makes sure each channel has enough ADA to cover posting fees. Admin can
   // move ADA between channels or add more, but can't remove it from script
-  // control. That can only be done at the end of the election.
-  // TODO would a list of channel ids help here?
+  // control. This is almost a no-op from the contract perspective, since that
+  // check is run for every action already. Note that it still has to update
+  // the state of the channels being rebalanced, which can compete with using
+  // those same UTXOs to post records. So don't do it more often than needed.
   RebalanceFunds
+
+  // Advance to the next election phase.
+  // The "only" here is because the phase can also be advanced during
+  // other actions to save on fees and confirmation time:
+  // - AddSubChannels
+  // - RmSubChannels
+  // - PostPublicRecords (to admin channel)
+  // - RebalanceFunds
+  // In later iterations, many/all of the phases will probably have custom
+  // logic for when their conditions are met.
+  AdvancePhaseOnly
 
   // This could probably be done along with RmSubChannels,
   // but I'm keeping them separate for simplicity.
