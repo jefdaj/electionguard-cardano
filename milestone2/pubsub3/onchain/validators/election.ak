@@ -87,7 +87,7 @@ pub fn validate_regular_spend(
   old_state: ChannelState,
   new_state: ChannelState,
   action: RegularAction,
-  self: Transaction, // TODO remove this and move vkh_signed to main spend()
+  // self: Transaction, // TODO remove this and move vkh_signed to main spend()
 ) -> Bool {
 
   // regular actions must always preserve the STT
@@ -97,11 +97,6 @@ pub fn validate_regular_spend(
   // TODO back to a when clause once there's more than one regular action
   // TODO should new_records be passed as part of the redeemer here too?
   let PostPublicRecords = action
-
-  let old_vkh = when old_state is {
-    AdminChannel(AdminChannelState { admin, .. }) -> admin
-    SubChannel(SubChannelState { publisher, .. }) -> publisher
-  }
 
   let new_records = when old_state is {
     AdminChannel(_) -> {
@@ -114,13 +109,13 @@ pub fn validate_regular_spend(
     }
   }
 
-  let vkh_signed = tx_signed_by(self, old_vkh) ?
+  // let vkh_signed = tx_signed_by(self, old_vkh) ?
   let new_records_valid = validate_records(new_records) ?
   let expected_new_state = post_public_records(old_state, new_records)
   let new_state_as_expected = (expected_new_state == new_state) ?
 
   and {
-    vkh_signed,
+    // vkh_signed,
     new_records_valid,
     new_state_as_expected,
     // todo @"channel funds above minimum", // TODO and define a reasonable minimum
@@ -134,7 +129,6 @@ pub fn validate_admin_spend(
   old_state: Option<AdminChannelState>,
   new_state: Option<AdminChannelState>,
   action: AdminAction,
-  // self: Transaction, // TODO remove this and move vkh_signed to main spend()
 ) -> Bool {
   when action is {
 
@@ -147,16 +141,11 @@ pub fn validate_admin_spend(
 
       expect Some(new_admin_state) = new_state
 
-      // expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, stt_name, script_addr, 1)
-      // expect InlineDatum(new_state) = stt_output.datum
-      // expect new_state: AdminChannelState = new_state
-      // let vkh_signed = tx_signed_by(self, new_admin_state.admin) ?
       let new_records_empty = (list.length(new_admin_state.new_records) == 0) ?
       let subchannels_empty = (list.length(new_admin_state.subchannels) == 0) ?
       let seq_zero = (new_admin_state.seq == 0) ?
       let initial_phase = is_initial_phase(new_admin_state.phase) ?
       and {
-        // vkh_signed,
         new_records_empty,
         subchannels_empty,
         seq_zero,
@@ -168,7 +157,6 @@ pub fn validate_admin_spend(
     AddSubChannels { channels } -> {
       expect Some(old_admin_state) = old_state
       expect Some(new_admin_state) = new_state
-      // let vkh_signed = tx_signed_by(self, new_admin_state.admin) ?
       let new_channels_valid  = are_disjoint(channels, ["admin"]) ? // TODO enforce [a-z]*[0-9]*?
       let new_channels_unique = are_disjoint(old_admin_state.subchannels, channels) ?
       let expected_new_admin_state = add_subchannels(old_admin_state, channels)
@@ -179,7 +167,6 @@ pub fn validate_admin_spend(
       let valid_transition = is_valid_phase_transition(old_admin_state.phase, new_admin_state.phase) ?
 
       and {
-        // vkh_signed,
         new_channels_valid,
         new_channels_unique,
         new_state_as_expected,
@@ -193,7 +180,6 @@ pub fn validate_admin_spend(
     RmSubChannels { channels } -> {
       expect Some(old_admin_state) = old_state
       expect Some(new_admin_state) = new_state
-      // let vkh_signed = tx_signed_by(self, new_admin_state.admin) ?
 
       // This seems like it should work, but only because this is a special case of being in the final phase?
       // (Otherwise, would need to adjust phase in expected new state)
@@ -204,7 +190,6 @@ pub fn validate_admin_spend(
       let final_phase = is_final_phase(old_admin_state.phase) ? // TODO allow at other times too?
 
       and {
-        // vkh_signed,
         new_state_as_expected,
 	valid_transition,
 	final_phase,
@@ -218,13 +203,11 @@ pub fn validate_admin_spend(
     RebalanceFunds -> todo @"rebalance channel funds"
 
     EndElection -> {
-      expect Some(AdminChannelState { admin, subchannels, phase, .. }) = old_state
+      expect Some(AdminChannelState { subchannels, phase, .. }) = old_state
       expect None = new_state
-      // let vkh_signed = tx_signed_by(self, admin) ?
       let subchannels_empty = (list.length(subchannels) == 0) ?
       let final_phase = is_final_phase(phase) ?
       and {
-        // vkh_signed,
         subchannels_empty,
 	final_phase,
 	// todo @"dummy logic for deciding what admin can do with channel funds?"
@@ -272,51 +255,66 @@ validator election(oneshot_ref: OutputReference) {
     when redeemer is {
 
       AdminAct(admin_act) -> {
+
         // for admin action:
         // - may be missing the old or new channel state
         // - can't be missing both, but we don't check that here
         // - channel state(s) must be admin channel states
-	// TODO should the STT be tested in validate_admin_spend rather than here?
         let old_admin_state: Option<AdminChannelState> = extract_admin_state(old_datum)
         let new_admin_state: Option<AdminChannelState> =
+	  // TODO make this clearer
           when tx_sends_token_to_addr(self, policy_id, stt_name, script_addr, 1) is {
             None -> None
             Some(stt_output) -> {
               expect InlineDatum(new_datum) = stt_output.datum
               expect AdminChannel(new_admin_state) = new_datum
-              Some(new_admin_state)
+              Some(new_admin_state) // TODO don't shadow var names
             }
           }
 
-	// Can normally get vkh from old state, but not if this is the first step
-	let admin_vkh = when old_admin_state is {
+	// Can normally get vkh from old state, unless this is the first step
+	let vkh = when old_admin_state is {
 	  Some(old_state) -> old_state.admin
 	  None -> {
 	    expect Some(new_state) = new_admin_state
 	    new_state.admin
 	  }
 	}
-        let vkh_signed = tx_signed_by(self, admin_vkh) ?
+        let vkh_signed = tx_signed_by(self, vkh) ?
 
 	and {
 	  vkh_signed,
           ada_retained_during_election,
 	  validate_admin_spend(old_admin_state, new_admin_state, admin_act),
 	}
+
       }
 
       RegularAct(reg_act) -> {
+
         // for regular action:
         // - must have old + new channel state
         // - the old + new states may be either for a regular or admin channel
         // - the state types must match, but we don't check that here
-	// TODO should the STT be tested in validate_regular_spend rather than here?
+	// TODO helper function to check for stt_output?
         expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, stt_name, script_addr, 1)
         expect InlineDatum(new_datum) = stt_output.datum
         expect Some(old_state): Option<ChannelState> = old_datum
         expect Some(new_state): Option<ChannelState> = new_datum
-        ada_retained_during_election && 
-        validate_regular_spend(old_state, new_state, reg_act, self)
+
+        // There's always an old state for regular actions,
+	// but the key is in different fields depending on the channel type
+        let vkh = when old_state is {
+          AdminChannel(AdminChannelState { admin, .. }) -> admin
+          SubChannel(SubChannelState { publisher, .. }) -> publisher
+        }
+        let vkh_signed = tx_signed_by(self, vkh) ?
+
+        and {
+	  vkh_signed,
+          ada_retained_during_election,
+          validate_regular_spend(old_state, new_state, reg_act),
+	}
       }
 
     }
