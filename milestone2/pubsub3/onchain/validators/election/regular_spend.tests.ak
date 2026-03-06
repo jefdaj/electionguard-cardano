@@ -89,7 +89,7 @@ test post_to_subchannel_valid() {
 
   // This should pass
   election.election.spend(
-    oneshot_ref, // TODO is this really where validator params are supposed to go?
+    oneshot_ref, // apparently validator params go here
     Some(old_state),
     redeemer,
     own_ref,
