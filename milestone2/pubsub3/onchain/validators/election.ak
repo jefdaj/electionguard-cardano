@@ -32,7 +32,7 @@ use election/utils.{
 }
 
 pub fn validate_admin_mint(
-  action: AdminAction, // regular actions don't mint or burn
+  action: AdminAction,
   policy_id: PolicyId,
   self: Transaction,
   oneshot_ref: OutputReference
@@ -64,9 +64,9 @@ pub fn validate_admin_mint(
       }
     }
 
-    AdvancePhaseOnly -> todo @"advance phase mint"
+    RebalanceFunds -> no_mints_for_policy(policy_id, self)
 
-    RebalanceFunds -> assert_no_mints(policy_id, self)
+    AdvancePhaseOnly -> no_mints_for_policy(policy_id, self)
 
     EndElection -> {
       let burns_admin_stt = tx_mints(self, policy_id, stt_name, -1) ?
@@ -77,51 +77,29 @@ pub fn validate_admin_mint(
 }
 
 // Confirm that none of our tokens are being minted or burned in a TX.
-pub fn assert_no_mints(policy_id: PolicyId, tx: Transaction) -> Bool {
+pub fn no_mints_for_policy(policy_id: PolicyId, tx: Transaction) -> Bool {
   ! has_any_nft(tx.mint, policy_id)
 }
 
-// This is defined by the redeemer; the datum can be a regular or admin state.
-// (But the datum can't be None)
+// In a regular spend both old_state and new_state always exist.
+// Their types must also match: both AdminChannelState or both SubChannelState.
 pub fn validate_regular_spend(
   old_state: ChannelState,
   new_state: ChannelState,
   action: RegularAction,
-  // self: Transaction, // TODO remove this and move vkh_signed to main spend()
 ) -> Bool {
-
-  // regular actions must always preserve the STT
-  // expect Some(stt_output) = tx_sends_token_to_addr(self, policy_id, stt_name, script_addr, 1)
-  // expect InlineDatum(new_state) = stt_output.datum
-
-  // TODO back to a when clause once there's more than one regular action
-  // TODO should new_records be passed as part of the redeemer here too?
-  let PostPublicRecords = action
-
+  expect PostPublicRecords = action
   let new_records = when old_state is {
-    AdminChannel(_) -> {
-      expect AdminChannel(new_admin_state) = new_state
-      new_admin_state.new_records
-    }
-    SubChannel(_) -> {
-      expect SubChannel(new_sub_state) = new_state
-      new_sub_state.new_records
-    }
+    AdminChannel(new_admin_state) -> new_admin_state.new_records
+    SubChannel(new_sub_state) -> new_sub_state.new_records
   }
-
-  // let vkh_signed = tx_signed_by(self, old_vkh) ?
   let new_records_valid = validate_records(new_records) ?
   let expected_new_state = post_public_records(old_state, new_records)
   let new_state_as_expected = (expected_new_state == new_state) ?
-
   and {
-    // vkh_signed,
     new_records_valid,
     new_state_as_expected,
-    // todo @"channel funds above minimum", // TODO and define a reasonable minimum
-    // todo @"channel funds stay with STT",
   }
-
 }
 
 // This is defined by the redeemer; the datum may be none or an admin state.
@@ -226,7 +204,7 @@ validator election(oneshot_ref: OutputReference) {
   ) {
     when redeemer is {
       AdminAct(action) -> validate_admin_mint(action, policy_id, self, oneshot_ref)
-      RegularAct(_) -> assert_no_mints(policy_id, self)
+      RegularAct(_) -> no_mints_for_policy(policy_id, self)
     }
   }
 
