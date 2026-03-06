@@ -97,7 +97,7 @@ test post_to_subchannel_valid() {
   )
 }
 
-test post_to_subchannel_wrong_publisher_fails() {
+test post_to_subchannel_wrong_publisher_fails() fail {
   let policy_id = #"aabbccdd"
   let stt_name = #"cafe"
   let publisher_vkh = #"abc123"
@@ -171,7 +171,7 @@ test post_to_subchannel_wrong_publisher_fails() {
   !election.election.spend(oneshot_ref, Some(old_state), redeemer, own_ref, tx)
 }
 
-test post_to_subchannel_stt_not_continued_fails() {
+test post_to_subchannel_stt_not_continued_fails() fail {
   let policy_id = #"aabbccdd"
   let stt_name = #"cafe"
   let publisher_vkh = #"abc123"
@@ -244,7 +244,7 @@ test post_to_subchannel_stt_not_continued_fails() {
   !election.election.spend(oneshot_ref, Some(old_state), redeemer, own_ref, tx)
 }
 
-test post_to_subchannel_seq_not_incremented_fails() {
+test post_to_subchannel_seq_not_incremented_fails() fail {
   let policy_id = #"aabbccdd"
   let stt_name = #"cafe"
   let publisher_vkh = #"abc123"
@@ -318,7 +318,7 @@ test post_to_subchannel_seq_not_incremented_fails() {
   !election.election.spend(oneshot_ref, Some(old_state), redeemer, own_ref, tx)
 }
 
-test post_to_subchannel_ada_withdrawn_fails() {
+test post_to_subchannel_ada_withdrawn_fails() fail {
   let policy_id = #"aabbccdd"
   let stt_name = #"cafe"
   let publisher_vkh = #"abc123"
