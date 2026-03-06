@@ -187,7 +187,16 @@ pub fn validate_admin_spend(
       }
     }
 
-    AdvancePhaseOnly -> todo @"advance phase spend"
+    AdvancePhaseOnly -> {
+      expect Some(old) = old_state
+      expect Some(new) = new_state
+      let valid_transition = is_valid_phase_transition(old.phase, new.phase) ?
+      let same_except_phase = (new == AdminChannelState {..old, phase: new.phase}) ?
+      and {
+	valid_transition,
+        same_except_phase,
+      }
+    }
 
     // TODO should the admin be able to also rebalance as part of other operations?
     RebalanceFunds -> todo @"rebalance channel funds"
