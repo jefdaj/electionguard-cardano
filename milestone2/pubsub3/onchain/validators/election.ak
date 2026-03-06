@@ -5,9 +5,12 @@ use cardano/assets.{PolicyId, has_any_nft}
 
 use election/action.{
   ElectionAction, AdminAct, RegularAct,
-  AdminAction, InitElection, AddSubChannels, RmSubChannels, EndElection,
+  AdminAction, InitElection,
+  AddSubChannels, RmSubChannels,
+  AdvancePhaseOnly, RebalanceFunds, EndElection,
   RegularAction, PostPublicRecords,
 }
+use election/funding.{channel_ada_preserved}
 use election/record.{validate_records}
 use election/state.{
   ChannelState,
@@ -61,6 +64,10 @@ pub fn validate_admin_mint(
       }
     }
 
+    AdvancePhaseOnly -> todo @"advance phase mint"
+
+    RebalanceFunds -> assert_no_mints(policy_id, self)
+
     EndElection -> {
       let burns_admin_stt = tx_mints(self, policy_id, stt_name, -1) ?
       burns_admin_stt
@@ -69,9 +76,9 @@ pub fn validate_admin_mint(
   }
 }
 
-// Regular actions shouldn't mint or burn any of our STTs.
-pub fn validate_regular_mint(policy_id: PolicyId, self: Transaction) -> Bool {
-  ! has_any_nft(self.mint, policy_id) 
+// Confirm that none of our tokens are being minted or burned in a TX.
+pub fn assert_no_mints(policy_id: PolicyId, tx: Transaction) -> Bool {
+  ! has_any_nft(tx.mint, policy_id)
 }
 
 // This is defined by the redeemer; the datum can be a regular or admin state.
@@ -110,12 +117,14 @@ pub fn validate_regular_spend(
   let vkh_signed = tx_signed_by(self, old_vkh) ?
   let new_records_valid = validate_records(new_records) ?
   let expected_new_state = post_public_records(old_state, new_records)
-  let new_state_as_expected = expected_new_state == new_state
+  let new_state_as_expected = (expected_new_state == new_state) ?
 
   and {
     vkh_signed,
     new_records_valid,
     new_state_as_expected,
+    // todo @"channel funds above minimum", // TODO and define a reasonable minimum
+    // todo @"channel funds stay with STT",
   }
 
 }
@@ -151,6 +160,7 @@ pub fn validate_admin_spend(
         subchannels_empty,
         seq_zero,
 	initial_phase,
+	// todo @"admin channel funds above minimum" // TODO and define a reasonable minimum
       }
     }
 
@@ -159,14 +169,14 @@ pub fn validate_admin_spend(
       expect Some(old_admin_state) = old_state
       expect Some(new_admin_state) = new_state
       let vkh_signed = tx_signed_by(self, new_admin_state.admin) ?
-      let new_channels_valid  = are_disjoint(channels, ["admin"]) // TODO enforce [a-z]*[0-9]*?
-      let new_channels_unique = are_disjoint(old_admin_state.subchannels, channels)
+      let new_channels_valid  = are_disjoint(channels, ["admin"]) ? // TODO enforce [a-z]*[0-9]*?
+      let new_channels_unique = are_disjoint(old_admin_state.subchannels, channels) ?
       let expected_new_admin_state = add_subchannels(old_admin_state, channels)
-      let new_state_as_expected = new_admin_state == expected_new_admin_state
-      let valid_old_phase = old_admin_state.phase == ElectionConfigPhase(ConfigOnboardingPhase)
+      let new_state_as_expected = (new_admin_state == expected_new_admin_state) ?
+      let valid_old_phase = (old_admin_state.phase == ElectionConfigPhase(ConfigOnboardingPhase)) ?
 
       // The new phase could still be ConfigOnboardingPhase, or it could advance to ConfigCeremonyPhase
-      let valid_transition = is_valid_phase_transition(old_admin_state.phase, new_admin_state.phase)
+      let valid_transition = is_valid_phase_transition(old_admin_state.phase, new_admin_state.phase) ?
 
       and {
         vkh_signed,
@@ -175,6 +185,8 @@ pub fn validate_admin_spend(
         new_state_as_expected,
 	valid_old_phase,
 	valid_transition,
+	// todo @"all channel funds above minimum" // TODO and define a reasonable minimum
+        // todo @"channel funds stay with STT",
       }
     }
 
@@ -186,9 +198,9 @@ pub fn validate_admin_spend(
       // This seems like it should work, but only because this is a special case of being in the final phase?
       // (Otherwise, would need to adjust phase in expected new state)
       let expected_new_admin_state = rm_subchannels(old_admin_state, channels)
-      let new_state_as_expected = new_admin_state == expected_new_admin_state
+      let new_state_as_expected = (new_admin_state == expected_new_admin_state) ?
 
-      let valid_transition = is_valid_phase_transition(old_admin_state.phase, new_admin_state.phase)
+      let valid_transition = is_valid_phase_transition(old_admin_state.phase, new_admin_state.phase) ?
       let final_phase = is_final_phase(old_admin_state.phase) ? // TODO allow at other times too?
 
       and {
@@ -196,8 +208,14 @@ pub fn validate_admin_spend(
         new_state_as_expected,
 	valid_transition,
 	final_phase,
+	// todo @"channel funds go to admin stt output"
       }
     }
+
+    AdvancePhaseOnly -> todo @"advance phase spend"
+
+    // TODO should the admin be able to also rebalance as part of other operations?
+    RebalanceFunds -> todo @"rebalance channel funds"
 
     EndElection -> {
       expect Some(AdminChannelState { admin, subchannels, phase, .. }) = old_state
@@ -209,6 +227,7 @@ pub fn validate_admin_spend(
         vkh_signed,
         subchannels_empty,
 	final_phase,
+	// todo @"dummy logic for deciding what admin can do with channel funds?"
       }
       // TODO require ADA goes back to admin or main channel
     }
@@ -224,7 +243,7 @@ validator election(oneshot_ref: OutputReference) {
   ) {
     when redeemer is {
       AdminAct(action) -> validate_admin_mint(action, policy_id, self, oneshot_ref)
-      RegularAct(_) -> validate_regular_mint(policy_id, self)
+      RegularAct(_) -> assert_no_mints(policy_id, self)
     }
   }
 
@@ -239,6 +258,16 @@ validator election(oneshot_ref: OutputReference) {
     expect Some(own_input) = self.inputs |> find_input(own_ref)
     expect Script(policy_id) = own_input.output.address.payment_credential
     let script_addr = own_input.output.address
+
+    // During the election, we want to make sure that no one takes ADA out of
+    // the channel fee pools, but also allow change from top-up transactions.
+    // At the end of the election, the admin can send remaining ADA wherever
+    // they want. In future versions, this would be a good place to add
+    // treasury logic.
+    let ada_retained_during_election = when redeemer is {
+      AdminAct(EndElection) -> True
+      _ -> channel_ada_preserved(self, policy_id)
+    }
 
     when redeemer is {
 
@@ -258,7 +287,8 @@ validator election(oneshot_ref: OutputReference) {
               Some(new_admin_state)
             }
           }
-        validate_admin_spend(old_admin_state, new_admin_state, admin_act, self)
+        ada_retained_during_election && 
+	validate_admin_spend(old_admin_state, new_admin_state, admin_act, self)
       }
 
       RegularAct(reg_act) -> {
@@ -271,6 +301,7 @@ validator election(oneshot_ref: OutputReference) {
         expect InlineDatum(new_datum) = stt_output.datum
         expect Some(old_state): Option<ChannelState> = old_datum
         expect Some(new_state): Option<ChannelState> = new_datum
+        ada_retained_during_election && 
         validate_regular_spend(old_state, new_state, reg_act, self)
       }
 

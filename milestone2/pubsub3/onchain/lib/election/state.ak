@@ -95,6 +95,7 @@ pub fn extract_subchannel_state(state: ChannelState) -> Option<SubChannelState> 
   }
 }
 
+// TODO move to action.ak?
 // Note that this will work even if it makes an invalid list of subchannels.
 // TODO should those checks go here too?
 pub fn add_subchannels(old_state: AdminChannelState, new_channels: List<ChannelId>) -> AdminChannelState {
@@ -107,6 +108,7 @@ pub fn add_subchannels(old_state: AdminChannelState, new_channels: List<ChannelI
   )
 }
 
+// TODO move to action.ak?
 // Note that this doesn't check whether the channels removed make sense.
 // TODO should those checks also go here?
 pub fn rm_subchannels(old_state: AdminChannelState, channels_to_rm: List<ChannelId>) -> AdminChannelState {
@@ -119,6 +121,7 @@ pub fn rm_subchannels(old_state: AdminChannelState, channels_to_rm: List<Channel
   )
 }
 
+// TODO move to action.ak?
 // Note that this doesn't check validity of the records
 // TODO should those checks also go here?
 pub fn post_public_records(old_state: ChannelState, records: List<PublicRecord>) -> ChannelState {
