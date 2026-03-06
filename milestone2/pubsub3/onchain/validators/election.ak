@@ -24,12 +24,11 @@ use election/phase.{
   is_initial_phase, is_final_phase,
   is_valid_phase_transition,
 }
-use election/utils.{
+use election/stt.{
   tx_mints, tx_mints_all,
-  tx_signed_by,
   tx_sends_token_to_addr,
-  are_disjoint,
 }
+use election/utils.{are_disjoint, tx_signed_by}
 
 pub fn validate_admin_mint(
   action: AdminAction,

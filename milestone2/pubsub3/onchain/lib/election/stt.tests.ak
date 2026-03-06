@@ -5,7 +5,7 @@ use cardano/transaction.{InlineDatum, Input, Output, OutputReference, Transactio
 use election/record as r
 use election/state as s
 
-use election/utils.{tx_sends_token_to_addr}
+use election/stt
 
 test tx_sends_token_to_addr_valid() {
   // Setup: Mock data
@@ -79,6 +79,6 @@ test tx_sends_token_to_addr_valid() {
     id: #"c0ffee",
   }
 
-  let found_output = tx_sends_token_to_addr(tx, policy_id, stt_name, script_address, 1)
+  let found_output = stt.tx_sends_token_to_addr(tx, policy_id, stt_name, script_address, 1)
   found_output == Some(stt_output)
 }
