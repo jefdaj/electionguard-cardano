@@ -84,21 +84,27 @@ pub fn no_mints_for_policy(policy_id: PolicyId, tx: Transaction) -> Bool {
 // In a regular spend both old_state and new_state always exist.
 // Their types must also match: both AdminChannelState or both SubChannelState.
 pub fn validate_regular_spend(
-  old_state: ChannelState,
-  new_state: ChannelState,
-  action: RegularAction,
+  old: ChannelState,
+  new: ChannelState,
+  act: RegularAction,
 ) -> Bool {
-  expect PostPublicRecords = action
-  let new_records = when old_state is {
-    AdminChannel(new_admin_state) -> new_admin_state.new_records
-    SubChannel(new_sub_state) -> new_sub_state.new_records
+  let PostPublicRecords = act
+  let records = when old is {
+    AdminChannel(_) -> {
+      expect AdminChannel(new_admin) = new
+      new_admin.new_records
+    }
+    SubChannel(_) -> {
+      expect SubChannel(new_sub) = new
+      new_sub.new_records
+    }
   }
-  let new_records_valid = validate_records(new_records) ?
-  let expected_new_state = post_public_records(old_state, new_records)
-  let new_state_as_expected = (expected_new_state == new_state) ?
+  let records_valid = validate_records(records) ?
+  let expected = post_public_records(old, records)
+  let state_valid = (expected == new) ?
   and {
-    new_records_valid,
-    new_state_as_expected,
+    records_valid,
+    state_valid,
   }
 }
 
