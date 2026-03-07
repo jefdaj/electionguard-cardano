@@ -62,8 +62,6 @@ pub fn validate_admin_channel_mint(
   }
 }
 
-// Remember this will be called once per *policy_id*, not per token minted.
-// So it should validate all the election STTs in one go.
 pub fn validate_subchannel_mints(
   action: ElectionAction,
   policy_id: PolicyId,
@@ -83,6 +81,8 @@ pub fn validate_subchannel_mints(
   }
 }
 
+// Remember this will be called once per policy_id, not per token minted.
+// So it should validate all the election STTs in one go.
 pub fn validate_mint(
   oneshot_ref: OutputReference,
   action: ElectionAction,
@@ -103,6 +103,7 @@ pub fn validate_mint(
 // Spend validator
 // ===========================================
 
+// Will be called once with Some(admin STT), or None for InitElection.
 pub fn validate_admin_single_channel_spend(
   state: Option<ChannelState>,
   action: ElectionAction,
@@ -118,6 +119,7 @@ pub fn validate_admin_single_channel_spend(
   }
 }
 
+// Will be called once with admin STT + once with each subchannel STT.
 pub fn validate_admin_multi_channel_spend(
   state: Option<ChannelState>,
   action: ElectionAction,
@@ -131,8 +133,9 @@ pub fn validate_admin_multi_channel_spend(
   }
 }
 
+// Will be called once with either the admin or a subchannel STT.
 pub fn validate_anyone_single_channel_spend(
-  state: Option<ChannelState>,
+  state: Option<ChannelState>, // TODO remove Option?
   action: ElectionAction,
   own_ref: OutputReference,
   tx: Transaction,
@@ -144,18 +147,18 @@ pub fn validate_anyone_single_channel_spend(
 }
 
 pub fn validate_spend(
-  state: Option<ChannelState>,
-  action: ElectionAction,
+  datum: Option<ChannelState>,
+  redeemer: ElectionAction,
   own_ref: OutputReference,
   tx: Transaction,
 ) {
-  when action is {
+  when redeemer is {
     InitElection | AddSubChannels { .. } | AdvancePhase | EndElection ->
-      validate_admin_single_channel_spend(state, action, own_ref, tx)
+      validate_admin_single_channel_spend(datum, redeemer, own_ref, tx)
     RmSubChannels { .. } | RebalanceFunds { .. } ->
-      validate_admin_multi_channel_spend(state, action, own_ref, tx)
+      validate_admin_multi_channel_spend(datum, redeemer, own_ref, tx)
     PostPublicRecords ->
-      validate_anyone_single_channel_spend(state, action, own_ref, tx)
+      validate_anyone_single_channel_spend(datum, redeemer, own_ref, tx)
   }
 }
 
@@ -165,18 +168,18 @@ pub fn validate_spend(
 
 validator election(oneshot_ref: OutputReference) {
   mint(
-    action: ElectionAction,
+    redeemer: ElectionAction,
     policy_id: PolicyId,
     tx: Transaction
   ) {
-    validate_mint(oneshot_ref, action, policy_id, tx)
+    validate_mint(oneshot_ref, redeemer, policy_id, tx)
   }
   spend(
-    state: Option<ChannelState>,
-    action: ElectionAction,
+    datum: Option<ChannelState>,
+    redeemer: ElectionAction,
     own_ref: OutputReference,
     tx: Transaction,
   ) {
-    validate_spend(state, action, own_ref, tx)
+    validate_spend(datum, redeemer, own_ref, tx)
   }
 }
