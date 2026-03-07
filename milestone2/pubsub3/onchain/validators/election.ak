@@ -1,7 +1,7 @@
 // use aiken/collection/list
 use cardano/address.{Script, Address}
 use cardano/assets.{PolicyId}
-use cardano/transaction.{OutputReference, Transaction, InlineDatum, find_input}
+use cardano/transaction.{OutputReference, Transaction, find_input}
 
 use election/action.{
   ElectionAction, InitElection, AddSubChannels, AdvancePhase, EndElection,
@@ -23,8 +23,8 @@ use election/state.{
   rm_subchannels, post_public_records,
 }
 use election/stt.{
-  tx_mints, tx_sends_token_to_addr, exact_subchannels_minted,
-  exact_subchannels_burned, no_mints_for_policy, full_stt_name,
+  tx_mints, tx_sends_token_to_addr, exact_channels_minted,
+  exact_channels_burned, no_mints_for_policy, full_stt_name,
   admin_authorized_tx
 }
 
@@ -48,15 +48,15 @@ pub fn validate_admin_channel_mint(
       // No need to check for authorization here because whoever mints a
       // new admin STT will become the admin of that election.
       expect Some(_) = tx.inputs |> find_input(oneshot_ref)
-      let mints_admin_stt = tx_mints(tx, policy_id, stt_name, 1) ?
-      mints_admin_stt
+      let mints_admin_stt_only = exact_channels_minted(tx, policy_id, [stt_name]) ?
+      mints_admin_stt_only
     }
     EndElection -> {
       // No need to check for authorization here because the ledger will
       // require that the admin STT is one of the inputs, and the spend
       // validator will require that the admin signed in order to spend it.
-      let burns_admin_stt = tx_mints(tx, policy_id, stt_name, -1) ?
-      burns_admin_stt
+      let burns_admin_stt_only = exact_channels_burned(tx, policy_id, [stt_name]) ?
+      burns_admin_stt_only
     }
     _ -> False
   }
@@ -69,10 +69,16 @@ pub fn validate_subchannel_mints(
   policy_id: PolicyId,
   tx: Transaction,
 ) -> Bool {
-  let admin_auth = admin_authorized_tx(tx, policy_id)
+  let admin_auth = admin_authorized_tx(tx, policy_id) ?
   when action is {
-    AddSubChannels { channels } -> admin_auth && exact_subchannels_minted(tx, policy_id, channels)
-    RmSubChannels  { channels } -> admin_auth && exact_subchannels_burned(tx, policy_id, channels)
+    AddSubChannels { channels } -> {
+      let mints_burns_as_expected = exact_channels_minted(tx, policy_id, channels) ?
+      admin_auth && mints_burns_as_expected
+    }
+    RmSubChannels { channels } -> {
+      let mints_burns_as_expected = exact_channels_burned(tx, policy_id, channels) ?
+      admin_auth && mints_burns_as_expected
+    }
     _ -> False
   }
 }

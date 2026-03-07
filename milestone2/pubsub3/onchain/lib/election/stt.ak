@@ -84,7 +84,7 @@ pub fn full_stt_name(channel_id: ChannelId) -> ByteArray {
   bytearray_join([config.stt_prefix, channel_id, "channel"], "-")
 }
 
-pub fn exact_subchannels_minted(
+pub fn exact_channels_minted(
   tx: Transaction,
   policy_id: PolicyId,
   channel_ids: List<ChannelId>
@@ -92,7 +92,7 @@ pub fn exact_subchannels_minted(
   check_exact_mint_burn(tx, policy_id, channel_ids, 1)
 }
 
-pub fn exact_subchannels_burned(
+pub fn exact_channels_burned(
   tx: Transaction,
   policy_id: PolicyId,
   channel_ids: List<ChannelId>
