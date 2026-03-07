@@ -34,6 +34,31 @@ use election/utils.{
 // Mint validator
 // ===========================================
 
+pub fn validate_admin_channel_mint(
+  oneshot_ref: OutputReference,
+  action: ElectionAction,
+  policy_id: PolicyId,
+  tx: Transaction,
+) -> Bool {
+  when action is {
+    InitElection -> todo @"init election mint"
+    EndElection  -> todo @"end election mint"
+    _ -> False
+  }
+}
+
+pub fn validate_subchannel_mint(
+  action: ElectionAction,
+  policy_id: PolicyId,
+  tx: Transaction,
+) -> Bool {
+  when action is {
+    AddSubChannels { .. } -> todo @"add subchannels mint"
+    RmSubChannels  { .. } -> todo @"rm subchannels mint"
+    _ -> False
+  }
+}
+
 pub fn validate_mint(
   oneshot_ref: OutputReference,
   action: ElectionAction,
@@ -41,20 +66,12 @@ pub fn validate_mint(
   tx: Transaction,
 ) -> Bool {
   when action is {
-
-    // Admin STT
-    InitElection -> todo @"init election mint"
-    EndElection  -> todo @"end election mint"
-
-    // Subchannel STTs
-    AddSubChannels { .. } -> todo @"add subchannels mint"
-    RmSubChannels  { .. } -> todo @"rm subchannels mint"
-
-    // No mints
-    AdvancePhase          -> no_mints_for_policy(policy_id, tx)
-    PostPublicRecords     -> no_mints_for_policy(policy_id, tx)
-    RebalanceFunds { .. } -> no_mints_for_policy(policy_id, tx)
-
+    InitElection | EndElection ->
+      validate_admin_channel_mint(oneshot_ref, action, policy_id, tx)
+    AddSubChannels { .. } | RmSubChannels { .. } ->
+      validate_subchannel_mint(action, policy_id, tx)
+    AdvancePhase | PostPublicRecords | RebalanceFunds { .. } ->
+      no_mints_for_policy(policy_id, tx)
   }
 }
 
