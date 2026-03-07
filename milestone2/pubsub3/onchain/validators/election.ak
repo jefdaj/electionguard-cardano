@@ -1,4 +1,4 @@
-use aiken/collection/list
+// use aiken/collection/list
 use cardano/address.{Script, Address}
 use cardano/assets.{PolicyId}
 use cardano/transaction.{OutputReference, Transaction, InlineDatum, find_input}
@@ -62,6 +62,30 @@ pub fn validate_mint(
 // Spend validator
 // ===========================================
 
+pub fn validate_spend(
+  state: Option<ChannelState>,
+  action: ElectionAction,
+  own_ref: OutputReference,
+  tx: Transaction,
+) {
+  when action is {
+
+    // Admin spending admin STT
+    InitElection          -> todo @"init election spend"
+    AddSubChannels { .. } -> todo @"add subchannels spend"
+    AdvancePhase          -> todo @"advance phase spend"
+    EndElection           -> todo @"end election spend"
+
+    // Admin spending multiple STTs
+    RmSubChannels  { .. } -> todo @"rm subchannels spend"
+    RebalanceFunds { .. } -> todo @"rebalance funds spend"
+
+    // Anyone spending a single STT
+    PostPublicRecords -> todo "post public records spend"
+
+  }
+}
+
 // ===========================================
 // Main validator
 // ===========================================
@@ -80,6 +104,6 @@ validator election(oneshot_ref: OutputReference) {
     own_ref: OutputReference,
     tx: Transaction,
   ) {
-    todo @"spend"
+    validate_spend(state, action, own_ref, tx)
   }
 }
