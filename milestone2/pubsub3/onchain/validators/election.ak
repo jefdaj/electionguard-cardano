@@ -15,6 +15,7 @@ use election/action.{
 //   is_valid_phase_transition,
 // }
 use election/record.{
+  PublicRecord,
   validate_records
 }
 use election/state.{
@@ -163,6 +164,23 @@ fn find_new_state(
   }
 }
 
+fn get_new_records(
+  old_state: ChannelState,
+  new_state: ChannelState,
+) -> List<PublicRecord> {
+  // Old and new types must match: both AdminChannel or both SubChannel
+  when old_state is {
+    AdminChannel(_) -> {
+      expect AdminChannel(new_admin_state) = new_state
+      new_admin_state.new_records
+    }   
+    SubChannel(_) -> {
+      expect SubChannel(new_admin_state) = new_state
+      new_admin_state.new_records
+    }   
+  }
+}
+
 // Will be called once with either the admin or a subchannel STT.
 // TODO which parts of this should be factored out into helper functions?
 pub fn validate_anyone_single_channel_spend(
@@ -178,18 +196,7 @@ pub fn validate_anyone_single_channel_spend(
   expect Some(old_state) = datum
   expect Some(new_state) = find_new_state(datum, own_ref, tx)
 
-  // Old and new types must match: both AdminChannel or both SubChannel
-  // TODO helper fn
-  let new_records = when old_state is {
-    AdminChannel(_) -> {
-      expect AdminChannel(new_admin_state) = new_state
-      new_admin_state.new_records
-    }   
-    SubChannel(_) -> {
-      expect SubChannel(new_admin_state) = new_state
-      new_admin_state.new_records
-    }   
-  }
+  let new_records = get_new_records(old_state, new_state)
 
   // The new records (or at least their CIDs + metadata) must be valid
   let records_valid = validate_records(new_records) ?
