@@ -29,21 +29,45 @@ use election/stt.{
 }
 use election/utils.{are_disjoint, tx_signed_by}
 
+// ===========================================
+// Mint validator
+// ===========================================
+
+pub fn validate_mint(
+  oneshot_ref: OutputReference,
+  action: ElectionAction,
+  policy_id: PolicyId,
+  tx: Transaction,
+) -> Bool {
+  todo @"validate_mint"
+}
+
+// Confirm that none of our tokens are being minted or burned in a TX.
+pub fn no_mints_for_policy(policy_id: PolicyId, tx: Transaction) -> Bool {
+  ! has_any_nft(tx.mint, policy_id)
+}
+
+// ===========================================
+// Spend validator
+// ===========================================
+
+// ===========================================
+// Main validator
+// ===========================================
+
 validator election(oneshot_ref: OutputReference) {
-
   mint(
-    redeemer: ElectionAction,
+    action: ElectionAction,
     policy_id: PolicyId,
-    self: Transaction
+    tx: Transaction
   ) {
-    todo @"mint"
+    validate_mint(oneshot_ref, action, policy_id, tx)
   }
-
   spend(
-    old_datum: Option<ChannelState>,
-    redeemer: ElectionAction,
+    state: Option<ChannelState>,
+    action: ElectionAction,
     own_ref: OutputReference,
-    self: Transaction,
+    tx: Transaction,
   ) {
     todo @"spend"
   }
