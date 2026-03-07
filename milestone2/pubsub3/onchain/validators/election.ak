@@ -1,36 +1,37 @@
 // use aiken/collection/list
 use cardano/address.{Script, Address}
 use cardano/assets.{PolicyId}
-use cardano/transaction.{OutputReference, Transaction, find_input}
+use cardano/transaction.{OutputReference, Transaction, InlineDatum, find_input}
 
 use election/action.{
   ElectionAction, InitElection, AddSubChannels, AdvancePhase, EndElection,
   RmSubChannels, RebalanceFunds, PostPublicRecords,
 }
-use election/funding.{
-  channel_ada_preserved
-}
-use election/phase.{
-  ElectionConfigPhase, ConfigOnboardingPhase, is_initial_phase, is_final_phase,
-  is_valid_phase_transition,
-}
+// use election/funding.{
+//   channel_ada_preserved
+// }
+// use election/phase.{
+//   ElectionConfigPhase, ConfigOnboardingPhase, is_initial_phase, is_final_phase,
+//   is_valid_phase_transition,
+// }
 use election/record.{
   validate_records
 }
 use election/state.{
   ChannelState, AdminChannel, AdminChannelState, SubChannel, SubChannelState,
-  extract_admin_state, add_subchannels,
-  rm_subchannels, post_public_records,
+  post_public_records,
+  get_stt_name,
 }
+// rm_subchannels, add_subchannels,
 use election/stt.{
-  tx_mints, tx_sends_token_to_addr, exact_channels_minted,
+  tx_sends_token_to_addr, exact_channels_minted,
   exact_channels_burned, no_mints_for_policy, full_stt_name,
   admin_authorized_tx
 }
 
-use election/utils.{
-  are_disjoint, tx_signed_by
-}
+// use election/utils.{
+//   are_disjoint, tx_signed_by
+// }
 
 // ===========================================
 // Mint validator
@@ -105,10 +106,10 @@ pub fn validate_mint(
 
 // Will be called once with Some(admin STT), or None for InitElection.
 pub fn validate_admin_single_channel_spend(
-  datum: Option<ChannelState>,
+  _datum: Option<ChannelState>,
   redeemer: ElectionAction,
-  own_ref: OutputReference,
-  tx: Transaction,
+  _own_ref: OutputReference,
+  _tx: Transaction,
 ) {
   when redeemer is {
     InitElection          -> todo @"init election spend"
@@ -121,10 +122,10 @@ pub fn validate_admin_single_channel_spend(
 
 // Will be called once with admin STT + once with each subchannel STT.
 pub fn validate_admin_multi_channel_spend(
-  datum: Option<ChannelState>,
+  _datum: Option<ChannelState>,
   redeemer: ElectionAction,
-  own_ref: OutputReference,
-  tx: Transaction,
+  _own_ref: OutputReference,
+  _tx: Transaction,
 ) {
   when redeemer is {
     RmSubChannels  { .. } -> todo @"rm subchannels spend"
@@ -140,10 +141,42 @@ pub fn validate_anyone_single_channel_spend(
   own_ref: OutputReference,
   tx: Transaction,
 ) {
+
+  expect PostPublicRecords = redeemer
+
   expect Some(prev_state) = datum
-  when redeemer is {
-    PostPublicRecords -> todo "post public records spend"
-    _ -> False
+
+  // TODO clean this up
+  expect Some(own_input) = tx.inputs |> find_input(own_ref)
+  expect Script(policy_id) = own_input.output.address.payment_credential
+  let script_addr = own_input.output.address
+  let stt_name = get_stt_name(datum)
+  expect Some(stt_output) = tx_sends_token_to_addr(tx, policy_id, stt_name, script_addr, 1)
+  expect InlineDatum(next_datum) = stt_output.datum
+  expect Some(next_state): Option<ChannelState> = next_datum
+
+  // Old and new types must match: both AdminChannel or both SubChannel
+  let new_records = when prev_state is {
+    AdminChannel(_) -> {
+      expect AdminChannel(next_admin_state) = next_state
+      next_admin_state.new_records
+    }
+    SubChannel(_) -> {
+      expect SubChannel(next_admin_state) = next_state
+      next_admin_state.new_records
+    }
+  }
+
+  // And the new records (or at least their CIDs + metadata) must be valid
+  let records_valid = validate_records(new_records) ?
+
+  // New state must be exactly as expected: new_records replaced, seq incremented
+  let next_expected = post_public_records(prev_state, new_records)
+  let next_state_as_expected = (next_expected == next_state) ?
+
+  and {
+    records_valid,
+    next_state_as_expected,
   }
 }
 
