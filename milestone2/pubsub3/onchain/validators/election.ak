@@ -38,12 +38,12 @@ use election/utils.{
 
 pub fn validate_admin_channel_mint(
   oneshot_ref: OutputReference,
-  action: ElectionAction,
+  redeemer: ElectionAction,
   policy_id: PolicyId,
   tx: Transaction,
 ) -> Bool {
   let stt_name = full_stt_name("admin")
-  when action is {
+  when redeemer is {
     InitElection -> {
       // No need to check for authorization here because whoever mints a
       // new admin STT will become the admin of that election.
@@ -63,12 +63,12 @@ pub fn validate_admin_channel_mint(
 }
 
 pub fn validate_subchannel_mints(
-  action: ElectionAction,
+  redeemer: ElectionAction,
   policy_id: PolicyId,
   tx: Transaction,
 ) -> Bool {
   let admin_auth = admin_authorized_tx(tx, policy_id) ?
-  when action is {
+  when redeemer is {
     AddSubChannels { channels } -> {
       let mints_burns_as_expected = exact_channels_minted(tx, policy_id, channels) ?
       admin_auth && mints_burns_as_expected
@@ -85,15 +85,15 @@ pub fn validate_subchannel_mints(
 // So it should validate all the election STTs in one go.
 pub fn validate_mint(
   oneshot_ref: OutputReference,
-  action: ElectionAction,
+  redeemer: ElectionAction,
   policy_id: PolicyId,
   tx: Transaction,
 ) -> Bool {
-  when action is {
+  when redeemer is {
     InitElection | EndElection ->
-      validate_admin_channel_mint(oneshot_ref, action, policy_id, tx)
+      validate_admin_channel_mint(oneshot_ref, redeemer, policy_id, tx)
     AddSubChannels { .. } | RmSubChannels { .. } ->
-      validate_subchannel_mints(action, policy_id, tx)
+      validate_subchannel_mints(redeemer, policy_id, tx)
     AdvancePhase | PostPublicRecords | RebalanceFunds { .. } ->
       no_mints_for_policy(policy_id, tx)
   }
@@ -105,12 +105,12 @@ pub fn validate_mint(
 
 // Will be called once with Some(admin STT), or None for InitElection.
 pub fn validate_admin_single_channel_spend(
-  state: Option<ChannelState>,
-  action: ElectionAction,
+  datum: Option<ChannelState>,
+  redeemer: ElectionAction,
   own_ref: OutputReference,
   tx: Transaction,
 ) {
-  when action is {
+  when redeemer is {
     InitElection          -> todo @"init election spend"
     AddSubChannels { .. } -> todo @"add subchannels spend"
     AdvancePhase          -> todo @"advance phase spend"
@@ -121,12 +121,12 @@ pub fn validate_admin_single_channel_spend(
 
 // Will be called once with admin STT + once with each subchannel STT.
 pub fn validate_admin_multi_channel_spend(
-  state: Option<ChannelState>,
-  action: ElectionAction,
+  datum: Option<ChannelState>,
+  redeemer: ElectionAction,
   own_ref: OutputReference,
   tx: Transaction,
 ) {
-  when action is {
+  when redeemer is {
     RmSubChannels  { .. } -> todo @"rm subchannels spend"
     RebalanceFunds { .. } -> todo @"rebalance funds spend"
     _ -> False
@@ -135,12 +135,13 @@ pub fn validate_admin_multi_channel_spend(
 
 // Will be called once with either the admin or a subchannel STT.
 pub fn validate_anyone_single_channel_spend(
-  state: Option<ChannelState>, // TODO remove Option?
-  action: ElectionAction,
+  datum: Option<ChannelState>,
+  redeemer: ElectionAction,
   own_ref: OutputReference,
   tx: Transaction,
 ) {
-  when action is {
+  expect Some(prev_state) = datum
+  when redeemer is {
     PostPublicRecords -> todo "post public records spend"
     _ -> False
   }
