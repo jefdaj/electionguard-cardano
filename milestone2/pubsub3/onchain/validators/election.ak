@@ -40,9 +40,17 @@ pub fn validate_admin_channel_mint(
   policy_id: PolicyId,
   tx: Transaction,
 ) -> Bool {
+  let stt_name = get_admin_stt_name()
   when action is {
-    InitElection -> todo @"init election mint"
-    EndElection  -> todo @"end election mint"
+    InitElection -> {
+      expect Some(_) = tx.inputs |> find_input(oneshot_ref)
+      let mints_admin_stt = tx_mints(tx, policy_id, stt_name, 1) ?
+      mints_admin_stt
+    }
+    EndElection -> {
+      let burns_admin_stt = tx_mints(tx, policy_id, stt_name, -1) ?
+      burns_admin_stt
+    }
     _ -> False
   }
 }
