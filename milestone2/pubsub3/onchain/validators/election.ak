@@ -139,29 +139,24 @@ fn find_new_state(
   datum: Option<ChannelState>,
   own_ref: OutputReference,
   tx: Transaction,
-) -> Option<ChannelState> {
+) -> ChannelState {
   // Get own input to extract script address and policy
   expect Some(own_input) = tx.inputs |> list.find(fn(i) { i.output_reference == own_ref })
   expect Script(policy_id) = own_input.output.address.payment_credential
-  
+
   let script_addr = own_input.output.address
   let stt_name = get_stt_name(datum)
 
-  // Find the output containing the STT in one step
-  let opt_stt =
+  // Find the output containing the STT
+  expect Some(stt_output) =
     list.find(tx.outputs, fn(output) {
-      output.address == script_addr && 
+      output.address == script_addr &&
       assets.quantity_of(output.value, policy_id, stt_name) == 1
     })
 
-  when opt_stt is {
-    None -> None
-    Some(stt_output) -> {
-      expect InlineDatum(new_datum) = stt_output.datum
-      expect new_state: ChannelState = new_datum
-      Some(new_state)
-    }
-  }
+  expect InlineDatum(new_datum) = stt_output.datum
+  expect new_state: ChannelState = new_datum
+  new_state
 }
 
 fn get_new_records(
@@ -194,7 +189,7 @@ pub fn validate_anyone_single_channel_spend(
   expect PostPublicRecords = redeemer
 
   expect Some(old_state) = datum
-  expect Some(new_state) = find_new_state(datum, own_ref, tx)
+  let new_state = find_new_state(datum, own_ref, tx)
 
   let new_records = get_new_records(old_state, new_state)
 
