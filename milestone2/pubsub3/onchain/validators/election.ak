@@ -45,11 +45,16 @@ pub fn validate_admin_channel_mint(
   let stt_name = full_stt_name("admin")
   when action is {
     InitElection -> {
+      // No need to check for authorization here because whoever mints a
+      // new admin STT will become the admin of that election.
       expect Some(_) = tx.inputs |> find_input(oneshot_ref)
       let mints_admin_stt = tx_mints(tx, policy_id, stt_name, 1) ?
       mints_admin_stt
     }
     EndElection -> {
+      // No need to check for authorization here because the ledger will
+      // require that the admin STT is one of the inputs, and the spend
+      // validator will require that the admin signed in order to spend it.
       let burns_admin_stt = tx_mints(tx, policy_id, stt_name, -1) ?
       burns_admin_stt
     }
