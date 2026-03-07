@@ -34,18 +34,33 @@ use election/utils.{
 // Mint validator
 // ===========================================
 
+// Confirm that none of our tokens are being minted or burned.
+pub fn no_mints_for_policy(policy_id: PolicyId, tx: Transaction) -> Bool {
+  ! has_any_nft(tx.mint, policy_id)
+}
+
 pub fn validate_mint(
   oneshot_ref: OutputReference,
   action: ElectionAction,
   policy_id: PolicyId,
   tx: Transaction,
 ) -> Bool {
-  todo @"validate_mint"
-}
+  when action is {
 
-// Confirm that none of our tokens are being minted or burned in a TX.
-pub fn no_mints_for_policy(policy_id: PolicyId, tx: Transaction) -> Bool {
-  ! has_any_nft(tx.mint, policy_id)
+    // Admin STT
+    InitElection -> todo @"init election mint"
+    EndElection  -> todo @"end election mint"
+
+    // Subchannel STTs
+    AddSubChannels { .. } -> todo "add subchannels mint"
+    RmSubChannels  { .. } -> todo "rm subchannels mint"
+
+    // No mints
+    AdvancePhase          -> no_mints_for_policy(policy_id, tx)
+    PostPublicRecords     -> no_mints_for_policy(policy_id, tx)
+    RebalanceFunds { .. } -> no_mints_for_policy(policy_id, tx)
+
+  }
 }
 
 // ===========================================
