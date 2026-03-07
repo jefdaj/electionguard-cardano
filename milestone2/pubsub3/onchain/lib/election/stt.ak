@@ -4,6 +4,8 @@ use cardano/address.{Script, Address}
 use cardano/assets.{PolicyId}
 use cardano/transaction.{Transaction, Output}
 
+// TODO is it important to check that only one STT is sent to a given output?
+
 // Whether a transaction mints the required amount of a token.
 pub fn tx_mints(
   tx: Transaction,
@@ -52,6 +54,7 @@ pub fn scriptAddress(hash: ByteArray) -> Address {
   addr
 }
 
+// TODO specialize this to mint(1), burn(-1), and no change(0)?
 pub fn tx_sends_token_to_addr(
   tx: Transaction,
   policy_id: PolicyId,
@@ -65,5 +68,3 @@ pub fn tx_sends_token_to_addr(
        assets.quantity_of(output.value, policy_id, token_name) >= min_quantity
      })
 }
-
-
