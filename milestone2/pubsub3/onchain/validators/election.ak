@@ -135,17 +135,18 @@ pub fn validate_admin_multi_channel_spend(
   }
 }
 
-fn find_new_state(
-  datum: Option<ChannelState>,
+fn find_continuation_state(
+  state: ChannelState,
   own_ref: OutputReference,
   tx: Transaction,
 ) -> ChannelState {
+
   // Get own input to extract script address and policy
   expect Some(own_input) = tx.inputs |> list.find(fn(i) { i.output_reference == own_ref })
   expect Script(policy_id) = own_input.output.address.payment_credential
 
   let script_addr = own_input.output.address
-  let stt_name = get_stt_name(datum)
+  let stt_name = get_stt_name(Some(state))
 
   // Find the output containing the STT
   expect Some(stt_output) =
@@ -154,24 +155,25 @@ fn find_new_state(
       assets.quantity_of(output.value, policy_id, stt_name) == 1
     })
 
-  expect InlineDatum(new_datum) = stt_output.datum
-  expect new_state: ChannelState = new_datum
-  new_state
+  expect InlineDatum(cont_datum) = stt_output.datum
+  expect cont_state: ChannelState = cont_datum
+  cont_state
 }
 
 fn get_new_records(
-  old_state: ChannelState,
-  new_state: ChannelState,
+  state: ChannelState,
+  continuation: ChannelState,
 ) -> List<PublicRecord> {
-  // Old and new types must match: both AdminChannel or both SubChannel
-  when old_state is {
+
+  // Types must match: both AdminChannel or both SubChannel.
+  when state is {
     AdminChannel(_) -> {
-      expect AdminChannel(new_admin_state) = new_state
-      new_admin_state.new_records
+      expect AdminChannel(cont_state) = continuation
+      cont_state.new_records
     }   
     SubChannel(_) -> {
-      expect SubChannel(new_admin_state) = new_state
-      new_admin_state.new_records
+      expect SubChannel(cont_state) = continuation
+      cont_state.new_records
     }   
   }
 }
@@ -188,21 +190,21 @@ pub fn validate_anyone_single_channel_spend(
   // The only "anyone, single channel" redeemer so far
   expect PostPublicRecords = redeemer
 
-  expect Some(old_state) = datum
-  let new_state = find_new_state(datum, own_ref, tx)
-
-  let new_records = get_new_records(old_state, new_state)
+  expect Some(state) = datum
+  let cont_state = find_continuation_state(state, own_ref, tx)
+  let new_records = get_new_records(state, cont_state)
 
   // The new records (or at least their CIDs + metadata) must be valid
-  let records_valid = validate_records(new_records) ?
+  let new_records_valid = validate_records(new_records) ?
 
-  // And the next state must be exactly as expected: new_records replaced, seq incremented
-  let new_expected = post_public_records(old_state, new_records)
-  let new_state_as_expected = (new_expected == new_state) ?
+  // And the continuation (next) state must be exactly as expected:
+  // new_records replaced, seq incremented, the rest unchanged
+  let expected_continuation = post_public_records(state, new_records)
+  let cont_as_expected = (cont_state == expected_continuation) ?
 
   and {
-    records_valid,
-    new_state_as_expected,
+    new_records_valid,
+    cont_as_expected,
   }
 }
 
