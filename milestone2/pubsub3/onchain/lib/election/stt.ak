@@ -2,7 +2,7 @@ use aiken/collection/dict
 use aiken/collection/list
 use cardano/address.{Script, Address}
 use cardano/assets.{AssetName, PolicyId, has_any_nft}
-use cardano/transaction.{Transaction, Output}
+use cardano/transaction.{Transaction, Input, Output, OutputReference}
 use election/utils.{bytearray_join}
 
 use config
@@ -143,4 +143,42 @@ fn check_exact_mint_burn(
   
   // Both conditions must be true
   count_matches && all_tokens_present
+}
+
+pub fn find_admin_stt_output(
+  tx: Transaction,
+  policy_id: PolicyId
+) -> Option<OutputReference> {
+  let stt_name = full_stt_name("admin")
+  find_input_with_token(tx, policy_id, stt_name)
+}
+
+fn find_input_with_token(
+  tx: Transaction,
+  policy_id: ByteArray,
+  token_name: ByteArray,
+) -> Option<OutputReference> {
+  when
+    list.find(
+      tx.inputs,
+      fn(input: Input) {
+        assets.quantity_of(input.output.value, policy_id, token_name) > 0
+      },
+    )
+  is {
+    Some(input) -> Some(input.output_reference)
+    None -> None
+  }
+}
+
+// Whether the admin authorized this transaction by spending the admin STT
+// (and therefore also by signing, which is checked in the spend validator).
+pub fn admin_authorized_tx(
+  tx: Transaction,
+  policy_id: PolicyId
+) -> Bool {
+  when find_admin_stt_output(tx, policy_id) is {
+    Some(_) -> True
+    None    -> False
+  }
 }

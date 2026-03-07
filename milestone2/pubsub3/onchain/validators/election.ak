@@ -24,7 +24,8 @@ use election/state.{
 }
 use election/stt.{
   tx_mints, tx_sends_token_to_addr, exact_subchannels_minted,
-  exact_subchannels_burned, no_mints_for_policy, full_stt_name
+  exact_subchannels_burned, no_mints_for_policy, full_stt_name,
+  admin_authorized_tx
 }
 
 use election/utils.{
@@ -63,9 +64,10 @@ pub fn validate_subchannel_mints(
   policy_id: PolicyId,
   tx: Transaction,
 ) -> Bool {
+  let admin_auth = admin_authorized_tx(tx, policy_id)
   when action is {
-    AddSubChannels { channels } -> exact_subchannels_minted(tx, policy_id, channels)
-    RmSubChannels  { channels } -> exact_subchannels_burned(tx, policy_id, channels)
+    AddSubChannels { channels } -> admin_auth && exact_subchannels_minted(tx, policy_id, channels)
+    RmSubChannels  { channels } -> admin_auth && exact_subchannels_burned(tx, policy_id, channels)
     _ -> False
   }
 }
