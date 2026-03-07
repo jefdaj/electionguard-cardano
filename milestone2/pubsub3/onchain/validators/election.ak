@@ -1,4 +1,4 @@
-// use aiken/collection/list
+use aiken/collection/list
 use cardano/address.{Script, Address}
 use cardano/assets.{PolicyId}
 use cardano/transaction.{OutputReference, Transaction, InlineDatum, find_input}
@@ -24,7 +24,7 @@ use election/state.{
 }
 // rm_subchannels, add_subchannels,
 use election/stt.{
-  tx_sends_token_to_addr, exact_channels_minted,
+  exact_channels_minted,
   exact_channels_burned, no_mints_for_policy, full_stt_name,
   admin_authorized_tx
 }
@@ -134,7 +134,37 @@ pub fn validate_admin_multi_channel_spend(
   }
 }
 
+fn find_new_state(
+  datum: Option<ChannelState>,
+  own_ref: OutputReference,
+  tx: Transaction,
+) -> Option<ChannelState> {
+  // Get own input to extract script address and policy
+  expect Some(own_input) = tx.inputs |> list.find(fn(i) { i.output_reference == own_ref })
+  expect Script(policy_id) = own_input.output.address.payment_credential
+  
+  let script_addr = own_input.output.address
+  let stt_name = get_stt_name(datum)
+
+  // Find the output containing the STT in one step
+  let opt_stt =
+    list.find(tx.outputs, fn(output) {
+      output.address == script_addr && 
+      assets.quantity_of(output.value, policy_id, stt_name) == 1
+    })
+
+  when opt_stt is {
+    None -> None
+    Some(stt_output) -> {
+      expect InlineDatum(new_datum) = stt_output.datum
+      expect new_state: ChannelState = new_datum
+      Some(new_state)
+    }
+  }
+}
+
 // Will be called once with either the admin or a subchannel STT.
+// TODO which parts of this should be factored out into helper functions?
 pub fn validate_anyone_single_channel_spend(
   datum: Option<ChannelState>,
   redeemer: ElectionAction,
@@ -142,41 +172,35 @@ pub fn validate_anyone_single_channel_spend(
   tx: Transaction,
 ) {
 
+  // The only "anyone, single channel" redeemer so far
   expect PostPublicRecords = redeemer
 
-  expect Some(prev_state) = datum
-
-  // TODO clean this up
-  expect Some(own_input) = tx.inputs |> find_input(own_ref)
-  expect Script(policy_id) = own_input.output.address.payment_credential
-  let script_addr = own_input.output.address
-  let stt_name = get_stt_name(datum)
-  expect Some(stt_output) = tx_sends_token_to_addr(tx, policy_id, stt_name, script_addr, 1)
-  expect InlineDatum(next_datum) = stt_output.datum
-  expect Some(next_state): Option<ChannelState> = next_datum
+  expect Some(old_state) = datum
+  expect Some(new_state) = find_new_state(datum, own_ref, tx)
 
   // Old and new types must match: both AdminChannel or both SubChannel
-  let new_records = when prev_state is {
+  // TODO helper fn
+  let new_records = when old_state is {
     AdminChannel(_) -> {
-      expect AdminChannel(next_admin_state) = next_state
-      next_admin_state.new_records
-    }
+      expect AdminChannel(new_admin_state) = new_state
+      new_admin_state.new_records
+    }   
     SubChannel(_) -> {
-      expect SubChannel(next_admin_state) = next_state
-      next_admin_state.new_records
-    }
+      expect SubChannel(new_admin_state) = new_state
+      new_admin_state.new_records
+    }   
   }
 
-  // And the new records (or at least their CIDs + metadata) must be valid
+  // The new records (or at least their CIDs + metadata) must be valid
   let records_valid = validate_records(new_records) ?
 
-  // New state must be exactly as expected: new_records replaced, seq incremented
-  let next_expected = post_public_records(prev_state, new_records)
-  let next_state_as_expected = (next_expected == next_state) ?
+  // And the next state must be exactly as expected: new_records replaced, seq incremented
+  let new_expected = post_public_records(old_state, new_records)
+  let new_state_as_expected = (new_expected == new_state) ?
 
   and {
     records_valid,
-    next_state_as_expected,
+    new_state_as_expected,
   }
 }
 
