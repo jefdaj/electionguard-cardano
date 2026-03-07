@@ -62,6 +62,46 @@ pub fn validate_mint(
 // Spend validator
 // ===========================================
 
+pub fn validate_admin_single_channel_spend(
+  state: Option<ChannelState>,
+  action: ElectionAction,
+  own_ref: OutputReference,
+  tx: Transaction,
+) {
+  when action is {
+    InitElection          -> todo @"init election spend"
+    AddSubChannels { .. } -> todo @"add subchannels spend"
+    AdvancePhase          -> todo @"advance phase spend"
+    EndElection           -> todo @"end election spend"
+    _ -> False
+  }
+}
+
+pub fn validate_admin_multi_channel_spend(
+  state: Option<ChannelState>,
+  action: ElectionAction,
+  own_ref: OutputReference,
+  tx: Transaction,
+) {
+  when action is {
+    RmSubChannels  { .. } -> todo @"rm subchannels spend"
+    RebalanceFunds { .. } -> todo @"rebalance funds spend"
+    _ -> False
+  }
+}
+
+pub fn validate_anyone_single_channel_spend(
+  state: Option<ChannelState>,
+  action: ElectionAction,
+  own_ref: OutputReference,
+  tx: Transaction,
+) {
+  when action is {
+    PostPublicRecords -> todo "post public records spend"
+    _ -> False
+  }
+}
+
 pub fn validate_spend(
   state: Option<ChannelState>,
   action: ElectionAction,
@@ -69,20 +109,12 @@ pub fn validate_spend(
   tx: Transaction,
 ) {
   when action is {
-
-    // Admin spending admin STT
-    InitElection          -> todo @"init election spend"
-    AddSubChannels { .. } -> todo @"add subchannels spend"
-    AdvancePhase          -> todo @"advance phase spend"
-    EndElection           -> todo @"end election spend"
-
-    // Admin spending multiple STTs
-    RmSubChannels  { .. } -> todo @"rm subchannels spend"
-    RebalanceFunds { .. } -> todo @"rebalance funds spend"
-
-    // Anyone spending a single STT
-    PostPublicRecords -> todo "post public records spend"
-
+    InitElection | AddSubChannels { .. } | AdvancePhase | EndElection ->
+      validate_admin_single_channel_spend(state, action, own_ref, tx)
+    RmSubChannels { .. } | RebalanceFunds { .. } ->
+      validate_admin_multi_channel_spend(state, action, own_ref, tx)
+    PostPublicRecords ->
+      validate_anyone_single_channel_spend(state, action, own_ref, tx)
   }
 }
 
