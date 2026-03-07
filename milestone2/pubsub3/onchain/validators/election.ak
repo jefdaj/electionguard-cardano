@@ -23,8 +23,8 @@ use election/state.{
   rm_subchannels, post_public_records,
 }
 use election/stt.{
-  tx_mints, tx_sends_token_to_addr, check_exact_subchannels_minted,
-  check_exact_subchannels_burned, no_mints_for_policy, full_stt_name
+  tx_mints, tx_sends_token_to_addr, exact_subchannels_minted,
+  exact_subchannels_burned, no_mints_for_policy, full_stt_name
 }
 
 use election/utils.{
@@ -63,13 +63,9 @@ pub fn validate_subchannel_mints(
   policy_id: PolicyId,
   tx: Transaction,
 ) -> Bool {
-  // let admin_stt_name = get_admin_stt_name()
-  // let admin_stt_unchanged = tx_mints(tx, policy_id, stt_name, 0)
   when action is {
-    AddSubChannels { channels } -> 
-      check_exact_subchannels_minted(tx, policy_id, channels)
-    RmSubChannels { channels } -> 
-      check_exact_subchannels_burned(tx, policy_id, channels)
+    AddSubChannels { channels } -> exact_subchannels_minted(tx, policy_id, channels)
+    RmSubChannels  { channels } -> exact_subchannels_burned(tx, policy_id, channels)
     _ -> False
   }
 }
