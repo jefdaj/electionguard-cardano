@@ -19,11 +19,12 @@ use election/record.{
 }
 use election/state.{
   ChannelState, AdminChannel, AdminChannelState, SubChannel, SubChannelState,
-  extract_admin_state, get_stt_name, get_admin_stt_name, add_subchannels,
+  extract_admin_state, add_subchannels,
   rm_subchannels, post_public_records,
 }
 use election/stt.{
-  tx_mints, tx_mints_all, tx_sends_token_to_addr, no_mints_for_policy
+  tx_mints, tx_sends_token_to_addr, check_exact_subchannels_minted,
+  check_exact_subchannels_burned, no_mints_for_policy, full_stt_name
 }
 
 use election/utils.{
@@ -40,7 +41,7 @@ pub fn validate_admin_channel_mint(
   policy_id: PolicyId,
   tx: Transaction,
 ) -> Bool {
-  let stt_name = get_admin_stt_name()
+  let stt_name = full_stt_name("admin")
   when action is {
     InitElection -> {
       expect Some(_) = tx.inputs |> find_input(oneshot_ref)
@@ -55,14 +56,20 @@ pub fn validate_admin_channel_mint(
   }
 }
 
-pub fn validate_subchannel_mint(
+// Remember this will be called once per *policy_id*, not per token minted.
+// So it should validate all the election STTs in one go.
+pub fn validate_subchannel_mints(
   action: ElectionAction,
   policy_id: PolicyId,
   tx: Transaction,
 ) -> Bool {
+  // let admin_stt_name = get_admin_stt_name()
+  // let admin_stt_unchanged = tx_mints(tx, policy_id, stt_name, 0)
   when action is {
-    AddSubChannels { .. } -> todo @"add subchannels mint"
-    RmSubChannels  { .. } -> todo @"rm subchannels mint"
+    AddSubChannels { channels } -> 
+      check_exact_subchannels_minted(tx, policy_id, channels)
+    RmSubChannels { channels } -> 
+      check_exact_subchannels_burned(tx, policy_id, channels)
     _ -> False
   }
 }
@@ -77,7 +84,7 @@ pub fn validate_mint(
     InitElection | EndElection ->
       validate_admin_channel_mint(oneshot_ref, action, policy_id, tx)
     AddSubChannels { .. } | RmSubChannels { .. } ->
-      validate_subchannel_mint(action, policy_id, tx)
+      validate_subchannel_mints(action, policy_id, tx)
     AdvancePhase | PostPublicRecords | RebalanceFunds { .. } ->
       no_mints_for_policy(policy_id, tx)
   }

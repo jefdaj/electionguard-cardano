@@ -1,8 +1,13 @@
 use aiken/collection/dict
 use aiken/collection/list
 use cardano/address.{Script, Address}
-use cardano/assets.{PolicyId, has_any_nft}
+use cardano/assets.{AssetName, PolicyId, has_any_nft}
 use cardano/transaction.{Transaction, Output}
+use election/utils.{bytearray_join}
+
+use config
+
+use election/state.{ChannelId}
 
 // TODO is it important to check that only one STT is sent to a given output?
 
@@ -72,4 +77,70 @@ pub fn tx_sends_token_to_addr(
 // Confirm that none of our tokens are being minted or burned.
 pub fn no_mints_for_policy(policy_id: PolicyId, tx: Transaction) -> Bool {
   ! has_any_nft(tx.mint, policy_id)
+}
+
+// TODO move to stt.ak
+pub fn full_stt_name(channel_id: ChannelId) -> ByteArray {
+  bytearray_join([config.stt_prefix, channel_id, "channel"], "-")
+}
+
+pub fn check_exact_subchannels_minted(
+  tx: Transaction,
+  policy_id: PolicyId,
+  channel_ids: List<ChannelId>
+) -> Bool {
+  check_exact_mint_burn(tx, policy_id, channel_ids, 1)
+}
+
+pub fn check_exact_subchannels_burned(
+  tx: Transaction,
+  policy_id: PolicyId,
+  channel_ids: List<ChannelId>
+) -> Bool {
+  check_exact_mint_burn(tx, policy_id, channel_ids, -1)
+}
+
+/// Checks that exactly the specified tokens are minted (quantity = 1) or burned (quantity = -1)
+/// 
+/// # Arguments
+/// * `tx` - The transaction to validate
+/// * `policy_id` - The policy ID of the tokens to check
+/// * `token_names` - List of asset names that should be minted/burned
+/// * `quantity` - Either 1 (for minting) or -1 (for burning)
+/// 
+/// # Returns
+/// * `True` if exactly those tokens are minted/burned with the correct quantity
+/// * `False` otherwise
+fn check_exact_mint_burn(
+  tx: Transaction,
+  policy_id: PolicyId,
+  token_names: List<AssetName>,
+  quantity: Int,
+) -> Bool {
+  // Extract the tokens for this policy from the mint field
+  let minted_tokens =
+    tx.mint
+      |> assets.tokens(policy_id)
+      |> dict.to_pairs()
+  
+  // Check that the number of minted tokens matches expected
+  let count_matches = list.length(minted_tokens) == list.length(token_names)
+  
+  // Check that every expected token is present with correct quantity
+  let all_tokens_present =
+    list.all(
+      token_names,
+      fn(expected_name) {
+        list.any(
+          minted_tokens,
+          fn(pair) {
+            let Pair(actual_name, actual_quantity) = pair
+            actual_name == expected_name && actual_quantity == quantity
+          },
+        )
+      },
+    )
+  
+  // Both conditions must be true
+  count_matches && all_tokens_present
 }
