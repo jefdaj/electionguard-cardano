@@ -1,6 +1,6 @@
 use aiken/collection/list
 use cardano/address.{Script, Address}
-use cardano/assets.{PolicyId, has_any_nft}
+use cardano/assets.{PolicyId}
 use cardano/transaction.{OutputReference, Transaction, InlineDatum, find_input}
 
 use election/action.{
@@ -23,7 +23,7 @@ use election/state.{
   rm_subchannels, post_public_records,
 }
 use election/stt.{
-  tx_mints, tx_mints_all, tx_sends_token_to_addr,
+  tx_mints, tx_mints_all, tx_sends_token_to_addr, no_mints_for_policy
 }
 
 use election/utils.{
@@ -33,11 +33,6 @@ use election/utils.{
 // ===========================================
 // Mint validator
 // ===========================================
-
-// Confirm that none of our tokens are being minted or burned.
-pub fn no_mints_for_policy(policy_id: PolicyId, tx: Transaction) -> Bool {
-  ! has_any_nft(tx.mint, policy_id)
-}
 
 pub fn validate_mint(
   oneshot_ref: OutputReference,
@@ -52,8 +47,8 @@ pub fn validate_mint(
     EndElection  -> todo @"end election mint"
 
     // Subchannel STTs
-    AddSubChannels { .. } -> todo "add subchannels mint"
-    RmSubChannels  { .. } -> todo "rm subchannels mint"
+    AddSubChannels { .. } -> todo @"add subchannels mint"
+    RmSubChannels  { .. } -> todo @"rm subchannels mint"
 
     // No mints
     AdvancePhase          -> no_mints_for_policy(policy_id, tx)

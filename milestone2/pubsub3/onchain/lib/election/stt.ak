@@ -1,7 +1,7 @@
 use aiken/collection/dict
 use aiken/collection/list
 use cardano/address.{Script, Address}
-use cardano/assets.{PolicyId}
+use cardano/assets.{PolicyId, has_any_nft}
 use cardano/transaction.{Transaction, Output}
 
 // TODO is it important to check that only one STT is sent to a given output?
@@ -67,4 +67,9 @@ pub fn tx_sends_token_to_addr(
        output.address == addr &&
        assets.quantity_of(output.value, policy_id, token_name) >= min_quantity
      })
+}
+
+// Confirm that none of our tokens are being minted or burned.
+pub fn no_mints_for_policy(policy_id: PolicyId, tx: Transaction) -> Bool {
+  ! has_any_nft(tx.mint, policy_id)
 }
