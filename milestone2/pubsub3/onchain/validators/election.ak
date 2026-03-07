@@ -72,12 +72,12 @@ pub fn validate_subchannel_mints(
   let admin_auth = admin_authorized_tx(tx, policy_id) ?
   when redeemer is {
     AddSubChannels { channels } -> {
-      let mints_burns_as_expected = exact_channels_minted(tx, policy_id, channels) ?
-      admin_auth && mints_burns_as_expected
+      let mints_as_expected = exact_channels_minted(tx, policy_id, channels) ?
+      admin_auth && mints_as_expected
     }
     RmSubChannels { channels } -> {
-      let mints_burns_as_expected = exact_channels_burned(tx, policy_id, channels) ?
-      admin_auth && mints_burns_as_expected
+      let mints_as_expected = exact_channels_burned(tx, policy_id, channels) ?
+      admin_auth && mints_as_expected
     }
     _ -> False
   }
@@ -135,7 +135,8 @@ pub fn validate_admin_multi_channel_spend(
   }
 }
 
-fn find_continuation_state(
+// TODO move to lib
+fn get_continuation_state(
   state: ChannelState,
   own_ref: OutputReference,
   tx: Transaction,
@@ -160,6 +161,7 @@ fn find_continuation_state(
   cont_state
 }
 
+// TODO move to lib
 fn get_new_records(
   state: ChannelState,
   continuation: ChannelState,
@@ -191,7 +193,7 @@ pub fn validate_anyone_single_channel_spend(
   expect PostPublicRecords = redeemer
 
   expect Some(state) = datum
-  let cont_state = find_continuation_state(state, own_ref, tx)
+  let cont_state = get_continuation_state(state, own_ref, tx)
   let new_records = get_new_records(state, cont_state)
 
   // The new records (or at least their CIDs + metadata) must be valid
@@ -199,8 +201,8 @@ pub fn validate_anyone_single_channel_spend(
 
   // And the continuation (next) state must be exactly as expected:
   // new_records replaced, seq incremented, the rest unchanged
-  let expected_continuation = post_public_records(state, new_records)
-  let cont_as_expected = (cont_state == expected_continuation) ?
+  let cont_expected = post_public_records(state, new_records)
+  let cont_as_expected = (cont_state == cont_expected) ?
 
   and {
     new_records_valid,
