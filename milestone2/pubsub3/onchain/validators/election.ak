@@ -156,6 +156,19 @@ fn validate_addsubchannels_spend(
   }
 }
 
+fn validate_advancephase_spend(
+  datum: Option<ChannelState>,
+  own_ref: OutputReference,
+  tx: Transaction,
+) -> Bool {
+  expect Some(AdminChannel(state)) = datum
+  expect AdminChannel(cont_state) = get_continuation_state(datum, own_ref, tx)
+  let valid_transition = is_valid_phase_transition(state.phase, cont_state.phase) ?
+  let expected = AdminChannelState {..state, phase: cont_state.phase}
+  let cont_as_expected = (cont_state == expected) ?
+  valid_transition && cont_as_expected
+}
+
 // No need to check for lack of a continuation STT here,
 // because the mint validator handles that.
 fn validate_endelection_spend(
@@ -176,11 +189,11 @@ pub fn validate_admin_single_channel_spend(
 ) {
   let authorized = admin_signed(own_ref, tx) ?
   authorized && when redeemer is {
-    InitElection -> validate_initelection_spend(datum, own_ref, tx)
+    InitElection                -> validate_initelection_spend(datum, own_ref, tx)
     AddSubChannels { channels } -> validate_addsubchannels_spend(datum, own_ref, tx, channels)
-    AdvancePhase          -> todo @"advance phase spend"
-    EndElection -> validate_endelection_spend(datum)
-    _ -> False
+    AdvancePhase                -> validate_advancephase_spend(datum, own_ref, tx)
+    EndElection                 -> validate_endelection_spend(datum)
+    _                           -> False
   }
 }
 
