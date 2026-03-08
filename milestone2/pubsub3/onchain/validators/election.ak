@@ -173,10 +173,10 @@ fn validate_advancephase_spend(
   valid_transition && cont_as_expected
 }
 
-// No need to check for lack of a continuation STT here; mint() handles that.
 fn validate_endelection_spend(
   datum: Option<ChannelState>,
 ) -> Bool {
+  // No need to check for lack of a continuation STT here; mint() handles that.
   expect Some(AdminChannel(AdminChannelState { subchannels, phase, .. })) = datum
   let final_phase = is_final_phase(phase) ?
   let subchannels_empty = (list.length(subchannels) == 0) ?
@@ -200,22 +200,22 @@ pub fn validate_admin_single_channel_spend(
   }
 }
 
-fn validate_rmsubchannels_spend(
-  datum: Option<ChannelState>,
+fn validate_rmsubchannels_admin_spend(
+  admin_state: AdminChannelState,
+  cont_state: ChannelState,
   own_ref: OutputReference,
   tx: Transaction,
   channels_to_rm: List<ChannelId>
 ) -> Bool {
+  expect AdminChannel(admin_cont_state) = cont_state
 
-  // TODO wait, does this need a SubChannel branch too??
-  expect Some(AdminChannel(state)) = datum
-  expect AdminChannel(cont_state) = get_continuation_state(datum, own_ref, tx)
+  // TODO allow at other times too?
+  let final_phase = is_final_phase(admin_state.phase) ?
 
-  let final_phase = is_final_phase(state.phase) ? // TODO allow at other times too?
-  let valid_transition = is_valid_phase_transition(state.phase, cont_state.phase) ?
+  let valid_transition = is_valid_phase_transition(admin_state.phase, admin_cont_state.phase) ?
 
-  let expected = rm_subchannels(state, channels_to_rm, cont_state.phase)
-  let cont_as_expected = (cont_state == expected) ?
+  let expected = rm_subchannels(admin_state, channels_to_rm, admin_cont_state.phase)
+  let cont_as_expected = (admin_cont_state == expected) ?
 
   // This check could go in the outer scope, but putting it here
   // prevents having to run it many times per TX.
@@ -229,7 +229,38 @@ fn validate_rmsubchannels_spend(
   }
 }
 
-fn validate_admin_rebalancefunds_spend(
+fn validate_rmsubchannels_sub_spend(
+  sub_state: SubChannelState,
+  channels: List<ChannelId>,
+) -> Bool {
+  // No need to check for lack of a continuation STT here; mint() handles that.
+
+  // This checks that all the channels updated are in the declared channels list
+  // (one channel checked per call). Combined with n_channels_correct in
+  // validate_rmsubchannels_admin_spend above, it should ensure that the redeemer
+  // channels list is correct.
+  let valid_channel = list.has(channels, sub_state.channel_id) ?
+  valid_channel
+}
+
+fn validate_rmsubchannels_spend(
+  datum: Option<ChannelState>,
+  own_ref: OutputReference,
+  tx: Transaction,
+  channels: List<ChannelId>,
+) -> Bool {
+  expect Some(state) = datum
+  when state is {
+    AdminChannel(admin_state) -> {
+      let cont_state = get_continuation_state(datum, own_ref, tx)
+      validate_rmsubchannels_admin_spend(admin_state, cont_state, own_ref, tx, channels)
+    }
+    SubChannel(sub_state) ->
+      validate_rmsubchannels_sub_spend(sub_state, channels)
+  }
+}
+
+fn validate_rebalancefunds_admin_spend(
   admin_state: AdminChannelState,
   cont_state: ChannelState,
   own_ref: OutputReference,
@@ -247,7 +278,7 @@ fn validate_admin_rebalancefunds_spend(
 
   // This check could go in validate_rebalancefunds_spend, but putting it here
   // prevents having to run it many times per TX. Combined with the
-  // valid_channel check in validate_subchannel_rebalancefunds_spend below, this
+  // valid_channel check in validate_rebalancefunds_sub_spend below, this
   // should ensure that the redeemer channel list is correct.
   let n_channels_correct = correct_n_channels_updated(own_ref, tx, channels) ?
 
@@ -258,7 +289,7 @@ fn validate_admin_rebalancefunds_spend(
   }
 }
 
-fn validate_subchannel_rebalancefunds_spend(
+fn validate_rebalancefunds_sub_spend(
   sub_state: SubChannelState,
   cont_state: ChannelState,
   channels: List<ChannelId>,
@@ -267,7 +298,7 @@ fn validate_subchannel_rebalancefunds_spend(
 
   // This checks that all the channels updated are in the declared channels list
   // (one channel checked per call). Combined with n_channels_correct in
-  // validate_admin_rebalancefunds_spent above, it should ensure that the redeemer
+  // validate_rebalancefunds_admin_spend above, it should ensure that the redeemer
   // channels list is correct.
   let valid_channel = list.has(channels, sub_state.channel_id) ?
 
@@ -292,9 +323,9 @@ fn validate_rebalancefunds_spend(
   let cont_state = get_continuation_state(datum, own_ref, tx)
   when state is {
     AdminChannel(admin_state) ->
-      validate_admin_rebalancefunds_spend(admin_state, cont_state, own_ref, tx, channels)
+      validate_rebalancefunds_admin_spend(admin_state, cont_state, own_ref, tx, channels)
     SubChannel(sub_state) ->
-      validate_subchannel_rebalancefunds_spend(sub_state, cont_state, channels)
+      validate_rebalancefunds_sub_spend(sub_state, cont_state, channels)
    }
 }
 
