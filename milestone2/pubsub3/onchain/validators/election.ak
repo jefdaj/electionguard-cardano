@@ -22,6 +22,7 @@ use election/stt.{
   exact_channels_burned, no_mints_for_policy, full_stt_name,
   admin_authorized_tx, get_continuation_state,
   admin_signed, publisher_signed, channels_kept_separate,
+  correct_n_channels_updated,
 }
 
 use election/utils.{are_disjoint}
@@ -224,11 +225,7 @@ fn validate_rmsubchannels_spend(
 
 // ADA transfers are handled by the ledger, and we already checked that
 // the overall script amount is retained, so this is almost a no-op: just
-// increment seq. Phase can optionally also be advanced. The only reason
-// we can't reuse validate_advancephase_spend here is this needs to work
-// with multiple channels.
-// TODO clean this up
-// TODO how to check that there aren't any channels mentioned but not rebalanced?
+// increment seq. Phase can optionally also be advanced.
 fn validate_rebalancefunds_spend(
   datum: Option<ChannelState>,
   own_ref: OutputReference,
@@ -250,7 +247,16 @@ fn validate_rebalancefunds_spend(
 	seq: admin_state.seq + 1
       }
       let cont_as_expected = (admin_cont_state == expected) ?
-      valid_transition && cont_as_expected
+
+      // This check could go in the outer scope, but putting it here
+      // prevents having to run it many times per TX.
+      let n_channels_correct = correct_n_channels_updated(own_ref, tx, channels)
+
+      and {
+        valid_transition,
+	n_channels_correct,
+	cont_as_expected,
+      }
     }
 
     SubChannel(sub_state) -> {

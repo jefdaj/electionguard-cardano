@@ -281,7 +281,7 @@ pub fn channels_kept_separate(
   list.all(
     tx.outputs,
     fn(output) {
-      let stt_count
+      let stt_count =
         output.value
           |> assets.tokens(policy_id)
           |> dict.size()
@@ -290,4 +290,51 @@ pub fn channels_kept_separate(
       (stt_count <= 1) ?
     },
   )
+}
+
+pub fn correct_n_channels_updated(
+  own_ref: OutputReference,
+  tx: Transaction,
+  channels: List<ChannelId>,
+) -> Bool {
+
+  let expected = list.length(channels) + 1 // +1 for admin STT
+
+  let (_, policy_id) = get_script_info(own_ref, tx)
+  // Count channel STTs being spent.
+  let stt_count = {
+    trace @"counting channel STTs in inputs"
+    count_tokens_in_outputs(tx.outputs, policy_id)
+  }
+
+  (stt_count == expected) ?
+}
+
+// Generic: count tokens in a list of outputs
+pub fn count_tokens_in_outputs(
+  outputs: List<Output>,
+  policy_id: PolicyId,
+) -> Int {
+  outputs
+    |> list.foldl(
+        0,
+        fn(output, count) {
+          let token_count =
+            output.value
+              |> assets.tokens(policy_id)
+              |> dict.size()
+
+          count + token_count
+        },
+      )
+}
+
+// Adapter: count tokens in transaction inputs
+pub fn count_tokens_in_inputs(
+  inputs: List<Input>,
+  policy_id: PolicyId,
+) -> Int {
+  inputs
+    |> list.map(fn(input) { input.output })
+    |> count_tokens_in_outputs(policy_id)
 }
