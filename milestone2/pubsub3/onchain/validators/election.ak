@@ -9,13 +9,11 @@ use election/action.{
   RmSubChannels, RebalanceFunds, PostPublicRecords,
 }
 use election/funding.{ada_retained_during_election}
-use election/phase.{is_initial_phase, is_valid_phase_transition}
-//   ElectionConfigPhase, ConfigOnboardingPhase, is_initial_phase, is_final_phase,
-//   is_valid_phase_transition,
-// }
+use election/phase.{is_initial_phase, is_final_phase, is_valid_phase_transition}
 use election/record.{validate_records}
 use election/state.{
-  ChannelId, ChannelState, AdminChannel,
+  ChannelId, ChannelState,
+  AdminChannel, AdminChannelState,
   add_subchannels, post_public_records, get_new_records,
 }
 // rm_subchannels, add_subchannels,
@@ -158,6 +156,17 @@ fn validate_addsubchannels_spend(
   }
 }
 
+// No need to check for lack of a continuation STT here,
+// because the mint validator handles that.
+fn validate_endelection_spend(
+  datum: Option<ChannelState>,
+) -> Bool {
+  expect Some(AdminChannel(AdminChannelState { subchannels, phase, .. })) = datum
+  let final_phase = is_final_phase(phase) ?
+  let subchannels_empty = (list.length(subchannels) == 0) ?
+  final_phase && subchannels_empty
+}
+
 // Will be called once with Some(admin STT), or None for InitElection.
 pub fn validate_admin_single_channel_spend(
   datum: Option<ChannelState>,
@@ -170,7 +179,7 @@ pub fn validate_admin_single_channel_spend(
     InitElection -> validate_initelection_spend(datum, own_ref, tx)
     AddSubChannels { channels } -> validate_addsubchannels_spend(datum, own_ref, tx, channels)
     AdvancePhase          -> todo @"advance phase spend"
-    EndElection           -> todo @"end election spend"
+    EndElection -> validate_endelection_spend(datum)
     _ -> False
   }
 }
