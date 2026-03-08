@@ -100,12 +100,16 @@ pub fn extract_subchannel_state(state: ChannelState) -> Option<SubChannelState> 
 // TODO move to action.ak?
 // Note that this will work even if it makes an invalid list of subchannels.
 // TODO should those checks go here too?
-pub fn add_subchannels(old_state: AdminChannelState, new_channels: List<ChannelId>) -> AdminChannelState {
+pub fn add_subchannels(
+  old_state: AdminChannelState,
+  new_channels: List<ChannelId>,
+  new_phase: ElectionPhase
+) -> AdminChannelState {
   AdminChannelState(
     old_state.admin, // should be unchanged
     list.concat(new_channels, old_state.subchannels), // TODO sort here?
     [], // should be reset on each non-post tx
-    old_state.phase,
+    new_phase, // TODO should this be validated here rather than separately?
     old_state.seq + 1 // should be incremented
   )
 }

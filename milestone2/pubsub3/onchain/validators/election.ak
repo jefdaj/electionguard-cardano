@@ -9,22 +9,24 @@ use election/action.{
   RmSubChannels, RebalanceFunds, PostPublicRecords,
 }
 use election/funding.{ada_retained_during_election}
-use election/phase.{is_initial_phase}
+use election/phase.{is_initial_phase, is_valid_phase_transition}
 //   ElectionConfigPhase, ConfigOnboardingPhase, is_initial_phase, is_final_phase,
 //   is_valid_phase_transition,
 // }
 use election/record.{validate_records}
-use election/state.{ChannelState, AdminChannel, post_public_records, get_new_records}
+use election/state.{
+  ChannelId, ChannelState, AdminChannel,
+  add_subchannels, post_public_records, get_new_records,
+}
 // rm_subchannels, add_subchannels,
 use election/stt.{
   exact_channels_minted,
   exact_channels_burned, no_mints_for_policy, full_stt_name,
   admin_authorized_tx, get_continuation_state,
+  admin_signed, publisher_signed,
 }
 
-// use election/utils.{
-//   are_disjoint, tx_signed_by
-// }
+use election/utils.{are_disjoint}
 
 // ===========================================
 // Mint validator
@@ -63,6 +65,7 @@ pub fn validate_subchannel_mints(
   policy_id: PolicyId,
   tx: Transaction,
 ) -> Bool {
+  // TODO unify with admin_signed?
   let admin_auth = admin_authorized_tx(tx, policy_id) ?
   admin_auth && when redeemer is {
     AddSubChannels { channels } -> {
@@ -102,7 +105,7 @@ pub fn validate_mint(
 fn validate_initelection_spend(
   datum: Option<ChannelState>,
   own_ref: OutputReference,
-  tx: Transaction
+  tx: Transaction,
 ) -> Bool {
 
   // This is currently true, but remember to remove it if we run into a
@@ -124,6 +127,37 @@ fn validate_initelection_spend(
   }
 }
 
+// TODO any reason to check or restrict where the new channel STTs are sent?
+fn validate_addsubchannels_spend(
+  datum: Option<ChannelState>,
+  own_ref: OutputReference,
+  tx: Transaction,
+  new_channels: List<ChannelId>
+) -> Bool {
+
+  // The new subchannel STTs aren't being spent, so this will only be called once with the admin STT.
+  expect Some(AdminChannel(state)) = datum
+  expect AdminChannel(cont_state) = get_continuation_state(datum, own_ref, tx)
+
+  // TODO merge into one lib fn?
+  let new_channels_valid  = are_disjoint(new_channels, ["admin"]) ? // TODO enforce [a-z]*[0-9]*?
+  let new_channels_unique = are_disjoint(state.subchannels, new_channels) ?
+
+  let expected = add_subchannels(state, new_channels, cont_state.phase)
+  let cont_as_expected = (cont_state == expected) ?
+  
+  // The new phase could still be ConfigOnboardingPhase,
+  // or it could advance to ConfigCeremonyPhase.
+  let phase_valid = is_valid_phase_transition(state.phase, cont_state.phase) ?
+
+  and {
+    new_channels_valid,
+    new_channels_unique,
+    cont_as_expected,
+    phase_valid,
+  }
+}
+
 // Will be called once with Some(admin STT), or None for InitElection.
 pub fn validate_admin_single_channel_spend(
   datum: Option<ChannelState>,
@@ -131,9 +165,10 @@ pub fn validate_admin_single_channel_spend(
   own_ref: OutputReference,
   tx: Transaction,
 ) {
-  when redeemer is {
+  let authorized = admin_signed(own_ref, tx) ?
+  authorized && when redeemer is {
     InitElection -> validate_initelection_spend(datum, own_ref, tx)
-    AddSubChannels { .. } -> todo @"add subchannels spend"
+    AddSubChannels { channels } -> validate_addsubchannels_spend(datum, own_ref, tx, channels)
     AdvancePhase          -> todo @"advance phase spend"
     EndElection           -> todo @"end election spend"
     _ -> False
@@ -144,10 +179,11 @@ pub fn validate_admin_single_channel_spend(
 pub fn validate_admin_multi_channel_spend(
   _datum: Option<ChannelState>,
   redeemer: ElectionAction,
-  _own_ref: OutputReference,
-  _tx: Transaction,
+  own_ref: OutputReference,
+  tx: Transaction,
 ) {
-  when redeemer is {
+  let authorized = admin_signed(own_ref, tx) ?
+  authorized && when redeemer is {
     RmSubChannels  { .. } -> todo @"rm subchannels spend"
     RebalanceFunds { .. } -> todo @"rebalance funds spend"
     _ -> False
@@ -162,6 +198,8 @@ pub fn validate_anyone_single_channel_spend(
   tx: Transaction,
 ) {
 
+  let authorized = publisher_signed(datum, own_ref, tx) ?
+
   // The only "anyone, single channel" redeemer so far
   expect PostPublicRecords = redeemer
 
@@ -174,10 +212,11 @@ pub fn validate_anyone_single_channel_spend(
 
   // And the continuation (next) state must be exactly as expected:
   // new_records replaced, seq incremented, the rest unchanged
-  let cont_expected = post_public_records(state, new_records)
-  let cont_as_expected = (cont_state == cont_expected) ?
+  let expected = post_public_records(state, new_records)
+  let cont_as_expected = (cont_state == expected) ?
 
   and {
+    authorized,
     new_records_valid,
     cont_as_expected,
   }

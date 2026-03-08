@@ -1,15 +1,15 @@
 use aiken/collection/dict
 use aiken/collection/list
-use aiken/crypto.{ScriptHash}
+use aiken/crypto.{ScriptHash, VerificationKeyHash}
 use cardano/address.{Script, Address}
 use cardano/assets.{AssetName, PolicyId, has_any_nft}
 use cardano/transaction.{Transaction, Input, InlineDatum, Output, OutputReference}
-use election/utils.{bytearray_join}
+use election/utils.{bytearray_join, tx_signed_by}
 
 use config
 
 use election/state.{
-  ChannelId, ChannelState,
+  ChannelId, ChannelState, AdminChannel, SubChannel,
   get_stt_name,
 }
 
@@ -200,18 +200,27 @@ pub fn get_script_info(
 
 // TODO rename stt -> own?
 // The state is optional because there isn't one during InitElection.
-pub fn find_stt_output(
+// TODO find instead of get? not sure if None is helpful
+pub fn get_stt_state(
   datum: Option<ChannelState>,
   own_ref: OutputReference,
   tx: Transaction,
-) -> Option<Output> {
+) -> Option<ChannelState> {
   let (script_addr, policy_id) = get_script_info(own_ref, tx)
   let stt_name = get_stt_name(datum)
   // Find the output containing the STT
-  list.find(tx.outputs, fn(output) {
-    output.address == script_addr &&
-    assets.quantity_of(output.value, policy_id, stt_name) == 1
-  })
+  expect Some(stt_output) =
+    list.find(tx.outputs, fn(output) {
+      output.address == script_addr &&
+      assets.quantity_of(output.value, policy_id, stt_name) == 1
+    })
+  when stt_output.datum is {
+    InlineDatum(datum) -> {
+      expect state: ChannelState = datum
+      Some(state)
+    }
+    _ -> None
+  }
 }
 
 // The state is optional because there isn't one during InitElection.
@@ -220,10 +229,43 @@ pub fn get_continuation_state(
   own_ref: OutputReference,
   tx: Transaction,
 ) -> ChannelState {
-  expect Some(stt_output) = find_stt_output(datum, own_ref, tx)
-  expect InlineDatum(cont_datum) = stt_output.datum
-  expect cont_state: ChannelState = cont_datum
+  expect Some(cont_state) = get_stt_state(datum, own_ref, tx)
   cont_state
 }
 
+pub fn get_publisher_vkh(
+  datum: Option<ChannelState>,
+  own_ref: OutputReference,
+  tx: Transaction,
+) -> VerificationKeyHash {
+  expect Some(state) = get_stt_state(datum, own_ref, tx)
+  when state is {
+    AdminChannel(admin_state) -> admin_state.admin
+    SubChannel(sub_state) -> sub_state.publisher
+  }
+}
 
+pub fn get_admin_vkh(
+  own_ref: OutputReference,
+  tx: Transaction,
+) -> VerificationKeyHash {
+  expect Some(AdminChannel(state)) = get_stt_state(None, own_ref, tx)
+  state.admin
+}
+
+pub fn publisher_signed(
+  datum: Option<ChannelState>,
+  own_ref: OutputReference,
+  tx: Transaction,
+) -> Bool {
+  let pub_vkh = get_publisher_vkh(datum, own_ref, tx)
+  tx_signed_by(tx, pub_vkh)
+}
+
+pub fn admin_signed(
+  own_ref: OutputReference,
+  tx: Transaction,
+) -> Bool {
+  let admin_vkh = get_admin_vkh(own_ref, tx)
+  tx_signed_by(tx, admin_vkh)
+}
