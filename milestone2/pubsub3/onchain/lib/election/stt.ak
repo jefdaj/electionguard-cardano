@@ -105,13 +105,13 @@ pub fn exact_channels_burned(
 }
 
 /// Checks that exactly the specified tokens are minted (quantity = 1) or burned (quantity = -1)
-/// 
+///
 /// # Arguments
 /// * `tx` - The transaction to validate
 /// * `policy_id` - The policy ID of the tokens to check
 /// * `token_names` - List of asset names that should be minted/burned
 /// * `quantity` - Either 1 (for minting) or -1 (for burning)
-/// 
+///
 /// # Returns
 /// * `True` if exactly those tokens are minted/burned with the correct quantity
 /// * `False` otherwise
@@ -126,10 +126,10 @@ fn check_exact_mint_burn(
     tx.mint
       |> assets.tokens(policy_id)
       |> dict.to_pairs()
-  
+
   // Check that the number of minted tokens matches expected
   let count_matches = list.length(minted_tokens) == list.length(token_names)
-  
+
   // Check that every expected token is present with correct quantity
   let all_tokens_present =
     list.all(
@@ -144,7 +144,7 @@ fn check_exact_mint_burn(
         )
       },
     )
-  
+
   // Both conditions must be true
   count_matches && all_tokens_present
 }
@@ -268,4 +268,26 @@ pub fn admin_signed(
 ) -> Bool {
   let admin_vkh = get_admin_vkh(own_ref, tx)
   tx_signed_by(tx, admin_vkh)
+}
+
+// This prevents more than one STT being sent to a given UTxO.
+// It may not be strictly required, but simplifies the mental model.
+pub fn channels_kept_separate(
+  own_ref: OutputReference,
+  tx: Transaction,
+) -> Bool {
+  trace @"checking each output has at most 1 channel STT"
+  let (_, policy_id) = get_script_info(own_ref, tx)
+  list.all(
+    tx.outputs,
+    fn(output) {
+      let stt_count
+        output.value
+          |> assets.tokens(policy_id)
+          |> dict.size()
+
+      trace @"stt_count at output": stt_count
+      (stt_count <= 1) ?
+    },
+  )
 }

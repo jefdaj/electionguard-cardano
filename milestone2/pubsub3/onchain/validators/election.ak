@@ -21,7 +21,7 @@ use election/stt.{
   exact_channels_minted,
   exact_channels_burned, no_mints_for_policy, full_stt_name,
   admin_authorized_tx, get_continuation_state,
-  admin_signed, publisher_signed,
+  admin_signed, publisher_signed, channels_kept_separate,
 }
 
 use election/utils.{are_disjoint}
@@ -148,11 +148,14 @@ fn validate_addsubchannels_spend(
   // or it could advance to ConfigCeremonyPhase.
   let phase_valid = is_valid_phase_transition(state.phase, cont_state.phase) ?
 
+  let channels_separate = channels_kept_separate(own_ref, tx) ?
+
   and {
     new_channels_valid,
     new_channels_unique,
     cont_as_expected,
     phase_valid,
+    channels_separate,
   }
 }
 
@@ -237,28 +240,33 @@ fn validate_rebalancefunds_spend(
   let cont_state = get_continuation_state(datum, own_ref, tx)
 
   when state is {
+
     AdminChannel(admin_state) -> {
       expect AdminChannel(admin_cont_state) = cont_state
       let valid_transition = is_valid_phase_transition(admin_state.phase, admin_cont_state.phase) ?
-      let expected = AdminChannelState {..admin_state, phase: admin_cont_state.phase, seq: admin_state.seq+1}
-      let cont_as_expected = (admin_cont_state == expected) ?
-      and {
-        valid_transition,
-        cont_as_expected,
+      let expected = AdminChannelState {
+        ..admin_state,
+	phase: admin_cont_state.phase,
+	seq: admin_state.seq + 1
       }
+      let cont_as_expected = (admin_cont_state == expected) ?
+      valid_transition && cont_as_expected
     }
+
     SubChannel(sub_state) -> {
       expect SubChannel(sub_cont_state) = cont_state
       let valid_channel = list.has(channels, sub_state.channel_id) ?
-      let expected = SubChannelState {..sub_state, seq: sub_state.seq+1}
-      let cont_as_expected = (sub_cont_state == expected) ?
-      and {
-        valid_channel,
-        cont_as_expected,
+      // Note there's no phase in this one.
+      let expected = SubChannelState {
+        ..sub_state,
+	seq: sub_state.seq + 1
       }
+      let cont_as_expected = (sub_cont_state == expected) ?
+      valid_channel && cont_as_expected
     }
+
   }
- }
+}
 
 // Will be called once with admin STT + once with each subchannel STT.
 pub fn validate_admin_multi_channel_spend(
@@ -268,7 +276,8 @@ pub fn validate_admin_multi_channel_spend(
   tx: Transaction,
 ) {
   let authorized = admin_signed(own_ref, tx) ?
-  authorized && when redeemer is {
+  let separate = channels_kept_separate(own_ref, tx) ?
+  authorized && separate && when redeemer is {
     RmSubChannels  { channels } -> validate_rmsubchannels_spend(datum, own_ref, tx, channels)
     RebalanceFunds { channels } -> validate_rebalancefunds_spend(datum, own_ref, tx, channels)
     _ -> False
