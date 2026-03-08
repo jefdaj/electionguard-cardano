@@ -219,7 +219,7 @@ fn validate_rmsubchannels_spend(
 
   // This check could go in the outer scope, but putting it here
   // prevents having to run it many times per TX.
-  let n_channels_correct = correct_n_channels_updated(own_ref, tx, channels)
+  let n_channels_correct = correct_n_channels_updated(own_ref, tx, channels_to_rm)
 
   and {
     final_phase,
@@ -227,6 +227,48 @@ fn validate_rmsubchannels_spend(
     cont_as_expected,
     n_channels_correct,
   }
+}
+
+fn validate_admin_rebalancefunds_spend(
+  admin_state: AdminChannelState,
+  cont_state: ChannelState,
+  own_ref: OutputReference,
+  tx: Transaction,
+  channels: List<ChannelId>,
+) -> Bool {
+  expect AdminChannel(admin_cont_state) = cont_state
+  let valid_transition = is_valid_phase_transition(admin_state.phase, admin_cont_state.phase) ?
+  let expected = AdminChannelState {
+    ..admin_state,
+    phase: admin_cont_state.phase,
+    seq: admin_state.seq + 1
+  }
+  let cont_as_expected = (admin_cont_state == expected) ?
+
+  // This check could go in validate_rebalancefunds_spend, but putting it here
+  // prevents having to run it many times per TX.
+  let n_channels_correct = correct_n_channels_updated(own_ref, tx, channels)
+
+  and {
+    valid_transition,
+    n_channels_correct,
+    cont_as_expected,
+  }
+}
+
+fn validate_subchannel_rebalancefunds_spend(
+  sub_state: SubChannelState,
+  cont_state: ChannelState,
+  channels: List<ChannelId>,
+) -> Bool {
+  expect SubChannel(sub_cont_state) = cont_state
+  let valid_channel = list.has(channels, sub_state.channel_id) ?
+  let expected = SubChannelState {
+    ..sub_state,
+    seq: sub_state.seq + 1
+  }
+  let cont_as_expected = (sub_cont_state == expected) ?
+  valid_channel && cont_as_expected
 }
 
 // ADA transfers are handled by the ledger, and we already checked that
@@ -238,46 +280,14 @@ fn validate_rebalancefunds_spend(
   tx: Transaction,
   channels: List<ChannelId>,
 ) -> Bool {
-
   expect Some(state) = datum
   let cont_state = get_continuation_state(datum, own_ref, tx)
-
   when state is {
-
-    AdminChannel(admin_state) -> {
-      expect AdminChannel(admin_cont_state) = cont_state
-      let valid_transition = is_valid_phase_transition(admin_state.phase, admin_cont_state.phase) ?
-      let expected = AdminChannelState {
-        ..admin_state,
-	phase: admin_cont_state.phase,
-	seq: admin_state.seq + 1
-      }
-      let cont_as_expected = (admin_cont_state == expected) ?
-
-      // This check could go in the outer scope, but putting it here
-      // prevents having to run it many times per TX.
-      let n_channels_correct = correct_n_channels_updated(own_ref, tx, channels)
-
-      and {
-        valid_transition,
-	n_channels_correct,
-	cont_as_expected,
-      }
-    }
-
-    SubChannel(sub_state) -> {
-      expect SubChannel(sub_cont_state) = cont_state
-      let valid_channel = list.has(channels, sub_state.channel_id) ?
-      // Note there's no phase in this one.
-      let expected = SubChannelState {
-        ..sub_state,
-	seq: sub_state.seq + 1
-      }
-      let cont_as_expected = (sub_cont_state == expected) ?
-      valid_channel && cont_as_expected
-    }
-
-  }
+    AdminChannel(admin_state) ->
+      validate_admin_rebalancefunds_spend(admin_state, cont_state, own_ref, tx, channels)
+    SubChannel(sub_state) ->
+      validate_subchannel_rebalancefunds_spend(sub_state, cont_state, channels)
+   }
 }
 
 // Will be called once with admin STT + once with each subchannel STT.
