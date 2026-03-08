@@ -1,3 +1,4 @@
+use aiken/collection/list
 use cardano/assets.{PolicyId}
 use cardano/transaction.{
   OutputReference, Transaction, find_input
@@ -8,12 +9,12 @@ use election/action.{
   RmSubChannels, RebalanceFunds, PostPublicRecords,
 }
 use election/funding.{ada_retained_during_election}
-// use election/phase.{
+use election/phase.{is_initial_phase}
 //   ElectionConfigPhase, ConfigOnboardingPhase, is_initial_phase, is_final_phase,
 //   is_valid_phase_transition,
 // }
 use election/record.{validate_records}
-use election/state.{ChannelState, post_public_records, get_new_records}
+use election/state.{ChannelState, AdminChannel, post_public_records, get_new_records}
 // rm_subchannels, add_subchannels,
 use election/stt.{
   exact_channels_minted,
@@ -63,14 +64,14 @@ pub fn validate_subchannel_mints(
   tx: Transaction,
 ) -> Bool {
   let admin_auth = admin_authorized_tx(tx, policy_id) ?
-  when redeemer is {
+  admin_auth && when redeemer is {
     AddSubChannels { channels } -> {
       let mints_as_expected = exact_channels_minted(tx, policy_id, channels) ?
-      admin_auth && mints_as_expected
+      mints_as_expected
     }
     RmSubChannels { channels } -> {
       let mints_as_expected = exact_channels_burned(tx, policy_id, channels) ?
-      admin_auth && mints_as_expected
+      mints_as_expected
     }
     _ -> False
   }
@@ -98,15 +99,42 @@ pub fn validate_mint(
 // Spend validator
 // ===========================================
 
+fn validate_initelection_spend(
+  datum: Option<ChannelState>,
+  own_ref: OutputReference,
+  tx: Transaction
+) -> Bool {
+
+  // This is currently true, but remember to remove it if we run into a
+  // use case for opening a channel starting from another script.
+  // TODO remove anyway, since it's not technically required?
+  expect None = datum
+
+  // Has a special to find the new admin state when given a datum of None.
+  let cont_state: ChannelState = get_continuation_state(datum, own_ref, tx)
+  expect AdminChannel(admin_state) = cont_state
+
+  let new_records_empty = (list.length(admin_state.new_records) == 0) ?
+  let subchannels_empty = (list.length(admin_state.subchannels) == 0) ?
+  let seq_zero = (admin_state.seq == 0) ?
+  let initial_phase = is_initial_phase(admin_state.phase) ?
+  and {
+    new_records_empty,
+    subchannels_empty,
+    seq_zero,
+    initial_phase,
+  }
+}
+
 // Will be called once with Some(admin STT), or None for InitElection.
 pub fn validate_admin_single_channel_spend(
-  _datum: Option<ChannelState>,
+  datum: Option<ChannelState>,
   redeemer: ElectionAction,
-  _own_ref: OutputReference,
-  _tx: Transaction,
+  own_ref: OutputReference,
+  tx: Transaction,
 ) {
   when redeemer is {
-    InitElection          -> todo @"init election spend"
+    InitElection -> validate_initelection_spend(datum, own_ref, tx)
     AddSubChannels { .. } -> todo @"add subchannels spend"
     AdvancePhase          -> todo @"advance phase spend"
     EndElection           -> todo @"end election spend"
@@ -140,7 +168,7 @@ pub fn validate_anyone_single_channel_spend(
   expect PostPublicRecords = redeemer
 
   expect Some(state) = datum
-  let cont_state = get_continuation_state(state, own_ref, tx)
+  let cont_state = get_continuation_state(datum, own_ref, tx)
   let new_records = get_new_records(state, cont_state)
 
   // The new records (or at least their CIDs + metadata) must be valid

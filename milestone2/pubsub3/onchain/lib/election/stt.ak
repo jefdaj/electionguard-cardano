@@ -199,14 +199,14 @@ pub fn get_script_info(
 }
 
 // TODO rename stt -> own?
-// TODO make state optional?
+// The state is optional because there isn't one during InitElection.
 pub fn find_stt_output(
-  state: ChannelState,
+  datum: Option<ChannelState>,
   own_ref: OutputReference,
   tx: Transaction,
 ) -> Option<Output> {
   let (script_addr, policy_id) = get_script_info(own_ref, tx)
-  let stt_name = get_stt_name(Some(state))
+  let stt_name = get_stt_name(datum)
   // Find the output containing the STT
   list.find(tx.outputs, fn(output) {
     output.address == script_addr &&
@@ -214,12 +214,13 @@ pub fn find_stt_output(
   })
 }
 
+// The state is optional because there isn't one during InitElection.
 pub fn get_continuation_state(
-  state: ChannelState,
+  datum: Option<ChannelState>,
   own_ref: OutputReference,
   tx: Transaction,
 ) -> ChannelState {
-  expect Some(stt_output) = find_stt_output(state, own_ref, tx)
+  expect Some(stt_output) = find_stt_output(datum, own_ref, tx)
   expect InlineDatum(cont_datum) = stt_output.datum
   expect cont_state: ChannelState = cont_datum
   cont_state
