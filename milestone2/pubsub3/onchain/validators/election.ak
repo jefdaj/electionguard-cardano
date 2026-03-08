@@ -14,6 +14,7 @@ use election/record.{validate_records}
 use election/state.{
   ChannelId, ChannelState,
   AdminChannel, AdminChannelState,
+  SubChannel, SubChannelState,
   add_subchannels, rm_subchannels, post_public_records, get_new_records,
 }
 use election/stt.{
@@ -218,6 +219,47 @@ fn validate_rmsubchannels_spend(
   }
 }
 
+// ADA transfers are handled by the ledger, and we already checked that
+// the overall script amount is retained, so this is almost a no-op: just
+// increment seq. Phase can optionally also be advanced. The only reason
+// we can't reuse validate_advancephase_spend here is this needs to work
+// with multiple channels.
+// TODO clean this up
+// TODO how to check that there aren't any channels mentioned but not rebalanced?
+fn validate_rebalancefunds_spend(
+  datum: Option<ChannelState>,
+  own_ref: OutputReference,
+  tx: Transaction,
+  channels: List<ChannelId>,
+) -> Bool {
+
+  expect Some(state) = datum
+  let cont_state = get_continuation_state(datum, own_ref, tx)
+
+  when state is {
+    AdminChannel(admin_state) -> {
+      expect AdminChannel(admin_cont_state) = cont_state
+      let valid_transition = is_valid_phase_transition(admin_state.phase, admin_cont_state.phase) ?
+      let expected = AdminChannelState {..admin_state, phase: admin_cont_state.phase, seq: admin_state.seq+1}
+      let cont_as_expected = (admin_cont_state == expected) ?
+      and {
+        valid_transition,
+        cont_as_expected,
+      }
+    }
+    SubChannel(sub_state) -> {
+      expect SubChannel(sub_cont_state) = cont_state
+      let valid_channel = list.has(channels, sub_state.channel_id) ?
+      let expected = SubChannelState {..sub_state, seq: sub_state.seq+1}
+      let cont_as_expected = (sub_cont_state == expected) ?
+      and {
+        valid_channel,
+        cont_as_expected,
+      }
+    }
+  }
+ }
+
 // Will be called once with admin STT + once with each subchannel STT.
 pub fn validate_admin_multi_channel_spend(
   datum: Option<ChannelState>,
@@ -228,7 +270,7 @@ pub fn validate_admin_multi_channel_spend(
   let authorized = admin_signed(own_ref, tx) ?
   authorized && when redeemer is {
     RmSubChannels  { channels } -> validate_rmsubchannels_spend(datum, own_ref, tx, channels)
-    RebalanceFunds { .. } -> todo @"rebalance funds spend"
+    RebalanceFunds { channels } -> validate_rebalancefunds_spend(datum, own_ref, tx, channels)
     _ -> False
   }
 }
