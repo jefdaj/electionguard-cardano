@@ -246,8 +246,10 @@ fn validate_admin_rebalancefunds_spend(
   let cont_as_expected = (admin_cont_state == expected) ?
 
   // This check could go in validate_rebalancefunds_spend, but putting it here
-  // prevents having to run it many times per TX.
-  let n_channels_correct = correct_n_channels_updated(own_ref, tx, channels)
+  // prevents having to run it many times per TX. Combined with the
+  // valid_channel check in validate_subchannel_rebalancefunds_spend below, this
+  // should ensure that the redeemer channel list is correct.
+  let n_channels_correct = correct_n_channels_updated(own_ref, tx, channels) ?
 
   and {
     valid_transition,
@@ -262,7 +264,13 @@ fn validate_subchannel_rebalancefunds_spend(
   channels: List<ChannelId>,
 ) -> Bool {
   expect SubChannel(sub_cont_state) = cont_state
+
+  // This checks that all the channels updated are in the declared channels list
+  // (one channel checked per call). Combined with n_channels_correct in
+  // validate_admin_rebalancefunds_spent above, it should ensure that the redeemer
+  // channels list is correct.
   let valid_channel = list.has(channels, sub_state.channel_id) ?
+
   let expected = SubChannelState {
     ..sub_state,
     seq: sub_state.seq + 1
