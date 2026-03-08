@@ -1,16 +1,38 @@
 use aiken/collection/list
-use cardano/transaction.{Transaction, Input}
+use cardano/transaction.{Transaction, Input, OutputReference}
 use cardano/assets.{PolicyId, Value, lovelace_of, policies}
 
-/// Checks that the channel's ADA is preserved minus transaction fees.
+use election/action.{ElectionAction, InitElection, EndElection}
+use election/stt.{get_script_info}
+
+// During the election, we want to make sure that no one takes ADA out of
+// the channel fee pools, but also allow change from top-up transactions.
+// At the end of the election, the admin can send remaining ADA wherever
+// they want. In future versions, this would be a good place to add
+// treasury logic.
+pub fn ada_retained_during_election(
+  redeemer: ElectionAction,
+  own_ref: OutputReference,
+  tx: Transaction,
+) -> Bool {
+  when redeemer is {
+    InitElection | EndElection -> True
+    _ -> {
+      let (_, policy_id) = get_script_info(own_ref, tx)
+      script_ada_retained(tx, policy_id)
+    }
+  }
+}
+
+/// Checks that the script controlled ADA is retained minus transaction fees.
 /// Allows external contributions and change outputs.
-pub fn channel_ada_preserved(
+fn script_ada_retained(
   tx: Transaction,
   policy_id: PolicyId,
 ) -> Bool {
-  let channel_input_ada  =  ada_in_inputs_with_policy(tx, policy_id)
-  let channel_output_ada = ada_in_outputs_with_policy(tx, policy_id)
-  channel_output_ada + tx.fee >= channel_input_ada
+  let script_input_ada  =  ada_in_inputs_with_policy(tx, policy_id)
+  let script_output_ada = ada_in_outputs_with_policy(tx, policy_id)
+  script_output_ada + tx.fee >= script_input_ada
 }
 
 /// Calculates total ADA in inputs that contain tokens from the policy

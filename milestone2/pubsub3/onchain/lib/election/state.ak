@@ -69,7 +69,7 @@ pub fn get_channel_id(state: Option<ChannelState>) -> ChannelId {
 
 // Note that you can set state to None to use this in the admin mint validator.
 // TODO is that weird and confusing?
-// TODO remove
+// TODO move to stt?
 pub fn get_stt_name(state: Option<ChannelState>) -> ByteArray {
   let channel_name = get_channel_id(state)
   bytearray_join([config.stt_prefix, channel_name, "channel"], "-")
@@ -173,3 +173,20 @@ pub fn post_public_records(old_state: ChannelState, records: List<PublicRecord>)
 //   expect new_state: ChannelState = new_datum
 //   new_state.seq == (old_seq + 1)
 // }
+
+// Types must match: both AdminChannel or both SubChannel.
+pub fn get_new_records(
+  state: ChannelState,
+  continuation: ChannelState,
+) -> List<PublicRecord> {
+  when state is {
+    AdminChannel(_) -> {
+      expect AdminChannel(cont_state) = continuation
+      cont_state.new_records
+    }   
+    SubChannel(_) -> {
+      expect SubChannel(cont_state) = continuation
+      cont_state.new_records
+    }   
+  }
+}

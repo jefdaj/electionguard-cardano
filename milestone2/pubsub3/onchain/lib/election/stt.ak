@@ -1,13 +1,17 @@
 use aiken/collection/dict
 use aiken/collection/list
+use aiken/crypto.{ScriptHash}
 use cardano/address.{Script, Address}
 use cardano/assets.{AssetName, PolicyId, has_any_nft}
-use cardano/transaction.{Transaction, Input, Output, OutputReference}
+use cardano/transaction.{Transaction, Input, InlineDatum, Output, OutputReference}
 use election/utils.{bytearray_join}
 
 use config
 
-use election/state.{ChannelId}
+use election/state.{
+  ChannelId, ChannelState,
+  get_stt_name,
+}
 
 // TODO is it important to check that only one STT is sent to a given output?
 
@@ -182,3 +186,43 @@ pub fn admin_authorized_tx(
     None    -> False
   }
 }
+
+// TODO does needing script_addr imply I'm doing something wrong?
+pub fn get_script_info(
+  own_ref: OutputReference,
+  tx: Transaction,
+) -> (Address, ScriptHash) {
+  expect Some(own_input) = tx.inputs |> transaction.find_input(own_ref)
+  expect Script(policy_id) = own_input.output.address.payment_credential
+  let script_addr = own_input.output.address
+  (script_addr, policy_id)
+}
+
+// TODO rename stt -> own?
+// TODO make state optional?
+pub fn find_stt_output(
+  state: ChannelState,
+  own_ref: OutputReference,
+  tx: Transaction,
+) -> Option<Output> {
+  let (script_addr, policy_id) = get_script_info(own_ref, tx)
+  let stt_name = get_stt_name(Some(state))
+  // Find the output containing the STT
+  list.find(tx.outputs, fn(output) {
+    output.address == script_addr &&
+    assets.quantity_of(output.value, policy_id, stt_name) == 1
+  })
+}
+
+pub fn get_continuation_state(
+  state: ChannelState,
+  own_ref: OutputReference,
+  tx: Transaction,
+) -> ChannelState {
+  expect Some(stt_output) = find_stt_output(state, own_ref, tx)
+  expect InlineDatum(cont_datum) = stt_output.datum
+  expect cont_state: ChannelState = cont_datum
+  cont_state
+}
+
+
