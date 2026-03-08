@@ -207,6 +207,7 @@ fn validate_rmsubchannels_spend(
   channels_to_rm: List<ChannelId>
 ) -> Bool {
 
+  // TODO wait, does this need a SubChannel branch too??
   expect Some(AdminChannel(state)) = datum
   expect AdminChannel(cont_state) = get_continuation_state(datum, own_ref, tx)
 
@@ -216,10 +217,15 @@ fn validate_rmsubchannels_spend(
   let expected = rm_subchannels(state, channels_to_rm, cont_state.phase)
   let cont_as_expected = (cont_state == expected) ?
 
+  // This check could go in the outer scope, but putting it here
+  // prevents having to run it many times per TX.
+  let n_channels_correct = correct_n_channels_updated(own_ref, tx, channels)
+
   and {
     final_phase,
     valid_transition,
     cont_as_expected,
+    n_channels_correct,
   }
 }
 
