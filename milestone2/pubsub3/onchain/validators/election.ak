@@ -198,6 +198,8 @@ pub fn validate_anyone_single_channel_spend(
   tx: Transaction,
 ) {
 
+  // Gotcha: admin_signed wouldn't do here, because we don't want the admin to
+  // be able to post to a non-admin channel.
   let authorized = publisher_signed(datum, own_ref, tx) ?
 
   // The only "anyone, single channel" redeemer so far
