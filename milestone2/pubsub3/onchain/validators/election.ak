@@ -110,14 +110,13 @@ fn validate_initelection_spend(
   // TODO remove anyway, since it's not technically required?
   expect None = datum
 
-  // Has a special to find the new admin state when given a datum of None.
-  let cont_state: ChannelState = get_continuation_state(datum, own_ref, tx)
-  expect AdminChannel(admin_state) = cont_state
+  // Has a special to find the new admin state when datum is None.
+  expect AdminChannel(cont_state) = get_continuation_state(None, own_ref, tx)
 
-  let new_records_empty = (list.length(admin_state.new_records) == 0) ?
-  let subchannels_empty = (list.length(admin_state.subchannels) == 0) ?
-  let seq_zero = (admin_state.seq == 0) ?
-  let initial_phase = is_initial_phase(admin_state.phase) ?
+  let new_records_empty = (list.length(cont_state.new_records) == 0) ?
+  let subchannels_empty = (list.length(cont_state.subchannels) == 0) ?
+  let seq_zero = (cont_state.seq == 0) ?
+  let initial_phase = is_initial_phase(cont_state.phase) ?
   and {
     new_records_empty,
     subchannels_empty,
