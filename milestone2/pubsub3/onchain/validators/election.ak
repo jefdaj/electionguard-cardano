@@ -1,15 +1,16 @@
 use aiken/collection/list
+use aiken/crypto.{ScriptHash}
 use cardano/address.{Script, Address}
 use cardano/assets.{PolicyId}
-use cardano/transaction.{OutputReference, Transaction, InlineDatum, find_input}
+use cardano/transaction.{
+  Output, OutputReference, Transaction, InlineDatum, find_input
+}
 
 use election/action.{
   ElectionAction, InitElection, AddSubChannels, AdvancePhase, EndElection,
   RmSubChannels, RebalanceFunds, PostPublicRecords,
 }
-// use election/funding.{
-//   channel_ada_preserved
-// }
+use election/funding.{channel_ada_preserved}
 // use election/phase.{
 //   ElectionConfigPhase, ConfigOnboardingPhase, is_initial_phase, is_final_phase,
 //   is_valid_phase_transition,
@@ -138,26 +139,41 @@ pub fn validate_admin_multi_channel_spend(
 }
 
 // TODO move to lib
+// TODO does needing script_addr imply I'm doing something wrong?
+fn get_script_info(
+  own_ref: OutputReference,
+  tx: Transaction,
+) -> (Address, ScriptHash) {
+  expect Some(own_input) = tx.inputs |> transaction.find_input(own_ref)
+  expect Script(policy_id) = own_input.output.address.payment_credential
+  let script_addr = own_input.output.address
+  (script_addr, policy_id)
+}
+
+// TODO move to lib
+// TODO rename stt -> own?
+// TODO make state optional?
+fn find_stt_output(
+  state: ChannelState,
+  own_ref: OutputReference,
+  tx: Transaction,
+) -> Option<Output> {
+  let (script_addr, policy_id) = get_script_info(own_ref, tx)
+  let stt_name = get_stt_name(Some(state))
+  // Find the output containing the STT
+  list.find(tx.outputs, fn(output) {
+    output.address == script_addr &&
+    assets.quantity_of(output.value, policy_id, stt_name) == 1
+  })
+}
+
+// TODO move to lib
 fn get_continuation_state(
   state: ChannelState,
   own_ref: OutputReference,
   tx: Transaction,
 ) -> ChannelState {
-
-  // Get own input to extract script address and policy
-  expect Some(own_input) = tx.inputs |> list.find(fn(i) { i.output_reference == own_ref })
-  expect Script(policy_id) = own_input.output.address.payment_credential
-
-  let script_addr = own_input.output.address
-  let stt_name = get_stt_name(Some(state))
-
-  // Find the output containing the STT
-  expect Some(stt_output) =
-    list.find(tx.outputs, fn(output) {
-      output.address == script_addr &&
-      assets.quantity_of(output.value, policy_id, stt_name) == 1
-    })
-
+  expect Some(stt_output) = find_stt_output(state, own_ref, tx)
   expect InlineDatum(cont_datum) = stt_output.datum
   expect cont_state: ChannelState = cont_datum
   cont_state
@@ -210,13 +226,35 @@ pub fn validate_anyone_single_channel_spend(
   }
 }
 
+// During the election, we want to make sure that no one takes ADA out of
+// the channel fee pools, but also allow change from top-up transactions.
+// At the end of the election, the admin can send remaining ADA wherever
+// they want. In future versions, this would be a good place to add
+// treasury logic.
+// TODO move to lib
+// TODO is anything more needed in the init election case?
+pub fn ada_retained_during_election(
+  redeemer: ElectionAction,
+  own_ref: OutputReference,
+  tx: Transaction,
+) -> Bool {
+  when redeemer is {
+    InitElection | EndElection -> True
+    _ -> {
+      let (_, policy_id) = get_script_info(own_ref, tx)
+      channel_ada_preserved(tx, policy_id)
+    }
+  }
+}
+
 pub fn validate_spend(
   datum: Option<ChannelState>,
   redeemer: ElectionAction,
   own_ref: OutputReference,
   tx: Transaction,
 ) {
-  when redeemer is {
+  let ada_retained = ada_retained_during_election(redeemer, own_ref, tx) ?
+  ada_retained && when redeemer is {
     InitElection | AddSubChannels { .. } | AdvancePhase | EndElection ->
       validate_admin_single_channel_spend(datum, redeemer, own_ref, tx)
     RmSubChannels { .. } | RebalanceFunds { .. } ->
