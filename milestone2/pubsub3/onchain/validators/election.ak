@@ -14,9 +14,8 @@ use election/record.{validate_records}
 use election/state.{
   ChannelId, ChannelState,
   AdminChannel, AdminChannelState,
-  add_subchannels, post_public_records, get_new_records,
+  add_subchannels, rm_subchannels, post_public_records, get_new_records,
 }
-// rm_subchannels, add_subchannels,
 use election/stt.{
   exact_channels_minted,
   exact_channels_burned, no_mints_for_policy, full_stt_name,
@@ -196,16 +195,39 @@ pub fn validate_admin_single_channel_spend(
   }
 }
 
+fn validate_rmsubchannels_spend(
+  datum: Option<ChannelState>,
+  own_ref: OutputReference,
+  tx: Transaction,
+  channels_to_rm: List<ChannelId>
+) -> Bool {
+
+  expect Some(AdminChannel(state)) = datum
+  expect AdminChannel(cont_state) = get_continuation_state(datum, own_ref, tx)
+
+  let final_phase = is_final_phase(state.phase) ? // TODO allow at other times too?
+  let valid_transition = is_valid_phase_transition(state.phase, cont_state.phase) ?
+
+  let expected = rm_subchannels(state, channels_to_rm, cont_state.phase)
+  let cont_as_expected = (cont_state == expected) ?
+
+  and {
+    final_phase,
+    valid_transition,
+    cont_as_expected,
+  }
+}
+
 // Will be called once with admin STT + once with each subchannel STT.
 pub fn validate_admin_multi_channel_spend(
-  _datum: Option<ChannelState>,
+  datum: Option<ChannelState>,
   redeemer: ElectionAction,
   own_ref: OutputReference,
   tx: Transaction,
 ) {
   let authorized = admin_signed(own_ref, tx) ?
   authorized && when redeemer is {
-    RmSubChannels  { .. } -> todo @"rm subchannels spend"
+    RmSubChannels  { channels } -> validate_rmsubchannels_spend(datum, own_ref, tx, channels)
     RebalanceFunds { .. } -> todo @"rebalance funds spend"
     _ -> False
   }

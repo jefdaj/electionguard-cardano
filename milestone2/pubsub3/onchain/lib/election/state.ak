@@ -117,12 +117,16 @@ pub fn add_subchannels(
 // TODO move to action.ak?
 // Note that this doesn't check whether the channels removed make sense.
 // TODO should those checks also go here?
-pub fn rm_subchannels(old_state: AdminChannelState, channels_to_rm: List<ChannelId>) -> AdminChannelState {
+pub fn rm_subchannels(
+  old_state: AdminChannelState,
+  channels_to_rm: List<ChannelId>,
+  new_phase: ElectionPhase
+) -> AdminChannelState {
   AdminChannelState(
     old_state.admin, // should be unchanged
     remove_elements(old_state.subchannels, channels_to_rm),
     [], // should be reset on each non-post tx
-    old_state.phase,
+    new_phase, // TODO should this be validated here rather than separately?
     old_state.seq + 1 // should be incremented
   )
 }
