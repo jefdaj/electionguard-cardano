@@ -48,7 +48,7 @@ pub fn validate_admin_channel_mint(
   when redeemer is {
     InitElection -> {
       // No need to check for authorization here because whoever mints a
-      // new admin STT will become the admin of that election.
+      // new admin STT will become the admin of their new election.
       expect Some(_) = tx.inputs |> find_input(oneshot_ref)
       let mints_admin_stt_only = exact_channels_minted(tx, policy_id, [stt_name]) ?
       mints_admin_stt_only
@@ -64,6 +64,8 @@ pub fn validate_admin_channel_mint(
   }
 }
 
+// These also check that the admin STT isn't being changed.
+// TODO make that more obvious
 pub fn validate_subchannel_mints(
   redeemer: ElectionAction,
   policy_id: PolicyId,
@@ -161,13 +163,12 @@ fn get_continuation_state(
   cont_state
 }
 
+// Types must match: both AdminChannel or both SubChannel.
 // TODO move to lib
 fn get_new_records(
   state: ChannelState,
   continuation: ChannelState,
 ) -> List<PublicRecord> {
-
-  // Types must match: both AdminChannel or both SubChannel.
   when state is {
     AdminChannel(_) -> {
       expect AdminChannel(cont_state) = continuation
@@ -181,7 +182,6 @@ fn get_new_records(
 }
 
 // Will be called once with either the admin or a subchannel STT.
-// TODO which parts of this should be factored out into helper functions?
 pub fn validate_anyone_single_channel_spend(
   datum: Option<ChannelState>,
   redeemer: ElectionAction,

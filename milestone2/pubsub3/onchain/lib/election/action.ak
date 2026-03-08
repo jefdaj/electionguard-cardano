@@ -29,27 +29,30 @@ pub type ElectionAction {
   AdvancePhase
 
   // Admin only, admin channel only. This could probably be done along with
-  // RmSubChannels, but I'm keeping them separate for simplicity. Burns the STT
-  // and signifies that the election is over. This is the only point where the
-  // admin can remove the remaining funds. Later, logic could be added saying
-  // they have to go back to a treasury or similar.
+  // RmSubChannels, but I'm keeping them separate for simplicity. Burns the admin
+  // STT and signifies that the election is over. This is the only point where the
+  // admin can remove ADA from the channel fee pools. Later, logic could be
+  // added saying they must to go back to a treasury or similar.
   EndElection
 
   // ===========================================
   // Admin actions spending multiple channels
   // ===========================================
 
-  // Admin only, but touches multiple channels.
+  // Admin only, but updates multiple channels.
   // Remove one or more subchannels and burn the corresponding STTs.
   RmSubChannels { channels: List<ChannelId> }
 
-  // Admin only, but touches multiple channels.
+  // Admin only, but updates multiple channels.
   // Makes sure each channel has enough ADA to cover posting fees. Admin can
   // move ADA between channels or add more, but can't remove it from script
   // control. This is almost a no-op from the contract perspective, since that
-  // check is run for every action already. Note that it still has to update
+  // check is run for every action already. But this still needs to update
   // the state of the channels being rebalanced, which can compete with using
   // those same UTXOs to post records. So don't do it more often than needed.
+  // Any rebalancing TX must include the admin STT as an input for
+  // authorization.
+  // TODO expclicit traced check for the admin STT
   RebalanceFunds { channels: List<ChannelId> }
 
   // ===========================================
@@ -57,8 +60,7 @@ pub type ElectionAction {
   // ===========================================
 
   // Admin or regular publisher, but only one channel.
-  // Post one or more public records (IPFS CIDs + metadata).
-  // Works on either the admin channel or a subchannel.
+  // Post a list of one or more public records (IPFS CIDs + metadata).
   PostPublicRecords
 
 }
