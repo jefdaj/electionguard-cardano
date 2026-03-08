@@ -107,7 +107,6 @@ fn validate_initelection_spend(
 
   // This is currently true, but remember to remove it if we run into a
   // use case for opening a channel starting from another script.
-  // TODO remove anyway, since it's not technically required?
   expect None = datum
 
   // Has a special to find the new admin state when datum is None.
