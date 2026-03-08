@@ -169,8 +169,7 @@ fn validate_advancephase_spend(
   valid_transition && cont_as_expected
 }
 
-// No need to check for lack of a continuation STT here,
-// because the mint validator handles that.
+// No need to check for lack of a continuation STT here; mint() handles that.
 fn validate_endelection_spend(
   datum: Option<ChannelState>,
 ) -> Bool {
