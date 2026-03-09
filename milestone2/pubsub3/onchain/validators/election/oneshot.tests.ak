@@ -3,14 +3,9 @@ use cardano/address.{Address, VerificationKey}
 use cardano/assets
 use cardano/transaction.{Input, NoDatum, Output, OutputReference, Transaction}
 
-pub const own_hash =
-  #"01020304050607080910111213140102030405060708091011121314"
-
-pub const other_hash =
-  #"02030405060708091011121314150203040506070809101112131415"
-
-pub const beneficiary_keyhash =
-  #"03040506070809101112131415160304050607080910111213141516"
+pub const own_hash = #"dead"
+pub const other_hash = #"c0ffee"
+pub const beneficiary_keyhash = #"c001"
 
 pub fn beneficiary_address() {
   keyhash_address(beneficiary_keyhash)
