@@ -3,7 +3,7 @@
 // use aiken/collection/list
 // use cardano/address.{Address, VerificationKey}
 use cardano/assets
-use cardano/transaction.{Input, NoDatum, Output, OutputReference, Transaction}
+use cardano/transaction.{Input, NoDatum, Output, Transaction}
 
 // pub const own_hash = #"dead"
 // pub const other_hash = #"c0ffee"
@@ -26,6 +26,7 @@ use cardano/transaction.{Input, NoDatum, Output, OutputReference, Transaction}
 use tests/mock
 
 use election/action.{InitElection}
+use election/stt
 
 test test_wip_initelection() {
   // TODO conditions checked by mint():
@@ -45,15 +46,21 @@ test test_wip_initelection() {
 
   let oneshot_utxo = mock.oneshot_oref()
 
+  // The output used to 
+  // TODO move -> mock.oneshot_output?
   let output0 =
     Output {
-      address: mock.script_address(),
+      address: mock.admin_address(),
       value: assets.zero,
       datum: NoDatum, // TODO start admin stt here
       reference_script: None,
     }
 
-  let oneshot_input = Input { output_reference: oneshot_utxo, output0 }
+  // TODO move -> mock.oneshot_input?
+  let oneshot_input = Input {
+    output_reference: oneshot_utxo,
+    output: output0
+  }
 
   let output1 =
     Output {
@@ -63,18 +70,20 @@ test test_wip_initelection() {
       reference_script: None,
     }
 
-  // TODO mock fn
-  let mint =
-    assets.from_asset(policy_id: own_hash, asset_name: "egc-election-admin-channel-state", quantity: 1)
-
-  let input = Input { output_reference: utxo, output }
+  let stt_name = stt.full_stt_name("admin")
+  let mint = assets.from_asset(
+    policy_id: own_hash,
+    asset_name: stt_name,
+    quantity: 1
+  )
 
   let tx =
     Transaction {
       ..transaction.placeholder,
       mint: mint,
       extra_signatories: [],
-      inputs: [input],
+      inputs: [oneshot_input],
+      outputs: [output1],
     }
 
   // simple_oneshot.mint(utxo, Void, own_hash, tx) == True
