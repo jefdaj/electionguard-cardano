@@ -42,6 +42,7 @@ pub fn mock_validate(
   let all_spends_pass = list.all(
     tx.inputs,
     fn(input) {
+      // TODO does this handle the NoDatum (None) case properly?
       expect InlineDatum(data) = input.output.datum
       expect datum: Option<ChannelState> = data
       mock_spend(
