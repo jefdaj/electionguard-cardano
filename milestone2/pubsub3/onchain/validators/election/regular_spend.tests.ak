@@ -80,7 +80,7 @@ test post_to_subchannel_valid() {
   }
 
   // Execute validator logic
-  let redeemer = a.RegularAct(a.PostPublicRecords)
+  let redeemer = a.PostPublicRecords
 
   let oneshot_ref = OutputReference {
     transaction_id: #"dead",
@@ -160,7 +160,7 @@ test post_to_subchannel_wrong_publisher_fails() fail {
     id: #"c0ffee",
   }
 
-  let redeemer = a.RegularAct(a.PostPublicRecords)
+  let redeemer = a.PostPublicRecords
 
   let oneshot_ref = OutputReference {
     transaction_id: #"dead",
@@ -233,7 +233,7 @@ test post_to_subchannel_stt_not_continued_fails() fail {
     id: #"c0ffee",
   }
 
-  let redeemer = a.RegularAct(a.PostPublicRecords)
+  let redeemer = a.PostPublicRecords
 
   let oneshot_ref = OutputReference {
     transaction_id: #"dead",
@@ -307,7 +307,7 @@ test post_to_subchannel_seq_not_incremented_fails() fail {
     id: #"c0ffee",
   }
 
-  let redeemer = a.RegularAct(a.PostPublicRecords)
+  let redeemer = a.PostPublicRecords
 
   let oneshot_ref = OutputReference {
     transaction_id: #"dead",
@@ -381,7 +381,7 @@ test post_to_subchannel_ada_withdrawn_fails() fail {
     id: #"c0ffee",
   }
 
-  let redeemer = a.RegularAct(a.PostPublicRecords)
+  let redeemer = a.PostPublicRecords
 
   let oneshot_ref = OutputReference {
     transaction_id: #"dead",
