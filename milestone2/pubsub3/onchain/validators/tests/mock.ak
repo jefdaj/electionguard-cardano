@@ -68,9 +68,13 @@ pub fn election_validate(
   let all_spends_pass = list.all(
     tx.inputs,
     fn(input) {
-      // TODO does this handle the NoDatum (None) case properly?
-      expect InlineDatum(data) = input.output.datum
-      expect datum: Option<ChannelState> = data
+      let datum: Option<ChannelState> = when input.output.datum is {
+	InlineDatum(data) -> {
+	  expect state: ChannelState = data
+	  Some(state)
+	}
+	_ -> None
+      }
       election_validate_spend(
         datum,
         redeemer,

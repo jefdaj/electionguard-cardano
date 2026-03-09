@@ -3,7 +3,7 @@
 // use aiken/collection/list
 // use cardano/address.{Address, VerificationKey}
 use cardano/assets
-use cardano/transaction.{Input, NoDatum, Output, Transaction}
+use cardano/transaction.{Input, InlineDatum, NoDatum, Output, Transaction}
 
 // pub const own_hash = #"dead"
 // pub const other_hash = #"c0ffee"
@@ -74,11 +74,15 @@ test test_wip_initelection() {
     output: output0
   }
 
+  // TODO problem encoding here?
+  let state0 = minimal_s0()
+  let datum0 = InlineDatum(state0)
+
   let output1 =
     Output {
       address: mock.script_address(),
       value: assets.zero,
-      datum: NoDatum, // TODO start admin stt here
+      datum: datum0,
       reference_script: None,
     }
 
