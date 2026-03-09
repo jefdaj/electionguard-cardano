@@ -26,7 +26,19 @@ use cardano/transaction.{Input, NoDatum, Output, Transaction}
 use tests/mock
 
 use election/action.{InitElection}
+use election/state.{ChannelState, AdminChannel, AdminChannelState}
+use election/phase.{ElectionConfigPhase, ConfigAnnouncePhase}
 use election/stt
+
+pub fn minimal_s0() -> ChannelState {
+  AdminChannel(AdminChannelState {
+    admin: mock.admin_vkh(),
+    subchannels: [],
+    new_records: [],
+    phase: ElectionConfigPhase(ConfigAnnouncePhase),
+    seq: 0
+  })
+}
 
 test test_wip_initelection() {
   // TODO conditions checked by mint():
