@@ -2,7 +2,7 @@
 
 // use aiken/collection/list
 // use cardano/address.{Address, VerificationKey}
-// use cardano/assets
+use cardano/assets
 use cardano/transaction.{Input, NoDatum, Output, OutputReference, Transaction}
 
 // pub const own_hash = #"dead"
@@ -41,29 +41,42 @@ test test_wip_initelection() {
 
   let redeemer = InitElection
 
-  let output =
+  let own_hash = mock.policy_id()
+
+  let oneshot_utxo = mock.oneshot_oref()
+
+  let output0 =
     Output {
-      address: beneficiary_address(),
+      address: mock.script_address(),
       value: assets.zero,
-      datum: NoDatum,
+      datum: NoDatum, // TODO start admin stt here
       reference_script: None,
     }
 
-  let mint =
-    assets.from_asset(policy_id: own_hash, asset_name: "testtoken", quantity: 1)
-  let utxo = OutputReference { transaction_id: "", output_index: 0 }
+  let oneshot_input = Input { output_reference: oneshot_utxo, output0 }
 
-  let oref = mock.mock_oneshot_ref()
+  let output1 =
+    Output {
+      address: mock.script_address(),
+      value: assets.zero,
+      datum: NoDatum, // TODO start admin stt here
+      reference_script: None,
+    }
+
+  // TODO mock fn
+  let mint =
+    assets.from_asset(policy_id: own_hash, asset_name: "egc-election-admin-channel-state", quantity: 1)
+
   let input = Input { output_reference: utxo, output }
 
   let tx =
     Transaction {
       ..transaction.placeholder,
       mint: mint,
-      extra_signatories: [other_hash],
+      extra_signatories: [],
       inputs: [input],
     }
 
   // simple_oneshot.mint(utxo, Void, own_hash, tx) == True
-  mock_validate(tx, redeemer)
+  mock.election_validate(tx, redeemer)
 }

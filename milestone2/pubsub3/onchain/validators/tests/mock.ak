@@ -7,8 +7,9 @@
 //
 
 use aiken/collection/list
+use aiken/crypto.{VerificationKeyHash}
 
-use cardano/address.{Script, Address}
+use cardano/address.{Script, Address, VerificationKey}
 use cardano/assets.{PolicyId}
 use cardano/transaction.{
   InlineDatum,
@@ -19,7 +20,18 @@ use election
 use election/action.{ElectionAction}
 use election/state.{ChannelState}
 
-pub fn oneshot_ref() -> OutputReference {
+pub fn admin_vkh() -> VerificationKeyHash {
+  #"abc123"
+}
+
+pub fn admin_address() -> Address {
+  Address {
+    payment_credential: VerificationKey(admin_vkh()),
+    stake_credential: None,
+  }
+}
+
+pub fn oneshot_oref() -> OutputReference {
   OutputReference { transaction_id: #"c0ffee", output_index: 0 }
 }
 
@@ -46,7 +58,7 @@ pub fn election_validate(
 
   // mint is run once per policy_id, so only once in these tests
   let mint_passes = election_validate_mint(
-    oneshot_ref(),
+    oneshot_oref(),
     redeemer,
     policy_id(),
     tx
