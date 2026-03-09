@@ -1,51 +1,46 @@
 // based on test_simple_oneshot from the aiken src code
 
-// TODO conditions checked by mint():
-// - has oneshot utxo ref as an input
-// - mints exactly one token: "egc-election-admin-channel-state"
-// TODO conditions checked by spend():
-// - datum is None (is that different from NoDatum?)
-// - get_continuation_state finds cont_state
-// - new_records empty
-// - subchannels empty
-// - seq == 0
-// - phase is ElectionConfigPhase(ConfigAnnouncePhase)
-
-use aiken/collection/list
-use cardano/address.{Address, VerificationKey}
-use cardano/assets
+// use aiken/collection/list
+// use cardano/address.{Address, VerificationKey}
+// use cardano/assets
 use cardano/transaction.{Input, NoDatum, Output, OutputReference, Transaction}
 
-pub const own_hash = #"dead"
-pub const other_hash = #"c0ffee"
-pub const beneficiary_keyhash = #"c001"
+// pub const own_hash = #"dead"
+// pub const other_hash = #"c0ffee"
+// pub const beneficiary_keyhash = #"c001"
 
-pub fn beneficiary_address() {
-  keyhash_address(beneficiary_keyhash)
-}
+// validator simple_oneshot(utxo_ref: OutputReference) {
+//   mint(_r: Void, _policy_id: ByteArray, self: Transaction) {
+//     let Transaction { inputs, .. } = self
+//     when list.find(inputs, fn(input) { input.output_reference == utxo_ref }) is {
+//       Some(_) -> True
+//       None -> False
+//     }
+//   }
+//   // TODO is this needed in current aiken?
+//   else(_) {
+//     fail
+//   }
+// }
 
-pub fn keyhash_address(keyhash: ByteArray) {
-  Address {
-    payment_credential: VerificationKey(keyhash),
-    stake_credential: None,
-  }
-}
+use tests/mock
 
-validator simple_oneshot(utxo_ref: OutputReference) {
-  mint(_r: Void, _policy_id: ByteArray, self: Transaction) {
-    let Transaction { inputs, .. } = self
-    when list.find(inputs, fn(input) { input.output_reference == utxo_ref }) is {
-      Some(_) -> True
-      None -> False
-    }
-  }
-  // TODO is this needed in current aiken?
-  else(_) {
-    fail
-  }
-}
+use election/action.{InitElection}
 
 test test_wip_initelection() {
+  // TODO conditions checked by mint():
+  // - has oneshot utxo ref as an input
+  // - mints exactly one token: "egc-election-admin-channel-state"
+  // TODO conditions checked by spend():
+  // - datum is None (is that different from NoDatum?)
+  // - get_continuation_state finds cont_state
+  // - new_records empty
+  // - subchannels empty
+  // - seq == 0
+  // - phase is ElectionConfigPhase(ConfigAnnouncePhase)
+
+  let redeemer = InitElection
+
   let output =
     Output {
       address: beneficiary_address(),
@@ -58,6 +53,7 @@ test test_wip_initelection() {
     assets.from_asset(policy_id: own_hash, asset_name: "testtoken", quantity: 1)
   let utxo = OutputReference { transaction_id: "", output_index: 0 }
 
+  let oref = mock.mock_oneshot_ref()
   let input = Input { output_reference: utxo, output }
 
   let tx =
@@ -68,5 +64,6 @@ test test_wip_initelection() {
       inputs: [input],
     }
 
-  simple_oneshot.mint(utxo, Void, own_hash, tx) == True
+  // simple_oneshot.mint(utxo, Void, own_hash, tx) == True
+  mock_validate(tx, redeemer)
 }
