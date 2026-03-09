@@ -111,7 +111,7 @@ fn validate_initelection_spend(
   // use case for opening a channel starting from another script.
   expect None = datum
 
-  // Has a special to find the new admin state when datum is None.
+  // Has a special case to find the new admin state when datum is None.
   expect AdminChannel(cont_state) = get_continuation_state(None, own_ref, tx)
 
   let new_records_empty = (list.length(cont_state.new_records) == 0) ?

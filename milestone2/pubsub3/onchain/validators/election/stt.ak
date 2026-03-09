@@ -83,9 +83,8 @@ pub fn no_mints_for_policy(policy_id: PolicyId, tx: Transaction) -> Bool {
   ! has_any_nft(tx.mint, policy_id)
 }
 
-// TODO move to stt.ak
 pub fn full_stt_name(channel_id: ChannelId) -> ByteArray {
-  bytearray_join([config.stt_prefix, channel_id, "channel"], "-")
+  bytearray_join([config.stt_prefix, channel_id, "channel", "state"], "-")
 }
 
 pub fn exact_channels_minted(

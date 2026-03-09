@@ -1,3 +1,16 @@
+// based on test_simple_oneshot from the aiken src code
+
+// TODO conditions checked by mint():
+// - has oneshot utxo ref as an input
+// - mints exactly one token: "egc-election-admin-channel-state"
+// TODO conditions checked by spend():
+// - datum is None (is that different from NoDatum?)
+// - get_continuation_state finds cont_state
+// - new_records empty
+// - subchannels empty
+// - seq == 0
+// - phase is ElectionConfigPhase(ConfigAnnouncePhase)
+
 use aiken/collection/list
 use cardano/address.{Address, VerificationKey}
 use cardano/assets
@@ -32,7 +45,6 @@ validator simple_oneshot(utxo_ref: OutputReference) {
   }
 }
 
-// based on test_simple_oneshot from the aiken src code
 test test_wip_initelection() {
   let output =
     Output {
@@ -50,7 +62,6 @@ test test_wip_initelection() {
 
   let tx =
     Transaction {
-      // TODO does placeholder include ADA for fee? or is that ignored?
       ..transaction.placeholder,
       mint: mint,
       extra_signatories: [other_hash],
