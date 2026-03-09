@@ -416,4 +416,5 @@ validator election(oneshot_ref: OutputReference) {
   ) {
     validate_spend(datum, redeemer, own_ref, tx)
   }
+  // TODO other cases are False by default, right?
 }
