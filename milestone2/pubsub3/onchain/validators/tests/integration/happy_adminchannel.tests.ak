@@ -10,10 +10,10 @@ use aiken/collection/list
 use aiken/primitive/string
 use aiken/primitive/int
 use cardano/assets.{Value}
-use cardano/transaction.{Input, Datum, InlineDatum, NoDatum, Output, OutputReference, Transaction}
+use cardano/transaction.{Input, NoDatum, Output, OutputReference, Transaction}
 use election/action as ea
 use election/phase as ep
-use election/state.{AdminChannel, AdminChannelState}
+use election/state.{AdminChannelState}
 use election/stt
 use tests/mock
 
@@ -47,23 +47,11 @@ fn state0() -> AdminChannelState {
   }
 }
 
-fn admin_datum(state: AdminChannelState) -> Datum {
-  InlineDatum(Some(AdminChannel(state)))
-}
-
-fn admin_stt_value() -> Value {
-  assets.from_asset(
-    policy_id: mock.policy_id(),
-    asset_name: stt.full_stt_name("admin"),
-    quantity: 1
-  )
-}
-
 fn output0() -> Output {
   Output {
     address: mock.script_address(),
-    value: admin_stt_value(),
-    datum: admin_datum(state0()),
+    value: mock.admin_stt_value(),
+    datum: mock.admin_datum(state0()),
     reference_script: None,
   }
 }
@@ -71,7 +59,7 @@ fn output0() -> Output {
 fn tx0() -> Transaction {
   Transaction {
     ..transaction.placeholder,
-    mint: admin_stt_value(),
+    mint: mock.admin_stt_value(),
     inputs: [oneshot_input()],
     outputs: [output0()],
   }
@@ -116,8 +104,8 @@ fn minimal_state(n: Int) -> AdminChannelState {
 fn minimal_output(n: Int) -> Output {
   Output {
     address: mock.script_address(),
-    value: admin_stt_value(),
-    datum: admin_datum(minimal_state(n)),
+    value: mock.admin_stt_value(),
+    datum: mock.admin_datum(minimal_state(n)),
     reference_script: None,
   }
 }

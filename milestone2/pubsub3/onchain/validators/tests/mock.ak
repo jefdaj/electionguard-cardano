@@ -9,16 +9,18 @@
 use aiken/collection/list
 use aiken/crypto.{VerificationKeyHash}
 
+use cardano/assets.{Value}
 use cardano/address.{Script, Address, VerificationKey}
 use cardano/assets.{PolicyId}
 use cardano/transaction.{
-  InlineDatum,
+  Datum, InlineDatum,
   Input, OutputReference, Transaction,
 }
 
 use election
 use election/action.{ElectionAction}
-use election/state.{ChannelState}
+use election/state.{ChannelState, AdminChannel, AdminChannelState}
+use election/stt
 
 pub fn admin_vkh() -> VerificationKeyHash {
   #"abc123"
@@ -103,4 +105,16 @@ fn election_validate_spend(
   tx: Transaction,
 ) -> Bool {
   election.validate_spend(datum, redeemer, own_ref, tx)
+}
+
+pub fn admin_datum(state: AdminChannelState) -> Datum {
+  InlineDatum(Some(AdminChannel(state)))
+}
+
+pub fn admin_stt_value() -> Value {
+  assets.from_asset(
+    policy_id: policy_id(),
+    asset_name: stt.full_stt_name("admin"),
+    quantity: 1
+  )
 }
