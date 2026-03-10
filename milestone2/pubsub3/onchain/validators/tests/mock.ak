@@ -111,10 +111,22 @@ pub fn admin_datum(state: AdminChannelState) -> Datum {
   InlineDatum(Some(AdminChannel(state)))
 }
 
-pub fn admin_stt_value() -> Value {
+pub fn admin_stt_mint() -> Value {
   assets.from_asset(
     policy_id: policy_id(),
     asset_name: stt.full_stt_name("admin"),
     quantity: 1
+  )
+}
+
+// It seems counterintuitive to me to call the continuing value at each stage a
+// "mint" when it hasn't changed, so this is an alias to make it clearer.
+pub const admin_stt_value = admin_stt_mint
+
+pub fn admin_stt_burn() -> Value {
+  assets.from_asset(
+    policy_id: policy_id(),
+    asset_name: stt.full_stt_name("admin"),
+    quantity: -1
   )
 }

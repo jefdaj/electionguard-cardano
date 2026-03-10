@@ -9,12 +9,11 @@
 use aiken/collection/list
 use aiken/primitive/string
 use aiken/primitive/int
-use cardano/assets.{Value}
+use cardano/assets
 use cardano/transaction.{Input, NoDatum, Output, OutputReference, Transaction}
 use election/action as ea
 use election/phase as ep
 use election/state.{AdminChannelState}
-use election/stt
 use tests/mock
 
 // ====================
@@ -158,18 +157,10 @@ fn output10() -> Output {
   }
 }
 
-fn admin_stt_burn() -> Value {
-  assets.from_asset(
-    policy_id: mock.policy_id(),
-    asset_name: stt.full_stt_name("admin"),
-    quantity: -1
-  )
-}
-
 fn tx10() -> Transaction {
   Transaction {
     ..transaction.placeholder,
-    mint: admin_stt_burn(),
+    mint: mock.admin_stt_burn(),
     inputs: [minimal_input(10)],
     outputs: [output10()],
     extra_signatories: [mock.admin_vkh()],
