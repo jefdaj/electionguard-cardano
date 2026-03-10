@@ -37,9 +37,11 @@ pub fn validate_admin_channel_mint(
   policy_id: PolicyId,
   tx: Transaction,
 ) -> Bool {
+  trace @"validate_admin_channel_mint"
   let stt_name = full_stt_name("admin")
   when redeemer is {
     InitElection -> {
+      trace @"initelection branch"
       // No need to check for authorization here because whoever mints a
       // new admin STT will become the admin of their new election.
       expect Some(_) = tx.inputs |> find_input(oneshot_ref)
@@ -87,7 +89,7 @@ pub fn validate_mint(
   policy_id: PolicyId,
   tx: Transaction,
 ) -> Bool {
-  // trace @"validate_mint oneshot_ref" : oneshot_ref
+  trace @"validate_mint"
   when redeemer is {
     InitElection | EndElection ->
       validate_admin_channel_mint(oneshot_ref, redeemer, policy_id, tx)
