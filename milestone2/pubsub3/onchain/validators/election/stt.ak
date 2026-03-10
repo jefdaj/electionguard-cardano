@@ -403,8 +403,9 @@ pub fn correct_n_channels_updated(
   // Count channel STTs being spent.
   let stt_count = {
     trace @"counting channel STTs in inputs"
-    count_tokens_in_outputs(tx.outputs, policy_id)
+    count_tokens_in_inputs(tx.inputs, policy_id)
   }
+  trace @"stt_count" : stt_count
 
   (stt_count == expected) ?
 }
