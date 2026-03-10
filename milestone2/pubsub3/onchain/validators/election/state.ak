@@ -83,7 +83,7 @@ pub fn add_subchannels(
 ) -> AdminChannelState {
   AdminChannelState(
     old_state.admin, // should be unchanged
-    list.concat(new_channels, old_state.subchannels), // TODO sort here?
+    list.concat(new_channels, old_state.subchannels), // TODO sort here? reverse order?
     [], // should be reset on each non-post tx
     new_phase, // TODO should this be validated here rather than separately?
     old_state.seq + 1 // should be incremented

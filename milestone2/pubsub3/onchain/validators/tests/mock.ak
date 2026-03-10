@@ -134,6 +134,24 @@ pub fn mint_stt(channel_id: ChannelId) -> Value {
   )
 }
 
+pub fn mint_stts(channel_ids: List<ChannelId>) -> Value {
+  let values = list.map(channel_ids, mint_stt)
+  list.foldl(
+    values,
+    assets.zero,
+    fn(val, acc) { assets.merge(val, acc) }
+  )
+}
+
+pub fn burn_stts(channel_ids: List<ChannelId>) -> Value {
+  let values = list.map(channel_ids, burn_stt)
+  list.foldl(
+    values,
+    assets.zero,
+    fn(val, acc) { assets.merge(val, acc) }
+  )
+}
+
 // It seems counterintuitive to me to call the continuing value at each stage a
 // "mint" when it hasn't changed, so this is an alias to make it clearer.
 pub const stt_value = mint_stt

@@ -136,6 +136,7 @@ fn validate_addsubchannels_spend(
   tx: Transaction,
   new_channels: List<ChannelId>
 ) -> Bool {
+  trace @"validate_addsubchannels_spend"
 
   // The new subchannel STTs aren't being spent, so this will only be called once with the admin STT.
   expect Some(AdminChannel(state)) = datum
@@ -146,6 +147,8 @@ fn validate_addsubchannels_spend(
   let new_channels_unique = are_disjoint(state.subchannels, new_channels) ?
 
   let expected = add_subchannels(state, new_channels, cont_state.phase)
+  // trace @"expected" : expected
+  // trace @"cont_state" : cont_state
   let cont_as_expected = (cont_state == expected) ?
   
   // The new phase could still be ConfigOnboardingPhase,
