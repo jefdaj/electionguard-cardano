@@ -1,7 +1,7 @@
 // Second integration test: simplest happy path through the lifecycle of a subchannel.
 // Builds on the admin channel tests in validators/tests/integration/minimal.tests.ak.
 
-// use aiken/primitive/string
+use aiken/primitive/string
 use aiken/collection/list
 use cardano/transaction.{Input, Output, OutputReference, Transaction}
 // TODO can't import test modules? use tests/integration/happy_adminchannel
@@ -141,9 +141,7 @@ fn rm_tx() -> Transaction {
     ..transaction.placeholder,
     inputs: [admin_pre_rm_input, sub_post_add_input],
     mint: mock.burn_stt(subchannel_id),
-    outputs: [
-      admin_post_rm_output,
-    ],
+    outputs: [admin_post_rm_output],
     extra_signatories: [mock.admin_vkh()],
   }
 }
@@ -161,8 +159,6 @@ const subchannel_ids = [
   "device1", "device2",
   "verifier1", "verifier2", "verifier3"
 ]
-
-// const n_subchannels = list.length(subchannel_ids)
 
 const add_action_multi = ea.AddSubChannels { channels: subchannel_ids }
 
@@ -221,4 +217,71 @@ fn add_tx_multi() -> Transaction {
 
 test happy_subchannel_multi_add() {
   mock.election_validate(add_tx_multi(), add_action_multi)
+}
+
+// ===============================
+// rm multiple subchannels
+// ===============================
+
+const rm_action_multi = ea.RmSubChannels { channels: subchannel_ids }
+
+fn sub_pre_rm_inputs_multi() -> List<Input> {
+  let outputs = sub_post_add_outputs_multi
+  list.map(
+    outputs,
+    fn(output) {
+      expect Some(i) = list.index_of(outputs, output)
+      let n = i + 1 // zero indexed
+      let tx_id = string.to_bytearray(string.concat(@"def", string.from_int(n))) // TODO reverse?
+      Input {
+        output_reference: OutputReference {
+          transaction_id: tx_id,
+          output_index: n, // 0 is the admin stt
+        },
+        output: output,
+      }
+    }
+  )
+}
+
+const admin_pre_rm_state_multi = AdminChannelState {
+  admin: mock.admin_vkh(),
+  subchannels: subchannel_ids,
+  new_records: [],
+  phase: ep.ElectionFinalizePhase,
+  seq: 10 // doesn't matter as long as it increases each step
+}
+
+const admin_pre_rm_output_multi = Output {
+  address: mock.script_address(),
+  value: mock.stt_value("admin"),
+  datum: mock.admin_datum(admin_pre_rm_state_multi),
+  reference_script: None,
+}
+
+const admin_pre_rm_input_multi = Input {
+  output_reference: OutputReference {
+    transaction_id: "abc2",
+    output_index: 0,
+  },
+  output: admin_pre_rm_output_multi,
+}
+
+fn rm_tx_multi() -> Transaction {
+  let burn_val = mock.burn_stts(subchannel_ids)
+  let sub_inputs = sub_pre_rm_inputs_multi()
+  Transaction {
+    ..transaction.placeholder,
+    inputs: [
+      admin_pre_rm_input_multi,
+      ..sub_inputs
+    ],
+    mint: burn_val,
+    outputs: [admin_post_rm_output], // TODO can it be the same?
+    extra_signatories: [mock.admin_vkh()],
+  }
+}
+
+test happy_subchannel_multi_rm() {
+  mock.election_validate(rm_tx_multi(), rm_action_multi)
 }
