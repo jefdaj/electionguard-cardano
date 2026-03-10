@@ -290,13 +290,13 @@ pub fn get_stt_state(
   trace @"get_stt_state"
   let (_, policy_id) = get_script_info(own_ref, tx)
   let stt_name = get_stt_name(datum)
-  // Find the output containing the STT
-  expect Some(stt_output) =
-    list.find(tx.outputs, fn(output) {
-      assets.has_nft(output.value, policy_id, stt_name)
+  // Find the input containing the STT
+  expect Some(stt_input) =
+    list.find(tx.inputs, fn(input) {
+      assets.has_nft(input.output.value, policy_id, stt_name)
     })
-  // trace @"stt_output" : stt_output
-  when stt_output.datum is {
+  trace @"stt_input" : stt_input
+  when stt_input.output.datum is {
     InlineDatum(datum) -> {
       expect state: Option<ChannelState> = datum
       state // TODO is this right?
