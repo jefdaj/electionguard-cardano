@@ -112,9 +112,8 @@ fn validate_initelection_spend(
   // use case for opening a channel starting from another script.
   expect None = datum
 
-  trace @"getting initial state"
+  // Special case because there's no input STT to get it the regular way.
   let init_state: AdminChannelState = get_initial_state(tx)
-  trace @"got initial state"
 
   let new_records_empty = (list.length(init_state.new_records) == 0) ?
   let subchannels_empty = (list.length(init_state.subchannels) == 0) ?
@@ -388,7 +387,7 @@ pub fn validate_spend(
   own_ref: OutputReference,
   tx: Transaction,
 ) {
-  trace @"validate_spend datum": datum
+  trace @"validate_spend"
   let ada_retained = ada_retained_during_election(redeemer, own_ref, tx) ?
   ada_retained && when redeemer is {
     InitElection ->

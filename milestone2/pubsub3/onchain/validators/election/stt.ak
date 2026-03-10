@@ -235,7 +235,6 @@ pub fn find_policy_ids_by_token_name(
 pub fn get_initial_state(
   tx: Transaction,
 ) -> AdminChannelState {
-  trace @"get_initial_state"
   let stt_name = full_stt_name("admin")
   let matching_datums =
     tx.outputs
@@ -246,27 +245,23 @@ pub fn get_initial_state(
                  |> assets.flatten()
                  |> list.any(
                       fn(asset) {
-                        let (_policy_id, token_name, _quantity) = asset
+                        let (_, token_name, _) = asset
                         token_name == stt_name
                       },
                     )
              
              if has_token {
-               trace @"output.datum" : output.datum
                when output.datum is {
                  InlineDatum(data) -> Some(data)
                  _ -> None
                }
              } else {
-               trace @"no datum"
                None
              }
            },
          )
-  trace @"matching_datums" : matching_datums
   expect [datum] = matching_datums
-  expect InlineDatum(state) = datum
-  expect Some(AdminChannel(init_state)) = state
+  expect Some(AdminChannel(init_state)) = datum
   init_state
 }
 
