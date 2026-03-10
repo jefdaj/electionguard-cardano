@@ -20,7 +20,7 @@ use election/state.{
 use election/stt.{
   exact_channels_minted,
   exact_channels_burned, no_mints_for_policy, full_stt_name,
-  admin_authorized_tx, get_continuation_state,
+  admin_authorized_tx, get_initial_state, get_continuation_state,
   admin_signed, publisher_signed, channels_kept_separate,
   correct_n_channels_updated,
 }
@@ -87,6 +87,7 @@ pub fn validate_mint(
   policy_id: PolicyId,
   tx: Transaction,
 ) -> Bool {
+  // trace @"validate_mint oneshot_ref" : oneshot_ref
   when redeemer is {
     InitElection | EndElection ->
       validate_admin_channel_mint(oneshot_ref, redeemer, policy_id, tx)
@@ -103,21 +104,22 @@ pub fn validate_mint(
 
 fn validate_initelection_spend(
   datum: Option<ChannelState>,
-  own_ref: OutputReference,
   tx: Transaction,
 ) -> Bool {
+  trace @"validate_initelection_spend"
 
   // This is currently true, but remember to remove it if we run into a
   // use case for opening a channel starting from another script.
   expect None = datum
 
-  // Has a special case to find the new admin state when datum is None.
-  expect AdminChannel(cont_state) = get_continuation_state(None, own_ref, tx)
+  trace @"getting initial state"
+  let init_state: AdminChannelState = get_initial_state(tx)
+  trace @"got initial state"
 
-  let new_records_empty = (list.length(cont_state.new_records) == 0) ?
-  let subchannels_empty = (list.length(cont_state.subchannels) == 0) ?
-  let seq_zero = (cont_state.seq == 0) ?
-  let initial_phase = is_initial_phase(cont_state.phase) ?
+  let new_records_empty = (list.length(init_state.new_records) == 0) ?
+  let subchannels_empty = (list.length(init_state.subchannels) == 0) ?
+  let seq_zero = (init_state.seq == 0) ?
+  let initial_phase = is_initial_phase(init_state.phase) ?
   and {
     new_records_empty,
     subchannels_empty,
@@ -190,9 +192,10 @@ pub fn validate_admin_single_channel_spend(
   own_ref: OutputReference,
   tx: Transaction,
 ) {
+  trace @"validate_admin_single_channel_spend"
   let authorized = admin_signed(own_ref, tx) ?
+  trace @"authorized"
   authorized && when redeemer is {
-    InitElection                -> validate_initelection_spend(datum, own_ref, tx)
     AddSubChannels { channels } -> validate_addsubchannels_spend(datum, own_ref, tx, channels)
     AdvancePhase                -> validate_advancephase_spend(datum, own_ref, tx)
     EndElection                 -> validate_endelection_spend(datum)
@@ -385,9 +388,12 @@ pub fn validate_spend(
   own_ref: OutputReference,
   tx: Transaction,
 ) {
+  trace @"validate_spend datum": datum
   let ada_retained = ada_retained_during_election(redeemer, own_ref, tx) ?
   ada_retained && when redeemer is {
-    InitElection | AddSubChannels { .. } | AdvancePhase | EndElection ->
+    InitElection ->
+      validate_initelection_spend(datum, tx)
+    AddSubChannels { .. } | AdvancePhase | EndElection ->
       validate_admin_single_channel_spend(datum, redeemer, own_ref, tx)
     RmSubChannels { .. } | RebalanceFunds { .. } ->
       validate_admin_multi_channel_spend(datum, redeemer, own_ref, tx)

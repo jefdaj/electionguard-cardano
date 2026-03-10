@@ -9,7 +9,9 @@ use election/utils.{bytearray_join, tx_signed_by}
 use config
 
 use election/state.{
-  ChannelId, ChannelState, AdminChannel, SubChannel,
+  ChannelId, ChannelState,
+  AdminChannel, AdminChannelState,
+  SubChannel,
   get_stt_name,
 }
 
@@ -191,20 +193,93 @@ pub fn get_script_info(
   own_ref: OutputReference,
   tx: Transaction,
 ) -> (Address, ScriptHash) {
+  trace @"get_script_info"
   expect Some(own_input) = tx.inputs |> transaction.find_input(own_ref)
+  // trace @"own_ref" : own_ref
+  // trace @"own_input" : own_input
+  // trace @"tx" : tx
+  // TODO why is this being called during InitElection?
+  trace @"payment credential" : own_input.output.address.payment_credential
   expect Script(policy_id) = own_input.output.address.payment_credential
   let script_addr = own_input.output.address
   (script_addr, policy_id)
 }
 
+/// Find all policy IDs for tokens with the given name across all transaction outputs.
+/// Returns a list of unique policy IDs that have tokens with the specified name.
+pub fn find_policy_ids_by_token_name(
+  tx: Transaction,
+  name: ByteArray,
+) -> List<ByteArray> {
+  tx.outputs
+    |> list.flat_map(
+         fn(output) {
+           output.value
+             |> assets.flatten()
+             |> list.filter_map(
+                  fn(asset) {
+                    let (policy_id, token_name, _quantity) = asset
+                    if token_name == name {
+                      Some(policy_id)
+                    } else {
+                      None
+                    }
+                  },
+                )
+         },
+       )
+    |> list.unique()
+}
+
+// This can't be done the usual way because there's no input STT.
+pub fn get_initial_state(
+  tx: Transaction,
+) -> AdminChannelState {
+  trace @"get_initial_state"
+  let stt_name = full_stt_name("admin")
+  let matching_datums =
+    tx.outputs
+      |> list.filter_map(
+           fn(output) {
+             let has_token =
+               output.value
+                 |> assets.flatten()
+                 |> list.any(
+                      fn(asset) {
+                        let (_policy_id, token_name, _quantity) = asset
+                        token_name == stt_name
+                      },
+                    )
+             
+             if has_token {
+               trace @"output.datum" : output.datum
+               when output.datum is {
+                 InlineDatum(data) -> Some(data)
+                 _ -> None
+               }
+             } else {
+               trace @"no datum"
+               None
+             }
+           },
+         )
+  trace @"matching_datums" : matching_datums
+  expect [datum] = matching_datums
+  expect InlineDatum(state) = datum
+  expect Some(AdminChannel(init_state)) = state
+  init_state
+}
+
+
 // TODO rename stt -> own?
 // The state is optional because there isn't one during InitElection.
 // TODO find instead of get? not sure if None is helpful
 pub fn get_stt_state(
-  datum: Option<ChannelState>,
+  datum: Option<ChannelState>, // TODO remove option because can't handle initial state
   own_ref: OutputReference,
   tx: Transaction,
 ) -> Option<ChannelState> {
+  trace @"get_stt_state"
   let (script_addr, policy_id) = get_script_info(own_ref, tx)
   let stt_name = get_stt_name(datum)
   // Find the output containing the STT
@@ -228,6 +303,7 @@ pub fn get_continuation_state(
   own_ref: OutputReference,
   tx: Transaction,
 ) -> ChannelState {
+  trace @"get_continuation_state"
   expect Some(cont_state) = get_stt_state(datum, own_ref, tx)
   cont_state
 }

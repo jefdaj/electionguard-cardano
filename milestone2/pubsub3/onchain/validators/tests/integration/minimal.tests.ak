@@ -30,6 +30,7 @@ use election/state.{ChannelState, AdminChannel, AdminChannelState}
 use election/phase.{ElectionConfigPhase, ConfigAnnouncePhase}
 use election/stt
 
+// This is owned by the admin's regular wallet, not by the script.
 fn oneshot_output() -> Output {
   Output {
     address: mock.admin_address(),

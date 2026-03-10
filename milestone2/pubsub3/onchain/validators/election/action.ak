@@ -10,7 +10,10 @@ pub type ElectionAction {
   // This isn't quite "starting the election", because it can be done
   // before the rest of the config has been figured out. It just creates
   // the admin STT and gives people a policy ID they can refer to.
-  InitElection
+  // The policy_id makes it easier to find the intial admin STT,
+  // and will also be useful for display in the UI.
+  // TODO but can we not get policy_id at this point?
+  InitElection // { policy_id: PolicyId }
 
   // Admin only, admin channel only (because the new subchannel STTs aren't
   // being spent). Add one or more subchannels and mint the corresponding STTs.
