@@ -161,14 +161,6 @@ test test_minimal_advancephase_9() { mock.election_validate(minimal_tx(9), ea.Ad
 // EndElection
 // ====================
 
-// checked by mint():
-// - burns admin stt only
-// checked by burn():
-// - has admin stt input
-// - admin stt state: is final phase, subchannels empty
-// checked by ledger:
-// - ada sent somewhere
-
 fn output10() -> Output {
   Output {
     address: mock.admin_address(), // admin's personal wallet
@@ -184,7 +176,9 @@ fn admin_stt_burn() -> Value {
     asset_name: stt.full_stt_name("admin"),
     quantity: -1
   )
-}fn tx10() -> Transaction {
+}
+
+fn tx10() -> Transaction {
   Transaction {
     ..transaction.placeholder,
     mint: admin_stt_burn(),

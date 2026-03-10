@@ -86,7 +86,6 @@ pub fn no_mints_for_policy(policy_id: PolicyId, tx: Transaction) -> Bool {
   ! has_any_nft(tx.mint, policy_id)
 }
 
-// TODO string/bytes issue here?
 pub fn full_stt_name(channel_id: ChannelId) -> ByteArray {
   let prefix = string.from_bytearray(config.stt_prefix)
   let id = string.from_bytearray(channel_id)
@@ -99,7 +98,7 @@ pub fn full_stt_name(channel_id: ChannelId) -> ByteArray {
 // TODO is that actually true? or did it fail?
 pub fn get_stt_name(state: Option<ChannelState>) -> ByteArray {
   let channel_id = get_channel_id(state)
-  trace @"string channel_id" : string.from_bytearray(channel_id) // TODO ah, string/bytes issue
+  trace @"string channel_id" : string.from_bytearray(channel_id)
   full_stt_name(channel_id)
 }
 
@@ -204,20 +203,14 @@ pub fn admin_authorized_tx(
   }
 }
 
-// TODO does needing script_addr imply I'm doing something wrong?
-// TODO remove script_addr as its never used
 pub fn get_policy_id(
   own_ref: OutputReference,
-  // tx: Transaction,
   inputs: List<Input>
 ) -> PolicyId {
   trace @"get_policy_id"
   expect Some(own_input) = inputs |> transaction.find_input(own_ref)
   expect Script(policy_id) = own_input.output.address.payment_credential
-  // let script_addr = own_input.output.address
-  // trace @"script_addr" : script_addr
   trace @"policy_id" : policy_id
-  // (script_addr, policy_id)
   policy_id
 }
 
@@ -287,12 +280,10 @@ pub fn get_initial_state(
 // TODO find instead of get? not sure if None is helpful
 pub fn get_stt_state(
   datum: Option<ChannelState>, // TODO remove option because can't handle initial state
-  // own_ref: OutputReference,
   outputs: List<Output>,
   policy_id: PolicyId,
 ) -> Option<ChannelState> {
   trace @"get_stt_state"
-  // let (_, policy_id) = get_policy_id(own_ref, tx)
   let stt_name = get_stt_name(datum)
   // Find the input containing the STT
   expect Some(stt_output) =
@@ -303,7 +294,7 @@ pub fn get_stt_state(
   when stt_output.datum is {
     InlineDatum(datum) -> {
       expect state: Option<ChannelState> = datum
-      state // TODO is this right?
+      state
     }
     _ -> None
   }
