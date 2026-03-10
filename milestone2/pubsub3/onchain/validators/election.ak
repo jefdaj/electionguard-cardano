@@ -171,9 +171,12 @@ fn validate_advancephase_spend(
   trace @"validate_advancephase_spend"
   expect Some(AdminChannel(state)) = datum
   expect AdminChannel(cont_state) = get_continuation_state(datum, own_ref, tx)
-  trace @"cont_state" : cont_state
   let valid_transition = is_valid_phase_transition(state.phase, cont_state.phase) ?
-  let expected = AdminChannelState {..state, phase: cont_state.phase}
+  let expected = AdminChannelState {
+    ..state,
+    phase: cont_state.phase,
+    seq: state.seq + 1
+  }
   let cont_as_expected = (cont_state == expected) ?
   valid_transition && cont_as_expected
 }
