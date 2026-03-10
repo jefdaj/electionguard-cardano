@@ -12,19 +12,6 @@ WARNING: on-chain code is currently ahead of off-chain; the two don't match yet
 on-chain code
 -------------
 
-TODO:
-
-* [x] plain CIDs -> records with metadata
-* [x] custom STT names including election name + channel name (egc-test1234-admin-stt etc)
-* [x] each subchannel has one authorized publisher for now
-* [x] subchannels are just a different thing for now, rather than nested "regular" channels
-* [x] admin is the only one who can close channels
-* [x] contract includes minting + burning subchannels
-* [x] all channels can be minted or burned at once (except admin)
-* [x] contract has an explicit election step/stage/phase variable
-* [ ] contract holds and distributes tADA to cover posting fees
-* [ ] contract returns tADA to admin when closing main channel
-
 Before running the main election script or tests,
 you need to build the validator with Aiken.
 There will be two versions of `plutus.json`: traced and production.
@@ -34,15 +21,30 @@ pytest.
 ```
 $ nix develop .#onchain
 $ ./build.sh
++ set -e
 ++ dirname ./build.sh
 + cd .
-+ aiken check
++ aiken check --trace-level silent
     Compiling jefdaj/electionguard-cardano 0.0.2 (.)
     Compiling aiken-lang/stdlib 3.0.0 (./build/packages/aiken-lang-stdlib)
    Collecting all tests scenarios across all modules
       Testing ...
 
-    ┍━ election/ballot_id.tests ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    ┍━ tests/integration/minimal.tests ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │ PASS [mem: 290.52 K, cpu:  98.18 M] test_minimal_initelection
+    │ PASS [mem: 559.61 K, cpu: 187.90 M] test_minimal_advancephase_2
+    │ PASS [mem: 568.95 K, cpu: 190.78 M] test_minimal_advancephase_3
+    │ PASS [mem: 578.30 K, cpu: 193.65 M] test_minimal_advancephase_4
+    │ PASS [mem: 580.11 K, cpu: 193.76 M] test_minimal_advancephase_5
+    │ PASS [mem: 575.95 K, cpu: 192.42 M] test_minimal_advancephase_6
+    │ PASS [mem: 595.21 K, cpu: 198.96 M] test_minimal_advancephase_7
+    │ PASS [mem: 598.82 K, cpu: 199.61 M] test_minimal_advancephase_8
+    │ PASS [mem: 596.25 K, cpu: 198.35 M] test_minimal_advancephase_9
+    │ PASS [mem: 408.60 K, cpu: 134.62 M] test_minimal_endelection
+    ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 10 tests | 10 passed | 0 failed
+
+
+    ┍━ tests/unit/ballot_id.tests ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │ PASS [mem:  59.42 K, cpu:  15.04 M] valid_hex_segment_test
     │ PASS [mem:  66.53 K, cpu:  16.85 M] invalid_hex_segment_test
     │ PASS [mem: 238.38 K, cpu:  59.94 M] valid_uuid_test
@@ -51,7 +53,8 @@ $ ./build.sh
     │ PASS [mem:  10.03 K, cpu:   2.51 M] invalid_format_test
     ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6 tests | 6 passed | 0 failed
 
-    ┍━ election/cid.tests ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    ┍━ tests/unit/cid.tests ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │ PASS [mem:   4.10 K, cpu:   1.02 M] valid_cid_test
     │ PASS [mem:   4.10 K, cpu:   1.02 M] valid_cid_different_hash_test
     │ PASS [mem:   4.10 K, cpu:   1.02 M] valid_cid_zeros_test
@@ -67,7 +70,13 @@ $ ./build.sh
     │ PASS [mem:   4.10 K, cpu:   1.02 M] valid_cid_max_hash_test
     ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 13 tests | 13 passed | 0 failed
 
-      Summary 19 checks, 0 errors, 0 warnings
+
+    ┍━ tests/unit/stt.tests ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │ PASS [mem: 108.75 K, cpu:  36.36 M] tx_sends_token_to_addr_valid
+    ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1 tests | 1 passed | 0 failed
+
+
+      Summary 30 checks, 0 errors, 0 warnings
 + aiken build --out election-plutus.json
     Compiling jefdaj/electionguard-cardano 0.0.2 (.)
     Compiling aiken-lang/stdlib 3.0.0 (./build/packages/aiken-lang-stdlib)
@@ -79,6 +88,19 @@ $ ./build.sh
    Generating project's blueprint (election-plutus-traced.json)
       Summary 0 errors, 0 warnings
 ```
+
+TODO:
+
+* [x] plain CIDs -> records with metadata
+* [x] custom STT names including election name + channel name (egc-test1234-admin-stt etc)
+* [x] each subchannel has one authorized publisher for now
+* [x] subchannels are just a different thing for now, rather than nested "regular" channels
+* [x] admin is the only one who can close channels
+* [x] contract includes minting + burning subchannels
+* [x] all channels can be minted or burned at once (except admin)
+* [x] contract has an explicit election step/stage/phase variable
+* [ ] contract holds and distributes tADA to cover posting fees
+* [ ] contract returns tADA to admin when closing main channel
 
 off-chain code
 --------------

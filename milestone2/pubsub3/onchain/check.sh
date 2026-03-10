@@ -3,5 +3,6 @@
 set -x
 set -e
 cd $(dirname "$0")
-clear
-aiken check $@
+args="$@"
+[[ -z "$args" ]] && args="--trace-level silent"
+aiken check $args
