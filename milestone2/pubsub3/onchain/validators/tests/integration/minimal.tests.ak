@@ -79,7 +79,7 @@ fn tx0() -> Transaction {
 
 // My convention for now is to label transactions by election id/container
 // name, then STT seq number. So admin_tx0, admin_tx1, guardian1_tx1, etc.
-test test_minimal_admin_tx0_initelection() {
+test test_minimal_initelection() {
   mock.election_validate(tx0(), ea.InitElection)
 }
 
