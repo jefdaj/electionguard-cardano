@@ -54,7 +54,7 @@ pub fn script_address() -> Address {
 pub fn election_validate(
   tx: Transaction,
   redeemer: ElectionAction,
-) {
+) -> Bool {
 
   // mint is run once per policy_id, so only once in these tests
   let mint_passes = election_validate_mint(
@@ -70,8 +70,8 @@ pub fn election_validate(
     fn(input) {
       let datum: Option<ChannelState> = when input.output.datum is {
 	InlineDatum(data) -> {
-	  expect state: ChannelState = data
-	  Some(state)
+	  expect state: Option<ChannelState> = data
+	  state
 	}
 	_ -> None
       }

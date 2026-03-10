@@ -1,18 +1,18 @@
+use aiken/primitive/string
 use aiken/collection/dict
 use aiken/collection/list
 use aiken/crypto.{ScriptHash, VerificationKeyHash}
 use cardano/address.{Script, Address}
 use cardano/assets.{AssetName, PolicyId, has_any_nft}
 use cardano/transaction.{Transaction, Input, InlineDatum, Output, OutputReference}
-use election/utils.{bytearray_join, tx_signed_by}
+use election/utils.{tx_signed_by}
 
 use config
 
 use election/state.{
   ChannelId, ChannelState,
   AdminChannel, AdminChannelState,
-  SubChannel,
-  get_stt_name,
+  SubChannel, get_channel_id,
 }
 
 // TODO is it important to check that only one STT is sent to a given output?
@@ -82,11 +82,25 @@ pub fn tx_sends_token_to_addr(
 
 // Confirm that none of our tokens are being minted or burned.
 pub fn no_mints_for_policy(policy_id: PolicyId, tx: Transaction) -> Bool {
+  trace @"no_mints_for_policy"
   ! has_any_nft(tx.mint, policy_id)
 }
 
+// TODO string/bytes issue here?
 pub fn full_stt_name(channel_id: ChannelId) -> ByteArray {
-  bytearray_join([config.stt_prefix, channel_id, "channel", "state"], "-")
+  let prefix = string.from_bytearray(config.stt_prefix)
+  let id = string.from_bytearray(channel_id)
+  let full_name = string.join([prefix, id, @"channel", @"state"], @"-")
+  // trace @"full_name" : full_name
+  string.to_bytearray(full_name)
+}
+
+// Note that you can set state to None to use this in the admin mint validator.
+// TODO is that actually true? or did it fail?
+pub fn get_stt_name(state: Option<ChannelState>) -> ByteArray {
+  let channel_id = get_channel_id(state)
+  trace @"string channel_id" : string.from_bytearray(channel_id) // TODO ah, string/bytes issue
+  full_stt_name(channel_id)
 }
 
 pub fn exact_channels_minted(
@@ -122,6 +136,8 @@ fn check_exact_mint_burn(
   token_names: List<AssetName>,
   quantity: Int,
 ) -> Bool {
+  trace @"check_exact_mint_burn"
+
   // Extract the tokens for this policy from the mint field
   let minted_tokens =
     tx.mint
@@ -195,13 +211,10 @@ pub fn get_script_info(
 ) -> (Address, ScriptHash) {
   trace @"get_script_info"
   expect Some(own_input) = tx.inputs |> transaction.find_input(own_ref)
-  // trace @"own_ref" : own_ref
-  // trace @"own_input" : own_input
-  // trace @"tx" : tx
-  // TODO why is this being called during InitElection?
-  trace @"payment credential" : own_input.output.address.payment_credential
   expect Script(policy_id) = own_input.output.address.payment_credential
   let script_addr = own_input.output.address
+  // trace @"script_addr" : script_addr
+  trace @"policy_id" : policy_id
   (script_addr, policy_id)
 }
 
@@ -249,7 +262,7 @@ pub fn get_initial_state(
                         token_name == stt_name
                       },
                     )
-             
+
              if has_token {
                when output.datum is {
                  InlineDatum(data) -> Some(data)
@@ -275,18 +288,18 @@ pub fn get_stt_state(
   tx: Transaction,
 ) -> Option<ChannelState> {
   trace @"get_stt_state"
-  let (script_addr, policy_id) = get_script_info(own_ref, tx)
+  let (_, policy_id) = get_script_info(own_ref, tx)
   let stt_name = get_stt_name(datum)
   // Find the output containing the STT
   expect Some(stt_output) =
     list.find(tx.outputs, fn(output) {
-      output.address == script_addr &&
-      assets.quantity_of(output.value, policy_id, stt_name) == 1
+      assets.has_nft(output.value, policy_id, stt_name)
     })
+  // trace @"stt_output" : stt_output
   when stt_output.datum is {
     InlineDatum(datum) -> {
-      expect state: ChannelState = datum
-      Some(state)
+      expect state: Option<ChannelState> = datum
+      state // TODO is this right?
     }
     _ -> None
   }
@@ -319,6 +332,7 @@ pub fn get_admin_vkh(
   own_ref: OutputReference,
   tx: Transaction,
 ) -> VerificationKeyHash {
+  trace @"get_admin_vkh"
   expect Some(AdminChannel(state)) = get_stt_state(None, own_ref, tx)
   state.admin
 }
@@ -329,15 +343,18 @@ pub fn publisher_signed(
   tx: Transaction,
 ) -> Bool {
   let pub_vkh = get_publisher_vkh(datum, own_ref, tx)
-  tx_signed_by(tx, pub_vkh)
+  let pub_sig = tx_signed_by(tx, pub_vkh) ?
+  pub_sig
 }
 
+// TODO move to different module?
 pub fn admin_signed(
   own_ref: OutputReference,
   tx: Transaction,
 ) -> Bool {
   let admin_vkh = get_admin_vkh(own_ref, tx)
-  tx_signed_by(tx, admin_vkh)
+  let admin_sig = tx_signed_by(tx, admin_vkh) ?
+  admin_sig
 }
 
 // This prevents more than one STT being sent to a given UTxO.

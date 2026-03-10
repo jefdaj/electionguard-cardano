@@ -2,12 +2,10 @@ use aiken/collection/list
 use aiken/crypto.{VerificationKeyHash}
 // use cardano/transaction.{InlineDatum, Output}
 
-use config
-
 use election/phase.{ElectionPhase}
 use election/record.{PublicRecord}
 
-use election/utils.{bytearray_join, remove_elements}
+use election/utils.{remove_elements}
 
 // TODO rename Channel?
 
@@ -66,28 +64,6 @@ pub fn get_channel_id(state: Option<ChannelState>) -> ChannelId {
     Some(SubChannel(sub_state)) -> sub_state.channel_id
   }
 }
-
-// Note that you can set state to None to use this in the admin mint validator.
-// TODO is that weird and confusing?
-// TODO move to stt?
-pub fn get_stt_name(state: Option<ChannelState>) -> ByteArray {
-  let channel_name = get_channel_id(state)
-  bytearray_join([config.stt_prefix, channel_name, "channel"], "-")
-}
-
-// TODO remove
-// pub fn get_admin_stt_name() -> ByteArray {
-//   get_stt_name(None)
-// }
-
-// TODO remove?
-// pub fn extract_admin_state(state: Option<ChannelState>) -> Option<AdminChannelState> {
-//   when state is {
-//     None -> None
-//     Some(AdminChannel(admin_state)) -> Some(admin_state)
-//     Some(SubChannel(_)) -> None
-//   }
-// }
 
 // TODO remove?
 pub fn extract_subchannel_state(state: ChannelState) -> Option<SubChannelState> {

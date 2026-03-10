@@ -168,8 +168,10 @@ fn validate_advancephase_spend(
   own_ref: OutputReference,
   tx: Transaction,
 ) -> Bool {
+  trace @"validate_advancephase_spend"
   expect Some(AdminChannel(state)) = datum
   expect AdminChannel(cont_state) = get_continuation_state(datum, own_ref, tx)
+  trace @"cont_state" : cont_state
   let valid_transition = is_valid_phase_transition(state.phase, cont_state.phase) ?
   let expected = AdminChannelState {..state, phase: cont_state.phase}
   let cont_as_expected = (cont_state == expected) ?
@@ -195,7 +197,6 @@ pub fn validate_admin_single_channel_spend(
 ) {
   trace @"validate_admin_single_channel_spend"
   let authorized = admin_signed(own_ref, tx) ?
-  trace @"authorized"
   authorized && when redeemer is {
     AddSubChannels { channels } -> validate_addsubchannels_spend(datum, own_ref, tx, channels)
     AdvancePhase                -> validate_advancephase_spend(datum, own_ref, tx)
