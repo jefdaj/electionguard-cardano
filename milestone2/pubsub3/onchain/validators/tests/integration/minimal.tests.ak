@@ -102,7 +102,9 @@ const minimal_states = [
 // In these minimal tests state n should have seq n (not generally true),
 // and the phase at index n in the minimal_states list.
 fn minimal_state(n: Int) -> AdminChannelState {
-  expect Some((seq, phase)) = list.at(minimal_states, n)
+  expect Some((seq, phase)) = list.at(minimal_states, n-1) // zero indexed
+  trace @"seq" : seq
+  trace @"phase" : phase
   AdminChannelState {
     ..state0(),
     phase: phase,
@@ -145,6 +147,7 @@ fn minimal_tx(n: Int) {
   }
 }
 
+// phase 1 is tested in the InitElection section above
 test test_minimal_advancephase_2() { mock.election_validate(minimal_tx(2), ea.AdvancePhase) }
 test test_minimal_advancephase_3() { mock.election_validate(minimal_tx(3), ea.AdvancePhase) }
 test test_minimal_advancephase_4() { mock.election_validate(minimal_tx(4), ea.AdvancePhase) }
