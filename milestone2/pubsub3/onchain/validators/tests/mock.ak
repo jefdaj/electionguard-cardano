@@ -6,6 +6,7 @@
 // mock.election_validate(...)
 //
 
+use aiken/primitive/string
 use aiken/collection/list
 use aiken/crypto.{VerificationKeyHash}
 
@@ -19,11 +20,19 @@ use cardano/transaction.{
 
 use election
 use election/action.{ElectionAction}
-use election/state.{ChannelState, AdminChannel, AdminChannelState}
+use election/state.{
+  ChannelId, ChannelState,
+  AdminChannel, AdminChannelState,
+  SubChannel, SubChannelState
+}
 use election/stt
 
 pub fn admin_vkh() -> VerificationKeyHash {
   #"abc123"
+}
+
+pub fn publisher_vkh() -> VerificationKeyHash {
+  #"def456"
 }
 
 pub fn admin_address() -> Address {
@@ -111,22 +120,28 @@ pub fn admin_datum(state: AdminChannelState) -> Datum {
   InlineDatum(Some(AdminChannel(state)))
 }
 
-pub fn admin_stt_mint() -> Value {
+pub fn subchannel_datum(state: SubChannelState) -> Datum {
+  InlineDatum(Some(SubChannel(state)))
+}
+
+pub fn mint_stt(channel_id: ChannelId) -> Value {
+  let stt_name = stt.full_stt_name(channel_id)
+  trace @"mint_stt stt_name" : string.from_bytearray(stt_name)
   assets.from_asset(
     policy_id: policy_id(),
-    asset_name: stt.full_stt_name("admin"),
+    asset_name: stt_name,
     quantity: 1
   )
 }
 
 // It seems counterintuitive to me to call the continuing value at each stage a
 // "mint" when it hasn't changed, so this is an alias to make it clearer.
-pub const admin_stt_value = admin_stt_mint
+pub const stt_value = mint_stt
 
-pub fn admin_stt_burn() -> Value {
+pub fn burn_stt(channel_id: ChannelId) -> Value {
   assets.from_asset(
     policy_id: policy_id(),
-    asset_name: stt.full_stt_name("admin"),
+    asset_name: stt.full_stt_name(channel_id),
     quantity: -1
   )
 }

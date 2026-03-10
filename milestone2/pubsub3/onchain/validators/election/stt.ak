@@ -3,7 +3,7 @@ use aiken/collection/dict
 use aiken/collection/list
 use aiken/crypto.{VerificationKeyHash}
 use cardano/address.{Script, Address}
-use cardano/assets.{AssetName, PolicyId, has_any_nft}
+use cardano/assets.{PolicyId, has_any_nft}
 use cardano/transaction.{Transaction, Input, InlineDatum, Output, OutputReference}
 use election/utils.{tx_signed_by}
 
@@ -132,10 +132,13 @@ pub fn exact_channels_burned(
 fn check_exact_mint_burn(
   tx: Transaction,
   policy_id: PolicyId,
-  token_names: List<AssetName>,
+  // token_names: List<AssetName>,
+  channel_ids: List<ChannelId>,
   quantity: Int,
 ) -> Bool {
   trace @"check_exact_mint_burn"
+
+  let token_names = list.map(channel_ids, fn(i) { full_stt_name(i) })
 
   // Extract the tokens for this policy from the mint field
   let minted_tokens =
@@ -290,7 +293,7 @@ pub fn get_stt_state(
     list.find(outputs, fn(output) {
       assets.has_nft(output.value, policy_id, stt_name)
     })
-  trace @"stt_output" : stt_output
+  // trace @"stt_output" : stt_output
   when stt_output.datum is {
     InlineDatum(datum) -> {
       expect state: Option<ChannelState> = datum
@@ -382,7 +385,7 @@ pub fn channels_kept_separate(
           |> assets.tokens(policy_id)
           |> dict.size()
 
-      trace @"stt_count at output": stt_count
+      // trace @"stt_count at output": stt_count
       (stt_count <= 1) ?
     },
   )

@@ -19,7 +19,7 @@ use election/state.{
 }
 use election/stt.{
   exact_channels_minted,
-  exact_channels_burned, no_mints_for_policy, full_stt_name,
+  exact_channels_burned, no_mints_for_policy,
   admin_authorized_tx, get_initial_state, get_continuation_state,
   admin_signed, publisher_signed, channels_kept_separate,
   correct_n_channels_updated,
@@ -38,21 +38,21 @@ pub fn validate_admin_channel_mint(
   tx: Transaction,
 ) -> Bool {
   trace @"validate_admin_channel_mint"
-  let stt_name = full_stt_name("admin")
+  let channel_id = "admin"
   when redeemer is {
     InitElection -> {
       trace @"initelection branch"
       // No need to check for authorization here because whoever mints a
       // new admin STT will become the admin of their new election.
       expect Some(_) = tx.inputs |> find_input(oneshot_ref)
-      let mints_admin_stt_only = exact_channels_minted(tx, policy_id, [stt_name]) ?
+      let mints_admin_stt_only = exact_channels_minted(tx, policy_id, [channel_id]) ?
       mints_admin_stt_only
     }
     EndElection -> {
       // No need to check for authorization here because the ledger will
       // require that the admin STT is one of the inputs, and the spend
       // validator will require that the admin signed in order to spend it.
-      let burns_admin_stt_only = exact_channels_burned(tx, policy_id, [stt_name]) ?
+      let burns_admin_stt_only = exact_channels_burned(tx, policy_id, [channel_id]) ?
       burns_admin_stt_only
     }
     _ -> False

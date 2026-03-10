@@ -49,7 +49,7 @@ fn state0() -> AdminChannelState {
 fn output0() -> Output {
   Output {
     address: mock.script_address(),
-    value: mock.admin_stt_value(),
+    value: mock.stt_value("admin"),
     datum: mock.admin_datum(state0()),
     reference_script: None,
   }
@@ -58,7 +58,7 @@ fn output0() -> Output {
 fn tx0() -> Transaction {
   Transaction {
     ..transaction.placeholder,
-    mint: mock.admin_stt_value(),
+    mint: mock.stt_value("admin"),
     inputs: [oneshot_input()],
     outputs: [output0()],
   }
@@ -103,7 +103,7 @@ fn minimal_state(n: Int) -> AdminChannelState {
 fn minimal_output(n: Int) -> Output {
   Output {
     address: mock.script_address(),
-    value: mock.admin_stt_value(),
+    value: mock.stt_value("admin"),
     datum: mock.admin_datum(minimal_state(n)),
     reference_script: None,
   }
@@ -160,7 +160,7 @@ fn output10() -> Output {
 fn tx10() -> Transaction {
   Transaction {
     ..transaction.placeholder,
-    mint: mock.admin_stt_burn(),
+    mint: mock.burn_stt("admin"),
     inputs: [minimal_input(10)],
     outputs: [output10()],
     extra_signatories: [mock.admin_vkh()],
