@@ -1,7 +1,7 @@
 use aiken/primitive/string
 use aiken/collection/dict
 use aiken/collection/list
-use aiken/crypto.{ScriptHash, VerificationKeyHash}
+use aiken/crypto.{VerificationKeyHash}
 use cardano/address.{Script, Address}
 use cardano/assets.{AssetName, PolicyId, has_any_nft}
 use cardano/transaction.{Transaction, Input, InlineDatum, Output, OutputReference}
@@ -205,17 +205,20 @@ pub fn admin_authorized_tx(
 }
 
 // TODO does needing script_addr imply I'm doing something wrong?
-pub fn get_script_info(
+// TODO remove script_addr as its never used
+pub fn get_policy_id(
   own_ref: OutputReference,
-  tx: Transaction,
-) -> (Address, ScriptHash) {
-  trace @"get_script_info"
-  expect Some(own_input) = tx.inputs |> transaction.find_input(own_ref)
+  // tx: Transaction,
+  inputs: List<Input>
+) -> PolicyId {
+  trace @"get_policy_id"
+  expect Some(own_input) = inputs |> transaction.find_input(own_ref)
   expect Script(policy_id) = own_input.output.address.payment_credential
-  let script_addr = own_input.output.address
+  // let script_addr = own_input.output.address
   // trace @"script_addr" : script_addr
   trace @"policy_id" : policy_id
-  (script_addr, policy_id)
+  // (script_addr, policy_id)
+  policy_id
 }
 
 /// Find all policy IDs for tokens with the given name across all transaction outputs.
@@ -284,19 +287,20 @@ pub fn get_initial_state(
 // TODO find instead of get? not sure if None is helpful
 pub fn get_stt_state(
   datum: Option<ChannelState>, // TODO remove option because can't handle initial state
-  own_ref: OutputReference,
-  tx: Transaction,
+  // own_ref: OutputReference,
+  outputs: List<Output>,
+  policy_id: PolicyId,
 ) -> Option<ChannelState> {
   trace @"get_stt_state"
-  let (_, policy_id) = get_script_info(own_ref, tx)
+  // let (_, policy_id) = get_policy_id(own_ref, tx)
   let stt_name = get_stt_name(datum)
   // Find the input containing the STT
-  expect Some(stt_input) =
-    list.find(tx.inputs, fn(input) {
-      assets.has_nft(input.output.value, policy_id, stt_name)
+  expect Some(stt_output) =
+    list.find(outputs, fn(output) {
+      assets.has_nft(output.value, policy_id, stt_name)
     })
-  trace @"stt_input" : stt_input
-  when stt_input.output.datum is {
+  trace @"stt_output" : stt_output
+  when stt_output.datum is {
     InlineDatum(datum) -> {
       expect state: Option<ChannelState> = datum
       state // TODO is this right?
@@ -305,6 +309,19 @@ pub fn get_stt_state(
   }
 }
 
+pub fn get_input_state(
+  datum: Option<ChannelState>,
+  own_ref: OutputReference,
+  tx: Transaction,
+) -> ChannelState {
+  trace @"get_input_state"
+  let input_outputs = list.map(tx.inputs, fn(input) { input.output })
+  let policy_id = get_policy_id(own_ref, tx.inputs)
+  expect Some(state) = get_stt_state(datum, input_outputs, policy_id)
+  state
+}
+
+
 // The state is optional because there isn't one during InitElection.
 pub fn get_continuation_state(
   datum: Option<ChannelState>,
@@ -312,8 +329,9 @@ pub fn get_continuation_state(
   tx: Transaction,
 ) -> ChannelState {
   trace @"get_continuation_state"
-  expect Some(cont_state) = get_stt_state(datum, own_ref, tx)
-  cont_state
+  let policy_id = get_policy_id(own_ref, tx.inputs)
+  expect Some(state) = get_stt_state(datum, tx.outputs, policy_id)
+  state
 }
 
 pub fn get_publisher_vkh(
@@ -321,7 +339,7 @@ pub fn get_publisher_vkh(
   own_ref: OutputReference,
   tx: Transaction,
 ) -> VerificationKeyHash {
-  expect Some(state) = get_stt_state(datum, own_ref, tx)
+  let state = get_input_state(datum, own_ref, tx)
   when state is {
     AdminChannel(admin_state) -> admin_state.admin
     SubChannel(sub_state) -> sub_state.publisher
@@ -333,7 +351,7 @@ pub fn get_admin_vkh(
   tx: Transaction,
 ) -> VerificationKeyHash {
   trace @"get_admin_vkh"
-  expect Some(AdminChannel(state)) = get_stt_state(None, own_ref, tx)
+  expect AdminChannel(state) = get_input_state(None, own_ref, tx)
   state.admin
 }
 
@@ -364,7 +382,7 @@ pub fn channels_kept_separate(
   tx: Transaction,
 ) -> Bool {
   trace @"checking each output has at most 1 channel STT"
-  let (_, policy_id) = get_script_info(own_ref, tx)
+  let policy_id = get_policy_id(own_ref, tx.inputs)
   list.all(
     tx.outputs,
     fn(output) {
@@ -387,7 +405,7 @@ pub fn correct_n_channels_updated(
 
   let expected = list.length(channels) + 1 // +1 for admin STT
 
-  let (_, policy_id) = get_script_info(own_ref, tx)
+  let policy_id = get_policy_id(own_ref, tx.inputs)
   // Count channel STTs being spent.
   let stt_count = {
     trace @"counting channel STTs in inputs"

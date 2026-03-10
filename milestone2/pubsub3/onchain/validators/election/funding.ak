@@ -3,7 +3,7 @@ use cardano/transaction.{Transaction, Input, OutputReference}
 use cardano/assets.{PolicyId, Value, lovelace_of, policies}
 
 use election/action.{ElectionAction, InitElection, EndElection}
-use election/stt.{get_script_info}
+use election/stt.{get_policy_id}
 
 // During the election, we want to make sure that no one takes ADA out of
 // the channel fee pools, but also allow change from top-up transactions.
@@ -18,7 +18,7 @@ pub fn ada_retained_during_election(
   when redeemer is {
     InitElection | EndElection -> True
     _ -> {
-      let (_, policy_id) = get_script_info(own_ref, tx)
+      let policy_id = get_policy_id(own_ref, tx.inputs)
       script_ada_retained(tx, policy_id)
     }
   }

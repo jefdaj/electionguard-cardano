@@ -185,13 +185,12 @@ fn admin_stt_burn() -> Value {
     quantity: -1
   )
 }fn tx10() -> Transaction {
-  let input = minimal_input(10)
-  // trace @"input" : input
   Transaction {
     ..transaction.placeholder,
     mint: admin_stt_burn(),
-    inputs: [input],
+    inputs: [minimal_input(10)],
     outputs: [output10()],
+    extra_signatories: [mock.admin_vkh()],
   }
 }
 
