@@ -158,5 +158,43 @@ test test_minimal_advancephase_8() { mock.election_validate(minimal_tx(8), ea.Ad
 test test_minimal_advancephase_9() { mock.election_validate(minimal_tx(9), ea.AdvancePhase) }
 
 // ====================
-// TODO EndElection
+// EndElection
 // ====================
+
+// checked by mint():
+// - burns admin stt only
+// checked by burn():
+// - has admin stt input
+// - admin stt state: is final phase, subchannels empty
+// checked by ledger:
+// - ada sent somewhere
+
+fn output10() -> Output {
+  Output {
+    address: mock.admin_address(), // admin's personal wallet
+    value: assets.zero,
+    datum: NoDatum,
+    reference_script: None,
+  }
+}
+
+fn admin_stt_burn() -> Value {
+  assets.from_asset(
+    policy_id: mock.policy_id(),
+    asset_name: stt.full_stt_name("admin"),
+    quantity: -1
+  )
+}fn tx10() -> Transaction {
+  let input = minimal_input(10)
+  // trace @"input" : input
+  Transaction {
+    ..transaction.placeholder,
+    mint: admin_stt_burn(),
+    inputs: [input],
+    outputs: [output10()],
+  }
+}
+
+test test_minimal_endelection() {
+  mock.election_validate(tx10(), ea.EndElection)
+}

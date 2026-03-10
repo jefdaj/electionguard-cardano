@@ -34,8 +34,8 @@ pub type ElectionAction {
   // Admin only, admin channel only. This could probably be done along with
   // RmSubChannels, but I'm keeping them separate for simplicity. Burns the admin
   // STT and signifies that the election is over. This is the only point where the
-  // admin can remove ADA from the channel fee pools. Later, logic could be
-  // added saying they must to go back to a treasury or similar.
+  // admin can remove ADA from the contract. Later, logic could be added saying
+  // it must to go back to a treasury or similar.
   EndElection
 
   // ===========================================
