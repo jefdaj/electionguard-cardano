@@ -9,6 +9,7 @@ pub fn tx_signed_by(tx: Transaction, signer: VerificationKeyHash) -> Bool {
 }
 
 // like string.join, but for bytearrays
+// TODO is this horribly inefficient on long lists?
 pub fn bytearray_join(
   bytearrays: List<ByteArray>,
   delimiter: ByteArray,
@@ -19,7 +20,7 @@ pub fn bytearray_join(
       list.foldl(
         rest,
         first,
-        fn(acc, item) { bytearray.concat(bytearray.concat(acc, delimiter), item) },
+        fn(acc, item) { bytearray.concat(item, bytearray.concat(acc, delimiter)) },
       )
   }
 }
