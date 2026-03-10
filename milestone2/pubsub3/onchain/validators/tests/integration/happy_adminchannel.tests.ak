@@ -1,5 +1,5 @@
 // The first integration test. It'll take the simplest happy path through the
-// contract lifecycle, not bothering to post valid election artifacts:
+// admin channel lifecycle, not bothering to post valid election artifacts:
 //
 // - InitElection
 // - AdvancePhase (7X)
@@ -79,7 +79,7 @@ fn tx0() -> Transaction {
 
 // My convention for now is to label transactions by election id/container
 // name, then STT seq number. So admin_tx0, admin_tx1, guardian1_tx1, etc.
-test test_minimal_initelection() {
+test happy_adminchannel_initelection() {
   mock.election_validate(tx0(), ea.InitElection)
 }
 
@@ -148,14 +148,14 @@ fn minimal_tx(n: Int) {
 }
 
 // phase 1 is tested in the InitElection section above
-test test_minimal_advancephase_2() { mock.election_validate(minimal_tx(2), ea.AdvancePhase) }
-test test_minimal_advancephase_3() { mock.election_validate(minimal_tx(3), ea.AdvancePhase) }
-test test_minimal_advancephase_4() { mock.election_validate(minimal_tx(4), ea.AdvancePhase) }
-test test_minimal_advancephase_5() { mock.election_validate(minimal_tx(5), ea.AdvancePhase) }
-test test_minimal_advancephase_6() { mock.election_validate(minimal_tx(6), ea.AdvancePhase) }
-test test_minimal_advancephase_7() { mock.election_validate(minimal_tx(7), ea.AdvancePhase) }
-test test_minimal_advancephase_8() { mock.election_validate(minimal_tx(8), ea.AdvancePhase) }
-test test_minimal_advancephase_9() { mock.election_validate(minimal_tx(9), ea.AdvancePhase) }
+test happy_adminchannel_advancephase_2() { mock.election_validate(minimal_tx(2), ea.AdvancePhase) }
+test happy_adminchannel_advancephase_3() { mock.election_validate(minimal_tx(3), ea.AdvancePhase) }
+test happy_adminchannel_advancephase_4() { mock.election_validate(minimal_tx(4), ea.AdvancePhase) }
+test happy_adminchannel_advancephase_5() { mock.election_validate(minimal_tx(5), ea.AdvancePhase) }
+test happy_adminchannel_advancephase_6() { mock.election_validate(minimal_tx(6), ea.AdvancePhase) }
+test happy_adminchannel_advancephase_7() { mock.election_validate(minimal_tx(7), ea.AdvancePhase) }
+test happy_adminchannel_advancephase_8() { mock.election_validate(minimal_tx(8), ea.AdvancePhase) }
+test happy_adminchannel_advancephase_9() { mock.election_validate(minimal_tx(9), ea.AdvancePhase) }
 
 // ====================
 // EndElection
@@ -188,6 +188,6 @@ fn tx10() -> Transaction {
   }
 }
 
-test test_minimal_endelection() {
+test happy_adminchannel_endelection() {
   mock.election_validate(tx10(), ea.EndElection)
 }
