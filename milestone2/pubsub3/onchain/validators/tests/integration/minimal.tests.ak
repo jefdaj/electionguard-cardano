@@ -2,8 +2,8 @@
 
 // use aiken/collection/list
 // use cardano/address.{Address, VerificationKey}
-use cardano/assets
-use cardano/transaction.{Input, InlineDatum, NoDatum, Output, Transaction}
+use cardano/assets.{Value}
+use cardano/transaction.{Input, Datum, InlineDatum, NoDatum, Output, Transaction}
 
 // pub const own_hash = #"dead"
 // pub const other_hash = #"c0ffee"
@@ -30,7 +30,23 @@ use election/state.{ChannelState, AdminChannel, AdminChannelState}
 use election/phase.{ElectionConfigPhase, ConfigAnnouncePhase}
 use election/stt
 
-pub fn minimal_s0() -> ChannelState {
+fn oneshot_output() -> Output {
+  Output {
+    address: mock.admin_address(),
+    value: assets.zero,
+    datum: NoDatum,
+    reference_script: None,
+  }
+}
+
+fn oneshot_input() -> Input {
+  Input {
+    output_reference: mock.oneshot_oref(),
+    output: oneshot_output()
+  }
+}
+
+fn state0() -> ChannelState {
   AdminChannel(AdminChannelState {
     admin: mock.admin_vkh(),
     subchannels: [],
@@ -38,6 +54,37 @@ pub fn minimal_s0() -> ChannelState {
     phase: ElectionConfigPhase(ConfigAnnouncePhase),
     seq: 0
   })
+}
+
+fn datum0() -> Datum {
+  InlineDatum(Some(state0()))
+}
+
+fn output0() -> Output {
+  Output {
+    address: mock.script_address(), // TODO error here?
+    value: assets.zero,
+    datum: datum0(),
+    reference_script: None,
+  }
+}
+
+fn oneshot_mint() -> Value {
+  assets.from_asset(
+    policy_id: mock.policy_id(),
+    asset_name: stt.full_stt_name("admin"),
+    quantity: 1
+  )
+}
+
+fn tx0() -> Transaction {
+  Transaction {
+    ..transaction.placeholder,
+    mint: oneshot_mint(),
+    extra_signatories: [],
+    inputs: [oneshot_input()],
+    outputs: [output0()],
+  }
 }
 
 test test_wip_initelection() {
@@ -51,57 +98,5 @@ test test_wip_initelection() {
   // - subchannels empty
   // - seq == 0
   // - phase is ElectionConfigPhase(ConfigAnnouncePhase)
-
-  let redeemer = InitElection
-
-  let own_hash = mock.policy_id()
-
-  let oneshot_utxo = mock.oneshot_oref()
-
-  // The output used to 
-  // TODO move -> mock.oneshot_output?
-  let output0 =
-    Output {
-      address: mock.admin_address(),
-      value: assets.zero,
-      datum: NoDatum, // TODO start admin stt here
-      reference_script: None,
-    }
-
-  // TODO move -> mock.oneshot_input?
-  let oneshot_input = Input {
-    output_reference: oneshot_utxo,
-    output: output0
-  }
-
-  // TODO problem encoding here?
-  let state0 = minimal_s0()
-  let datum0 = InlineDatum(state0)
-
-  let output1 =
-    Output {
-      address: mock.script_address(),
-      value: assets.zero,
-      datum: datum0,
-      reference_script: None,
-    }
-
-  let stt_name = stt.full_stt_name("admin")
-  let mint = assets.from_asset(
-    policy_id: own_hash,
-    asset_name: stt_name,
-    quantity: 1
-  )
-
-  let tx =
-    Transaction {
-      ..transaction.placeholder,
-      mint: mint,
-      extra_signatories: [],
-      inputs: [oneshot_input],
-      outputs: [output1],
-    }
-
-  // simple_oneshot.mint(utxo, Void, own_hash, tx) == True
-  mock.election_validate(tx, redeemer)
+  mock.election_validate(tx0(), InitElection)
 }
