@@ -22,15 +22,16 @@ IN_LOG = Path(IN_DIR) / 'egsync.log'
 OUT_AK = 'aiken_static_data.ak'
 
 print('''// Generated with aiken_static_data.py
-// Consider editing and re-running that to make changes''')
+// Consider editing and re-running that to make changes.''')
 
 VARS = {}
 
 with open(IN_LOG, 'r') as f:
     lines = f.readlines()
+    lines.sort()
     lines = [l for l in lines if 'fetch_public_record' in l]
     json_strs = [l[l.find('{'):-1].replace("'", '"') for l in lines]
-    json_strs.sort()
+    # json_strs.sort()
     JSONS = [json.loads(j) for j in json_strs]
 
 def convert_cid_for_aiken(cid_str):
@@ -124,6 +125,7 @@ def plaintext_tally(n, j, c, s):
 def device(n, j, c, s):
     i = int(j["device_number"])
     m = f'Device {{ device_number: {i} }}'
+    n = f'device{i}'
     return record(n, c, s, m)
 
 def ballot_name(prefix, j, key='ballot_id'):
@@ -181,7 +183,7 @@ render_fns = [
     summary,
 ]
 
-VARNAMES = set()
+VARNAMES = []
 
 # generate individual records
 for fn in render_fns:
@@ -191,11 +193,11 @@ for fn in render_fns:
         fn_name = fn.__name__
         if j["record_type"] == fn.__name__:
             varname = fn(fn_name, j, comment, cid_str)
-            VARNAMES.add(varname)
+            VARNAMES.append(varname)
         # print(json.dumps(j, indent=2))
         # print(j["record_type"])
 
-VARNAMES = sorted(VARNAMES)
+# VARNAMES = sorted(VARNAMES)
 
 # generate lists
 lists = {
@@ -205,6 +207,7 @@ lists = {
     'guardian3' : 'guardian3',
     'ballot_submitted' : 'ballot_submitted',
     'ballot_spoiled' : 'ballot_spoiled',
+    'cast_notice' : 'cast_notice',
     'spoiled_share' : '.*spoiled_share.*',
     'spoiled_result' : 'spoiled_result',
     'device1' : '(device|ballot_submitted|ballot_spoiled|cast_notice)',
