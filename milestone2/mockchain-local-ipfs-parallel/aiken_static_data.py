@@ -24,6 +24,7 @@ with open(IN_LOG, 'r') as f:
     lines = f.readlines()
     lines = [l for l in lines if 'fetch_public_record' in l]
     json_strs = [l[l.find('{'):-1].replace("'", '"') for l in lines]
+    json_strs.sort()
     JSONS = [json.loads(j) for j in json_strs]
 
 def convert_cid_for_aiken(cid_str):
@@ -41,11 +42,10 @@ def record(n, c, s, m):
 const {n} = er.PublicRecord {{
   {c}
   cid: {s},
-  metadata: r.{m}
+  metadata: er.{m}
 }}""")
 
 def manifest(n, j, c, s):
-    # print(j)
     m = 'Manifest'
     record(n, c, s, m)
 
@@ -54,23 +54,54 @@ def ceremony_details(n, j, c, s):
     record(n, c, s, m)
 
 def guardian_pubkey(n, j, c, s):
-    print(j)
     i = int(j["guardian_id"].split('_')[-1])
     m = f'GuardianPubkey {{ guardian_number: {i} }}'
     n = f'guardian{i}_pubkey'
     record(n, c, s, m)
 
+def guardian_backup(n, j, c, s):
+    i = int(j["guardian_id"].split('_')[-1])
+    b = int(j["backup_order"])
+    m = f'GuardianBackup {{ guardian_number: {i}, backup_order: {b} }}'
+    n = f'guardian{i}_backup{b}'
+    record(n, c, s, m)
+
+def guardian_verification(n, j, c, s):
+    i = int(j["guardian_id"].split('_')[-1])
+    b = int(j["backup_order"])
+    m = f'GuardianVerification {{ guardian_number: {i}, backup_order: {b} }}'
+    n = f'guardian{i}_verification{b}'
+    record(n, c, s, m)
+
+def joint_key(n, j, c, s):
+    m = 'JointKey'
+    record(n, c, s, m)
+
+def constants(n, j, c, s):
+    m = 'Constants'
+    record(n, c, s, m)
+
+def device(n, j, c, s):
+    i = int(j["device_number"])
+    m = f'Device {{ device_number: {i} }}'
+    record(n, c, s, m)
+
+def ballot_submitted(n, j, c, s):
+    i = f'string.to_bytearray(@"{j["ballot_id"]}")'
+    m = f'Device {{ ballot_id: {i} }}'
+    record(n, c, s, m)
+
 render_fns = [
-    manifest,
-    ceremony_details,
-    guardian_pubkey,
-    # guardian_backup
-    # guardian_verification
-    # joint_key
-    # constants
-    # context
-    # device
-    # ballot_submitted
+    # manifest,
+    # ceremony_details,
+    # guardian_pubkey,
+    # guardian_backup,
+    # guardian_verification,
+    # joint_key,
+    # constants,
+    # TODO context?
+    # device,
+    ballot_submitted
     # ballot_spoiled
     # cast_notice
     # ciphertext_tally
@@ -88,6 +119,5 @@ for j in JSONS:
         fn_name = fn.__name__
         if j["record_type"] == fn.__name__:
             fn(fn_name, j, comment, cid_str)
-            continue
         # print(json.dumps(j, indent=2))
         # print(j["record_type"])
