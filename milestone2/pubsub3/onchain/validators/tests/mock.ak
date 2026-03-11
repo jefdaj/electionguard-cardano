@@ -6,6 +6,7 @@
 // mock.election_validate(...)
 //
 
+use aiken/crypto.{Blake2b_224, Hash}
 use aiken/primitive/string
 use aiken/collection/list
 use aiken/crypto.{VerificationKeyHash}
@@ -27,12 +28,13 @@ use election/state.{
 }
 use election/stt
 
-pub fn admin_vkh() -> VerificationKeyHash {
-  #"abc123"
+// Note this is the same as a VerificationKeyHash.
+pub fn vkh(seed: ByteArray) -> Hash<Blake2b_224, ByteArray> {
+  crypto.blake2b_224(seed)
 }
 
-pub fn publisher_vkh() -> VerificationKeyHash {
-  #"def456"
+pub fn admin_vkh() -> VerificationKeyHash {
+  vkh(string.to_bytearray(@"admin"))
 }
 
 pub fn admin_address() -> Address {

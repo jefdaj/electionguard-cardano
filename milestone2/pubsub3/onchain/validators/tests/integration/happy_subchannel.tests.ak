@@ -14,7 +14,7 @@ use tests/mock
 // add single subchannel
 // ===============================
 
-const subchannel_id = "guardian1"
+const subchannel_id = string.to_bytearray(@"guardian1")
 
 const add_action = ea.AddSubChannels { channels: [subchannel_id] }
 
@@ -56,7 +56,7 @@ const admin_post_add_output = Output {
 
 const sub_post_add_state = SubChannelState {
   channel_id: subchannel_id,
-  publisher: mock.publisher_vkh(),
+  publisher: mock.vkh(subchannel_id),
   new_records: [],
   seq: 0,
 }
@@ -181,7 +181,7 @@ const sub_post_add_states_multi =
     fn(sub_id) {
       SubChannelState {
         channel_id: sub_id,
-        publisher: mock.publisher_vkh(),
+        publisher: mock.vkh(subchannel_id),
         new_records: [],
         seq: 0,
       }

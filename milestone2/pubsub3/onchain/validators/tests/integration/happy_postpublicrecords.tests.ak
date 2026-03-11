@@ -1,5 +1,6 @@
 // Test posting public records from the admin channel or a subchannel.
 
+use aiken/primitive/string
 use cardano/transaction.{Input, Output, OutputReference, Transaction}
 use election/state.{AdminChannelState, SubChannelState}
 use election/action as ea
@@ -74,11 +75,11 @@ test happy_postpublicrecords_admin() {
 // post to a subchannel
 // ===============================
 
-const subchannel_id = "guardian1"
+const subchannel_id = string.to_bytearray(@"guardian1")
 
 const sub_state0 =  SubChannelState {
   channel_id: subchannel_id,
-  publisher: mock.publisher_vkh(),
+  publisher: mock.vkh(subchannel_id),
   new_records: [],
   seq: 0
 }
@@ -101,7 +102,7 @@ const sub_input = Input {
 fn sub_state1() -> SubChannelState {
   SubChannelState {
     channel_id: subchannel_id,
-    publisher: mock.publisher_vkh(),
+    publisher: mock.vkh(subchannel_id),
     new_records: [manifest], // wrong record type, but doesn't matter here
     seq: sub_state0.seq + 1,
   }
@@ -119,7 +120,7 @@ fn sub_tx() -> Transaction {
     ..transaction.placeholder,
     inputs: [sub_input],
     outputs: [sub_output1],
-    extra_signatories: [mock.publisher_vkh()],
+    extra_signatories: [mock.vkh(subchannel_id)],
   }
 }
 
