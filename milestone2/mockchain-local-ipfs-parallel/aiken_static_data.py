@@ -59,6 +59,21 @@ def guardian_pubkey(n, j, c, s):
     n = f'guardian{i}_pubkey'
     record(n, c, s, m)
 
+def tally_share(n, j, c, s):
+    i = int(j["guardian_id"].split('_')[-1])
+    m = f'TallyShare {{ guardian_number: {i} }}'
+    n = f'guardian{i}_tally_share'
+    record(n, c, s, m)
+
+def spoiled_share(n, j, c, s):
+    n = ballot_name('spoiled_share', j, 'spoiled_id')
+    i = j["spoiled_id"]
+    m = f'''SpoiledShare {{
+    guardian_number: {i},
+    spoiled_id: {i},
+  }}'''
+    record(n, c, s, m)
+
 def guardian_backup(n, j, c, s):
     i = int(j["guardian_id"].split('_')[-1])
     b = int(j["backup_order"])
@@ -81,14 +96,43 @@ def constants(n, j, c, s):
     m = 'Constants'
     record(n, c, s, m)
 
+def ciphertext_tally(n, j, c, s):
+    m = 'CiphertextTally'
+    record(n, c, s, m)
+
+def plaintext_tally(n, j, c, s):
+    m = 'PlaintextTally'
+    record(n, c, s, m)
+
 def device(n, j, c, s):
     i = int(j["device_number"])
     m = f'Device {{ device_number: {i} }}'
     record(n, c, s, m)
 
+def ballot_name(prefix, j, key='ballot_id'):
+    i = j[key]
+    n = '_'.join(i.replace('ballot', prefix).split('-')[:2])
+    return n
+
 def ballot_submitted(n, j, c, s):
-    i = f'string.to_bytearray(@"{j["ballot_id"]}")'
-    m = f'Device {{ ballot_id: {i} }}'
+    i = j["ballot_id"]
+    n = ballot_name('ballot_submitted', j)
+    i = f'string.to_bytearray(@"{i}")'
+    m = f'BallotSubmitted {{ ballot_id: {i} }}'
+    record(n, c, s, m)
+
+def ballot_spoiled(n, j, c, s):
+    i = j["ballot_id"]
+    n = ballot_name('ballot_spoiled', j)
+    i = f'string.to_bytearray(@"{i}")'
+    m = f'BallotSpoiled {{ ballot_id: {i} }}'
+    record(n, c, s, m)
+
+def cast_notice(n, j, c, s):
+    i = j["ballot_id"]
+    n = ballot_name('cast_notice', j)
+    i = f'string.to_bytearray(@"{i}")'
+    m = f'CastNotice {{ ballot_id: {i} }}'
     record(n, c, s, m)
 
 render_fns = [
@@ -101,13 +145,13 @@ render_fns = [
     # constants,
     # TODO context?
     # device,
-    ballot_submitted
-    # ballot_spoiled
-    # cast_notice
-    # ciphertext_tally
-    # tally_share
-    # spoiled_share
-    # plaintext_tally
+    # ballot_submitted,
+    # ballot_spoiled,
+    # cast_notice,
+    # ciphertext_tally,
+    # tally_share,
+    spoiled_share
+    # plaintext_tally,
     # spoiled_result
     # summary
 ]
