@@ -2,6 +2,7 @@
 
 # Example of how to run a single election.
 
+set -x
 sudo ./election.py \
   --project-config election.json \
   --logfile election.log \

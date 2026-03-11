@@ -10,15 +10,15 @@
   },
   "election": {
     "guardians": {"count": 3, "quorum": 2},
-    "devices": {"count": 8},
+    "devices": {"count": 1},
     "verifiers": {"count": 1}
   },
   "votes": [{
     "question": "Should pineapple be banned on pizza?",
     "answers": {
-      "Yes":    {"cast": 100, "spoil":30},
-      "No":     {"cast": 200, "spoil":20},
-      "Unsure": {"cast": 300, "spoil":10}
+      "Yes":    {"cast": 1, "spoil":3},
+      "No":     {"cast": 2, "spoil":2},
+      "Unsure": {"cast": 3, "spoil":1}
     }
   }],
   "attacks": []
