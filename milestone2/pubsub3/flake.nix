@@ -61,6 +61,7 @@
         pygments
         watchdog
         pytest
+        py-multiformats-cid # exposed on its own to help generate static CID examples
       ];
 
       kupo = pkgs.callPackage ./nix/kupo.nix {};

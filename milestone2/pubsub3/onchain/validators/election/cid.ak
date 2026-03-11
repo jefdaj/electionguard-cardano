@@ -1,4 +1,5 @@
 use aiken/builtin
+// use aiken/primitive/string
 
 /// IPFS content identifier (CID)
 // Note that Kubo currently defaults to v0, but the devs expect to move to v1 "soon",
@@ -10,6 +11,8 @@ pub type CIDv1 =
 // Structure: [version(1)][codec(1)][hash_type(1)][hash_length(1)][hash(32)]
 // Common: 0x01 0x70 0x12 0x20 [32-byte SHA-256]
 pub fn validate_cid(cid: CIDv1) -> Bool {
+  trace @"validate_cid"
+  trace @"cid" : cid
   let length  = builtin.length_of_bytearray(cid)
   let version     = builtin.index_bytearray(cid, 0)
 

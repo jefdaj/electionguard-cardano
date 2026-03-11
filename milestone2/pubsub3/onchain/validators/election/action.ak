@@ -64,6 +64,7 @@ pub type ElectionAction {
 
   // Admin or regular publisher, but only one channel.
   // Post a list of one or more public records (IPFS CIDs + metadata).
+  // TODO include info to display in UI here? or get from kupo?
   PostPublicRecords
 
 }

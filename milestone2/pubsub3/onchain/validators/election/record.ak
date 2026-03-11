@@ -61,6 +61,7 @@ pub fn validate_guardian_number(guardian_number: Int) -> Bool {
 
 // TODO test this
 pub fn validate_metadata(metadata: PublicRecordMetadata) -> Bool {
+  trace @"validate_metadata" : metadata
   when metadata is {
 
     GuardianPubkey { guardian_number } -> validate_guardian_number(guardian_number)
@@ -105,6 +106,7 @@ pub type PublicRecord {
 }
 
 pub fn validate_record(record: PublicRecord) -> Bool {
+  trace @"validate_record"
   validate_metadata(record.metadata) && validate_cid(record.cid)
 }
 
