@@ -216,6 +216,7 @@ lists = {
     'device1' : '(device|ballot_submitted|ballot_spoiled|cast_notice)',
     'verifier1' : 'verifier1',
     'summary' : '.*_summary',
+    'all' : '.*',
 }
 
 for list_name, list_regex in lists.items():
