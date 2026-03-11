@@ -59,6 +59,13 @@ def guardian_pubkey(n, j, c, s):
     n = f'guardian{i}_pubkey'
     record(n, c, s, m)
 
+def summary(n, j, c, s):
+    i = j["verifier_id"].replace('_', '') # TODO leave underscore?
+    n = f'{i}_summary'
+    i = f'string.to_bytearray(@"{i}")' # TODO remove?
+    m = f'Summary {{ verifier_id: {i} }}'
+    record(n, c, s, m)
+
 def tally_share(n, j, c, s):
     i = int(j["guardian_id"].split('_')[-1])
     m = f'TallyShare {{ guardian_number: {i} }}'
@@ -67,10 +74,13 @@ def tally_share(n, j, c, s):
 
 def spoiled_share(n, j, c, s):
     n = ballot_name('spoiled_share', j, 'spoiled_id')
-    i = j["spoiled_id"]
+    i = int(j["guardian_id"].split('_')[-1])
+    n = f'guardian{i}_{n}'
+    i2 = j["spoiled_id"]
+    i2 = f'string.to_bytearray(@"{i2}")' # TODO remove?
     m = f'''SpoiledShare {{
     guardian_number: {i},
-    spoiled_id: {i},
+    spoiled_id: {i2},
   }}'''
     record(n, c, s, m)
 
@@ -121,6 +131,14 @@ def ballot_submitted(n, j, c, s):
     m = f'BallotSubmitted {{ ballot_id: {i} }}'
     record(n, c, s, m)
 
+def spoiled_result(n, j, c, s):
+    i = j["ballot_id"]
+    n = ballot_name('spoiled_result', j)
+    i = f'string.to_bytearray(@"{i}")'
+    m = f'SpoiledResult {{ ballot_id: {i} }}'
+    record(n, c, s, m)
+
+
 def ballot_spoiled(n, j, c, s):
     i = j["ballot_id"]
     n = ballot_name('ballot_spoiled', j)
@@ -136,26 +154,27 @@ def cast_notice(n, j, c, s):
     record(n, c, s, m)
 
 render_fns = [
-    # manifest,
-    # ceremony_details,
-    # guardian_pubkey,
-    # guardian_backup,
-    # guardian_verification,
-    # joint_key,
-    # constants,
+    manifest,
+    ceremony_details,
+    guardian_pubkey,
+    guardian_backup,
+    guardian_verification,
+    joint_key,
+    constants,
     # TODO context?
-    # device,
-    # ballot_submitted,
-    # ballot_spoiled,
-    # cast_notice,
-    # ciphertext_tally,
-    # tally_share,
-    spoiled_share
-    # plaintext_tally,
-    # spoiled_result
-    # summary
+    device,
+    ballot_submitted,
+    ballot_spoiled,
+    cast_notice,
+    ciphertext_tally,
+    tally_share,
+    spoiled_share,
+    plaintext_tally,
+    spoiled_result,
+    summary,
 ]
 
+# generate individual records
 for j in JSONS:
     for fn in render_fns:
         comment = f'// orig base32: {j["cid"]}'
@@ -165,3 +184,5 @@ for j in JSONS:
             fn(fn_name, j, comment, cid_str)
         # print(json.dumps(j, indent=2))
         # print(j["record_type"])
+
+# TODO generate lists?
