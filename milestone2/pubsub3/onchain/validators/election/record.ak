@@ -1,3 +1,4 @@
+use aiken/primitive/bytearray
 use aiken/collection/list
 
 use election/cid.{CIDv1, validate_cid}
@@ -60,14 +61,69 @@ pub fn validate_guardian_number(guardian_number: Int) -> Bool {
   guardian_number > 0 && guardian_number <= max_guardians
 }
 
-// TODO test this
+/// Validates that a ByteArray represents a verifier ID with the following rules:
+/// - Must be under 20 characters when decoded
+/// - Must match pattern: [a-z]* followed by an optional number (max 3 digits)
+/// They could all be relaxed if needed.
+// TODO rename validate_channel_id and put with ChannelId definition?
+pub fn validate_verifier_id(id: ByteArray) -> Bool {
+  trace @"validate_verifier_id"
+  let length = bytearray.length(id)
+  if length >= 20 {
+    False
+  } else {
+    validate_verifier_id_pattern(id, 0, length, True, 0)
+  }
+}
+
+/// Recursive helper to validate the pattern
+/// - in_letters: True if we're still in the letter portion
+/// - digit_count: Number of digits encountered
+fn validate_verifier_id_pattern(
+  id: ByteArray,
+  index: Int,
+  length: Int,
+  in_letters: Bool,
+  digit_count: Int,
+) -> Bool {
+  if index >= length {
+    // Reached end successfully
+    True
+  } else {
+    let byte = bytearray.at(id, index)
+
+    // Check if it's a lowercase letter (a-z: 97-122)
+    if byte >= 97 && byte <= 122 {
+      if in_letters {
+        // Still in letter portion
+        validate_verifier_id_pattern(id, index + 1, length, True, digit_count)
+      } else {
+        // Found a letter after digits - invalid
+        False
+      }
+    // Check if it's a digit (0-9: 48-57)
+    } else if byte >= 48 && byte <= 57 {
+      if digit_count < 3 {
+        // Transition to digit portion, increment count
+        validate_verifier_id_pattern(id, index + 1, length, False, digit_count + 1)
+      } else {
+        // More than 3 digits - invalid
+        False
+      }
+    } else {
+      // Any other character is invalid
+      False
+    }
+  }
+}
+
 pub fn validate_metadata(metadata: PublicRecordMetadata) -> Bool {
   trace @"validate_metadata" : metadata
   when metadata is {
 
     GuardianPubkey { guardian_number } -> validate_guardian_number(guardian_number)
     TallyShare     { guardian_number } -> validate_guardian_number(guardian_number)
-    
+
     GuardianBackup { guardian_number, backup_order } -> and {
         validate_guardian_number(guardian_number),
         validate_guardian_number(backup_order), // same rules as guardian_number
@@ -90,7 +146,7 @@ pub fn validate_metadata(metadata: PublicRecordMetadata) -> Bool {
 
     Device  { device_number } -> device_number > 0 &&   device_number <= max_devices
 
-    Summary { .. } -> True // TODO write verify fn
+    Summary { verifier_id } -> validate_verifier_id(verifier_id)
 
     Manifest        -> True
     JointKey        -> True
