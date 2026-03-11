@@ -38,14 +38,17 @@ with open(IN_LOG, 'r') as f:
     JSONS = [json.loads(j) for j in json_strs]
 
 def convert_cid_for_aiken(cid_str):
-    # print(f'cid_str: {cid_str}')
+    """Convert an IPFS CID string to Aiken ByteArray format."""
     c = make_cid(cid_str)
-    # print(c)
-    # print(c.version)
-    b16 = c.encode('base16')
-    s = str(b16)[3:-1]
-    a = f'#"{s}"'
-    return a
+
+    # Get the raw bytes from the CID's buffer attribute
+    cid_bytes = c.buffer
+
+    # Convert to hex string
+    hex_str = cid_bytes.hex()
+
+    # Return in Aiken ByteArray format
+    return f'#"{hex_str}"'
 
 def record(n, c, s, m):
     print(f"""

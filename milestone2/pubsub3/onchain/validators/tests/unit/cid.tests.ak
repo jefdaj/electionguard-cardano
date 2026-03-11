@@ -1,4 +1,6 @@
-use election/cid.{validate_cid}
+use aiken/collection/list
+use election/cid.{CIDv1, validate_cid}
+use tests/data/static_election_records as sr
 
 /// Test a valid CIDv1 with SHA-256
 test valid_cid_test() {
@@ -81,4 +83,10 @@ test valid_cid_min_values_test() {
 test valid_cid_max_hash_test() {
   let valid_cid = #"01701220ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
   validate_cid(valid_cid) == True
+}
+
+test all_static_election_cids_valid() {
+  let cids: List<CIDv1> =
+    list.map(sr.all_records, fn(r) { r.cid })
+  list.all(cids, validate_cid)
 }

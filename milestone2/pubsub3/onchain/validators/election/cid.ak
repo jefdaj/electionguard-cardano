@@ -14,18 +14,27 @@ pub fn validate_cid(cid: CIDv1) -> Bool {
   trace @"validate_cid"
   trace @"cid" : cid
   let length  = builtin.length_of_bytearray(cid)
+  trace @"length" : length
   let version     = builtin.index_bytearray(cid, 0)
+  trace @"version" : version
 
   // use dag-pb codec (Kubo default) for now
   // TODO would it make sense to switch to 0x71 (dag-cbor) later?
   let codec       = builtin.index_bytearray(cid, 1)
+  trace @"codec" : codec
 
   let hash_type   = builtin.index_bytearray(cid, 2)
   let hash_length = builtin.index_bytearray(cid, 3)
+  trace @"hash_type" : hash_type
+  trace @"hash_length" : hash_length
+
+  // TODO switch to dag-cbor?
+  // codec       == 0x71, // dag-cbor
+
   and {
     length      == 36,
     version     == 0x01, // CIDv1
-    codec       == 0x70, // dag-pb
+    codec       == 0x55, // raw
     hash_type   == 0x12, // SHA-256
     hash_length == 0x20  // 32 bytes
   }
