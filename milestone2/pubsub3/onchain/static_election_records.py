@@ -18,9 +18,8 @@ from pathlib import Path
 import json
 import re
 
-IN_DIR = 'aiken_static_data'
+IN_DIR = 'static_election_records'
 IN_LOG = Path(IN_DIR) / 'egsync.log'
-OUT_AK = 'aiken_static_data.ak'
 
 print('''// Generated with static_election_records.py
 // Consider editing and re-running that to make changes.
