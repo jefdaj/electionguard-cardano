@@ -7,12 +7,9 @@ use election/phase as ep
 use election/record as er
 use tests/mock
 
-// converted from: "bafkreibqf4ce4bqoemmjd6xnj2p22ey5uy26cmpuyg6q7jcr2tocisqkny"
-// TODO generate a full set of static election artifacts with hex strings for Aiken
-const cid1_hex = #"01701220114c8f7ea380e0bf01c877bb4c67f94c8e2c36f2cac792f618be3b2e698ade63"
-
 const manifest = er.PublicRecord {
-  cid: cid1_hex,
+  // orig base32: bafkreiat5mhmsrevctm43qlv6aokrli3cdoj2aqyb34wsf6idybuvzwtua
+  cid: #"0155122013eb0ec9449514d9cdc175f01ca8ad1b10dc9d02180ef96917c81e034ae6d3a0",
   metadata: er.Manifest,
 }
 
