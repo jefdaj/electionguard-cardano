@@ -21,8 +21,7 @@ IN_DIR = 'aiken_static_data'
 IN_LOG = Path(IN_DIR) / 'egsync.log'
 OUT_AK = 'aiken_static_data.ak'
 
-print('''
-// Generated with aiken_static_data.py
+print('''// Generated with aiken_static_data.py
 // Consider editing and re-running that to make changes''')
 
 VARS = {}
@@ -185,8 +184,8 @@ render_fns = [
 VARNAMES = set()
 
 # generate individual records
-for j in JSONS:
-    for fn in render_fns:
+for fn in render_fns:
+    for j in JSONS:
         comment = f'// orig base32: {j["cid"]}'
         cid_str = convert_cid_for_aiken(j["cid"])
         fn_name = fn.__name__
@@ -200,13 +199,13 @@ VARNAMES = sorted(VARNAMES)
 
 # generate lists
 lists = {
-    'admin' : '(manifest|joint_key|ceremont_details|ciphertext_tally|plaintext_tally)',
+    'admin' : '(manifest|joint_key|constants|ceremont_details|ciphertext_tally|plaintext_tally)',
     'guardian1' : 'guardian1',
     'guardian2' : 'guardian2',
     'guardian3' : 'guardian3',
     'ballot_submitted' : 'ballot_submitted',
     'ballot_spoiled' : 'ballot_spoiled',
-    'spoiled_share' : 'spoiled_share',
+    'spoiled_share' : '.*spoiled_share.*',
     'spoiled_result' : 'spoiled_result',
     'device1' : '(device|ballot_submitted|ballot_spoiled|cast_notice)',
     'verifier1' : 'verifier1',
