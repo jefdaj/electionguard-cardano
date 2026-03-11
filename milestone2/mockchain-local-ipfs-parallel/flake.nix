@@ -43,6 +43,8 @@
         watchdog
         quart
         hypercorn
+
+        # py-multiformats-cid # temporary for aiken_static_data.py
       ];
 
       # based on https://stackoverflow.com/a/78450917
