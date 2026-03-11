@@ -1,4 +1,4 @@
-// Generated with aiken_static_data.py
+// Generated with static_election_records.py
 // Consider editing and re-running that to make changes.
 
 use aiken/primitive/string.{to_bytearray}

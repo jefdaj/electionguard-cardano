@@ -2,6 +2,7 @@
 
 # Usage:
 #
+# cd ../mockchain-local-ipfs-parallel
 # nix develop
 # sudo rm -r data
 # ./election.sh
@@ -10,7 +11,7 @@
 # exit
 #
 # nix develop .#egsync
-# ./aiken_static_data.py > staticdata.ak
+# ../pubsub3/onchain/static_election_records.py > ../pubsub3/onchain/validators/tests/data/static_election_records.ak
 
 from multiformats_cid import cid, make_cid
 from pathlib import Path
@@ -21,7 +22,7 @@ IN_DIR = 'aiken_static_data'
 IN_LOG = Path(IN_DIR) / 'egsync.log'
 OUT_AK = 'aiken_static_data.ak'
 
-print('''// Generated with aiken_static_data.py
+print('''// Generated with static_election_records.py
 // Consider editing and re-running that to make changes.
 
 use aiken/primitive/string.{to_bytearray}
