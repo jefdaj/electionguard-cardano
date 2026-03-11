@@ -22,7 +22,10 @@ IN_LOG = Path(IN_DIR) / 'egsync.log'
 OUT_AK = 'aiken_static_data.ak'
 
 print('''// Generated with aiken_static_data.py
-// Consider editing and re-running that to make changes.''')
+// Consider editing and re-running that to make changes.
+
+use aiken/primitive/string.{to_bytearray}
+use election/record as er''')
 
 VARS = {}
 
@@ -46,7 +49,7 @@ def convert_cid_for_aiken(cid_str):
 
 def record(n, c, s, m):
     print(f"""
-const {n} = er.PublicRecord {{
+pub const {n} = er.PublicRecord {{
   {c}
   cid: {s},
   metadata: er.{m}
@@ -70,7 +73,7 @@ def guardian_pubkey(n, j, c, s):
 def summary(n, j, c, s):
     i = j["verifier_id"].replace('_', '') # TODO leave underscore?
     n = f'{i}_summary'
-    i = f'string.to_bytearray(@"{i}")' # TODO remove?
+    i = f'to_bytearray(@"{i}")' # TODO remove?
     m = f'Summary {{ verifier_id: {i} }}'
     return record(n, c, s, m)
 
@@ -85,7 +88,7 @@ def spoiled_share(n, j, c, s):
     i = int(j["guardian_id"].split('_')[-1])
     n = f'guardian{i}_{n}'
     i2 = j["spoiled_id"]
-    i2 = f'string.to_bytearray(@"{i2}")' # TODO remove?
+    i2 = f'to_bytearray(@"{i2}")' # TODO remove?
     m = f'''SpoiledShare {{
     guardian_number: {i},
     spoiled_id: {i2},
@@ -136,14 +139,14 @@ def ballot_name(prefix, j, key='ballot_id'):
 def ballot_submitted(n, j, c, s):
     i = j["ballot_id"]
     n = ballot_name('ballot_submitted', j)
-    i = f'string.to_bytearray(@"{i}")'
+    i = f'to_bytearray(@"{i}")'
     m = f'BallotSubmitted {{ ballot_id: {i} }}'
     return record(n, c, s, m)
 
 def spoiled_result(n, j, c, s):
     i = j["ballot_id"]
     n = ballot_name('spoiled_result', j)
-    i = f'string.to_bytearray(@"{i}")'
+    i = f'to_bytearray(@"{i}")'
     m = f'SpoiledResult {{ ballot_id: {i} }}'
     return record(n, c, s, m)
 
@@ -151,14 +154,14 @@ def spoiled_result(n, j, c, s):
 def ballot_spoiled(n, j, c, s):
     i = j["ballot_id"]
     n = ballot_name('ballot_spoiled', j)
-    i = f'string.to_bytearray(@"{i}")'
+    i = f'to_bytearray(@"{i}")'
     m = f'BallotSpoiled {{ ballot_id: {i} }}'
     return record(n, c, s, m)
 
 def cast_notice(n, j, c, s):
     i = j["ballot_id"]
     n = ballot_name('cast_notice', j)
-    i = f'string.to_bytearray(@"{i}")'
+    i = f'to_bytearray(@"{i}")'
     m = f'CastNotice {{ ballot_id: {i} }}'
     return record(n, c, s, m)
 
@@ -201,7 +204,7 @@ for fn in render_fns:
 
 # generate lists
 lists = {
-    'admin' : '(manifest|joint_key|constants|ceremont_details|ciphertext_tally|plaintext_tally)',
+    'admin' : '(manifest|joint_key|constants|ceremont_details|ciphertext_tally|plaintext_tally|.*admin.*summary.*)',
     'guardian1' : 'guardian1',
     'guardian2' : 'guardian2',
     'guardian3' : 'guardian3',
@@ -216,8 +219,7 @@ lists = {
 }
 
 for list_name, list_regex in lists.items():
-    print()
-    print(f'const {list_name}_records = [')
+    print(f'\npub const {list_name}_records = [')
     for v in VARNAMES:
         if re.match(list_regex, v):
             print(f'  {v},')

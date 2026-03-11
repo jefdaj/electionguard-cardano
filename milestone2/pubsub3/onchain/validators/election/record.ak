@@ -51,7 +51,8 @@ pub type PublicRecordMetadata {
     ballot_id: ByteArray
   }
   Summary {
-    verifier_number: Int // TODO nope, could be anyone not just verifiers, so need bytearray
+    // verifier_number: Int // TODO nope, could be anyone not just verifiers, so need bytearray
+    verifier_id: ByteArray
   }
 }
 
@@ -87,8 +88,9 @@ pub fn validate_metadata(metadata: PublicRecordMetadata) -> Bool {
       validate_guardian_number(guardian_number)
     }
 
-    Device  {   device_number } ->   device_number > 0 &&   device_number <= max_devices
-    Summary { verifier_number } -> verifier_number > 0 && verifier_number <= max_verifiers
+    Device  { device_number } -> device_number > 0 &&   device_number <= max_devices
+
+    Summary { .. } -> True // TODO write verify fn
 
     Manifest        -> True
     JointKey        -> True
