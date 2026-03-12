@@ -309,6 +309,31 @@ test happy_election_admin_tx6() {
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
+// ----------- admin_tx7 -----------
+
+// post summary
+// TODO better to keep separate from advancing phase?
+const admin_s7 = AdminChannelState {
+  ..admin_s6,
+  new_records: [
+    sr.admin1_summary, // TODO remove the 1?
+  ],
+  seq: 7,
+}
+
+fn admin_tx7_pair() -> (Output, Transaction) {
+  let (output, _) = admin_tx6_pair()
+  happy_admin_post(
+    mock.input(@"admin_tx6", 0, output),
+    admin_s7
+  )
+}
+
+test happy_election_admin_tx7() {
+  let (_, tx) = admin_tx7_pair()
+  mock.election_validate(tx, ea.PostPublicRecords)
+}
+
 
 // =================================
 // guardian1 transactions:
