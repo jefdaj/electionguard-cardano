@@ -207,7 +207,7 @@ for fn in render_fns:
 
 # generate lists
 lists = {
-    'admin' : '(manifest|joint_key|constants|ceremont_details|ciphertext_tally|plaintext_tally|.*admin.*summary.*)',
+    'admin' : '(manifest|joint_key|constants|ceremony_details|ciphertext_tally|plaintext_tally|.*admin.*summary.*)',
     'guardian1' : 'guardian1',
     'guardian2' : 'guardian2',
     'guardian3' : 'guardian3',

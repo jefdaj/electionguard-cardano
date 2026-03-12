@@ -528,6 +528,7 @@ pub const guardian1_summary = er.PublicRecord {
 
 pub const admin_records = [
   manifest,
+  ceremony_details,
   joint_key,
   constants,
   ciphertext_tally,

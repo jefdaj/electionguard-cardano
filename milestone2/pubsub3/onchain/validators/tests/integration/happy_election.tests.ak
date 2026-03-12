@@ -137,7 +137,7 @@ fn sub_out0(sub_id: ChannelId, sub_state: SubChannelState) -> Output {
   mock.script_output(sub_id, mock.subchannel_datum(sub_state))
 }
 
-// These are outputs of admin_tx2, but could also be called tx0 for their subchannel
+// These are outputs of admin_tx2, but could also be called tx0 for their subchannels
 const guardian1_tx0_out0 = sub_out0(channel_id(@"guardian1"), guardian1_s0)
 const guardian2_tx0_out0 = sub_out0(channel_id(@"guardian2"), guardian2_s0)
 const guardian3_tx0_out0 = sub_out0(channel_id(@"guardian3"), guardian3_s0)
