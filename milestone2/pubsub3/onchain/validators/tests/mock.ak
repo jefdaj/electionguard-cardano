@@ -180,3 +180,15 @@ pub fn oneshot_input() -> Input {
     output: oneshot_output()
   }
 }
+
+// Create a unique input from a previous output
+pub fn input(name: String, index: Int, output: Output) -> Input {
+  let txid = crypto.blake2b_224(string.to_bytearray(name))
+  Input {
+    output_reference: OutputReference {
+      transaction_id: txid,
+      output_index: index,
+    },
+    output: output
+  }
+}

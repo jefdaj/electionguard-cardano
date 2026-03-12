@@ -7,8 +7,6 @@
 //
 
 use aiken/collection/list
-use aiken/primitive/string
-use aiken/primitive/int
 use cardano/assets
 use cardano/transaction.{Input, NoDatum, Output, OutputReference, Transaction}
 use election/action as ea
@@ -93,17 +91,10 @@ fn minimal_output(n: Int) -> Output {
   }
 }
 
+
 // Input n refers to output (n-1), which includes the datum for state (n-1).
 fn minimal_input(n: Int) -> Input {
-  let minimal_id =
-    string.to_bytearray(string.concat(@"abcdef", int.to_string(n)))
-  Input {
-    output_reference: OutputReference {
-      transaction_id: minimal_id,
-      output_index: 0,
-    },
-    output: minimal_output(n-1)
-  }
+  mock.input(@"abcdef", n, minimal_output(n-1))
 }
 
 // TX n consumes input n and produces output n.
