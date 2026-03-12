@@ -377,6 +377,42 @@ test happy_election_device1_tx1() {
 
 // ----------- device1_tx2 -----------
 
+// submit all ballots
+const device1_s2 = SubChannelState {
+  channel_id: d1,
+  publisher: mock.vkh(d1),
+  new_records: [
+    sr.ballot_submitted_476d9db6,
+    sr.ballot_submitted_480eed2e,
+    sr.ballot_submitted_48b5dc74,
+    sr.ballot_submitted_4957f5fe,
+    sr.ballot_submitted_49fb726a,
+    sr.ballot_submitted_4aa15ab8,
+    sr.ballot_submitted_4b4fb8a6,
+    sr.ballot_submitted_4bf9df52,
+    sr.ballot_submitted_4c9f842a,
+    sr.ballot_submitted_4d471122,
+    sr.ballot_submitted_4decea16,
+    sr.ballot_submitted_4e970104,
+  ],
+  seq: 2,
+}
+
+fn device1_tx2_pair() -> (Output, Transaction) {
+  let (output, _) = device1_tx1_pair()
+  happy_subchannel_post(
+    d1,
+    mock.input(@"device1_tx1", 0, output),
+    device1_s2
+  )
+}
+
+test happy_election_device1_tx2() {
+  let (_, tx) = device1_tx2_pair()
+  mock.election_validate(tx, ea.PostPublicRecords)
+}
+
+
 // =================================
 // verifier1 transactions:
 // 1. post summary (verification)
