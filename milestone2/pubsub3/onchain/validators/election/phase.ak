@@ -91,7 +91,9 @@ fn is_valid_phase_advance(old: ElectionPhase, new: ElectionPhase) -> Bool {
   when old is {
     ElectionConfigPhase(ConfigAnnouncePhase)   -> new == ElectionConfigPhase(ConfigOnboardingPhase)
     ElectionConfigPhase(ConfigOnboardingPhase) -> new == ElectionConfigPhase(ConfigCeremonyPhase)
-    ElectionConfigPhase(ConfigCeremonyPhase)   -> new == ElectionConfigPhase(ConfigFinalizePhase)
+    ElectionConfigPhase(ConfigCeremonyPhase)   ->
+      // TODO remove ConfigFinalizePhase if it's not really needed?
+      new == ElectionConfigPhase(ConfigFinalizePhase) || new == ElectionVotingPhase
     ElectionConfigPhase(ConfigFinalizePhase)   -> new == ElectionVotingPhase
     ElectionVotingPhase                        -> new == ElectionResultsPhase(ResultsTallyPhase)
     ElectionResultsPhase(ResultsTallyPhase)    -> new == ElectionResultsPhase(ResultsDecryptPhase)

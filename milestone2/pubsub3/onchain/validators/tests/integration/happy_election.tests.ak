@@ -187,13 +187,15 @@ test happy_election_admin_tx2() {
 
 // ----------- admin_tx3 -----------
 
-// finalize election config
+// finalize election config, advance to voting
+// TODO any issue skipping ConfigFinalizePhase here?
 const admin_s3 = AdminChannelState {
   ..admin_s2,
   new_records: [
     sr.joint_key,
     sr.constants,
   ],
+  phase: ep.ElectionVotingPhase,
   seq: 3,
 }
 
