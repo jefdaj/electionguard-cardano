@@ -16,7 +16,7 @@
 // - happy_election_device1_tx3
 //
 
-use aiken/collection/list
+// use aiken/collection/list
 // use aiken/primitive/int
 // use aiken/primitive/string
 // use cardano/assets
@@ -30,6 +30,19 @@ use election/state.{
 }
 use tests/data/static_election_records as sr
 use tests/mock
+
+// =================================
+// shorthand
+// =================================
+
+const a  = channel_id(@"admin")
+const g1 = channel_id(@"guardian1")
+const g2 = channel_id(@"guardian2")
+const g3 = channel_id(@"guardian3")
+const d1 = channel_id(@"device1")
+const v1 = channel_id(@"verifier1")
+
+const subchannel_ids: List<ChannelId> = [g1, g2, g3, d1, v1]
 
 // =================================
 // initial solo admin transactions:
@@ -48,14 +61,11 @@ const admin_s0 = AdminChannelState {
   seq: 0
 }
 
-const admin_tx0_out0 = mock.script_output(
-  channel_id(@"admin"),
-  mock.admin_datum(admin_s0)
-)
+const admin_tx0_out0 = mock.script_output(a, mock.admin_datum(admin_s0))
 
 const admin_tx0 = Transaction {
   ..transaction.placeholder,
-  mint: mock.stt_value(channel_id(@"admin")),
+  mint: mock.stt_value(a),
   inputs: [mock.oneshot_input],
   outputs: [admin_tx0_out0],
 }
@@ -78,10 +88,7 @@ const admin_s1 = AdminChannelState {
   seq: 1,
 }
 
-const admin_tx1_out0 = mock.script_output(
-  channel_id(@"admin"),
-  mock.admin_datum(admin_s1)
-)
+const admin_tx1_out0 = mock.script_output(a, mock.admin_datum(admin_s1))
 
 const admin_tx1_in0 = mock.input(@"admin_tx0", 0, admin_tx0_out0)
 
@@ -98,12 +105,6 @@ test happy_election_admin_tx1() {
 
 // ----------- admin_tx2 -----------
 
-const subchannel_ids: List<ChannelId> =
-  list.map(
-    [@"guardian1", @"guardian2", @"guardian3", @"device1", @"verifier1"],
-    channel_id
-  )
-
 // TODO is it confusing that you hash the prev tx number here?
 const admin_tx2_in0 = mock.input(@"admin_tx1", 0, admin_tx1_out0)
 
@@ -118,10 +119,7 @@ const admin_s2 = AdminChannelState {
   seq: admin_s1.seq + 1
 }
 
-const admin_tx2_out0 = mock.script_output(
-  channel_id(@"admin"),
-  mock.admin_datum(admin_s2)
-)
+const admin_tx2_out0 = mock.script_output(a, mock.admin_datum(admin_s2))
 
 fn sub_s0(subchannel_id: ChannelId) -> SubChannelState {
   SubChannelState {
@@ -132,23 +130,32 @@ fn sub_s0(subchannel_id: ChannelId) -> SubChannelState {
   }
 }
 
-// We'll want to refer to these in their subchannel sections
-const guardian1_s0 = sub_s0(channel_id(@"guardian1"))
-const guardian2_s0 = sub_s0(channel_id(@"guardian2"))
-const guardian3_s0 = sub_s0(channel_id(@"guardian3"))
-const device1_s0   = sub_s0(channel_id(@"device1"  ))
-const verifier1_s0 = sub_s0(channel_id(@"verifier1"))
+// We'll want to refer to these in their subchannel sections.
+const guardian1_s0 = sub_s0(g1)
+const guardian2_s0 = sub_s0(g2)
+const guardian3_s0 = sub_s0(g3)
+const device1_s0   = sub_s0(d1)
+const verifier1_s0 = sub_s0(v1)
 
 fn sub_out0(sub_id: ChannelId, sub_state: SubChannelState) -> Output {
   mock.script_output(sub_id, mock.subchannel_datum(sub_state))
 }
 
-// These are outputs of admin_tx2, and also tx0 of their subchannels
-const guardian1_tx0_out0 = sub_out0(channel_id(@"guardian1"), guardian1_s0)
-const guardian2_tx0_out0 = sub_out0(channel_id(@"guardian2"), guardian2_s0)
-const guardian3_tx0_out0 = sub_out0(channel_id(@"guardian3"), guardian3_s0)
-const device1_tx0_out0   = sub_out0(channel_id(@"device1"  ), device1_s0  )
-const verifier1_tx0_out0 = sub_out0(channel_id(@"verifier1"), verifier1_s0)
+// These are outputs of admin_tx2, and also tx0 of their subchannels.
+const guardian1_tx0_out0 = sub_out0(g1, guardian1_s0)
+const guardian2_tx0_out0 = sub_out0(g2, guardian2_s0)
+const guardian3_tx0_out0 = sub_out0(g3, guardian3_s0)
+const device1_tx0_out0   = sub_out0(d1, device1_s0  )
+const verifier1_tx0_out0 = sub_out0(v1, verifier1_s0)
+
+// And matching inputs. Not used until subchannel sections below, but easier to
+// write here where the indexes are obvious.
+// const admin_tx3_in0     = mock.input(@"admin_tx2", 0, admin_tx2_out0    )
+// const guardian1_tx1_in0 = mock.input(@"admin_tx2", 1, guardian1_tx0_out0)
+// const guardian2_tx1_in0 = mock.input(@"admin_tx2", 2, guardian2_tx0_out0)
+// const guardian3_tx1_in0 = mock.input(@"admin_tx2", 3, guardian3_tx0_out0)
+// const device1_tx1_in0   = mock.input(@"admin_tx2", 4, device1_tx0_out0  )
+const verifier1_tx1_in0 = mock.input(@"admin_tx2", 5, verifier1_tx0_out0)
 
 const admin_tx2 = Transaction {
   ..transaction.placeholder,
@@ -202,11 +209,6 @@ test happy_election_admin_tx2() {
 
 // guardian1_tx1
 
-const guardian1_tx1_in0 = mock.script_output(
-  channel_id(@"guardian1"),
-  mock.subchannel_datum(guardian1_s0)
-)
-
 test happy_election_guardian1_tx1() {
   // mock.election_validate(admin_tx0, ea.InitElection)
   True
@@ -217,39 +219,20 @@ test happy_election_guardian1_tx1() {
 // 1. 
 // =================================
 
-const guardian2_tx1_in0 = mock.script_output(
-  channel_id(@"guardian2"),
-  mock.subchannel_datum(guardian2_s0)
-)
-
 // =================================
 // guardian3 transactions:
 // 1. 
 // =================================
-
-const guardian3_tx1_in0 = mock.script_output(
-  channel_id(@"guardian3"),
-  mock.subchannel_datum(guardian3_s0)
-)
 
 // =================================
 // device1 transactions:
 // 1. 
 // =================================
 
-const device1_tx1_in0 = mock.script_output(
-  channel_id(@"device1"),
-  mock.subchannel_datum(device1_s0)
-)
-
 // =================================
 // verifier1 transactions:
 // 1. post summary (verification)
 // =================================
-
-const v1 = channel_id(@"verifier1")
-
-const verifier1_tx1_in0 = mock.script_output(v1, mock.subchannel_datum(verifier1_s0))
 
 const verifier1_s1 = SubChannelState {
   channel_id: v1,
@@ -260,7 +243,18 @@ const verifier1_s1 = SubChannelState {
   seq: 1,
 }
 
-const verifier1_tx1_out0 = mock.script_output(v1, mock.admin_datum(admin_s1))
+const verifier1_tx1_out0 = mock.script_output(v1, mock.subchannel_datum(verifier1_s1))
+
+const verifier1_tx1 = Transaction {
+  ..transaction.placeholder,
+  inputs: [verifier1_tx1_in0],
+  outputs: [verifier1_tx1_out0],
+  extra_signatories: [mock.vkh(v1)],
+}
+
+test happy_election_verifier1_tx1() {
+  mock.election_validate(verifier1_tx1, ea.PostPublicRecords)
+}
 
 // =================================
 // final solo admin section:
