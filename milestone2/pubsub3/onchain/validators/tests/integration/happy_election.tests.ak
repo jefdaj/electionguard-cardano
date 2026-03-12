@@ -278,6 +278,37 @@ test happy_election_admin_tx5() {
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
+// ----------- admin_tx6 -----------
+
+// post plaintext results, advance phase
+const admin_s6 = AdminChannelState {
+  ..admin_s5,
+  new_records: [
+    sr.plaintext_tally,
+    sr.spoiled_result_476d9db6,
+    sr.spoiled_result_480eed2e,
+    sr.spoiled_result_48b5dc74,
+    sr.spoiled_result_49fb726a,
+    sr.spoiled_result_4aa15ab8,
+    sr.spoiled_result_4c9f842a,
+  ],
+  phase: ep.ElectionVerifyPhase,
+  seq: 6,
+}
+
+fn admin_tx6_pair() -> (Output, Transaction) {
+  let (output, _) = admin_tx5_pair()
+  happy_admin_post(
+    mock.input(@"admin_tx5", 0, output),
+    admin_s6
+  )
+}
+
+test happy_election_admin_tx6() {
+  let (_, tx) = admin_tx6_pair()
+  mock.election_validate(tx, ea.PostPublicRecords)
+}
+
 
 // =================================
 // guardian1 transactions:

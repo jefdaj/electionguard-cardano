@@ -533,6 +533,12 @@ pub const admin_records = [
   constants,
   ciphertext_tally,
   plaintext_tally,
+  spoiled_result_476d9db6,
+  spoiled_result_480eed2e,
+  spoiled_result_48b5dc74,
+  spoiled_result_49fb726a,
+  spoiled_result_4aa15ab8,
+  spoiled_result_4c9f842a,
   admin1_summary,
 ]
 
