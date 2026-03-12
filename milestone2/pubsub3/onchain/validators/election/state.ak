@@ -1,3 +1,4 @@
+use aiken/primitive/string
 use aiken/collection/list
 use aiken/crypto.{VerificationKeyHash}
 // use cardano/transaction.{InlineDatum, Output}
@@ -10,6 +11,10 @@ use election/utils.{remove_elements}
 // TODO rename Channel?
 
 pub type ChannelId = ByteArray
+
+pub fn channel_id(channel_name: String) -> ChannelId {
+  string.to_bytearray(channel_name)
+}
 
 pub type ChannelState {
   AdminChannel(AdminChannelState)
