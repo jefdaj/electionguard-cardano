@@ -205,8 +205,13 @@ test happy_election_admin_tx2() {
 // =================================
 // guardian1 transactions:
 // 1. key ceremony round 1
-// 2. 
+// 2. key ceremony round 2
+// 3. key ceremony round 3
+// 4. decrypt results
+// 5. summary (verification)
 // =================================
+
+// TODO later, can 4 and 5 be done together?
 
 // Automate simple subchannel posts with one input and one output
 fn happy_subchannel_post(
@@ -226,8 +231,7 @@ fn happy_subchannel_post(
 
 // key ceremony round 1
 const guardian1_s1 = SubChannelState {
-  channel_id: g1,
-  publisher: mock.vkh(g1),
+  ..guardian1_s0,
   new_records: [
     sr.guardian1_pubkey,
   ],
@@ -240,14 +244,13 @@ fn guardian1_tx1_pair() -> (Output, Transaction) {
 }
 
 test happy_election_guardian1_tx1() {
-  let (_, guardian1_tx1) = guardian1_tx1_pair()
-  mock.election_validate(guardian1_tx1, ea.PostPublicRecords)
+  let (_, tx) = guardian1_tx1_pair()
+  mock.election_validate(tx, ea.PostPublicRecords)
 }
 
 // key ceremony round 2
 const guardian1_s2 = SubChannelState {
-  channel_id: g1,
-  publisher: mock.vkh(g1),
+  ..guardian1_s1,
   new_records: [
     sr.guardian1_backup2,
     sr.guardian1_backup3,
@@ -256,23 +259,22 @@ const guardian1_s2 = SubChannelState {
 }
 
 fn guardian1_tx2_pair() -> (Output, Transaction) {
-  let (guardian1_tx1_out0, _) = guardian1_tx1_pair()
+  let (output, _) = guardian1_tx1_pair()
   happy_subchannel_post(
     g1,
-    mock.input(@"guardian1_tx1", 0, guardian1_tx1_out0),
+    mock.input(@"guardian1_tx1", 0, output),
     guardian1_s2
   )
 }
 
 test happy_election_guardian1_tx2() {
-  let (_, guardian1_tx2) = guardian1_tx2_pair()
-  mock.election_validate(guardian1_tx2, ea.PostPublicRecords)
+  let (_, tx) = guardian1_tx2_pair()
+  mock.election_validate(tx, ea.PostPublicRecords)
 }
 
 // key ceremony round 3
 const guardian1_s3 = SubChannelState {
-  channel_id: g1,
-  publisher: mock.vkh(g1),
+  ..guardian1_s2,
   new_records: [
     sr.guardian1_verification2,
     sr.guardian1_verification3,
@@ -281,20 +283,48 @@ const guardian1_s3 = SubChannelState {
 }
 
 fn guardian1_tx3_pair() -> (Output, Transaction) {
-  let (guardian1_tx2_out0, _) = guardian1_tx2_pair()
+  let (output, _) = guardian1_tx2_pair()
   happy_subchannel_post(
     g1,
-    mock.input(@"guardian1_tx2", 0, guardian1_tx2_out0),
+    mock.input(@"guardian1_tx2", 0, output),
     guardian1_s3
   )
 }
 
 test happy_election_guardian1_tx3() {
-  let (_, guardian1_tx3) = guardian1_tx3_pair()
-  mock.election_validate(guardian1_tx3, ea.PostPublicRecords)
+  let (_, tx) = guardian1_tx3_pair()
+  mock.election_validate(tx, ea.PostPublicRecords)
 }
 
-// TODO factor out helpers
+// decrypt results
+const guardian1_s4 = SubChannelState {
+  ..guardian1_s3,
+  new_records: [
+    sr.guardian1_tally_share,
+    sr.guardian1_spoiled_share_476d9db6,
+    sr.guardian1_spoiled_share_480eed2e,
+    sr.guardian1_spoiled_share_48b5dc74,
+    sr.guardian1_spoiled_share_49fb726a,
+    sr.guardian1_spoiled_share_4aa15ab8,
+    sr.guardian1_spoiled_share_4c9f842a,
+  ],
+  seq: 4,
+}
+
+fn guardian1_tx4_pair() -> (Output, Transaction) {
+  let (output, _) = guardian1_tx3_pair()
+  happy_subchannel_post(
+    g1,
+    mock.input(@"guardian1_tx3", 0, output),
+    guardian1_s4
+  )
+}
+
+test happy_election_guardian1_tx4() {
+  let (_, tx) = guardian1_tx4_pair()
+  mock.election_validate(tx, ea.PostPublicRecords)
+}
+
 // TODO duplicate for guardian2, guardian3
 
 // =================================
