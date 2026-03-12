@@ -108,15 +108,22 @@ pub fn rm_subchannels(
 }
 
 // TODO move to action.ak?
-// Note that this doesn't check validity of the records
+// Note that this doesn't check validity of the records or new phase
 // TODO should those checks also go here?
-pub fn post_public_records(old_state: ChannelState, records: List<PublicRecord>) -> ChannelState {
+pub fn post_public_records(
+  old_state: ChannelState,
+  records: List<PublicRecord>,
+  phase: Option<ElectionPhase>
+) -> ChannelState {
   when old_state is {
     AdminChannel(old) -> AdminChannel(AdminChannelState(
       old.admin,
       old.subchannels,
       records, // should replace the old list
-      old.phase, // TODO should this be allowed to transition?
+      when phase is {
+        Some(new_phase) -> new_phase
+        None -> old.phase
+      },
       old.seq + 1, // should be incremented
     ))
     SubChannel(old) -> SubChannel(SubChannelState(

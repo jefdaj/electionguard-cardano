@@ -378,14 +378,24 @@ pub fn validate_anyone_single_channel_spend(
   // The new records (or at least their CIDs + metadata) must be valid
   let new_records_valid = validate_records(new_records) ?
 
+  // Optional phase transition when posting to admin channel
+  let (opt_cont_phase, phase_valid) = when state is {
+    AdminChannel(admin_state) -> {
+      expect AdminChannel(AdminChannelState { phase, .. }) = cont_state
+      (Some(phase), is_valid_phase_transition(admin_state.phase, phase))
+    }
+    SubChannel(_) -> (None, True) // subchannels have no phase (yet)
+  }
+
   // And the continuation (next) state must be exactly as expected:
   // new_records replaced, seq incremented, the rest unchanged
-  let expected = post_public_records(state, new_records)
+  let expected = post_public_records(state, new_records, opt_cont_phase)
   let cont_as_expected = (cont_state == expected) ?
 
   and {
     authorized,
     new_records_valid,
+    phase_valid,
     cont_as_expected,
   }
 }

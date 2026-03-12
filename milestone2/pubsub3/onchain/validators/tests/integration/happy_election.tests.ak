@@ -60,6 +60,7 @@ test happy_election_admin_tx0() {
 
 // ----------- admin_tx1 -----------
 
+// post 2 records and advance
 const admin_s1 = AdminChannelState {
   admin: mock.admin_vkh(),
   subchannels: [],
@@ -85,6 +86,10 @@ const admin_tx1 = Transaction {
 test happy_election_admin_tx1() {
   mock.election_validate(admin_tx1, ea.PostPublicRecords)
 }
+
+// ----------- admin_tx2 -----------
+
+// TODO write this in the morning based on "add multiple channels"
 
 // =================================
 // parallel admin section:
