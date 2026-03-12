@@ -185,6 +185,23 @@ test happy_election_admin_tx2() {
 // 7. verify
 // =================================
 
+// Automate simple admin transactions that take one input, post some new
+// records, and produce one output.
+// TODO can this be used for earlier ones too?
+fn happy_admin_post(
+  input: Input,
+  state: AdminChannelState
+) -> (Output, Transaction) {
+  let output = mock.script_output(a, mock.admin_datum(state))
+  let tx = Transaction {
+    ..transaction.placeholder,
+    inputs: [input],
+    outputs: [output],
+    extra_signatories: [mock.admin_vkh],
+  }
+  (output, tx)
+}
+
 // ----------- admin_tx3 -----------
 
 // finalize election config, advance to voting
@@ -199,23 +216,6 @@ const admin_s3 = AdminChannelState {
   seq: 3,
 }
 
-// Automate simple admin transactions that take one input, post some new
-// records, and produce one output.
-// TODO can this be used for earlier ones too?
-fn happy_admin_post(
-  input: Input,
-  state: AdminChannelState
-) -> (Output, Transaction) {
-  let output = mock.script_output(a, mock.admin_datum(state))
-  let tx = Transaction {
-    ..transaction.placeholder,
-    inputs: [input],
-    outputs: [output],
-    extra_signatories: [mock.vkh(a)],
-  }
-  (output, tx)
-}
-
 // admin_tx3_in0 defined above in admin_tx2 section
 fn admin_tx3_pair() -> (Output, Transaction) {
   happy_admin_post(admin_tx3_in0, admin_s3)
@@ -224,6 +224,33 @@ fn admin_tx3_pair() -> (Output, Transaction) {
 test happy_election_admin_tx3() {
   let (_, tx) = admin_tx3_pair()
   mock.election_validate(tx, ea.PostPublicRecords)
+}
+
+// ----------- admin_tx4 -----------
+
+// This could be combined with posting the tally, but in later versions I think
+// it would make more sense to have this be a definite stopping point where
+// devices post any last votes and their STTs are burned (channels removed). So
+// for now I'll keep it as an advance-only step.
+
+const admin_s4 = AdminChannelState {
+  ..admin_s3,
+  new_records: [],
+  phase: ep.ElectionResultsPhase(ep.ResultsTallyPhase),
+  seq: 4,
+}
+
+fn admin_tx4_pair() -> (Output, Transaction) {
+  let (output, _) = admin_tx3_pair()
+  happy_admin_post(
+    mock.input(@"admin_tx3", 0, output),
+    admin_s4
+  )
+}
+
+test happy_election_admin_tx4() {
+  let (_, tx) = admin_tx4_pair()
+  mock.election_validate(tx, ea.AdvancePhase)
 }
 
 // =================================

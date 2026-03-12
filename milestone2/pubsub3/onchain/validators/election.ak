@@ -177,9 +177,12 @@ fn validate_advancephase_spend(
   let valid_transition = is_valid_phase_transition(state.phase, cont_state.phase) ?
   let expected = AdminChannelState {
     ..state,
+    new_records: [],
     phase: cont_state.phase,
     seq: state.seq + 1
   }
+  // trace @"expected" : expected
+  // trace @"cont_state" : cont_state
   let cont_as_expected = (cont_state == expected) ?
   valid_transition && cont_as_expected
 }
