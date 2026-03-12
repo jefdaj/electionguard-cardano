@@ -21,7 +21,7 @@
 // use aiken/primitive/string
 // use cardano/assets
 // use cardano/transaction.{Input, NoDatum, Output, OutputReference, Transaction}
-use cardano/transaction.{Transaction, Output}
+use cardano/transaction.{Transaction, Input, Output}
 use election/action as ea
 use election/phase as ep
 use election/state.{
@@ -208,6 +208,22 @@ test happy_election_admin_tx2() {
 // 2. 
 // =================================
 
+// Automate simple subchannel posts with one input and one output
+fn happy_subchannel_post(
+  channel: ChannelId,
+  input: Input,
+  state: SubChannelState
+) -> (Output, Transaction) {
+  let output = mock.script_output(channel, mock.subchannel_datum(state))
+  let tx = Transaction {
+    ..transaction.placeholder,
+    inputs: [input],
+    outputs: [output],
+    extra_signatories: [mock.vkh(channel)],
+  }
+  (output, tx)
+}
+
 // key ceremony round 1
 const guardian1_s1 = SubChannelState {
   channel_id: g1,
@@ -218,16 +234,13 @@ const guardian1_s1 = SubChannelState {
   seq: 1,
 }
 
-const guardian1_tx1_out0 = mock.script_output(g1, mock.subchannel_datum(guardian1_s1))
-
-const guardian1_tx1 = Transaction {
-  ..transaction.placeholder,
-  inputs: [guardian1_tx1_in0],
-  outputs: [guardian1_tx1_out0],
-  extra_signatories: [mock.vkh(g1)],
+// guardian1_tx1_in0 defined above in admin_tx2 section
+fn guardian1_tx1_pair() -> (Output, Transaction) {
+  happy_subchannel_post(g1, guardian1_tx1_in0, guardian1_s1)
 }
 
 test happy_election_guardian1_tx1() {
+  let (_, guardian1_tx1) = guardian1_tx1_pair()
   mock.election_validate(guardian1_tx1, ea.PostPublicRecords)
 }
 
@@ -242,18 +255,17 @@ const guardian1_s2 = SubChannelState {
   seq: 2,
 }
 
-const guardian1_tx2_in0 = mock.input(@"guardian1_tx1", 0, guardian1_tx1_out0)
-
-const guardian1_tx2_out0 = mock.script_output(g1, mock.subchannel_datum(guardian1_s2))
-
-const guardian1_tx2 = Transaction {
-  ..transaction.placeholder,
-  inputs: [guardian1_tx2_in0],
-  outputs: [guardian1_tx2_out0],
-  extra_signatories: [mock.vkh(g1)],
+fn guardian1_tx2_pair() -> (Output, Transaction) {
+  let (guardian1_tx1_out0, _) = guardian1_tx1_pair()
+  happy_subchannel_post(
+    g1,
+    mock.input(@"guardian1_tx1", 0, guardian1_tx1_out0),
+    guardian1_s2
+  )
 }
 
 test happy_election_guardian1_tx2() {
+  let (_, guardian1_tx2) = guardian1_tx2_pair()
   mock.election_validate(guardian1_tx2, ea.PostPublicRecords)
 }
 
@@ -268,18 +280,17 @@ const guardian1_s3 = SubChannelState {
   seq: 3,
 }
 
-const guardian1_tx3_in0 = mock.input(@"guardian1_tx2", 0, guardian1_tx2_out0)
-
-const guardian1_tx3_out0 = mock.script_output(g1, mock.subchannel_datum(guardian1_s3))
-
-const guardian1_tx3 = Transaction {
-  ..transaction.placeholder,
-  inputs: [guardian1_tx3_in0],
-  outputs: [guardian1_tx3_out0],
-  extra_signatories: [mock.vkh(g1)],
+fn guardian1_tx3_pair() -> (Output, Transaction) {
+  let (guardian1_tx2_out0, _) = guardian1_tx2_pair()
+  happy_subchannel_post(
+    g1,
+    mock.input(@"guardian1_tx2", 0, guardian1_tx2_out0),
+    guardian1_s3
+  )
 }
 
 test happy_election_guardian1_tx3() {
+  let (_, guardian1_tx3) = guardian1_tx3_pair()
   mock.election_validate(guardian1_tx3, ea.PostPublicRecords)
 }
 
