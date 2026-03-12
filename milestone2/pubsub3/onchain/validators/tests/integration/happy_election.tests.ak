@@ -178,8 +178,8 @@ test happy_election_admin_tx2() {
 
 // =================================
 // parallel admin section:
-// 3. finalize config (device here?)
-// 4. voting
+// 3. finalize config
+// 4. advance voting -> tally
 // 5. results tally
 // 6. results decrypt
 // 7. verify
@@ -252,6 +252,32 @@ test happy_election_admin_tx4() {
   let (_, tx) = admin_tx4_pair()
   mock.election_validate(tx, ea.AdvancePhase)
 }
+
+// ----------- admin_tx5 -----------
+
+// post ciphertext tally, advance phase
+const admin_s5 = AdminChannelState {
+  ..admin_s4,
+  new_records: [
+    sr.ciphertext_tally,
+  ],
+  phase: ep.ElectionResultsPhase(ep.ResultsDecryptPhase),
+  seq: 5,
+}
+
+fn admin_tx5_pair() -> (Output, Transaction) {
+  let (output, _) = admin_tx4_pair()
+  happy_admin_post(
+    mock.input(@"admin_tx4", 0, output),
+    admin_s5
+  )
+}
+
+test happy_election_admin_tx5() {
+  let (_, tx) = admin_tx5_pair()
+  mock.election_validate(tx, ea.PostPublicRecords)
+}
+
 
 // =================================
 // guardian1 transactions:
