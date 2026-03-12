@@ -342,17 +342,14 @@ const device1_s1 = SubChannelState {
   seq: 1,
 }
 
-const device1_tx1_out0 = mock.script_output(d1, mock.subchannel_datum(device1_s1))
-
-const device1_tx1 = Transaction {
-  ..transaction.placeholder,
-  inputs: [device1_tx1_in0],
-  outputs: [device1_tx1_out0],
-  extra_signatories: [mock.vkh(d1)],
+// device1_tx1_in0 defined above in admin_tx2 section
+fn device1_tx1_pair() -> (Output, Transaction) {
+  happy_subchannel_post(d1, device1_tx1_in0, device1_s1)
 }
 
 test happy_election_device1_tx1() {
-  mock.election_validate(device1_tx1, ea.PostPublicRecords)
+  let (_, tx) = device1_tx1_pair()
+  mock.election_validate(tx, ea.PostPublicRecords)
 }
 
 // =================================
@@ -369,17 +366,14 @@ const verifier1_s1 = SubChannelState {
   seq: 1,
 }
 
-const verifier1_tx1_out0 = mock.script_output(v1, mock.subchannel_datum(verifier1_s1))
-
-const verifier1_tx1 = Transaction {
-  ..transaction.placeholder,
-  inputs: [verifier1_tx1_in0],
-  outputs: [verifier1_tx1_out0],
-  extra_signatories: [mock.vkh(v1)],
+// verifier1_tx1_in0 defined above in admin_tx2 section
+fn verifier1_tx1_pair() -> (Output, Transaction) {
+  happy_subchannel_post(v1, verifier1_tx1_in0, verifier1_s1)
 }
 
 test happy_election_verifier1_tx1() {
-  mock.election_validate(verifier1_tx1, ea.PostPublicRecords)
+  let (_, tx) = verifier1_tx1_pair()
+  mock.election_validate(tx, ea.PostPublicRecords)
 }
 
 // =================================
