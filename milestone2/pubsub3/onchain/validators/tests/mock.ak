@@ -15,8 +15,8 @@ use cardano/assets.{Value}
 use cardano/address.{Script, Address, VerificationKey}
 use cardano/assets.{PolicyId}
 use cardano/transaction.{
-  Datum, InlineDatum,
-  Input, OutputReference, Transaction,
+  Datum, NoDatum, InlineDatum,
+  Input, Output, OutputReference, Transaction,
 }
 
 use election
@@ -28,7 +28,6 @@ use election/state.{
 }
 use election/stt
 
-// Note this is the same as a VerificationKeyHash.
 pub fn vkh(seed: ByteArray) -> Hash<Blake2b_224, ByteArray> {
   crypto.blake2b_224(seed)
 }
@@ -164,4 +163,20 @@ pub fn burn_stt(channel_id: ChannelId) -> Value {
     asset_name: stt.full_stt_name(channel_id),
     quantity: -1
   )
+}
+
+pub fn oneshot_output() -> Output {
+  Output {
+    address: admin_address(), // admin's personal wallet
+    value: assets.zero,
+    datum: NoDatum,
+    reference_script: None,
+  }
+}
+
+pub fn oneshot_input() -> Input {
+  Input {
+    output_reference: oneshot_oref(),
+    output: oneshot_output()
+  }
 }

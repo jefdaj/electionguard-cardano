@@ -9,7 +9,7 @@ use election/ballot_id.{validate_ballot_id}
 // I've run elections with up to 99 guardians in the Python code.
 const max_guardians: Int = 100
 const max_devices  : Int = 100
-const max_verifiers: Int = 100
+// const max_verifiers: Int = 100
 
 pub type PublicRecordMetadata {
   Manifest

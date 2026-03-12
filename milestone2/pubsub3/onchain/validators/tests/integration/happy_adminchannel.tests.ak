@@ -20,19 +20,18 @@ use tests/mock
 // InitElection
 // ====================
 
-fn oneshot_output() -> Output {
-  Output {
-    address: mock.admin_address(), // admin's personal wallet
-    value: assets.zero,
-    datum: NoDatum,
-    reference_script: None,
-  }
+// My convention for now is to label transactions by election id/container
+// name, then STT seq number. So admin_tx0, admin_tx1, guardian1_tx1, etc.
+test happy_adminchannel_initelection() {
+  mock.election_validate(tx0(), ea.InitElection)
 }
 
-fn oneshot_input() -> Input {
-  Input {
-    output_reference: mock.oneshot_oref(),
-    output: oneshot_output()
+fn tx0() -> Transaction {
+  Transaction {
+    ..transaction.placeholder,
+    mint: mock.stt_value("admin"),
+    inputs: [mock.oneshot_input()],
+    outputs: [output0()],
   }
 }
 
@@ -53,21 +52,6 @@ fn output0() -> Output {
     datum: mock.admin_datum(state0()),
     reference_script: None,
   }
-}
-
-fn tx0() -> Transaction {
-  Transaction {
-    ..transaction.placeholder,
-    mint: mock.stt_value("admin"),
-    inputs: [oneshot_input()],
-    outputs: [output0()],
-  }
-}
-
-// My convention for now is to label transactions by election id/container
-// name, then STT seq number. So admin_tx0, admin_tx1, guardian1_tx1, etc.
-test happy_adminchannel_initelection() {
-  mock.election_validate(tx0(), ea.InitElection)
 }
 
 // ====================
