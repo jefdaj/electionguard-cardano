@@ -151,7 +151,7 @@ const verifier1_tx0_out0 = sub_out0(v1, verifier1_s0)
 // And matching inputs. Not used until subchannel sections below, but easier to
 // write here where the indexes are obvious.
 // const admin_tx3_in0     = mock.input(@"admin_tx2", 0, admin_tx2_out0    )
-// const guardian1_tx1_in0 = mock.input(@"admin_tx2", 1, guardian1_tx0_out0)
+const guardian1_tx1_in0 = mock.input(@"admin_tx2", 1, guardian1_tx0_out0)
 // const guardian2_tx1_in0 = mock.input(@"admin_tx2", 2, guardian2_tx0_out0)
 // const guardian3_tx1_in0 = mock.input(@"admin_tx2", 3, guardian3_tx0_out0)
 const device1_tx1_in0   = mock.input(@"admin_tx2", 4, device1_tx0_out0  )
@@ -204,25 +204,87 @@ test happy_election_admin_tx2() {
 
 // =================================
 // guardian1 transactions:
-// 1. 
+// 1. key ceremony round 1
+// 2. 
 // =================================
 
-// guardian1_tx1
-
-test happy_election_guardian1_tx1() {
-  // mock.election_validate(admin_tx0, ea.InitElection)
-  True
+// key ceremony round 1
+const guardian1_s1 = SubChannelState {
+  channel_id: g1,
+  publisher: mock.vkh(g1),
+  new_records: [
+    sr.guardian1_pubkey,
+  ],
+  seq: 1,
 }
 
-// =================================
-// guardian2 transactions:
-// 1. 
-// =================================
+const guardian1_tx1_out0 = mock.script_output(g1, mock.subchannel_datum(guardian1_s1))
 
-// =================================
-// guardian3 transactions:
-// 1. 
-// =================================
+const guardian1_tx1 = Transaction {
+  ..transaction.placeholder,
+  inputs: [guardian1_tx1_in0],
+  outputs: [guardian1_tx1_out0],
+  extra_signatories: [mock.vkh(g1)],
+}
+
+test happy_election_guardian1_tx1() {
+  mock.election_validate(guardian1_tx1, ea.PostPublicRecords)
+}
+
+// key ceremony round 2
+const guardian1_s2 = SubChannelState {
+  channel_id: g1,
+  publisher: mock.vkh(g1),
+  new_records: [
+    sr.guardian1_backup2,
+    sr.guardian1_backup3,
+  ],
+  seq: 2,
+}
+
+const guardian1_tx2_in0 = mock.input(@"guardian1_tx1", 0, guardian1_tx1_out0)
+
+const guardian1_tx2_out0 = mock.script_output(g1, mock.subchannel_datum(guardian1_s2))
+
+const guardian1_tx2 = Transaction {
+  ..transaction.placeholder,
+  inputs: [guardian1_tx2_in0],
+  outputs: [guardian1_tx2_out0],
+  extra_signatories: [mock.vkh(g1)],
+}
+
+test happy_election_guardian1_tx2() {
+  mock.election_validate(guardian1_tx2, ea.PostPublicRecords)
+}
+
+// key ceremony round 3
+const guardian1_s3 = SubChannelState {
+  channel_id: g1,
+  publisher: mock.vkh(g1),
+  new_records: [
+    sr.guardian1_verification2,
+    sr.guardian1_verification3,
+  ],
+  seq: 3,
+}
+
+const guardian1_tx3_in0 = mock.input(@"guardian1_tx2", 0, guardian1_tx2_out0)
+
+const guardian1_tx3_out0 = mock.script_output(g1, mock.subchannel_datum(guardian1_s3))
+
+const guardian1_tx3 = Transaction {
+  ..transaction.placeholder,
+  inputs: [guardian1_tx3_in0],
+  outputs: [guardian1_tx3_out0],
+  extra_signatories: [mock.vkh(g1)],
+}
+
+test happy_election_guardian1_tx3() {
+  mock.election_validate(guardian1_tx3, ea.PostPublicRecords)
+}
+
+// TODO factor out helpers
+// TODO duplicate for guardian2, guardian3
 
 // =================================
 // device1 transactions:
