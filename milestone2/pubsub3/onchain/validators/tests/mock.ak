@@ -32,9 +32,7 @@ pub fn vkh(seed: ByteArray) -> Hash<Blake2b_224, ByteArray> {
   crypto.blake2b_224(seed)
 }
 
-pub fn admin_vkh() -> VerificationKeyHash {
-  vkh(string.to_bytearray(@"admin"))
-}
+pub const admin_vkh: VerificationKeyHash = vkh(string.to_bytearray(@"admin"))
 
 pub fn admin_address() -> Address {
   Address {
@@ -156,6 +154,8 @@ pub fn burn_stts(channel_ids: List<ChannelId>) -> Value {
 // It seems counterintuitive to me to call the continuing value at each stage a
 // "mint" when it hasn't changed, so this is an alias to make it clearer.
 pub const stt_value = mint_stt
+
+pub const admin_stt = stt_value(string.to_bytearray(@"admin"))
 
 pub fn burn_stt(channel_id: ChannelId) -> Value {
   assets.from_asset(

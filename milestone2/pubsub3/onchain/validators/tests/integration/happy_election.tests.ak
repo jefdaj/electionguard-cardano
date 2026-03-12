@@ -16,15 +16,15 @@
 // - happy_election_device1_tx3
 //
 
-// use aiken/collection/list
+use aiken/collection/list
 // use aiken/primitive/int
-// use aiken/primitive/string
-// use cardano/assets
+use aiken/primitive/string
+use cardano/assets
 // use cardano/transaction.{Input, NoDatum, Output, OutputReference, Transaction}
 use cardano/transaction.{Transaction}
 use election/action as ea
 use election/phase as ep
-use election/state.{AdminChannelState}
+use election/state.{ChannelId, AdminChannelState}
 use tests/data/static_election_records as sr
 use tests/mock
 
@@ -89,7 +89,94 @@ test happy_election_admin_tx1() {
 
 // ----------- admin_tx2 -----------
 
-// TODO write this in the morning based on "add multiple channels"
+const subchannel_ids: List<ChannelId> =
+  list.map(
+    [@"guardian1", @"guardian2", @"guardian3", @"device1", @"verifier1"],
+    string.to_bytearray
+  )
+
+// TODO is it confusing that you hash the prev tx number here?
+const admin_tx2_in0 = mock.input(@"admin_tx1", 0, admin_tx1_out0)
+
+const admin_act2 = ea.AddSubChannels { channels: subchannel_ids }
+
+const admin_s2 = AdminChannelState {
+  ..admin_s1,
+  subchannels: subchannel_ids,
+  seq: admin_s1.seq + 1
+}
+
+const admin_tx2_out0 = mock.script_output("admin", mock.admin_datum(admin_s2))
+
+// const admin_post_add_output_multi = Output {
+//   address: mock.script_address(),
+//   value: mock.stt_value("admin"),
+//   datum: mock.admin_datum(admin_post_add_state_multi),
+//   reference_script: None,
+// }
+
+// const sub_post_add_states_multi =
+//   list.map(
+//     subchannel_ids,
+//     fn(sub_id) {
+//       SubChannelState {
+//         channel_id: sub_id,
+//         publisher: mock.vkh(subchannel_id),
+//         new_records: [],
+//         seq: 0,
+//       }
+//     }
+//   )
+
+// const sub_post_add_outputs_multi =
+//   list.map(
+//     sub_post_add_states_multi,
+//     fn(sub_state) {
+//       Output {
+//         address: mock.script_address(),
+//         value: mock.stt_value(sub_state.channel_id),
+//         datum: mock.subchannel_datum(sub_state),
+//         reference_script: None,
+//       }
+//     }
+//   )
+
+// fn add_tx_multi() -> Transaction {
+//   let mint_val = mock.mint_stts(subchannel_ids)
+//   Transaction {
+//     ..transaction.placeholder,
+//     inputs: [admin_pre_add_input],
+//     mint: mint_val,
+//     outputs: [
+//       admin_post_add_output_multi,
+//       ..sub_post_add_outputs_multi
+//     ],
+//     extra_signatories: [mock.admin_vkh()],
+//   }
+// }
+
+// TODO admin_tx2_sub_outputs
+
+const admin_tx2_mint = assets.merge(
+  mock.admin_stt,
+  mock.mint_stts(subchannel_ids),
+)
+
+const admin_tx2 = Transaction {
+  ..transaction.placeholder,
+  inputs: [admin_tx2_in0],
+  mint: admin_tx2_mint,
+  outputs: [
+    admin_tx2_out0
+    // ..admin_tx2_sub_outputs
+  ],
+  extra_signatories: [mock.admin_vkh()],
+}
+
+test happy_election_admin_tx2() {
+  mock.election_validate(admin_tx2, admin_act2)
+}
+
 
 // =================================
 // parallel admin section:
