@@ -32,10 +32,10 @@ use tests/data/static_election_records as sr
 use tests/mock
 
 // =================================
-// initial solo admin section:
-// 1. init election
-// 2. announce config
-// 3. onboarding (add subchannels)
+// initial solo admin transactions:
+// 0. init election
+// 1. announce config
+// 2. onboarding (add subchannels)
 // =================================
 
 // ----------- admin_tx0 -----------
@@ -48,11 +48,14 @@ const admin_s0 = AdminChannelState {
   seq: 0
 }
 
-const admin_tx0_out0 = mock.script_output("admin", mock.admin_datum(admin_s0))
+const admin_tx0_out0 = mock.script_output(
+  channel_id(@"admin"),
+  mock.admin_datum(admin_s0)
+)
 
 const admin_tx0 = Transaction {
   ..transaction.placeholder,
-  mint: mock.stt_value("admin"),
+  mint: mock.stt_value(channel_id(@"admin")),
   inputs: [mock.oneshot_input],
   outputs: [admin_tx0_out0],
 }
@@ -75,7 +78,10 @@ const admin_s1 = AdminChannelState {
   seq: 1,
 }
 
-const admin_tx1_out0 = mock.script_output("admin", mock.admin_datum(admin_s1))
+const admin_tx1_out0 = mock.script_output(
+  channel_id(@"admin"),
+  mock.admin_datum(admin_s1)
+)
 
 const admin_tx1_in0 = mock.input(@"admin_tx0", 0, admin_tx0_out0)
 
@@ -126,7 +132,7 @@ fn sub_s0(subchannel_id: ChannelId) -> SubChannelState {
   }
 }
 
-// Separate variables because we'll want to refer to them in their subchannel sections
+// We'll want to refer to these in their subchannel sections
 const guardian1_s0 = sub_s0(channel_id(@"guardian1"))
 const guardian2_s0 = sub_s0(channel_id(@"guardian2"))
 const guardian3_s0 = sub_s0(channel_id(@"guardian3"))
@@ -137,20 +143,12 @@ fn sub_out0(sub_id: ChannelId, sub_state: SubChannelState) -> Output {
   mock.script_output(sub_id, mock.subchannel_datum(sub_state))
 }
 
-// These are outputs of admin_tx2, but could also be called tx0 for their subchannels
+// These are outputs of admin_tx2, and also tx0 of their subchannels
 const guardian1_tx0_out0 = sub_out0(channel_id(@"guardian1"), guardian1_s0)
 const guardian2_tx0_out0 = sub_out0(channel_id(@"guardian2"), guardian2_s0)
 const guardian3_tx0_out0 = sub_out0(channel_id(@"guardian3"), guardian3_s0)
 const device1_tx0_out0   = sub_out0(channel_id(@"device1"  ), device1_s0  )
 const verifier1_tx0_out0 = sub_out0(channel_id(@"verifier1"), verifier1_s0)
-
-const admin_tx2_subchannel_outputs = [
-  guardian1_tx0_out0,
-  guardian2_tx0_out0,
-  guardian3_tx0_out0,
-  device1_tx0_out0,
-  verifier1_tx0_out0,
-]
 
 const admin_tx2 = Transaction {
   ..transaction.placeholder,
@@ -158,7 +156,11 @@ const admin_tx2 = Transaction {
   mint: mock.mint_stts(subchannel_ids),
   outputs: [
     admin_tx2_out0,
-    ..admin_tx2_subchannel_outputs
+    guardian1_tx0_out0,
+    guardian2_tx0_out0,
+    guardian3_tx0_out0,
+    device1_tx0_out0,
+    verifier1_tx0_out0,
  ],
   extra_signatories: [mock.admin_vkh],
 }
@@ -169,13 +171,19 @@ test happy_election_admin_tx2() {
 
 // =================================
 // parallel admin section:
-// 1. ceremony
-// 2. finalize config (device here?)
-// 3. voting
-// 4. results tally
-// 5. results decrypt
-// 6. verify
+// 3. ceremony
+// 4. finalize config (device here?)
+// 5. voting
+// 6. results tally
+// 7. results decrypt
+// 8. verify
 // =================================
+
+// =================================
+// admin
+// =================================
+
+// admin_tx3
 
 // =================================
 // parallel subchannels sections
@@ -186,6 +194,73 @@ test happy_election_admin_tx2() {
 // 4. results decrypt
 // 5. verify
 // =================================
+
+// =================================
+// guardian1 transactions:
+// 1. 
+// =================================
+
+// guardian1_tx1
+
+const guardian1_tx1_in0 = mock.script_output(
+  channel_id(@"guardian1"),
+  mock.subchannel_datum(guardian1_s0)
+)
+
+test happy_election_guardian1_tx1() {
+  // mock.election_validate(admin_tx0, ea.InitElection)
+  True
+}
+
+// =================================
+// guardian2 transactions:
+// 1. 
+// =================================
+
+const guardian2_tx1_in0 = mock.script_output(
+  channel_id(@"guardian2"),
+  mock.subchannel_datum(guardian2_s0)
+)
+
+// =================================
+// guardian3 transactions:
+// 1. 
+// =================================
+
+const guardian3_tx1_in0 = mock.script_output(
+  channel_id(@"guardian3"),
+  mock.subchannel_datum(guardian3_s0)
+)
+
+// =================================
+// device1 transactions:
+// 1. 
+// =================================
+
+const device1_tx1_in0 = mock.script_output(
+  channel_id(@"device1"),
+  mock.subchannel_datum(device1_s0)
+)
+
+// =================================
+// verifier1 transactions:
+// 1. post summary (verification)
+// =================================
+
+const v1 = channel_id(@"verifier1")
+
+const verifier1_tx1_in0 = mock.script_output(v1, mock.subchannel_datum(verifier1_s0))
+
+const verifier1_s1 = SubChannelState {
+  channel_id: v1,
+  publisher: mock.vkh(v1),
+  new_records: [
+    sr.verifier1_summary,
+  ],
+  seq: 1,
+}
+
+const verifier1_tx1_out0 = mock.script_output(v1, mock.admin_datum(admin_s1))
 
 // =================================
 // final solo admin section:
