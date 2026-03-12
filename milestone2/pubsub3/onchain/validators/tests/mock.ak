@@ -174,11 +174,9 @@ pub fn oneshot_output() -> Output {
   }
 }
 
-pub fn oneshot_input() -> Input {
-  Input {
-    output_reference: oneshot_oref(),
-    output: oneshot_output()
-  }
+pub const oneshot_input = Input {
+  output_reference: oneshot_oref(),
+  output: oneshot_output()
 }
 
 // Create a unique input from a previous output
@@ -190,5 +188,14 @@ pub fn input(name: String, index: Int, output: Output) -> Input {
       output_index: index,
     },
     output: output
+  }
+}
+
+pub fn script_output(channel_id: ChannelId, datum: Datum) -> Output {
+  Output {
+    address: script_address(),
+    value: stt_value(channel_id),
+    datum: datum,
+    reference_script: None,
   }
 }

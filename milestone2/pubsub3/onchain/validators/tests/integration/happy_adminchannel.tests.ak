@@ -8,7 +8,7 @@
 
 use aiken/collection/list
 use cardano/assets
-use cardano/transaction.{Input, NoDatum, Output, OutputReference, Transaction}
+use cardano/transaction.{Input, NoDatum, Output, Transaction}
 use election/action as ea
 use election/phase as ep
 use election/state.{AdminChannelState}
@@ -28,7 +28,7 @@ fn tx0() -> Transaction {
   Transaction {
     ..transaction.placeholder,
     mint: mock.stt_value("admin"),
-    inputs: [mock.oneshot_input()],
+    inputs: [mock.oneshot_input],
     outputs: [output0()],
   }
 }

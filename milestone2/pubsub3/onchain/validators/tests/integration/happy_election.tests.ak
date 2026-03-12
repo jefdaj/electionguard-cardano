@@ -16,16 +16,16 @@
 // - happy_election_device1_tx3
 //
 
-// use tests/data/static_election_records as sr
 // use aiken/collection/list
-// use aiken/primitive/string
 // use aiken/primitive/int
+// use aiken/primitive/string
 // use cardano/assets
 // use cardano/transaction.{Input, NoDatum, Output, OutputReference, Transaction}
-use cardano/transaction.{Output, Transaction}
+use cardano/transaction.{Transaction}
 use election/action as ea
 use election/phase as ep
 use election/state.{AdminChannelState}
+use tests/data/static_election_records as sr
 use tests/mock
 
 // =================================
@@ -34,40 +34,56 @@ use tests/mock
 // 2. announce config
 // 3. onboarding (add subchannels)
 // =================================
-// ====================
-// InitElection
-// ====================
+
+// ----------- admin_tx0 -----------
+
+const admin_s0 = AdminChannelState {
+  admin: mock.admin_vkh(),
+  subchannels: [],
+  new_records: [],
+  phase: ep.ElectionConfigPhase(ep.ConfigAnnouncePhase),
+  seq: 0
+}
+
+const admin_tx0_out0 = mock.script_output("admin", mock.admin_datum(admin_s0))
+
+const admin_tx0 = Transaction {
+  ..transaction.placeholder,
+  mint: mock.stt_value("admin"),
+  inputs: [mock.oneshot_input],
+  outputs: [admin_tx0_out0],
+}
 
 test happy_election_admin_tx0() {
-  mock.election_validate(admin_tx0(), ea.InitElection)
+  mock.election_validate(admin_tx0, ea.InitElection)
 }
 
-fn admin_tx0() -> Transaction {
-  Transaction {
-    ..transaction.placeholder,
-    mint: mock.stt_value("admin"),
-    inputs: [mock.oneshot_input()],
-    outputs: [admin_tx0_out0()],
-  }
+// ----------- admin_tx1 -----------
+
+const admin_s1 = AdminChannelState {
+  admin: mock.admin_vkh(),
+  subchannels: [],
+  new_records: [
+    sr.manifest,
+    sr.ceremony_details,
+  ],
+  phase: ep.ElectionConfigPhase(ep.ConfigOnboardingPhase),
+  seq: 1,
 }
 
-fn admin_tx0_out0() -> Output {
-  Output {
-    address: mock.script_address(),
-    value: mock.stt_value("admin"),
-    datum: mock.admin_datum(admin_s0()),
-    reference_script: None,
-  }
+const admin_tx1_out0 = mock.script_output("admin", mock.admin_datum(admin_s1))
+
+const admin_tx1_in0 = mock.input(@"admin_tx0", 0, admin_tx0_out0)
+
+const admin_tx1 = Transaction {
+  ..transaction.placeholder,
+  inputs: [admin_tx1_in0],
+  outputs: [admin_tx1_out0],
+  extra_signatories: [mock.admin_vkh()],
 }
 
-fn admin_s0() -> AdminChannelState {
-  AdminChannelState {
-    admin: mock.admin_vkh(),
-    subchannels: [],
-    new_records: [],
-    phase: ep.ElectionConfigPhase(ep.ConfigAnnouncePhase),
-    seq: 0
-  }
+test happy_election_admin_tx1() {
+  mock.election_validate(admin_tx1, ea.PostPublicRecords)
 }
 
 // =================================
