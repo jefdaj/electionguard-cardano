@@ -19,7 +19,7 @@
 use aiken/collection/list
 // use aiken/primitive/int
 // use aiken/primitive/string
-use cardano/assets
+// use cardano/assets
 // use cardano/transaction.{Input, NoDatum, Output, OutputReference, Transaction}
 use cardano/transaction.{Transaction, Output}
 use election/action as ea
@@ -105,7 +105,8 @@ const admin_act2 = ea.AddSubChannels { channels: subchannel_ids }
 
 // add subchannels, advance phase
 const admin_s2 = AdminChannelState {
-  ..admin_s1,
+  admin: mock.admin_vkh,
+  new_records: [],
   subchannels: subchannel_ids,
   phase: ep.ElectionConfigPhase(ep.ConfigCeremonyPhase),
   seq: admin_s1.seq + 1
@@ -132,16 +133,16 @@ const guardian3_s0 = sub_s0(channel_id(@"guardian3"))
 const device1_s0   = sub_s0(channel_id(@"device1"  ))
 const verifier1_s0 = sub_s0(channel_id(@"verifier1"))
 
-fn sub_output(sub_id: ChannelId, sub_state: SubChannelState) -> Output {
+fn sub_out0(sub_id: ChannelId, sub_state: SubChannelState) -> Output {
   mock.script_output(sub_id, mock.subchannel_datum(sub_state))
 }
 
 // These are outputs of admin_tx2, but could also be called tx0 for their subchannel
-const guardian1_tx0_out0 = sub_output(channel_id(@"guardian1"), guardian1_s0)
-const guardian2_tx0_out0 = sub_output(channel_id(@"guardian2"), guardian2_s0)
-const guardian3_tx0_out0 = sub_output(channel_id(@"guardian3"), guardian3_s0)
-const device1_tx0_out0   = sub_output(channel_id(@"device1"  ), device1_s0  )
-const verifier1_tx0_out0 = sub_output(channel_id(@"verifier1"), verifier1_s0)
+const guardian1_tx0_out0 = sub_out0(channel_id(@"guardian1"), guardian1_s0)
+const guardian2_tx0_out0 = sub_out0(channel_id(@"guardian2"), guardian2_s0)
+const guardian3_tx0_out0 = sub_out0(channel_id(@"guardian3"), guardian3_s0)
+const device1_tx0_out0   = sub_out0(channel_id(@"device1"  ), device1_s0  )
+const verifier1_tx0_out0 = sub_out0(channel_id(@"verifier1"), verifier1_s0)
 
 const admin_tx2_subchannel_outputs = [
   guardian1_tx0_out0,
