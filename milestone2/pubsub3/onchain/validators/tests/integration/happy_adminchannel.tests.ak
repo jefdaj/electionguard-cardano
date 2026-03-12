@@ -35,7 +35,7 @@ fn tx0() -> Transaction {
 
 fn state0() -> AdminChannelState {
   AdminChannelState {
-    admin: mock.admin_vkh(),
+    admin: mock.admin_vkh,
     subchannels: [],
     new_records: [],
     phase: ep.ElectionConfigPhase(ep.ConfigAnnouncePhase),
@@ -105,7 +105,7 @@ fn minimal_tx(n: Int) {
     ..transaction.placeholder,
     inputs: [input],
     outputs: [output],
-    extra_signatories: [mock.admin_vkh()],
+    extra_signatories: [mock.admin_vkh],
   }
 }
 
@@ -138,7 +138,7 @@ fn tx10() -> Transaction {
     mint: mock.burn_stt("admin"),
     inputs: [minimal_input(10)],
     outputs: [output10()],
-    extra_signatories: [mock.admin_vkh()],
+    extra_signatories: [mock.admin_vkh],
   }
 }
 

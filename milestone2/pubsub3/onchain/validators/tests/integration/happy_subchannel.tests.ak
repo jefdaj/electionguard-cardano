@@ -19,7 +19,7 @@ const subchannel_id = string.to_bytearray(@"guardian1")
 const add_action = ea.AddSubChannels { channels: [subchannel_id] }
 
 const admin_pre_add_state = AdminChannelState {
-  admin: mock.admin_vkh(),
+  admin: mock.admin_vkh,
   subchannels: [],
   new_records: [],
   phase: ep.ElectionConfigPhase(ep.ConfigOnboardingPhase),
@@ -78,7 +78,7 @@ fn add_tx() -> Transaction {
       admin_post_add_output,
       sub_post_add_output,
     ],
-    extra_signatories: [mock.admin_vkh()],
+    extra_signatories: [mock.admin_vkh],
   }
 }
 
@@ -93,7 +93,7 @@ test happy_subchannel_single_add() {
 const rm_action = ea.RmSubChannels { channels: [subchannel_id] }
 
 const admin_pre_rm_state = AdminChannelState {
-  admin: mock.admin_vkh(),
+  admin: mock.admin_vkh,
   subchannels: [subchannel_id],
   new_records: [],
   phase: ep.ElectionFinalizePhase,
@@ -142,7 +142,7 @@ fn rm_tx() -> Transaction {
     inputs: [admin_pre_rm_input, sub_post_add_input],
     mint: mock.burn_stt(subchannel_id),
     outputs: [admin_post_rm_output],
-    extra_signatories: [mock.admin_vkh()],
+    extra_signatories: [mock.admin_vkh],
   }
 }
 
@@ -211,7 +211,7 @@ fn add_tx_multi() -> Transaction {
       admin_post_add_output_multi,
       ..sub_post_add_outputs_multi
     ],
-    extra_signatories: [mock.admin_vkh()],
+    extra_signatories: [mock.admin_vkh],
   }
 }
 
@@ -245,7 +245,7 @@ fn sub_pre_rm_inputs_multi() -> List<Input> {
 }
 
 const admin_pre_rm_state_multi = AdminChannelState {
-  admin: mock.admin_vkh(),
+  admin: mock.admin_vkh,
   subchannels: subchannel_ids,
   new_records: [],
   phase: ep.ElectionFinalizePhase,
@@ -278,7 +278,7 @@ fn rm_tx_multi() -> Transaction {
     ],
     mint: burn_val,
     outputs: [admin_post_rm_output], // TODO can it be the same?
-    extra_signatories: [mock.admin_vkh()],
+    extra_signatories: [mock.admin_vkh],
   }
 }
 

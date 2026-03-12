@@ -19,7 +19,7 @@ const manifest = er.PublicRecord {
 // ===============================
 
 const admin_state0 =  AdminChannelState {
-  admin: mock.admin_vkh(),
+  admin: mock.admin_vkh,
   subchannels: [],
   new_records: [],
   phase: ep.ElectionConfigPhase(ep.ConfigAnnouncePhase),
@@ -43,7 +43,7 @@ const admin_input = Input {
 
 fn admin_state1() -> AdminChannelState {
   AdminChannelState {
-    admin: mock.admin_vkh(),
+    admin: mock.admin_vkh,
     subchannels: [],
     new_records: [manifest, manifest, manifest], // duplicates, but doesn't matter here
     phase: ep.ElectionConfigPhase(ep.ConfigAnnouncePhase),
@@ -63,7 +63,7 @@ fn admin_tx() -> Transaction {
     ..transaction.placeholder,
     inputs: [admin_input],
     outputs: [admin_output1],
-    extra_signatories: [mock.admin_vkh()],
+    extra_signatories: [mock.admin_vkh],
   }
 }
 

@@ -36,7 +36,7 @@ pub const admin_vkh: VerificationKeyHash = vkh(string.to_bytearray(@"admin"))
 
 pub fn admin_address() -> Address {
   Address {
-    payment_credential: VerificationKey(admin_vkh()),
+    payment_credential: VerificationKey(admin_vkh),
     stake_credential: None,
   }
 }

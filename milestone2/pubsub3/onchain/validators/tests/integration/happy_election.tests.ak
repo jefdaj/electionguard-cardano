@@ -38,7 +38,7 @@ use tests/mock
 // ----------- admin_tx0 -----------
 
 const admin_s0 = AdminChannelState {
-  admin: mock.admin_vkh(),
+  admin: mock.admin_vkh,
   subchannels: [],
   new_records: [],
   phase: ep.ElectionConfigPhase(ep.ConfigAnnouncePhase),
@@ -62,7 +62,7 @@ test happy_election_admin_tx0() {
 
 // post 2 records and advance
 const admin_s1 = AdminChannelState {
-  admin: mock.admin_vkh(),
+  admin: mock.admin_vkh,
   subchannels: [],
   new_records: [
     sr.manifest,
@@ -80,7 +80,7 @@ const admin_tx1 = Transaction {
   ..transaction.placeholder,
   inputs: [admin_tx1_in0],
   outputs: [admin_tx1_out0],
-  extra_signatories: [mock.admin_vkh()],
+  extra_signatories: [mock.admin_vkh],
 }
 
 test happy_election_admin_tx1() {
@@ -151,7 +151,7 @@ const admin_tx2_out0 = mock.script_output("admin", mock.admin_datum(admin_s2))
 //       admin_post_add_output_multi,
 //       ..sub_post_add_outputs_multi
 //     ],
-//     extra_signatories: [mock.admin_vkh()],
+//     extra_signatories: [mock.admin_vkh],
 //   }
 // }
 
@@ -170,7 +170,7 @@ const admin_tx2 = Transaction {
     admin_tx2_out0
     // ..admin_tx2_sub_outputs
   ],
-  extra_signatories: [mock.admin_vkh()],
+  extra_signatories: [mock.admin_vkh],
 }
 
 test happy_election_admin_tx2() {
