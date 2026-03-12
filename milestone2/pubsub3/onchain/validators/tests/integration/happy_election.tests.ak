@@ -154,7 +154,7 @@ const verifier1_tx0_out0 = sub_out0(v1, verifier1_s0)
 // const guardian1_tx1_in0 = mock.input(@"admin_tx2", 1, guardian1_tx0_out0)
 // const guardian2_tx1_in0 = mock.input(@"admin_tx2", 2, guardian2_tx0_out0)
 // const guardian3_tx1_in0 = mock.input(@"admin_tx2", 3, guardian3_tx0_out0)
-// const device1_tx1_in0   = mock.input(@"admin_tx2", 4, device1_tx0_out0  )
+const device1_tx1_in0   = mock.input(@"admin_tx2", 4, device1_tx0_out0  )
 const verifier1_tx1_in0 = mock.input(@"admin_tx2", 5, verifier1_tx0_out0)
 
 const admin_tx2 = Transaction {
@@ -226,8 +226,31 @@ test happy_election_guardian1_tx1() {
 
 // =================================
 // device1 transactions:
-// 1. 
+// 1. announce device1
+// 2. ...
 // =================================
+
+const device1_s1 = SubChannelState {
+  channel_id: d1,
+  publisher: mock.vkh(d1),
+  new_records: [
+    sr.device1,
+  ],
+  seq: 1,
+}
+
+const device1_tx1_out0 = mock.script_output(d1, mock.subchannel_datum(device1_s1))
+
+const device1_tx1 = Transaction {
+  ..transaction.placeholder,
+  inputs: [device1_tx1_in0],
+  outputs: [device1_tx1_out0],
+  extra_signatories: [mock.vkh(d1)],
+}
+
+test happy_election_device1_tx1() {
+  mock.election_validate(device1_tx1, ea.PostPublicRecords)
+}
 
 // =================================
 // verifier1 transactions:
