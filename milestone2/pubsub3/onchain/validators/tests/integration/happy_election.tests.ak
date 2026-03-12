@@ -186,21 +186,7 @@ test happy_election_admin_tx2() {
 // 8. verify
 // =================================
 
-// =================================
-// admin
-// =================================
-
-// admin_tx3
-
-// =================================
-// parallel subchannels sections
-// (grouped by channel):
-// 1. key ceremony
-// 2. device announce?
-// 3. voting
-// 4. results decrypt
-// 5. verify
-// =================================
+// ----------- admin_tx3 -----------
 
 // =================================
 // guardian1 transactions:
@@ -213,7 +199,9 @@ test happy_election_admin_tx2() {
 
 // TODO later, can 4 and 5 be done together?
 
-// Automate simple subchannel posts with one input and one output
+// Automate simple subchannel transactions that take one input, post some new
+// records, and produce one output.
+// TODO admin channel version?
 fn happy_subchannel_post(
   channel: ChannelId,
   input: Input,
@@ -228,6 +216,8 @@ fn happy_subchannel_post(
   }
   (output, tx)
 }
+
+// ----------- guardian1_tx1 -----------
 
 // key ceremony round 1
 const guardian1_s1 = SubChannelState {
@@ -247,6 +237,8 @@ test happy_election_guardian1_tx1() {
   let (_, tx) = guardian1_tx1_pair()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
+
+// ----------- guardian1_tx2 -----------
 
 // key ceremony round 2
 const guardian1_s2 = SubChannelState {
@@ -272,6 +264,8 @@ test happy_election_guardian1_tx2() {
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
+// ----------- guardian1_tx3 -----------
+
 // key ceremony round 3
 const guardian1_s3 = SubChannelState {
   ..guardian1_s2,
@@ -295,6 +289,8 @@ test happy_election_guardian1_tx3() {
   let (_, tx) = guardian1_tx3_pair()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
+
+// ----------- guardian1_tx4 -----------
 
 // decrypt results
 const guardian1_s4 = SubChannelState {
@@ -324,6 +320,8 @@ test happy_election_guardian1_tx4() {
   let (_, tx) = guardian1_tx4_pair()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
+
+// ----------- guardian1_tx5 -----------
 
 // post summary
 const guardian1_s5 = SubChannelState {
@@ -356,6 +354,8 @@ test happy_election_guardian1_tx5() {
 // 2. ...
 // =================================
 
+// ----------- device1_tx1 -----------
+
 const device1_s1 = SubChannelState {
   channel_id: d1,
   publisher: mock.vkh(d1),
@@ -374,6 +374,8 @@ test happy_election_device1_tx1() {
   let (_, tx) = device1_tx1_pair()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
+
+// ----------- device1_tx2 -----------
 
 // =================================
 // verifier1 transactions:
