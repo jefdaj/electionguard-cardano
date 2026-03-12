@@ -412,6 +412,42 @@ test happy_election_device1_tx2() {
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
+// ----------- device1_tx3 -----------
+
+// cast/spoil all ballots
+const device1_s3 = SubChannelState {
+  channel_id: d1,
+  publisher: mock.vkh(d1),
+  new_records: [
+    sr.ballot_spoiled_476d9db6,
+    sr.ballot_spoiled_480eed2e,
+    sr.ballot_spoiled_48b5dc74,
+    sr.ballot_spoiled_49fb726a,
+    sr.ballot_spoiled_4aa15ab8,
+    sr.ballot_spoiled_4c9f842a,
+    sr.cast_notice_4957f5fe,
+    sr.cast_notice_4b4fb8a6,
+    sr.cast_notice_4bf9df52,
+    sr.cast_notice_4d471122,
+    sr.cast_notice_4decea16,
+    sr.cast_notice_4e970104,
+  ],
+  seq: 3,
+}
+
+fn device1_tx3_pair() -> (Output, Transaction) {
+  let (output, _) = device1_tx2_pair()
+  happy_subchannel_post(
+    d1,
+    mock.input(@"device1_tx2", 0, output),
+    device1_s3
+  )
+}
+
+test happy_election_device1_tx3() {
+  let (_, tx) = device1_tx3_pair()
+  mock.election_validate(tx, ea.PostPublicRecords)
+}
 
 // =================================
 // verifier1 transactions:
