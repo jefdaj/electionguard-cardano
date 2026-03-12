@@ -150,7 +150,7 @@ const verifier1_tx0_out0 = sub_out0(v1, verifier1_s0)
 
 // And matching inputs. Not used until subchannel sections below, but easier to
 // write here where the indexes are obvious.
-// const admin_tx3_in0     = mock.input(@"admin_tx2", 0, admin_tx2_out0    )
+const admin_tx3_in0     = mock.input(@"admin_tx2", 0, admin_tx2_out0    )
 const guardian1_tx1_in0 = mock.input(@"admin_tx2", 1, guardian1_tx0_out0)
 const guardian2_tx1_in0 = mock.input(@"admin_tx2", 2, guardian2_tx0_out0)
 const guardian3_tx1_in0 = mock.input(@"admin_tx2", 3, guardian3_tx0_out0)
@@ -178,15 +178,51 @@ test happy_election_admin_tx2() {
 
 // =================================
 // parallel admin section:
-// 3. ceremony
-// 4. finalize config (device here?)
-// 5. voting
-// 6. results tally
-// 7. results decrypt
-// 8. verify
+// 3. finalize config (device here?)
+// 4. voting
+// 5. results tally
+// 6. results decrypt
+// 7. verify
 // =================================
 
 // ----------- admin_tx3 -----------
+
+// finalize election config
+const admin_s3 = AdminChannelState {
+  ..admin_s2,
+  new_records: [
+    sr.joint_key,
+    sr.constants,
+  ],
+  seq: 3,
+}
+
+// Automate simple admin transactions that take one input, post some new
+// records, and produce one output.
+// TODO can this be used for earlier ones too?
+fn happy_admin_post(
+  input: Input,
+  state: AdminChannelState
+) -> (Output, Transaction) {
+  let output = mock.script_output(a, mock.admin_datum(state))
+  let tx = Transaction {
+    ..transaction.placeholder,
+    inputs: [input],
+    outputs: [output],
+    extra_signatories: [mock.vkh(a)],
+  }
+  (output, tx)
+}
+
+// admin_tx3_in0 defined above in admin_tx2 section
+fn admin_tx3_pair() -> (Output, Transaction) {
+  happy_admin_post(admin_tx3_in0, admin_s3)
+}
+
+test happy_election_admin_tx3() {
+  let (_, tx) = admin_tx3_pair()
+  mock.election_validate(tx, ea.PostPublicRecords)
+}
 
 // =================================
 // guardian1 transactions:
@@ -199,7 +235,6 @@ test happy_election_admin_tx2() {
 
 // Automate simple subchannel transactions that take one input, post some new
 // records, and produce one output.
-// TODO admin channel version?
 fn happy_subchannel_post(
   channel: ChannelId,
   input: Input,
