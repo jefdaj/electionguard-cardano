@@ -153,7 +153,7 @@ const verifier1_tx0_out0 = sub_out0(v1, verifier1_s0)
 // const admin_tx3_in0     = mock.input(@"admin_tx2", 0, admin_tx2_out0    )
 const guardian1_tx1_in0 = mock.input(@"admin_tx2", 1, guardian1_tx0_out0)
 const guardian2_tx1_in0 = mock.input(@"admin_tx2", 2, guardian2_tx0_out0)
-// const guardian3_tx1_in0 = mock.input(@"admin_tx2", 3, guardian3_tx0_out0)
+const guardian3_tx1_in0 = mock.input(@"admin_tx2", 3, guardian3_tx0_out0)
 const device1_tx1_in0   = mock.input(@"admin_tx2", 4, device1_tx0_out0  )
 const verifier1_tx1_in0 = mock.input(@"admin_tx2", 5, verifier1_tx0_out0)
 
@@ -344,8 +344,6 @@ test happy_election_guardian1_tx5() {
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
-// TODO duplicate for guardian2, guardian3
-
 // =================================
 // guardian2 transactions:
 // 1. key ceremony round 1
@@ -481,6 +479,144 @@ fn guardian2_tx5_pair() -> (Output, Transaction) {
 
 test happy_election_guardian2_tx5() {
   let (_, tx) = guardian2_tx5_pair()
+  mock.election_validate(tx, ea.PostPublicRecords)
+}
+
+// =================================
+// guardian3 transactions:
+// 1. key ceremony round 1
+// 2. key ceremony round 2
+// 3. key ceremony round 3
+// 4. decrypt results
+// 5. summary (verification)
+// =================================
+
+// ----------- guardian3_tx1 -----------
+
+// key ceremony round 1
+const guardian3_s1 = SubChannelState {
+  ..guardian3_s0,
+  new_records: [
+    sr.guardian3_pubkey,
+  ],
+  seq: 1,
+}
+
+// guardian3_tx1_in0 defined above in admin_tx2 section
+fn guardian3_tx1_pair() -> (Output, Transaction) {
+  happy_subchannel_post(g3, guardian3_tx1_in0, guardian3_s1)
+}
+
+test happy_election_guardian3_tx1() {
+  let (_, tx) = guardian3_tx1_pair()
+  mock.election_validate(tx, ea.PostPublicRecords)
+}
+
+// ----------- guardian3_tx2 -----------
+
+// key ceremony round 2
+const guardian3_s2 = SubChannelState {
+  ..guardian3_s1,
+  new_records: [
+    sr.guardian3_backup1,
+    sr.guardian3_backup2,
+  ],
+  seq: 2,
+}
+
+fn guardian3_tx2_pair() -> (Output, Transaction) {
+  let (output, _) = guardian3_tx1_pair()
+  happy_subchannel_post(
+    g3,
+    mock.input(@"guardian3_tx1", 0, output),
+    guardian3_s2
+  )
+}
+
+test happy_election_guardian3_tx2() {
+  let (_, tx) = guardian3_tx2_pair()
+  mock.election_validate(tx, ea.PostPublicRecords)
+}
+
+// ----------- guardian3_tx3 -----------
+
+// key ceremony round 3
+const guardian3_s3 = SubChannelState {
+  ..guardian3_s2,
+  new_records: [
+    sr.guardian3_verification1,
+    sr.guardian3_verification2,
+  ],
+  seq: 3,
+}
+
+fn guardian3_tx3_pair() -> (Output, Transaction) {
+  let (output, _) = guardian3_tx2_pair()
+  happy_subchannel_post(
+    g3,
+    mock.input(@"guardian3_tx2", 0, output),
+    guardian3_s3
+  )
+}
+
+test happy_election_guardian3_tx3() {
+  let (_, tx) = guardian3_tx3_pair()
+  mock.election_validate(tx, ea.PostPublicRecords)
+}
+
+// ----------- guardian3_tx4 -----------
+
+// decrypt results
+const guardian3_s4 = SubChannelState {
+  ..guardian3_s3,
+  new_records: [
+    sr.guardian3_tally_share,
+    sr.guardian3_spoiled_share_476d9db6,
+    sr.guardian3_spoiled_share_480eed2e,
+    sr.guardian3_spoiled_share_48b5dc74,
+    sr.guardian3_spoiled_share_49fb726a,
+    sr.guardian3_spoiled_share_4aa15ab8,
+    sr.guardian3_spoiled_share_4c9f842a,
+  ],
+  seq: 4,
+}
+
+fn guardian3_tx4_pair() -> (Output, Transaction) {
+  let (output, _) = guardian3_tx3_pair()
+  happy_subchannel_post(
+    g3,
+    mock.input(@"guardian3_tx3", 0, output),
+    guardian3_s4
+  )
+}
+
+test happy_election_guardian3_tx4() {
+  let (_, tx) = guardian3_tx4_pair()
+  mock.election_validate(tx, ea.PostPublicRecords)
+}
+
+// ----------- guardian3_tx5 -----------
+
+// post summary
+const guardian3_s5 = SubChannelState {
+  ..guardian3_s4,
+  new_records: [
+    sr.guardian3_summary
+  ],
+  seq: 5,
+}
+
+fn guardian3_tx5_pair() -> (Output, Transaction) {
+  let (output, _) = guardian3_tx4_pair()
+  happy_subchannel_post(
+    g3,
+    mock.input(@"guardian3_tx4", 0, output),
+    guardian3_s5
+  )
+}
+
+test happy_election_guardian3_tx5() {
+  let (_, tx) = guardian3_tx5_pair()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
