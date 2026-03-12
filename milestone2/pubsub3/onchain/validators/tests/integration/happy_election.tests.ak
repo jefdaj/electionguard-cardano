@@ -2,11 +2,19 @@
 // This one has enough going on that I need variable naming conventions:
 //
 // 1. first channel name: admin, guardian1, ...
-// 2. then tx<N> where N == seq: 0, 1, ...
+// 2. then txN where N == seq: 0, 1, ...
 // 3. type: state, input, output, ...
-// 4. finally an input/output index if needed: 0, 1, ...
+// 4. finally an input/output index: 0, 1, ...
 //
-// Examples: admin_tx0_state, device1_tx3_input, device1_tx3_output0
+// Examples:
+// - admin_tx0_state
+// - device1_tx3_input0
+// - device1_tx3_output0
+//
+// Tests will be named by channel and txN. Examples:
+// - happy_election_admin_tx0
+// - happy_election_device1_tx3
+//
 
 // use aiken/primitive/string
 // use election/record as er
