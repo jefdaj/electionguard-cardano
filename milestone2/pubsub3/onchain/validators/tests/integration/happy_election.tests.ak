@@ -325,6 +325,29 @@ test happy_election_guardian1_tx4() {
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
+// post summary
+const guardian1_s5 = SubChannelState {
+  ..guardian1_s4,
+  new_records: [
+    sr.guardian1_summary
+  ],
+  seq: 5,
+}
+
+fn guardian1_tx5_pair() -> (Output, Transaction) {
+  let (output, _) = guardian1_tx4_pair()
+  happy_subchannel_post(
+    g1,
+    mock.input(@"guardian1_tx4", 0, output),
+    guardian1_s5
+  )
+}
+
+test happy_election_guardian1_tx5() {
+  let (_, tx) = guardian1_tx5_pair()
+  mock.election_validate(tx, ea.PostPublicRecords)
+}
+
 // TODO duplicate for guardian2, guardian3
 
 // =================================
