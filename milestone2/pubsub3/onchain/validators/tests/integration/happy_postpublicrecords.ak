@@ -67,7 +67,7 @@ pub fn admin_tx() -> Transaction {
   }
 }
 
-pub fn test_happy_postpublicrecords_admin() {
+pub fn test_admin() {
   mock.election_validate(admin_tx(), ea.PostPublicRecords)
 }
 
@@ -124,6 +124,6 @@ pub fn sub_tx() -> Transaction {
   }
 }
 
-pub fn test_happy_postpublicrecords_subchannel() {
+pub fn test_subchannel() {
   mock.election_validate(sub_tx(), ea.PostPublicRecords)
 }
