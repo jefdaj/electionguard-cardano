@@ -119,7 +119,7 @@ pub fn test_admin_tx1() {
 const admin_tx1_out0 = mock.script_output(a, mock.admin_datum(admin_s1))
 
 // TODO is it confusing that you hash the prev tx number here?
-const admin_tx2_in0 = mock.input(@"admin_tx1", 0, admin_tx1_out0)
+pub const admin_tx2_in0 = mock.input(@"admin_tx1", 0, admin_tx1_out0)
 
 const admin_act2 = ea.AddSubChannels { channels: subchannel_ids }
 
@@ -163,12 +163,12 @@ const verifier1_tx0_out0 = sub_out0(v1, verifier1_s0)
 
 // And matching inputs. Not used until subchannel sections below, but easier to
 // write here where the indexes are obvious.
-const admin_tx3_in0     = mock.input(@"admin_tx2", 0, admin_tx2_out0    )
-const guardian1_tx1_in0 = mock.input(@"admin_tx2", 1, guardian1_tx0_out0)
-const guardian2_tx1_in0 = mock.input(@"admin_tx2", 2, guardian2_tx0_out0)
-const guardian3_tx1_in0 = mock.input(@"admin_tx2", 3, guardian3_tx0_out0)
-const device1_tx1_in0   = mock.input(@"admin_tx2", 4, device1_tx0_out0  )
-const verifier1_tx1_in0 = mock.input(@"admin_tx2", 5, verifier1_tx0_out0)
+pub const admin_tx3_in0     = mock.input(@"admin_tx2", 0, admin_tx2_out0    )
+pub const guardian1_tx1_in0 = mock.input(@"admin_tx2", 1, guardian1_tx0_out0)
+pub const guardian2_tx1_in0 = mock.input(@"admin_tx2", 2, guardian2_tx0_out0)
+pub const guardian3_tx1_in0 = mock.input(@"admin_tx2", 3, guardian3_tx0_out0)
+pub const device1_tx1_in0   = mock.input(@"admin_tx2", 4, device1_tx0_out0  )
+pub const verifier1_tx1_in0 = mock.input(@"admin_tx2", 5, verifier1_tx0_out0)
 
 const admin_tx2 = Transaction {
   ..transaction.placeholder,

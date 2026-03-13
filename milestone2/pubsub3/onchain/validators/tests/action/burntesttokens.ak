@@ -5,19 +5,28 @@ use aiken/collection/list
 use cardano/transaction.{Transaction, Input}
 use cardano/assets.{Value}
 use election/action as ea
-use tests/integration/happy_postpublicrecords as hppr
+use tests/integration/happy_election
+use tests/integration/happy_postpublicrecords
 use tests/mock
 
 // A list of valid STT inputs defined in the "happy path" tests.
 const happy_stt_input_list = [
-  hppr.admin_input,
-  hppr.sub_input,
+  happy_election.admin_tx2_in0,
+  happy_election.admin_tx3_in0,
+  happy_election.device1_tx1_in0,
+  happy_election.guardian1_tx1_in0,
+  happy_election.guardian2_tx1_in0,
+  happy_election.guardian3_tx1_in0,
+  happy_election.verifier1_tx1_in0,
+  happy_postpublicrecords.admin_input,
+  happy_postpublicrecords.sub_input,
 ]
 
 // Return one of the happy_stt_inputs.
 pub fn happy_stt_input() -> Fuzzer<Input> {
   fuzz.int_between(0, list.length(happy_stt_input_list) - 1)
     |> fuzz.map(fn(i) {
+      trace @"i" : i
       when list.at(happy_stt_input_list, i) is {
         Some(input) -> input
         None -> fail @"Index out of bounds"
@@ -25,7 +34,8 @@ pub fn happy_stt_input() -> Fuzzer<Input> {
     })
 }
 
-pub fn happy_stt_inputs() -> Fuzzer<List<Input>> { fuzz.set(happy_stt_input()) }
+// TODO is it a problem that lots of inputs are duplicated here?
+pub fn happy_stt_inputs() -> Fuzzer<List<Input>> { fuzz.list(happy_stt_input()) }
 
 fn make_burn_value(inputs: List<Input>) -> Value {
   list.foldl(
@@ -46,14 +56,4 @@ pub fn can_burn_test_tokens(inputs: List<Input>) -> Bool {
     mint: burn_val,
   }
   mock.election_validate(tx, ea.BurnTestTokens)
-}
-
-// TODO could you write a fuzzer + test prop for this? should always be able to burn
-
-pub fn test_can_burn_hppr_admin_input() {
-  can_burn_test_tokens([hppr.admin_input])
-}
-
-pub fn test_can_burn_hppr_sub_input() {
-  can_burn_test_tokens([hppr.sub_input])
 }
