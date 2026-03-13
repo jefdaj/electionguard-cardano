@@ -9,8 +9,8 @@ It will have:
 
 WARNING: on-chain code is currently ahead of off-chain; the two don't match yet
 
-on-chain code
--------------
+on-chain (Aiken) code
+---------------------
 
 Before running the main election script or tests,
 you need to build the validator with Aiken.
@@ -25,24 +25,67 @@ $ ./build.sh
 ++ dirname ./build.sh
 + cd .
 + aiken check --trace-level silent
-    Compiling jefdaj/electionguard-cardano 0.0.2 (.)
+    Compiling jefdaj/electionguard-cardano 0.1.0 (.)
     Compiling aiken-lang/stdlib 3.0.0 (./build/packages/aiken-lang-stdlib)
    Collecting all tests scenarios across all modules
       Testing ...
 
-    ┍━ tests/integration/minimal.tests ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    │ PASS [mem: 290.52 K, cpu:  98.18 M] test_minimal_initelection
-    │ PASS [mem: 559.61 K, cpu: 187.90 M] test_minimal_advancephase_2
-    │ PASS [mem: 568.95 K, cpu: 190.78 M] test_minimal_advancephase_3
-    │ PASS [mem: 578.30 K, cpu: 193.65 M] test_minimal_advancephase_4
-    │ PASS [mem: 580.11 K, cpu: 193.76 M] test_minimal_advancephase_5
-    │ PASS [mem: 575.95 K, cpu: 192.42 M] test_minimal_advancephase_6
-    │ PASS [mem: 595.21 K, cpu: 198.96 M] test_minimal_advancephase_7
-    │ PASS [mem: 598.82 K, cpu: 199.61 M] test_minimal_advancephase_8
-    │ PASS [mem: 596.25 K, cpu: 198.35 M] test_minimal_advancephase_9
-    │ PASS [mem: 408.60 K, cpu: 134.62 M] test_minimal_endelection
-    ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 10 tests | 10 passed | 0 failed
+    ┍━ tests/integration/happy_adminchannel.tests ━━━━━━━━━━━━━━━━━━━━━━━
+    │ PASS [mem: 280.31 K, cpu:  95.89 M] happy_adminchannel_initelection
+    │ PASS [mem: 539.43 K, cpu: 182.51 M] happy_adminchannel_advancephase_2
+    │ PASS [mem: 549.17 K, cpu: 185.45 M] happy_adminchannel_advancephase_3
+    │ PASS [mem: 559.62 K, cpu: 188.58 M] happy_adminchannel_advancephase_4
+    │ PASS [mem: 561.13 K, cpu: 188.56 M] happy_adminchannel_advancephase_5
+    │ PASS [mem: 557.37 K, cpu: 187.29 M] happy_adminchannel_advancephase_6
+    │ PASS [mem: 577.03 K, cpu: 193.89 M] happy_adminchannel_advancephase_7
+    │ PASS [mem: 581.04 K, cpu: 194.60 M] happy_adminchannel_advancephase_8
+    │ PASS [mem: 578.87 K, cpu: 193.41 M] happy_adminchannel_advancephase_9
+    │ PASS [mem: 390.76 K, cpu: 129.35 M] happy_adminchannel_endelection
+    ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 10 tests | 10 passed | 0 failed
 
+    ┍━ tests/integration/happy_election.tests ━━━━━━━━━━━━━━━━━━━━
+    │ PASS [mem: 207.07 K, cpu:  68.69 M] happy_election_admin_tx0
+    │ PASS [mem: 566.76 K, cpu: 190.02 M] happy_election_admin_tx1
+    │ PASS [mem:   1.07 M, cpu: 355.12 M] happy_election_admin_tx2
+    │ PASS [mem: 621.47 K, cpu: 205.83 M] happy_election_admin_tx3
+    │ PASS [mem: 624.28 K, cpu: 207.16 M] happy_election_admin_tx4
+    │ PASS [mem: 701.12 K, cpu: 234.92 M] happy_election_admin_tx5
+    │ PASS [mem:   2.52 M, cpu: 722.94 M] happy_election_admin_tx6
+    │ PASS [mem:   1.22 M, cpu: 395.26 M] happy_election_admin_tx7
+    │ PASS [mem: 475.58 K, cpu: 161.07 M] happy_election_guardian1_tx1
+    │ PASS [mem: 604.43 K, cpu: 204.59 M] happy_election_guardian1_tx2
+    │ PASS [mem: 701.93 K, cpu: 238.63 M] happy_election_guardian1_tx3
+    │ PASS [mem:   2.46 M, cpu: 710.35 M] happy_election_guardian1_tx4
+    │ PASS [mem:   1.14 M, cpu: 376.63 M] happy_election_guardian1_tx5
+    │ PASS [mem: 475.58 K, cpu: 161.07 M] happy_election_guardian2_tx1
+    │ PASS [mem: 604.43 K, cpu: 204.59 M] happy_election_guardian2_tx2
+    │ PASS [mem: 701.93 K, cpu: 238.63 M] happy_election_guardian2_tx3
+    │ PASS [mem:   2.46 M, cpu: 710.35 M] happy_election_guardian2_tx4
+    │ PASS [mem:   1.14 M, cpu: 376.63 M] happy_election_guardian2_tx5
+    │ PASS [mem: 475.58 K, cpu: 161.07 M] happy_election_guardian3_tx1
+    │ PASS [mem: 604.43 K, cpu: 204.59 M] happy_election_guardian3_tx2
+    │ PASS [mem: 701.93 K, cpu: 238.63 M] happy_election_guardian3_tx3
+    │ PASS [mem:   2.46 M, cpu: 710.35 M] happy_election_guardian3_tx4
+    │ PASS [mem:   1.14 M, cpu: 376.63 M] happy_election_guardian3_tx5
+    │ PASS [mem: 489.75 K, cpu: 164.32 M] happy_election_device1_tx1
+    │ PASS [mem:   3.84 M, cpu:   1.05 B] happy_election_device1_tx2
+    │ PASS [mem:   4.37 M, cpu:   1.22 B] happy_election_device1_tx3
+    │ PASS [mem: 559.16 K, cpu: 182.91 M] happy_election_verifier1_tx1
+    │ PASS [mem:   3.97 M, cpu:   1.32 B] happy_election_admin_tx8
+    │ PASS [mem: 267.91 K, cpu:  86.86 M] happy_election_admin_tx9
+    ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 29 tests | 29 passed | 0 failed
+
+    ┍━ tests/integration/happy_postpublicrecords.tests ━━━━━━━━━━━━━━━━
+    │ PASS [mem: 551.23 K, cpu: 181.82 M] happy_postpublicrecords_admin
+    │ PASS [mem: 440.21 K, cpu: 147.05 M] happy_postpublicrecords_subchannel
+    ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2 tests | 2 passed | 0 failed
+
+    ┍━ tests/integration/happy_subchannel.tests ━━━━━━━━━━━━━━━━━━━━━
+    │ PASS [mem: 660.11 K, cpu: 220.66 M] happy_subchannel_single_add
+    │ PASS [mem:   1.04 M, cpu: 349.38 M] happy_subchannel_single_rm
+    │ PASS [mem:   2.03 M, cpu: 661.27 M] happy_subchannel_multi_add
+    │ PASS [mem:   7.50 M, cpu:   2.61 B] happy_subchannel_multi_rm
+    ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4 tests | 4 passed | 0 failed
 
     ┍━ tests/unit/ballot_id.tests ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │ PASS [mem:  59.42 K, cpu:  15.04 M] valid_hex_segment_test
@@ -53,8 +96,8 @@ $ ./build.sh
     │ PASS [mem:  10.03 K, cpu:   2.51 M] invalid_format_test
     ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6 tests | 6 passed | 0 failed
 
-
-    ┍━ tests/unit/cid.tests ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    ┍━ tests/unit/cid.tests ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │ PASS [mem: 964.12 K, cpu: 278.71 M] all_static_election_cids_valid
     │ PASS [mem:   4.10 K, cpu:   1.02 M] valid_cid_test
     │ PASS [mem:   4.10 K, cpu:   1.02 M] valid_cid_different_hash_test
     │ PASS [mem:   4.10 K, cpu:   1.02 M] valid_cid_zeros_test
@@ -68,22 +111,25 @@ $ ./build.sh
     │ PASS [mem:   3.90 K, cpu: 988.34 K] invalid_codec_test
     │ PASS [mem:   4.10 K, cpu:   1.02 M] valid_cid_min_values_test
     │ PASS [mem:   4.10 K, cpu:   1.02 M] valid_cid_max_hash_test
-    ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 13 tests | 13 passed | 0 failed
+    ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 14 tests | 14 passed | 0 failed
 
+    ┍━ tests/unit/record.tests ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │ PASS [mem:  13.11 M, cpu:   3.39 B] all_static_election_metadata_valid
+    │ PASS [mem:  13.61 M, cpu:   3.52 B] all_static_election_records_valid
+    ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2 tests | 2 passed | 0 failed
 
     ┍━ tests/unit/stt.tests ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │ PASS [mem: 108.75 K, cpu:  36.36 M] tx_sends_token_to_addr_valid
     ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1 tests | 1 passed | 0 failed
 
-
-      Summary 30 checks, 0 errors, 0 warnings
+      Summary 68 checks, 0 errors, 0 warnings
 + aiken build --out election-plutus.json
-    Compiling jefdaj/electionguard-cardano 0.0.2 (.)
+    Compiling jefdaj/electionguard-cardano 0.1.0 (.)
     Compiling aiken-lang/stdlib 3.0.0 (./build/packages/aiken-lang-stdlib)
    Generating project's blueprint (election-plutus.json)
       Summary 0 errors, 0 warnings
 + aiken build --out election-plutus-traced.json --trace-level verbose
-    Compiling jefdaj/electionguard-cardano 0.0.2 (.)
+    Compiling jefdaj/electionguard-cardano 0.1.0 (.)
     Compiling aiken-lang/stdlib 3.0.0 (./build/packages/aiken-lang-stdlib)
    Generating project's blueprint (election-plutus-traced.json)
       Summary 0 errors, 0 warnings
@@ -102,11 +148,13 @@ TODO:
 * [ ] contract holds and distributes tADA to cover posting fees
 * [ ] contract returns tADA to admin when closing main channel
 
-off-chain code
---------------
+off-chain (Python) code
+-----------------------
 
 TODO:
 
+* [ ] add a "burn all tokens" action for use in testing
+* [ ] manually construct pycardano txs for each step in an election
 * [ ] have each container generate its own keypair
 * [ ] all eg nodes share one cardano node for now
 * [ ] share addrs with admin (via top level script and bind mounts for now)
@@ -115,8 +163,7 @@ TODO:
 The tests cover opening a new channel on testnet, publishing 0, 1, 2, or all
 (81) static election artifacts from a previous election run, and closing the
 channel. There's a [publisher](./offchain/pubsub/publisher.py) that submits
-the transactions, a [validator](./onchain/validators/pubsub.ak) that checks
-them on chain, and a [subscriber](./offchain/pubsub/subscriber.py) that
+the transactions and a [subscriber](./offchain/pubsub/subscriber.py) that
 reconstructs them from the on-chain datums. Then the tests assert that the
 reconstructed CID lists match the originals.
 
