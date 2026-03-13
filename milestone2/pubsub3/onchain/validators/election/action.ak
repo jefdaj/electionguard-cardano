@@ -2,6 +2,10 @@ use election/state.{ChannelId}
 
 pub type ElectionAction {
 
+  // Temporary action to ensure that I don't pollute the testnet with
+  // unspendable mistakes. Burns any/all STTs, no questions asked.
+  BurnTestTokens
+
   // ===========================================
   // Admin actions spending admin channel
   // ===========================================

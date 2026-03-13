@@ -1,3 +1,4 @@
+use aiken/collection/dict
 use aiken/collection/list
 use cardano/assets.{PolicyId}
 use cardano/transaction.{
@@ -5,7 +6,9 @@ use cardano/transaction.{
 }
 
 use election/action.{
-  ElectionAction, InitElection, AddSubChannels, AdvancePhase, EndElection,
+  ElectionAction,
+  BurnTestTokens,
+  InitElection, AddSubChannels, AdvancePhase, EndElection,
   RmSubChannels, RebalanceFunds, PostPublicRecords,
 }
 use election/funding.{ada_retained_during_election}
@@ -20,9 +23,9 @@ use election/state.{
 use election/stt.{
   exact_channels_minted,
   exact_channels_burned, no_mints_for_policy,
-  admin_authorized_tx, get_initial_state, get_continuation_state,
+  admin_authorized_tx, get_initial_state, get_continuation_state, get_policy_id,
   admin_signed, publisher_signed, channels_kept_separate,
-  correct_n_channels_updated,
+  correct_n_channels_updated, count_tokens_in_outputs,
 }
 
 use election/utils.{are_disjoint}
@@ -81,6 +84,13 @@ pub fn validate_subchannel_mints(
   }
 }
 
+// Allow only if all quantities for this policy are negative (burning)
+pub fn validate_burntesttokens_mint(policy_id: PolicyId, tx: Transaction) {
+  assets.tokens(tx.mint, policy_id)
+    |> dict.to_pairs()
+    |> list.all(fn(pair) { pair.2nd < 0 })
+}
+
 // Remember this will be called once per policy_id, not per token minted.
 // So it should validate all the election STTs in one go.
 pub fn validate_mint(
@@ -91,6 +101,7 @@ pub fn validate_mint(
 ) -> Bool {
   trace @"validate_mint"
   when redeemer is {
+    BurnTestTokens -> validate_burntesttokens_mint(policy_id, tx)
     InitElection | EndElection ->
       validate_admin_channel_mint(oneshot_ref, redeemer, policy_id, tx)
     AddSubChannels { .. } | RmSubChannels { .. } ->
@@ -403,6 +414,13 @@ pub fn validate_anyone_single_channel_spend(
   }
 }
 
+// This should burn all the tokens, leaving 0 in the outputs.
+pub fn validate_burntesttokens_spend(own_ref: OutputReference, tx: Transaction) {
+  let policy_id = get_policy_id(own_ref, tx.inputs)
+  let tokens_out = count_tokens_in_outputs(tx.outputs, policy_id)
+  (tokens_out == 0) ?
+}
+
 pub fn validate_spend(
   datum: Option<ChannelState>,
   redeemer: ElectionAction,
@@ -412,6 +430,7 @@ pub fn validate_spend(
   trace @"validate_spend"
   let ada_retained = ada_retained_during_election(redeemer, own_ref, tx) ?
   ada_retained && when redeemer is {
+    BurnTestTokens -> True
     InitElection ->
       validate_initelection_spend(datum, tx)
     AddSubChannels { .. } | AdvancePhase | EndElection ->
