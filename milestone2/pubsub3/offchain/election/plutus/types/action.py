@@ -78,9 +78,13 @@ class RebalanceFunds(ElectionAction):
     channels: List[bytes] # ChannelId == ByteArray
 
 @dataclass
-class EndElection(ElectionAction):
+class PostPublicRecords(ElectionAction):
     CONSTR_ID = 6
 
 @dataclass
-class BurnTestTokens(ElectionAction):
+class EndElection(ElectionAction):
     CONSTR_ID = 7
+
+@dataclass
+class BurnTestTokens(ElectionAction):
+    CONSTR_ID = 8
