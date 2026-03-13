@@ -9,10 +9,9 @@ from tempfile import NamedTemporaryFile
 from pathlib import Path
 from os.path import realpath
 
-PLUTUS_JSON_PATH_PROD   = realpath(Path(__file__).parent / '../../../onchain/pubsub3-plutus.json')
+PLUTUS_JSON_PATH_PROD   = realpath(Path(__file__).parent / '../../../onchain/election-plutus.json')
 PLUTUS_JSON_PATH_TRACED = PLUTUS_JSON_PATH_PROD.replace('.json', '-traced.json')
 
-# TODO is this reliable?
 IS_TEST_ENV = "pytest" in sys.modules
 if IS_TEST_ENV:
     PLUTUS_JSON_PATH = PLUTUS_JSON_PATH_TRACED
@@ -32,7 +31,7 @@ def pick_oneshot_utxo(context, addr):
     utxo = max(utxos, key=lambda utxo: utxo.output.amount.coin)
     return utxo
 
- # This is a temporary hack for use with `aiken blueprint apply`
+# This is a temporary hack for use with `aiken blueprint apply`
 # See https://github.com/Python-Cardano/pycardano/issues/439
 # TODO revisit once native apply_params support is released
 @dataclass

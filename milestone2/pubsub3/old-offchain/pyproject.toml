@@ -3,9 +3,9 @@ requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "election"
-version = "0.2.0"
-description = "ElectionGuard + Cardano off-chain code"
+name = "pubsub"
+version = "0.1.0"
+description = "Cardano IPFS pubsub smart contract"
 requires-python = ">=3.9"
 dependencies = [
     "pycardano>=0.9.0",
@@ -22,7 +22,7 @@ dev = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["election*"]
+include = ["pubsub*"]
 
 [tool.pytest.ini_options]
 
