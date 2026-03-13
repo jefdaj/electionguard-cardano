@@ -5,12 +5,22 @@ use aiken/collection/list
 use cardano/transaction.{Transaction, Input}
 use cardano/assets.{Value}
 use election/action as ea
+use tests/integration/happy_adminchannel
 use tests/integration/happy_subchannel
 use tests/integration/happy_election
 use tests/integration/happy_postpublicrecords
 use tests/mock
 
 const happy_stt_inputs_plain = [
+  // happy_adminchannel.minimal_input(1), TODO bug in compiler here??
+  happy_adminchannel.minimal_input(2),
+  happy_adminchannel.minimal_input(3),
+  happy_adminchannel.minimal_input(4),
+  happy_adminchannel.minimal_input(5),
+  happy_adminchannel.minimal_input(6),
+  happy_adminchannel.minimal_input(7),
+  happy_adminchannel.minimal_input(8),
+  happy_adminchannel.minimal_input(9),
   happy_election.admin_tx2_in0,
   happy_election.admin_tx3_in0,
   happy_election.device1_tx1_in0,

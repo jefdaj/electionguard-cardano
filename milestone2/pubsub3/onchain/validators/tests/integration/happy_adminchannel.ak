@@ -93,7 +93,7 @@ fn minimal_output(n: Int) -> Output {
 
 
 // Input n refers to output (n-1), which includes the datum for state (n-1).
-fn minimal_input(n: Int) -> Input {
+pub fn minimal_input(n: Int) -> Input {
   mock.input(@"abcdef", n, minimal_output(n-1))
 }
 
