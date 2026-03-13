@@ -24,7 +24,39 @@ const happy_stt_input_list = list.concat(
     happy_postpublicrecords.sub_input,
   ],
   // inputs defined in triples
-  list.map([], fn(e) { e }) // TODO write this
+  list.map(
+    [
+      happy_election.admin_tx1_triple(),
+      happy_election.admin_tx3_triple(),
+      happy_election.admin_tx4_triple(),
+      happy_election.admin_tx5_triple(),
+      happy_election.admin_tx6_triple(),
+      happy_election.admin_tx7_triple(),
+      happy_election.device1_tx1_triple(),
+      happy_election.device1_tx2_triple(),
+      happy_election.device1_tx3_triple(),
+      happy_election.guardian1_tx1_triple(),
+      happy_election.guardian1_tx2_triple(),
+      happy_election.guardian1_tx3_triple(),
+      happy_election.guardian1_tx4_triple(),
+      happy_election.guardian1_tx5_triple(),
+      happy_election.guardian2_tx1_triple(),
+      happy_election.guardian2_tx2_triple(),
+      happy_election.guardian2_tx3_triple(),
+      happy_election.guardian2_tx4_triple(),
+      happy_election.guardian2_tx5_triple(),
+      happy_election.guardian3_tx1_triple(),
+      happy_election.guardian3_tx2_triple(),
+      happy_election.guardian3_tx3_triple(),
+      happy_election.guardian3_tx4_triple(),
+      happy_election.guardian3_tx5_triple(),
+      happy_election.verifier1_tx1_triple(),
+    ],
+    fn(e) {
+      let (_, _, input) = e
+      input
+    }
+  )
 )
 
 // Return one of the happy_stt_inputs.

@@ -102,7 +102,7 @@ const admin_s1 = AdminChannelState {
   seq: 1,
 }
 
-fn admin_tx1_triple() -> (Output, Transaction, Input) {
+pub fn admin_tx1_triple() -> (Output, Transaction, Input) {
   happy_admin_post(
     mock.input(@"admin_tx0", 0, admin_tx0_out0),
     admin_s1
@@ -213,7 +213,7 @@ const admin_s3 = AdminChannelState {
 }
 
 // admin_tx3_in0 defined above in admin_tx2 section
-fn admin_tx3_triple() -> (Output, Transaction, Input) {
+pub fn admin_tx3_triple() -> (Output, Transaction, Input) {
   happy_admin_post(admin_tx3_in0, admin_s3)
 }
 
@@ -236,7 +236,7 @@ const admin_s4 = AdminChannelState {
   seq: 4,
 }
 
-fn admin_tx4_triple() -> (Output, Transaction, Input) {
+pub fn admin_tx4_triple() -> (Output, Transaction, Input) {
   let (output, _, _) = admin_tx3_triple()
   happy_admin_post(
     mock.input(@"admin_tx3", 0, output),
@@ -261,7 +261,7 @@ const admin_s5 = AdminChannelState {
   seq: 5,
 }
 
-fn admin_tx5_triple() -> (Output, Transaction, Input) {
+pub fn admin_tx5_triple() -> (Output, Transaction, Input) {
   let (output, _, _) = admin_tx4_triple()
   happy_admin_post(
     mock.input(@"admin_tx4", 0, output),
@@ -292,7 +292,7 @@ const admin_s6 = AdminChannelState {
   seq: 6,
 }
 
-fn admin_tx6_triple() -> (Output, Transaction, Input) {
+pub fn admin_tx6_triple() -> (Output, Transaction, Input) {
   let (output, _, _) = admin_tx5_triple()
   happy_admin_post(
     mock.input(@"admin_tx5", 0, output),
@@ -318,7 +318,7 @@ const admin_s7 = AdminChannelState {
   seq: 7,
 }
 
-fn admin_tx7_triple() -> (Output, Transaction, Input) {
+pub fn admin_tx7_triple() -> (Output, Transaction, Input) {
   let (output, _, _) = admin_tx6_triple()
   happy_admin_post(
     mock.input(@"admin_tx6", 0, output),
@@ -369,7 +369,7 @@ const guardian1_s1 = SubChannelState {
 }
 
 // guardian1_tx1_in0 defined above in admin_tx2 section
-fn guardian1_tx1_triple() -> (Output, Transaction, Input) {
+pub fn guardian1_tx1_triple() -> (Output, Transaction, Input) {
   happy_subchannel_post(g1, guardian1_tx1_in0, guardian1_s1)
 }
 
@@ -390,7 +390,7 @@ const guardian1_s2 = SubChannelState {
   seq: 2,
 }
 
-fn guardian1_tx2_triple() -> (Output, Transaction, Input) {
+pub fn guardian1_tx2_triple() -> (Output, Transaction, Input) {
   let (output, _, _) = guardian1_tx1_triple()
   happy_subchannel_post(
     g1,
@@ -416,7 +416,7 @@ const guardian1_s3 = SubChannelState {
   seq: 3,
 }
 
-fn guardian1_tx3_triple() -> (Output, Transaction, Input) {
+pub fn guardian1_tx3_triple() -> (Output, Transaction, Input) {
   let (output, _, _) = guardian1_tx2_triple()
   happy_subchannel_post(
     g1,
@@ -447,7 +447,7 @@ const guardian1_s4 = SubChannelState {
   seq: 4,
 }
 
-fn guardian1_tx4_triple() -> (Output, Transaction, Input) {
+pub fn guardian1_tx4_triple() -> (Output, Transaction, Input) {
   let (output, _, _) = guardian1_tx3_triple()
   happy_subchannel_post(
     g1,
@@ -472,7 +472,7 @@ const guardian1_s5 = SubChannelState {
   seq: 5,
 }
 
-fn guardian1_tx5_triple() -> (Output, Transaction, Input) {
+pub fn guardian1_tx5_triple() -> (Output, Transaction, Input) {
   let (output, _, _) = guardian1_tx4_triple()
   happy_subchannel_post(
     g1,
@@ -507,7 +507,7 @@ const guardian2_s1 = SubChannelState {
 }
 
 // guardian2_tx1_in0 defined above in admin_tx2 section
-fn guardian2_tx1_triple() -> (Output, Transaction, Input) {
+pub fn guardian2_tx1_triple() -> (Output, Transaction, Input) {
   happy_subchannel_post(g2, guardian2_tx1_in0, guardian2_s1)
 }
 
@@ -528,7 +528,7 @@ const guardian2_s2 = SubChannelState {
   seq: 2,
 }
 
-fn guardian2_tx2_triple() -> (Output, Transaction, Input) {
+pub fn guardian2_tx2_triple() -> (Output, Transaction, Input) {
   let (output, _, _) = guardian2_tx1_triple()
   happy_subchannel_post(
     g2,
@@ -554,7 +554,7 @@ const guardian2_s3 = SubChannelState {
   seq: 3,
 }
 
-fn guardian2_tx3_triple() -> (Output, Transaction, Input) {
+pub fn guardian2_tx3_triple() -> (Output, Transaction, Input) {
   let (output, _, _) = guardian2_tx2_triple()
   happy_subchannel_post(
     g2,
@@ -585,7 +585,7 @@ const guardian2_s4 = SubChannelState {
   seq: 4,
 }
 
-fn guardian2_tx4_triple() -> (Output, Transaction, Input) {
+pub fn guardian2_tx4_triple() -> (Output, Transaction, Input) {
   let (output, _, _) = guardian2_tx3_triple()
   happy_subchannel_post(
     g2,
@@ -610,7 +610,7 @@ const guardian2_s5 = SubChannelState {
   seq: 5,
 }
 
-fn guardian2_tx5_triple() -> (Output, Transaction, Input) {
+pub fn guardian2_tx5_triple() -> (Output, Transaction, Input) {
   let (output, _, _) = guardian2_tx4_triple()
   happy_subchannel_post(
     g2,
@@ -645,7 +645,7 @@ const guardian3_s1 = SubChannelState {
 }
 
 // guardian3_tx1_in0 defined above in admin_tx2 section
-fn guardian3_tx1_triple() -> (Output, Transaction, Input) {
+pub fn guardian3_tx1_triple() -> (Output, Transaction, Input) {
   happy_subchannel_post(g3, guardian3_tx1_in0, guardian3_s1)
 }
 
@@ -666,7 +666,7 @@ const guardian3_s2 = SubChannelState {
   seq: 2,
 }
 
-fn guardian3_tx2_triple() -> (Output, Transaction, Input) {
+pub fn guardian3_tx2_triple() -> (Output, Transaction, Input) {
   let (output, _, _) = guardian3_tx1_triple()
   happy_subchannel_post(
     g3,
@@ -692,7 +692,7 @@ const guardian3_s3 = SubChannelState {
   seq: 3,
 }
 
-fn guardian3_tx3_triple() -> (Output, Transaction, Input) {
+pub fn guardian3_tx3_triple() -> (Output, Transaction, Input) {
   let (output, _, _) = guardian3_tx2_triple()
   happy_subchannel_post(
     g3,
@@ -723,7 +723,7 @@ const guardian3_s4 = SubChannelState {
   seq: 4,
 }
 
-fn guardian3_tx4_triple() -> (Output, Transaction, Input) {
+pub fn guardian3_tx4_triple() -> (Output, Transaction, Input) {
   let (output, _, _) = guardian3_tx3_triple()
   happy_subchannel_post(
     g3,
@@ -748,7 +748,7 @@ const guardian3_s5 = SubChannelState {
   seq: 5,
 }
 
-fn guardian3_tx5_triple() -> (Output, Transaction, Input) {
+pub fn guardian3_tx5_triple() -> (Output, Transaction, Input) {
   let (output, _, _) = guardian3_tx4_triple()
   happy_subchannel_post(
     g3,
@@ -781,7 +781,7 @@ const device1_s1 = SubChannelState {
 }
 
 // device1_tx1_in0 defined above in admin_tx2 section
-fn device1_tx1_triple() -> (Output, Transaction, Input) {
+pub fn device1_tx1_triple() -> (Output, Transaction, Input) {
   happy_subchannel_post(d1, device1_tx1_in0, device1_s1)
 }
 
@@ -813,7 +813,7 @@ const device1_s2 = SubChannelState {
   seq: 2,
 }
 
-fn device1_tx2_triple() -> (Output, Transaction, Input) {
+pub fn device1_tx2_triple() -> (Output, Transaction, Input) {
   let (output, _, _) = device1_tx1_triple()
   happy_subchannel_post(
     d1,
@@ -850,7 +850,7 @@ const device1_s3 = SubChannelState {
   seq: 3,
 }
 
-fn device1_tx3_triple() -> (Output, Transaction, Input) {
+pub fn device1_tx3_triple() -> (Output, Transaction, Input) {
   let (output, _, _) = device1_tx2_triple()
   happy_subchannel_post(
     d1,
@@ -880,7 +880,7 @@ const verifier1_s1 = SubChannelState {
 }
 
 // verifier1_tx1_in0 defined above in admin_tx2 section
-fn verifier1_tx1_triple() -> (Output, Transaction, Input) {
+pub fn verifier1_tx1_triple() -> (Output, Transaction, Input) {
   happy_subchannel_post(v1, verifier1_tx1_in0, verifier1_s1)
 }
 
