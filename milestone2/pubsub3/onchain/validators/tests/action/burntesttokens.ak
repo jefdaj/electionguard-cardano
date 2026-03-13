@@ -10,17 +10,22 @@ use tests/integration/happy_postpublicrecords
 use tests/mock
 
 // A list of valid STT inputs defined in the "happy path" tests.
-const happy_stt_input_list = [
-  happy_election.admin_tx2_in0,
-  happy_election.admin_tx3_in0,
-  happy_election.device1_tx1_in0,
-  happy_election.guardian1_tx1_in0,
-  happy_election.guardian2_tx1_in0,
-  happy_election.guardian3_tx1_in0,
-  happy_election.verifier1_tx1_in0,
-  happy_postpublicrecords.admin_input,
-  happy_postpublicrecords.sub_input,
-]
+const happy_stt_input_list = list.concat(
+  // inputs defined directly
+  [
+    happy_election.admin_tx2_in0,
+    happy_election.admin_tx3_in0,
+    happy_election.device1_tx1_in0,
+    happy_election.guardian1_tx1_in0,
+    happy_election.guardian2_tx1_in0,
+    happy_election.guardian3_tx1_in0,
+    happy_election.verifier1_tx1_in0,
+    happy_postpublicrecords.admin_input,
+    happy_postpublicrecords.sub_input,
+  ],
+  // inputs defined in triples
+  list.map([], fn(e) { e }) // TODO write this
+)
 
 // Return one of the happy_stt_inputs.
 pub fn happy_stt_input() -> Fuzzer<Input> {
