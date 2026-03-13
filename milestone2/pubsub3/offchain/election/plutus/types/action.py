@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import ClassVar, Dict, Type
+from typing import ClassVar, Dict, List, Type
 from pycardano import PlutusData, RawPlutusData
 
 # These should be kept in sync with onchain/validators/election/action.ak!
