@@ -12,21 +12,21 @@ pub type CIDv1 =
 // Common: 0x01 0x70 0x12 0x20 [32-byte SHA-256]
 pub fn validate_cid(cid: CIDv1) -> Bool {
   trace @"validate_cid"
-  trace @"cid" : cid
+  // trace @"cid" : cid
   let length  = builtin.length_of_bytearray(cid)
-  trace @"length" : length
+  // trace @"length" : length
   let version     = builtin.index_bytearray(cid, 0)
-  trace @"version" : version
+  // trace @"version" : version
 
   // use dag-pb codec (Kubo default) for now
   // TODO would it make sense to switch to 0x71 (dag-cbor) later?
   let codec       = builtin.index_bytearray(cid, 1)
-  trace @"codec" : codec
+  // trace @"codec" : codec
 
   let hash_type   = builtin.index_bytearray(cid, 2)
   let hash_length = builtin.index_bytearray(cid, 3)
-  trace @"hash_type" : hash_type
-  trace @"hash_length" : hash_length
+  // trace @"hash_type" : hash_type
+  // trace @"hash_length" : hash_length
 
   // TODO switch to dag-cbor?
   // codec       == 0x71, // dag-cbor

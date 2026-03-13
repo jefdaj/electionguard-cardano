@@ -76,18 +76,22 @@ pub type ResultsPhase {
 }
 
 pub fn is_initial_phase(phase: ElectionPhase) -> Bool {
+  trace @"is_initial_phase"
   phase == ElectionConfigPhase(ConfigAnnouncePhase)
 }
 
 pub fn is_final_phase(phase: ElectionPhase) -> Bool {
+  trace @"is_final_phase"
   phase == ElectionFinalizePhase
 }
 
 pub fn is_valid_phase_transition(old: ElectionPhase, new: ElectionPhase) -> Bool {
+  trace @"is_valid_phase_transition"
   old == new || is_valid_phase_advance(old, new)
 }
 
 fn is_valid_phase_advance(old: ElectionPhase, new: ElectionPhase) -> Bool {
+  trace @"is_valid_phase_advance"
   when old is {
     ElectionConfigPhase(ConfigAnnouncePhase)   -> new == ElectionConfigPhase(ConfigOnboardingPhase)
     ElectionConfigPhase(ConfigOnboardingPhase) -> new == ElectionConfigPhase(ConfigCeremonyPhase)

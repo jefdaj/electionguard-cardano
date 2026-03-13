@@ -15,6 +15,7 @@ pub fn ada_retained_during_election(
   own_ref: OutputReference,
   tx: Transaction,
 ) -> Bool {
+  trace @"ada_retained_during_election"
   when redeemer is {
     InitElection | EndElection -> True
     _ -> {
@@ -30,6 +31,7 @@ fn script_ada_retained(
   tx: Transaction,
   policy_id: PolicyId,
 ) -> Bool {
+  trace @"script_ada_retained"
   let script_input_ada  =  ada_in_inputs_with_policy(tx, policy_id)
   let script_output_ada = ada_in_outputs_with_policy(tx, policy_id)
   script_output_ada + tx.fee >= script_input_ada
@@ -41,6 +43,7 @@ fn ada_in_inputs_with_policy(
   tx: Transaction,
   policy_id: PolicyId,
 ) -> Int {
+  trace @"ada_in_inputs_with_policy"
   list.foldl(
     tx.inputs,
     0,
@@ -60,6 +63,7 @@ fn ada_in_outputs_with_policy(
   tx: Transaction,
   policy_id: PolicyId,
 ) -> Int {
+  trace @"ada_in_outputs_with_policy"
   list.foldl(
     tx.outputs,
     0,
@@ -76,5 +80,6 @@ fn ada_in_outputs_with_policy(
 /// Checks if a value contains any tokens from the specified policy
 // TODO there's a specific fn for this, right?
 fn has_policy(val: Value, policy_id: PolicyId) -> Bool {
+  trace @"has_policy"
   list.has(policies(val), policy_id)
 }

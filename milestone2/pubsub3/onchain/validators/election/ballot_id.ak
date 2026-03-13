@@ -6,6 +6,7 @@ use aiken/primitive/bytearray
 
 /// Expected format: "ballot-" followed by a UUID v1 (8-4-4-4-12 hex digits)
 pub fn validate_ballot_id(id: ByteArray) -> Bool {
+  trace @"validate_ballot_id"
 
   // Check if starts with "ballot-"
   let prefix = bytearray.slice(id, 0, 6)
@@ -24,6 +25,7 @@ pub fn validate_ballot_id(id: ByteArray) -> Bool {
 
 /// Validates UUID format: 8-4-4-4-12 hex characters with hyphens
 pub fn validate_uuid_format(uuid: ByteArray) -> Bool {
+  trace @"validate_uuid_format"
 
   let is_correct_length = bytearray.length(uuid) == 36
 
@@ -51,6 +53,7 @@ pub fn validate_uuid_format(uuid: ByteArray) -> Bool {
 
 /// Checks if all characters in a byte range are valid hexadecimal
 pub fn is_hex_segment(bytes: ByteArray, start: Int, end: Int) -> Bool {
+  trace @"is_hex_segment"
   when start < end is {
     True -> {
       let byte = bytearray.at(bytes, start)

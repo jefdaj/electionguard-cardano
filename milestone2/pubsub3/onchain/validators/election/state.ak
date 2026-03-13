@@ -13,6 +13,7 @@ use election/utils.{remove_elements}
 pub type ChannelId = ByteArray
 
 pub fn channel_id(channel_name: String) -> ChannelId {
+  trace @"channel_id"
   string.to_bytearray(channel_name)
 }
 
@@ -63,6 +64,7 @@ pub type SubChannelState {
 }
 
 pub fn get_channel_id(state: Option<ChannelState>) -> ChannelId {
+  trace @"get_channel_id"
   when state is {
     None -> "admin"
     Some(AdminChannel(_)) -> "admin"
@@ -72,6 +74,7 @@ pub fn get_channel_id(state: Option<ChannelState>) -> ChannelId {
 
 // TODO remove?
 pub fn extract_subchannel_state(state: ChannelState) -> Option<SubChannelState> {
+  trace @"extract_subchannel_state"
   when state is {
     SubChannel(subchannel_state) -> Some(subchannel_state)
     AdminChannel(_) -> None
@@ -86,6 +89,7 @@ pub fn add_subchannels(
   new_channels: List<ChannelId>,
   new_phase: ElectionPhase
 ) -> AdminChannelState {
+  trace @"add_subchannels"
   AdminChannelState(
     old_state.admin, // should be unchanged
     list.concat(new_channels, old_state.subchannels), // TODO sort here? reverse order?
@@ -103,6 +107,7 @@ pub fn rm_subchannels(
   channels_to_rm: List<ChannelId>,
   new_phase: ElectionPhase
 ) -> AdminChannelState {
+  trace @"rm_subchannels"
   AdminChannelState(
     old_state.admin, // should be unchanged
     remove_elements(old_state.subchannels, channels_to_rm),
@@ -120,6 +125,7 @@ pub fn post_public_records(
   records: List<PublicRecord>,
   phase: Option<ElectionPhase>
 ) -> ChannelState {
+  trace @"post_public_records"
   when old_state is {
     AdminChannel(old) -> AdminChannel(AdminChannelState(
       old.admin,
@@ -175,6 +181,7 @@ pub fn get_new_records(
   state: ChannelState,
   continuation: ChannelState,
 ) -> List<PublicRecord> {
+  trace @"get_new_records"
   when state is {
     AdminChannel(_) -> {
       expect AdminChannel(cont_state) = continuation

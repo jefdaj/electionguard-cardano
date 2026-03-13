@@ -70,6 +70,7 @@ pub fn validate_subchannel_mints(
   tx: Transaction,
 ) -> Bool {
   // TODO unify with admin_signed?
+  trace @"validate_subchannel_mints"
   let admin_auth = admin_authorized_tx(tx, policy_id) ?
   admin_auth && when redeemer is {
     AddSubChannels { channels } -> {
@@ -202,6 +203,7 @@ fn validate_advancephase_spend(
 fn validate_endelection_spend(
   datum: Option<ChannelState>,
 ) -> Bool {
+  trace @"validate_endelection_spend"
   // No need to check for lack of a continuation STT here; mint() handles that.
   expect Some(AdminChannel(AdminChannelState { subchannels, phase, .. })) = datum
   let final_phase = is_final_phase(phase) ?
@@ -233,6 +235,7 @@ fn validate_rmsubchannels_admin_spend(
   tx: Transaction,
   channels_to_rm: List<ChannelId>
 ) -> Bool {
+  trace @"validate_rmsubchannels_admin_spend"
   expect AdminChannel(admin_cont_state) = cont_state
 
   // TODO allow at other times too?
@@ -259,6 +262,7 @@ fn validate_rmsubchannels_sub_spend(
   sub_state: SubChannelState,
   channels: List<ChannelId>,
 ) -> Bool {
+  trace @"validate_rmsubchannels_sub_spend"
   // No need to check for lack of a continuation STT here; mint() handles that.
 
   // This checks that all the channels updated are in the declared channels list
@@ -275,6 +279,7 @@ fn validate_rmsubchannels_spend(
   tx: Transaction,
   channels: List<ChannelId>,
 ) -> Bool {
+  trace @"validate_rmsubchannels_spend"
   expect Some(state) = datum
   when state is {
     AdminChannel(admin_state) -> {
@@ -293,6 +298,7 @@ fn validate_rebalancefunds_admin_spend(
   tx: Transaction,
   channels: List<ChannelId>,
 ) -> Bool {
+  trace @"validate_rebalancefunds_admin_spend"
   expect AdminChannel(admin_cont_state) = cont_state
   let valid_transition = is_valid_phase_transition(admin_state.phase, admin_cont_state.phase) ?
   let expected = AdminChannelState {
@@ -320,6 +326,7 @@ fn validate_rebalancefunds_sub_spend(
   cont_state: ChannelState,
   channels: List<ChannelId>,
 ) -> Bool {
+  trace @"validate_rebalancefunds_sub_spend"
   expect SubChannel(sub_cont_state) = cont_state
 
   // This checks that all the channels updated are in the declared channels list
@@ -345,6 +352,7 @@ fn validate_rebalancefunds_spend(
   tx: Transaction,
   channels: List<ChannelId>,
 ) -> Bool {
+  trace @"validate_rebalancefunds_spend"
   expect Some(state) = datum
   let cont_state = get_continuation_state(datum, own_ref, tx)
   when state is {
@@ -362,6 +370,7 @@ pub fn validate_admin_multi_channel_spend(
   own_ref: OutputReference,
   tx: Transaction,
 ) {
+  trace @"validate_admin_multi_channel_spend"
   let authorized = admin_signed(own_ref, tx) ?
   let separate = channels_kept_separate(own_ref, tx) ?
   authorized && separate && when redeemer is {
@@ -378,6 +387,7 @@ pub fn validate_anyone_single_channel_spend(
   own_ref: OutputReference,
   tx: Transaction,
 ) {
+  trace @"validate_anyone_single_channel_spend"
 
   // Gotcha: admin_signed wouldn't do here, because we don't want the admin to
   // be able to post to a non-admin channel.
@@ -454,6 +464,7 @@ validator election(oneshot_ref: OutputReference) {
     policy_id: PolicyId,
     tx: Transaction
   ) {
+    trace @"mint"
     validate_mint(oneshot_ref, redeemer, policy_id, tx)
   }
   spend(
@@ -462,6 +473,7 @@ validator election(oneshot_ref: OutputReference) {
     own_ref: OutputReference,
     tx: Transaction,
   ) {
+    trace @"spend"
     validate_spend(datum, redeemer, own_ref, tx)
   }
   // TODO other cases are False by default, right?

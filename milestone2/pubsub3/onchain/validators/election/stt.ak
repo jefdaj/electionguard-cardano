@@ -24,6 +24,7 @@ pub fn tx_mints(
   token_name: ByteArray,
   amount: Int,
 ) -> Bool {
+  trace @"tx_mints"
   let Transaction { mint, .. } = tx
   let policy_tokens = assets.tokens(mint, policy_id)
 
@@ -40,6 +41,7 @@ pub fn tx_mints_all(
   token_names: List<ByteArray>,
   amount: Int,
 ) -> Bool {
+  trace @"tx_mints_all"
   list.all(token_names, fn(token_name) {
     tx_mints(tx, policy_id, token_name, amount)
   })
@@ -51,6 +53,7 @@ pub fn tx_does_not_mint(
   tx: Transaction,
   policy_id: PolicyId
 ) -> Bool {
+  trace @"tx_does_not_mint"
   let Transaction { mint, .. } = tx
   let minted = mint |> assets.tokens(policy_id) |> dict.to_pairs()
   minted == []
@@ -58,6 +61,7 @@ pub fn tx_does_not_mint(
 
 // From Rhys's Aiken Language Test Lib 3/5 video
 pub fn scriptAddress(hash: ByteArray) -> Address {
+  trace @"scriptAddress"
   let addr = Address {
     payment_credential: Script(hash),
     stake_credential: None,
@@ -73,6 +77,7 @@ pub fn tx_sends_token_to_addr(
   addr: Address,
   min_quantity: Int // TODO require exact quantity?
 ) -> Option<Output> {
+  trace @"tx_sends_token_to_addr"
   tx.outputs
   |> list.find(fn(output) {
        output.address == addr &&
@@ -87,6 +92,7 @@ pub fn no_mints_for_policy(policy_id: PolicyId, tx: Transaction) -> Bool {
 }
 
 pub fn full_stt_name(channel_id: ChannelId) -> ByteArray {
+  trace @"full_stt_name"
   let prefix = string.from_bytearray(config.stt_prefix)
   let id = string.from_bytearray(channel_id)
   let full_name = string.join([prefix, id, @"channel", @"state"], @"-")
@@ -97,8 +103,9 @@ pub fn full_stt_name(channel_id: ChannelId) -> ByteArray {
 // Note that you can set state to None to use this in the admin mint validator.
 // TODO is that actually true? or did it fail?
 pub fn get_stt_name(state: Option<ChannelState>) -> ByteArray {
+  trace @"get_stt_name"
   let channel_id = get_channel_id(state)
-  trace @"string channel_id" : string.from_bytearray(channel_id)
+  // trace @"string channel_id" : string.from_bytearray(channel_id)
   full_stt_name(channel_id)
 }
 
@@ -107,6 +114,7 @@ pub fn exact_channels_minted(
   policy_id: PolicyId,
   channel_ids: List<ChannelId>
 ) -> Bool {
+  trace @"exact_channels_minted"
   check_exact_mint_burn(tx, policy_id, channel_ids, 1)
 }
 
@@ -115,6 +123,7 @@ pub fn exact_channels_burned(
   policy_id: PolicyId,
   channel_ids: List<ChannelId>
 ) -> Bool {
+  trace @"exact_channels_burned"
   check_exact_mint_burn(tx, policy_id, channel_ids, -1)
 }
 
@@ -172,6 +181,7 @@ pub fn find_admin_stt_output(
   tx: Transaction,
   policy_id: PolicyId
 ) -> Option<OutputReference> {
+  trace @"find_admin_stt_output"
   let stt_name = full_stt_name("admin")
   find_input_with_token(tx, policy_id, stt_name)
 }
@@ -181,6 +191,7 @@ fn find_input_with_token(
   policy_id: ByteArray,
   token_name: ByteArray,
 ) -> Option<OutputReference> {
+  trace @"find_input_with_token"
   when
     list.find(
       tx.inputs,
@@ -200,6 +211,7 @@ pub fn admin_authorized_tx(
   tx: Transaction,
   policy_id: PolicyId
 ) -> Bool {
+  trace @"admin_authorized_tx"
   when find_admin_stt_output(tx, policy_id) is {
     Some(_) -> True
     None    -> False
@@ -213,7 +225,7 @@ pub fn get_policy_id(
   trace @"get_policy_id"
   expect Some(own_input) = inputs |> transaction.find_input(own_ref)
   expect Script(policy_id) = own_input.output.address.payment_credential
-  trace @"policy_id" : policy_id
+  // trace @"policy_id" : policy_id
   policy_id
 }
 
@@ -223,6 +235,7 @@ pub fn find_policy_ids_by_token_name(
   tx: Transaction,
   name: ByteArray,
 ) -> List<ByteArray> {
+  trace @"find_policy_ids_by_token_name"
   tx.outputs
     |> list.flat_map(
          fn(output) {
@@ -247,6 +260,7 @@ pub fn find_policy_ids_by_token_name(
 pub fn get_initial_state(
   tx: Transaction,
 ) -> AdminChannelState {
+  trace @"get_initial_state"
   let stt_name = full_stt_name("admin")
   let matching_datums =
     tx.outputs
@@ -333,6 +347,7 @@ pub fn get_publisher_vkh(
   own_ref: OutputReference,
   tx: Transaction,
 ) -> VerificationKeyHash {
+  trace @"get_publisher_vkh"
   let state = get_input_state(datum, own_ref, tx)
   when state is {
     AdminChannel(admin_state) -> admin_state.admin
@@ -354,6 +369,7 @@ pub fn publisher_signed(
   own_ref: OutputReference,
   tx: Transaction,
 ) -> Bool {
+  trace @"publisher_signed"
   let pub_vkh = get_publisher_vkh(datum, own_ref, tx)
   let pub_sig = tx_signed_by(tx, pub_vkh) ?
   pub_sig
@@ -364,6 +380,7 @@ pub fn admin_signed(
   own_ref: OutputReference,
   tx: Transaction,
 ) -> Bool {
+  trace @"admin_signed"
   let admin_vkh = get_admin_vkh(own_ref, tx)
   let admin_sig = tx_signed_by(tx, admin_vkh) ?
   admin_sig
@@ -375,7 +392,8 @@ pub fn channels_kept_separate(
   own_ref: OutputReference,
   tx: Transaction,
 ) -> Bool {
-  trace @"checking each output has at most 1 channel STT"
+  trace @"channels_kept_separate"
+  // trace @"checking each output has at most 1 channel STT"
   let policy_id = get_policy_id(own_ref, tx.inputs)
   list.all(
     tx.outputs,
@@ -396,16 +414,17 @@ pub fn correct_n_channels_updated(
   tx: Transaction,
   channels: List<ChannelId>,
 ) -> Bool {
+  trace @"correct_n_channels_updated"
 
   let expected = list.length(channels) + 1 // +1 for admin STT
 
   let policy_id = get_policy_id(own_ref, tx.inputs)
   // Count channel STTs being spent.
   let stt_count = {
-    trace @"counting channel STTs in inputs"
+    // trace @"counting channel STTs in inputs"
     count_tokens_in_inputs(tx.inputs, policy_id)
   }
-  trace @"stt_count" : stt_count
+  // trace @"stt_count" : stt_count
 
   (stt_count == expected) ?
 }
@@ -415,6 +434,7 @@ pub fn count_tokens_in_outputs(
   outputs: List<Output>,
   policy_id: PolicyId,
 ) -> Int {
+  trace @"count_tokens_in_outputs"
   outputs
     |> list.foldl(
         0,
@@ -434,6 +454,7 @@ pub fn count_tokens_in_inputs(
   inputs: List<Input>,
   policy_id: PolicyId,
 ) -> Int {
+  trace @"count_tokens_in_inputs"
   inputs
     |> list.map(fn(input) { input.output })
     |> count_tokens_in_outputs(policy_id)

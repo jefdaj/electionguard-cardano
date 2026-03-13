@@ -28,7 +28,7 @@ pub fn can_burn_test_tokens(inputs: List<Input>) -> Bool {
   mock.election_validate(tx, ea.BurnTestTokens)
 }
 
-// TODO test_burn_sub_output0
+// TODO could you write a fuzzer + test prop for this? should always be able to burn
 
 pub fn test_can_burn_hppr_admin_input() {
   can_burn_test_tokens([hppr.admin_input])
@@ -37,5 +37,3 @@ pub fn test_can_burn_hppr_admin_input() {
 pub fn test_can_burn_hppr_sub_input() {
   can_burn_test_tokens([hppr.sub_input])
 }
-
-// TODO then run them in the other module of course

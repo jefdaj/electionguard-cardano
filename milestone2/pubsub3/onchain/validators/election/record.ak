@@ -58,6 +58,7 @@ pub type PublicRecordMetadata {
 }
 
 pub fn validate_guardian_number(guardian_number: Int) -> Bool {
+  trace @"validate_guardian_number"
   guardian_number > 0 && guardian_number <= max_guardians
 }
 
