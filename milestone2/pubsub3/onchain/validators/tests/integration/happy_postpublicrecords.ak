@@ -3,6 +3,7 @@
 use aiken/primitive/string
 use cardano/transaction.{Input, Output, OutputReference, Transaction}
 use election/state.{AdminChannelState, SubChannelState}
+use election/action as ea
 use election/phase as ep
 use election/record as er
 use tests/mock
@@ -66,6 +67,10 @@ pub fn admin_tx() -> Transaction {
   }
 }
 
+pub fn test_happy_postpublicrecords_admin() {
+  mock.election_validate(admin_tx(), ea.PostPublicRecords)
+}
+
 // ===============================
 // post to a subchannel
 // ===============================
@@ -117,4 +122,8 @@ pub fn sub_tx() -> Transaction {
     outputs: [sub_output1],
     extra_signatories: [mock.vkh(subchannel_id)],
   }
+}
+
+pub fn test_happy_postpublicrecords_subchannel() {
+  mock.election_validate(sub_tx(), ea.PostPublicRecords)
 }

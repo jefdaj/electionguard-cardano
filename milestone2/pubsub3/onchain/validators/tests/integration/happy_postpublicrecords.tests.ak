@@ -1,19 +1,15 @@
 // Test posting public records from the admin channel or a subchannel.
+// Separating the tests like this seems to get around Aiken's test module
+// re-use restrictions.
 
-use election/action
-use tests/integration/happy_postpublicrecords
-use tests/mock
+// TODO ask about it and request they be removed?
+
+use tests/integration/happy_postpublicrecords as hp
 
 test happy_postpublicrecords_admin() {
-  mock.election_validate(
-    happy_postpublicrecords.admin_tx(),
-    action.PostPublicRecords
-  )
+  hp.test_happy_postpublicrecords_admin()
 }
 
 test happy_postpublicrecords_subchannel() {
-  mock.election_validate(
-    happy_postpublicrecords.sub_tx(),
-    action.PostPublicRecords
-  )
+  hp.test_happy_postpublicrecords_subchannel()
 }
