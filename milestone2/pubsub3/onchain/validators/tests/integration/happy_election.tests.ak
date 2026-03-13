@@ -318,6 +318,7 @@ const admin_s7 = AdminChannelState {
   new_records: [
     sr.admin1_summary, // TODO remove the 1?
   ],
+  phase: ep.ElectionFinalizePhase,
   seq: 7,
 }
 
@@ -333,7 +334,6 @@ test happy_election_admin_tx7() {
   let (_, tx) = admin_tx7_pair()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
-
 
 // =================================
 // guardian1 transactions:
@@ -873,6 +873,7 @@ test happy_election_device1_tx3() {
 // 1. post summary (verification)
 // =================================
 
+// post verification, advance phase
 const verifier1_s1 = SubChannelState {
   channel_id: v1,
   publisher: mock.vkh(v1),
@@ -893,7 +894,50 @@ test happy_election_verifier1_tx1() {
 }
 
 // =================================
-// final solo admin section:
-// 1. rm subchannels
-// 2. end election
+// final admin section:
+// 8. rm subchannels
+// 9. end election
 // =================================
+
+const admin_act8 = ea.RmSubChannels { channels: subchannel_ids }
+
+fn admin_tx8_inputs() -> List<Input> {
+  let (a_out , _) = admin_tx7_pair()
+  let (g1_out, _) = guardian1_tx5_pair()
+  let (g2_out, _) = guardian2_tx5_pair()
+  let (g3_out, _) = guardian3_tx5_pair()
+  let (d1_out, _) = device1_tx1_pair()
+  let (v1_out, _) = verifier1_tx1_pair()
+
+  // Each of these is output 0 from a different transaction.
+  let in0 = mock.input(@"admin_tx7"    , 0, a_out )
+  let in1 = mock.input(@"guardian1_tx5", 0, g1_out)
+  let in2 = mock.input(@"guardian2_tx5", 0, g2_out)
+  let in3 = mock.input(@"guardian3_tx5", 0, g3_out)
+  let in4 = mock.input(@"device1_tx3"  , 0, d1_out)
+  let in5 = mock.input(@"verifier1_tx1", 0, v1_out)
+
+  [in0, in1, in2, in3, in4, in5]
+}
+
+// remove subchannels
+const admin_s8 = AdminChannelState {
+  ..admin_s7,
+  subchannels: [],
+  new_records: [],
+  seq: 8,
+}
+
+const admin_tx8_out0 = mock.script_output(a, mock.admin_datum(admin_s8))
+
+const admin_tx8 = Transaction {
+  ..transaction.placeholder,
+  inputs: admin_tx8_inputs(),
+  mint: mock.burn_stts(subchannel_ids),
+  outputs: [admin_tx8_out0],
+  extra_signatories: [mock.admin_vkh],
+}
+
+test happy_election_admin_tx8() {
+  mock.election_validate(admin_tx8, admin_act8)
+}
