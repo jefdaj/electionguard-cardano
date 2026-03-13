@@ -99,7 +99,7 @@ pub fn happy_stt_input() -> Fuzzer<Input> {
 }
 
 // TODO is it a problem that lots of inputs are duplicated here?
-pub fn happy_stt_inputs() -> Fuzzer<List<Input>> { fuzz.list(happy_stt_input()) }
+pub fn happy_stt_inputs() -> Fuzzer<List<Input>> { fuzz.set(happy_stt_input()) }
 
 fn make_burn_value(inputs: List<Input>) -> Value {
   list.foldl(
