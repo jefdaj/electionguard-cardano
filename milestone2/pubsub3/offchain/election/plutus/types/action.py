@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from typing import ClassVar, Dict, Type
 from pycardano import PlutusData, RawPlutusData
 
+# These should be kept in sync with onchain/validators/election/action.ak!
+
 # Apparently there's no built in way in PyCardano to decode a superclass; you
 # have to know the concrete class first or try each of them. This is a first
 # attempt at working around that. It registers subclasses as long as they have a
@@ -48,4 +50,37 @@ class ElectionAction(PlutusData):
 
 # Concrete types defined after base
 
+@dataclass
+class InitElection(ElectionAction):
+    CONSTR_ID = 0
 
+@dataclass
+class AddSubChannels(ElectionAction):
+    CONSTR_ID = 1
+    channels: List[bytes] # ChannelId == ByteArray
+
+@dataclass
+class AdvancePhase(ElectionAction):
+    CONSTR_ID = 2
+
+@dataclass
+class EndElection(ElectionAction):
+    CONSTR_ID = 3
+
+@dataclass
+class RmSubChannels(ElectionAction):
+    CONSTR_ID = 4
+    channels: List[bytes] # ChannelId == ByteArray
+
+@dataclass
+class RebalanceFunds(ElectionAction):
+    CONSTR_ID = 5
+    channels: List[bytes] # ChannelId == ByteArray
+
+@dataclass
+class EndElection(ElectionAction):
+    CONSTR_ID = 6
+
+@dataclass
+class BurnTestTokens(ElectionAction):
+    CONSTR_ID = 7
