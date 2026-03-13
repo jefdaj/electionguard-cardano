@@ -19,9 +19,9 @@
 // use aiken/collection/list
 // use aiken/primitive/int
 // use aiken/primitive/string
-// use cardano/assets
+use cardano/assets
 // use cardano/transaction.{Input, NoDatum, Output, OutputReference, Transaction}
-use cardano/transaction.{Transaction, Input, Output}
+use cardano/transaction.{NoDatum, Transaction, Input, Output}
 use election/action as ea
 use election/phase as ep
 use election/state.{
@@ -899,6 +899,8 @@ test happy_election_verifier1_tx1() {
 // 9. end election
 // =================================
 
+// ----------- admin_tx8 -----------
+
 const admin_act8 = ea.RmSubChannels { channels: subchannel_ids }
 
 fn admin_tx8_inputs() -> List<Input> {
@@ -940,4 +942,25 @@ const admin_tx8 = Transaction {
 
 test happy_election_admin_tx8() {
   mock.election_validate(admin_tx8, admin_act8)
+}
+
+// ----------- admin_tx9 -----------
+
+const admin_tx9_out0 = Output {
+  address: mock.admin_address(), // admin's personal wallet
+  value: assets.zero, // TODO ADA here?
+  datum: NoDatum,
+  reference_script: None,
+}
+
+const admin_tx9 = Transaction {
+  ..transaction.placeholder,
+  mint: mock.burn_stt("admin"),
+  inputs: [mock.input(@"admin_tx8", 0, admin_tx8_out0)],
+  outputs: [admin_tx9_out0],
+  extra_signatories: [mock.admin_vkh],
+}
+
+test happy_election_admin_tx9() {
+  mock.election_validate(admin_tx9, ea.EndElection)
 }
