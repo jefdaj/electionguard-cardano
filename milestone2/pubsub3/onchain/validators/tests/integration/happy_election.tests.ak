@@ -7,6 +7,7 @@
 // 4. finally an input/output index: 0, 1, ...
 //
 // Examples:
+// - admin_tx0
 // - admin_s0
 // - device1_tx3_in0
 // - device1_tx3_out0
@@ -16,11 +17,7 @@
 // - happy_election_device1_tx3
 //
 
-// use aiken/collection/list
-// use aiken/primitive/int
-// use aiken/primitive/string
 use cardano/assets
-// use cardano/transaction.{Input, NoDatum, Output, OutputReference, Transaction}
 use cardano/transaction.{NoDatum, Transaction, Input, Output}
 use election/action as ea
 use election/phase as ep
@@ -43,6 +40,22 @@ const d1 = channel_id(@"device1")
 const v1 = channel_id(@"verifier1")
 
 const subchannel_ids: List<ChannelId> = [g1, g2, g3, d1, v1]
+
+// Automate simple admin transactions that take one input, post some new
+// records, and produce one output.
+fn happy_admin_post(
+  input: Input,
+  state: AdminChannelState
+) -> (Output, Transaction) {
+  let output = mock.script_output(a, mock.admin_datum(state))
+  let tx = Transaction {
+    ..transaction.placeholder,
+    inputs: [input],
+    outputs: [output],
+    extra_signatories: [mock.admin_vkh],
+  }
+  (output, tx)
+}
 
 // =================================
 // initial solo admin transactions:
@@ -68,6 +81,7 @@ const admin_tx0 = Transaction {
   mint: mock.stt_value(a),
   inputs: [mock.oneshot_input],
   outputs: [admin_tx0_out0],
+  extra_signatories: [mock.admin_vkh],
 }
 
 test happy_election_admin_tx0() {
@@ -88,22 +102,21 @@ const admin_s1 = AdminChannelState {
   seq: 1,
 }
 
-const admin_tx1_out0 = mock.script_output(a, mock.admin_datum(admin_s1))
-
-const admin_tx1_in0 = mock.input(@"admin_tx0", 0, admin_tx0_out0)
-
-const admin_tx1 = Transaction {
-  ..transaction.placeholder,
-  inputs: [admin_tx1_in0],
-  outputs: [admin_tx1_out0],
-  extra_signatories: [mock.admin_vkh],
+fn admin_tx1_pair() -> (Output, Transaction) {
+  happy_admin_post(
+    mock.input(@"admin_tx0", 0, admin_tx0_out0),
+    admin_s1
+  )
 }
 
 test happy_election_admin_tx1() {
-  mock.election_validate(admin_tx1, ea.PostPublicRecords)
+  let (_, tx) = admin_tx1_pair()
+  mock.election_validate(tx, ea.PostPublicRecords)
 }
 
 // ----------- admin_tx2 -----------
+
+const admin_tx1_out0 = mock.script_output(a, mock.admin_datum(admin_s1))
 
 // TODO is it confusing that you hash the prev tx number here?
 const admin_tx2_in0 = mock.input(@"admin_tx1", 0, admin_tx1_out0)
@@ -184,23 +197,6 @@ test happy_election_admin_tx2() {
 // 6. results decrypt
 // 7. verify
 // =================================
-
-// Automate simple admin transactions that take one input, post some new
-// records, and produce one output.
-// TODO can this be used for earlier ones too?
-fn happy_admin_post(
-  input: Input,
-  state: AdminChannelState
-) -> (Output, Transaction) {
-  let output = mock.script_output(a, mock.admin_datum(state))
-  let tx = Transaction {
-    ..transaction.placeholder,
-    inputs: [input],
-    outputs: [output],
-    extra_signatories: [mock.admin_vkh],
-  }
-  (output, tx)
-}
 
 // ----------- admin_tx3 -----------
 
