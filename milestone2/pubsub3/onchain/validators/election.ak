@@ -86,6 +86,7 @@ pub fn validate_subchannel_mints(
 
 // Allow only if all quantities for this policy are negative (burning)
 pub fn validate_burntesttokens_mint(policy_id: PolicyId, tx: Transaction) {
+  trace @"validate_burntesttokens_mint"
   assets.tokens(tx.mint, policy_id)
     |> dict.to_pairs()
     |> list.all(fn(pair) { pair.2nd < 0 })
@@ -416,6 +417,7 @@ pub fn validate_anyone_single_channel_spend(
 
 // This should burn all the tokens, leaving 0 in the outputs.
 pub fn validate_burntesttokens_spend(own_ref: OutputReference, tx: Transaction) {
+  trace @"validate_burntesttokens_spend"
   let policy_id = get_policy_id(own_ref, tx.inputs)
   let tokens_out = count_tokens_in_outputs(tx.outputs, policy_id)
   (tokens_out == 0) ?
@@ -430,7 +432,7 @@ pub fn validate_spend(
   trace @"validate_spend"
   let ada_retained = ada_retained_during_election(redeemer, own_ref, tx) ?
   ada_retained && when redeemer is {
-    BurnTestTokens -> True
+    BurnTestTokens -> validate_burntesttokens_spend(own_ref, tx)
     InitElection ->
       validate_initelection_spend(datum, tx)
     AddSubChannels { .. } | AdvancePhase | EndElection ->
