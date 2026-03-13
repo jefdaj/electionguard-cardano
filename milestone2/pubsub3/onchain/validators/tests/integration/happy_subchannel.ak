@@ -33,7 +33,7 @@ const admin_pre_add_output = Output {
   reference_script: None,
 }
 
-const admin_pre_add_input = Input {
+pub const admin_pre_add_input = Input {
   output_reference: OutputReference {
     transaction_id: "abc1",
     output_index: 0,
@@ -120,7 +120,7 @@ const admin_pre_rm_output = Output {
   reference_script: None,
 }
 
-const admin_pre_rm_input = Input {
+pub const admin_pre_rm_input = Input {
   output_reference: OutputReference {
     transaction_id: "abc2",
     output_index: 0,
@@ -128,7 +128,7 @@ const admin_pre_rm_input = Input {
   output: admin_pre_rm_output,
 }
 
-const sub_post_add_input = Input {
+pub const sub_post_add_input = Input {
   output_reference: OutputReference {
     transaction_id: "def1",
     output_index: 1, // TODO is this right? does it matter?
@@ -225,7 +225,7 @@ pub fn test_multi_add() {
 
 const rm_action_multi = ea.RmSubChannels { channels: subchannel_ids }
 
-fn sub_pre_rm_inputs_multi() -> List<Input> {
+pub fn sub_pre_rm_inputs_multi() -> List<Input> {
   let outputs = sub_post_add_outputs_multi
   list.map(
     outputs,

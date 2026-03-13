@@ -5,58 +5,75 @@ use aiken/collection/list
 use cardano/transaction.{Transaction, Input}
 use cardano/assets.{Value}
 use election/action as ea
+use tests/integration/happy_subchannel
 use tests/integration/happy_election
 use tests/integration/happy_postpublicrecords
 use tests/mock
 
-// A list of valid STT inputs defined in the "happy path" tests.
-const happy_stt_input_list = list.concat(
-  // inputs defined directly
+const happy_stt_inputs_plain = [
+  happy_election.admin_tx2_in0,
+  happy_election.admin_tx3_in0,
+  happy_election.device1_tx1_in0,
+  happy_election.guardian1_tx1_in0,
+  happy_election.guardian2_tx1_in0,
+  happy_election.guardian3_tx1_in0,
+  happy_election.verifier1_tx1_in0,
+  happy_postpublicrecords.admin_input,
+  happy_postpublicrecords.sub_input,
+  happy_subchannel.admin_pre_add_input,
+  happy_subchannel.admin_pre_rm_input,
+  happy_subchannel.sub_post_add_input,
+]
+
+const happy_stt_inputs_from_lists = list.flat_map(
   [
-    happy_election.admin_tx2_in0,
-    happy_election.admin_tx3_in0,
-    happy_election.device1_tx1_in0,
-    happy_election.guardian1_tx1_in0,
-    happy_election.guardian2_tx1_in0,
-    happy_election.guardian3_tx1_in0,
-    happy_election.verifier1_tx1_in0,
-    happy_postpublicrecords.admin_input,
-    happy_postpublicrecords.sub_input,
+    happy_subchannel.sub_pre_rm_inputs_multi(),
   ],
-  // inputs defined in triples
-  list.map(
-    [
-      happy_election.admin_tx1_triple(),
-      happy_election.admin_tx3_triple(),
-      happy_election.admin_tx4_triple(),
-      happy_election.admin_tx5_triple(),
-      happy_election.admin_tx6_triple(),
-      happy_election.admin_tx7_triple(),
-      happy_election.device1_tx1_triple(),
-      happy_election.device1_tx2_triple(),
-      happy_election.device1_tx3_triple(),
-      happy_election.guardian1_tx1_triple(),
-      happy_election.guardian1_tx2_triple(),
-      happy_election.guardian1_tx3_triple(),
-      happy_election.guardian1_tx4_triple(),
-      happy_election.guardian1_tx5_triple(),
-      happy_election.guardian2_tx1_triple(),
-      happy_election.guardian2_tx2_triple(),
-      happy_election.guardian2_tx3_triple(),
-      happy_election.guardian2_tx4_triple(),
-      happy_election.guardian2_tx5_triple(),
-      happy_election.guardian3_tx1_triple(),
-      happy_election.guardian3_tx2_triple(),
-      happy_election.guardian3_tx3_triple(),
-      happy_election.guardian3_tx4_triple(),
-      happy_election.guardian3_tx5_triple(),
-      happy_election.verifier1_tx1_triple(),
-    ],
-    fn(e) {
-      let (_, _, input) = e
-      input
-    }
-  )
+  fn(a) { a }
+)
+
+const happy_stt_inputs_from_triples = list.map(
+  [
+    happy_election.admin_tx1_triple(),
+    happy_election.admin_tx3_triple(),
+    happy_election.admin_tx4_triple(),
+    happy_election.admin_tx5_triple(),
+    happy_election.admin_tx6_triple(),
+    happy_election.admin_tx7_triple(),
+    happy_election.device1_tx1_triple(),
+    happy_election.device1_tx2_triple(),
+    happy_election.device1_tx3_triple(),
+    happy_election.guardian1_tx1_triple(),
+    happy_election.guardian1_tx2_triple(),
+    happy_election.guardian1_tx3_triple(),
+    happy_election.guardian1_tx4_triple(),
+    happy_election.guardian1_tx5_triple(),
+    happy_election.guardian2_tx1_triple(),
+    happy_election.guardian2_tx2_triple(),
+    happy_election.guardian2_tx3_triple(),
+    happy_election.guardian2_tx4_triple(),
+    happy_election.guardian2_tx5_triple(),
+    happy_election.guardian3_tx1_triple(),
+    happy_election.guardian3_tx2_triple(),
+    happy_election.guardian3_tx3_triple(),
+    happy_election.guardian3_tx4_triple(),
+    happy_election.guardian3_tx5_triple(),
+    happy_election.verifier1_tx1_triple()
+  ],
+  fn(triple) {
+    let (_, _, input) = triple
+    input
+  }
+)
+
+// A list of valid STT inputs defined in the "happy path" tests.
+const happy_stt_input_list = list.flat_map(
+  [
+    happy_stt_inputs_plain,
+    happy_stt_inputs_from_lists,
+    happy_stt_inputs_from_triples,
+  ],
+  fn(a) { a }
 )
 
 // Return one of the happy_stt_inputs.
