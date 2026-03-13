@@ -2,10 +2,6 @@ use election/state.{ChannelId}
 
 pub type ElectionAction {
 
-  // Temporary action to ensure that I don't pollute the testnet with
-  // unspendable mistakes. Burns any/all STTs, no questions asked.
-  BurnTestTokens
-
   // ===========================================
   // Admin actions spending admin channel
   // ===========================================
@@ -70,5 +66,9 @@ pub type ElectionAction {
   // Post a list of one or more public records (IPFS CIDs + metadata).
   // TODO include info to display in UI here? or get from kupo?
   PostPublicRecords
+
+  // Temporary action to ensure that I don't pollute the testnet with
+  // unspendable mistakes. Burns any/all STTs, no questions asked.
+  BurnTestTokens
 
 }
