@@ -42,11 +42,11 @@ const v1 = channel_id(@"verifier1")
 const subchannel_ids: List<ChannelId> = [g1, g2, g3, d1, v1]
 
 // Automate simple admin transactions that take one input, post some new
-// records, and produce one output.
+// records, and produce one output. Returns the Input too for use in other tests.
 fn happy_admin_post(
   input: Input,
   state: AdminChannelState
-) -> (Output, Transaction) {
+) -> (Output, Transaction, Input) {
   let output = mock.script_output(a, mock.admin_datum(state))
   let tx = Transaction {
     ..transaction.placeholder,
@@ -54,7 +54,7 @@ fn happy_admin_post(
     outputs: [output],
     extra_signatories: [mock.admin_vkh],
   }
-  (output, tx)
+  (output, tx, input)
 }
 
 // =================================
@@ -102,7 +102,7 @@ const admin_s1 = AdminChannelState {
   seq: 1,
 }
 
-fn admin_tx1_pair() -> (Output, Transaction) {
+fn admin_tx1_triple() -> (Output, Transaction, Input) {
   happy_admin_post(
     mock.input(@"admin_tx0", 0, admin_tx0_out0),
     admin_s1
@@ -110,7 +110,7 @@ fn admin_tx1_pair() -> (Output, Transaction) {
 }
 
 pub fn test_admin_tx1() {
-  let (_, tx) = admin_tx1_pair()
+  let (_, tx, _) = admin_tx1_triple()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
@@ -213,12 +213,12 @@ const admin_s3 = AdminChannelState {
 }
 
 // admin_tx3_in0 defined above in admin_tx2 section
-fn admin_tx3_pair() -> (Output, Transaction) {
+fn admin_tx3_triple() -> (Output, Transaction, Input) {
   happy_admin_post(admin_tx3_in0, admin_s3)
 }
 
 pub fn test_admin_tx3() {
-  let (_, tx) = admin_tx3_pair()
+  let (_, tx, _) = admin_tx3_triple()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
@@ -236,8 +236,8 @@ const admin_s4 = AdminChannelState {
   seq: 4,
 }
 
-fn admin_tx4_pair() -> (Output, Transaction) {
-  let (output, _) = admin_tx3_pair()
+fn admin_tx4_triple() -> (Output, Transaction, Input) {
+  let (output, _, _) = admin_tx3_triple()
   happy_admin_post(
     mock.input(@"admin_tx3", 0, output),
     admin_s4
@@ -245,7 +245,7 @@ fn admin_tx4_pair() -> (Output, Transaction) {
 }
 
 pub fn test_admin_tx4() {
-  let (_, tx) = admin_tx4_pair()
+  let (_, tx, _) = admin_tx4_triple()
   mock.election_validate(tx, ea.AdvancePhase)
 }
 
@@ -261,8 +261,8 @@ const admin_s5 = AdminChannelState {
   seq: 5,
 }
 
-fn admin_tx5_pair() -> (Output, Transaction) {
-  let (output, _) = admin_tx4_pair()
+fn admin_tx5_triple() -> (Output, Transaction, Input) {
+  let (output, _, _) = admin_tx4_triple()
   happy_admin_post(
     mock.input(@"admin_tx4", 0, output),
     admin_s5
@@ -270,7 +270,7 @@ fn admin_tx5_pair() -> (Output, Transaction) {
 }
 
 pub fn test_admin_tx5() {
-  let (_, tx) = admin_tx5_pair()
+  let (_, tx, _) = admin_tx5_triple()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
@@ -292,8 +292,8 @@ const admin_s6 = AdminChannelState {
   seq: 6,
 }
 
-fn admin_tx6_pair() -> (Output, Transaction) {
-  let (output, _) = admin_tx5_pair()
+fn admin_tx6_triple() -> (Output, Transaction, Input) {
+  let (output, _, _) = admin_tx5_triple()
   happy_admin_post(
     mock.input(@"admin_tx5", 0, output),
     admin_s6
@@ -301,7 +301,7 @@ fn admin_tx6_pair() -> (Output, Transaction) {
 }
 
 pub fn test_admin_tx6() {
-  let (_, tx) = admin_tx6_pair()
+  let (_, tx, _) = admin_tx6_triple()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
@@ -318,8 +318,8 @@ const admin_s7 = AdminChannelState {
   seq: 7,
 }
 
-fn admin_tx7_pair() -> (Output, Transaction) {
-  let (output, _) = admin_tx6_pair()
+fn admin_tx7_triple() -> (Output, Transaction, Input) {
+  let (output, _, _) = admin_tx6_triple()
   happy_admin_post(
     mock.input(@"admin_tx6", 0, output),
     admin_s7
@@ -327,7 +327,7 @@ fn admin_tx7_pair() -> (Output, Transaction) {
 }
 
 pub fn test_admin_tx7() {
-  let (_, tx) = admin_tx7_pair()
+  let (_, tx, _) = admin_tx7_triple()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
@@ -346,7 +346,7 @@ fn happy_subchannel_post(
   channel: ChannelId,
   input: Input,
   state: SubChannelState
-) -> (Output, Transaction) {
+) -> (Output, Transaction, Input) {
   let output = mock.script_output(channel, mock.subchannel_datum(state))
   let tx = Transaction {
     ..transaction.placeholder,
@@ -354,7 +354,7 @@ fn happy_subchannel_post(
     outputs: [output],
     extra_signatories: [mock.vkh(channel)],
   }
-  (output, tx)
+  (output, tx, input)
 }
 
 // ----------- guardian1_tx1 -----------
@@ -369,12 +369,12 @@ const guardian1_s1 = SubChannelState {
 }
 
 // guardian1_tx1_in0 defined above in admin_tx2 section
-fn guardian1_tx1_pair() -> (Output, Transaction) {
+fn guardian1_tx1_triple() -> (Output, Transaction, Input) {
   happy_subchannel_post(g1, guardian1_tx1_in0, guardian1_s1)
 }
 
 pub fn test_guardian1_tx1() {
-  let (_, tx) = guardian1_tx1_pair()
+  let (_, tx, _) = guardian1_tx1_triple()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
@@ -390,8 +390,8 @@ const guardian1_s2 = SubChannelState {
   seq: 2,
 }
 
-fn guardian1_tx2_pair() -> (Output, Transaction) {
-  let (output, _) = guardian1_tx1_pair()
+fn guardian1_tx2_triple() -> (Output, Transaction, Input) {
+  let (output, _, _) = guardian1_tx1_triple()
   happy_subchannel_post(
     g1,
     mock.input(@"guardian1_tx1", 0, output),
@@ -400,7 +400,7 @@ fn guardian1_tx2_pair() -> (Output, Transaction) {
 }
 
 pub fn test_guardian1_tx2() {
-  let (_, tx) = guardian1_tx2_pair()
+  let (_, tx, _) = guardian1_tx2_triple()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
@@ -416,8 +416,8 @@ const guardian1_s3 = SubChannelState {
   seq: 3,
 }
 
-fn guardian1_tx3_pair() -> (Output, Transaction) {
-  let (output, _) = guardian1_tx2_pair()
+fn guardian1_tx3_triple() -> (Output, Transaction, Input) {
+  let (output, _, _) = guardian1_tx2_triple()
   happy_subchannel_post(
     g1,
     mock.input(@"guardian1_tx2", 0, output),
@@ -426,7 +426,7 @@ fn guardian1_tx3_pair() -> (Output, Transaction) {
 }
 
 pub fn test_guardian1_tx3() {
-  let (_, tx) = guardian1_tx3_pair()
+  let (_, tx, _) = guardian1_tx3_triple()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
@@ -447,8 +447,8 @@ const guardian1_s4 = SubChannelState {
   seq: 4,
 }
 
-fn guardian1_tx4_pair() -> (Output, Transaction) {
-  let (output, _) = guardian1_tx3_pair()
+fn guardian1_tx4_triple() -> (Output, Transaction, Input) {
+  let (output, _, _) = guardian1_tx3_triple()
   happy_subchannel_post(
     g1,
     mock.input(@"guardian1_tx3", 0, output),
@@ -457,7 +457,7 @@ fn guardian1_tx4_pair() -> (Output, Transaction) {
 }
 
 pub fn test_guardian1_tx4() {
-  let (_, tx) = guardian1_tx4_pair()
+  let (_, tx, _) = guardian1_tx4_triple()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
@@ -472,8 +472,8 @@ const guardian1_s5 = SubChannelState {
   seq: 5,
 }
 
-fn guardian1_tx5_pair() -> (Output, Transaction) {
-  let (output, _) = guardian1_tx4_pair()
+fn guardian1_tx5_triple() -> (Output, Transaction, Input) {
+  let (output, _, _) = guardian1_tx4_triple()
   happy_subchannel_post(
     g1,
     mock.input(@"guardian1_tx4", 0, output),
@@ -482,7 +482,7 @@ fn guardian1_tx5_pair() -> (Output, Transaction) {
 }
 
 pub fn test_guardian1_tx5() {
-  let (_, tx) = guardian1_tx5_pair()
+  let (_, tx, _) = guardian1_tx5_triple()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
@@ -507,12 +507,12 @@ const guardian2_s1 = SubChannelState {
 }
 
 // guardian2_tx1_in0 defined above in admin_tx2 section
-fn guardian2_tx1_pair() -> (Output, Transaction) {
+fn guardian2_tx1_triple() -> (Output, Transaction, Input) {
   happy_subchannel_post(g2, guardian2_tx1_in0, guardian2_s1)
 }
 
 pub fn test_guardian2_tx1() {
-  let (_, tx) = guardian2_tx1_pair()
+  let (_, tx, _) = guardian2_tx1_triple()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
@@ -528,8 +528,8 @@ const guardian2_s2 = SubChannelState {
   seq: 2,
 }
 
-fn guardian2_tx2_pair() -> (Output, Transaction) {
-  let (output, _) = guardian2_tx1_pair()
+fn guardian2_tx2_triple() -> (Output, Transaction, Input) {
+  let (output, _, _) = guardian2_tx1_triple()
   happy_subchannel_post(
     g2,
     mock.input(@"guardian2_tx1", 0, output),
@@ -538,7 +538,7 @@ fn guardian2_tx2_pair() -> (Output, Transaction) {
 }
 
 pub fn test_guardian2_tx2() {
-  let (_, tx) = guardian2_tx2_pair()
+  let (_, tx, _) = guardian2_tx2_triple()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
@@ -554,8 +554,8 @@ const guardian2_s3 = SubChannelState {
   seq: 3,
 }
 
-fn guardian2_tx3_pair() -> (Output, Transaction) {
-  let (output, _) = guardian2_tx2_pair()
+fn guardian2_tx3_triple() -> (Output, Transaction, Input) {
+  let (output, _, _) = guardian2_tx2_triple()
   happy_subchannel_post(
     g2,
     mock.input(@"guardian2_tx2", 0, output),
@@ -564,7 +564,7 @@ fn guardian2_tx3_pair() -> (Output, Transaction) {
 }
 
 pub fn test_guardian2_tx3() {
-  let (_, tx) = guardian2_tx3_pair()
+  let (_, tx, _) = guardian2_tx3_triple()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
@@ -585,8 +585,8 @@ const guardian2_s4 = SubChannelState {
   seq: 4,
 }
 
-fn guardian2_tx4_pair() -> (Output, Transaction) {
-  let (output, _) = guardian2_tx3_pair()
+fn guardian2_tx4_triple() -> (Output, Transaction, Input) {
+  let (output, _, _) = guardian2_tx3_triple()
   happy_subchannel_post(
     g2,
     mock.input(@"guardian2_tx3", 0, output),
@@ -595,7 +595,7 @@ fn guardian2_tx4_pair() -> (Output, Transaction) {
 }
 
 pub fn test_guardian2_tx4() {
-  let (_, tx) = guardian2_tx4_pair()
+  let (_, tx, _) = guardian2_tx4_triple()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
@@ -610,8 +610,8 @@ const guardian2_s5 = SubChannelState {
   seq: 5,
 }
 
-fn guardian2_tx5_pair() -> (Output, Transaction) {
-  let (output, _) = guardian2_tx4_pair()
+fn guardian2_tx5_triple() -> (Output, Transaction, Input) {
+  let (output, _, _) = guardian2_tx4_triple()
   happy_subchannel_post(
     g2,
     mock.input(@"guardian2_tx4", 0, output),
@@ -620,7 +620,7 @@ fn guardian2_tx5_pair() -> (Output, Transaction) {
 }
 
 pub fn test_guardian2_tx5() {
-  let (_, tx) = guardian2_tx5_pair()
+  let (_, tx, _) = guardian2_tx5_triple()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
@@ -645,12 +645,12 @@ const guardian3_s1 = SubChannelState {
 }
 
 // guardian3_tx1_in0 defined above in admin_tx2 section
-fn guardian3_tx1_pair() -> (Output, Transaction) {
+fn guardian3_tx1_triple() -> (Output, Transaction, Input) {
   happy_subchannel_post(g3, guardian3_tx1_in0, guardian3_s1)
 }
 
 pub fn test_guardian3_tx1() {
-  let (_, tx) = guardian3_tx1_pair()
+  let (_, tx, _) = guardian3_tx1_triple()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
@@ -666,8 +666,8 @@ const guardian3_s2 = SubChannelState {
   seq: 2,
 }
 
-fn guardian3_tx2_pair() -> (Output, Transaction) {
-  let (output, _) = guardian3_tx1_pair()
+fn guardian3_tx2_triple() -> (Output, Transaction, Input) {
+  let (output, _, _) = guardian3_tx1_triple()
   happy_subchannel_post(
     g3,
     mock.input(@"guardian3_tx1", 0, output),
@@ -676,7 +676,7 @@ fn guardian3_tx2_pair() -> (Output, Transaction) {
 }
 
 pub fn test_guardian3_tx2() {
-  let (_, tx) = guardian3_tx2_pair()
+  let (_, tx, _) = guardian3_tx2_triple()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
@@ -692,8 +692,8 @@ const guardian3_s3 = SubChannelState {
   seq: 3,
 }
 
-fn guardian3_tx3_pair() -> (Output, Transaction) {
-  let (output, _) = guardian3_tx2_pair()
+fn guardian3_tx3_triple() -> (Output, Transaction, Input) {
+  let (output, _, _) = guardian3_tx2_triple()
   happy_subchannel_post(
     g3,
     mock.input(@"guardian3_tx2", 0, output),
@@ -702,7 +702,7 @@ fn guardian3_tx3_pair() -> (Output, Transaction) {
 }
 
 pub fn test_guardian3_tx3() {
-  let (_, tx) = guardian3_tx3_pair()
+  let (_, tx, _) = guardian3_tx3_triple()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
@@ -723,8 +723,8 @@ const guardian3_s4 = SubChannelState {
   seq: 4,
 }
 
-fn guardian3_tx4_pair() -> (Output, Transaction) {
-  let (output, _) = guardian3_tx3_pair()
+fn guardian3_tx4_triple() -> (Output, Transaction, Input) {
+  let (output, _, _) = guardian3_tx3_triple()
   happy_subchannel_post(
     g3,
     mock.input(@"guardian3_tx3", 0, output),
@@ -733,7 +733,7 @@ fn guardian3_tx4_pair() -> (Output, Transaction) {
 }
 
 pub fn test_guardian3_tx4() {
-  let (_, tx) = guardian3_tx4_pair()
+  let (_, tx, _) = guardian3_tx4_triple()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
@@ -748,8 +748,8 @@ const guardian3_s5 = SubChannelState {
   seq: 5,
 }
 
-fn guardian3_tx5_pair() -> (Output, Transaction) {
-  let (output, _) = guardian3_tx4_pair()
+fn guardian3_tx5_triple() -> (Output, Transaction, Input) {
+  let (output, _, _) = guardian3_tx4_triple()
   happy_subchannel_post(
     g3,
     mock.input(@"guardian3_tx4", 0, output),
@@ -758,7 +758,7 @@ fn guardian3_tx5_pair() -> (Output, Transaction) {
 }
 
 pub fn test_guardian3_tx5() {
-  let (_, tx) = guardian3_tx5_pair()
+  let (_, tx, _) = guardian3_tx5_triple()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
@@ -781,12 +781,12 @@ const device1_s1 = SubChannelState {
 }
 
 // device1_tx1_in0 defined above in admin_tx2 section
-fn device1_tx1_pair() -> (Output, Transaction) {
+fn device1_tx1_triple() -> (Output, Transaction, Input) {
   happy_subchannel_post(d1, device1_tx1_in0, device1_s1)
 }
 
 pub fn test_device1_tx1() {
-  let (_, tx) = device1_tx1_pair()
+  let (_, tx, _) = device1_tx1_triple()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
@@ -813,8 +813,8 @@ const device1_s2 = SubChannelState {
   seq: 2,
 }
 
-fn device1_tx2_pair() -> (Output, Transaction) {
-  let (output, _) = device1_tx1_pair()
+fn device1_tx2_triple() -> (Output, Transaction, Input) {
+  let (output, _, _) = device1_tx1_triple()
   happy_subchannel_post(
     d1,
     mock.input(@"device1_tx1", 0, output),
@@ -823,7 +823,7 @@ fn device1_tx2_pair() -> (Output, Transaction) {
 }
 
 pub fn test_device1_tx2() {
-  let (_, tx) = device1_tx2_pair()
+  let (_, tx, _) = device1_tx2_triple()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
@@ -850,8 +850,8 @@ const device1_s3 = SubChannelState {
   seq: 3,
 }
 
-fn device1_tx3_pair() -> (Output, Transaction) {
-  let (output, _) = device1_tx2_pair()
+fn device1_tx3_triple() -> (Output, Transaction, Input) {
+  let (output, _, _) = device1_tx2_triple()
   happy_subchannel_post(
     d1,
     mock.input(@"device1_tx2", 0, output),
@@ -860,7 +860,7 @@ fn device1_tx3_pair() -> (Output, Transaction) {
 }
 
 pub fn test_device1_tx3() {
-  let (_, tx) = device1_tx3_pair()
+  let (_, tx, _) = device1_tx3_triple()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
@@ -880,12 +880,12 @@ const verifier1_s1 = SubChannelState {
 }
 
 // verifier1_tx1_in0 defined above in admin_tx2 section
-fn verifier1_tx1_pair() -> (Output, Transaction) {
+fn verifier1_tx1_triple() -> (Output, Transaction, Input) {
   happy_subchannel_post(v1, verifier1_tx1_in0, verifier1_s1)
 }
 
 pub fn test_verifier1_tx1() {
-  let (_, tx) = verifier1_tx1_pair()
+  let (_, tx, _) = verifier1_tx1_triple()
   mock.election_validate(tx, ea.PostPublicRecords)
 }
 
@@ -900,12 +900,12 @@ pub fn test_verifier1_tx1() {
 const admin_act8 = ea.RmSubChannels { channels: subchannel_ids }
 
 fn admin_tx8_inputs() -> List<Input> {
-  let (a_out , _) = admin_tx7_pair()
-  let (g1_out, _) = guardian1_tx5_pair()
-  let (g2_out, _) = guardian2_tx5_pair()
-  let (g3_out, _) = guardian3_tx5_pair()
-  let (d1_out, _) = device1_tx1_pair()
-  let (v1_out, _) = verifier1_tx1_pair()
+  let (a_out , _, _) = admin_tx7_triple()
+  let (g1_out, _, _) = guardian1_tx5_triple()
+  let (g2_out, _, _) = guardian2_tx5_triple()
+  let (g3_out, _, _) = guardian3_tx5_triple()
+  let (d1_out, _, _) = device1_tx1_triple()
+  let (v1_out, _, _) = verifier1_tx1_triple()
 
   // Each of these is output 0 from a different transaction.
   let in0 = mock.input(@"admin_tx7"    , 0, a_out )
