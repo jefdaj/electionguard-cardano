@@ -74,6 +74,7 @@ fn ada_in_outputs_with_policy(
 }
 
 /// Checks if a value contains any tokens from the specified policy
+// TODO there's a specific fn for this, right?
 fn has_policy(val: Value, policy_id: PolicyId) -> Bool {
   list.has(policies(val), policy_id)
 }
