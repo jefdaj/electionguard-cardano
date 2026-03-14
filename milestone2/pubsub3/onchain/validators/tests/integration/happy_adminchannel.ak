@@ -11,7 +11,7 @@ use cardano/assets
 use cardano/transaction.{Input, NoDatum, Output, Transaction}
 use election/types/action as ea
 use election/types/phase as ep
-use election/types/state.{AdminChannelState}
+use election/types/channel.{AdminChannelState}
 use tests/mock
 
 // ====================

@@ -3,7 +3,7 @@ use aiken/crypto.{VerificationKeyHash}
 use cardano/assets.{PolicyId}
 use cardano/transaction.{Transaction, OutputReference}
 use election/stt.{find_admin_stt_output, get_input_state}
-use election/types/state.{ChannelState, AdminChannel, SubChannel}
+use election/types/channel.{ChannelState, AdminChannel, SubChannel}
 
 // Whether a transaction was signed by the required key.
 pub fn tx_signed_by(tx: Transaction, signer: VerificationKeyHash) -> Bool {

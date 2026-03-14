@@ -3,7 +3,7 @@ use aiken/collection/list
 use cardano/assets.{PolicyId, has_any_nft}
 use cardano/transaction.{Transaction}
 use election/stt.{full_stt_name}
-use election/types/state.{ChannelId}
+use election/types/channel.{ChannelId}
 
 // TODO is it important to check that only one STT is sent to a given output?
 

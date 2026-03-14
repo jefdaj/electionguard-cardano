@@ -21,7 +21,7 @@ use cardano/transaction.{
 
 use election
 use election/types/action.{ElectionAction}
-use election/types/state.{
+use election/types/channel.{
   ChannelId, ChannelState,
   AdminChannel, AdminChannelState,
   SubChannel, SubChannelState

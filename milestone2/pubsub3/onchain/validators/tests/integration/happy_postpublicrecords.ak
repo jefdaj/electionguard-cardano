@@ -2,7 +2,7 @@
 
 use aiken/primitive/string
 use cardano/transaction.{Input, Output, OutputReference, Transaction}
-use election/types/state.{AdminChannelState, SubChannelState}
+use election/types/channel.{AdminChannelState, SubChannelState}
 use election/types/action as ea
 use election/types/phase as ep
 use election/types/record as er

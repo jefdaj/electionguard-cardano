@@ -1,4 +1,4 @@
-use election/types/state.{ChannelId}
+use election/types/channel.{ChannelId}
 
 pub type ElectionAction {
 
