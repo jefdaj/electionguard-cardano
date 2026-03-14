@@ -35,4 +35,4 @@ from .record import (
   PublicRecord,
 )
 
-from .channel import ChannelId
+from .channel import ChannelId, ChannelIdHelper

@@ -4,35 +4,8 @@ from dataclasses import dataclass
 from pycardano import PlutusData
 from typing import List, Union
 from .cid import CID, CIDHelper
+from .channel_id import ChannelId, ChannelIdHelper
 from .phase import ElectionPhase
-
-# @dataclass
-# class PubsubState(PlutusData):
-#     CONSTR_ID = 0
-#     publisher: bytes  # VerificationKeyHash - 28 bytes
-#     cids: List[bytes] # CID just converts str <--> bytes now
-#     seq: int # index for double checking nothing is missed (unused so far)
-# 
-#     def __repr__(self):
-#         cids_str = [CIDHelper.to_string(cid) for cid in self.cids]
-#         return (
-#             'PubsubState('
-#             f'publisher={self.publisher.hex()}, '
-#             f'cids={cids_str}, '
-#             f'seq={self.seq})'
-#         )
-
-
-# ==================
-# ChannelId
-# ==================
-
-type ChannelId = bytes
-
-
-# ==================
-# ChannelState
-# ==================
 
 @dataclass
 class AdminChannelState(PlutusData):
