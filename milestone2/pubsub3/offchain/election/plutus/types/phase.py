@@ -57,6 +57,9 @@ class ElectionConfigPhase(PlutusData):
     CONSTR_ID = 0
     phase: ConfigPhase
 
+    def __repr__(self):
+        return f'ElectionConfigPhase({type(self.phase).__name__})'
+
 @dataclass
 class ElectionVotingPhase(PlutusData):
     CONSTR_ID = 1
@@ -65,6 +68,9 @@ class ElectionVotingPhase(PlutusData):
 class ElectionResultsPhase(PlutusData):
     CONSTR_ID = 2
     phase: ResultsPhase
+
+    def __repr__(self):
+        return f'ElectionResultsPhase({type(self.phase).__name__})'
 
 @dataclass
 class ElectionVerifyPhase(PlutusData):
