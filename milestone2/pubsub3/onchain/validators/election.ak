@@ -20,9 +20,11 @@ use election/types/state.{
   SubChannel, SubChannelState,
   add_subchannels, rm_subchannels, post_public_records, get_new_records,
 }
-use election/stt.{
+use election/mint.{
   exact_channels_minted,
   exact_channels_burned, no_mints_for_policy,
+}
+use election/stt.{
   admin_authorized_tx, get_initial_state, get_continuation_state, get_policy_id,
   admin_signed, publisher_signed, channels_kept_separate,
   correct_n_channels_updated, count_tokens_in_outputs,
