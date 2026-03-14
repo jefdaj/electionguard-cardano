@@ -1,8 +1,19 @@
 use aiken/collection/list
+use aiken/crypto.{VerificationKeyHash}
 use election/types/channel.{ChannelId, ChannelState, AdminChannel, AdminChannelState, SubChannel, SubChannelState}
-use election/types/phase.{ElectionPhase}
+use election/types/phase.{ElectionPhase, ElectionConfigPhase, ConfigAnnouncePhase}
 use election/types/record.{PublicRecord}
 use election/utils.{remove_elements}
+
+pub fn init_election(admin: VerificationKeyHash) -> AdminChannelState {
+  AdminChannelState {
+    admin: admin,
+    subchannels: [],
+    new_records: [],
+    phase: ElectionConfigPhase(ConfigAnnouncePhase),
+    seq: 0
+  }
+}
 
 // Note that this will work even if it makes an invalid list of subchannels.
 // TODO should those checks go here too?

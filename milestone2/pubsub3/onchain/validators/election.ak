@@ -11,6 +11,7 @@ use election/types/action.{
   RmSubChannels, RebalanceFunds, PostPublicRecords,
 }
 use election/actions.{
+  init_election,
   add_subchannels, rm_subchannels, post_public_records,
   advance_phase, rebalance_funds_admin, rebalance_funds_subchannel,
 }
@@ -129,11 +130,16 @@ fn validate_initelection_spend(
   // Special case because there's no input STT to get it the regular way.
   let init_state: AdminChannelState = get_initial_state(tx)
 
+  // TODO does this obsolete the other checks below?
+  let expected = init_election(init_state.admin)
+  let cont_as_expected = (init_state == expected) ?
+
   let new_records_empty = (list.length(init_state.new_records) == 0) ?
   let subchannels_empty = (list.length(init_state.subchannels) == 0) ?
   let seq_zero = (init_state.seq == 0) ?
   let initial_phase = is_initial_phase(init_state.phase) ?
   and {
+    cont_as_expected,
     new_records_empty,
     subchannels_empty,
     seq_zero,
