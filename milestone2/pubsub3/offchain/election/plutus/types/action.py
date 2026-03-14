@@ -1,8 +1,8 @@
+# Should be kept in sync with onchain/validators/election/action.ak
+
 from dataclasses import dataclass
 from typing import List, Union
 from pycardano import PlutusData
-
-# These should be kept in sync with onchain/validators/election/action.ak
 
 @dataclass
 class InitElection(PlutusData):

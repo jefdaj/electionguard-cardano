@@ -1,0 +1,117 @@
+# Should be kept in sync with onchain/validators/election/record.ak
+
+from pycardano import PlutusData
+from dataclasses import dataclass
+from typing import Union
+
+# TODO move ChannelId to prevent circular import
+from .state import ChannelId
+
+# PublicRecordMetadata variants
+@dataclass
+class Manifest(PlutusData):
+    CONSTR_ID = 0
+
+@dataclass
+class CeremonyDetails(PlutusData):
+    CONSTR_ID = 1
+
+@dataclass
+class GuardianPubkey(PlutusData):
+    CONSTR_ID = 2
+    guardian_number: int
+
+@dataclass
+class GuardianBackup(PlutusData):
+    CONSTR_ID = 3
+    guardian_number: int
+    backup_order: int
+
+@dataclass
+class GuardianVerification(PlutusData):
+    CONSTR_ID = 4
+    guardian_number: int
+    backup_order: int
+
+@dataclass
+class JointKey(PlutusData):
+    CONSTR_ID = 5
+
+@dataclass
+class Constants(PlutusData):
+    CONSTR_ID = 6
+
+@dataclass
+class Device(PlutusData):
+    CONSTR_ID = 7
+    device_number: int
+
+@dataclass
+class BallotSubmitted(PlutusData):
+    CONSTR_ID = 8
+    ballot_id: bytes
+
+@dataclass
+class CastNotice(PlutusData):
+    CONSTR_ID = 9
+    ballot_id: bytes
+
+@dataclass
+class BallotSpoiled(PlutusData):
+    CONSTR_ID = 10
+    ballot_id: bytes
+
+@dataclass
+class CiphertextTally(PlutusData):
+    CONSTR_ID = 11
+
+@dataclass
+class TallyShare(PlutusData):
+    CONSTR_ID = 12
+    guardian_number: int
+
+@dataclass
+class SpoiledShare(PlutusData):
+    CONSTR_ID = 13
+    spoiled_id: bytes
+    guardian_number: int
+
+@dataclass
+class PlaintextTally(PlutusData):
+    CONSTR_ID = 14
+
+@dataclass
+class SpoiledResult(PlutusData):
+    CONSTR_ID = 15
+    ballot_id: bytes
+
+@dataclass
+class Summary(PlutusData):
+    CONSTR_ID = 16
+    verifier_id: bytes
+
+PublicRecordMetadata = Union[
+    Manifest,
+    CeremonyDetails,
+    GuardianPubkey,
+    GuardianBackup,
+    GuardianVerification,
+    JointKey,
+    Constants,
+    Device,
+    BallotSubmitted,
+    CastNotice,
+    BallotSpoiled,
+    CiphertextTally,
+    TallyShare,
+    SpoiledShare,
+    PlaintextTally,
+    SpoiledResult,
+    Summary,
+]
+
+@dataclass
+class PublicRecord(PlutusData):
+    CONSTR_ID = 0
+    cid: bytes
+    metadata: PublicRecordMetadata
