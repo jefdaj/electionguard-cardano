@@ -1,11 +1,11 @@
 # Should be kept in sync with onchain/validators/election/record.ak
 
+from .cid import CID, CIDHelper
 from .channel import ChannelId
 from dataclasses import dataclass
 from pycardano import PlutusData
 from typing import Union
 
-# PublicRecordMetadata variants
 @dataclass
 class Manifest(PlutusData):
     CONSTR_ID = 0
@@ -111,5 +111,10 @@ PublicRecordMetadata = Union[
 @dataclass
 class PublicRecord(PlutusData):
     CONSTR_ID = 0
-    cid: bytes
+    cid: CID
     metadata: PublicRecordMetadata
+
+    def __repr__(self):
+        t = type(self.metadata).__name__
+        c = CIDv1Helper.to_string(self.cid)
+        f"{t}(cid={c})"

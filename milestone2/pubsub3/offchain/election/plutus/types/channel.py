@@ -3,9 +3,10 @@
 from dataclasses import dataclass
 from pycardano import PlutusData
 from typing import List, Union
-from .cid import CID, CIDHelper
+from .cid import CID, CIDHelper # TODO rename to better disambiguate with channel_id?
 from .channel_id import ChannelId, ChannelIdHelper
 from .phase import ElectionPhase
+from .record import PublicRecord
 
 @dataclass
 class AdminChannelState(PlutusData):
@@ -17,18 +18,17 @@ class AdminChannelState(PlutusData):
     seq: int
 
     def __repr__(self):
+        # TODO are these missing their list brackets?
         subchannels_str = [ch.hex() for ch in self.subchannels]
-        records_repr = [
-            f"{type(r.metadata).__name__}(cid={CIDv1Helper.to_string(r.cid)})"
-            for r in self.new_records
-        ]
+        records_str = [repr(r) for r in self.new_records] # TODO is this right?
         return (
             'AdminChannelState('
             f'admin={self.admin.hex()}, '
             f'subchannels={subchannels_str}, '
-            f'new_records={records_repr}, '
+            f'new_records={records_str}, '
             f'phase={repr(self.phase)}, '
             f'seq={self.seq})'
+        )
 
 @dataclass
 class SubChannelState(PlutusData):
@@ -39,10 +39,7 @@ class SubChannelState(PlutusData):
     seq: int
 
     def __repr__(self):
-        records_repr = [
-            f"{type(r.metadata).__name__}(cid={CIDv1Helper.to_string(r.cid)})"
-            for r in self.new_records
-        ]
+        records_repr = [repr(r) for r in self.new_records] # TODO is this right?
         return (
             'SubChannelState('
             f'channel_id={self.channel_id.hex()}, '

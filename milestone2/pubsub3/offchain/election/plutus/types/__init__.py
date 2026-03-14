@@ -13,6 +13,8 @@ from .action import (
 
 from .cid import CID, CIDHelper
 
+from .channel import ChannelId, ChannelIdHelper
+
 from .record import (
   Manifest,
   CeremonyDetails,
@@ -34,5 +36,3 @@ from .record import (
   PublicRecordMetadata,
   PublicRecord,
 )
-
-from .channel import ChannelId, ChannelIdHelper
