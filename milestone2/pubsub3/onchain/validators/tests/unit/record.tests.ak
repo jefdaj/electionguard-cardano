@@ -1,5 +1,5 @@
 use aiken/collection/list
-use election/record as er
+use election/types/record as er
 use tests/data/static_election_records as sr
 
 test all_static_election_metadata_valid() {

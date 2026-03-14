@@ -2,7 +2,7 @@ use aiken/collection/list
 use cardano/transaction.{Transaction, Input, OutputReference}
 use cardano/assets.{PolicyId, Value, lovelace_of, policies}
 
-use election/action.{ElectionAction, InitElection, EndElection}
+use election/types/action.{ElectionAction, InitElection, EndElection}
 use election/stt.{get_policy_id}
 
 // During the election, we want to make sure that no one takes ADA out of

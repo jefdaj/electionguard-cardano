@@ -2,8 +2,8 @@ use cardano/address.{Address, Script}
 use cardano/assets
 use cardano/transaction.{InlineDatum, Input, Output, OutputReference, Transaction}
 
-use election/record as r
-use election/state as s
+use election/types/record as r
+use election/types/state as s
 
 use election/stt
 

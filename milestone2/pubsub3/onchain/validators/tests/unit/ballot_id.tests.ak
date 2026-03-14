@@ -1,4 +1,4 @@
-use election/ballot_id
+use election/types/ballot_id
 
 test valid_hex_segment_test() {
   // hex up until the last byte (9)

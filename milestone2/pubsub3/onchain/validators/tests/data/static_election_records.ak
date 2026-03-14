@@ -2,7 +2,7 @@
 // Consider editing and re-running that to make changes.
 
 use aiken/primitive/string.{to_bytearray}
-use election/record as er
+use election/types/record as er
 
 pub const manifest = er.PublicRecord {
   // orig base32: bafkreiat5mhmsrevctm43qlv6aokrli3cdoj2aqyb34wsf6idybuvzwtua

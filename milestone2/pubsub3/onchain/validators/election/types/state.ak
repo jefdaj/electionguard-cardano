@@ -3,8 +3,8 @@ use aiken/collection/list
 use aiken/crypto.{VerificationKeyHash}
 // use cardano/transaction.{InlineDatum, Output}
 
-use election/phase.{ElectionPhase}
-use election/record.{PublicRecord}
+use election/types/phase.{ElectionPhase}
+use election/types/record.{PublicRecord}
 
 use election/utils.{remove_elements}
 

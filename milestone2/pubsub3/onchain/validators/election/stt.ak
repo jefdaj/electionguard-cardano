@@ -9,7 +9,7 @@ use election/utils.{tx_signed_by}
 
 use config
 
-use election/state.{
+use election/types/state.{
   ChannelId, ChannelState,
   AdminChannel, AdminChannelState,
   SubChannel, get_channel_id,

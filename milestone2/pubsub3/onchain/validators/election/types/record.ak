@@ -1,8 +1,8 @@
 use aiken/primitive/bytearray
 use aiken/collection/list
 
-use election/cid.{CIDv1, validate_cid}
-use election/ballot_id.{validate_ballot_id}
+use election/types/cid.{CIDv1, validate_cid}
+use election/types/ballot_id.{validate_ballot_id}
 
 // These aren't part of the ElectionGuard protocol as far as I know,
 // but it seems reasonable to err on the side of safety for now.

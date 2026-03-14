@@ -4,7 +4,7 @@ use aiken/fuzz
 use aiken/collection/list
 use cardano/transaction.{Transaction, Input}
 use cardano/assets.{Value}
-use election/action as ea
+use election/types/action as ea
 use tests/integration/happy_adminchannel
 use tests/integration/happy_subchannel
 use tests/integration/happy_election

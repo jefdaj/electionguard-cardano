@@ -19,9 +19,9 @@
 
 use cardano/assets
 use cardano/transaction.{NoDatum, Transaction, Input, Output}
-use election/action as ea
-use election/phase as ep
-use election/state.{
+use election/types/action as ea
+use election/types/phase as ep
+use election/types/state.{
   ChannelId, channel_id,
   AdminChannelState, SubChannelState
 }

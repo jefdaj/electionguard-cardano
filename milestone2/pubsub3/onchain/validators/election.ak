@@ -5,16 +5,16 @@ use cardano/transaction.{
   OutputReference, Transaction, find_input
 }
 
-use election/action.{
+use election/types/action.{
   ElectionAction,
   BurnTestTokens,
   InitElection, AddSubChannels, AdvancePhase, EndElection,
   RmSubChannels, RebalanceFunds, PostPublicRecords,
 }
 use election/funding.{ada_retained_during_election}
-use election/phase.{is_initial_phase, is_final_phase, is_valid_phase_transition}
-use election/record.{validate_records}
-use election/state.{
+use election/types/phase.{is_initial_phase, is_final_phase, is_valid_phase_transition}
+use election/types/record.{validate_records}
+use election/types/state.{
   ChannelId, ChannelState,
   AdminChannel, AdminChannelState,
   SubChannel, SubChannelState,

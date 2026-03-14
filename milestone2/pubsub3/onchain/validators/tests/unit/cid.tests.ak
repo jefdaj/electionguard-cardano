@@ -1,5 +1,5 @@
 use aiken/collection/list
-use election/cid.{CIDv1, validate_cid}
+use election/types/cid.{CIDv1, validate_cid}
 use tests/data/static_election_records as sr
 
 test all_static_election_cids_valid() {

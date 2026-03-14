@@ -2,10 +2,10 @@
 
 use aiken/primitive/string
 use cardano/transaction.{Input, Output, OutputReference, Transaction}
-use election/state.{AdminChannelState, SubChannelState}
-use election/action as ea
-use election/phase as ep
-use election/record as er
+use election/types/state.{AdminChannelState, SubChannelState}
+use election/types/action as ea
+use election/types/phase as ep
+use election/types/record as er
 use tests/mock
 
 pub const manifest = er.PublicRecord {
