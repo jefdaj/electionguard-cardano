@@ -10,7 +10,7 @@ use election/types/action.{
   InitElection, AddSubChannels, AdvancePhase, EndElection,
   RmSubChannels, RebalanceFunds, PostPublicRecords,
 }
-use election/actions.{
+use election/cont.{
   init_election,
   add_subchannels, rm_subchannels, post_public_records,
   advance_phase, rebalance_funds_admin, rebalance_funds_subchannel,
