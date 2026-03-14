@@ -2,9 +2,9 @@
 
 from multiformats_cid import make_cid
 
-CID = bytes
+IpfsCid = bytes
 
-class CIDHelper:
+class IpfsCidHelper:
     """
     Helper class for IPFS CID operations.
 
@@ -21,22 +21,22 @@ class CIDHelper:
 
     Examples:
         # From IPFS string
-        >>> cid_bytes = CIDHelper.from_string('bafkreif3ndgroyswbk7nts7xroxklqa2xyjijiqil3eiczvhvehep6vdue')
+        >>> cid_bytes = IpfsCidHelper.from_string('bafkreif3ndgroyswbk7nts7xroxklqa2xyjijiqil3eiczvhvehep6vdue')
 
         # Use in PlutusData
         >>> record = PublicRecord(cid=cid_bytes, metadata=Manifest())
 
         # Convert back to string for IPFS operations
-        >>> ipfs_hash = CIDHelper.to_string(cid_bytes)
+        >>> ipfs_hash = IpfsCidHelper.to_string(cid_bytes)
 
         # Use with aioipfs
         >>> async with aioipfs.AsyncIPFS() as client:
-        >>>     content = await client.cat(CIDHelper.to_string(cid_bytes))
+        >>>     content = await client.cat(IpfsCidHelper.to_string(cid_bytes))
     """
 
     @staticmethod
-    def from_string(cid_string: str) -> CID:
-        """Parse a CID from its string representation and validate it's a CIDv1 with SHA-256 and raw codec."""
+    def from_string(cid_string: str) -> IpfsCid:
+        """Parse an IpfsCid from its string representation and validate it's a CIDv1 with SHA-256 and raw codec."""
         c = make_cid(cid_string)
         buffer = c.buffer
 
@@ -55,13 +55,13 @@ class CIDHelper:
         return buffer
 
     @staticmethod
-    def to_string(cid_bytes: CID) -> str:
+    def to_string(cid_bytes: IpfsCid) -> str:
         """Convert CID bytes to base32 string representation."""
         c = make_cid(cid_bytes)
         return str(c)
 
     @staticmethod
-    def validate(cid_bytes: CID) -> None:
+    def validate(cid_bytes: IpfsCid) -> None:
         """Validate that bytes represent a valid CIDv1 with SHA-256 and raw codec."""
         if len(cid_bytes) != 36:
             raise ValueError(f"CIDv1 must be exactly 36 bytes, got {len(cid_bytes)}")

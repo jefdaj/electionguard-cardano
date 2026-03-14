@@ -11,7 +11,7 @@ from .action import (
   ElectionAction,
 )
 
-from .cid import CID, CIDHelper
+from .ipfs_cid import IpfsCid, IpfsCidHelper
 
 from .channel import ChannelId, ChannelIdHelper
 

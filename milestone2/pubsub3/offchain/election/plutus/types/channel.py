@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from pycardano import PlutusData
 from typing import List, Union
-from .cid import CID, CIDHelper # TODO rename to better disambiguate with channel_id?
+from .ipfs_cid import IpfsCid, IpfsCidHelper
 from .channel_id import ChannelId, ChannelIdHelper
 from .phase import ElectionPhase
 from .record import PublicRecord
