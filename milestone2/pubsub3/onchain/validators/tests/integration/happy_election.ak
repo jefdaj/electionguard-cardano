@@ -21,10 +21,8 @@ use cardano/assets
 use cardano/transaction.{NoDatum, Transaction, Input, Output}
 use election/types/action as ea
 use election/types/phase as ep
-use election/types/channel.{
-  ChannelId, channel_id,
-  AdminChannelState, SubChannelState
-}
+use election/types/channel_id.{ChannelId, channel_id}
+use election/types/channel.{AdminChannelState, SubChannelState}
 use tests/data/static_election_records as sr
 use tests/mock
 

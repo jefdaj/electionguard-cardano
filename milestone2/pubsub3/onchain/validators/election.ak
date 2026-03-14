@@ -18,10 +18,10 @@ use election/cont.{
 use election/fund.{ada_retained_during_election}
 use election/types/phase.{is_initial_phase, is_final_phase, is_valid_phase_transition}
 use election/types/record.{validate_records}
+use election/types/channel_id.{ChannelId}
 use election/types/channel.{
-  ChannelId, ChannelState,
-  AdminChannel, AdminChannelState,
-  SubChannel, SubChannelState, get_new_records,
+  ChannelState, AdminChannel, AdminChannelState, SubChannel, SubChannelState,
+  get_new_records,
 }
 use election/mint.{
   exact_channels_minted, exact_channels_burned,

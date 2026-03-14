@@ -6,9 +6,9 @@ use cardano/assets.{PolicyId}
 use cardano/transaction.{Transaction, Input, InlineDatum, Output, OutputReference}
 use config
 
+use election/types/channel_id.{ChannelId}
 use election/types/channel.{
-  ChannelId, ChannelState,
-  AdminChannel, AdminChannelState,
+  ChannelState, AdminChannel, AdminChannelState,
   get_channel_id,
 }
 

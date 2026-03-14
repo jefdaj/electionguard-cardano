@@ -1,23 +1,7 @@
 use aiken/crypto.{VerificationKeyHash}
-use aiken/primitive/string
 use election/types/phase.{ElectionPhase}
 use election/types/record.{PublicRecord}
-
-// ====================
-// Channel ID
-// ====================
-
-pub type ChannelId = ByteArray
-
-// TODO rename from_string?
-pub fn channel_id(channel_name: String) -> ChannelId {
-  trace @"channel_id"
-  string.to_bytearray(channel_name)
-}
-
-// ====================
-// Channel State
-// ====================
+use election/types/channel_id.{ChannelId}
 
 pub type ChannelState {
   AdminChannel(AdminChannelState)

@@ -3,7 +3,7 @@ use aiken/collection/list
 use cardano/assets.{PolicyId, has_any_nft}
 use cardano/transaction.{OutputReference, Transaction}
 use election/stt.{full_stt_name, get_policy_id, count_tokens_in_outputs}
-use election/types/channel.{ChannelId}
+use election/types/channel_id.{ChannelId}
 
 // Whether a transaction mints the required amount of a token.
 pub fn tx_mints(

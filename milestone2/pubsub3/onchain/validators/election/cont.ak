@@ -1,6 +1,7 @@
 use aiken/collection/list
 use aiken/crypto.{VerificationKeyHash}
-use election/types/channel.{ChannelId, ChannelState, AdminChannel, AdminChannelState, SubChannel, SubChannelState}
+use election/types/channel_id.{ChannelId}
+use election/types/channel.{ChannelState, AdminChannel, AdminChannelState, SubChannel, SubChannelState}
 use election/types/phase.{ElectionPhase, ElectionConfigPhase, ConfigAnnouncePhase}
 use election/types/record.{PublicRecord}
 use election/utils.{remove_elements}
