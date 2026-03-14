@@ -1,7 +1,7 @@
 # Should be kept in sync with onchain/validators/election/types/record.ak
 
 from .ballot_id import BallotIdMixin
-from .channel import ChannelIdMixin
+from .channel_id import ChannelIdMixin
 from .ipfs_cid import IpfsCidHelper, IpfsCidMixin
 from dataclasses import dataclass
 from pycardano import PlutusData

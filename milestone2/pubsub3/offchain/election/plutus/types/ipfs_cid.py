@@ -1,6 +1,7 @@
 # Should be kept in sync with onchain/validators/election/cid.ak
 
 from multiformats_cid import make_cid
+from pydantic.v1 import validator
 
 IpfsCid = bytes
 

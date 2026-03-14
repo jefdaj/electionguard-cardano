@@ -1,12 +1,12 @@
 # Should be kept in sync with onchain/validators/election/types/channel.ak
 
-from dataclasses import dataclass
-from pycardano import PlutusData
-from typing import List, Union
-from .ipfs_cid import IpfsCid, IpfsCidHelper
 from .channel_id import ChannelId, ChannelIdHelper
+from .ipfs_cid import IpfsCid, IpfsCidHelper
 from .phase import ElectionPhase
 from .record import PublicRecord
+from dataclasses import dataclass
+from pycardano import PlutusData
+from typing import List, Union, TYPE_CHECKING
 
 @dataclass
 class AdminChannelState(PlutusData):
