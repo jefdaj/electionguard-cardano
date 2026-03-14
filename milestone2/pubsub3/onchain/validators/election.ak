@@ -11,7 +11,7 @@ use election/types/action.{
   InitElection, AddSubChannels, AdvancePhase, EndElection,
   RmSubChannels, RebalanceFunds, PostPublicRecords,
 }
-use election/funding.{ada_retained_during_election}
+use election/fund.{ada_retained_during_election}
 use election/types/phase.{is_initial_phase, is_final_phase, is_valid_phase_transition}
 use election/types/record.{validate_records}
 use election/types/state.{
