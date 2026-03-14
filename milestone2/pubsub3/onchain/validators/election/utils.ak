@@ -1,12 +1,4 @@
 use aiken/collection/list
-use aiken/crypto.{VerificationKeyHash}
-use cardano/transaction.{Transaction}
-
-// Whether a transaction was signed by the required key.
-pub fn tx_signed_by(tx: Transaction, signer: VerificationKeyHash) -> Bool {
-  trace @"tx_signed_by"
-  list.has(tx.extra_signatories, signer)
-}
 
 pub fn are_disjoint(list1: List<a>, list2: List<a>) -> Bool {
   trace @"are_disjoint"

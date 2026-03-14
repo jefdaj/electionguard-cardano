@@ -1,18 +1,15 @@
-use aiken/primitive/string
 use aiken/collection/dict
 use aiken/collection/list
-use aiken/crypto.{VerificationKeyHash}
+use aiken/primitive/string
 use cardano/address.{Script, Address}
 use cardano/assets.{PolicyId}
 use cardano/transaction.{Transaction, Input, InlineDatum, Output, OutputReference}
-use election/utils.{tx_signed_by}
-
 use config
 
 use election/types/state.{
   ChannelId, ChannelState,
   AdminChannel, AdminChannelState,
-  SubChannel, get_channel_id,
+  get_channel_id,
 }
 
 // TODO is it important to check that only one STT is sent to a given output?
@@ -71,19 +68,6 @@ fn find_input_with_token(
   is {
     Some(input) -> Some(input.output_reference)
     None -> None
-  }
-}
-
-// Whether the admin authorized this transaction by spending the admin STT
-// (and therefore also by signing, which is checked in the spend validator).
-pub fn admin_authorized_tx(
-  tx: Transaction,
-  policy_id: PolicyId
-) -> Bool {
-  trace @"admin_authorized_tx"
-  when find_admin_stt_output(tx, policy_id) is {
-    Some(_) -> True
-    None    -> False
   }
 }
 
@@ -209,50 +193,6 @@ pub fn get_continuation_state(
   let policy_id = get_policy_id(own_ref, tx.inputs)
   expect Some(state) = get_stt_state(datum, tx.outputs, policy_id)
   state
-}
-
-pub fn get_publisher_vkh(
-  datum: Option<ChannelState>,
-  own_ref: OutputReference,
-  tx: Transaction,
-) -> VerificationKeyHash {
-  trace @"get_publisher_vkh"
-  let state = get_input_state(datum, own_ref, tx)
-  when state is {
-    AdminChannel(admin_state) -> admin_state.admin
-    SubChannel(sub_state) -> sub_state.publisher
-  }
-}
-
-pub fn get_admin_vkh(
-  own_ref: OutputReference,
-  tx: Transaction,
-) -> VerificationKeyHash {
-  trace @"get_admin_vkh"
-  expect AdminChannel(state) = get_input_state(None, own_ref, tx)
-  state.admin
-}
-
-pub fn publisher_signed(
-  datum: Option<ChannelState>,
-  own_ref: OutputReference,
-  tx: Transaction,
-) -> Bool {
-  trace @"publisher_signed"
-  let pub_vkh = get_publisher_vkh(datum, own_ref, tx)
-  let pub_sig = tx_signed_by(tx, pub_vkh) ?
-  pub_sig
-}
-
-// TODO move to different module?
-pub fn admin_signed(
-  own_ref: OutputReference,
-  tx: Transaction,
-) -> Bool {
-  trace @"admin_signed"
-  let admin_vkh = get_admin_vkh(own_ref, tx)
-  let admin_sig = tx_signed_by(tx, admin_vkh) ?
-  admin_sig
 }
 
 // This prevents more than one STT being sent to a given UTxO.

@@ -24,9 +24,12 @@ use election/mint.{
   exact_channels_minted,
   exact_channels_burned, no_mints_for_policy,
 }
+use election/auth.{
+  admin_authorized_spend, admin_signed, publisher_signed,
+}
 use election/stt.{
-  admin_authorized_tx, get_initial_state, get_continuation_state, get_policy_id,
-  admin_signed, publisher_signed, channels_kept_separate,
+  get_initial_state, get_continuation_state, get_policy_id,
+  channels_kept_separate,
   correct_n_channels_updated, count_tokens_in_outputs,
 }
 
@@ -73,7 +76,7 @@ pub fn validate_subchannel_mints(
 ) -> Bool {
   // TODO unify with admin_signed?
   trace @"validate_subchannel_mints"
-  let admin_auth = admin_authorized_tx(tx, policy_id) ?
+  let admin_auth = admin_authorized_spend(tx, policy_id) ?
   admin_auth && when redeemer is {
     AddSubChannels { channels } -> {
       let mints_as_expected = exact_channels_minted(tx, policy_id, channels) ?
