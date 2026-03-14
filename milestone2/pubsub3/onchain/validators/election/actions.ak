@@ -18,61 +18,61 @@ pub fn init_election(admin: VerificationKeyHash) -> AdminChannelState {
 // Note that this will work even if it makes an invalid list of subchannels.
 // TODO should those checks go here too?
 pub fn add_subchannels(
-  old_state: AdminChannelState,
-  new_channels: List<ChannelId>,
-  new_phase: ElectionPhase
+  state: AdminChannelState,
+  channels: List<ChannelId>,
+  cont_phase: ElectionPhase
 ) -> AdminChannelState {
   trace @"add_subchannels"
   AdminChannelState(
-    old_state.admin, // should be unchanged
-    list.concat(new_channels, old_state.subchannels), // TODO sort here? reverse order?
+    state.admin, // should be unchanged
+    list.concat(channels, state.subchannels), // TODO sort here? reverse order?
     [], // should be reset on each non-post tx
-    new_phase, // TODO should this be validated here rather than separately?
-    old_state.seq + 1 // should be incremented
+    cont_phase, // TODO should this be validated here rather than separately?
+    state.seq + 1 // should be incremented
   )
 }
 
 // Note that this doesn't check whether the channels removed make sense.
 // TODO should those checks also go here?
 pub fn rm_subchannels(
-  old_state: AdminChannelState,
-  channels_to_rm: List<ChannelId>,
-  new_phase: ElectionPhase
+  state: AdminChannelState,
+  channels: List<ChannelId>,
+  cont_phase: ElectionPhase
 ) -> AdminChannelState {
   trace @"rm_subchannels"
   AdminChannelState(
-    old_state.admin, // should be unchanged
-    remove_elements(old_state.subchannels, channels_to_rm),
+    state.admin, // should be unchanged
+    remove_elements(state.subchannels, channels),
     [], // should be reset on each non-post tx
-    new_phase, // TODO should this be validated here rather than separately?
-    old_state.seq + 1 // should be incremented
+    cont_phase, // TODO should this be validated here rather than separately?
+    state.seq + 1 // should be incremented
   )
 }
 
 // Note that this doesn't check validity of the records or new phase
 // TODO should those checks also go here?
 pub fn post_public_records(
-  old_state: ChannelState,
+  state: ChannelState,
   records: List<PublicRecord>,
-  phase: Option<ElectionPhase>
+  cont_phase: Option<ElectionPhase>
 ) -> ChannelState {
   trace @"post_public_records"
-  when old_state is {
-    AdminChannel(old) -> AdminChannel(AdminChannelState(
-      old.admin,
-      old.subchannels,
+  when state is {
+    AdminChannel(admin_state) -> AdminChannel(AdminChannelState(
+      admin_state.admin,
+      admin_state.subchannels,
       records, // should replace the old list
-      when phase is {
-        Some(new_phase) -> new_phase
-        None -> old.phase
+      when cont_phase is {
+        Some(phase) -> phase
+        None -> admin_state.phase
       },
-      old.seq + 1, // should be incremented
+      admin_state.seq + 1, // should be incremented
     ))
-    SubChannel(old) -> SubChannel(SubChannelState(
-      old.channel_id,
-      old.publisher,
+    SubChannel(sub_state) -> SubChannel(SubChannelState(
+      sub_state.channel_id,
+      sub_state.publisher,
       records, // should be replaced
-      old.seq + 1, // should be incremented
+      sub_state.seq + 1, // should be incremented
     ))
   }
 }
