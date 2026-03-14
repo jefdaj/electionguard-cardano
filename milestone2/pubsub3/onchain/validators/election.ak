@@ -1,4 +1,3 @@
-use aiken/collection/dict
 use aiken/collection/list
 use cardano/assets.{PolicyId}
 use cardano/transaction.{
@@ -23,8 +22,9 @@ use election/types/channel.{
   SubChannel, SubChannelState, get_new_records,
 }
 use election/mint.{
-  exact_channels_minted,
-  exact_channels_burned, no_mints_for_policy, tx_burns_all,
+  exact_channels_minted, exact_channels_burned,
+  no_mints_for_policy,
+  tx_burns_all, tx_only_burns,
 }
 use election/auth.{
   admin_authorized_spend, admin_signed, publisher_signed,
@@ -92,15 +92,6 @@ pub fn validate_subchannel_mints(
   }
 }
 
-// TODO move to mint module
-// Allow only if all quantities for this policy are negative (burning)
-pub fn validate_burntesttokens_mint(policy_id: PolicyId, tx: Transaction) -> Bool {
-  trace @"validate_burntesttokens_mint"
-  assets.tokens(tx.mint, policy_id)
-    |> dict.to_pairs()
-    |> list.all(fn(pair) { pair.2nd < 0 })
-}
-
 // Remember this will be called once per policy_id, not per token minted.
 // So it should validate all the election STTs in one go.
 pub fn validate_mint(
@@ -111,7 +102,7 @@ pub fn validate_mint(
 ) -> Bool {
   trace @"validate_mint"
   when redeemer is {
-    BurnTestTokens -> validate_burntesttokens_mint(policy_id, tx)
+    BurnTestTokens -> tx_only_burns(policy_id, tx)
     InitElection | EndElection ->
       validate_admin_channel_mint(oneshot_ref, redeemer, policy_id, tx)
     AddSubChannels { .. } | RmSubChannels { .. } ->

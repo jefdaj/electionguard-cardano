@@ -35,6 +35,14 @@ pub fn tx_mints_all(
   })
 }
 
+// Allow only if all quantities for this policy are negative (burning)
+pub fn tx_only_burns(policy_id: PolicyId, tx: Transaction) -> Bool {
+  trace @"tx_only_burns"
+  assets.tokens(tx.mint, policy_id)
+    |> dict.to_pairs()
+    |> list.all(fn(pair) { pair.2nd < 0 })
+}
+
 // Whether a TX burns all tokens, leaving none in the outputs.
 // Note this is different from RmSubChannels, which leaves the admin STT.
 pub fn tx_burns_all(own_ref: OutputReference, tx: Transaction) -> Bool {
