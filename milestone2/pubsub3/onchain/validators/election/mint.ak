@@ -1,11 +1,9 @@
 use aiken/collection/dict
 use aiken/collection/list
 use cardano/assets.{PolicyId, has_any_nft}
-use cardano/transaction.{Transaction}
-use election/stt.{full_stt_name}
+use cardano/transaction.{OutputReference, Transaction}
+use election/stt.{full_stt_name, get_policy_id, count_tokens_in_outputs}
 use election/types/channel.{ChannelId}
-
-// TODO is it important to check that only one STT is sent to a given output?
 
 // Whether a transaction mints the required amount of a token.
 pub fn tx_mints(
@@ -35,6 +33,15 @@ pub fn tx_mints_all(
   list.all(token_names, fn(token_name) {
     tx_mints(tx, policy_id, token_name, amount)
   })
+}
+
+// Whether a TX burns all tokens, leaving none in the outputs.
+// Note this is different from RmSubChannels, which leaves the admin STT.
+pub fn tx_burns_all(own_ref: OutputReference, tx: Transaction) -> Bool {
+  trace @"tx_burns_all"
+  let policy_id = get_policy_id(own_ref, tx.inputs)
+  let tokens_out = count_tokens_in_outputs(tx.outputs, policy_id)
+  (tokens_out == 0) ?
 }
 
 // TODO name something better

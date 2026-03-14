@@ -24,15 +24,15 @@ use election/types/channel.{
 }
 use election/mint.{
   exact_channels_minted,
-  exact_channels_burned, no_mints_for_policy,
+  exact_channels_burned, no_mints_for_policy, tx_burns_all,
 }
 use election/auth.{
   admin_authorized_spend, admin_signed, publisher_signed,
 }
 use election/stt.{
-  get_initial_state, get_continuation_state, get_policy_id,
+  get_initial_state, get_continuation_state,
   channels_kept_separate,
-  correct_n_channels_updated, count_tokens_in_outputs,
+  correct_n_channels_updated,
 }
 
 use election/utils.{are_disjoint}
@@ -92,8 +92,9 @@ pub fn validate_subchannel_mints(
   }
 }
 
+// TODO move to mint module
 // Allow only if all quantities for this policy are negative (burning)
-pub fn validate_burntesttokens_mint(policy_id: PolicyId, tx: Transaction) {
+pub fn validate_burntesttokens_mint(policy_id: PolicyId, tx: Transaction) -> Bool {
   trace @"validate_burntesttokens_mint"
   assets.tokens(tx.mint, policy_id)
     |> dict.to_pairs()
@@ -195,6 +196,7 @@ fn validate_advancephase_spend(
   expect Some(AdminChannel(state)) = datum
   expect AdminChannel(cont_state) = get_continuation_state(datum, own_ref, tx)
   let valid_transition = is_valid_phase_transition(state.phase, cont_state.phase) ?
+  // TODO factor out to the actions module
   let expected = AdminChannelState {
     ..state,
     new_records: [],
@@ -224,7 +226,7 @@ pub fn validate_admin_single_channel_spend(
   redeemer: ElectionAction,
   own_ref: OutputReference,
   tx: Transaction,
-) {
+) -> Bool {
   trace @"validate_admin_single_channel_spend"
   let authorized = admin_signed(own_ref, tx) ?
   authorized && when redeemer is {
@@ -308,6 +310,7 @@ fn validate_rebalancefunds_admin_spend(
   trace @"validate_rebalancefunds_admin_spend"
   expect AdminChannel(admin_cont_state) = cont_state
   let valid_transition = is_valid_phase_transition(admin_state.phase, admin_cont_state.phase) ?
+  // TODO factor out into actions module
   let expected = AdminChannelState {
     ..admin_state,
     phase: admin_cont_state.phase,
@@ -342,6 +345,7 @@ fn validate_rebalancefunds_sub_spend(
   // channels list is correct.
   let valid_channel = list.has(channels, sub_state.channel_id) ?
 
+  // TODO factor out into actions module
   let expected = SubChannelState {
     ..sub_state,
     seq: sub_state.seq + 1
@@ -376,7 +380,7 @@ pub fn validate_admin_multi_channel_spend(
   redeemer: ElectionAction,
   own_ref: OutputReference,
   tx: Transaction,
-) {
+) -> Bool {
   trace @"validate_admin_multi_channel_spend"
   let authorized = admin_signed(own_ref, tx) ?
   let separate = channels_kept_separate(own_ref, tx) ?
@@ -393,7 +397,7 @@ pub fn validate_anyone_single_channel_spend(
   redeemer: ElectionAction,
   own_ref: OutputReference,
   tx: Transaction,
-) {
+) -> Bool {
   trace @"validate_anyone_single_channel_spend"
 
   // Gotcha: admin_signed wouldn't do here, because we don't want the admin to
@@ -432,24 +436,16 @@ pub fn validate_anyone_single_channel_spend(
   }
 }
 
-// This should burn all the tokens, leaving 0 in the outputs.
-pub fn validate_burntesttokens_spend(own_ref: OutputReference, tx: Transaction) {
-  trace @"validate_burntesttokens_spend"
-  let policy_id = get_policy_id(own_ref, tx.inputs)
-  let tokens_out = count_tokens_in_outputs(tx.outputs, policy_id)
-  (tokens_out == 0) ?
-}
-
 pub fn validate_spend(
   datum: Option<ChannelState>,
   redeemer: ElectionAction,
   own_ref: OutputReference,
   tx: Transaction,
-) {
+) -> Bool {
   trace @"validate_spend"
   let ada_retained = ada_retained_during_election(redeemer, own_ref, tx) ?
   ada_retained && when redeemer is {
-    BurnTestTokens -> validate_burntesttokens_spend(own_ref, tx)
+    BurnTestTokens -> tx_burns_all(own_ref, tx)
     InitElection ->
       validate_initelection_spend(datum, tx)
     AddSubChannels { .. } | AdvancePhase | EndElection ->
