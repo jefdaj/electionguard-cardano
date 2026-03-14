@@ -4,3 +4,4 @@
 
 from . import types
 from . import utils
+from .script import ElectionScript
