@@ -3,16 +3,16 @@
 from dataclasses import dataclass
 from typing import List, Union
 from pycardano import PlutusData
-from .channel_id import ChannelId
+from .channel_id import ChannelIdMixin
 
 @dataclass
 class InitElection(PlutusData):
     CONSTR_ID = 0
 
 @dataclass
-class AddSubChannels(PlutusData):
+class AddSubChannels(ChannelIdMixin, PlutusData):
     CONSTR_ID = 1
-    channels: List[ChannelId]
+    channels: List[bytes]
 
 @dataclass
 class AdvancePhase(PlutusData):
@@ -23,14 +23,14 @@ class EndElection(PlutusData):
     CONSTR_ID = 3
 
 @dataclass
-class RmSubChannels(PlutusData):
+class RmSubChannels(ChannelIdMixin, PlutusData):
     CONSTR_ID = 4
-    channels: List[ChannelId]
+    channels: List[bytes]
 
 @dataclass
-class RebalanceFunds(PlutusData):
+class RebalanceFunds(ChannelIdMixin, PlutusData):
     CONSTR_ID = 5
-    channels: List[ChannelId]
+    channels: List[bytes]
 
 @dataclass
 class PostPublicRecords(PlutusData):

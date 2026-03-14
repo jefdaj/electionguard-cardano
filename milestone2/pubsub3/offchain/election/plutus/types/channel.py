@@ -12,7 +12,7 @@ from .record import PublicRecord
 class AdminChannelState(PlutusData):
     CONSTR_ID = 0
     admin: bytes  # VerificationKeyHash
-    subchannels: List[ChannelId]
+    subchannels: List[bytes]
     new_records: List[PublicRecord]
     phase: ElectionPhase
     seq: int
@@ -33,7 +33,7 @@ class AdminChannelState(PlutusData):
 @dataclass
 class SubChannelState(PlutusData):
     CONSTR_ID = 0
-    channel_id: ChannelId
+    channel_id: bytes
     publisher: bytes   # VerificationKeyHash
     new_records: List[PublicRecord]
     seq: int

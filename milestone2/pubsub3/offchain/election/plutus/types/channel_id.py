@@ -1,6 +1,8 @@
 # Should be kept in sync with onchain/election/types/channel_id.ak
 
 import re
+from typing import List
+from pydantic.v1 import validator
 
 type ChannelId = bytes
 
@@ -28,9 +30,12 @@ class ChannelIdHelper:
     _REGEX = re.compile(r'^(admin|(guardian|device|verifier)([1-9]\d?|100))$')
 
     @staticmethod
+    def validate(channel_string: str) -> bool:
+        return ChannelIdHelper._REGEX.match(channel_string) is not None
+
+    @staticmethod
     def from_string(channel_string: str) -> bytes:
-        """Convert ChannelId string to bytes with validation."""
-        if not ChannelIdHelper._REGEX.match(channel_string):
+        if not ChannelIdHelper.validate(channel_string):
             raise ValueError(
                 f"Invalid ChannelId: '{channel_string}'. "
                 "Must be 'admin' or one of 'guardian', 'device', 'verifier' "
@@ -40,21 +45,45 @@ class ChannelIdHelper:
 
     @staticmethod
     def to_string(channel_bytes: bytes) -> str:
-        """Convert ChannelId bytes to string."""
         try:
             channel_string = channel_bytes.decode('utf-8')
         except UnicodeDecodeError:
-            raise ValueError(f"ChannelId bytes are not valid UTF-8: {channel_bytes.hex()}")
-        if not ChannelIdHelper._REGEX.match(channel_string):
+            raise ValueError(
+                f"ChannelId bytes are not valid UTF-8: {channel_bytes.hex()}"
+            )
+        if not ChannelIdHelper.validate(channel_string):
             raise ValueError(
                 f"Invalid ChannelId: '{channel_string}'. "
                 "Must be 'admin' or one of 'guardian', 'device', 'verifier' "
                 "followed by a number 1-100."
             )
-
         return channel_string
 
     @staticmethod
-    def validate(channel_bytes: bytes) -> None:
-        """Validate ChannelId format."""
-        ChannelIdHelper.to_string(channel_bytes)
+    def validate_bytes(channel_bytes: bytes) -> bool:
+        try:
+            channel_string = channel_bytes.decode('utf-8')
+            return ChannelIdHelper.validate(channel_string)
+        except UnicodeDecodeError:
+            return False
+
+class ChannelIdMixin:
+    """Mixin that validates channel_id fields (single or list)."""
+
+    @validator('channel_id', 'verifier_id', allow_reuse=True)
+    def validate_channel_id_field(cls, v):
+        ChannelIdHelper.to_string(v) # Validates and raises if invalid
+        return v
+
+    @validator('channels', 'subchannels', allow_reuse=True, each_item=True)
+    def validate_channels_list_items(cls, v):
+        ChannelIdHelper.to_string(v) # Validates and raises if invalid
+        return v
+
+    @validator('channels', 'subchannels', allow_reuse=True)
+    def validate_channels_list_constraints(cls, v):
+        if len(v) > 100: # TODO should there be a max?
+            raise ValueError(f"Too many channels: {len(v)} (max 100)")
+        if len(v) != len(set(v)):
+            raise ValueError("channels list contains duplicates")
+        return v

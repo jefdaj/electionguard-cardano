@@ -1,9 +1,11 @@
-# Should be kept in sync with onchain/validators/election/record.ak
+# Should be kept in sync with onchain/validators/election/types/record.ak
 
-from .ipfs_cid import IpfsCid, IpfsCidHelper
-from .channel import ChannelId
+from .ballot_id import BallotIdMixin
+from .channel import ChannelIdMixin
+from .ipfs_cid import IpfsCidHelper, IpfsCidMixin
 from dataclasses import dataclass
 from pycardano import PlutusData
+from pydantic.v1 import validator
 from typing import Union
 
 @dataclass
@@ -45,19 +47,19 @@ class Device(PlutusData):
     device_number: int
 
 @dataclass
-class BallotSubmitted(PlutusData):
+class BallotSubmitted(BallotIdMixin, PlutusData):
     CONSTR_ID = 8
-    ballot_id: bytes # TODO BallotId?
+    ballot_id: bytes
 
 @dataclass
-class CastNotice(PlutusData):
+class CastNotice(BallotIdMixin, PlutusData):
     CONSTR_ID = 9
-    ballot_id: bytes # TODO BallotId?
+    ballot_id: bytes
 
 @dataclass
-class BallotSpoiled(PlutusData):
+class BallotSpoiled(BallotIdMixin, PlutusData):
     CONSTR_ID = 10
-    ballot_id: bytes # TODO BallotId?
+    ballot_id: bytes
 
 @dataclass
 class CiphertextTally(PlutusData):
@@ -69,9 +71,9 @@ class TallyShare(PlutusData):
     guardian_number: int
 
 @dataclass
-class SpoiledShare(PlutusData):
+class SpoiledShare(BallotIdMixin, PlutusData):
     CONSTR_ID = 13
-    spoiled_id: bytes # TODO BallotId?
+    spoiled_id: bytes # TODO same ballot- prefix, right?
     guardian_number: int
 
 @dataclass
@@ -79,14 +81,14 @@ class PlaintextTally(PlutusData):
     CONSTR_ID = 14
 
 @dataclass
-class SpoiledResult(PlutusData):
+class SpoiledResult(BallotIdMixin, PlutusData):
     CONSTR_ID = 15
-    ballot_id: bytes # TODO BallotId?
+    ballot_id: bytes
 
 @dataclass
-class Summary(PlutusData):
+class Summary(ChannelIdMixin, PlutusData):
     CONSTR_ID = 16
-    verifier_id: ChannelId
+    verifier_id: bytes
 
 PublicRecordMetadata = Union[
     Manifest,
@@ -108,10 +110,11 @@ PublicRecordMetadata = Union[
     Summary,
 ]
 
+# TODO metadata mixin?
 @dataclass
-class PublicRecord(PlutusData):
+class PublicRecord(IpfsCidMixin, PlutusData):
     CONSTR_ID = 0
-    ipfs_cid: IpfsCid
+    ipfs_cid: bytes
     metadata: PublicRecordMetadata
 
     def __repr__(self):

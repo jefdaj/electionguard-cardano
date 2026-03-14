@@ -73,3 +73,16 @@ class IpfsCidHelper:
             raise ValueError(f"Must use SHA-256 hash type (0x12), got {cid_bytes[2]:#x}")
         if cid_bytes[3] != 0x20:
             raise ValueError(f"Must use 32-byte hash length (0x20), got {cid_bytes[3]:#x}")
+
+class IpfsCidMixin:
+    """Mixin that provides ipfs_cid validation via IpfsCidHelper."""
+
+    @validator('ipfs_cid', allow_reuse=True)
+    def validate_ipfs_cid_field(cls, v):
+        try:
+            ipfs_cid_str = v.decode('utf-8')
+            if not IpfsCidHelper.validate(ipfs_cid_str):
+                raise ValueError(f"Invalid CID format: {ipfs_cid_str}")
+        except UnicodeDecodeError:
+            raise ValueError("ipfs_cid must be valid UTF-8")
+        return v
