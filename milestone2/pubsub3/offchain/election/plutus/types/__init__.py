@@ -1,7 +1,6 @@
 # from .state import PubsubState
 
 from .action import (
-  ElectionAction,
   InitElection,
   AddSubChannels,
   AdvancePhase,
@@ -11,6 +10,7 @@ from .action import (
   PostPublicRecords,
   EndElection,
   BurnTestTokens,
+  ElectionAction,
 )
 
 from .cid import CIDv1
