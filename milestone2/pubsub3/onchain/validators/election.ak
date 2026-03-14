@@ -12,7 +12,7 @@ use election/types/action.{
 }
 use election/actions.{
   add_subchannels, rm_subchannels, post_public_records,
-  advance_phase,
+  advance_phase, rebalance_funds_admin, rebalance_funds_subchannel,
 }
 use election/fund.{ada_retained_during_election}
 use election/types/phase.{is_initial_phase, is_final_phase, is_valid_phase_transition}
@@ -295,12 +295,7 @@ fn validate_rebalancefunds_admin_spend(
   trace @"validate_rebalancefunds_admin_spend"
   expect AdminChannel(admin_cont_state) = cont_state
   let valid_transition = is_valid_phase_transition(admin_state.phase, admin_cont_state.phase) ?
-  // TODO factor out into actions module
-  let expected = AdminChannelState {
-    ..admin_state,
-    phase: admin_cont_state.phase,
-    seq: admin_state.seq + 1
-  }
+  let expected = rebalance_funds_admin(admin_state, admin_cont_state.phase)
   let cont_as_expected = (admin_cont_state == expected) ?
 
   // This check could go in validate_rebalancefunds_spend, but putting it here
@@ -330,11 +325,7 @@ fn validate_rebalancefunds_sub_spend(
   // channels list is correct.
   let valid_channel = list.has(channels, sub_state.channel_id) ?
 
-  // TODO factor out into actions module
-  let expected = SubChannelState {
-    ..sub_state,
-    seq: sub_state.seq + 1
-  }
+  let expected = rebalance_funds_subchannel(sub_state) 
   let cont_as_expected = (sub_cont_state == expected) ?
   valid_channel && cont_as_expected
 }

@@ -74,3 +74,18 @@ pub fn advance_phase(state: AdminChannelState, cont_phase: ElectionPhase) -> Adm
     seq: state.seq + 1
   }
 }
+
+pub fn rebalance_funds_admin(state: AdminChannelState, cont_phase: ElectionPhase) -> AdminChannelState {
+  AdminChannelState {
+    ..state,
+    phase: cont_phase,
+    seq: state.seq + 1
+  }
+}
+
+pub fn rebalance_funds_subchannel(state: SubChannelState) -> SubChannelState {
+  SubChannelState {
+    ..state,
+    seq: state.seq + 1
+  }
+}
