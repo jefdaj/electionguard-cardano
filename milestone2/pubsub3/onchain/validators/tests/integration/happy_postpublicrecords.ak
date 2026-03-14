@@ -10,7 +10,7 @@ use tests/mock
 
 pub const manifest = er.PublicRecord {
   // orig base32: bafkreiat5mhmsrevctm43qlv6aokrli3cdoj2aqyb34wsf6idybuvzwtua
-  cid: #"0155122013eb0ec9449514d9cdc175f01ca8ad1b10dc9d02180ef96917c81e034ae6d3a0",
+  ipfs_cid: #"0155122013eb0ec9449514d9cdc175f01ca8ad1b10dc9d02180ef96917c81e034ae6d3a0",
   metadata: er.Manifest,
 }
 

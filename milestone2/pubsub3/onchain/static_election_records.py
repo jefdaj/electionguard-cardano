@@ -54,7 +54,7 @@ def record(n, c, s, m):
     print(f"""
 pub const {n} = er.PublicRecord {{
   {c}
-  cid: {s},
+  ipfs_cid: {s},
   metadata: er.{m}
 }}""")
     return n

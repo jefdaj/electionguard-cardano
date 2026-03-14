@@ -1,7 +1,7 @@
 use aiken/primitive/bytearray
 use aiken/collection/list
 
-use election/types/ipfs_cid.{CIDv1, validate_cid}
+use election/types/ipfs_cid.{IpfsCid, validate_ipfs_cid}
 use election/types/ballot_id.{validate_ballot_id}
 
 // These aren't part of the ElectionGuard protocol as far as I know,
@@ -160,13 +160,13 @@ pub fn validate_metadata(metadata: PublicRecordMetadata) -> Bool {
 }
 
 pub type PublicRecord {
-  cid: CIDv1,
+  ipfs_cid: IpfsCid,
   metadata: PublicRecordMetadata
 }
 
 pub fn validate_record(record: PublicRecord) -> Bool {
   trace @"validate_record"
-  validate_metadata(record.metadata) && validate_cid(record.cid)
+  validate_metadata(record.metadata) && validate_ipfs_cid(record.ipfs_cid)
 }
 
 pub fn validate_records(records: List<PublicRecord>) -> Bool {
