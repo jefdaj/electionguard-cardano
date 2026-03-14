@@ -11,9 +11,9 @@ from .action import (
   ElectionAction,
 )
 
-from .ipfs_cid import IpfsCid, IpfsCidHelper
-
 from .channel import ChannelId, ChannelIdHelper
+
+from .ipfs_cid import IpfsCid, IpfsCidHelper
 
 from .record import (
   Manifest,
