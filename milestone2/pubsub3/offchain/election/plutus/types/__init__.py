@@ -36,3 +36,5 @@ from .record import (
   PublicRecordMetadata,
   PublicRecord,
 )
+
+from .state import ChannelId
