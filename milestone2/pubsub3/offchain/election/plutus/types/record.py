@@ -1,11 +1,9 @@
 # Should be kept in sync with onchain/validators/election/record.ak
 
-from pycardano import PlutusData
+from .channel import ChannelId
 from dataclasses import dataclass
+from pycardano import PlutusData
 from typing import Union
-
-# TODO move ChannelId to prevent circular import
-from .state import ChannelId
 
 # PublicRecordMetadata variants
 @dataclass

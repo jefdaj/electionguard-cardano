@@ -1,5 +1,3 @@
-# from .state import PubsubState
-
 from .action import (
   InitElection,
   AddSubChannels,
@@ -37,4 +35,4 @@ from .record import (
   PublicRecord,
 )
 
-from .state import ChannelId
+from .channel import ChannelId
