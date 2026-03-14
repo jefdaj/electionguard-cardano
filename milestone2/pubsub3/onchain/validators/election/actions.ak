@@ -65,3 +65,12 @@ pub fn post_public_records(
     ))
   }
 }
+
+pub fn advance_phase(state: AdminChannelState, cont_phase: ElectionPhase) -> AdminChannelState {
+  AdminChannelState {
+    ..state,
+    new_records: [],
+    phase: cont_phase,
+    seq: state.seq + 1
+  }
+}

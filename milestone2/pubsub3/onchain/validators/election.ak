@@ -12,6 +12,7 @@ use election/types/action.{
 }
 use election/actions.{
   add_subchannels, rm_subchannels, post_public_records,
+  advance_phase,
 }
 use election/fund.{ada_retained_during_election}
 use election/types/phase.{is_initial_phase, is_final_phase, is_valid_phase_transition}
@@ -76,7 +77,6 @@ pub fn validate_subchannel_mints(
   policy_id: PolicyId,
   tx: Transaction,
 ) -> Bool {
-  // TODO unify with admin_signed?
   trace @"validate_subchannel_mints"
   let admin_auth = admin_authorized_spend(tx, policy_id) ?
   admin_auth && when redeemer is {
@@ -187,13 +187,7 @@ fn validate_advancephase_spend(
   expect Some(AdminChannel(state)) = datum
   expect AdminChannel(cont_state) = get_continuation_state(datum, own_ref, tx)
   let valid_transition = is_valid_phase_transition(state.phase, cont_state.phase) ?
-  // TODO factor out to the actions module
-  let expected = AdminChannelState {
-    ..state,
-    new_records: [],
-    phase: cont_state.phase,
-    seq: state.seq + 1
-  }
+  let expected = advance_phase(state, cont_state.phase)
   // trace @"expected" : expected
   // trace @"cont_state" : cont_state
   let cont_as_expected = (cont_state == expected) ?
