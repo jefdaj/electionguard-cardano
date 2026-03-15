@@ -28,10 +28,11 @@ def get_status_icon(status):
     elif status in ["confirming", "fetching", "verifying"]:
         return "[cyan]●[/cyan]"
     elif status == "success":
-        return "[green]✓[/green]"
+        return "[green]✔[/green]"  # Heavy check mark (U+2714)
     elif status == "error":
-        return "[red]✗[/red]"
+        return "[red]✖[/red]"  # Heavy multiplication X (U+2716)
     return "?"
+
 
 def create_status_display(file_statuses):
     """Create a display showing all file statuses as individual lines."""
@@ -129,14 +130,14 @@ async def process_file(file_status, live):
 
         if not confirm_success:
             error_msg = file_status.confirm_error.split(": ", 1)[-1]
-            live.console.print(f"[red]✗[/red]     {file_status.filename}[red]: {error_msg}[/red]")
+            live.console.print(f"[red]✖[/red]     {file_status.filename}[red]: {error_msg}[/red]")
             file_status.completed = True
             return False
 
         # Success
         await asyncio.sleep(0.8)
         file_status.completed = True
-        live.console.print(f"[green]✓[/green]     {file_status.filename}")
+        live.console.print(f"[green]✔[/green]     {file_status.filename}")
         return True
 
     # Original file processing logic
@@ -154,7 +155,7 @@ async def process_file(file_status, live):
 
         confirm_icon = get_status_icon(file_status.confirm_status)
         error_msg = ", ".join(errors)
-        live.console.print(f"{confirm_icon} [red]✗[/red]   {file_status.filename}[red]: {error_msg}[/red]")
+        live.console.print(f"{confirm_icon} [red]✖[/red]   {file_status.filename}[red]: {error_msg}[/red]")
 
         file_status.completed = True
         return False
@@ -171,7 +172,7 @@ async def process_file(file_status, live):
 
         confirm_icon = get_status_icon(file_status.confirm_status)
         error_msg = ", ".join(errors)
-        live.console.print(f"{confirm_icon} [green]✓[/green] [red]✗[/red] {file_status.filename}[red]: {error_msg}[/red]")
+        live.console.print(f"{confirm_icon} [green]✔[/green] [red]✖[/red] {file_status.filename}[red]: {error_msg}[/red]")
 
         file_status.completed = True
         return False
@@ -180,13 +181,13 @@ async def process_file(file_status, live):
 
     if not confirm_success:
         error_msg = file_status.confirm_error.split(": ", 1)[-1]
-        live.console.print(f"[red]✗[/red] [green]✓[/green] [green]✓[/green] {file_status.filename}[red]: {error_msg}[/red]")
+        live.console.print(f"[red]✖[/red] [green]✔[/green] [green]✔[/green] {file_status.filename}[red]: {error_msg}[/red]")
         file_status.completed = True
         return False
 
     await asyncio.sleep(0.8)
     file_status.completed = True
-    live.console.print(f"[green]✓ ✓ ✓[/green] {file_status.filename}")
+    live.console.print(f"[green]✔ ✔ ✔[/green] {file_status.filename}")
 
     return True
 
