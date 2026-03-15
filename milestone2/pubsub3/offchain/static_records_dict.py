@@ -57,34 +57,23 @@ def guardian_verification(n, j, s):
     i = int(j["guardian_id"].split('_')[-1])
     b = int(j["backup_order"])
     m = types.GuardianVerification(guardian_number=i, backup_order=b)
-    r = types.PublicRecord(ipfs_cid=s, metadata=m)
-    return r
-
+    return types.PublicRecord(ipfs_cid=s, metadata=m)
 
 def summary(n, j, s):
     i = j["verifier_id"].replace('_', '') # TODO leave underscore?
-    n = f'{i}_summary'
-    i = f'to_bytearray(@"{i}")' # TODO remove?
-    m = f'Summary {{ verifier_id: {i} }}'
-    return record(n, s, m)
+    m = types.Summary(verifier_id=i)
+    return types.PublicRecord(ipfs_cid=s, metadata=m)
 
 def tally_share(n, j, s):
     i = int(j["guardian_id"].split('_')[-1])
-    m = f'TallyShare {{ guardian_number: {i} }}'
-    n = f'guardian{i}_tally_share'
-    return record(n, s, m)
+    m = types.TallyShare(guardian_number=i)
+    return types.PublicRecord(ipfs_cid=s, metadata=m)
 
 def spoiled_share(n, j, s):
-    n = ballot_name('spoiled_share', j, 'spoiled_id')
     i = int(j["guardian_id"].split('_')[-1])
-    n = f'guardian{i}_{n}'
     i2 = j["spoiled_id"]
-    i2 = f'to_bytearray(@"{i2}")' # TODO remove?
-    m = f'''SpoiledShare {{
-    guardian_number: {i},
-    spoiled_id: {i2},
-  }}'''
-    return record(n, s, m)
+    m = types.SpoiledShare(guardian_number=i, spoiled_id=i2)
+    return types.PublicRecord(ipfs_cid=s, metadata=m)
 
 def joint_key(n, j, s):
     m = types.JointKey()
@@ -95,12 +84,12 @@ def constants(n, j, s):
     return types.PublicRecord(ipfs_cid=s, metadata=m)
 
 def ciphertext_tally(n, j, s):
-    m = 'CiphertextTally'
-    return record(n, s, m)
+    m = types.CiphertextTally()
+    return types.PublicRecord(ipfs_cid=s, metadata=m)
 
 def plaintext_tally(n, j, s):
-    m = 'PlaintextTally'
-    return record(n, s, m)
+    m = types.PlaintextTally()
+    return types.PublicRecord(ipfs_cid=s, metadata=m)
 
 def device(n, j, s):
     i = int(j["device_number"])
@@ -114,32 +103,23 @@ def ballot_name(prefix, j, key='ballot_id'):
 
 def ballot_submitted(n, j, s):
     i = j["ballot_id"]
-    n = ballot_name('ballot_submitted', j)
-    i = f'to_bytearray(@"{i}")'
-    m = f'BallotSubmitted {{ ballot_id: {i} }}'
-    return record(n, s, m)
+    m = types.BallotSubmitted(ballot_id=i)
+    return types.PublicRecord(ipfs_cid=s, metadata=m)
 
 def spoiled_result(n, j, s):
     i = j["ballot_id"]
-    n = ballot_name('spoiled_result', j)
-    i = f'to_bytearray(@"{i}")'
-    m = f'SpoiledResult {{ ballot_id: {i} }}'
-    return record(n, s, m)
-
+    m = types.SpoiledResult(ballot_id=i)
+    return types.PublicRecord(ipfs_cid=s, metadata=m)
 
 def ballot_spoiled(n, j, s):
     i = j["ballot_id"]
-    n = ballot_name('ballot_spoiled', j)
-    i = f'to_bytearray(@"{i}")'
-    m = f'BallotSpoiled {{ ballot_id: {i} }}'
-    return record(n, s, m)
+    m = types.BallotSpoiled(ballot_id=i)
+    return types.PublicRecord(ipfs_cid=s, metadata=m)
 
 def cast_notice(n, j, s):
     i = j["ballot_id"]
-    n = ballot_name('cast_notice', j)
-    i = f'to_bytearray(@"{i}")'
-    m = f'CastNotice {{ ballot_id: {i} }}'
-    return record(n, s, m)
+    m = types.CastNotice(ballot_id=i)
+    return types.PublicRecord(ipfs_cid=s, metadata=m)
 
 render_fns = [
     manifest,
@@ -151,15 +131,15 @@ render_fns = [
     constants,
     # TODO context?
     device,
-    # ballot_submitted,
-    # ballot_spoiled,
-    # cast_notice,
-    # ciphertext_tally,
-    # tally_share,
-    # spoiled_share,
-    # plaintext_tally,
-    # spoiled_result,
-    # summary,
+    ballot_submitted,
+    ballot_spoiled,
+    cast_notice,
+    ciphertext_tally,
+    tally_share,
+    spoiled_share,
+    plaintext_tally,
+    spoiled_result,
+    summary,
 ]
 
 ITEMS = []
