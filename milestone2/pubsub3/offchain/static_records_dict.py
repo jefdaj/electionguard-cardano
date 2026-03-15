@@ -31,20 +31,24 @@ with open(IN_LOG, 'r') as f:
     JSONS = [json.loads(j) for j in json_strs]
 
 def manifest(n, j, s):
-    # return record(n, s, m)
     m = election.plutus.types.Manifest()
     r = election.plutus.types.PublicRecord(ipfs_cid=s, metadata=m)
     return r
 
 def ceremony_details(n, j, s):
-    m = 'CeremonyDetails'
-    return record(n, s, m)
+    m = election.plutus.types.CeremonyDetails()
+    r = election.plutus.types.PublicRecord(ipfs_cid=s, metadata=m)
+    return r
 
 def guardian_pubkey(n, j, s):
     i = int(j["guardian_id"].split('_')[-1])
-    m = f'GuardianPubkey {{ guardian_number: {i} }}'
-    n = f'guardian{i}_pubkey'
-    return record(n, s, m)
+    # m = f'GuardianPubkey {{ guardian_number: {i} }}'
+    # n = f'guardian{i}_pubkey'
+    # return record(n, s, m)
+    m = election.plutus.types.GuardianPubkey(i)
+    r = election.plutus.types.PublicRecord(ipfs_cid=s, metadata=m)
+    return r
+
 
 def summary(n, j, s):
     i = j["verifier_id"].replace('_', '') # TODO leave underscore?
@@ -143,8 +147,8 @@ def cast_notice(n, j, s):
 
 render_fns = [
     manifest,
-    # ceremony_details,
-    # guardian_pubkey,
+    ceremony_details,
+    guardian_pubkey,
     # guardian_backup,
     # guardian_verification,
     # joint_key,
@@ -169,10 +173,9 @@ for fn in render_fns:
         cid_str = j["cid"]
         fn_name = fn.__name__
         if j["record_type"] == fn.__name__:
-            print(json.dumps(j, indent=2))
+            # print(json.dumps(j, indent=2))
             item = fn(fn_name, j, cid_str)
             ITEMS.append(item)
         # print(j["record_type"])
 
-# pprint(ITEMS)
-print(ITEMS)
+pprint(ITEMS)
