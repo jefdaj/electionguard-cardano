@@ -62,11 +62,7 @@
         watchdog
         pytest
         py-multiformats-cid # exposed on its own to help generate static CID examples
-
-        # try some progress bars
         rich
-        alive-progress
-        enlighten
       ];
 
       kupo = pkgs.callPackage ./nix/kupo.nix {};
