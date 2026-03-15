@@ -74,12 +74,12 @@ def create_status_display(file_statuses):
 
             lines.append(line)
 
-    return "\n".join(lines) if lines else "[dim]No files currently processing...[/dim]"
+    return "\n".join(lines) if lines else ""
 
 async def simulate_confirm(file_status):
     """Simulate confirming hash on chain."""
     file_status.confirm_status = "confirming"
-    await asyncio.sleep(random.uniform(20, 60))
+    await asyncio.sleep(random.uniform(3, 9))
 
     # 10% chance of failure
     if random.random() < 0.1:
@@ -230,8 +230,12 @@ async def main():
         FileStatus("end election", onchain_only=True),
     ]
 
-    console.print("[cyan]Starting verifier...[/cyan]\n")
+    console.print("Connected to Cardano node")
+    console.print("Connected to IPFS node")
+    console.print("Enter election info:")
+    console.print("Running verifier...\n")
 
+    # TODO probably only need 1 refresh per second?
     with Live(create_status_display(items), console=console, refresh_per_second=10) as live:
         semaphore = asyncio.Semaphore(6) # TODO raise pretty high and assume TXs are the bottleneck
 
@@ -249,7 +253,7 @@ async def main():
 
         await asyncio.gather(update_display(), *tasks)
 
-    console.print("\n[cyan]Process complete![/cyan]")
+    console.print("Verification complete.")
     successful = sum(1 for fs in items if
                     (fs.onchain_only and fs.confirm_status == "success") or
                     (not fs.onchain_only and fs.confirm_status == "success" and
