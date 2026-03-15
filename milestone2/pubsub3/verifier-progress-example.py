@@ -7,6 +7,7 @@ from rich.text import Text
 
 console = Console()
 
+# TODO also add a local_only option for verification messages from the script itself
 class FileStatus:
     def __init__(self, filename, onchain_only=False):
         self.filename = filename
