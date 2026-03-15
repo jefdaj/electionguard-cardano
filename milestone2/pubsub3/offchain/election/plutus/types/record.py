@@ -118,6 +118,6 @@ class PublicRecord(IpfsCidMixin, PlutusData):
     metadata: PublicRecordMetadata
 
     def __repr__(self):
-        t = type(self.metadata).__name__
-        c = IpfsCidHelper.to_string(self.cid)
-        f"{t}(cid={c})"
+        m = type(self.metadata).__name__ + '()'
+        c = IpfsCidHelper.to_string(self.ipfs_cid)
+        return f"PublicRecord(ipfs_cid={c}, metadata={m})"

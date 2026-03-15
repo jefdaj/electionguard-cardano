@@ -11,7 +11,7 @@
 # exit
 #
 # nix develop .#egsync
-# ../pubsub3/onchain/static_election_records.py > ../pubsub3/onchain/validators/tests/data/static_election_records.ak
+# ../pubsub3/onchain/static_records_ak.py > ../pubsub3/onchain/validators/tests/data/static_election_records.ak
 
 from multiformats_cid import cid, make_cid
 from pathlib import Path
@@ -21,7 +21,7 @@ import re
 IN_DIR = 'static_election_records'
 IN_LOG = Path(IN_DIR) / 'egsync.log'
 
-print('''// Generated with static_election_records.py
+print('''// Generated with static_records.py
 // Consider editing and re-running that to make changes.
 
 use aiken/primitive/string.{to_bytearray}
