@@ -33,68 +33,85 @@ with open(IN_LOG, 'r') as f:
 def manifest(n, j, s):
     m = types.Manifest()
     r = types.PublicRecord(ipfs_cid=s, metadata=m)
-    return r
+    return (1, r)
 
 def ceremony_details(n, j, s):
     m = types.CeremonyDetails()
     r = types.PublicRecord(ipfs_cid=s, metadata=m)
-    return r
+    return (1, r)
 
 def guardian_pubkey(n, j, s):
     i = int(j["guardian_id"].split('_')[-1])
     m = types.GuardianPubkey(i)
     r = types.PublicRecord(ipfs_cid=s, metadata=m)
-    return r
+    return (1, r)
 
 def guardian_backup(n, j, s):
     i = int(j["guardian_id"].split('_')[-1])
     b = int(j["backup_order"])
     m = types.GuardianBackup(guardian_number=i, backup_order=b)
     r = types.PublicRecord(ipfs_cid=s, metadata=m)
-    return r
+    return (2, r)
 
 def guardian_verification(n, j, s):
     i = int(j["guardian_id"].split('_')[-1])
     b = int(j["backup_order"])
     m = types.GuardianVerification(guardian_number=i, backup_order=b)
-    return types.PublicRecord(ipfs_cid=s, metadata=m)
+    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    return (3, r)
 
 def summary(n, j, s):
     i = j["verifier_id"].replace('_', '') # TODO leave underscore?
     m = types.Summary(verifier_id=i)
-    return types.PublicRecord(ipfs_cid=s, metadata=m)
+    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    seqs = {
+        'admin': 7,
+        'guardian': 5,
+        'verifier': 1,
+    }
+    for role in seqs.keys():
+        if role in i:
+            s = seqs[role]
+    return (s, r)
 
 def tally_share(n, j, s):
     i = int(j["guardian_id"].split('_')[-1])
     m = types.TallyShare(guardian_number=i)
-    return types.PublicRecord(ipfs_cid=s, metadata=m)
+    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    return (4, r)
 
 def spoiled_share(n, j, s):
     i = int(j["guardian_id"].split('_')[-1])
     i2 = j["spoiled_id"]
     m = types.SpoiledShare(guardian_number=i, spoiled_id=i2)
-    return types.PublicRecord(ipfs_cid=s, metadata=m)
+    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    return (4, r)
 
 def joint_key(n, j, s):
     m = types.JointKey()
-    return types.PublicRecord(ipfs_cid=s, metadata=m)
+    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    return (3, r)
 
 def constants(n, j, s):
     m = types.Constants()
-    return types.PublicRecord(ipfs_cid=s, metadata=m)
+    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    return (3, r)
 
 def ciphertext_tally(n, j, s):
     m = types.CiphertextTally()
-    return types.PublicRecord(ipfs_cid=s, metadata=m)
+    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    return (5, r)
 
 def plaintext_tally(n, j, s):
     m = types.PlaintextTally()
-    return types.PublicRecord(ipfs_cid=s, metadata=m)
+    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    return (6, r)
 
 def device(n, j, s):
     i = int(j["device_number"])
     m = types.Device(device_number=i)
-    return types.PublicRecord(ipfs_cid=s, metadata=m)
+    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    return (1, r)
 
 def ballot_name(prefix, j, key='ballot_id'):
     i = j[key]
@@ -104,22 +121,26 @@ def ballot_name(prefix, j, key='ballot_id'):
 def ballot_submitted(n, j, s):
     i = j["ballot_id"]
     m = types.BallotSubmitted(ballot_id=i)
-    return types.PublicRecord(ipfs_cid=s, metadata=m)
+    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    return (2, r)
 
 def spoiled_result(n, j, s):
     i = j["ballot_id"]
     m = types.SpoiledResult(ballot_id=i)
-    return types.PublicRecord(ipfs_cid=s, metadata=m)
+    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    return (6, r)
 
 def ballot_spoiled(n, j, s):
     i = j["ballot_id"]
     m = types.BallotSpoiled(ballot_id=i)
-    return types.PublicRecord(ipfs_cid=s, metadata=m)
+    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    return (3, r)
 
 def cast_notice(n, j, s):
     i = j["ballot_id"]
     m = types.CastNotice(ballot_id=i)
-    return types.PublicRecord(ipfs_cid=s, metadata=m)
+    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    return (3, r)
 
 render_fns = [
     manifest,
@@ -143,7 +164,9 @@ render_fns = [
 ]
 
 # block: role: (ElectionAction, List[PublicRecord])
-TXS = {}
+TXS = {
+        'admin': {0: (types.InitElection(), [])}
+}
 
 for fn in render_fns:
     for j in JSONS:
@@ -155,11 +178,13 @@ for fn in render_fns:
         fn_name = fn.__name__
         if j["record_type"] == fn.__name__:
             # print(json.dumps(j, indent=2))
-            records = fn(fn_name, j, cid_str)
+            (seq, records) = fn(fn_name, j, cid_str)
             item = (types.PostPublicRecords(), records)
             if not channel in TXS:
-                TXS[channel] = []
-            TXS[channel].append(item)
+                TXS[channel] = {}
+            if not seq in TXS[channel]:
+                TXS[channel][seq] = []
+            TXS[channel][seq].append(item)
         # print(j["record_type"])
 
 pprint(TXS, width=250)
