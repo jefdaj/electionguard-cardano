@@ -46,6 +46,20 @@ def guardian_pubkey(n, j, s):
     r = types.PublicRecord(ipfs_cid=s, metadata=m)
     return r
 
+def guardian_backup(n, j, s):
+    i = int(j["guardian_id"].split('_')[-1])
+    b = int(j["backup_order"])
+    m = types.GuardianBackup(guardian_number=i, backup_order=b)
+    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    return r
+
+def guardian_verification(n, j, s):
+    i = int(j["guardian_id"].split('_')[-1])
+    b = int(j["backup_order"])
+    m = types.GuardianVerification(guardian_number=i, backup_order=b)
+    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    return r
+
 
 def summary(n, j, s):
     i = j["verifier_id"].replace('_', '') # TODO leave underscore?
@@ -70,20 +84,6 @@ def spoiled_share(n, j, s):
     guardian_number: {i},
     spoiled_id: {i2},
   }}'''
-    return record(n, s, m)
-
-def guardian_backup(n, j, s):
-    i = int(j["guardian_id"].split('_')[-1])
-    b = int(j["backup_order"])
-    m = f'GuardianBackup {{ guardian_number: {i}, backup_order: {b} }}'
-    n = f'guardian{i}_backup{b}'
-    return record(n, s, m)
-
-def guardian_verification(n, j, s):
-    i = int(j["guardian_id"].split('_')[-1])
-    b = int(j["backup_order"])
-    m = f'GuardianVerification {{ guardian_number: {i}, backup_order: {b} }}'
-    n = f'guardian{i}_verification{b}'
     return record(n, s, m)
 
 def joint_key(n, j, s):
@@ -146,8 +146,8 @@ render_fns = [
     manifest,
     ceremony_details,
     guardian_pubkey,
-    # guardian_backup,
-    # guardian_verification,
+    guardian_backup,
+    guardian_verification,
     # joint_key,
     # constants,
     # TODO context?
@@ -175,4 +175,4 @@ for fn in render_fns:
             ITEMS.append(item)
         # print(j["record_type"])
 
-pprint(ITEMS)
+pprint(ITEMS, width=200)
