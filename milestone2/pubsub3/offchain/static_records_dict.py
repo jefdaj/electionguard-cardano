@@ -87,12 +87,12 @@ def spoiled_share(n, j, s):
     return record(n, s, m)
 
 def joint_key(n, j, s):
-    m = 'JointKey'
-    return record(n, s, m)
+    m = types.JointKey()
+    return types.PublicRecord(ipfs_cid=s, metadata=m)
 
 def constants(n, j, s):
-    m = 'Constants'
-    return record(n, s, m)
+    m = types.Constants()
+    return types.PublicRecord(ipfs_cid=s, metadata=m)
 
 def ciphertext_tally(n, j, s):
     m = 'CiphertextTally'
@@ -104,9 +104,8 @@ def plaintext_tally(n, j, s):
 
 def device(n, j, s):
     i = int(j["device_number"])
-    m = f'Device {{ device_number: {i} }}'
-    n = f'device{i}'
-    return record(n, s, m)
+    m = types.Device(device_number=i)
+    return types.PublicRecord(ipfs_cid=s, metadata=m)
 
 def ballot_name(prefix, j, key='ballot_id'):
     i = j[key]
@@ -148,10 +147,10 @@ render_fns = [
     guardian_pubkey,
     guardian_backup,
     guardian_verification,
-    # joint_key,
-    # constants,
+    joint_key,
+    constants,
     # TODO context?
-    # device,
+    device,
     # ballot_submitted,
     # ballot_spoiled,
     # cast_notice,
