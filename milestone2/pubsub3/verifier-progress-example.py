@@ -7,13 +7,13 @@ from rich.text import Text
 
 console = Console()
 
-# TODO also add a local_only option for verification messages from the script itself
 class FileStatus:
-    def __init__(self, filename, onchain_only=False):
+    def __init__(self, filename, onchain_only=False, local_only=False):
         self.filename = filename
         self.onchain_only = onchain_only  # True for blockchain events
-        self.confirm_status = "pending"  # pending, confirming, success, error
-        self.fetch_status = "pending" if not onchain_only else None
+        self.local_only = local_only  # True for local script messages
+        self.confirm_status = "pending" if not local_only else None
+        self.fetch_status = "pending" if not (onchain_only or local_only) else None
         self.verify_status = "pending" if not onchain_only else None
         self.confirm_error = None
         self.fetch_error = None
@@ -38,16 +38,21 @@ def create_status_display(file_statuses):
     """Create a display showing all file statuses as individual lines."""
     lines = []
 
-    # Only show files that have started and haven't been completed yet
     for fs in file_statuses:
         if fs.started and not fs.completed:
             if fs.onchain_only:
-                # For message-only items, only show confirm status
+                # For onchain-only items, only show confirm status
                 line = f"{get_status_icon(fs.confirm_status)}     {fs.filename}"
 
-                # Append error message if there is one
                 if fs.confirm_error:
                     error_msg = fs.confirm_error.split(": ", 1)[-1]
+                    line += f"[red]: {error_msg}[/red]"
+            elif fs.local_only:
+                # For local-only items, only show verify status
+                line = f"    {get_status_icon(fs.verify_status)} {fs.filename}"
+
+                if fs.verify_error:
+                    error_msg = fs.verify_error.split(": ", 1)[-1]
                     line += f"[red]: {error_msg}[/red]"
             else:
                 # Original file processing logic
@@ -63,7 +68,6 @@ def create_status_display(file_statuses):
 
                 line = f"{get_status_icon(fs.confirm_status)} {fetch_icon} {verify_icon} {fs.filename}"
 
-                # Append error message if there is one
                 if fs.confirm_error:
                     error_msg = fs.confirm_error.split(": ", 1)[-1]
                     line += f"[red]: {error_msg}[/red]"
@@ -114,7 +118,7 @@ async def simulate_verify(file_status):
     # 15% chance of failure
     if random.random() < 0.15:
         file_status.verify_status = "error"
-        file_status.verify_error = f"Verification failed for {file_status.filename}: Checksum mismatch"
+        file_status.verify_error = f"Verification failed for {file_status.filename}: Failed local verification"
         return False
 
     file_status.verify_status = "success"
@@ -124,7 +128,7 @@ async def process_file(file_status, live):
     """Process a single file with confirmation parallel to fetch+verify."""
     file_status.started = True
 
-    # For message-only items, just confirm
+    # For onchain-only items, just confirm
     if file_status.onchain_only:
         confirm_success = await simulate_confirm(file_status)
 
@@ -134,10 +138,24 @@ async def process_file(file_status, live):
             file_status.completed = True
             return False
 
-        # Success
         await asyncio.sleep(0.8)
         file_status.completed = True
         live.console.print(f"[green]✔[/green]     {file_status.filename}")
+        return True
+
+    # For local-only items, just verify
+    if file_status.local_only:
+        verify_success = await simulate_verify(file_status)
+
+        if not verify_success:
+            error_msg = file_status.verify_error.split(": ", 1)[-1]
+            live.console.print(f"    [red]✖[/red] {file_status.filename}[red]: {error_msg}[/red]")
+            file_status.completed = True
+            return False
+
+        await asyncio.sleep(0.8)
+        file_status.completed = True
+        live.console.print(f"    [green]✔[/green] {file_status.filename}")
         return True
 
     # Original file processing logic
@@ -217,6 +235,7 @@ async def main():
         FileStatus("model_weights_4.pkl"),
         FileStatus("model_weights_5.pkl"),
         FileStatus("advance to phase 4", onchain_only=True),
+        FileStatus("ballot sets: submitted == (cast + spoiled)", local_only=True),
         FileStatus("tally"),
         FileStatus("decrypted tally"),
         FileStatus("admin summary"),
@@ -230,6 +249,7 @@ async def main():
         FileStatus("rm subchannel device1", onchain_only=True),
         FileStatus("rm subchannel verifier1", onchain_only=True),
         FileStatus("end election", onchain_only=True),
+        FileStatus("all summaries match local results", local_only=True),
     ]
 
     console.print("Connected to Cardano node")
