@@ -1,3 +1,9 @@
+# Generated with static_records_dict.py
+# Consider editing and re-running that to make changes.
+
+from election.plutus.types import *
+
+STATIC_RECORDS = \
 [PublicRecord(ipfs_cid='bafkreiat5mhmsrevctm43qlv6aokrli3cdoj2aqyb34wsf6idybuvzwtua', metadata=Manifest()),
  PublicRecord(ipfs_cid='bafkreiampwehpnmfwiexflsuqrmythwm5y7b375ypjt64qbwtx5altmrby', metadata=CeremonyDetails()),
  PublicRecord(ipfs_cid='bafkreifgfszdehl7ibjxlxa6crbwa5efjb54l42w6pinvxkaysq2jmd7rm', metadata=GuardianPubkey(guardian_number=3)),

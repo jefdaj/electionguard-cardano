@@ -14,11 +14,12 @@ from pprint import pprint
 IN_DIR = 'static_election_records'
 IN_LOG = Path(IN_DIR) / 'egsync.log'
 
-# print('''# Generated with static_records_dict.py
-# // Consider editing and re-running that to make changes.
-# 
-# use aiken/primitive/string.{to_bytearray}
-# use election/types/record as er''')
+print('''# Generated with static_records_dict.py
+# Consider editing and re-running that to make changes.
+
+from election.plutus.types import *
+
+STATIC_RECORDS = \\''')
 
 VARS = {}
 
