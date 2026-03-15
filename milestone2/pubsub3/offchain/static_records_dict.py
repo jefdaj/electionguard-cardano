@@ -14,14 +14,13 @@ from pprint import pprint
 IN_DIR = 'static_election_records'
 IN_LOG = Path(IN_DIR) / 'egsync.log'
 
+# TODO rename static_tx_dict.py
 print('''# Generated with static_records_dict.py
 # Consider editing and re-running that to make changes.
 
 from election.plutus.types import *
 
-STATIC_RECORDS = \\''')
-
-VARS = {}
+STATIC_TRANSACTIONS = \\''')
 
 with open(IN_LOG, 'r') as f:
     lines = f.readlines()
@@ -143,16 +142,22 @@ render_fns = [
     summary,
 ]
 
-ITEMS = []
+# block: role: (ElectionAction, List[PublicRecord])
+TXS = []
 
 for fn in render_fns:
     for j in JSONS:
+        channel = j["mockchain_channel"]
+        if channel == 'admin_1':
+            channel = 'admin'
+        # print(channel)
         cid_str = j["cid"]
         fn_name = fn.__name__
         if j["record_type"] == fn.__name__:
             # print(json.dumps(j, indent=2))
-            item = fn(fn_name, j, cid_str)
-            ITEMS.append(item)
+            records = fn(fn_name, j, cid_str)
+            item = (types.PostPublicRecords(), records)
+            TXS.append(item)
         # print(j["record_type"])
 
-pprint(ITEMS, width=200)
+pprint(TXS, width=200)
