@@ -6,8 +6,8 @@
 # nix develop
 # sudo rm -r data
 # ./election.sh
-# sudo cp -r ./data/private/verifier_1/egsync ./aiken_static_data
-# sudo chown $(whoami) ./aiken_static_data -R
+# sudo cp -r ./data/private/verifier_1/egsync ./static_election_records
+# sudo chown $(whoami) ./static_election_records -R
 # exit
 #
 # nix develop .#egsync
