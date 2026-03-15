@@ -4,7 +4,7 @@
 # nix develop .#offchain
 # ./static_records_dict.py > static_election_records_dict_out.py
 
-import election
+from election.plutus import types
 from multiformats_cid import cid, make_cid
 from pathlib import Path
 import json
@@ -31,22 +31,19 @@ with open(IN_LOG, 'r') as f:
     JSONS = [json.loads(j) for j in json_strs]
 
 def manifest(n, j, s):
-    m = election.plutus.types.Manifest()
-    r = election.plutus.types.PublicRecord(ipfs_cid=s, metadata=m)
+    m = types.Manifest()
+    r = types.PublicRecord(ipfs_cid=s, metadata=m)
     return r
 
 def ceremony_details(n, j, s):
-    m = election.plutus.types.CeremonyDetails()
-    r = election.plutus.types.PublicRecord(ipfs_cid=s, metadata=m)
+    m = types.CeremonyDetails()
+    r = types.PublicRecord(ipfs_cid=s, metadata=m)
     return r
 
 def guardian_pubkey(n, j, s):
     i = int(j["guardian_id"].split('_')[-1])
-    # m = f'GuardianPubkey {{ guardian_number: {i} }}'
-    # n = f'guardian{i}_pubkey'
-    # return record(n, s, m)
-    m = election.plutus.types.GuardianPubkey(i)
-    r = election.plutus.types.PublicRecord(ipfs_cid=s, metadata=m)
+    m = types.GuardianPubkey(i)
+    r = types.PublicRecord(ipfs_cid=s, metadata=m)
     return r
 
 
