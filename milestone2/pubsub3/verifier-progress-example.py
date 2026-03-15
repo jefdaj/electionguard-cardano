@@ -34,7 +34,7 @@ def get_status_icon(status):
 def create_status_display(file_statuses):
     """Create a display showing all file statuses as individual lines."""
     lines = []
-    
+
     # Only show files that have started and haven't been completed yet
     for fs in file_statuses:
         if fs.started and not fs.completed:
@@ -49,10 +49,10 @@ def create_status_display(file_statuses):
             else:
                 fetch_icon = get_status_icon(fs.fetch_status)
                 verify_icon = get_status_icon(fs.verify_status)
-            
+
             # Build the base line
             line = f"{get_status_icon(fs.confirm_status)} {fetch_icon} {verify_icon} {fs.filename}"
-            
+
             # Append error message if there is one
             if fs.confirm_error:
                 error_msg = fs.confirm_error.split(": ", 1)[-1]
@@ -63,36 +63,36 @@ def create_status_display(file_statuses):
             elif fs.verify_error:
                 error_msg = fs.verify_error.split(": ", 1)[-1]
                 line += f"[red]: {error_msg}[/red]"
-            
+
             lines.append(line)
-    
+
     return "\n".join(lines) if lines else "[dim]No files currently processing...[/dim]"
 
 async def simulate_confirm(file_status):
     """Simulate confirming hash on chain."""
     file_status.confirm_status = "confirming"
-    await asyncio.sleep(random.uniform(0.3, 1.5))
-    
+    await asyncio.sleep(random.uniform(20, 60))
+
     # 10% chance of failure
     if random.random() < 0.1:
         file_status.confirm_status = "error"
         file_status.confirm_error = f"Hash confirmation failed for {file_status.filename}: Transaction not found"
         return False
-    
+
     file_status.confirm_status = "success"
     return True
 
 async def simulate_download(file_status):
     """Simulate downloading a file via IPFS."""
     file_status.fetch_status = "fetching"
-    await asyncio.sleep(random.uniform(0.5, 2.0))
-    
+    await asyncio.sleep(random.uniform(1, 10))
+
     # 20% chance of failure
     if random.random() < 0.2:
         file_status.fetch_status = "error"
         file_status.fetch_error = f"Failed to fetch {file_status.filename}: IPFS timeout"
         return False
-    
+
     file_status.fetch_status = "success"
     return True
 
@@ -100,51 +100,52 @@ async def simulate_verify(file_status):
     """Simulate verifying a file."""
     file_status.verify_status = "verifying"
     await asyncio.sleep(random.uniform(0.3, 1.5))
-    
+
     # 15% chance of failure
     if random.random() < 0.15:
         file_status.verify_status = "error"
         file_status.verify_error = f"Verification failed for {file_status.filename}: Checksum mismatch"
         return False
-    
+
     file_status.verify_status = "success"
     return True
 
 async def process_file(file_status, live):
-    """Process a single file (confirm, download, and verify)."""
-    # Mark as started so it appears in the display
+    """Process a single file with confirmation parallel to fetch+verify."""
     file_status.started = True
-    
-    # Confirm phase
-    confirm_success = await simulate_confirm(file_status)
-    
-    if not confirm_success:
-        # Error is now shown inline, no separate log line
-        return False
-    
-    # Download phase (only if confirm succeeded)
+
+    # Start confirmation task (runs independently)
+    confirm_task = asyncio.create_task(simulate_confirm(file_status))
+
+    # Start fetch→verify chain (runs independently until fetch completes)
     download_success = await simulate_download(file_status)
     
     if not download_success:
-        # Error is now shown inline, no separate log line
+        # Fetch failed - wait for confirm to finish before returning
+        await confirm_task
         return False
-    
-    # Verify phase (only if download succeeded)
+
+    # Fetch succeeded, now verify (depends on fetch)
     verify_success = await simulate_verify(file_status)
-    
+
     if not verify_success:
-        # Error is now shown inline, no separate log line
+        # Verify failed - wait for confirm to finish before returning
+        await confirm_task
         return False
-    
-    # If we got here, all three phases succeeded
-    # Show the success state briefly before removing
-    await asyncio.sleep(0.8)  # Short delay so user can see the success
-    
-    # Mark as completed and log it with the same checkmark format
+
+    # Both chains succeeded - wait for confirmation if it's still running
+    confirm_success = await confirm_task
+
+    if not confirm_success:
+        return False
+
+    # All three phases succeeded
+    await asyncio.sleep(0.8)
     file_status.completed = True
     live.console.print(f"[green]✓ ✓ ✓[/green] {file_status.filename}")
-    
+
     return True
+
 
 async def main():
     # Create a list of files to process
@@ -165,38 +166,38 @@ async def main():
         "assets_bundle.zip",
         "documentation.pdf",
     ]
-    
+
     file_statuses = [FileStatus(f) for f in files]
-    
+
     console.print("[cyan]Starting file download and verification process...[/cyan]\n")
-    
+
     # Use Live display to update the status in real-time
     with Live(create_status_display(file_statuses), console=console, refresh_per_second=10) as live:
         # Create a semaphore to limit concurrent processing
         semaphore = asyncio.Semaphore(3)  # Process 3 files at a time
-        
+
         async def process_with_semaphore(fs):
             async with semaphore:
                 return await process_file(fs, live)
-        
+
         # Create tasks (not just coroutines)
         tasks = [asyncio.create_task(process_with_semaphore(fs)) for fs in file_statuses]
-        
+
         # Update display periodically while tasks are running
         async def update_display():
             while not all(task.done() for task in tasks):
                 live.update(create_status_display(file_statuses))
                 await asyncio.sleep(0.1)
             live.update(create_status_display(file_statuses))
-        
+
         # Run both the tasks and the display updater
         await asyncio.gather(update_display(), *tasks)
-    
+
     # Summary
     console.print("\n[cyan]Process Complete![/cyan]")
     successful = sum(1 for fs in file_statuses if fs.confirm_status == "success" and fs.fetch_status == "success" and fs.verify_status == "success")
     console.print(f"Successfully processed: [green]{successful}/{len(files)}[/green] files")
-    
+
     failed = len(files) - successful
     if failed > 0:
         console.print(f"Errors encountered: [red]{failed}[/red]")
