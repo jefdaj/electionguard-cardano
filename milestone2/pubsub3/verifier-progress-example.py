@@ -74,7 +74,7 @@ async def simulate_confirm(file_status):
     await asyncio.sleep(random.uniform(20, 60))
 
     # 10% chance of failure
-    if random.random() < 0.1:
+    if random.random() < 0.5:
         file_status.confirm_status = "error"
         file_status.confirm_error = f"Hash confirmation failed for {file_status.filename}: Transaction not found"
         return False
