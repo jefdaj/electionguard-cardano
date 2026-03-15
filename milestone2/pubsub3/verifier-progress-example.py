@@ -7,6 +7,9 @@ from rich.text import Text
 
 console = Console()
 
+OK  = "[green]✔[/green]" # Heavy check mark (U+2714)
+ERR = "[red]✖[/red]"     # Heavy multiplication X (U+2716)
+
 class FileStatus:
     def __init__(self, filename, onchain_only=False, local_only=False):
         self.filename = filename
@@ -28,9 +31,9 @@ def get_status_icon(status):
     elif status in ["confirming", "fetching", "verifying"]:
         return "[cyan]●[/cyan]"
     elif status == "success":
-        return "[green]✔[/green]"  # Heavy check mark (U+2714)
+        return OK
     elif status == "error":
-        return "[red]✖[/red]"  # Heavy multiplication X (U+2716)
+        return ERR
     return "?"
 
 
@@ -140,7 +143,7 @@ async def process_file(file_status, live):
 
         await asyncio.sleep(0.8)
         file_status.completed = True
-        live.console.print(f"[green]✔[/green]     {file_status.filename}")
+        live.console.print(f"{OK}     {file_status.filename}")
         return True
 
     # For local-only items, just verify
@@ -155,7 +158,7 @@ async def process_file(file_status, live):
 
         await asyncio.sleep(0.8)
         file_status.completed = True
-        live.console.print(f"    [green]✔[/green] {file_status.filename}")
+        live.console.print(f"    {OK} {file_status.filename}")
         return True
 
     # Original file processing logic
@@ -190,7 +193,7 @@ async def process_file(file_status, live):
 
         confirm_icon = get_status_icon(file_status.confirm_status)
         error_msg = ", ".join(errors)
-        live.console.print(f"{confirm_icon} [green]✔[/green] [red]✖[/red] {file_status.filename}[red]: {error_msg}[/red]")
+        live.console.print(f"{confirm_icon} {OK} {ERR} {file_status.filename}[red]: {error_msg}[/red]")
 
         file_status.completed = True
         return False
@@ -199,13 +202,13 @@ async def process_file(file_status, live):
 
     if not confirm_success:
         error_msg = file_status.confirm_error.split(": ", 1)[-1]
-        live.console.print(f"[red]✖[/red] [green]✔[/green] [green]✔[/green] {file_status.filename}[red]: {error_msg}[/red]")
+        live.console.print(f"{ERR} {OK} {OK} {file_status.filename}[red]: {error_msg}[/red]")
         file_status.completed = True
         return False
 
     await asyncio.sleep(0.8)
     file_status.completed = True
-    live.console.print(f"[green]✔ ✔ ✔[/green] {file_status.filename}")
+    live.console.print(f"{OK} {OK} {OK} {file_status.filename}")
 
     return True
 
