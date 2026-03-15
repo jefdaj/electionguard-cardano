@@ -76,7 +76,7 @@ async def simulate_confirm(file_status):
     # 10% chance of failure
     if random.random() < 0.5:
         file_status.confirm_status = "error"
-        file_status.confirm_error = f"Hash confirmation failed for {file_status.filename}: Transaction not found"
+        file_status.confirm_error = f"Hash confirmation failed for {file_status.filename}: Transaction not confirmed"
         return False
 
     file_status.confirm_status = "success"
@@ -119,23 +119,22 @@ async def process_file(file_status, live):
 
     # Start fetch→verify chain (runs independently until fetch completes)
     download_success = await simulate_download(file_status)
-
+    
     if not download_success:
         # Fetch failed - wait for confirm to finish before returning
         await confirm_task
-
-        # Log the error and mark as completed
-        fetch_icon = get_status_icon(file_status.fetch_status)
-        error_msg = file_status.fetch_error.split(": ", 1)[-1]
-
+        
+        # Collect error messages
+        errors = []
         if file_status.confirm_status == "error":
-            # Both confirm and fetch failed - show confirm error
-            live.console.print(f"[red]✗[/red]   {file_status.filename}[red]: {file_status.confirm_error.split(': ', 1)[-1]}[/red]")
-        else:
-            # Only fetch failed
-            confirm_icon = get_status_icon(file_status.confirm_status)
-            live.console.print(f"{confirm_icon} [red]✗[/red]   {file_status.filename}[red]: {error_msg}[/red]")
-
+            errors.append(file_status.confirm_error.split(": ", 1)[-1])
+        errors.append(file_status.fetch_error.split(": ", 1)[-1])
+        
+        # Log the error and mark as completed
+        confirm_icon = get_status_icon(file_status.confirm_status)
+        error_msg = ", ".join(errors)
+        live.console.print(f"{confirm_icon} [red]✗[/red]   {file_status.filename}[red]: {error_msg}[/red]")
+        
         file_status.completed = True
         return False
 
@@ -145,18 +144,18 @@ async def process_file(file_status, live):
     if not verify_success:
         # Verify failed - wait for confirm to finish before returning
         await confirm_task
-
-        # Log the error and mark as completed
-        error_msg = file_status.verify_error.split(": ", 1)[-1]
-
+        
+        # Collect error messages
+        errors = []
         if file_status.confirm_status == "error":
-            # Confirm failed, verify failed
-            live.console.print(f"[red]✗[/red] [green]✓[/green] [red]✗[/red] {file_status.filename}[red]: {file_status.confirm_error.split(': ', 1)[-1]}[/red]")
-        else:
-            # Only verify failed
-            confirm_icon = get_status_icon(file_status.confirm_status)
-            live.console.print(f"{confirm_icon} [green]✓[/green] [red]✗[/red] {file_status.filename}[red]: {error_msg}[/red]")
-
+            errors.append(file_status.confirm_error.split(": ", 1)[-1])
+        errors.append(file_status.verify_error.split(": ", 1)[-1])
+        
+        # Log the error and mark as completed
+        confirm_icon = get_status_icon(file_status.confirm_status)
+        error_msg = ", ".join(errors)
+        live.console.print(f"{confirm_icon} [green]✓[/green] [red]✗[/red] {file_status.filename}[red]: {error_msg}[/red]")
+        
         file_status.completed = True
         return False
 
@@ -176,6 +175,7 @@ async def process_file(file_status, live):
     live.console.print(f"[green]✓ ✓ ✓[/green] {file_status.filename}")
 
     return True
+
 
 async def main():
     # Create a list of files to process
