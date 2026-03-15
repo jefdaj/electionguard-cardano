@@ -143,7 +143,7 @@ render_fns = [
 ]
 
 # block: role: (ElectionAction, List[PublicRecord])
-TXS = []
+TXS = {}
 
 for fn in render_fns:
     for j in JSONS:
@@ -157,7 +157,9 @@ for fn in render_fns:
             # print(json.dumps(j, indent=2))
             records = fn(fn_name, j, cid_str)
             item = (types.PostPublicRecords(), records)
-            TXS.append(item)
+            if not channel in TXS:
+                TXS[channel] = []
+            TXS[channel].append(item)
         # print(j["record_type"])
 
-pprint(TXS, width=200)
+pprint(TXS, width=250)
