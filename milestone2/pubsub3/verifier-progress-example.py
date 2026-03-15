@@ -8,16 +8,17 @@ from rich.text import Text
 console = Console()
 
 class FileStatus:
-    def __init__(self, filename):
+    def __init__(self, filename, onchain_only=False):
         self.filename = filename
+        self.onchain_only = onchain_only  # True for blockchain events
         self.confirm_status = "pending"  # pending, confirming, success, error
-        self.fetch_status = "pending"  # pending, fetching, success, error
-        self.verify_status = "pending"  # pending, verifying, success, error
+        self.fetch_status = "pending" if not onchain_only else None
+        self.verify_status = "pending" if not onchain_only else None
         self.confirm_error = None
         self.fetch_error = None
         self.verify_error = None
-        self.completed = False  # Track if file is fully done
-        self.started = False  # Track if file has started processing
+        self.completed = False
+        self.started = False
 
 def get_status_icon(status):
     """Return the appropriate icon for a status."""
@@ -38,31 +39,38 @@ def create_status_display(file_statuses):
     # Only show files that have started and haven't been completed yet
     for fs in file_statuses:
         if fs.started and not fs.completed:
-            # If confirm failed, don't show fetch/verify status
-            if fs.confirm_status == "error":
-                fetch_icon = " "
-                verify_icon = " "
-            # If fetch failed, don't show verify status
-            elif fs.fetch_status == "error":
-                fetch_icon = get_status_icon(fs.fetch_status)
-                verify_icon = " "
+            if fs.onchain_only:
+                # For message-only items, only show confirm status
+                line = f"{get_status_icon(fs.confirm_status)}     {fs.filename}"
+
+                # Append error message if there is one
+                if fs.confirm_error:
+                    error_msg = fs.confirm_error.split(": ", 1)[-1]
+                    line += f"[red]: {error_msg}[/red]"
             else:
-                fetch_icon = get_status_icon(fs.fetch_status)
-                verify_icon = get_status_icon(fs.verify_status)
+                # Original file processing logic
+                if fs.confirm_status == "error":
+                    fetch_icon = " "
+                    verify_icon = " "
+                elif fs.fetch_status == "error":
+                    fetch_icon = get_status_icon(fs.fetch_status)
+                    verify_icon = " "
+                else:
+                    fetch_icon = get_status_icon(fs.fetch_status)
+                    verify_icon = get_status_icon(fs.verify_status)
 
-            # Build the base line
-            line = f"{get_status_icon(fs.confirm_status)} {fetch_icon} {verify_icon} {fs.filename}"
+                line = f"{get_status_icon(fs.confirm_status)} {fetch_icon} {verify_icon} {fs.filename}"
 
-            # Append error message if there is one
-            if fs.confirm_error:
-                error_msg = fs.confirm_error.split(": ", 1)[-1]
-                line += f"[red]: {error_msg}[/red]"
-            elif fs.fetch_error:
-                error_msg = fs.fetch_error.split(": ", 1)[-1]
-                line += f"[red]: {error_msg}[/red]"
-            elif fs.verify_error:
-                error_msg = fs.verify_error.split(": ", 1)[-1]
-                line += f"[red]: {error_msg}[/red]"
+                # Append error message if there is one
+                if fs.confirm_error:
+                    error_msg = fs.confirm_error.split(": ", 1)[-1]
+                    line += f"[red]: {error_msg}[/red]"
+                elif fs.fetch_error:
+                    error_msg = fs.fetch_error.split(": ", 1)[-1]
+                    line += f"[red]: {error_msg}[/red]"
+                elif fs.verify_error:
+                    error_msg = fs.verify_error.split(": ", 1)[-1]
+                    line += f"[red]: {error_msg}[/red]"
 
             lines.append(line)
 
@@ -74,7 +82,7 @@ async def simulate_confirm(file_status):
     await asyncio.sleep(random.uniform(20, 60))
 
     # 10% chance of failure
-    if random.random() < 0.5:
+    if random.random() < 0.1:
         file_status.confirm_status = "error"
         file_status.confirm_error = f"Hash confirmation failed for {file_status.filename}: Transaction not confirmed"
         return False
@@ -114,161 +122,141 @@ async def process_file(file_status, live):
     """Process a single file with confirmation parallel to fetch+verify."""
     file_status.started = True
 
-    # Start confirmation task (runs independently)
+    # For message-only items, just confirm
+    if file_status.onchain_only:
+        confirm_success = await simulate_confirm(file_status)
+
+        if not confirm_success:
+            error_msg = file_status.confirm_error.split(": ", 1)[-1]
+            live.console.print(f"[red]✗[/red]     {file_status.filename}[red]: {error_msg}[/red]")
+            file_status.completed = True
+            return False
+
+        # Success
+        await asyncio.sleep(0.8)
+        file_status.completed = True
+        live.console.print(f"[green]✓[/green]     {file_status.filename}")
+        return True
+
+    # Original file processing logic
     confirm_task = asyncio.create_task(simulate_confirm(file_status))
 
-    # Start fetch→verify chain (runs independently until fetch completes)
     download_success = await simulate_download(file_status)
-    
+
     if not download_success:
-        # Fetch failed - wait for confirm to finish before returning
         await confirm_task
-        
-        # Collect error messages
+
         errors = []
         if file_status.confirm_status == "error":
             errors.append(file_status.confirm_error.split(": ", 1)[-1])
         errors.append(file_status.fetch_error.split(": ", 1)[-1])
-        
-        # Log the error and mark as completed
+
         confirm_icon = get_status_icon(file_status.confirm_status)
         error_msg = ", ".join(errors)
         live.console.print(f"{confirm_icon} [red]✗[/red]   {file_status.filename}[red]: {error_msg}[/red]")
-        
+
         file_status.completed = True
         return False
 
-    # Fetch succeeded, now verify (depends on fetch)
     verify_success = await simulate_verify(file_status)
 
     if not verify_success:
-        # Verify failed - wait for confirm to finish before returning
         await confirm_task
-        
-        # Collect error messages
+
         errors = []
         if file_status.confirm_status == "error":
             errors.append(file_status.confirm_error.split(": ", 1)[-1])
         errors.append(file_status.verify_error.split(": ", 1)[-1])
-        
-        # Log the error and mark as completed
+
         confirm_icon = get_status_icon(file_status.confirm_status)
         error_msg = ", ".join(errors)
         live.console.print(f"{confirm_icon} [green]✓[/green] [red]✗[/red] {file_status.filename}[red]: {error_msg}[/red]")
-        
+
         file_status.completed = True
         return False
 
-    # Both chains succeeded - wait for confirmation if it's still running
     confirm_success = await confirm_task
 
     if not confirm_success:
-        # Only confirm failed
         error_msg = file_status.confirm_error.split(": ", 1)[-1]
         live.console.print(f"[red]✗[/red] [green]✓[/green] [green]✓[/green] {file_status.filename}[red]: {error_msg}[/red]")
         file_status.completed = True
         return False
 
-    # All three phases succeeded
     await asyncio.sleep(0.8)
     file_status.completed = True
     live.console.print(f"[green]✓ ✓ ✓[/green] {file_status.filename}")
 
     return True
 
-
 async def main():
-    # Create a list of files to process
-    files = [
-        "dataset_part1.tar.gz",
-        "dataset_part2.tar.gz",
-        "model_weights.pkl",
-        "config.json",
-        "training_data.csv",
-        "validation_data.csv",
-        "test_data.csv",
-        "metadata.xml",
-        "readme.md",
-        "requirements.txt",
-        "dataset_part1.tar.gz",
-        "dataset_part2.tar.gz",
-        "model_weights.pkl",
-        "config.json",
-        "training_data.csv",
-        "validation_data.csv",
-        "test_data.csv",
-        "metadata.xml",
-        "readme.md",
-        "requirements.txt",
-        "dataset_part1.tar.gz",
-        "dataset_part2.tar.gz",
-        "model_weights.pkl",
-        "config.json",
-        "training_data.csv",
-        "validation_data.csv",
-        "test_data.csv",
-        "metadata.xml",
-        "readme.md",
-        "requirements.txt",
-        "dataset_part1.tar.gz",
-        "dataset_part2.tar.gz",
-        "model_weights.pkl",
-        "config.json",
-        "training_data.csv",
-        "validation_data.csv",
-        "test_data.csv",
-        "metadata.xml",
-        "readme.md",
-        "requirements.txt",
-        "dataset_part1.tar.gz",
-        "dataset_part2.tar.gz",
-        "model_weights.pkl",
-        "config.json",
-        "training_data.csv",
-        "validation_data.csv",
-        "test_data.csv",
-        "metadata.xml",
-        "readme.md",
-        "requirements.txt",
-        "docker_image.tar",
-        "logs_archive.zip",
-        "backup_2024.sql",
-        "assets_bundle.zip",
-        "documentation.pdf",
+    # Create a list of files and events to process
+    items = [
+        FileStatus("init election", onchain_only=True),
+        FileStatus("add subchannel guardian1", onchain_only=True),
+        FileStatus("add subchannel guardian2", onchain_only=True),
+        FileStatus("add subchannel guardian3", onchain_only=True),
+        FileStatus("add subchannel device1", onchain_only=True),
+        FileStatus("add subchannel verifier1", onchain_only=True),
+        FileStatus("advance to phase 2", onchain_only=True),
+        FileStatus("dataset_part1.tar.gz"),
+        FileStatus("dataset_part2.tar.gz"),
+        FileStatus("dataset_part3.tar.gz"),
+        FileStatus("dataset_part4.tar.gz"),
+        FileStatus("dataset_part5.tar.gz"),
+        FileStatus("dataset_part6.tar.gz"),
+        FileStatus("dataset_part7.tar.gz"),
+        FileStatus("dataset_part8.tar.gz"),
+        FileStatus("dataset_part9.tar.gz"),
+        FileStatus("advance to phase 3", onchain_only=True),
+        FileStatus("model_weights_1.pkl"),
+        FileStatus("model_weights_2.pkl"),
+        FileStatus("model_weights_3.pkl"),
+        FileStatus("model_weights_4.pkl"),
+        FileStatus("model_weights_5.pkl"),
+        FileStatus("advance to phase 4", onchain_only=True),
+        FileStatus("tally"),
+        FileStatus("decrypted tally"),
+        FileStatus("admin summary"),
+        FileStatus("guardian1 summary"),
+        FileStatus("guardian2 summary"),
+        FileStatus("guardian3 summary"),
+        FileStatus("verifier1 summary"),
+        FileStatus("rm subchannel guardian1", onchain_only=True),
+        FileStatus("rm subchannel guardian2", onchain_only=True),
+        FileStatus("rm subchannel guardian3", onchain_only=True),
+        FileStatus("rm subchannel device1", onchain_only=True),
+        FileStatus("rm subchannel verifier1", onchain_only=True),
+        FileStatus("end election", onchain_only=True),
     ]
 
-    file_statuses = [FileStatus(f) for f in files]
+    console.print("[cyan]Starting verifier...[/cyan]\n")
 
-    console.print("[cyan]Starting file download and verification process...[/cyan]\n")
-
-    # Use Live display to update the status in real-time
-    with Live(create_status_display(file_statuses), console=console, refresh_per_second=10) as live:
-        # Create a semaphore to limit concurrent processing
-        semaphore = asyncio.Semaphore(9)  # Process 9 files at a time
+    with Live(create_status_display(items), console=console, refresh_per_second=10) as live:
+        semaphore = asyncio.Semaphore(6) # TODO raise pretty high and assume TXs are the bottleneck
 
         async def process_with_semaphore(fs):
             async with semaphore:
                 return await process_file(fs, live)
 
-        # Create tasks (not just coroutines)
-        tasks = [asyncio.create_task(process_with_semaphore(fs)) for fs in file_statuses]
+        tasks = [asyncio.create_task(process_with_semaphore(fs)) for fs in items]
 
-        # Update display periodically while tasks are running
         async def update_display():
             while not all(task.done() for task in tasks):
-                live.update(create_status_display(file_statuses))
+                live.update(create_status_display(items))
                 await asyncio.sleep(0.1)
-            live.update(create_status_display(file_statuses))
+            live.update(create_status_display(items))
 
-        # Run both the tasks and the display updater
         await asyncio.gather(update_display(), *tasks)
 
-    # Summary
-    console.print("\n[cyan]Process Complete![/cyan]")
-    successful = sum(1 for fs in file_statuses if fs.confirm_status == "success" and fs.fetch_status == "success" and fs.verify_status == "success")
-    console.print(f"Successfully processed: [green]{successful}/{len(files)}[/green] files")
+    console.print("\n[cyan]Process complete![/cyan]")
+    successful = sum(1 for fs in items if
+                    (fs.onchain_only and fs.confirm_status == "success") or
+                    (not fs.onchain_only and fs.confirm_status == "success" and
+                     fs.fetch_status == "success" and fs.verify_status == "success"))
+    console.print(f"Successfully processed: [green]{successful}/{len(items)}[/green] items")
 
-    failed = len(files) - successful
+    failed = len(items) - successful
     if failed > 0:
         console.print(f"Errors encountered: [red]{failed}[/red]")
 
