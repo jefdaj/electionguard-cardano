@@ -24,7 +24,7 @@ def get_status_icon(status):
     if status == "pending":
         return "[dim]·[/dim]"
     elif status in ["confirming", "fetching", "verifying"]:
-        return "[yellow]●[/yellow]"
+        return "[cyan]●[/cyan]"
     elif status == "success":
         return "[green]✓[/green]"
     elif status == "error":
@@ -168,7 +168,7 @@ async def main():
     
     file_statuses = [FileStatus(f) for f in files]
     
-    console.print("[bold yellow]Starting file download and verification process...[/bold yellow]\n")
+    console.print("[cyan]Starting file download and verification process...[/cyan]\n")
     
     # Use Live display to update the status in real-time
     with Live(create_status_display(file_statuses), console=console, refresh_per_second=10) as live:
@@ -193,7 +193,7 @@ async def main():
         await asyncio.gather(update_display(), *tasks)
     
     # Summary
-    console.print("\n[bold cyan]Process Complete![/bold cyan]")
+    console.print("\n[cyan]Process Complete![/cyan]")
     successful = sum(1 for fs in file_statuses if fs.confirm_status == "success" and fs.fetch_status == "success" and fs.verify_status == "success")
     console.print(f"Successfully processed: [green]{successful}/{len(files)}[/green] files")
     
