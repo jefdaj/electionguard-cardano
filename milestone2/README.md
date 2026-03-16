@@ -2,6 +2,7 @@ milestone 2
 ===========
 
 [Dev update video](https://www.youtube.com/watch?v=qKZ2EL0CwM0).
+Since the video, I have the actual (multichannel) contract working.
 
 The main deliverables will all be in [publish-and-verify](./publish-and-verify).
 
