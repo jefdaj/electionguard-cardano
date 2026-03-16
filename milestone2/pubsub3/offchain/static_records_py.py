@@ -190,7 +190,7 @@ SUBCHANNELS = [
 
 # TODO how to add info for when the admin advances phase?
 
-# block: role: (ElectionAction, List[PublicRecord])
+# role: block: (ElectionAction, List[PublicRecord])
 TXS = {
         'admin': {0: (types.InitElection(), []),
                   2: (types.AddSubChannels(channels=SUBCHANNELS)),
@@ -214,7 +214,8 @@ for fn in render_fns:
             item = (types.PostPublicRecords(), records)
             if not channel in TXS:
                 TXS[channel] = {}
-            # TODO figure something out for this
+            # TODO figure out the proper offset here while writing publisher
+            # TODO might need an admin offset partway through too?
             # if channel != 'admin':
             #     seq += 4 # align all to admin seq
             if not seq in TXS[channel]:
