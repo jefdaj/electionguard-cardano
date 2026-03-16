@@ -31,7 +31,8 @@ Current status as of 2026-03-16:
 - [Milestone 2](./milestone2/) (Cardano stuff) in progress:
 
   * [Dev update video](https://www.youtube.com/watch?v=qKZ2EL0CwM0),
-    mostly still current except I now have the multichannel contract written.
+    mostly still current except I now have the multichannel contract written,
+    and I've gone back to the original plan of having separate publish + verify scripts.
 
   * Aiken smart contract (multichannel version):
     - [x] [Validator](./milestone2/publish-and-verify/onchain/validators/election.ak) written

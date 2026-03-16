@@ -2,7 +2,10 @@ milestone 2
 ===========
 
 [Dev update video](https://www.youtube.com/watch?v=qKZ2EL0CwM0).
-Since the video, I have the actual (multichannel) contract working.
+Since the video:
+
+- I have the actual (multichannel) contract working.
+- I've gone back to the original plan of publish + verify scripts rather than one integrated election thing.
 
 The main deliverables will all be in [publish-and-verify](./publish-and-verify).
 
