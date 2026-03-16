@@ -1,4 +1,4 @@
-# Generated with static_records_dict.py. Consider editing and re-running that to make any changes.
+# Generated with static_records_py.py. Consider editing and re-running that to make any changes.
 
 from election.plutus.types import *
 

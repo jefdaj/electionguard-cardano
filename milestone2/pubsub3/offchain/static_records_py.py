@@ -2,7 +2,7 @@
 
 # Usage:
 # nix develop .#offchain
-# ./static_records_dict.py > static_election_records_dict_out.py
+# ./static_records_py.py > static_election_records_py_out.py
 
 from election.plutus import types
 from multiformats_cid import cid, make_cid
@@ -14,8 +14,7 @@ from pprint import pprint
 IN_DIR = 'static_election_records'
 IN_LOG = Path(IN_DIR) / 'egsync.log'
 
-# TODO rename static_tx_dict.py
-print('''# Generated with static_records_dict.py. Consider editing and re-running that to make any changes.
+print('''# Generated with static_records_py.py. Consider editing and re-running that to make any changes.
 
 from election.plutus.types import *
 ''')
