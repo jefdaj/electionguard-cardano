@@ -214,6 +214,9 @@ for fn in render_fns:
             item = (types.PostPublicRecords(), records)
             if not channel in TXS:
                 TXS[channel] = {}
+            # TODO figure something out for this
+            # if channel != 'admin':
+            #     seq += 4 # align all to admin seq
             if not seq in TXS[channel]:
                 TXS[channel][seq] = []
             TXS[channel][seq].append(item)

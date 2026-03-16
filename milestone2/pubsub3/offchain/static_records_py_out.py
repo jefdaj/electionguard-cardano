@@ -3,12 +3,12 @@
 from election.plutus.types import *
 
 STATIC_PHASES = \
-{0: ElectionConfigPhase(ConfigAnnouncePhase),
- 1: ElectionConfigPhase(ConfigOnboardingPhase),
- 2: ElectionConfigPhase(ConfigCeremonyPhase),
+{0: ElectionConfigPhase(phase=ConfigAnnouncePhase()),
+ 1: ElectionConfigPhase(phase=ConfigOnboardingPhase()),
+ 2: ElectionConfigPhase(phase=ConfigCeremonyPhase()),
  3: ElectionVotingPhase(),
- 4: ElectionResultsPhase(ResultsTallyPhase),
- 5: ElectionResultsPhase(ResultsDecryptPhase),
+ 4: ElectionResultsPhase(phase=ResultsTallyPhase()),
+ 5: ElectionResultsPhase(phase=ResultsDecryptPhase()),
  6: ElectionVerifyPhase(),
  7: ElectionFinalizePhase()}
 
