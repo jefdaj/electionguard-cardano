@@ -6,12 +6,12 @@
 # nix develop
 # sudo rm -r data
 # ./election.sh
-# sudo cp -r ./data/private/verifier_1/egsync ./static_records
-# sudo chown $(whoami) ./static_records -R
+# sudo cp -r ./data/private/verifier_1/egsync ../publish-and-verify/offchain/static_records
+# sudo chown $(whoami) ../publish-and-verify/offchain/static_records -R
 # exit
 #
-# nix develop .#egsync
-# ../pubsub3/onchain/static_records_ak.py > ../pubsub3/onchain/validators/tests/data/static_election_records.ak
+# nix develop .#offchain
+# ../static_records_ak.py > ../onchain/validators/tests/data/static_records.ak
 
 from multiformats_cid import cid, make_cid
 from pathlib import Path

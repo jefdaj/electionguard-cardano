@@ -1,9 +1,9 @@
 milestone 2
 ===========
 
-The main deliverables will all be in [pubsub3](./pubsub3).
+The main deliverables will all be in [publish-and-verify](./publish-and-verify).
 
-There are also some older misc works in progress:
+There's also some other misc related work:
 
 * [Cardano node + Ogmios](./cardano-node-ogmios)
 * [ipfs-cluster experiment](./ipfs-cluster)
@@ -11,4 +11,3 @@ There are also some older misc works in progress:
 * [elections with IPFS + multi-party "mockchain"](./mockchain-local-ipfs)
 * [parallel mockchain with improved performance](./mockchain-local-ipfs-parallel)
 * [pubsub2: CIDs on Preview via Aiken, PyCardano, Kupo](./pubsub2-aiken-pycardano-kupo)
-* [parallel smart contract design](./smart-contract-parallel)
