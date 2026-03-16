@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # TODO click interface
 # TODO import static_records
 # TODO write a "generate multiple keypairs" function in wallet (and start wallet)

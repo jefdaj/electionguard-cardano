@@ -1,9 +1,13 @@
+#!/usr/bin/env python3
+
 import time
 import random
 import asyncio
 from rich.console import Console
 from rich.live import Live
 from rich.text import Text
+
+print("THIS DOESN'T DO ANYTHING YET.\nIT'S JUST A UI MOCKUP FOR THE VERIFIER.\n")
 
 console = Console()
 
