@@ -15,12 +15,33 @@ IN_DIR = 'static_election_records'
 IN_LOG = Path(IN_DIR) / 'egsync.log'
 
 # TODO rename static_tx_dict.py
-print('''# Generated with static_records_dict.py
-# Consider editing and re-running that to make changes.
+print('''# Generated with static_records_dict.py. Consider editing and re-running that to make any changes.
 
 from election.plutus.types import *
+''')
 
-STATIC_TRANSACTIONS = \\''')
+#####################
+# phases
+#####################
+
+PHASES = {
+    0: types.ElectionConfigPhase(phase=types.ConfigAnnouncePhase()),
+    1: types.ElectionConfigPhase(phase=types.ConfigOnboardingPhase()),
+    2: types.ElectionConfigPhase(phase=types.ConfigCeremonyPhase()),
+    3: types.ElectionVotingPhase(),
+    4: types.ElectionResultsPhase(phase=types.ResultsTallyPhase()),
+    5: types.ElectionResultsPhase(phase=types.ResultsDecryptPhase()),
+    6: types.ElectionVerifyPhase(),
+    7: types.ElectionFinalizePhase(),
+}
+
+print('STATIC_PHASES = \\')
+pprint(PHASES, width=250)
+print()
+
+#####################
+# transactions
+#####################
 
 with open(IN_LOG, 'r') as f:
     lines = f.readlines()
@@ -199,4 +220,5 @@ for fn in render_fns:
             TXS[channel][seq].append(item)
         # print(j["record_type"])
 
+print('STATIC_TRANSACTIONS = \\')
 pprint(TXS, width=250)

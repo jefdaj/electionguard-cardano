@@ -1,14 +1,25 @@
-# Generated with static_records_dict.py
-# Consider editing and re-running that to make changes.
+# Generated with static_records_dict.py. Consider editing and re-running that to make any changes.
 
 from election.plutus.types import *
+
+STATIC_PHASES = \
+{0: ElectionConfigPhase(ConfigAnnouncePhase),
+ 1: ElectionConfigPhase(ConfigOnboardingPhase),
+ 2: ElectionConfigPhase(ConfigCeremonyPhase),
+ 3: ElectionVotingPhase(),
+ 4: ElectionResultsPhase(ResultsTallyPhase),
+ 5: ElectionResultsPhase(ResultsDecryptPhase),
+ 6: ElectionVerifyPhase(),
+ 7: ElectionFinalizePhase()}
 
 STATIC_TRANSACTIONS = \
 {'admin': {0: (InitElection(), []),
            1: [(PostPublicRecords(), PublicRecord(ipfs_cid='bafkreiat5mhmsrevctm43qlv6aokrli3cdoj2aqyb34wsf6idybuvzwtua', metadata=Manifest())),
                (PostPublicRecords(), PublicRecord(ipfs_cid='bafkreiampwehpnmfwiexflsuqrmythwm5y7b375ypjt64qbwtx5altmrby', metadata=CeremonyDetails()))],
+           2: AddSubChannels(channels=[b'guardian1', b'guardian2', b'guardian3', b'device1', b'verifier1']),
            3: [(PostPublicRecords(), PublicRecord(ipfs_cid='bafkreiflosagia6a2m5rr2dx3jwgrw3fgz6evooliim32gi35drfe6j7ia', metadata=JointKey())),
                (PostPublicRecords(), PublicRecord(ipfs_cid='bafkreicnmehtjlzlm5sddglfrqg2zjmqlrje3g24uxxdgsjzscouqrxjoy', metadata=Constants()))],
+           4: (AdvancePhase(), []),
            5: [(PostPublicRecords(), PublicRecord(ipfs_cid='bafkreievubwr4agxsswp4relq4qkmq4fvcwo74vximmlgrk3zbz6xbwpka', metadata=CiphertextTally()))],
            6: [(PostPublicRecords(), PublicRecord(ipfs_cid='bafkreicy6dgis5ro4cwe7khlj53b575frfsrrydhu6cxu2vrlwstcwkyyu', metadata=PlaintextTally())),
                (PostPublicRecords(), PublicRecord(ipfs_cid='bafkreihjz3q65b3yfyjvjf6m7rbhw7zsuqevlzjdate6ojuqx7mhug3x5m', metadata=SpoiledResult(ballot_id='ballot-476d9db6-1d64-11f1-9625-768fd7ed4145'))),
@@ -17,7 +28,9 @@ STATIC_TRANSACTIONS = \
                (PostPublicRecords(), PublicRecord(ipfs_cid='bafkreiea23ycqgsptmpgckbpudwekyt6jgiqlt2klky5nkr7dvzotdd6vy', metadata=SpoiledResult(ballot_id='ballot-49fb726a-1d64-11f1-ad12-768fd7ed4145'))),
                (PostPublicRecords(), PublicRecord(ipfs_cid='bafkreifvqpg4fiw5lfpt7pzgzwb5snnhayagyzbsbtectxw2ulaof6s2vi', metadata=SpoiledResult(ballot_id='ballot-4aa15ab8-1d64-11f1-bc23-768fd7ed4145'))),
                (PostPublicRecords(), PublicRecord(ipfs_cid='bafkreihesgn7p3n2nt6tjcfduezo66ywphat3s75dxtqakrolootf2xpby', metadata=SpoiledResult(ballot_id='ballot-4c9f842a-1d64-11f1-94d0-768fd7ed4145')))],
-           7: [(PostPublicRecords(), PublicRecord(ipfs_cid='bafkreifvzqqtpbiln42xeu3bxgstcy3wnabh3vnxroxfwkhkai6fvidjtq', metadata=Summary(verifier_id='admin1')))]},
+           7: [(PostPublicRecords(), PublicRecord(ipfs_cid='bafkreifvzqqtpbiln42xeu3bxgstcy3wnabh3vnxroxfwkhkai6fvidjtq', metadata=Summary(verifier_id='admin1')))],
+           8: RmSubChannels(channels=[b'guardian1', b'guardian2', b'guardian3', b'device1', b'verifier1']),
+           9: (EndElection(), [])},
  'device_1': {1: [(PostPublicRecords(), PublicRecord(ipfs_cid='bafkreif73tr5sgi2qm23r3l3ahmn5z73le7lh2mfw267jzeackvrvzacb4', metadata=Device(device_number=1)))],
               2: [(PostPublicRecords(), PublicRecord(ipfs_cid='bafkreihelpxclsgoej4a6yeinlw6nlondthnniwwml2tdsvwhollogqxey', metadata=BallotSubmitted(ballot_id='ballot-476d9db6-1d64-11f1-9625-768fd7ed4145'))),
                   (PostPublicRecords(), PublicRecord(ipfs_cid='bafkreibttf67rmdea6gvgux7l4ongpd72cocduvmel65kevffiu5riahe4', metadata=BallotSubmitted(ballot_id='ballot-480eed2e-1d64-11f1-ac1f-768fd7ed4145'))),
