@@ -6,7 +6,7 @@
 # TODO if keys don't exist in --keys-dir: generate them, save files
 # TODO separate script to send ADA from on secret key file -> another? or use eternl?
 # TODO should be able to skip that if the admin already has ADA from a prev run
-# TODO init a publisher (and start writing one lol)
+# TODO init a publisher
 # publisher should start in "not ready" mode, and you either:
 # 1. tell it the oneshot utxo used (+ expected policy_id?)
 # 2. tell it to InitElection itself using a utxo from the admin wallet
