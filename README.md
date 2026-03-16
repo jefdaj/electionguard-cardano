@@ -32,7 +32,7 @@ Current status as of 2026-03-16:
 
   * Aiken smart contract:
     - [x] [Validator](./milestone2/publish-and-verify/onchain/validators/election.ak) written
-    - [x] [Tests](https://github.com/jefdaj/electionguard-cardano/tree/trunk/milestone2/publish-and-verify#on-chain-aiken-code) passing
+    - [x] [Tests](./milestone2/publish-and-verify#on-chain-aiken-code) passing
 
   * Working on final milestone outputs:
     - [ ] Output 2.1: [contract design docs](./milestone2/publish-and-verify/docs/)
