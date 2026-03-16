@@ -1,5 +1,2 @@
 # Cardano preview wallet keys with tADA from the faucet
 offchain/keys/
-
-# TODO actually, do include these in repo?
-offchain/static_election_records

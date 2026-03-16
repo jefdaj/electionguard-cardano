@@ -11,7 +11,7 @@ import json
 import re
 from pprint import pprint
 
-IN_DIR = 'static_election_records'
+IN_DIR = 'static_records'
 IN_LOG = Path(IN_DIR) / 'egsync.log'
 
 print('''# Generated with static_records_py.py. Consider editing and re-running that to make any changes.

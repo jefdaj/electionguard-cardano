@@ -1,5 +1,5 @@
-// Generated with static_election_records.py
-// Consider editing and re-running that to make changes.
+// Generated with static_records.py
+// Consider editing and re-running that to make any changes.
 
 use aiken/primitive/string.{to_bytearray}
 use election/types/record as er

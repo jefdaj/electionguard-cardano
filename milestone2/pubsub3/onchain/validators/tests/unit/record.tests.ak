@@ -1,6 +1,6 @@
 use aiken/collection/list
 use election/types/record as er
-use tests/data/static_election_records as sr
+use tests/data/static_records as sr
 
 test all_static_election_metadata_valid() {
   let metas: List<er.PublicRecordMetadata> =

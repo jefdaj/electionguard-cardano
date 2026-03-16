@@ -1,6 +1,6 @@
 use aiken/collection/list
 use election/types/ipfs_cid.{IpfsCid, validate_ipfs_cid}
-use tests/data/static_election_records as sr
+use tests/data/static_records as sr
 
 test all_static_election_cids_valid() {
   let cids: List<IpfsCid> =

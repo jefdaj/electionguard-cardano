@@ -6,8 +6,8 @@
 # nix develop
 # sudo rm -r data
 # ./election.sh
-# sudo cp -r ./data/private/verifier_1/egsync ./static_election_records
-# sudo chown $(whoami) ./static_election_records -R
+# sudo cp -r ./data/private/verifier_1/egsync ./static_records
+# sudo chown $(whoami) ./static_records -R
 # exit
 #
 # nix develop .#egsync
@@ -18,7 +18,7 @@ from pathlib import Path
 import json
 import re
 
-IN_DIR = 'static_election_records'
+IN_DIR = 'static_records'
 IN_LOG = Path(IN_DIR) / 'egsync.log'
 
 print('''// Generated with static_records.py
