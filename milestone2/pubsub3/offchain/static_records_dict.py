@@ -163,9 +163,21 @@ render_fns = [
     summary,
 ]
 
+SUBCHANNELS = [
+  types.ChannelIdHelper().from_string(i)
+  for i in ['guardian1', 'guardian2', 'guardian3', 'device1', 'verifier1']
+]
+
+# TODO how to add info for when the admin advances phase?
+
 # block: role: (ElectionAction, List[PublicRecord])
 TXS = {
-        'admin': {0: (types.InitElection(), [])}
+        'admin': {0: (types.InitElection(), []),
+                  2: (types.AddSubChannels(channels=SUBCHANNELS)),
+                  4: (types.AdvancePhase(), []), # TODO handle other advances!
+                  8: (types.RmSubChannels(channels=SUBCHANNELS)),
+                  9: (types.EndElection(), [])
+                  }
 }
 
 for fn in render_fns:
