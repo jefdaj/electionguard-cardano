@@ -30,7 +30,7 @@ Current status as of 2026-03-16:
 
 - [Milestone 2](./milestone2/) (Cardano stuff) in progress:
 
-  * [Aiken smart contract](./milestone2/publish-and-verify/onchain/validators/election.ak) written, tests passing
+  * [Aiken smart contract](./milestone2/publish-and-verify/onchain/validators/election.ak) written, [tests passing](./milestone2/publish-and-verify#on-chain-aiken-code)
 
   * Working on final milestone outputs:
     - [ ] Output 2.1: [contract design docs](./milestone2/publish-and-verify/docs/)
