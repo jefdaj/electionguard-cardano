@@ -65,7 +65,7 @@ Each update (datum) only includes the latest batch of `new_records`. Observers o
 
 ## Election Phases
 
-An election is broken into a series of standard phases defined [here](../onchain/validators/election/types/phase.ak):
+Each election is broken into a series of standard phases defined [here](../onchain/validators/election/types/phase.ak):
 
 1. Config
 
@@ -82,6 +82,4 @@ An election is broken into a series of standard phases defined [here](../onchain
 4. Verify
 5. Finalize
 
-
-
-
+These are good for adding phase-specific logic to the contract. For example ADA can't be removed except by the admin during `Finalize` (see [funding](#funding) below). They'll also be useful for displaying progress in a future UI, and for controlling which actions are available to each person/role at any given time.
