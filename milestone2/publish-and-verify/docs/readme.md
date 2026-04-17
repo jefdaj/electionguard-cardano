@@ -23,3 +23,9 @@ In this case it's a multithreaded pubsub channel:
 ![](./fig01.svg)
 
 There's always one "admin" channel with an associated state thread token (STT). The admin can mint and burn subchannel tokens. Each subchannel has one authorized publisher, who can update its state to post public records. The admin can post records on their own channel too, as well as update a couple extra bits of admin state.
+
+## Public Records
+
+The most important thing
+
+## Election Phases
