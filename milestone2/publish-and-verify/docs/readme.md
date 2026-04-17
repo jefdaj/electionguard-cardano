@@ -16,5 +16,7 @@ There are many other things the blockchain would also be useful for, but they're
 
 ## Visualizing the on-chain data
 
-I think the best way to start getting a grip on the code is to visualize the on-chain data structure. It's basically a multithreaded pubsub channel:
+Cardano smart contracts can be tricky to visualize because they don't construct transactions; they only decide whether a given transaction made by off-chain code is valid or not. I think the simplest place to start is with an example of the data structure they're trying to force the offchain code to create.
+
+In this case it's a multithreaded pubsub channel, like this:
 
