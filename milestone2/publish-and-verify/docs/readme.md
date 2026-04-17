@@ -59,4 +59,6 @@ Leaving the admin channel aside for a minute, most transactions are simple: one 
 
 That's two newly scanned ballots being submitted, one previously submitted ballot being "spoiled" (AKA audited or marked for public decryption) by the voter, and one previously submitted ballot being cast by the voter.
 
+To prevent unnecessary chain bloat, each update only includes the latest batch of `new_records`; to get the full history you need to run a blockchain indexer.
+
 ## Election Phases
