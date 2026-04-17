@@ -1,0 +1,65 @@
+...@classes
+
+*.class: channel
+*.s*.class: datum
+*.tx*.class: tx
+
+classes: {
+  admin: {
+    style.stroke: "#e4881b"
+  }
+}
+
+verifier1: {
+  (* -> *)[*].style.stroke: forestgreen
+  s*.style.fill: "#b0ce46"
+  tx*.style.fill: "#66ba46"
+  s0 -> tx0 -> s1
+}
+
+admin.tx0 -> verifier1.s0: {class: admin}
+verifier1.s1 -> admin.tx2: {class: admin}
+
+device1: {
+  (* -> *)[*].style.stroke: purple
+  s*.style.fill: "#cea5e4"
+  tx*.style.fill: "#c686ea"
+  s0 -> tx0 -> s1
+}
+
+admin.tx0 -> device1.s0: {class: admin}
+device1.s1 -> admin.tx2: {class: admin}
+
+admin: {
+  (* -> *)[*]: {class: admin}
+  s*.style.fill: "#f7d76a"
+  tx*.style.fill: "#f7ba6a"
+  s0 -> tx0 -> s1 -> tx1 -> s2 -> tx2 -> s3
+}
+
+guardian*.s*.style.fill: "#cdecfb"
+guardian*.tx*.style.fill: "#8cd7fa"
+
+guardian1: {
+  (* -> *)[*].style.stroke: blue
+  s0 -> tx0 -> s1
+}
+
+admin.tx0 -> guardian1.s0: {class: admin}
+guardian1.s1 -> admin.tx2: {class: admin}
+
+guardian2: {
+  (* -> *)[*].style.stroke: blue
+  s0 -> tx0 -> s1
+}
+
+admin.tx0 -> guardian2.s0: {class: admin}
+guardian2.s1 -> admin.tx2: {class: admin}
+
+guardian3: {
+  (* -> *)[*].style.stroke: blue
+  s0 -> tx0 -> s1
+}
+
+admin.tx0 -> guardian3.s0: {class: admin}
+guardian3.s1 -> admin.tx2: {class: admin}
