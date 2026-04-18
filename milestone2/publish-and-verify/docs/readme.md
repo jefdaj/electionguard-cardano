@@ -118,8 +118,65 @@ There are two types of channel states, defined [here](../onchain/validators/elec
 
 Both types have one `VerificationKeyHash` (wallet key) authorized to update them, but it's called `admin` in the admin channel and `publisher` in subchannels.
 
-Both also have `new_records` lists that work the same way (they're replaced each update). They also have `seq` variables taht will be used to handle rollbacks, and makes it simpler to double check that no history is missing in clients subscribed to the channel.
+Both also have `new_records` lists that work the same way (they're replaced each update). They also have `seq` variables that will be used by clients subscribing to updates. They'll make it easy to check that no updates have been skipped, and easy to roll back in case the chain reorganizes.
 
 The admin one has an extra `phase` variable as well as a `subchannels` list, while the subchannel one has a `channel_id`.
 
 The admin channel posts a mix of channel/election related state updates, as well as public records. Subchannels only post public records.
+
+## Files
+
+Here's an overview of all the validator code so far.
+It's split into the production code and test suite:
+
+```
+onchain/validators
+├── election.ak
+├── election
+│   ├── auth.ak
+│   ├── cont.ak
+│   ├── fund.ak
+│   ├── mint.ak
+│   ├── stt.ak
+│   ├── types
+│   │   ├── action.ak
+│   │   ├── ballot_id.ak
+│   │   ├── channel.ak
+│   │   ├── channel_id.ak
+│   │   ├── ipfs_cid.ak
+│   │   ├── phase.ak
+│   │   └── record.ak
+│   └── utils.ak
+└── tests
+    ├── mock.ak
+    ├── action
+    │   ├── burntesttokens.ak
+    │   └── burntesttokens.tests.ak
+    ├── data
+    │   └── static_records.ak
+    ├── integration
+    │   ├── happy_adminchannel.ak
+    │   ├── happy_adminchannel.tests.ak
+    │   ├── happy_election.ak
+    │   ├── happy_election.tests.ak
+    │   ├── happy_postpublicrecords.ak
+    │   ├── happy_postpublicrecords.tests.ak
+    │   ├── happy_subchannel.ak
+    │   └── happy_subchannel.tests.ak
+    └── unit
+        ├── action.tests.ak
+        ├── ballot_id.tests.ak
+        ├── ipfs_cid.tests.ak
+        ├── record.tests.ak
+        └── state.tests.ak
+```
+
+Within the production code `election.ak` is the final validator. Data types are defined in `election/types/*.ak`, and the rest of the code is under `election/*.ak` grouped roughly by "aspect".
+
+The test suite is organized into `mock.ak` which is a little library of helper functions. `data` holds statically generated test data, and then the rest of the folders are tests by type:
+
+- unit tests
+- single-action tests
+- integration tests
+
+The current integration tests are "happy path" tests that confirm the full contract lifecycle works. They start with `happy_`. Later, others can be added to check that the validator rejects all attempts at invalid state transitions. The happy path tests are a good starting point for that, because each invalid state can be reached by starting from one of the valid states and doing one thing wrong.
