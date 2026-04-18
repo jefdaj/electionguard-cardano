@@ -1,4 +1,4 @@
-# Tour of the electionguard-cardano validator code
+# Tour of the electionguard-cardano smart contract
 
 In this first MVP version of the ElectionGuard + Cardano system, the on-chain code serves two purposes, both related to limiting the power of the government (AKA election administrator) by decentralizing some of their duties:
 
@@ -17,7 +17,7 @@ There are many other things the blockchain would also be useful for, but they're
 ## Files
 
 Here's an overview of all the validator code so far.
-It's split into the production code and test suite:
+It's split into the production code and the test suite:
 
 ```
 validators
@@ -33,9 +33,9 @@ validators
     └── unit/*.ak         # Unit tests
 ```
 
-Within the production code `election.ak` is the final validator. Data types are defined in `election/types/*.ak`, and the rest of the code is under `election/*.ak` grouped roughly by "aspect".
+Within the production code `election.ak` is the main validator. Data types are defined in `election/types/*.ak`, and the rest of the code is under `election/*.ak` grouped roughly by "aspect".
 
-The test suite is organized into `mock.ak` which is a little library of helper functions. `data` holds statically generated test data, and then the rest of the folders are tests by type:
+The test suite is organized into `mock.ak` which is a little library of helper functions; `data`, which holds statically generated test data; and then the rest of the folders are tests by type:
 
 - unit tests
 - single-action tests
