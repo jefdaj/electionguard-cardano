@@ -49,7 +49,7 @@ Cardano smart contracts can be tricky to visualize because they don't construct 
 
 ![](./fig01.svg)
 
-Each channel has a state thread token (STT), and each state `s0`, `s1`, ... `sN` contains a list of zero or more new public records.
+Each channel has a state thread token (STT), and each state `s0`, `s1`, ... `sN` contains a list of zero or more new public records. It also has a pool of ADA to pay for transaction fees (see [funding](#funding-transaction-fees)).
 
 There's always one admin channel. The admin can post records to it, as well as update a couple other bits of special admin state, and mint or burn subchannel tokens.
 
@@ -113,7 +113,7 @@ Each election is broken into a series of standard phases defined [here](../oncha
 4. Verify
 5. Finalize
 
-These are good for adding phase-specific logic to the contract. For example ADA can't be removed except by the admin during `Finalize` (see [funding](#funding) below). They'll also be useful for displaying progress in a future UI, and for controlling which actions are available to each person/role at any given time.
+These are good for adding phase-specific logic to the contract. For example ADA can't be removed except by the admin during `Finalize` (see [funding](#funding-transaction-fees)). They'll also be useful for displaying progress in a future UI, and for controlling which actions are available to each person/role at any given time.
 
 ## Funding Transaction Fees
 
