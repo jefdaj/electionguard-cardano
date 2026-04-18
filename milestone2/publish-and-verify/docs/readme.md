@@ -49,7 +49,7 @@ Cardano smart contracts can be tricky to visualize because they don't construct 
 
 ![](./fig01.svg)
 
-Each channel has a state thread token (STT), and each state `s0`, `s1`, ... `sN` contains a list of zero or more new public records. It also has a pool of ADA to pay for transaction fees (see [funding](#funding-transaction-fees)).
+Each channel has a state thread token (STT), and each state `s0`, `s1`, ... `sN` contains a list of zero or more new public records. The channel state UTXO also carries a pool of ADA to pay for transaction fees (see [funding](#funding-transaction-fees)).
 
 There's always one admin channel. The admin can post records to it, as well as update a couple other bits of special admin state, and mint or burn subchannel tokens.
 
@@ -120,13 +120,13 @@ These are good for adding phase-specific logic to the contract. For example ADA 
 The contract is set up to minimize the amount of ADA that needs to be handled by election officials. The expected workflow is:
 
 1. The admin locks a pool of ADA with each channel STT to pay for fees.
-2. The admin sends a little more ADA to the publisher to be used as smart contract collateral (that bit can't be provided by the contract).
-3. Posting can be done for free using the channel ADA.
-4. If needed, the admin can top up a channel or rebalance between channels at any point.
+2. The admin sends a little more ADA to the channel publisher's wallet to be used as smart contract collateral (that can't be provided by a contract).
+3. Posting records can be done for free using the channel's ADA pool.
+4. If needed, the admin can top up a channel pool or rebalance between them at any point.
 5. At the end of the election the admin can remove the remaining ADA. There could be custom treasury related logic here in the future.
 6. There's currently no mechanism to recover the collateral; publishers can keep it.
 
-Most of that is handled by the off-chain code that constructs transactions, and by the Cardano ledger. The contract just ensures is that no one can take the ADA associated with a channel during the election. That's handled [here](../onchain/validators/election.ak#L428) and [here](../onchain/validators/election/fund.ak#L13). There's also a `RebalanceFunds` action for the admin, which is almost a no-op except that it needs to update the admin STT + each subchannel STT being rebalanced.
+Most of that will be handled by the off-chain code that constructs transactions, and by the Cardano ledger. The contract just ensures is that no one can take the ADA associated with a channel during the election. That's handled [here](../onchain/validators/election.ak#L428) and [here](../onchain/validators/election/fund.ak#L13). There's also a `RebalanceFunds` action for the admin, which is almost a no-op except that it needs to update the admin STT + each subchannel STT being rebalanced.
 
 ## Burning Test Tokens
 
@@ -134,14 +134,15 @@ When I first started working with the testnet, I accidentally made a few unspend
 
 ## Admin actions
 
-Now you know enough to understand [all the action (redeemer) types](../onchain/validators/election/types/action.ak) and the . They're grouped in the source code by which channels they touch, but would typically be used in this order by the admin:
+Now you know enough to understand [all the action (redeemer) types](../onchain/validators/election/types/action.ak). They're grouped in the source code by which channels they touch, but would typically be used in this order by the admin:
 
 1. InitElection
 2. PostPublicRecords
 3. AddSubChannels
 4. AdvancePhase
-5. RmSubchannels
-6. EndElection
+5. PostPublicRecords
+6. RmSubchannels
+7. EndElection
 
 ## Channel State
 
@@ -151,6 +152,23 @@ Both types have one `VerificationKeyHash` (wallet key) authorized to update them
 
 Both also have `new_records` lists that work the same way (they're replaced each update). They also have `seq` variables that will be used by clients subscribing to updates. They'll make it easy to check that no updates have been skipped, and easy to roll back in case the chain reorganizes.
 
-The admin one has an extra `phase` variable as well as a `subchannels` list, while the subchannel one has a `channel_id`.
+The admin state has an extra `phase` variable as well as a `subchannels` list, while the subchannel state has a `channel_id`.
 
 The admin channel posts a mix of channel/election related state updates, as well as public records. Subchannels only post public records.
+
+## Test Election
+
+The most useful and comprehensive test to look through is probably [happy_election.ak](../onchain/validators/tests/integration/happy_election.ak). I ran an election locally (using the same roles pictured in the diagram above), [generated]() Aiken code describing the [static records]() from that election, and then manually wrote out every transaction and channel state needed to post them on chain. It's organized into these sections:
+
+- initial solo admin transactions
+- parallel admin section
+- guardian1 transactions
+- guardian2 transactions
+- guardian3 transactions
+- device1 transactions
+- verifier1 transactions
+- final admin section
+
+## Running the tests
+
+
