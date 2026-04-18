@@ -83,3 +83,43 @@ Each election is broken into a series of standard phases defined [here](../oncha
 5. Finalize
 
 These are good for adding phase-specific logic to the contract. For example ADA can't be removed except by the admin during `Finalize` (see [funding](#funding) below). They'll also be useful for displaying progress in a future UI, and for controlling which actions are available to each person/role at any given time.
+
+## Funding Transaction Fees
+
+The contract is set up to minimize the amount of ADA that needs to be handled by election officials. The expected workflow is:
+
+1. The admin locks a pool of ADA with each channel STT to pay for fees.
+2. The admin sends a little more ADA to the publisher to be used as smart contract collateral (that bit can't be provided by the contract).
+3. Posting can be done for free using the channel ADA.
+4. If needed, the admin can top up a channel or rebalance between channels at any point.
+5. At the end of the election the admin can remove the remaining ADA. There could be custom treasury related logic here in the future.
+6. There's currently no mechanism to recover the collateral; publishers can keep it.
+
+Most of that is handled by the off-chain code that constructs transactions, and by the Cardano ledger. The contract just ensures is that no one can take the ADA associated with a channel during the election. That's handled [here](../onchain/validators/election.ak#L428) and [here](../onchain/validators/election/fund.ak#L13). There's also a `RebalanceFunds` action for the admin, which is almost a no-op except that it needs to update the admin STT + each subchannel STT being rebalanced.
+
+## Burning Test Tokens
+
+When I first started working with the testnet, I accidentally made a few unspendable (or not easily spendable) test tokens. The current version of the contract includes a `BurnTestTokens` action (redeemer) to prevent that. Whenever one of the tests hits an unexpected issue, I'll run the burn script to clean it up. Obviously this part should be removed before production use!
+
+## Admin actions
+
+Now you know enough to understand [all the action (redeemer) types](../onchain/validators/election/types/action.ak) and the . They're grouped in the source code by which channels they touch, but would typically be used in this order by the admin:
+
+1. InitElection
+2. PostPublicRecords
+3. AddSubChannels
+4. AdvancePhase
+5. RmSubchannels
+6. EndElection
+
+## Channel State
+
+There are two types of channel states, defined [here](../onchain/validators/election/types/channel.ak): `AdminChannelState` and `SubChannelState`.
+
+Both types have one `VerificationKeyHash` (wallet key) authorized to update them, but it's called `admin` in the admin channel and `publisher` in subchannels.
+
+Both also have `new_records` lists that work the same way (they're replaced each update). They also have `seq` variables taht will be used to handle rollbacks, and makes it simpler to double check that no history is missing in clients subscribed to the channel.
+
+The admin one has an extra `phase` variable as well as a `subchannels` list, while the subchannel one has a `channel_id`.
+
+The admin channel posts a mix of channel/election related state updates, as well as public records. Subchannels only post public records.
