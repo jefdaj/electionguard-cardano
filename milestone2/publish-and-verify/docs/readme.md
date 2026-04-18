@@ -16,14 +16,15 @@ There are many other things the blockchain would also be useful for, but they're
 
 ## Visualizing the on-chain data
 
-Cardano smart contracts can be tricky to visualize because they don't construct transactions; they only decide whether a given transaction is valid or not. So the simplest way to start is with an example of the data structure they're trying to force the off-chain code to create.
-
-In this case it's a multithreaded pubsub channel:
+Cardano smart contracts can be tricky to visualize because they don't construct transactions; they only decide whether a given transaction is valid or not. So the simplest way to start is with an example of the data structure they're trying to force the off-chain code to create. In this case it's a multithreaded pubsub channel:
 
 ![](./fig01.svg)
 
-There's always one admin channel with an associated state thread token (STT). The admin can mint and burn subchannel tokens. Each subchannel has one authorized publisher, who can update its state to post public records. The admin can post records on their own channel too, as well as update a couple extra bits of admin state.
+There's always one admin channel with an associated state thread token (STT). The admin can mint and burn subchannel tokens. Each subchannel has one authorized publisher, who can update its state to post public records.
 
+Each channel state `s0`, `s1`, ... `sN` contains a list of zero or more new public records.
+
+The admin can post records on their own channel too, as well as update a couple extra bits of admin state.
 ## Public Records
 
 Leaving the admin channel aside for a minute, most transactions are simple: one of the subchannel publishers posts a list of public records to their channel. In the case of a ballot encryption device, the list might look like:

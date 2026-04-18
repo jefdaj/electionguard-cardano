@@ -82,6 +82,17 @@
 
             default = offchain;
 
+            docs = pkgs.mkShell {
+              nativeBuildInputs = [
+                pkgs.d2
+              ];
+              shellHook = ''
+                echo "running devShells.x86_64-linux.docs shellHook"
+                cd docs
+                echo "d2 version: $(d2 --version)"
+              '';
+            };
+
             onchain = pkgs.mkShell {
               nativeBuildInputs = devPkgList pkgs ++ (with pkgs; [
                 aiken.packages.x86_64-linux.aiken
