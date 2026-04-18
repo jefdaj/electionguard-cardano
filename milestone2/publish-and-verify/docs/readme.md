@@ -20,48 +20,6 @@ Here's an overview of all the validator code so far.
 It's split into the production code and test suite:
 
 ```
-onchain/validators
-├── election.ak
-├── election
-│   ├── auth.ak
-│   ├── cont.ak
-│   ├── fund.ak
-│   ├── mint.ak
-│   ├── stt.ak
-│   ├── types
-│   │   ├── action.ak
-│   │   ├── ballot_id.ak
-│   │   ├── channel.ak
-│   │   ├── channel_id.ak
-│   │   ├── ipfs_cid.ak
-│   │   ├── phase.ak
-│   │   └── record.ak
-│   └── utils.ak
-└── tests
-    ├── mock.ak
-    ├── action
-    │   ├── burntesttokens.ak
-    │   └── burntesttokens.tests.ak
-    ├── data
-    │   └── static_records.ak
-    ├── integration
-    │   ├── happy_adminchannel.ak
-    │   ├── happy_adminchannel.tests.ak
-    │   ├── happy_election.ak
-    │   ├── happy_election.tests.ak
-    │   ├── happy_postpublicrecords.ak
-    │   ├── happy_postpublicrecords.tests.ak
-    │   ├── happy_subchannel.ak
-    │   └── happy_subchannel.tests.ak
-    └── unit
-        ├── action.tests.ak
-        ├── ballot_id.tests.ak
-        ├── ipfs_cid.tests.ak
-        ├── record.tests.ak
-        └── state.tests.ak
-```
-
-```
 validators
 ├── election.ak           # The main validator
 ├── election              # Definitions factored out of the main validator
