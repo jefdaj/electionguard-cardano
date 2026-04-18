@@ -53,7 +53,7 @@ device1: {
   s0 -> tx0 -> o -> tx8 -> s8
 }
 
-admin.tx1 -> device1.s0: {class: admin}
+admin.tx2 -> device1.s0: {class: admin}
 device1.s8 -> admin.tx8: {class: admin}
 
 verifier1: {
@@ -63,5 +63,5 @@ verifier1: {
   s0 -> tx0 -> s1
 }
 
-admin.tx1 -> verifier1.s0: {class: admin}
+admin.tx2 -> verifier1.s0: {class: admin}
 verifier1.s1 -> admin.tx8: {class: admin}
