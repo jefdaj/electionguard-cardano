@@ -1,5 +1,7 @@
 # Tour of the electionguard-cardano smart contract
 
+See also [Dev Update #5 on YouTube](https://www.youtube.com/watch?v=zWpfJSx9b1I).
+
 In this first MVP version of the ElectionGuard + Cardano system, the on-chain code serves two purposes, both related to limiting the power of the government (AKA election administrator) by decentralizing some of their duties:
 
 1. The contract acts as the "public, append-only bulletin board". In traditional non-blockchain ElectionGuard deployments, this would just be a website. Decentralizing it removes the temptation for the admin to alter records or take the site down if they don't like how the election is going, and reduces their exposure to being hacked or DDOSed.
