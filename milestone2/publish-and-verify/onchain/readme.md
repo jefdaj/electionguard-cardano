@@ -33,13 +33,13 @@ validators
     └── unit/*.ak         # Unit tests
 ```
 
-Within the production code `election.ak` is the main validator. Data types are defined in `election/types/*.ak`, and the rest of the code is under `election/*.ak` grouped roughly by "aspect".
+Within the production code [election.ak](./validators/election.ak) is the main validator. Data types are defined in [election/types](./validators/election/types/), and the rest of the code is under [election](./validators/election/) grouped roughly by "aspect".
 
 The test suite is organized into `mock.ak` which is a little library of helper functions; `data`, which holds statically generated test data; and then the rest of the folders are tests by type:
 
-- unit tests
-- single-action tests
-- integration tests
+- [unit tests](./validators/tests/unit/)
+- [single-action tests](./validators/tests/action/)
+- [integration tests](./validators/tests/integration/)
 
 The current integration tests are "happy path" tests that confirm the full contract lifecycle works. They start with `happy_`. Later, others can be added to check that the validator rejects all attempts at invalid state transitions. The happy path tests are a good starting point for that, because each invalid state can be reached by starting from one of the valid states and doing one thing wrong.
 
