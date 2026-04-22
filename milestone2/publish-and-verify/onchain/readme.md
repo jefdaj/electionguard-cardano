@@ -47,7 +47,7 @@ The current integration tests are "happy path" tests that confirm the full contr
 
 Cardano smart contracts can be tricky to visualize because they don't construct transactions; they only decide whether a given transaction is valid or not. So the simplest way to start is with an example of the data structure they're trying to force the off-chain code to create. In this case it's a multithreaded pubsub channel:
 
-![](./fig01.svg)
+![](./docs/fig01.svg)
 
 Each channel has a state thread token (STT), and each state `s0`, `s1`, ... `sN` contains a list of zero or more new public records. The channel state UTXO also carries a pool of ADA to pay for transaction fees (see [funding](#funding-transaction-fees)).
 
