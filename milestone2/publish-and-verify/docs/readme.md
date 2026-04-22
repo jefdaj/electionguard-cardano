@@ -161,15 +161,15 @@ The admin channel posts a mix of channel/election related state updates, as well
 The most useful and comprehensive test to look through is probably [happy_election.ak](../onchain/validators/tests/integration/happy_election.ak). I ran an election locally, [generated]() Aiken code describing the [static records]() from that election, and then manually wrote out every transaction and channel state needed to post them on chain. It's chopped up like this:
 
 - initial solo admin transactions
-- parallel admin section
+- parallel admin transactions
 - guardian1 transactions
 - guardian2 transactions
 - guardian3 transactions
 - device1 transactions
 - verifier1 transactions
-- final admin section
+- final admin transactions
 
-You can run the entire test scenario at once, or pick individual transactions. See [running the tests](#running-the-tests).
+You can run the entire test scenario at once, or pick out parts of it. See [running the tests](#running-the-tests).
 
 ## Running the tests
 
