@@ -173,9 +173,6 @@ You can run the entire test scenario at once, or pick out parts of it. See [runn
 
 ## Running the tests
 
-There are two versions of the contract: traced and production.
-[check.sh](./check.sh) uses the traced version. [build.sh](./build.sh) builds both.
-
 You can run specific tests:
 
 ```
