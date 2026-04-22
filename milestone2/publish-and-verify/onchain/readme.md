@@ -35,11 +35,11 @@ validators
 
 Within the production code [election.ak](./validators/election.ak) is the main validator. Data types are defined in [election/types](./validators/election/types/), and the rest of the code is under [election](./validators/election/) grouped roughly by "aspect".
 
-The test suite is organized into `mock.ak` which is a little library of helper functions; `data`, which holds statically generated test data; and then the rest of the folders are tests by type:
+The test suite is organized into [mock.ak](./validators/tests/mock.ak) which is a little library of helper functions; `data`, which holds statically generated test data; and then the rest of the folders are tests by type:
 
 - [unit tests](./validators/tests/unit/)
-- [single-action tests](./validators/tests/action/)
 - [integration tests](./validators/tests/integration/)
+- [single-action tests](./validators/tests/action/)
 
 The current integration tests are "happy path" tests that confirm the full contract lifecycle works. They start with `happy_`. Later, others can be added to check that the validator rejects all attempts at invalid state transitions. The happy path tests are a good starting point for that, because each invalid state can be reached by starting from one of the valid states and doing one thing wrong.
 
@@ -90,13 +90,13 @@ Leaving the admin channel aside for a minute, most transactions are simple: one 
 
 That's two newly scanned ballots being submitted, one previously submitted ballot being "spoiled" (AKA audited or marked for public decryption) by the voter, and one previously submitted ballot being cast (marked for inclusion in the final tally) by the voter.
 
-All records include an IPFS CID and some metadata. The possible metadata types are [here](../onchain/validators/election/types/record.ak).
+All records include an IPFS CID and some metadata. The possible metadata types are in [record.ak](./validators/election/types/record.ak).
 
 Each update (datum) only includes the latest batch of `new_records`. Observers or other node operators need to run a Kupo indexer to get the full history. There's no way around the general requirement to run a custom node, because it also needs to fetch files via IPFS in order to confirm that the current election state is valid.
 
 ## Election Phases
 
-Each election is broken into a series of standard phases defined [here](../onchain/validators/election/types/phase.ak):
+Each election is broken into a series of standard phases defined in [phase.ak](./validators/election/types/phase.ak):
 
 1. Config
 
@@ -126,7 +126,7 @@ The contract is set up to minimize the amount of ADA that needs to be handled by
 5. At the end of the election the admin can remove the remaining ADA. There could be custom treasury related logic here in the future.
 6. There's currently no mechanism to recover the collateral; publishers can keep it.
 
-Most of that will be handled by the off-chain code that constructs transactions, and by the Cardano ledger. The contract just ensures is that no one can take the ADA associated with a channel during the election. That's handled [here](../onchain/validators/election.ak#L428) and [here](../onchain/validators/election/fund.ak#L13). There's also a `RebalanceFunds` action for the admin, which is almost a no-op except that it needs to update the admin STT + each subchannel STT being rebalanced.
+Most of that will be handled by the off-chain code that constructs transactions, and by the Cardano ledger. The contract just ensures is that no one can take the ADA associated with a channel during the election. That's handled [here](./validators/election.ak#L428) and [here in fund.ak](./validators/election/fund.ak#L13). There's also a `RebalanceFunds` action for the admin, which is almost a no-op except that it needs to update the admin STT + each subchannel STT being rebalanced.
 
 ## Burning Test Tokens
 
@@ -134,7 +134,7 @@ When I first started working with the testnet, I accidentally made a few unspend
 
 ## Admin actions
 
-Now you know enough to understand [all the action (redeemer) types](../onchain/validators/election/types/action.ak). They're grouped in the source code by which channels they touch, but would typically be used in this order by the admin:
+Now you know enough to understand [all the action (redeemer) types in action.ak](./validators/election/types/action.ak). They're grouped in the source code by which channels they touch, but would typically be used in this order by the admin:
 
 1. InitElection
 2. PostPublicRecords
@@ -146,7 +146,7 @@ Now you know enough to understand [all the action (redeemer) types](../onchain/v
 
 ## Channel State
 
-There are two types of channel states, defined [here](../onchain/validators/election/types/channel.ak): `AdminChannelState` and `SubChannelState`.
+There are two types of channel states, defined in [channel.ak](./validators/election/types/channel.ak): `AdminChannelState` and `SubChannelState`.
 
 Both types have one `VerificationKeyHash` (wallet key) authorized to update them, but it's called `admin` in the admin channel and `publisher` in subchannels.
 
@@ -158,7 +158,7 @@ The admin channel posts a mix of channel/election related state updates, as well
 
 ## Test Election
 
-The most useful and comprehensive test to look through is probably [happy_election.ak](../onchain/validators/tests/integration/happy_election.ak). I ran an election locally, [generated]() Aiken code describing the [static records]() from that election, and then manually wrote out every transaction and channel state needed to post them on chain. It's chopped up like this:
+The most useful and comprehensive test to look through is probably [happy_election.ak](./validators/tests/integration/happy_election.ak). I ran an election locally, [generated]() Aiken code describing the [static records]() from that election, and then manually wrote out every transaction and channel state needed to post them on chain. It's chopped up like this:
 
 - initial solo admin transactions
 - parallel admin transactions
