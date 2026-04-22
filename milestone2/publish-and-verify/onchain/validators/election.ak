@@ -461,5 +461,4 @@ validator election(oneshot_ref: OutputReference) {
     trace @"spend"
     validate_spend(datum, redeemer, own_ref, tx)
   }
-  // TODO other cases are False by default, right?
 }
