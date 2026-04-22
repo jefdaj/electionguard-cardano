@@ -45,7 +45,8 @@ The current integration tests are "happy path" tests that confirm the full contr
 
 ## Running the tests
 
-You can run specific tests:
+You can run specific tests with trace statments,
+which is very useful for debugging:
 
 ```
 $ nix develop .#onchain
