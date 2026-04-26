@@ -25,8 +25,8 @@ TODO:
 * [x] contract includes minting + burning subchannels
 * [x] all channels can be minted or burned at once (except admin)
 * [x] contract has an explicit election step/stage/phase variable
-* [ ] contract holds and distributes tADA to cover posting fees
-* [ ] contract returns tADA to admin when closing main channel
+* [x] contract holds and distributes tADA to cover posting fees
+* [x] contract returns tADA to admin when closing main channel
 
 off-chain (Python) code
 -----------------------
