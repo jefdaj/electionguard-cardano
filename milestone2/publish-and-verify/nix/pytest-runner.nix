@@ -1,5 +1,6 @@
 # usage:
 # pytest-runner = pkgs.python3Packages.callPackage ./pytest-runner.nix {};
+# TODO remove when feasible
 
 { fetchPypi
 , buildPythonPackage

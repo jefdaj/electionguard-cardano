@@ -3,8 +3,7 @@
 
   inputs = {
 
-    # TODO update python packages for 25.11 (not urgent)
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     aiken.url   = "github:aiken-lang/aiken/v1.1.21";
     arion.url   = "github:jefdaj/arion/rm-obsolete-version-attribute";
 
@@ -23,26 +22,27 @@
             # TODO or remove cose in favor of something like python-cwt
             # TODO or rewrite TX building in MeshJS rather than PyCardano
             # TODO or rely on physical mitigations
-            "python3.12-ecdsa-0.19.1"
+            "python3.13-ecdsa-0.19.1"
 
           ];
         };
       };
 
-      py312Overlay = self: super: {
-        python312 = super.python312.override {
+      py313Overlay = self: super: {
+        python313 = super.python313.override {
           packageOverrides = pyself: pysuper: {
             pytest-runner       = pyself.callPackage ./nix/pytest-runner.nix       {};
             py-multiformats-cid = pyself.callPackage ./nix/py-multiformats-cid.nix {};
             aioipfs             = pyself.callPackage ./nix/aioipfs.nix             {};
             pycardano           = pyself.callPackage ./nix/pycardano.nix           {};
             cbor2               = pyself.callPackage ./nix/cbor2.nix               {};
+            cbor2pure           = pyself.callPackage ./nix/cbor2pure.nix           {};
           };
         };
       };
 
       # This is an actual output; see note below.
-      pkgs = basePkgs.extend py312Overlay;
+      pkgs = basePkgs.extend py313Overlay;
 
       devPkgList = ps: with ps; [
         arion.packages.x86_64-linux.arion
@@ -100,24 +100,24 @@
               shellHook = ''
                 echo "running devShells.x86_64-linux.onchain shellHook"
                 cd onchain
-                echo "aiken version: $(aiken --version)"
+                echo "$(aiken --version)"
               '';
             };
 
             offchain = pkgs.mkShell {
               nativeBuildInputs = onchain.nativeBuildInputs ++ [
-                (pkgs.python312.withPackages offchainPyPkgList)
+                (pkgs.python313.withPackages offchainPyPkgList)
                 kupo
               ];
               shellHook = ''
                 echo "running devShells.x86_64-linux.offchain shellHook"
                 cd offchain
-                echo "python version: $(python --version)"
-                echo "aiken version: $(aiken --version)"
-                echo "kupo version: $(kupo --version)"
+                echo "$(aiken --version)"
+                echo "kupo $(kupo --version)"
+                echo "$(python --version)"
+                echo "pycardano $(python -c "import importlib.metadata as m; print(m.version('pycardano'))")"
               '';
 
-              # TODO is this worth the speed tradeoff?
               PYTHONDONTWRITEBYTECODE = true;
             };
 

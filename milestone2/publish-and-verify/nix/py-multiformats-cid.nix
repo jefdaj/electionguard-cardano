@@ -3,8 +3,11 @@
 { buildPythonPackage
 , fetchFromGitHub
 , pytest
-, pytest-runner
 , base58
+, setuptools
+, pytest-runner
+, py-multibase
+, py-multiaddr
 }:
 
 
@@ -27,21 +30,20 @@ buildPythonPackage rec {
     base58
   ];
 
-  # build-system = [
-  #   setuptools
-  # ];
-  # dependencies = [
-  #   # these work
-  #   aiohttp
-  #   aiofiles
-  #   async-timeout
-  #   base58
-  #   # these would need packaging
-  #   gitignore-parser
-  #   py-multibase
-  #   py-multiaddr
-  #   # "py-multiformats-cid"
-  # ];
+  pyproject = true;
+  build-system = [setuptools];
+
+  dependencies = [
+    # these work
+    # aiohttp
+    # aiofiles
+    # async-timeout
+    # base58
+    py-multibase
+    py-multiaddr
+    # these would need packaging
+    # gitignore-parser
+  ];
   # pythonRelaxDeps = [
   #   "gitignore-parser"
   # ];

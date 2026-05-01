@@ -3,7 +3,6 @@
 
   inputs = {
 
-    # TODO update python packages for 25.11 (not urgent)
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     aiken.url   = "github:aiken-lang/aiken/v1.1.21";
     arion.url   = "github:jefdaj/arion/rm-obsolete-version-attribute";
