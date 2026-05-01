@@ -1,6 +1,3 @@
-# This is taken directly from the current head of the nixpkgs repo.
-# TODO remove once v0.14 makes it to 25.05
-
 {
   lib,
   buildPythonPackage,
@@ -9,7 +6,9 @@
   # Python deps
   blockfrost-python,
   cachetools,
+  base58,
   cbor2,
+  cbor2pure,
   cose,
   docker,
   ecpy,
@@ -41,14 +40,14 @@ let
 in
 buildPythonPackage rec {
   pname = "pycardano";
-  version = "0.19.0";
+  version = "0.19.2";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "Python-Cardano";
     repo = "pycardano";
     tag = "v${version}";
-    hash = "sha256-W5N254tND7mI0oR82YhMFWn4zVVs3ygYOqXOBMO3sXY=";
+    hash = "sha256-aLePVslTCm5NJ0s3w8gK7AeWeg8rKDYC2uxg/WJ3bjY=";
   };
 
   build-system = [
@@ -58,7 +57,9 @@ buildPythonPackage rec {
   dependencies = [
     blockfrost-python
     cachetools
+    base58
     cbor2
+    cbor2pure
     cose_0_9_dev8
     docker
     ecpy
@@ -96,6 +97,7 @@ buildPythonPackage rec {
     # cbor2 with C extensions fail tests due to differences in used sized vs unsized arrays
     # more info: https://github.com/NixOS/nixpkgs/pull/402433#issuecomment-2916520286
     # TODO tell someone that just disabling them fixes it for now?
-    broken = cbor2.withCExtensions; # consider overriding cbor2 with cbor2WithoutCExtensions
+    # broken = cbor2.withCExtensions; # consider overriding cbor2 with cbor2WithoutCExtensions
+    broken = false;
   };
 }
