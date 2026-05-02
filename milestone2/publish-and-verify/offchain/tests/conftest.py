@@ -11,9 +11,6 @@ from election import wallet as ew
 from election import plutus as ep
 from election.plutus import script as es
 
-
-### misc fixtures ###
-
 # TODO disambiguate from the module
 @pytest.fixture(scope='session')
 def ogmios() -> OgmiosV6ChainContext:
