@@ -1,6 +1,9 @@
 from election import publisher as ep
 from pycardano import UTxO
 
+# TODO how should this relate to the eventual Quart server? guess it's the backend/model?
+# TODO plan that all out roughly before continuing to code here
+
 class Admin:
     def __init__(
         self,
@@ -25,11 +28,12 @@ class Admin:
         )
 
     def _init_subscriber(self, kupo_args):
-        """Delayed init for subscriber because we need to know the args for `kupo --since`"""
+        """Delayed init for subscriber because we need to know the args for `kupo --since`."""
         script = ElectionScript(oneshot_utxo)
         self.subscriber = es.Subscriber(script)
 
     def init_election(self):
+        """Create admin STT and run delayed init functions."""
         oneshot_utxo = ... # TODO write this
         kupo_args = ... # TODO write this
         self._init_publisher(oneshot_utxo)
