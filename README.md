@@ -11,7 +11,7 @@ ElectionGuard + Cardano
 
 Work in progress on [the Catalyst fund13 project](https://milestones.projectcatalyst.io/projects/1300090).
 
-Current status as of 2026-03-16:
+Current status as of 2026-05-07:
 
 - All Milestones (1, 2, and 3) approved
 
@@ -34,12 +34,13 @@ Current status as of 2026-03-16:
     mostly still current except I now have the multichannel contract written,
     and I've gone back to the original plan of having separate publish + verify scripts.
 
-  * Aiken smart contract (multichannel version):
+  * Aiken smart contract:
     - [x] [Validator](./milestone2/publish-and-verify/onchain/validators/election.ak) written
     - [x] [Tests](./milestone2/publish-and-verify#on-chain-aiken-code) passing
+    - [x] [Video](https://www.youtube.com/watch?v=zWpfJSx9b1I)
 
   * Starting on the milestone outputs:
-    - [ ] Output 2.1: [contract design docs](./milestone2/publish-and-verify/docs/)
+    - [x] Output 2.1 (mostly done): [contract design docs](./milestone2/publish-and-verify/onchain/)
     - [ ] Output 2.2: [publish script](./milestone2/publish-and-verify/offchain/publish.py)
     - [ ] Output 2.3: [verify script](./milestone2/publish-and-verify/offchain/verify.py)
 
