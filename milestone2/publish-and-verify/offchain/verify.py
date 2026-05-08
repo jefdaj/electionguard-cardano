@@ -264,6 +264,13 @@ async def main():
     console.print("Enter election info:")
     console.print("Running verifier...\n")
 
+    console.print("Cardano confirm transactions")
+    console.print("│ IPFS fetch files")
+    console.print("│ │ Locally verify file contents")
+    console.print("│ │ │")
+    console.print("▼ ▼ ▼")
+    console.print("")
+
     # TODO probably only need 1 refresh per second?
     with Live(create_status_display(items), console=console, refresh_per_second=10) as live:
         semaphore = asyncio.Semaphore(6) # TODO raise pretty high and assume TXs are the bottleneck
