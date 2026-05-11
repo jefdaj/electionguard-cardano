@@ -5,3 +5,4 @@
 from . import ogmios
 from . import wallet
 from . import plutus
+from . import publisher

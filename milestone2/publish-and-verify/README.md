@@ -33,8 +33,9 @@ off-chain (Python) code
 
 TODO:
 
-* [x] add a "burn all tokens" action for use in testing
 * [x] write python types to match aiken types
+* [ ] basic init election tests needed to try burning test tokens
+* [ ] burn-test-tokens script
 * [ ] manually construct pycardano txs for each step in an election
 * [ ] have each container generate its own keypair
 * [ ] all eg nodes share one cardano node for now

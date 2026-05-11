@@ -93,7 +93,7 @@ def load_wallet_addr(name="main") -> Address:
     with open(PUBLIC_ADDR, 'r') as f:
         return Address.from_primitive(f.read())
 
-def load_election_wallet_signing_key() -> SigningKey:
+def load_wallet_signing_key() -> SigningKey:
     generate_keys()
     with open(SIGNING_KEY, 'r') as f:
         # TODO would validate_type=True here help?

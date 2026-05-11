@@ -8,6 +8,7 @@ from pathlib import Path
 from pycardano import UTxO, OgmiosV6ChainContext, SigningKey, Transaction, TransactionBuilder
 from time import sleep
 from typing import List, Optional
+from election.plutus.script import ElectionScript
 
 # from .ogmios import query_network_tip_sync
 # from .wallet import addr_for_signing_key, vkh_for_signing_key

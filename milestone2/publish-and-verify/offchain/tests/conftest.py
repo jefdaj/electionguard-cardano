@@ -20,20 +20,20 @@ def ogmios() -> OgmiosV6ChainContext:
 @pytest.fixture(scope='session')
 def addr() -> Address:
     '''Load test publisher address.'''
-    return ew.load_election_wallet_addr()
+    return ew.load_wallet_addr()
 
 @pytest.fixture(scope='session')
 def sk() -> SigningKey:
     '''Load test publisher signing key.'''
-    return ew.load_election_wallet_signing_key()
+    return ew.load_wallet_signing_key()
 
 @pytest.fixture(scope='session')
 def vkh(sk: SigningKey) -> VerificationKeyHash:
     '''Load test publisher verification key hash.'''
     return ew.vkh_for_signing_key(sk)
 
-# TODO explicit scope?
-@pytest.fixture
+# TODO do we ever want this one to persist between tests?
+@pytest.fixture(scope='function')
 def oneshot_utxo(ogmios: OgmiosV6ChainContext, addr: Address) -> UTxO:
     '''Pick a oneshot UTxO from the election wallet.'''
     return es.pick_oneshot_utxo(ogmios, addr)

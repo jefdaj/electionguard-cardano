@@ -12,5 +12,3 @@ def test_init_script(oneshot_utxo: UTxO):
     assert isinstance(script.spend_script, bytes)
     assert isinstance(script.policy_id, ScriptHash)
     assert isinstance(script.address, Address)
-
-# TODO test save/load json
