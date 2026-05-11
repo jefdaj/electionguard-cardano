@@ -6,6 +6,9 @@ They publish TXs via Ogmios and files via IPFS (Kubo) (not Kupo).
 
 from pathlib import Path
 from pycardano import UTxO, OgmiosV6ChainContext, SigningKey, Transaction, TransactionBuilder
+from election.ogmios import OGMIOS_CTX
+from election.plutus import script as es
+from election import wallet as ew
 from time import sleep
 from typing import List, Optional
 from election.plutus.script import ElectionScript
@@ -26,8 +29,8 @@ class ElectionPublisher:
         role: str,
         index: int,
         keys_dir: Path,
-        script: ElectionScript,
-        ogmios: OgmiosV6ChainContext,
+        # script: ElectionScript,
+        # TODO pass once using more than one: ogmios: OgmiosV6ChainContext,
         # TODO ipfs (kubo)
     ):
         """Create the publisher.
@@ -35,12 +38,14 @@ class ElectionPublisher:
         """
         self.role = role
         self.index = index
-        self.keys_dir = keys_dir
-        self.ogmios = ogmios
-        self.script = script
+        if isinstance(Path, str):
+            self.keys_dir = keys_dir
+        else:
+            self.keys_dir = Path(keys_dir)
+        self.ogmios = OGMIOS_CTX
         self._init_keypair()
-        # self.publisher_address = addr_for_signing_key(self.publisher_signing_key)
-        # self.oneshot_utxo = pick_oneshot_utxo(ogmios, self.publisher_address)
+        self.oneshot_utxo = es.pick_oneshot_utxo(self.ogmios, self.address)
+        self.script = ElectionScript(self.oneshot_utxo)
         # self.pubsub_script = PubsubScript(self.oneshot_utxo)
         # self.channel_state: Optional[str] = None # TODO formalize a type
         # self.published_cids = []
@@ -50,20 +55,17 @@ class ElectionPublisher:
         """Load the keypair, creating it first if needed."""
         self.keys_dir.mkdir(exist_ok=True)
         name = self.channel_id()
-        sk_path   = self.keys_dir / (name + '.sk')
-        addr_path = self.keys_dir / (name + '.addr')
-        if not sk_path.exists():
-            pass
-        # self.publisher_signing_key = publisher_signing_key
-        # self.publisher_verification_key_hash = vkh_for_signing_key(self.publisher_signing_key)
+        self.signing_key           = ew.load_wallet_signing_key(keys_dir=self.keys_dir, name=name)
+        self.verification_key_hash = ew.vkh_for_signing_key(self.signing_key)
+        self.address               = ew.addr_for_signing_key(self.signing_key)
 
     def channel_id(self) -> str:
         return 'admin' if self.role == 'admin' else f'{self.role}{self.index}'
 
     def sign_and_submit(self, txb: TransactionBuilder):
         tx_signed = txb.build_and_sign(
-            [self.publisher_signing_key],
-            change_address=self.publisher_address
+            [self.signing_key],
+            change_address=self.address
         )
         self.ogmios.submit_tx(tx_signed)
         print(f'submitted tx with id={tx_signed.id}')

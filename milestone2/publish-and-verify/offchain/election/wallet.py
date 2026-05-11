@@ -45,14 +45,10 @@ The test001 format is simplest for pytest, but something more like test002
 makes sense when generating each keypair in a separate docker data mount dir.
 """
 
-from os import makedirs
-from os.path import basename, exists, join, realpath
 from pathlib import Path
 from pycardano import Address, Network, SigningKey, PaymentSigningKey, PaymentVerificationKey, VerificationKeyHash
 
-KEYS_DIR = Path(__file__).parent / '../keys'
-SIGNING_KEY = join(KEYS_DIR, 'main.sk')
-PUBLIC_ADDR = join(KEYS_DIR, 'main.addr')
+DEF_KEYS_DIR = Path(__file__).parent / '../keys'
 
 def vkh_for_signing_key(sk: PaymentSigningKey) -> VerificationKeyHash:
     verification_key = PaymentVerificationKey.from_signing_key(sk)
@@ -63,38 +59,43 @@ def addr_for_signing_key(sk: PaymentSigningKey) -> Address:
     address = Address(payment_part=verification_key.hash(), network=Network.TESTNET)
     return address
 
-def generate_keys():
-    if exists(SIGNING_KEY):
-        assert exists(PUBLIC_ADDR)
+def generate_keys(keys_dir=DEF_KEYS_DIR, name='main', verbose=True):
+    sk_path   = (keys_dir / (name + '.sk'  )).absolute()
+    addr_path = (keys_dir / (name + '.addr')).absolute()
+    if sk_path.exists():
+        assert addr_path.exists()
         return
-    makedirs(KEYS_DIR, exist_ok=True)
+    keys_dir.mkdir(exist_ok=True)
     signing_key = PaymentSigningKey.generate()
-    signing_key.save(SIGNING_KEY)
+    signing_key.save(str(sk_path))
     address = addr_for_signing_key(signing_key)
-    with open(PUBLIC_ADDR, "w") as f:
+    with addr_path.open("w") as f:
         f.write(str(address))
     msg = f'''
     Your new Preview testnet keys are here:
 
-    {realpath(SIGNING_KEY)}
-    {realpath(PUBLIC_ADDR)}
+    {signing_key}
+    {address}
 
-    Your public address (2nd file) is: {address}
+    Your public address (2nd file) is: {str(addr_path)}
 
     Before continuing, fund that address with tADA from the faucet:
     https://docs.cardano.org/cardano-testnets/tools/faucet
 
     If you don't, local tests will still work but testnet tests will fail.
     '''
-    input(msg)
+    if verbose:
+        print(msg)
  
-def load_wallet_addr(name="main") -> Address:
-    generate_keys()
-    with open(PUBLIC_ADDR, 'r') as f:
+def load_wallet_addr(keys_dir=DEF_KEYS_DIR, name="main", verbose=False) -> Address:
+    generate_keys(keys_dir=keys_dir, name=name, verbose=verbose)
+    public_addr = (keys_dir / (name + '.addr')).absolute()
+    with public_addr.open('r') as f:
         return Address.from_primitive(f.read())
 
-def load_wallet_signing_key() -> SigningKey:
-    generate_keys()
-    with open(SIGNING_KEY, 'r') as f:
+def load_wallet_signing_key(keys_dir=DEF_KEYS_DIR, name='main', verbose=False) -> SigningKey:
+    generate_keys(keys_dir=keys_dir, name=name, verbose=verbose)
+    signing_key = (keys_dir / (name + '.sk')).absolute()
+    with signing_key.open('r') as f:
         # TODO would validate_type=True here help?
         return SigningKey.from_json(f.read())
