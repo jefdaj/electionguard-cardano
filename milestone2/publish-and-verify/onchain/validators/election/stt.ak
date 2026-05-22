@@ -29,7 +29,7 @@ pub fn full_stt_name(channel_id: ChannelId) -> ByteArray {
   trace @"full_stt_name"
   let prefix = string.from_bytearray(config.stt_prefix)
   let id = string.from_bytearray(channel_id)
-  let full_name = string.join([prefix, id, @"channel", @"state"], @"-")
+  let full_name = string.join([prefix, id, @"stt"], @"-")
   // trace @"full_name" : full_name
   string.to_bytearray(full_name)
 }

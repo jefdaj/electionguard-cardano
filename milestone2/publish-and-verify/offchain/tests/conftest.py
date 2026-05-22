@@ -3,13 +3,15 @@ import pytest
 
 from os.path import realpath, join, exists
 from pathlib import Path
-from pycardano import OgmiosV6ChainContext, Address, SigningKey, VerificationKeyHash, UTxO
+from pycardano import OgmiosV6ChainContext, Address, SigningKey, VerificationKeyHash, UTxO, MultiAsset
 from typing import Dict, List
 
 from election import ogmios as eo
 from election import wallet as ew
 from election import plutus as ep
-from election.plutus import script as es
+from election.plutus import script as eps
+from election.plutus.types.channel_id import *
+from election.roles import funder as erf
 
 # TODO disambiguate from the module
 @pytest.fixture(scope='session')
@@ -33,7 +35,37 @@ def vkh(sk: SigningKey) -> VerificationKeyHash:
     return ew.vkh_for_signing_key(sk)
 
 # TODO do we ever want this one to persist between tests?
-@pytest.fixture(scope='function')
+@pytest.fixture(scope='module')
 def oneshot_utxo(ogmios: OgmiosV6ChainContext, addr: Address) -> UTxO:
     '''Pick a oneshot UTxO from the election wallet.'''
-    return es.pick_oneshot_utxo(ogmios, addr)
+    return eps.pick_oneshot_utxo(ogmios, addr)
+
+@pytest.fixture(scope='module')
+def script(oneshot_utxo: UTxO) -> eps.ElectionScript:
+    '''Parameterize the contract with the oneshot_utxo.'''
+    return eps.ElectionScript(oneshot_utxo)
+
+@pytest.fixture(scope='module')
+def admin_id() -> ChannelId:
+    return ChannelIdHelper.from_string('admin')
+
+@pytest.fixture(scope='module')
+def subchannel_ids() -> List[ChannelId]:
+    strs = ['guardian1', 'guardian2', 'guardian3', 'device1', 'verifier1']
+    return [ChannelIdHelper.from_string(s) for s in strs]
+
+@pytest.fixture(scope='module')
+def admin_channel_stt_assets(
+        script: eps.ElectionScript,
+        admin_id: ChannelId
+    ) -> MultiAsset:
+    return erf.mint_channel_stt_assets(script.policy_id, 1, [admin_id])
+
+@pytest.fixture(scope='module')
+def subchannel_stt_assets(
+        script: eps.ElectionScript,
+        subchannel_ids: List[ChannelId]
+    ) -> MultiAsset:
+    return erf.mint_channel_stt_assets(script.policy_id, 1, subchannel_ids)
+
+

@@ -29,7 +29,7 @@ class ElectionPublisher:
         role: str,
         index: int,
         keys_dir: Path,
-        # script: ElectionScript,
+        script: ElectionScript,
         # TODO pass once using more than one: ogmios: OgmiosV6ChainContext,
         # TODO ipfs (kubo)
     ):
@@ -42,10 +42,9 @@ class ElectionPublisher:
             self.keys_dir = keys_dir
         else:
             self.keys_dir = Path(keys_dir)
+        self.script = script
         self.ogmios = OGMIOS_CTX
         self._init_keypair()
-        self.oneshot_utxo = es.pick_oneshot_utxo(self.ogmios, self.address)
-        self.script = ElectionScript(self.oneshot_utxo)
         # self.pubsub_script = PubsubScript(self.oneshot_utxo)
         # self.channel_state: Optional[str] = None # TODO formalize a type
         # self.published_cids = []
@@ -60,7 +59,13 @@ class ElectionPublisher:
         self.address               = ew.addr_for_signing_key(self.signing_key)
 
     def channel_id(self) -> str:
-        return 'admin' if self.role == 'admin' else f'{self.role}{self.index}'
+        if self.role == 'funder':
+            # Funder doesn't have a channel and shouldn't need the id
+            raise NotImplementedError
+        elif role == 'admin':
+            return self.role
+        else:
+            return f'{self.role}{self.index}'
 
     def sign_and_submit(self, txb: TransactionBuilder):
         tx_signed = txb.build_and_sign(
