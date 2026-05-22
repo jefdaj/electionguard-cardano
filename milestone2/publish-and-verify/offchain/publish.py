@@ -1,10 +1,32 @@
 #!/usr/bin/env python3
 
-from pprint import pprint
-from static_records_py_out import STATIC_PHASES, STATIC_TRANSACTIONS
+import os
+from pprint import pformat
+import logging
 
-print('admin phases by relative block:'); pprint(STATIC_PHASES)
-print('\n(redeemer, records to post) by channel and relative block:'); pprint(STATIC_TRANSACTIONS)
+import election
+from static_records import STATIC_PHASES, STATIC_TRANSACTIONS
+
+logging.basicConfig(
+  filename='publisher.log',
+  encoding='utf-8',
+  level=logging.INFO,
+  format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
+
+log = logging.getLogger(os.path.basename(__file__))
+
+log.info(
+  'admin phases by relative block:\n%s\n' %
+  pformat(STATIC_PHASES)
+)
+
+log.info(
+  '(redeemer, records to post) by channel and relative block:\n%s\n' %
+  pformat(STATIC_TRANSACTIONS)
+)
+
+raise SystemExit
 
 # TODO start a click interface with --keys-dir
 

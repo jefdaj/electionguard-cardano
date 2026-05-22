@@ -12,6 +12,9 @@ from election import wallet as ew
 from time import sleep
 from typing import List, Optional
 from election.plutus.script import ElectionScript
+import logging
+
+log = logging.getLogger(__name__)
 
 # from .ogmios import query_network_tip_sync
 # from .wallet import addr_for_signing_key, vkh_for_signing_key
@@ -36,6 +39,7 @@ class ElectionPublisher:
         """Create the publisher.
         The script should already have been parameterized with a one-shot UTxO by the Admin.
         """
+        log.info('init publisher')
         self.role = role
         self.index = index
         if isinstance(Path, str):
