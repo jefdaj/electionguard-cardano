@@ -54,17 +54,17 @@ keys_dir='test-keys'
 # The wallet which funds the election and recovers remaining ADA afterward.
 # Often but not necesarily the personal wallet of the election admin.
 # In a future web interface, this will be the wallet you connect to the dApp.
-f = election.roles.funder.Funder(keys_dir, wallet_name='main')
+f = election.roles.funder.Funder(keys_dir, wallet_name='dev')
 
 # Create Admin separately in case it's a different person from the Funder.
 a = election.roles.admin.Admin(keys_dir)
-
-raise SystemExit
 
 # Create the admin STT and run delayed admin init functions.
 # Also returns info needed for a Subscriber to index election events.
 # init_election(admin=a, keys_dir=keys_dir, main_wallet_name='main')
 sub_info = f.init_election(admin=a)
+
+raise SystemExit
 
 # TODO test this
 # f.burn_test_tokens()

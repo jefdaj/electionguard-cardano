@@ -33,21 +33,20 @@ class ElectionPublisher:
         index: int,
         keys_dir: Path,
         script: ElectionScript,
+        key_name: Optional[Path]
         # TODO pass once using more than one: ogmios: OgmiosV6ChainContext,
         # TODO ipfs (kubo)
     ):
         """Create the publisher.
         The script should already have been parameterized with a one-shot UTxO by the Admin.
         """
-        log.info('init publisher')
+        log.info('ElectionPublisher.__init__')
         self.role = role
         self.index = index
-        if isinstance(Path, str):
-            self.keys_dir = keys_dir
-        else:
-            self.keys_dir = Path(keys_dir)
+        self.keys_dir = Path(keys_dir) # TODO ok if already a Path?
         self.script = script
         self.ogmios = OGMIOS_CTX
+        self.key_name = key_name if key_name else self.channel_id()
         self._init_keypair()
         # self.pubsub_script = PubsubScript(self.oneshot_utxo)
         # self.channel_state: Optional[str] = None # TODO formalize a type
@@ -56,13 +55,14 @@ class ElectionPublisher:
 
     def _init_keypair(self):
         """Load the keypair, creating it first if needed."""
+        log.info('ElectionPublisher._init_keypair')
         self.keys_dir.mkdir(exist_ok=True)
-        name = self.channel_id()
-        self.signing_key           = ew.load_wallet_signing_key(keys_dir=self.keys_dir, name=name)
+        self.signing_key = ew.load_wallet_signing_key(keys_dir=self.keys_dir, name=self.key_name)
         self.verification_key_hash = ew.vkh_for_signing_key(self.signing_key)
-        self.address               = ew.addr_for_signing_key(self.signing_key)
+        self.address = ew.addr_for_signing_key(self.signing_key)
 
     def channel_id(self) -> str:
+        log.info('ElectionPublisher.channel_id')
         if self.role == 'funder':
             # Funder doesn't have a channel and shouldn't need the id
             raise NotImplementedError
@@ -72,6 +72,7 @@ class ElectionPublisher:
             return f'{self.role}{self.index}'
 
     def sign_and_submit(self, txb: TransactionBuilder):
+        log.info('ElectionPublisher.sign_and_submit')
         tx_signed = txb.build_and_sign(
             [self.signing_key],
             change_address=self.address
@@ -82,6 +83,7 @@ class ElectionPublisher:
 
     # TODO get this working for the case where the utxo is confirmed + consumed between polls
     def wait_for_confirmation(self, tx: Transaction, max_seconds: int = 300, interval_seconds: int = 5):
+        log.info('ElectionPublisher.wait_for_confirmation')
         tx_id = str(tx.id) # TODO is this the right way?
         print(f'tx {tx_id} waiting up to {max_seconds} seconds for confirmation', end='', flush=True)
         waited_seconds = 0

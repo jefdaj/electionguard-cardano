@@ -60,6 +60,7 @@ def addr_for_signing_key(sk: PaymentSigningKey) -> Address:
     return address
 
 def generate_keys(keys_dir=DEF_KEYS_DIR, name='main', verbose=True):
+    keys_dir = Path(keys_dir)
     sk_path   = (keys_dir / (name + '.sk'  )).absolute()
     addr_path = (keys_dir / (name + '.addr')).absolute()
     if sk_path.exists():
@@ -88,12 +89,14 @@ def generate_keys(keys_dir=DEF_KEYS_DIR, name='main', verbose=True):
         print(msg)
  
 def load_wallet_addr(keys_dir=DEF_KEYS_DIR, name="main", verbose=False) -> Address:
+    keys_dir = Path(keys_dir)
     generate_keys(keys_dir=keys_dir, name=name, verbose=verbose)
     public_addr = (keys_dir / (name + '.addr')).absolute()
     with public_addr.open('r') as f:
         return Address.from_primitive(f.read())
 
 def load_wallet_signing_key(keys_dir=DEF_KEYS_DIR, name='main', verbose=False) -> SigningKey:
+    keys_dir = Path(keys_dir)
     generate_keys(keys_dir=keys_dir, name=name, verbose=verbose)
     signing_key = (keys_dir / (name + '.sk')).absolute()
     with signing_key.open('r') as f:

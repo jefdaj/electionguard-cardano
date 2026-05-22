@@ -1,4 +1,9 @@
 # Cardano preview wallet keys with tADA from the faucet
 offchain/*keys/
 
+# Every time we parameterize the contract, we save the resulting JSON just in
+# case we need it to recover some assets later. Normally they get bulk deleted
+# after a couple days.
+onchain/election-plutus-*.json
+
 *.log

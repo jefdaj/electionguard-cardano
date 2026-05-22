@@ -4,11 +4,12 @@ from election.plutus import types as ept
 from election.plutus.types.channel_id import *
 from election.ogmios import OGMIOS_CTX
 from election import wallet as ew
-from pycardano import UTxO, ScriptHash, MultiAsset, TransactionBuilder, Asset, AssetName
+from pycardano import UTxO, ScriptHash, MultiAsset, TransactionBuilder, Asset, AssetName, Redeemer
 from pathlib import Path
 from pycardano import UTxO, OgmiosV6ChainContext
 from typing import List
 import logging
+from pprint import pformat
 
 log = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ class Funder:
     ):
         log.debug('Funder.__init__')
         self.keys_dir = keys_dir
-        self.wallet_name = wallet_name
+        self.wallet_name = wallet_name # TODO rename key_name?
         self.publisher = None
         self.subscriber = None
         self.ogmios = OGMIOS_CTX
@@ -64,6 +65,7 @@ class Funder:
             index=1,
             keys_dir=self.keys_dir,
             script=script,
+            key_name=self.wallet_name,
             # ogmios=self.ogmios
         )
 
@@ -84,8 +86,13 @@ class Funder:
     ) -> TransactionBuilder:
         log.debug('Funder.build_init_tx')
 
-        init_redeemer = Redeemer(data=et.InitElection())
-        assets = mint_channel_stt_assets(script.policy_id, 1)
+        init_redeemer = Redeemer(data=ept.InitElection())
+        log.info('redeemer: %s' % pformat(init_redeemer))
+
+        admin_id = ChannelIdHelper.from_string('admin')
+        assets = mint_channel_stt_assets(self.script.policy_id, 1, [admin_id])
+        log.info('assets: %s' % pformat(assets))
+
         state = PubsubState(
             pub_vkh.payload, # TODO is there a cleaner way to get .payload?
             [],
@@ -128,9 +135,9 @@ class Funder:
     def init_election(self, admin):
         log.debug('Funder.init_election')
         # TODO will this also generate the keypair if needed? do we want it to?
-        funder_addr = load_wallet_addr(keys_dir=self.keys_dir, name=self.wallet_name)
+        funder_addr = ew.load_wallet_addr(keys_dir=self.keys_dir, name=self.wallet_name)
         oneshot_utxo = eps.pick_oneshot_utxo(OGMIOS_CTX, funder_addr)
-        self.script = ElectionScript(oneshot_utxo)
+        self.script = eps.ElectionScript(oneshot_utxo)
         self._init_publisher(self.script)
         sub_info = None # TODO write this
 
