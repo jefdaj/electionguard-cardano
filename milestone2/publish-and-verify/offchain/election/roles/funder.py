@@ -4,9 +4,11 @@ from election.plutus import types as ept
 from election.plutus.types.channel_id import *
 from election.ogmios import OGMIOS_CTX
 from election import wallet as ew
-from pycardano import UTxO, ScriptHash, MultiAsset, TransactionBuilder, Asset, AssetName, Redeemer
+# import pycardano as pc
+# from pycardano import UTxO, ScriptHash, MultiAsset, TransactionBuilder, Asset, AssetName, Redeemer, Value
+from pycardano import *
 from pathlib import Path
-from pycardano import UTxO, OgmiosV6ChainContext
+# from pycardano import UTxO, OgmiosV6ChainContext
 from typing import List
 import logging
 from pprint import pformat
@@ -93,23 +95,30 @@ class Funder:
         assets = mint_channel_stt_assets(self.script.policy_id, 1, [admin_id])
         log.info('assets: %s' % pformat(assets))
 
-        state = PubsubState(
-            pub_vkh.payload, # TODO is there a cleaner way to get .payload?
-            [],
-            0
+        vkh = self.publisher.verification_key_hash
+        state = ept.channel.AdminChannelState(
+            admin       = vkh.payload,
+            subchannels = [],
+            new_records = [],
+            phase       = ept.phase.ConfigAnnouncePhase,
+            seq         = 0,
         )
+        log.info('state: %s' % pformat(state))
 
         current_value = Value(
             0, # start with 0, then top up to min below
             assets   # the minted STT
         )
+        log.info('current_value: %s' % pformat(current_value))
 
         # Lock the STT at the script address
         stt_output = TransactionOutput(
-            address=script.address,
+            address=self.script.address,
             amount=current_value,
             datum=state
         )
+        log.info('stt_output: %s' % pformat(stt_output))
+        raise SystemExit
 
         # top up to min ada
         current_value.coin += min_lovelace(ctx, stt_output)
