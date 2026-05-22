@@ -10,23 +10,21 @@ from static_records import STATIC_PHASES, STATIC_TRANSACTIONS
 logging.basicConfig(
   filename='publisher.log',
   encoding='utf-8',
-  level=logging.INFO,
+  level=logging.DEBUG,
   format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
 
 log = logging.getLogger(os.path.basename(__file__))
 
-log.info(
+log.debug(
   'admin phases by relative block:\n%s\n' %
   pformat(STATIC_PHASES)
 )
 
-log.info(
+log.debug(
   '(redeemer, records to post) by channel and relative block:\n%s\n' %
   pformat(STATIC_TRANSACTIONS)
 )
-
-raise SystemExit
 
 # TODO start a click interface with --keys-dir
 
@@ -46,10 +44,6 @@ raise SystemExit
 
 # TODO print the info needed by the verifier and generate a qr code if easy
 
-# TODO use publisher to InitElection
-
-main_keys = 'main_keys'
-
 # Keys will be arranged like:
 # test_keys/admin.{sk,addr}
 # test_keys/guardian1.{sk,addr}
@@ -60,7 +54,9 @@ keys_dir='test-keys'
 # The wallet which funds the election and recovers remaining ADA afterward.
 # Often but not necesarily the personal wallet of the election admin.
 # In a future web interface, this will be the wallet you connect to the dApp.
-f = election.roles.Funder(keys_dir, wallet_name='main')
+f = election.roles.funder.Funder(keys_dir, wallet_name='main')
+
+raise SystemExit
 
 # Create Admin separately in case it's a different person from the Funder.
 a = election.roles.Admin(keys_dir)
