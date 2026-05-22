@@ -117,28 +117,31 @@ class Funder:
             amount=current_value,
             datum=state
         )
-        log.debug('stt_output: %s' % pformat(stt_output))
+        log.debug('stt_output before top-up: %s' % pformat(stt_output))
 
         # top up to min ada
         current_value.coin += min_lovelace(self.ogmios, stt_output)
         log.debug('current_value after top-up: %s' % pformat(current_value))
-        raise SystemExit
 
         # TODO is restating it with new current_value required?
-        stt_output = TransactionOutput(
-            address=script.address,
-            amount=current_value,
-            datum=state
-        )
+        # stt_output = TransactionOutput(
+            # address=self.script.address,
+            # amount=current_value,
+            # datum=state
+        # )
+        log.debug('stt_output after top-up: %s' % pformat(stt_output))
 
+        # TODO is init_redeemer what we need here? or a separate one?
         mint_tx = (
             TransactionBuilder(self.ogmios, mint=assets)
-            .add_input(oneshot_utxo)
-            .add_input_address(pub_addr)
-            .add_minting_script(script=script.mint_script, redeemer=mint_redeemer)
+            .add_input(self.script.oneshot_utxo)
+            .add_input_address(self.publisher.address)
+            .add_minting_script(script=self.script.mint_script, redeemer=init_redeemer)
             .add_output(stt_output)
         )
-        mint_tx.required_signers = [pub_vkh]
+        mint_tx.required_signers = [vkh]
+        log.debug('mint_tx:\n%s\n' % pformat(mint_tx))
+
         return mint_tx
 
 
