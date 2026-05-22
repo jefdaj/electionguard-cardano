@@ -89,27 +89,27 @@ class Funder:
         log.debug('Funder.build_init_tx')
 
         init_redeemer = Redeemer(data=ept.InitElection())
-        log.info('redeemer: %s' % pformat(init_redeemer))
+        log.debug('redeemer: %s' % pformat(init_redeemer))
 
         admin_id = ChannelIdHelper.from_string('admin')
         assets = mint_channel_stt_assets(self.script.policy_id, 1, [admin_id])
-        log.info('assets: %s' % pformat(assets))
+        log.debug('assets: %s' % pformat(assets))
 
         vkh = self.publisher.verification_key_hash
         state = ept.channel.AdminChannelState(
             admin       = vkh.payload,
             subchannels = [],
             new_records = [],
-            phase       = ept.phase.ConfigAnnouncePhase,
+            phase       = ept.phase.ElectionConfigPhase(ept.phase.ConfigAnnouncePhase()),
             seq         = 0,
         )
-        log.info('state: %s' % pformat(state))
+        log.debug('state: %s' % pformat(state))
 
         current_value = Value(
             0, # start with 0, then top up to min below
             assets   # the minted STT
         )
-        log.info('current_value: %s' % pformat(current_value))
+        log.debug('current_value before top-up: %s' % pformat(current_value))
 
         # Lock the STT at the script address
         stt_output = TransactionOutput(
@@ -117,11 +117,12 @@ class Funder:
             amount=current_value,
             datum=state
         )
-        log.info('stt_output: %s' % pformat(stt_output))
-        raise SystemExit
+        log.debug('stt_output: %s' % pformat(stt_output))
 
         # top up to min ada
-        current_value.coin += min_lovelace(ctx, stt_output)
+        current_value.coin += min_lovelace(self.ogmios, stt_output)
+        log.debug('current_value after top-up: %s' % pformat(current_value))
+        raise SystemExit
 
         # TODO is restating it with new current_value required?
         stt_output = TransactionOutput(
@@ -131,7 +132,7 @@ class Funder:
         )
 
         mint_tx = (
-            TransactionBuilder(ctx, mint=assets)
+            TransactionBuilder(self.ogmios, mint=assets)
             .add_input(oneshot_utxo)
             .add_input_address(pub_addr)
             .add_minting_script(script=script.mint_script, redeemer=mint_redeemer)
