@@ -56,10 +56,10 @@ keys_dir='test-keys'
 # In a future web interface, this will be the wallet you connect to the dApp.
 f = election.roles.funder.Funder(keys_dir, wallet_name='main')
 
-raise SystemExit
-
 # Create Admin separately in case it's a different person from the Funder.
-a = election.roles.Admin(keys_dir)
+a = election.roles.admin.Admin(keys_dir)
+
+raise SystemExit
 
 # Create the admin STT and run delayed admin init functions.
 # Also returns info needed for a Subscriber to index election events.
