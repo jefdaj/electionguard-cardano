@@ -12,19 +12,21 @@ import subprocess
 import sys
 import threading
 import time
+import logging
 
 from dataclasses import dataclass
 from os import environ
 from pprint import pprint
-from pycardano import *
+
+# TODO import qualified to avoid logging conflict
+# from pycardano import *
+
 from typing import Any, Callable, Dict, List, Optional
 
 from .ogmios import OGMIOS_HOST, OGMIOS_PORT
+from .plutus.types.channel import AdminChannelState
+from .plutus.types.action import *
 
-from .plutus import AdminChannelState
-from .plutus.action import *
-
-import logging
 
 log = logging.getLogger(__name__)
 
@@ -221,8 +223,8 @@ class Subscriber:
                 proc.wait() # TODO remove?
         self._kupo_proc = None
 
-    def check_if_channel_closed(self):
-        log.info('Subscriber.check_if_channel_closed')
+    def check_if_election_ended(self):
+        log.info('Subscriber.check_if_election_ended')
         (tx_id, output_ix) = self._last_tx_key
         resp = self.session.get(KUPO_MATCHES_URL + f'/{output_ix}@{tx_id}') # TODO params? timeout?
         if resp.status_code == 200:
@@ -294,7 +296,8 @@ class Subscriber:
 
                 if not any_new_utxo:
                     log.info('No new UTXOs')
-                    self.check_if_channel_closed()
+                    self.check_if_election_ended()
+                    # TODO is this the only check like this? or do we need one per channel?
 
             except requests.RequestException as e:
                 log.warn('Kupo polling error: {}', e)
@@ -309,8 +312,9 @@ class Subscriber:
 
     def subscribed_records(self):
         records = []
+        # TODO fix so even if one is missing, iteration doesn't get messed up
         for record in range(0, len(self.records_by_seq)):
-            assert records in self.records_by_seq, f'Missing CID batch {seq}'
+            assert records in self.records_by_seq, f'Missing records with seq={seq}.'
             records += self.records_by_seq[seq]
         return records
 

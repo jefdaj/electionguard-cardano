@@ -64,6 +64,8 @@ a = election.roles.admin.Admin(keys_dir)
 # TODO sub_info not implemented yet
 sub_info = f.init_election(admin=a)
 
+log.info(f'sub_info: {sub_info}')
+
 f.burn_test_tokens()
 
 raise SystemExit

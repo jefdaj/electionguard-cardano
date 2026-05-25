@@ -2,7 +2,7 @@ from election import publisher as ep
 from election.plutus import script as eps
 from election.plutus import types as ept
 from election.plutus.types.channel_id import *
-from election.ogmios import OGMIOS_CTX
+from election.ogmios import OGMIOS_CTX, query_network_tip_sync
 from election import wallet as ew
 # import pycardano as pc
 # from pycardano import UTxO, ScriptHash, MultiAsset, TransactionBuilder, Asset, AssetName, Redeemer, Value
@@ -159,7 +159,9 @@ class Funder:
         oneshot_utxo = eps.pick_oneshot_utxo(OGMIOS_CTX, funder_addr)
         self.script = eps.ElectionScript(oneshot_utxo)
         self._init_publisher(self.script)
-        sub_info = None # TODO write this
+
+        # should be synchronous so it's done before the first tx is published
+        sub_info = query_network_tip_sync()
 
         # TODO create and submit tx
         tx = self.build_init_tx()
