@@ -86,6 +86,13 @@ class Funder:
         # script: PubsubScript,
         # oneshot_utxo: UTxO,
     ) -> TransactionBuilder:
+        """Build an InitElection transaction.
+        This is an unusual one because it doesn't have any options, so there's
+        no point pulling them from static_records.py.
+        """
+
+        # TODO merge this into init_election rather than separate builders?
+
         log.debug('Funder.build_init_tx')
 
         init_redeemer = Redeemer(data=ept.InitElection())
@@ -159,5 +166,65 @@ class Funder:
 
         return sub_info
 
-    # TODO burn_test_tokens
+    def burn_test_tokens(self):
+        "Cleans up test tokens so they don't pollute the testnet or dev wallet."
+        # TODO add an arg saying which tokens to burn once there are more than one
+        # TODO once subscribing works, have this auto-detect and burn all tokens
+        # TODO add a toggle to disable for production
+        # TODO can we add this as an error handler in pytest?
+
+        # TODO wait, basically need subscriber BEFORE doing anything with current states
+
+        log.debug('Funder.burn_test_tokens')
+
+#         redeemer = Redeemer(data=ept.BurnTestTokens())
+#         log.debug('redeemer: %s' % pformat(redeemer))
+#
+#         admin_id = ChannelIdHelper.from_string('admin')
+#         assets = mint_channel_stt_assets(self.script.policy_id, -1, [admin_id])
+#         log.debug('assets: %s' % pformat(assets))
+#
+#         vkh = self.publisher.verification_key_hash
+#
+#         current_value = Value(
+#             0, # start with 0, then top up to min below
+#             assets   # the minted STT
+#         )
+#         log.debug('current_value before top-up: %s' % pformat(current_value))
+#
+#         # Lock the STT at the script address
+#         stt_output = TransactionOutput(
+#             address=self.script.address,
+#             amount=current_value,
+#             datum=state
+#         )
+#         log.debug('stt_output before top-up: %s' % pformat(stt_output))
+#
+#         # top up to min ada
+#         current_value.coin += min_lovelace(self.ogmios, stt_output)
+#         log.debug('current_value after top-up: %s' % pformat(current_value))
+#
+#         # TODO is restating it with new current_value required?
+#         # stt_output = TransactionOutput(
+#             # address=self.script.address,
+#             # amount=current_value,
+#             # datum=state
+#         # )
+#         log.debug('stt_output after top-up: %s' % pformat(stt_output))
+#
+#         # TODO is init_redeemer what we need here? or a separate one?
+#         mint_tx = (
+#             TransactionBuilder(self.ogmios, mint=assets)
+#             .add_input(self.script.oneshot_utxo)
+#             .add_input_address(self.publisher.address)
+#             .add_minting_script(script=self.script.mint_script, redeemer=init_redeemer)
+#             .add_output(stt_output)
+#         )
+#         mint_tx.required_signers = [vkh]
+#         log.debug('mint_tx:\n%s\n' % pformat(mint_tx))
+#
+#         return mint_tx
+
+
+
     # TODO end_election

@@ -8,7 +8,7 @@ import election
 from static_records import STATIC_PHASES, STATIC_TRANSACTIONS
 
 logging.basicConfig(
-  filename='publisher.log',
+  filename='publish.log',
   encoding='utf-8',
   level=logging.DEBUG,
   format="%(asctime)s %(levelname)s %(name)s: %(message)s",
@@ -61,8 +61,10 @@ a = election.roles.admin.Admin(keys_dir)
 
 # Create the admin STT and run delayed admin init functions.
 # Also returns info needed for a Subscriber to index election events.
-# init_election(admin=a, keys_dir=keys_dir, main_wallet_name='main')
+# TODO sub_info not implemented yet
 sub_info = f.init_election(admin=a)
+
+f.burn_test_tokens()
 
 raise SystemExit
 
