@@ -149,7 +149,11 @@ class Funder:
         mint_tx.required_signers = [vkh]
         log.debug('mint_tx:\n%s\n' % pformat(mint_tx))
 
-        return mint_tx
+        # return mint_tx
+
+        mint_tx_submitted = self.publisher.sign_and_submit(mint_tx)
+        # self.publisher.wait_for_confirmation(mint_tx_signed) # TODO should wait happen here?
+        return mint_tx_submitted
 
 
     def init_election(self, admin):

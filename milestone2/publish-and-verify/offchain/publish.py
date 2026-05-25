@@ -66,6 +66,11 @@ sub_info = f.init_election(admin=a)
 
 log.info(f'sub_info: {sub_info}')
 
+init_tx = f.publisher.wait_for_confirmation(mint_tx_signed)
+
+log.info('published init_tx')
+log.debug(f'full init_tx:\n%s\n' % pformat(init_tx))
+
 f.burn_test_tokens()
 
 raise SystemExit

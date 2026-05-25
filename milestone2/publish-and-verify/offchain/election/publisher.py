@@ -78,25 +78,25 @@ class ElectionPublisher:
             change_address=self.address
         )
         self.ogmios.submit_tx(tx_signed)
-        print(f'submitted tx with id={tx_signed.id}')
+        log.info(f'submitted tx with id={tx_signed.id}')
         return tx_signed
 
     # TODO get this working for the case where the utxo is confirmed + consumed between polls
     def wait_for_confirmation(self, tx: Transaction, max_seconds: int = 300, interval_seconds: int = 5):
         log.info('ElectionPublisher.wait_for_confirmation')
         tx_id = str(tx.id) # TODO is this the right way?
-        print(f'tx {tx_id} waiting up to {max_seconds} seconds for confirmation', end='', flush=True)
+        log.info(f'tx {tx_id} waiting up to {max_seconds} seconds for confirmation', end='', flush=True)
         waited_seconds = 0
         while True:
             time.sleep(interval_seconds)
             waited_seconds += interval_seconds
-            print('.', end='', flush=True)
+            log.info('.', end='', flush=True)
             utxo = self.ogmios.utxo_by_tx_id(tx_id, 0)
             if utxo is None:
                 if waited_seconds >= max_seconds:
-                    print(' FAIL', flush=True)
+                    log.error(' FAIL', flush=True)
                     raise Exception(f'tx {tx_id} still not confirmed after {waited_seconds} seconds')
                 continue
             else:
-                print(f' confirmed after {waited_seconds} seconds', flush=True)
+                log.info(f' confirmed after {waited_seconds} seconds', flush=True)
                 return
