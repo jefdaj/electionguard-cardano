@@ -41,7 +41,7 @@ NODE_CONFIG = environ.get('NODE_CONFIG', '../../cardano-node-ogmios/config/netwo
 @dataclass
 class SubscriberConfig:
     since_slot:  int # For kupo --since
-    since_block: str # For kupo --since
+    since_block_hash: str # For kupo --since
     policy_id:   str # For kupo --match TODO remove?
     until_slot: Optional[int] = None # For kupo --until, to prevent open-ended scans during tests
 
@@ -86,7 +86,7 @@ def handle_match(utxo: Dict[str, Any], session: requests.Session) -> ElectionAct
 class Subscriber:
     '''
     Runs kupo and feeds matches to a callback.
-    Note that since_slot and since_block should be figured out *before* deploying the contract,
+    Note that since_slot and since_block_hash should be figured out *before* deploying the contract,
     to be sure the indexed range will include the first transaction.
     until_slot prevents open-ended scanning during tests.
     '''
@@ -136,7 +136,7 @@ class Subscriber:
             return
 
         # os.makedirs(KUPO_WORKDIR, exist_ok=True)
-        since_arg = f'{self.config.since_slot}.{self.config.since_block}'
+        since_arg = f'{self.config.since_slot}.{self.config.since_block_hash}'
 
         cmd = [
 

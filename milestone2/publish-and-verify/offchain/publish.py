@@ -5,6 +5,7 @@ from pprint import pformat
 import logging
 
 import election
+from election import subscriber as es
 from static_records import STATIC_PHASES, STATIC_TRANSACTIONS
 
 logging.basicConfig(
@@ -61,17 +62,24 @@ a = election.roles.admin.Admin(keys_dir)
 
 # Create the admin STT and run delayed admin init functions.
 # Also returns info needed for a Subscriber to index election events.
-# TODO sub_info not implemented yet
 sub_info = f.init_election(admin=a)
-
 log.info(f'sub_info: {sub_info}')
 
-init_tx = f.publisher.wait_for_confirmation(mint_tx_signed)
+# TODO should the publisher just create and return this directly?
+sub_cfg = es.SubscriberConfig(
+  since_slot       = sub_info['slot'],
+  since_block_hash = sub_info['block_hash'],
+  policy_id        = f.publisher.script.policy_id,
+)
+log.info(f'sub_cfg: {sub_cfg}')
 
-log.info('published init_tx')
-log.debug(f'full init_tx:\n%s\n' % pformat(init_tx))
+# log.info('published init_tx')
+# log.debug(f'full init_tx:\n%s\n' % pformat(init_tx))
 
-f.burn_test_tokens()
+# TODO nope that's wrong lol:
+# f.publisher.wait_for_confirmation(mint_tx_signed)
+
+# f.burn_test_tokens()
 
 raise SystemExit
 

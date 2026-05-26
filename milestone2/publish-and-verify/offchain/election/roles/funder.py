@@ -149,11 +149,11 @@ class Funder:
         mint_tx.required_signers = [vkh]
         log.debug('mint_tx:\n%s\n' % pformat(mint_tx))
 
-        # return mint_tx
+        return mint_tx
 
-        mint_tx_submitted = self.publisher.sign_and_submit(mint_tx)
+        # mint_tx_submitted = self.publisher.sign_and_submit(mint_tx)
         # self.publisher.wait_for_confirmation(mint_tx_signed) # TODO should wait happen here?
-        return mint_tx_submitted
+        # return mint_tx_submitted
 
 
     def init_election(self, admin):
@@ -166,9 +166,10 @@ class Funder:
 
         # should be synchronous so it's done before the first tx is published
         sub_info = query_network_tip_sync()
+        log.info('sub_info: %s' % pformat(sub_info))
 
         # TODO create and submit tx
-        tx = self.build_init_tx()
+        # tx = self.build_init_tx()
 
         return sub_info
 
