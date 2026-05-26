@@ -13,7 +13,9 @@ from typing import List
 import logging
 from pprint import pformat
 
-log = logging.getLogger(__name__)
+from .admin import Admin
+
+LOG = logging.getLogger(__name__)
 
 # This should match the one defined in aiken.toml
 # TODO get them from a common source?
@@ -52,7 +54,7 @@ class Funder:
         wallet_name: str,
         # TODO pass once using more than one: ogmios: OgmiosV6ChainContext,
     ):
-        log.debug('Funder.__init__')
+        LOG.debug('Funder.__init__')
         self.keys_dir = keys_dir
         self.wallet_name = wallet_name # TODO rename key_name?
         self.publisher = None
@@ -61,7 +63,7 @@ class Funder:
 
     def _init_publisher(self, script):
         """Delayed init for publisher because we need to know the one-shot UTxO."""
-        log.debug('Funder._init_publisher')
+        LOG.debug('Funder._init_publisher')
         self.publisher = ep.ElectionPublisher(
             role="funder",
             index=1,
@@ -73,19 +75,12 @@ class Funder:
 
     def _init_subscriber(self, kupo_args):
         """Delayed init for subscriber because we need to know the args for `kupo --since`."""
-        log.debug('Funder._init_subscriber')
+        LOG.debug('Funder._init_subscriber')
         # TODO write this once publishing works
         # script = ElectionScript(oneshot_utxo)
         self.subscriber = eps.Subscriber(self.publisher.script)
 
-    def build_init_tx(
-        self,
-        # ctx: OgmiosV6ChainContext,
-        # pub_addr: Address,
-        # pub_vkh: VerificationKeyHash,
-        # script: PubsubScript,
-        # oneshot_utxo: UTxO,
-    ) -> TransactionBuilder:
+    def build_init_tx(self, admin: Admin) -> TransactionBuilder:
         """Build an InitElection transaction.
         This is an unusual one because it doesn't have any options, so there's
         no point pulling them from static_records.py.
@@ -93,14 +88,14 @@ class Funder:
 
         # TODO merge this into init_election rather than separate builders?
 
-        log.debug('Funder.build_init_tx')
+        LOG.debug('Funder.build_init_tx')
 
-        init_redeemer = Redeemer(data=ept.InitElection())
-        log.debug('redeemer: %s' % pformat(init_redeemer))
+        redeemer = Redeemer(data=ept.InitElection())
+        LOG.debug('redeemer: %s' % pformat(redeemer))
 
         admin_id = ChannelIdHelper.from_string('admin')
         assets = mint_channel_stt_assets(self.script.policy_id, 1, [admin_id])
-        log.debug('assets: %s' % pformat(assets))
+        LOG.debug('assets: %s' % pformat(assets))
 
         vkh = self.publisher.verification_key_hash
         state = ept.channel.AdminChannelState(
@@ -110,13 +105,13 @@ class Funder:
             phase       = ept.phase.ElectionConfigPhase(ept.phase.ConfigAnnouncePhase()),
             seq         = 0,
         )
-        log.debug('state: %s' % pformat(state))
+        LOG.debug('state: %s' % pformat(state))
 
         current_value = Value(
             0, # start with 0, then top up to min below
             assets   # the minted STT
         )
-        log.debug('current_value before top-up: %s' % pformat(current_value))
+        LOG.debug('current_value before top-up: %s' % pformat(current_value))
 
         # Lock the STT at the script address
         stt_output = TransactionOutput(
@@ -124,46 +119,51 @@ class Funder:
             amount=current_value,
             datum=state
         )
-        log.debug('stt_output before top-up: %s' % pformat(stt_output))
+        LOG.debug('stt_output before top-up: %s' % pformat(stt_output))
 
         # top up to min ada
         current_value.coin += min_lovelace(self.ogmios, stt_output)
-        log.debug('current_value after top-up: %s' % pformat(current_value))
+        LOG.debug('current_value after top-up: %s' % pformat(current_value))
 
         # TODO is restating it with new current_value required?
-        # stt_output = TransactionOutput(
-            # address=self.script.address,
-            # amount=current_value,
-            # datum=state
-        # )
-        log.debug('stt_output after top-up: %s' % pformat(stt_output))
+        stt_output = TransactionOutput(
+            address=self.script.address,
+            amount=current_value,
+            datum=state
+        )
+        LOG.debug('stt_output after top-up: %s' % pformat(stt_output))
 
-        # TODO is init_redeemer what we need here? or a separate one?
-        mint_tx = (
+        # TODO is redeemer what we need here? or a separate one?
+        init_tx = (
             TransactionBuilder(self.ogmios, mint=assets)
-            .add_input(self.script.oneshot_utxo)
-            .add_input_address(self.publisher.address)
-            .add_minting_script(script=self.script.mint_script, redeemer=init_redeemer)
+            .add_input(self.script.oneshot_utxo)       # removing does not fix duplicate submit error
+            .add_input_address(self.publisher.address) # removing does not fix duplicate submit error
+            .add_minting_script(script=self.script.mint_script, redeemer=redeemer)
             .add_output(stt_output)
         )
-        mint_tx.required_signers = [vkh]
-        log.debug('mint_tx:\n%s\n' % pformat(mint_tx))
+        init_tx.required_signers = [vkh]
+        LOG.debug('init_tx:\n%s\n' % pformat(init_tx))
 
-        return mint_tx
+        return init_tx
 
-    def init_election(self, admin):
-        log.debug('Funder.init_election')
-        # TODO will this also generate the keypair if needed? do we want it to?
-        funder_addr = ew.load_wallet_addr(keys_dir=self.keys_dir, name=self.wallet_name)
-        oneshot_utxo = eps.pick_oneshot_utxo(OGMIOS_CTX, funder_addr)
-        self.script = eps.ElectionScript(oneshot_utxo)
-        self._init_publisher(self.script)
+    def init_election(self, admin: Admin):
+        LOG.debug('Funder.init_election')
 
-        # should be synchronous so it's done before the first tx is published
+        # Should be done before the first TX is published to ensure everyone indexes it.
         sub_info = query_network_tip_sync()
-        log.info('sub_info: %s' % pformat(sub_info))
+        LOG.info('sub_info: %s' % pformat(sub_info))
 
-        init_tx = self.build_init_tx()
+        # Need to load addr separately because self.publisher does not exist yet.
+        # TODO will this also generate the keypair if needed? do we want it to?
+        fund_addr = ew.load_wallet_addr(keys_dir=self.keys_dir, name=self.wallet_name)
+        oneshot_utxo = eps.pick_oneshot_utxo(OGMIOS_CTX, fund_addr)
+        self.script = eps.ElectionScript(oneshot_utxo)
+
+        # Now that we have the Script, we can create the Publisher normally.
+        self._init_publisher(self.script)
+        assert self.publisher.address == fund_addr
+
+        init_tx = self.build_init_tx(admin=admin)
         init_tx_submitted = self.publisher.sign_and_submit(init_tx)
 
         return (sub_info, init_tx_submitted)
@@ -177,14 +177,14 @@ class Funder:
 
         # TODO wait, basically need subscriber BEFORE doing anything with current states
 
-        log.debug('Funder.burn_test_tokens')
+        LOG.debug('Funder.burn_test_tokens')
 
 #         redeemer = Redeemer(data=ept.BurnTestTokens())
-#         log.debug('redeemer: %s' % pformat(redeemer))
+#         LOG.debug('redeemer: %s' % pformat(redeemer))
 #
 #         admin_id = ChannelIdHelper.from_string('admin')
 #         assets = mint_channel_stt_assets(self.script.policy_id, -1, [admin_id])
-#         log.debug('assets: %s' % pformat(assets))
+#         LOG.debug('assets: %s' % pformat(assets))
 #
 #         vkh = self.publisher.verification_key_hash
 #
@@ -192,7 +192,7 @@ class Funder:
 #             0, # start with 0, then top up to min below
 #             assets   # the minted STT
 #         )
-#         log.debug('current_value before top-up: %s' % pformat(current_value))
+#         LOG.debug('current_value before top-up: %s' % pformat(current_value))
 #
 #         # Lock the STT at the script address
 #         stt_output = TransactionOutput(
@@ -200,11 +200,11 @@ class Funder:
 #             amount=current_value,
 #             datum=state
 #         )
-#         log.debug('stt_output before top-up: %s' % pformat(stt_output))
+#         LOG.debug('stt_output before top-up: %s' % pformat(stt_output))
 #
 #         # top up to min ada
 #         current_value.coin += min_lovelace(self.ogmios, stt_output)
-#         log.debug('current_value after top-up: %s' % pformat(current_value))
+#         LOG.debug('current_value after top-up: %s' % pformat(current_value))
 #
 #         # TODO is restating it with new current_value required?
 #         # stt_output = TransactionOutput(
@@ -212,20 +212,20 @@ class Funder:
 #             # amount=current_value,
 #             # datum=state
 #         # )
-#         log.debug('stt_output after top-up: %s' % pformat(stt_output))
+#         LOG.debug('stt_output after top-up: %s' % pformat(stt_output))
 #
-#         # TODO is init_redeemer what we need here? or a separate one?
-#         mint_tx = (
+#         # TODO is redeemer what we need here? or a separate one?
+#         init_tx = (
 #             TransactionBuilder(self.ogmios, mint=assets)
 #             .add_input(self.script.oneshot_utxo)
 #             .add_input_address(self.publisher.address)
-#             .add_minting_script(script=self.script.mint_script, redeemer=init_redeemer)
+#             .add_minting_script(script=self.script.mint_script, redeemer=redeemer)
 #             .add_output(stt_output)
 #         )
-#         mint_tx.required_signers = [vkh]
-#         log.debug('mint_tx:\n%s\n' % pformat(mint_tx))
+#         init_tx.required_signers = [vkh]
+#         LOG.debug('init_tx:\n%s\n' % pformat(init_tx))
 #
-#         return mint_tx
+#         return init_tx
 
 
 

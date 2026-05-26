@@ -10,11 +10,16 @@ from tempfile import NamedTemporaryFile
 from typing import List
 import json
 import subprocess
+import logging
+
+
+LOG = logging.getLogger(__name__)
+
 
 def pick_oneshot_utxo(context, addr):
     # No particular logic to max here; any UTXO should work for the initial tests
     utxos = context.utxos(addr)
-    print(f'pick_oneshot_utxo addr:{addr} utxos:{utxos}')
+    LOG.info(f'pick_oneshot_utxo addr:{addr} utxos:{utxos}')
     if not utxos:
         raise Exception(f'addr {addr} has no UTXOs')
     utxo = max(utxos, key=lambda utxo: utxo.output.amount.coin)
@@ -114,9 +119,10 @@ class ElectionScript:
         return f"ElectionScript(oneshot_hex={self.oneshot_hex[:16]}..., policy_id={str(self.policy_id)[:16]}...)"
 
     def apply_params(self) -> dict:
-        print(f"Oneshot UTXO being used:")
-        print(f"  tx_hash: {self.oneshot_utxo.input.transaction_id.payload.hex()}")
-        print(f"  index: {self.oneshot_utxo.input.index}")
+        msg =  f"Oneshot UTXO being used:"
+        msg += f"\n  tx_hash: {self.oneshot_utxo.input.transaction_id.payload.hex()}"
+        msg += f"\n  index: {self.oneshot_utxo.input.index}"
+        LOG.info(msg)
         hex_params = [self.oneshot_hex]
         return aiken_blueprint_apply_hex_params(PLUTUS_JSON_PATH, hex_params)
 
@@ -129,4 +135,4 @@ class ElectionScript:
         makedirs(dirname(plutus_json_path), exist_ok=True)
         with open(plutus_json_path, 'w') as f:
             json.dump(self._json_dict, f, indent=2) # TODO pydantic style?
-        print(f'saved {plutus_json_path}')
+        LOG.info(f'saved {plutus_json_path}')

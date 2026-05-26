@@ -15,14 +15,14 @@ logging.basicConfig(
   format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
 
-log = logging.getLogger(os.path.basename(__file__))
+LOG = logging.getLogger(os.path.basename(__file__))
 
-log.debug(
+LOG.debug(
   'admin phases by relative block:\n%s\n' %
   pformat(STATIC_PHASES)
 )
 
-log.debug(
+LOG.debug(
   '(redeemer, records to post) by channel and relative block:\n%s\n' %
   pformat(STATIC_TRANSACTIONS)
 )
@@ -63,7 +63,7 @@ a = election.roles.admin.Admin(keys_dir)
 # Create the admin STT and run delayed admin init functions.
 # Also returns info needed for a Subscriber to index election events.
 (sub_info, init_tx) = f.init_election(admin=a)
-log.info(f'sub_info: {sub_info}')
+LOG.info(f'sub_info: {sub_info}')
 
 # TODO should the publisher just create and return this directly?
 sub_cfg = es.SubscriberConfig(
@@ -71,10 +71,10 @@ sub_cfg = es.SubscriberConfig(
   since_block_hash = sub_info['block_hash'],
   policy_id        = f.publisher.script.policy_id,
 )
-log.info(f'sub_cfg: {sub_cfg}')
+LOG.info(f'sub_cfg: {sub_cfg}')
 
-# log.info('published init_tx')
-# log.debug(f'full init_tx:\n%s\n' % pformat(init_tx))
+# LOG.info('published init_tx')
+# LOG.debug(f'full init_tx:\n%s\n' % pformat(init_tx))
 
 f.publisher.wait_for_confirmation(init_tx)
 
