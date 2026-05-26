@@ -12,6 +12,7 @@ from election import wallet as ew
 from time import sleep
 from typing import List, Optional
 from election.plutus.script import ElectionScript
+from pprint import pformat
 import logging
 
 log = logging.getLogger(__name__)
@@ -79,6 +80,7 @@ class ElectionPublisher:
         )
         self.ogmios.submit_tx(tx_signed)
         log.info(f'submitted tx with id={tx_signed.id}')
+        log.debug(f'entire submitted tx:\n%s:\n' % pformat(tx_signed))
         return tx_signed
 
     # TODO get this working for the case where the utxo is confirmed + consumed between polls

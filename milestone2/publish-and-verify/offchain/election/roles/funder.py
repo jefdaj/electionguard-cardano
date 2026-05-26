@@ -151,11 +151,6 @@ class Funder:
 
         return mint_tx
 
-        # mint_tx_submitted = self.publisher.sign_and_submit(mint_tx)
-        # self.publisher.wait_for_confirmation(mint_tx_signed) # TODO should wait happen here?
-        # return mint_tx_submitted
-
-
     def init_election(self, admin):
         log.debug('Funder.init_election')
         # TODO will this also generate the keypair if needed? do we want it to?
@@ -168,10 +163,10 @@ class Funder:
         sub_info = query_network_tip_sync()
         log.info('sub_info: %s' % pformat(sub_info))
 
-        # TODO create and submit tx
-        # tx = self.build_init_tx()
+        init_tx = self.build_init_tx()
+        init_tx_submitted = self.publisher.sign_and_submit(init_tx)
 
-        return sub_info
+        return (sub_info, init_tx_submitted)
 
     def burn_test_tokens(self):
         "Cleans up test tokens so they don't pollute the testnet or dev wallet."

@@ -62,7 +62,7 @@ a = election.roles.admin.Admin(keys_dir)
 
 # Create the admin STT and run delayed admin init functions.
 # Also returns info needed for a Subscriber to index election events.
-sub_info = f.init_election(admin=a)
+(sub_info, init_tx) = f.init_election(admin=a)
 log.info(f'sub_info: {sub_info}')
 
 # TODO should the publisher just create and return this directly?
@@ -76,8 +76,7 @@ log.info(f'sub_cfg: {sub_cfg}')
 # log.info('published init_tx')
 # log.debug(f'full init_tx:\n%s\n' % pformat(init_tx))
 
-# TODO nope that's wrong lol:
-# f.publisher.wait_for_confirmation(mint_tx_signed)
+f.publisher.wait_for_confirmation(init_tx)
 
 # f.burn_test_tokens()
 
