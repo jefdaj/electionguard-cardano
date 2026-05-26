@@ -1,6 +1,6 @@
 services:
   cardano-node:
-    image: ghcr.io/intersectmbo/cardano-node:10.7.1
+    image: ghcr.io/intersectmbo/cardano-node:11.0.1
     command: [
       "run",
       "--config", "/config/config.json",
@@ -25,7 +25,8 @@ services:
 
   ogmios:
     # TODO does ktorz normally publish "latest" from the dev branch?
-    image: cardanosolutions/ogmios:v6.14.0
+    # image: cardanosolutions/ogmios:v6.14.0
+    image: 3a21f883f83e # custom version i built for now
     restart: on-failure
     command: [
       "--host", "0.0.0.0",
