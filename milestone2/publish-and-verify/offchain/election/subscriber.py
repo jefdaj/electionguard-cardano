@@ -229,7 +229,7 @@ class Subscriber:
         (tx_id, output_ix) = self._last_tx_key
         resp = self.session.get(KUPO_MATCHES_URL + f'/{output_ix}@{tx_id}') # TODO params? timeout?
         if resp.status_code == 200:
-            utxos = resp.json()
+            utxos = resp.json() # TODO store a map of channel id -> latest utxo in the subscriber
             LOG.debug(f'utxos: {pformat(utxos)}')
             assert isinstance(utxos, list), "expected a list of UTXOs"
             for utxo in utxos:
