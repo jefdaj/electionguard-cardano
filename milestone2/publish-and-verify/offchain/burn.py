@@ -13,6 +13,7 @@ from pycardano import Redeemer, ScriptHash
 from election.plutus import types as ept
 from election.plutus.types.channel import ADMIN_CHANNEL_ID
 from election import subscriber as es
+from election.roles.funder import mint_channel_stt_assets
 
 logging.basicConfig(
   encoding='utf-8',
@@ -27,7 +28,7 @@ LOG = logging.getLogger(os.path.basename(__file__))
 args = docopt(__doc__)
 
 
-### subscribe to find latest admin stt utxo ###
+### subscribe to find latest utxos ###
 
 sub_cfg = es.SubscriberConfig(
     since_slot = args['<slot>'],
@@ -40,13 +41,32 @@ sub = es.Subscriber(sub_cfg, es.handle_match, es.handle_endelection)
 sub.start()
 time.sleep(3)
 sub.stop()
-LOG.info(f'final history:\n{pformat(sub.history)}')
 
-records = sub.subscribed_records(ADMIN_CHANNEL_ID)
-LOG.info(f'final records: {pformat(records)}')
 LOG.info(f'final utxos: {pformat(sub.utxos)}')
 
 ### create tx to burn and sweep funds ###
 
 redeemer = Redeemer(data=ept.BurnTestTokens())
 LOG.debug(f'redeemer: {redeemer}')
+
+channel_ids = list(sub.states.keys())
+LOG.info(f'channel_ids: {channel_ids}')
+
+burn_assets = mint_channel_stt_assets(
+    ScriptHash(bytes.fromhex(args['<policy_id>'])),
+    -1,
+    channel_ids,
+)
+LOG.info(f'burn_assets: {burn_assets}')
+
+# TODO dest_output
+
+# burn_tx = (
+    # TransactionBuilder(OGMIOS_CTX, mint=assets)
+    # .add_input(self.script.oneshot_utxo)
+    # .add_minting_script(script=self.script.mint_script, redeemer=redeemer)
+    # .add_output(dest_output)
+# )
+# LOG.debug('burn_tx:\n%s\n' % pformat(burn_tx))
+
+
