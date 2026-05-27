@@ -9,7 +9,7 @@ import os
 import time
 from pprint import pformat
 from docopt import docopt
-from pycardano import Redeemer, ScriptHash
+from pycardano import Redeemer, ScriptHash, Address
 from election.plutus import types as ept
 from election.plutus.types.channel import ADMIN_CHANNEL_ID
 from election import subscriber as es
@@ -59,7 +59,11 @@ burn_assets = mint_channel_stt_assets(
 )
 LOG.info(f'burn_assets: {burn_assets}')
 
+dest_addr = Address.decode(args['<dest_addr>'])
+LOG.info(f'dest_addr: {dest_addr}')
+
 # TODO dest_output
+
 
 # burn_tx = (
     # TransactionBuilder(OGMIOS_CTX, mint=assets)
