@@ -2,7 +2,7 @@ use aiken/collection/list
 use cardano/transaction.{Transaction, Input, OutputReference}
 use cardano/assets.{PolicyId, Value, lovelace_of, policies}
 
-use election/types/action.{ElectionAction, InitElection, EndElection}
+use election/types/action.{ElectionAction, InitElection, EndElection, BurnTestTokens}
 use election/stt.{get_policy_id}
 
 // During the election, we want to make sure that no one takes ADA out of
@@ -17,6 +17,7 @@ pub fn ada_retained_during_election(
 ) -> Bool {
   trace @"ada_retained_during_election"
   when redeemer is {
+    BurnTestTokens -> True // TODO remove for production
     InitElection | EndElection -> True
     _ -> {
       let policy_id = get_policy_id(own_ref, tx.inputs)
