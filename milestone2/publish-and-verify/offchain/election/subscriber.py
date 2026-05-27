@@ -105,7 +105,8 @@ class Subscriber:
         self.on_close = on_close
 
         # used to reconstruct subscribed_records() on demand
-        self.records_by_seq: Mapping[int, Tuple[bytes]] = {}
+        # TODO later, a map of channel id -> states by seq
+        self.history: Mapping[int, AdminShannelState] = {}
 
         # for managing the kupo process
         self._kupo_proc:   Optional[subprocess.Popen] = None
@@ -289,7 +290,7 @@ class Subscriber:
                         # log.info(f'new_state: {new_state} ({type(new_state)})')
 
                         assert isinstance(new_state, AdminChannelState), 'Each TX should have a AdminChannelState'
-                        self.records_by_seq[new_state.seq] = tuple(new_state.new_records)
+                        self.history[new_state.seq] = new_state
 
                     except Exception as e:
                         log.error('Error in self.on_match: {}', e)
@@ -313,9 +314,9 @@ class Subscriber:
     def subscribed_records(self):
         records = []
         # TODO fix so even if one is missing, iteration doesn't get messed up
-        for seq in range(0, len(self.records_by_seq)):
-            assert seq in self.records_by_seq, f'Missing records with seq={seq}.'
-            records += list(self.records_by_seq[seq])
+        for seq in range(0, len(self.history)):
+            assert seq in self.history, f'Missing records with seq={seq}.'
+            records += list(self.history[seq].new_records)
         return records
 
     def start(self) -> None:

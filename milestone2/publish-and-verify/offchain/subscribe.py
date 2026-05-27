@@ -5,6 +5,7 @@ from pprint import pformat
 from pycardano import *
 import logging
 import time
+from pprint import pformat
 
 import election
 from election import subscriber as es
@@ -32,4 +33,5 @@ sub.start()
 time.sleep(1)
 sub.stop()
 records = sub.subscribed_records()
+LOG.info(f'history: {pformat(sub.history)}')
 LOG.info(f'records: {records}')
