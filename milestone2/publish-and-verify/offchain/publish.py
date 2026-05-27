@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 
+'''Usage:
+  ./publish.py <keys_dir> <funder_wallet_name>
+'''
+
 import os
+from docopt import docopt
 from pprint import pformat
 import logging
 
@@ -27,8 +32,6 @@ LOG.debug(
   pformat(STATIC_TRANSACTIONS)
 )
 
-# TODO start a click interface with --keys-dir
-
 # TODO write a "generate multiple keypairs" function in wallet (and start wallet)
 # TODO if keys don't exist in --keys-dir:
 #        - gen 1 keypair per role: amdmin, guardian1, guardian2, guardian3, device1, verifier1
@@ -45,24 +48,31 @@ LOG.debug(
 
 # TODO print the info needed by the verifier and generate a qr code if easy
 
+args = docopt(__doc__)
+
+# TODO arg for how much ada to give each channel? or just use a default
+
 # Keys will be arranged like:
 # test_keys/admin.{sk,addr}
 # test_keys/guardian1.{sk,addr}
 # test_keys/...
 # test_keys = 'test_keys'
-keys_dir='test-keys'
+keys_dir=os.path.realpath(args['<keys_dir>'])
 
 # The wallet which funds the election and recovers remaining ADA afterward.
 # Often but not necesarily the personal wallet of the election admin.
 # In a future web interface, this will be the wallet you connect to the dApp.
-f = election.roles.funder.Funder(keys_dir, wallet_name='dev')
+f = election.roles.funder.Funder(keys_dir, wallet_name=args['<funder_wallet_name>'])
+f.init_script()
+LOG.info(f'oneshot_utxo: {f.script.oneshot_utxo}')
 
 # Create Admin separately in case it's a different person from the Funder.
 a = election.roles.admin.Admin(keys_dir)
+a._init_publisher(f.script) # TODO make this less awkward
 
 # Create the admin STT and run delayed admin init functions.
 # Also returns info needed for a Subscriber to index election events.
-(sub_info, init_tx) = f.init_election(admin=a)
+(sub_info, init_tx) = f.init_election(admin=a, channel_ada=50)
 LOG.info(f'sub_info: {sub_info}')
 
 # TODO should the publisher just create and return this directly?

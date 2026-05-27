@@ -35,7 +35,7 @@ class ElectionPublisher:
         index: int,
         keys_dir: Path,
         script: ElectionScript,
-        key_name: Optional[Path]
+        key_name: Optional[Path] = None,
         # TODO pass once using more than one: ogmios: OgmiosV6ChainContext,
         # TODO ipfs (kubo)
     ):
@@ -48,7 +48,7 @@ class ElectionPublisher:
         self.keys_dir = Path(keys_dir) # TODO ok if already a Path?
         self.script = script
         # self.ogmios = OGMIOS_CTX
-        self.key_name = key_name if key_name else self.channel_id()
+        self.key_name = self.channel_id() if key_name is None else key_name
         self._init_keypair()
         # self.pubsub_script = PubsubScript(self.oneshot_utxo)
         # self.channel_state: Optional[str] = None # TODO formalize a type
@@ -71,7 +71,7 @@ class ElectionPublisher:
         if self.role == 'funder':
             # Funder doesn't have a channel and shouldn't need the id
             raise NotImplementedError
-        elif role == 'admin':
+        elif self.role == 'admin':
             return self.role
         else:
             return f'{self.role}{self.index}'
