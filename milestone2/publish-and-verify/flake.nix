@@ -118,7 +118,7 @@
                 echo "pycardano $(python -c "import importlib.metadata as m; print(m.version('pycardano'))")"
               '';
 
-              PYTHONDONTWRITEBYTECODE = true;
+              PYTHONDONTWRITEBYTECODE = "1";
             };
 
           };

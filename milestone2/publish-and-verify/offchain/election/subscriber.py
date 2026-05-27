@@ -21,7 +21,7 @@ from pprint import pprint
 # TODO import qualified to avoid logging conflict
 # from pycardano import *
 
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Tuple, Optional
 
 from .ogmios import OGMIOS_HOST, OGMIOS_PORT
 from .plutus.types.channel import AdminChannelState
@@ -51,7 +51,7 @@ SubscriberCallback = Callable[[dict, requests.Session], ElectionAction]
 
 def fetch_datum(session: requests.Session, datum_hash: str) -> Any:
     url = f'http://{KUPO_HOST}:{KUPO_PORT}/v1/datums/{datum_hash}' # TODO global var?
-    log.info('fetch_datum: fetching datum {}', datum_hash)
+    log.info(f'fetch_datum: fetching datum {datum_hash}')
     resp = session.get(url, timeout=10)
     resp.raise_for_status()
     return resp.json()
@@ -61,7 +61,7 @@ def handle_endelection(utxo: Dict[str, Any], session: requests.Session) -> Elect
     return EndElection()
 
 def handle_match(utxo: Dict[str, Any], session: requests.Session) -> ElectionAction:
-    log.debug('Full match UTxO:\n{}', json.dumps(utxo, indent=2))
+    log.debug(f'Full match UTxO:\n{json.dumps(utxo, indent=2)}')
 
     tx_id = utxo.get('transaction_id')
     out_ix = utxo.get('output_index')
@@ -105,7 +105,7 @@ class Subscriber:
         self.on_close = on_close
 
         # used to reconstruct subscribed_records() on demand
-        self.records_by_seq: Mapping[int, List[bytes]] = {}
+        self.records_by_seq: Mapping[int, Tuple[bytes]] = {}
 
         # for managing the kupo process
         self._kupo_proc:   Optional[subprocess.Popen] = None
@@ -132,7 +132,7 @@ class Subscriber:
 
         if self._kupo_proc is not None and self._kupo_proc.poll() is None:
             # TODO error here?
-            log.info('Kupo already running (pid={})', self._kupo_proc.pid)
+            log.info(f'Kupo already running (pid={self._kupo_proc.pid})')
             return
 
         # os.makedirs(KUPO_WORKDIR, exist_ok=True)
@@ -172,7 +172,7 @@ class Subscriber:
 
         ]
 
-        log.info('Starting Kupo: {}', ' '.join(cmd))
+        log.info(f'Starting Kupo: {' '.join(cmd)}')
         self._kupo_proc = subprocess.Popen(
             cmd,
             preexec_fn=os.setsid, # makes handling signals more reliable
@@ -201,7 +201,7 @@ class Subscriber:
             line = line.rstrip('\n')
             if not line:
                 continue
-            log.info('Kupo output: {}', line)
+            log.info(f'Kupo output: {line}')
             if proc.poll() is not None:
                 break
         # TODO why does this seem to happen immediately?
@@ -213,7 +213,7 @@ class Subscriber:
         if proc is None:
             return
         if proc.poll() is None:
-            log.info('Terminating Kupo (pid={})', proc.pid)
+            log.info(f'Terminating Kupo (pid={proc.pid})')
             proc.terminate()
             try:
                 proc.wait(timeout=5)
@@ -244,7 +244,7 @@ class Subscriber:
         log.info(f'Channel not yet closed {resp}')
 
     def _watch_kupo(self) -> None:
-        log.info('Watcher thread started for policy_id={}', self.config.policy_id)
+        log.info(f'Watcher thread started for policy_id={self.config.policy_id}')
 
         while not self._kupo_stop.is_set():
             try:
@@ -289,7 +289,7 @@ class Subscriber:
                         # log.info(f'new_state: {new_state} ({type(new_state)})')
 
                         assert isinstance(new_state, AdminChannelState), 'Each TX should have a AdminChannelState'
-                        self.records_by_seq[new_state.seq] = new_state.new_records
+                        self.records_by_seq[new_state.seq] = tuple(new_state.new_records)
 
                     except Exception as e:
                         log.error('Error in self.on_match: {}', e)
@@ -313,9 +313,9 @@ class Subscriber:
     def subscribed_records(self):
         records = []
         # TODO fix so even if one is missing, iteration doesn't get messed up
-        for record in range(0, len(self.records_by_seq)):
-            assert records in self.records_by_seq, f'Missing records with seq={seq}.'
-            records += self.records_by_seq[seq]
+        for seq in range(0, len(self.records_by_seq)):
+            assert seq in self.records_by_seq, f'Missing records with seq={seq}.'
+            records += list(self.records_by_seq[seq])
         return records
 
     def start(self) -> None:
@@ -330,7 +330,7 @@ class Subscriber:
                 log.error('Error in watcher: {}', e)
 
         def handle_sigint(sig, frame):
-            log.info('Signal {} recieved, shutting down...', sig)
+            log.info(f'Signal {sig} recieved, shutting down...')
             self.stop()
 
         signal.signal(signal.SIGINT , handle_sigint)
