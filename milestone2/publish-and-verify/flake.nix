@@ -56,6 +56,7 @@
         aioipfs
         click
         click-default-group
+        docopt
         dotmap
         pycardano
         pygments
