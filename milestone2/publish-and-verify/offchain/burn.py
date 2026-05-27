@@ -6,9 +6,12 @@
 
 import logging
 import os
+import time
+from pprint import pformat
 from docopt import docopt
 from pycardano import Redeemer, ScriptHash
 from election.plutus import types as ept
+from election.plutus.types.channel import ADMIN_CHANNEL_ID
 from election import subscriber as es
 
 logging.basicConfig(
@@ -39,7 +42,7 @@ time.sleep(3)
 sub.stop()
 LOG.info(f'final history:\n{pformat(sub.history)}')
 
-records = sub.subscribed_records()
+records = sub.subscribed_records(ADMIN_CHANNEL_ID)
 LOG.info(f'final records: {pformat(records)}')
 
 
