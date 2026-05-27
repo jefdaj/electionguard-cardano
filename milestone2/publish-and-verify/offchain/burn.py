@@ -44,7 +44,7 @@ LOG.info(f'final history:\n{pformat(sub.history)}')
 
 records = sub.subscribed_records(ADMIN_CHANNEL_ID)
 LOG.info(f'final records: {pformat(records)}')
-
+LOG.info(f'final utxos: {pformat(sub.utxos)}')
 
 ### create tx to burn and sweep funds ###
 

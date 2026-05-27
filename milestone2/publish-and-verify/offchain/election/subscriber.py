@@ -139,7 +139,11 @@ class Subscriber:
 
         # used to query the current state
         # TODO can these both be put in the same map without making it annoying/fragile?
-        self.state: Mapping[ChannelId, ChannelState] = {}
+        self.states: Mapping[ChannelId, ChannelState] = {}
+
+        # used to query raw utxos
+        # TODO is this useful for anything other than burning?
+        self.utxos: Mapping[ChannelId, UTxO] = {}
 
         # for managing the kupo process
         self._kupo_proc:   Optional[subprocess.Popen] = None
@@ -328,9 +332,13 @@ class Subscriber:
                             self.history[channel_id] = {}
                         self.history[channel_id][new_state.state.seq] = new_state
 
-                        if not channel_id in self.state:
-                            self.state[channel_id] = {}
-                        self.state[channel_id] = new_state
+                        if not channel_id in self.states:
+                            self.states[channel_id] = {}
+                        self.states[channel_id] = new_state
+
+                        if not channel_id in self.utxos:
+                            self.utxos[channel_id] = {}
+                        self.utxos[channel_id] = utxo
 
                     except Exception as e:
                         LOG.error('Error in self.on_match: {}', e)
