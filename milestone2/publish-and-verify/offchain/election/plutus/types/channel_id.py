@@ -87,3 +87,5 @@ class ChannelIdMixin:
         if len(v) != len(set(v)):
             raise ValueError("channels list contains duplicates")
         return v
+
+ADMIN_CHANNEL_ID = ChannelIdHelper.from_string('admin')

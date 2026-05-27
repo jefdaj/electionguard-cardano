@@ -19,13 +19,14 @@ from os import environ
 from pprint import pformat
 
 # TODO import qualified to avoid logging conflict
-# from pycardano import *
+from pycardano import UTxO
 
 from typing import Any, Callable, Dict, List, Tuple, Optional
 
 from .ogmios import OGMIOS_HOST, OGMIOS_PORT
-from .plutus.types.channel import AdminChannelState
+from .plutus.types.channel import *
 from .plutus.types.action import *
+from .plutus.types.channel import *
 
 
 LOG = logging.getLogger(__name__)
@@ -56,11 +57,32 @@ def fetch_datum(session: requests.Session, datum_hash: str) -> Any:
     resp.raise_for_status()
     return resp.json()
 
+# TODO remove? merge into Subscriber class?
 def handle_endelection(utxo: Dict[str, Any], session: requests.Session) -> ElectionAction:
     LOG.info('handle_endelection: admin channel closed')
     return EndElection()
 
-def handle_match(utxo: Dict[str, Any], session: requests.Session) -> ElectionAction:
+# TODO move to channel_id.py
+def channel_id_from_asset_name(encoded: str) -> ChannelId:
+    channel_id = bytes.fromhex(encoded)
+    assert ChannelIdHelper.validate_bytes(channel_id)
+    LOG.debug(f'decoded {asset_name} -> {channel_id}')
+    return channel_id
+
+# TODO remove in favor of getting channel_ids from states?
+# TODO where should this live?
+def channel_id_from_output(output: UTxO) -> Optional[ChannelId]:
+    for asset_key in output.value.assets.keys():
+        policy_id, asset_name = asset_key.split('.')
+        try:
+            return channel_id_from_asset_name(asset_name)
+        except:
+            continue
+    LOG.error(f'Output does not match any channel:\n{output}')
+    return None
+
+# TODO merge into Subscriber class?
+def handle_match(utxo: Dict[str, Any], session: requests.Session) -> (ChannelId, ChannelState):
     LOG.debug(f'Full match UTxO:\n{json.dumps(utxo, indent=2)}')
 
     tx_id = utxo.get('transaction_id')
@@ -71,13 +93,21 @@ def handle_match(utxo: Dict[str, Any], session: requests.Session) -> ElectionAct
     slot_no = created.get('slot_no')
     header_hash = created.get('header_hash')
 
-    assert datum_hash
+    assert datum_hash # TODO will this not exist in the final EndElection tx?
 
     try:
         datum = fetch_datum(session, datum_hash)
-        state = AdminChannelState.from_cbor(datum['datum'])
-        LOG.info(f'handle_match: decoded state {state.seq}: {state}')
-        return state
+
+        # try subchannel first because that should be more common long term
+        try:
+            state = SubChannel(state=SubChannelState.from_cbor(datum['datum']))
+            channel_id = state.state.channel_id
+        except:
+            state = AdminChannel(state=AdminChannelState.from_cbor(datum['datum']))
+            channel_id = ADMIN_CHANNEL_ID
+
+        LOG.info(f'handle_match: decoded {channel_id} state {state.state.seq}: {state}')
+        return (channel_id, state)
 
     except Exception as e:
         LOG.error('handle_match: failed to fetch datum {}: {}', datum_hash, e)
@@ -105,8 +135,11 @@ class Subscriber:
         self.on_close = on_close
 
         # used to reconstruct subscribed_records() on demand
-        # TODO later, a map of channel id -> states by seq
-        self.history: Mapping[int, AdminShannelState] = {}
+        self.history: Mapping[ChannelId, Mapping[int, ChannelState]] = {}
+
+        # used to query the current state
+        # TODO can these both be put in the same map without making it annoying/fragile?
+        self.state: Mapping[ChannelId, ChannelState] = {}
 
         # for managing the kupo process
         self._kupo_proc:   Optional[subprocess.Popen] = None
@@ -121,6 +154,7 @@ class Subscriber:
         self.session.headers.update({'Accept': 'application/json'})
 
         # we check whether this was spent without any new match to confirm a EndElection
+        # TODO remove once state map works
         self._last_tx_key = None # TODO type?
 
 
@@ -286,11 +320,17 @@ class Subscriber:
 
                     try:
 
-                        new_state = self.on_match(utxo, self.session)
+                        (channel_id, new_state) = self.on_match(utxo, self.session)
                         # LOG.info(f'new_state: {new_state} ({type(new_state)})')
 
-                        assert isinstance(new_state, AdminChannelState), 'Each TX should have a AdminChannelState'
-                        self.history[new_state.seq] = new_state
+                        # assert isinstance(new_state, AdminChannelState), 'Each TX should have a AdminChannelState'
+                        if not channel_id in self.history:
+                            self.history[channel_id] = {}
+                        self.history[channel_id][new_state.state.seq] = new_state
+
+                        if not channel_id in self.state:
+                            self.state[channel_id] = {}
+                        self.state[channel_id] = new_state
 
                     except Exception as e:
                         LOG.error('Error in self.on_match: {}', e)
@@ -311,12 +351,16 @@ class Subscriber:
 
         LOG.info('Watcher thread exiting')
 
-    def subscribed_records(self):
+    def subscribed_records(self, channel_id: ChannelId):
+        LOG.debug('Subscriber.subscribed_records')
+        LOG.debug(f'history: {self.history}')
         records = []
         # TODO fix so even if one is missing, iteration doesn't get messed up
-        for seq in range(0, len(self.history)):
-            assert seq in self.history, f'Missing records with seq={seq}.'
-            records += list(self.history[seq].new_records)
+        if not channel_id in self.history:
+            return []
+        for seq in range(0, len(self.history[channel_id])):
+            assert seq in self.history[channel_id], f'Missing records with channel_id={channel_id} seq={seq}.'
+            records += list(self.history[channel_id][seq].state.new_records)
         return records
 
     def start(self) -> None:

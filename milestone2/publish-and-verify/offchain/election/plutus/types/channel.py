@@ -1,6 +1,6 @@
 # Should be kept in sync with onchain/validators/election/types/channel.ak
 
-from .channel_id import ChannelId, ChannelIdHelper
+from .channel_id import ChannelId, ChannelIdHelper, ADMIN_CHANNEL_ID
 from .ipfs_cid import IpfsCid, IpfsCidHelper
 from .phase import ElectionPhase
 from .record import PublicRecord

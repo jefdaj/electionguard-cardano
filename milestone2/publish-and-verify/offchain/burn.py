@@ -7,8 +7,9 @@
 import logging
 import os
 from docopt import docopt
-from pycardano import Redeemer
+from pycardano import Redeemer, ScriptHash
 from election.plutus import types as ept
+from election import subscriber as es
 
 logging.basicConfig(
   encoding='utf-8',
@@ -34,7 +35,7 @@ LOG.info(f'sub_cfg: {sub_cfg}')
 
 sub = es.Subscriber(sub_cfg, es.handle_match, es.handle_endelection)
 sub.start()
-time.sleep(1)
+time.sleep(3)
 sub.stop()
 LOG.info(f'final history:\n{pformat(sub.history)}')
 

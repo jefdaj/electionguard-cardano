@@ -14,6 +14,7 @@ from docopt import docopt
 
 import election
 from election import subscriber as es
+from election.plutus.types.channel import ADMIN_CHANNEL_ID
 
 logging.basicConfig(
   # filename='subscribe.log',
@@ -33,11 +34,12 @@ sub_cfg = es.SubscriberConfig(
 )
 LOG.info(f'sub_cfg: {sub_cfg}')
 
+# TODO does handle_endelection need to be separate? maybe combine after all
 sub = es.Subscriber(sub_cfg, es.handle_match, es.handle_endelection)
 sub.start()
 time.sleep(1)
 sub.stop()
 LOG.info(f'final history:\n{pformat(sub.history)}')
 
-records = sub.subscribed_records()
+records = sub.subscribed_records(ADMIN_CHANNEL_ID)
 LOG.info(f'final records: {pformat(records)}')
