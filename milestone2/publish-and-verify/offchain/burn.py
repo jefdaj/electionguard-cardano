@@ -131,7 +131,11 @@ Channel ADA will be sent to {pub.address}
 Are you sure? (y/n):'''
 
 if confirm(prompt=msg):
-    tx_submitted = pub.sign_and_submit(burn_tx)
-    pub.wait_for_confirmation(tx_submitted)
+    try:
+        tx_submitted = pub.sign_and_submit(burn_tx)
+        pub.wait_for_confirmation(tx_submitted)
+    except Exception as e:
+        LOG.error(e)
+        raise
 else:
     LOG.error('NOT SURE. ABORT')
