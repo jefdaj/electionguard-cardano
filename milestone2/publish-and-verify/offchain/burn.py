@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 '''Usage:
-  ./burn.py <slot> <block_hash> <policy_id> <dest_addr>
+  ./burn.py <slot> <block_hash> <policy_id> <keys_dir> <key_name>
 '''
 
 import json
@@ -18,13 +18,14 @@ from election.plutus import types as ept
 from election.plutus import script as eps
 from election.plutus.config import PLUTUS_JSON_PATH
 from election.plutus.types.channel import ADMIN_CHANNEL_ID
+from election import publisher as ep
 from election import subscriber as es
 from election.roles.funder import mint_channel_stt_assets
 from typing import Optional
 
 logging.basicConfig(
   encoding='utf-8',
-  level=logging.DEBUG,
+  level=logging.INFO,
   format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
 
@@ -55,6 +56,19 @@ LOG.info(f'policy_id: {policy_id}')
 
 script = load_script_by_policy_id(policy_id)
 LOG.info(f'script: {script}')
+
+
+### load destination wallet ###
+
+keys_dir=os.path.realpath(args['<keys_dir>'])
+pub = ep.ElectionPublisher(
+    role    = 'burner',
+    index   = 1,
+    keys_dir= keys_dir,
+    script  = script,
+    key_name= args['<key_name>'],
+)
+LOG.info(f'pub: {pub}')
 
 
 ### subscribe to find latest utxos ###
@@ -89,19 +103,32 @@ burn_assets = mint_channel_stt_assets(
 )
 LOG.info(f'burn_assets: {burn_assets}')
 
-dest_addr = Address.decode(args['<dest_addr>'])
-LOG.info(f'dest_addr: {dest_addr}')
-
 burn_tx = (
     TransactionBuilder(OGMIOS_CTX, mint=burn_assets)
     .add_minting_script(script=script.mint_script, redeemer=redeemer)
 )
 for utxo in sub.utxos.values():
-    # txid = utxo['output']['transaction_id']
-    # index = utxo['output']['transaction_index']
     LOG.debug(f'utxo: {utxo}')
-    burn_tx = burn_tx.add_input(utxo) # TODO what is this missing?
+    burn_tx = burn_tx.add_input(utxo)
 
 LOG.debug('burn_tx:\n%s\n' % pformat(burn_tx))
 
+def confirm(prompt="Are you sure? (y/n): "):
+    return input(prompt).strip().lower() in ("y", "yes")
 
+
+### confirm, then submit tx ###
+
+msg = f'''
+About to burn these tokens:
+{pformat(burn_assets)}
+
+Channel ADA will be sent to {pub.address}
+
+Are you sure? (y/n):'''
+
+if confirm(prompt=msg):
+    tx_submitted = pub.sign_and_submit(burn_tx)
+    pub.wait_for_confirmation(tx_submitted)
+else:
+    LOG.error('NOT SURE. ABORT')
