@@ -24,6 +24,7 @@ from election.roles.funder import mint_channel_stt_assets
 from typing import Optional
 
 logging.basicConfig(
+  filename='burn.log',
   encoding='utf-8',
   level=logging.INFO,
   format="%(asctime)s %(levelname)s %(name)s: %(message)s",
@@ -90,8 +91,8 @@ LOG.info(f'final utxos: {pformat(sub.utxos)}')
 
 ### create tx to burn and sweep funds ###
 
-redeemer = Redeemer(data=ept.BurnTestTokens())
-LOG.debug(f'redeemer: {redeemer}')
+mint_redeemer = Redeemer(data=ept.BurnTestTokens())
+LOG.debug(f'mint_redeemer: {mint_redeemer}')
 
 channel_ids = list(sub.states.keys())
 LOG.info(f'channel_ids: {channel_ids}')
@@ -105,19 +106,21 @@ LOG.info(f'burn_assets: {burn_assets}')
 
 burn_tx = (
     TransactionBuilder(OGMIOS_CTX, mint=burn_assets)
-    .add_minting_script(script=script.mint_script, redeemer=redeemer)
+    .add_minting_script(script=script.mint_script, redeemer=mint_redeemer)
 )
+
 for utxo in sub.utxos.values():
     LOG.debug(f'utxo: {utxo}')
-    burn_tx = burn_tx.add_input(utxo)
+    spend_redeemer = Redeemer(data=ept.BurnTestTokens()) # TODO need one per utxo, right?
+    burn_tx = burn_tx.add_script_input(utxo, script=script.spend_script, redeemer=spend_redeemer)
 
 LOG.debug('burn_tx:\n%s\n' % pformat(burn_tx))
 
-def confirm(prompt="Are you sure? (y/n): "):
-    return input(prompt).strip().lower() in ("y", "yes")
-
 
 ### confirm, then submit tx ###
+
+def confirm(prompt="Are you sure? (y/n): "):
+    return input(prompt).strip().lower() in ("y", "yes")
 
 msg = f'''
 About to burn these tokens:
