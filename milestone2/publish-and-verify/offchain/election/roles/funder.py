@@ -148,7 +148,7 @@ class Funder:
 
         init_tx = (
             TransactionBuilder(OGMIOS_CTX, mint=assets)
-            .add_input(self.script.oneshot_utxo)
+            .add_input(self.script.oneshot_utxo) # TODO this would fail if trying to load from json
             .add_input_address(self.publisher.address)
             .add_minting_script(script=self.script.mint_script, redeemer=redeemer)
             .add_output(stt_output)

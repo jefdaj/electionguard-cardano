@@ -4,16 +4,23 @@
   ./burn.py <slot> <block_hash> <policy_id> <dest_addr>
 '''
 
+import json
 import logging
 import os
 import time
+import re
+from glob import glob
 from pprint import pformat
 from docopt import docopt
-from pycardano import Redeemer, ScriptHash, Address
+from pycardano import Redeemer, ScriptHash, Address, TransactionBuilder
+from election.ogmios import OGMIOS_CTX
 from election.plutus import types as ept
+from election.plutus import script as eps
+from election.plutus.config import PLUTUS_JSON_PATH
 from election.plutus.types.channel import ADMIN_CHANNEL_ID
 from election import subscriber as es
 from election.roles.funder import mint_channel_stt_assets
+from typing import Optional
 
 logging.basicConfig(
   encoding='utf-8',
@@ -26,6 +33,28 @@ logging.basicConfig(
 LOG = logging.getLogger(os.path.basename(__file__))
 
 args = docopt(__doc__)
+
+
+### find and load script json by policy_id ###
+
+# TODO move to script.py
+def load_script_by_policy_id(policy_id: ScriptHash) -> Optional[eps.ElectionScript]:
+    'So far, this is only needed when creating a burn TX.'
+    ptn1 = PLUTUS_JSON_PATH.replace('.json', '-*.json')
+    ptn2 = PLUTUS_JSON_PATH.replace('.json', '-[0-9a-f]*.json')
+    paths = [f for f in glob(ptn1) if re.match(ptn2, f)]
+    LOG.debug(f'possible plutus json paths: {paths}')
+    for path in paths:
+        script = eps.ElectionScript(json_path=path)
+        if script.policy_id == policy_id:
+            return script
+    return None
+
+policy_id = ScriptHash(bytes.fromhex(args['<policy_id>']))
+LOG.info(f'policy_id: {policy_id}')
+
+script = load_script_by_policy_id(policy_id)
+LOG.info(f'script: {script}')
 
 
 ### subscribe to find latest utxos ###
@@ -43,6 +72,7 @@ time.sleep(3)
 sub.stop()
 
 LOG.info(f'final utxos: {pformat(sub.utxos)}')
+
 
 ### create tx to burn and sweep funds ###
 
@@ -62,15 +92,16 @@ LOG.info(f'burn_assets: {burn_assets}')
 dest_addr = Address.decode(args['<dest_addr>'])
 LOG.info(f'dest_addr: {dest_addr}')
 
-# TODO dest_output
+burn_tx = (
+    TransactionBuilder(OGMIOS_CTX, mint=burn_assets)
+    .add_minting_script(script=script.mint_script, redeemer=redeemer)
+)
+for utxo in sub.utxos.values():
+    # txid = utxo['output']['transaction_id']
+    # index = utxo['output']['transaction_index']
+    LOG.debug(f'utxo: {utxo}')
+    burn_tx = burn_tx.add_input(utxo) # TODO what is this missing?
 
-
-# burn_tx = (
-    # TransactionBuilder(OGMIOS_CTX, mint=assets)
-    # .add_input(self.script.oneshot_utxo)
-    # .add_minting_script(script=self.script.mint_script, redeemer=redeemer)
-    # .add_output(dest_output)
-# )
-# LOG.debug('burn_tx:\n%s\n' % pformat(burn_tx))
+LOG.debug('burn_tx:\n%s\n' % pformat(burn_tx))
 
 

@@ -18,8 +18,19 @@ from dataclasses import dataclass
 from os import environ
 from pprint import pformat
 
-# TODO import qualified to avoid logging conflict
-from pycardano import UTxO
+# long list to avoid logging conflict
+from pycardano import (
+    UTxO,
+    TransactionInput,
+    TransactionOutput,
+    TransactionId,
+    Value,
+    Asset,
+    MultiAsset,
+    ScriptHash,
+    AssetName,
+    Address,
+)
 
 from typing import Any, Callable, Dict, List, Tuple, Optional
 
@@ -112,6 +123,54 @@ def handle_match(utxo: Dict[str, Any], session: requests.Session) -> (ChannelId,
     except Exception as e:
         LOG.error('handle_match: failed to fetch datum {}: {}', datum_hash, e)
         raise
+
+def kupo_to_utxo(kupo_dict: dict) -> UTxO:
+    """Convert a Kupo UTXO response dict to a PyCardano UTxO.
+    WARNING: Does not handle a lot of edge cases! Mainly for BurnTestTokens.
+    """
+    tx_input = TransactionInput.from_primitive(
+        [kupo_dict["transaction_id"], kupo_dict["output_index"]]
+    )
+
+    coins = kupo_dict["value"]["coins"]
+    assets = kupo_dict["value"].get("assets", {})
+
+    if assets:
+        multi_asset = MultiAsset()
+        for asset_id, amount in assets.items():
+            if "." in asset_id:
+                policy_hex, asset_name_hex = asset_id.split(".", 1)
+            else:
+                policy_hex = asset_id
+                asset_name_hex = ""
+
+            policy_id = ScriptHash.from_primitive(policy_hex)
+            asset_name = AssetName(bytes.fromhex(asset_name_hex))
+
+            if policy_id not in multi_asset:
+                multi_asset[policy_id] = Asset()  # <-- Asset(), not {}
+
+            multi_asset[policy_id][asset_name] = amount
+
+        value = Value(coin=coins, multi_asset=multi_asset)
+    else:
+        value = Value(coin=coins)
+
+    address = Address.from_primitive(kupo_dict["address"])
+
+    datum_hash = None
+    if kupo_dict.get("datum_hash"):
+        from pycardano import DatumHash
+        datum_hash = DatumHash.from_primitive(kupo_dict["datum_hash"])
+
+    tx_output = TransactionOutput(
+        address=address,
+        amount=value,
+        datum_hash=datum_hash,
+    )
+
+    return UTxO(tx_input, tx_output)
+
 
 class Subscriber:
     '''
@@ -303,16 +362,16 @@ class Subscriber:
 
                 any_new_utxo = False
 
-                for utxo in unspent_utxos:
-                    if not isinstance(utxo, dict):
+                for utxo_dict in unspent_utxos:
+                    if not isinstance(utxo_dict, dict):
                         # continue
-                        raise Exception(f'Unexpected utxo format {type(utxo)}:\n{utxo}')
+                        raise Exception(f'Unexpected utxo format {type(utxo_dict)}:\n{utxo_dict}')
 
                     # skip already-processed transactions
                     # TODO is this ever actually needed?
                     # TODO is this wrong in case of a roll-back?
-                    tx_id = utxo.get('transaction_id')
-                    out_ix = utxo.get('output_index')
+                    tx_id = utxo_dict.get('transaction_id')
+                    out_ix = utxo_dict.get('output_index')
                     key = (tx_id, out_ix)
                     if tx_id and key in self._seen_tx_ids:
                         continue
@@ -324,7 +383,7 @@ class Subscriber:
 
                     try:
 
-                        (channel_id, new_state) = self.on_match(utxo, self.session)
+                        (channel_id, new_state) = self.on_match(utxo_dict, self.session)
                         # LOG.info(f'new_state: {new_state} ({type(new_state)})')
 
                         # assert isinstance(new_state, AdminChannelState), 'Each TX should have a AdminChannelState'
@@ -338,7 +397,7 @@ class Subscriber:
 
                         if not channel_id in self.utxos:
                             self.utxos[channel_id] = {}
-                        self.utxos[channel_id] = utxo
+                        self.utxos[channel_id] = kupo_to_utxo(utxo_dict)
 
                     except Exception as e:
                         LOG.error('Error in self.on_match: {}', e)

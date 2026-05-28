@@ -3,11 +3,11 @@
 from .config import PLUTUS_JSON_PATH
 from dataclasses import dataclass
 from os import makedirs
-from os.path import dirname, realpath
+from os.path import dirname, realpath, splitext
 from pathlib import Path
 from pycardano import PlutusData, PlutusV3Script, ScriptHash, UTxO, Address, Network
 from tempfile import NamedTemporaryFile
-from typing import List
+from typing import List, Optional
 import json
 import subprocess
 import logging
@@ -91,12 +91,38 @@ class ElectionScript:
     """
     # TODO variable saying whether it's using the traced or production version
 
-    def __init__(self, oneshot_utxo: UTxO):
+    def __init__(self, oneshot_utxo: Optional[UTxO] = None, json_path: Optional[str] = None):
 
-        self.oneshot_utxo = oneshot_utxo
-        self.oneshot_hex = utxo_to_ref_hex(self.oneshot_utxo)
-        self._json_dict = self.apply_params()
+        # TODO when loading from json_path, do we also need to save + load the oneshot_utxo for anything?
+        # TODO for now, oneshot_utxo hash higher priority than json_path... is that a reasonable interface?
+        # TODO don't require the json to be named including the hex
 
+        if oneshot_utxo is not None:
+            # TODO use oneshot_hex for logging instead?
+            msg =  f"Oneshot UTXO being used:"
+            msg += f"\n  tx_hash: {self.oneshot_utxo.input.transaction_id.payload.hex()}"
+            msg += f"\n  index: {self.oneshot_utxo.input.index}"
+            LOG.info(msg)
+            self.oneshot_hex = utxo_to_ref_hex(self.oneshot_utxo)
+            LOG.info(f'oneshot_hex from oneshot_utxo: {self.oneshot_hex}')
+            hex_params = [self.oneshot_hex]
+            json_dict = aiken_blueprint_apply_hex_params(PLUTUS_JSON_PATH, hex_params)
+            self._init_from_json(json_dict)
+            self.save_json()
+
+        elif json_path is not None:
+            self.oneshot_hex = splitext(json_path.split('-')[-1])[0]
+            LOG.info(f'oneshot_hex from json_path: {self.oneshot_hex}')
+            with open(json_path, 'r') as f:
+                json_dict = json.load(f)
+            self._init_from_json(json_dict)
+
+        else:
+            raise Exception('must init with either a oneshot_utxo or existing json_path')
+
+    def _init_from_json(self, json_dict):
+
+        self._json_dict = json_dict
         validators = self._json_dict["validators"]
         mint_validator  = next(v for v in validators if 'mint'  in v['title'])
         spend_validator = next(v for v in validators if 'spend' in v['title'])
@@ -113,18 +139,12 @@ class ElectionScript:
             network=Network.TESTNET
         )
 
-        self.save_json()
 
     def __repr__(self) -> str:
         # TODO include oneshot_utxo, address, json path
-        return f"ElectionScript(oneshot_hex={self.oneshot_hex[:16]}..., policy_id={str(self.policy_id)[:16]}...)"
+        return f"ElectionScript(policy_id={str(self.policy_id)[:16]}...)"
 
-    def apply_params(self) -> dict:
-        msg =  f"Oneshot UTXO being used:"
-        msg += f"\n  tx_hash: {self.oneshot_utxo.input.transaction_id.payload.hex()}"
-        msg += f"\n  index: {self.oneshot_utxo.input.index}"
-        LOG.info(msg)
-        hex_params = [self.oneshot_hex]
+    def apply_params(self, hex_params) -> dict:
         return aiken_blueprint_apply_hex_params(PLUTUS_JSON_PATH, hex_params)
 
     def default_json_path(self) -> Path:
