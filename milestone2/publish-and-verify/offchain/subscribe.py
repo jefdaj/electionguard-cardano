@@ -12,9 +12,9 @@ import time
 from pprint import pformat
 from docopt import docopt
 
-import election
-from election import subscriber as es
-from election.plutus.types.channel import ADMIN_CHANNEL_ID
+import ecg
+from ecg import subscriber as es
+from ecg.plutus.types.channel import ADMIN_CHANNEL_ID
 
 logging.basicConfig(
   # filename='subscribe.log',

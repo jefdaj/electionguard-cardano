@@ -9,8 +9,8 @@ from docopt import docopt
 from pprint import pformat
 import logging
 
-import election
-from election import subscriber as es
+import egc
+from egc import subscriber as es
 from static_records import STATIC_PHASES, STATIC_TRANSACTIONS
 
 logging.basicConfig(
@@ -62,12 +62,12 @@ keys_dir=os.path.realpath(args['<keys_dir>'])
 # The wallet which funds the election and recovers remaining ADA afterward.
 # Often but not necesarily the personal wallet of the election admin.
 # In a future web interface, this will be the wallet you connect to the dApp.
-f = election.roles.funder.Funder(keys_dir, wallet_name=args['<funder_wallet_name>'])
+f = egc.roles.funder.Funder(keys_dir, wallet_name=args['<funder_wallet_name>'])
 f.init_script()
 LOG.info(f'oneshot_utxo: {f.script.oneshot_utxo}')
 
 # Create Admin separately in case it's a different person from the Funder.
-a = election.roles.admin.Admin(keys_dir)
+a = egc.roles.admin.Admin(keys_dir)
 a._init_publisher(f.script) # TODO make this less awkward
 
 # Create the admin STT and run delayed admin init functions.
@@ -104,11 +104,11 @@ raise SystemExit
 #     'kupo_info': kupo_info,
 # }
 #
-# g1 = election.roles.Guardian(index=1, **shared_args)
-# g2 = election.roles.Guardian(index=2, **shared_args)
-# g3 = election.roles.Guardian(index=3, **shared_args)
-# d1 = election.roles.Device(  index=1, **shared_args)
-# v1 = election.roles.Verifier(index=1, **shared_args)
+# g1 = egc.roles.Guardian(index=1, **shared_args)
+# g2 = egc.roles.Guardian(index=2, **shared_args)
+# g3 = egc.roles.Guardian(index=3, **shared_args)
+# d1 = egc.roles.Device(  index=1, **shared_args)
+# v1 = egc.roles.Verifier(index=1, **shared_args)
 #
 # # TODO later, move this after adding subchannels? that way n guardians is known
 # # TODO also advance phase here?
