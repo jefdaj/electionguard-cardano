@@ -1,15 +1,11 @@
-"""Deployment info to save as JSON when deploying the contract.
-"""
-
 import json
 
 from dataclasses import dataclass
 from datetime import datetime
 from functools import cached_property
 
-from pycardano import Address, Network, TransactionInput
+from pycardano import Address, Network, TransactionInput, PlutusV3Script, ScriptHash
 
-# TODO rename JSON_VERSION? ELECTION_VERSION?
 SCHEMA_VERSION = 1
 
 @dataclass(frozen=True)
@@ -24,13 +20,13 @@ class ElectionScript:
     # The input is used to construct the oneshot TX. The hex is the script parameter.
     # These are not duplicates of (reasonably accessible) info in the aiken_blueprint.
     # TODO later, make a list of params including token prefix below
-    onshot_input: TransactionInput
+    oneshot_input: TransactionInput
     oneshot_hex: str
 
     # The final JSON blueprint. Includes title, contract version, CBOR fields, etc.
     aiken_blueprint: dict
 
-    # Convenient fields duplicated from the aiken_blueprint.
+    # Fields duplicated from the aiken_blueprint for convenience.
     policy_id: ScriptHash
     mint_validator: PlutusV3Script
     spend_validator: PlutusV3Script
