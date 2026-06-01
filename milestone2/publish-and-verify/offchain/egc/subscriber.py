@@ -19,18 +19,18 @@ from os import environ
 from pprint import pformat
 
 # long list to avoid logging conflict
-from pycardano import (
-    UTxO,
-    TransactionInput,
-    TransactionOutput,
-    TransactionId,
-    Value,
-    Asset,
-    MultiAsset,
-    ScriptHash,
-    AssetName,
-    Address,
-)
+# from pycardano import (
+#     UTxO,
+#     TransactionInput,
+#     TransactionOutput,
+#     TransactionId,
+#     Value,
+#     Asset,
+#     MultiAsset,
+#     ScriptHash,
+#     AssetName,
+#     Address,
+# )
 
 from typing import Any, Callable, Dict, List, Tuple, Optional
 
@@ -39,14 +39,17 @@ from .plutus.types.channel import *
 from .plutus.types.action import *
 from .plutus.types.channel import *
 
-
 LOG = logging.getLogger(__name__)
+
+from pycardano import *
+
 
 KUPO_HOST        = environ.get('KUPO_HOST', '127.0.0.1')
 KUPO_PORT        = int(environ.get('KUPO_PORT', '1442'))
 KUPO_MATCHES_URL = f'http://{KUPO_HOST}:{KUPO_PORT}/v1/matches'
 KUPO_POLL_SEC    = 0.5 # TODO what's reasonable during live operation?
 
+# TODO pull this from ogmios module, and rename
 NODE_SOCKET = environ.get('CARDANO_NODE_SOCKET_PATH', '../../cardano-node-ogmios/data/node-ipc/node.socket')
 NODE_CONFIG = environ.get('NODE_CONFIG', '../../cardano-node-ogmios/config/network/preview/cardano-node/config.json')
 
@@ -172,7 +175,7 @@ def kupo_to_utxo(kupo_dict: dict) -> UTxO:
     return UTxO(tx_input, tx_output)
 
 
-class Subscriber:
+class ElectionSubscriber:
     '''
     Runs kupo and feeds matches to a callback.
     Note that since_slot and since_block_hash should be figured out *before* deploying the contract,
@@ -187,7 +190,7 @@ class Subscriber:
             on_close: SubscriberCallback,
         ):
 
-        LOG.info('Subscriber.__init__')
+        LOG.info('ElectionSubscriber.__init__')
 
         self.config = config
         self.on_match = on_match
@@ -226,7 +229,7 @@ class Subscriber:
         Start Kupo as a subprocess.
         Uses `--since {slot}.{hash}` and `--match '{policy_id}/*'`.
         '''
-        LOG.info('Subscriber._start_kupo')
+        LOG.info('ElectionSubscriber._start_kupo')
 
         if self._kupo_proc is not None and self._kupo_proc.poll() is None:
             # TODO error here?
@@ -291,7 +294,7 @@ class Subscriber:
         time.sleep(0.1) # prevents polling error during startup
 
     def _log_kupo_output(self) -> None:
-        LOG.info('Subscriber._log_kupo_output')
+        LOG.info('ElectionSubscriber._log_kupo_output')
         proc = self._kupo_proc
         if proc.stdout is None:
             return
@@ -306,7 +309,7 @@ class Subscriber:
         LOG.info('Kupo subprocess output thread terminating')
 
     def stop_kupo(self) -> None:
-        LOG.info('Subscriber.stop_kupo')
+        LOG.info('ElectionSubscriber.stop_kupo')
         proc = self._kupo_proc
         if proc is None:
             return
@@ -322,7 +325,7 @@ class Subscriber:
         self._kupo_proc = None
 
     def check_if_admin_channel_closed(self):
-        LOG.info('Subscriber.check_if_admin_channel_closed')
+        LOG.info('ElectionSubscriber.check_if_admin_channel_closed')
         (tx_id, output_ix) = self._last_tx_key
         resp = self.session.get(KUPO_MATCHES_URL + f'/{output_ix}@{tx_id}') # TODO params? timeout?
         if resp.status_code == 200:
@@ -419,7 +422,7 @@ class Subscriber:
         LOG.info('Watcher thread exiting')
 
     def subscribed_records(self, channel_id: ChannelId):
-        LOG.debug('Subscriber.subscribed_records')
+        LOG.debug('ElectionSubscriber.subscribed_records')
         LOG.debug(f'history: {self.history}')
         records = []
         # TODO fix so even if one is missing, iteration doesn't get messed up
@@ -431,7 +434,7 @@ class Subscriber:
         return records
 
     def start(self) -> None:
-        LOG.info('Subscriber.start')
+        LOG.info('ElectionSubscriber.start')
         self._kupo_stop.clear()
 
         def _start_and_watch() -> None:
@@ -455,13 +458,13 @@ class Subscriber:
         self._kupo_thread.start()
 
     def join(self):
-        LOG.info('Subscriber.join')
+        LOG.info('ElectionSubscriber.join')
         # TODO how is this actually supposed to be done?
         while not self.is_done():
             time.sleep(1)
 
     def stop(self) -> None:
-        LOG.info('Subscriber.stop')
+        LOG.info('ElectionSubscriber.stop')
         self.stop_kupo()
         self._kupo_stop.set()
         if self._kupo_thread and self._kupo_thread.is_alive():

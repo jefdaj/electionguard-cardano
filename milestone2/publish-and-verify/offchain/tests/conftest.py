@@ -6,7 +6,7 @@ LOG = logging.getLogger(__name__)
 pytest_plugins = [
     "fixtures.ogmios",
     "fixtures.funder",
-    # "fixtures.election",
+    "fixtures.election",
 ]
 
 # import json

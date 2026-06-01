@@ -2,6 +2,9 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
+from egc.election import *
+from pycardano import *
+
 # @pytest.fixture(scope='package')
 # def oneshot_utxo(ogmios: OgmiosV6ChainContext, addr: Address) -> UTxO:
 #     '''Pick a oneshot UTxO from the election wallet.'''

@@ -1,5 +1,7 @@
+from egc import Election, ElectionPublisher, ElectionSubscriber
+
 from egc import publisher as ep
-from egc.plutus import script as eps
+# from egc.plutus import script as eps
 from egc.plutus import types as ept
 from egc.plutus.types.channel_id import *
 from egc.ogmios import OGMIOS_CTX, query_network_tip_sync
@@ -84,7 +86,7 @@ class Funder:
     def _init_publisher(self, script):
         """Delayed init for publisher because we need to know the one-shot UTxO."""
         LOG.debug('Funder._init_publisher')
-        self.publisher = ep.ElectionPublisher(
+        self.publisher = ElectionPublisher(
             role="funder",
             index=1,
             keys_dir=self.keys_dir,
@@ -98,7 +100,7 @@ class Funder:
         LOG.debug('Funder._init_subscriber')
         # TODO write this once publishing works
         # script = ElectionScript(oneshot_utxo)
-        self.subscriber = eps.Subscriber(self.publisher.script)
+        self.subscriber = ElectionSubscriber(self.publisher.script)
 
     def build_init_tx(self, admin: Admin, channel_ada: int) -> TransactionBuilder:
         """Build an InitElection transaction.
