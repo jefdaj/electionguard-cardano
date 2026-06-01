@@ -8,4 +8,4 @@ from . import plutus
 from . import publisher
 from . import subscriber
 from . import roles
-from . import info
+from . import election

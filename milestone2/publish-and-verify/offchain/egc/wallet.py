@@ -102,3 +102,5 @@ def load_wallet_signing_key(keys_dir=DEF_KEYS_DIR, name='main', verbose=False) -
     with signing_key.open('r') as f:
         # TODO would validate_type=True here help?
         return SigningKey.from_json(f.read())
+
+# TODO Keypair class to encapsulate a lot of this?

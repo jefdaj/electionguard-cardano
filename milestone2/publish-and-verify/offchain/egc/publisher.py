@@ -6,12 +6,12 @@ They publish TXs via Ogmios and files via IPFS (Kubo) (not Kupo).
 
 from pathlib import Path
 from pycardano import UTxO, OgmiosV6ChainContext, SigningKey, Transaction, TransactionBuilder, Value
-from election.ogmios import OGMIOS_CTX
-from election.plutus import script as es
-from election import wallet as ew
+from egc.ogmios import OGMIOS_CTX
+# from egc.plutus import script as es
+from egc import wallet as ew
 from time import sleep
 from typing import List, Optional
-from election.plutus.script import ElectionScript
+from egc.election import Election
 from pprint import pformat
 import logging
 import time
@@ -26,6 +26,8 @@ LOG = logging.getLogger(__name__)
 #     build_psopen_tx, build_pspublish_tx, build_psclose_tx
 # )
 
+# TODO refactor to take a Keypair object rather than 2 args?
+
 class ElectionPublisher:
 
     # TODO pass kubo here and implement ipfs publishing
@@ -34,19 +36,20 @@ class ElectionPublisher:
         role: str,
         index: int,
         keys_dir: Path,
-        script: ElectionScript,
+        # script: ElectionScript,
+        election: Election,
         key_name: Optional[Path] = None,
         # TODO pass once using more than one: ogmios: OgmiosV6ChainContext,
         # TODO ipfs (kubo)
     ):
         """Create the publisher.
-        The script should already have been parameterized with a one-shot UTxO by the Admin.
         """
         LOG.debug('ElectionPublisher.__init__')
         self.role = role
         self.index = index
         self.keys_dir = Path(keys_dir) # TODO ok if already a Path?
-        self.script = script
+        self.election = election
+        # self.script = script
         # self.ogmios = OGMIOS_CTX
         self.key_name = self.channel_id() if key_name is None else key_name
         self._init_keypair()

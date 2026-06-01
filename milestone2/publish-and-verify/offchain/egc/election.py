@@ -1,12 +1,14 @@
 import json
+import logging
 
 from dataclasses import dataclass
 from datetime import datetime
 from functools import cached_property
 from pathlib import Path
+from pycardano import Address, Network, TransactionInput, PlutusV3Script, ScriptHash
 from typing import Self
 
-from pycardano import Address, Network, TransactionInput, PlutusV3Script, ScriptHash
+LOG = logging.getLogger(__name__)
 
 SCHEMA_VERSION = 1
 
@@ -14,9 +16,8 @@ SCHEMA_VERSION = 1
 class ElectionScript:
     """The compiled, parameterized contract.
 
-    Everything in here affects the script hash — change any field and you get
-    a different on-chain contract. Network-independent: the same Script
-    produces the same hash on mainnet and testnet.
+    Includes more info than actually needed by roles, publishers, or subscribers.
+    Network-independent: the same Script produces the same hash on mainnet and testnet.
     """
 
     # The input is used to construct the oneshot TX. The hex is the script parameter.
@@ -37,6 +38,7 @@ class ElectionScript:
     # TODO later: token name prefix
 
     def to_dict(self) -> dict:
+        LOG.debug('ElectionScript.to_dict')
         return {
             "oneshot_input": {
                 "tx_id": str(self.oneshot_input.transaction_id),
@@ -49,6 +51,7 @@ class ElectionScript:
 
     @classmethod
     def from_dict(cls, data: dict) -> Self:
+        LOG.debug('ElectionScript.from_dict')
         oneshot_input = TransactionInput(
             TransactionId(bytes.fromhex(data["oneshot_input"]["tx_id"])),
             data["oneshot_input"]["output_index"],
@@ -81,9 +84,7 @@ class ElectionScript:
 class ElectionDeployment:
     """Operational context for a particular deployment of an ElectionScript.
 
-    None of these fields affect the script hash. The same Script can in
-    principle be deployed with different Deployments (e.g. preprod then
-    mainnet) and remain byte-identical.
+    None of these fields affect the script hash.
     """
 
     # TODO later, distinguish preview from preprod
@@ -101,6 +102,7 @@ class ElectionDeployment:
     kupo_since_block_hash: str
 
     def to_dict(self) -> dict:
+        LOG.debug('ElectionDeployment.to_dict')
         return {
             "network":               self.network.name.lower(),  # "mainnet" / "testnet"
             "funder_address":        str(self.funder_address),
@@ -112,6 +114,7 @@ class ElectionDeployment:
 
     @classmethod
     def from_dict(cls, data: dict) -> Self:
+        LOG.debug('ElectionDeployment.from_dict')
         return cls(
             network               = Network[data["network"].upper()],
             funder_address        = Address.from_primitive(data["funder_address"]),
@@ -142,14 +145,12 @@ class Election:
     @property
     def address(self) -> Address:
         """Script address, derived from the spend script hash and network."""
-        # script_hash = PlutusV3Script(bytes.fromhex(self.script.spend_cbor_hex)).hash()
-        # return Address(script_hash, network=self.deployment.network)
-        ...
-
-    # TODO to_dict / from_dict / to_json / from_json
-
+        LOG.debug('Election.address')
+        # TODO can policy_id be used directly?
+        return Address(self.script.policy_id, network=self.deployment.network)
 
     def to_dict(self) -> dict:
+        LOG.debug('Election.to_dict')
         return {
             "schema_version": self.schema_version,
             "script":         self.script.to_dict(),
@@ -158,6 +159,7 @@ class Election:
 
     @classmethod
     def from_dict(cls, data: dict) -> Self:
+        LOG.debug('Election.from_dict')
         version = data.get("schema_version")
         if version != SCHEMA_VERSION:
             raise ValueError(
@@ -171,8 +173,10 @@ class Election:
         )
 
     def to_json(self, path: str | Path) -> None:
+        LOG.debug('Election.to_json')
         Path(path).write_text(json.dumps(self.to_dict(), indent=2))
 
     @classmethod
     def from_json(cls, path: str | Path) -> Self:
+        LOG.debug('Election.from_json')
         return cls.from_dict(json.loads(Path(path).read_text()))

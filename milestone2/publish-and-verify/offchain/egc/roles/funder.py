@@ -1,9 +1,9 @@
-from election import publisher as ep
-from election.plutus import script as eps
-from election.plutus import types as ept
-from election.plutus.types.channel_id import *
-from election.ogmios import OGMIOS_CTX, query_network_tip_sync
-from election import wallet as ew
+from egc import publisher as ep
+from egc.plutus import script as eps
+from egc.plutus import types as ept
+from egc.plutus.types.channel_id import *
+from egc.ogmios import OGMIOS_CTX, query_network_tip_sync
+from egc import wallet as ew
 # import pycardano as pc
 # from pycardano import UTxO, ScriptHash, MultiAsset, TransactionBuilder, Asset, AssetName, Redeemer, Value
 from pycardano import *
@@ -16,12 +16,13 @@ from pprint import pformat
 from .admin import Admin
 
 # TODO is there really not a built in convenience function or constant for this?
+# TODO where should it live?
 LOVELACE_PER_ADA = 1_000_000
 
 LOG = logging.getLogger(__name__)
 
 # This should match the one defined in aiken.toml
-# TODO get them from a common source?
+# TODO custom prefix set by funder
 STT_PREFIX: str = "egc-election"
 
 def full_stt_name(channel_id: ChannelId) -> bytes:
@@ -148,7 +149,7 @@ class Funder:
 
         init_tx = (
             TransactionBuilder(OGMIOS_CTX, mint=assets)
-            .add_input(self.script.oneshot_utxo) # TODO this would fail if trying to load from json
+            .add_input(self.script.oneshot_utxo)
             .add_input_address(self.publisher.address)
             .add_minting_script(script=self.script.mint_script, redeemer=redeemer)
             .add_output(stt_output)
@@ -162,7 +163,7 @@ class Funder:
     def init_script(self):
         """Pick oneshot_utxo and parameterize script."""
         # Need to load addr separately because self.publisher does not exist yet.
-        # TODO will this also generate the keypair if needed? do we want it to?
+        # TODO rewrite this
         fund_addr = ew.load_wallet_addr(keys_dir=self.keys_dir, name=self.wallet_name)
         oneshot_utxo = eps.pick_oneshot_utxo(OGMIOS_CTX, fund_addr)
         self.script = eps.ElectionScript(oneshot_utxo)

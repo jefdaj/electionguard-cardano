@@ -31,9 +31,18 @@ TODO:
 off-chain (Python) code
 -----------------------
 
+Tests:
+
+* [ ] 1. funded wallet --[init election]--> ref script, admin stt, election info
+* [ ] 2. election info (script, deployment, election) round trip to/from json file
+* [ ] 3. election info --> subscriber config
+* [ ] 4. script, admin stt --[burn test tokens]--> funds back in wallet, ref script spent, stt burned
+* [ ] 5. subscriber subscribe to init election + burn test tokens
+
 TODO:
 
 * [x] write python types to match aiken types
+* [ ] script needs to be a reference script?
 * [ ] basic init election tests needed to try burning test tokens
 * [ ] burn-test-tokens script
 * [ ] manually construct pycardano txs for each step in an election
