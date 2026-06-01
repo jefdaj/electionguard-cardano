@@ -16,7 +16,6 @@ SCHEMA_VERSION = 1
 class ElectionScript:
     """The compiled, parameterized contract.
 
-    Includes more info than actually needed by roles, publishers, or subscribers.
     Network-independent: the same Script produces the same hash on mainnet and testnet.
     """
 
