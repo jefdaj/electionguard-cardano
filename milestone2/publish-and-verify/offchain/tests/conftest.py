@@ -6,7 +6,7 @@ LOG = logging.getLogger(__name__)
 pytest_plugins = [
 
     # TODO add after script works:
-    # "fixtures.ogmios"
+    "fixtures.ogmios"
 
     # "fixtures.funder"
     # "fixtures.election"

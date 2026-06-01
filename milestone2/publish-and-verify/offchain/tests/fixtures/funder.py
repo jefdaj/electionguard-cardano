@@ -1,6 +1,3 @@
-# TODO one session skope funder keypair loaded from disk
-# TODO and a package (election) scope Funder object because it'll need a new Subscriber each time
-
 import logging
 import pytest
 
@@ -8,6 +5,9 @@ from pycardano import *
 from egc.wallet import *
 
 LOG = logging.getLogger(__name__)
+
+
+### dev keypair with tADA is session scoped ###
 
 @pytest.fixture(scope='session')
 def funder_sk() -> SigningKey:
@@ -23,3 +23,14 @@ def funder_addr() -> Address:
 def funder_vkh(funder_sk: SigningKey) -> VerificationKeyHash:
     LOG.info('funder_vkh fixture')
     return vkh_for_signing_key(funder_sk)
+
+
+### Funder is package scoped because a new Election needs a new Subscriber ###
+
+@pytest.fixture(scope='package')
+def funder(
+        funder_sk: SigningKey,
+        funder_addr: Address,
+        funder_vkh: VerificationKeyHash,
+    ): -> Funder:
+    pass
