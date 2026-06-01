@@ -4,12 +4,9 @@ import pytest
 LOG = logging.getLogger(__name__)
 
 pytest_plugins = [
-
-    # TODO add after script works:
-    "fixtures.ogmios"
-
-    # "fixtures.funder"
-    # "fixtures.election"
+    "fixtures.ogmios",
+    "fixtures.funder",
+    # "fixtures.election",
 ]
 
 # import json

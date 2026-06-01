@@ -1,10 +1,10 @@
 import logging
 import pytest
 
+LOG = logging.getLogger(__name__)
+
 from pycardano import *
 from egc.wallet import *
-
-LOG = logging.getLogger(__name__)
 
 
 ### dev keypair with tADA is session scoped ###
@@ -27,10 +27,10 @@ def funder_vkh(funder_sk: SigningKey) -> VerificationKeyHash:
 
 ### Funder is package scoped because a new Election needs a new Subscriber ###
 
-@pytest.fixture(scope='package')
-def funder(
-        funder_sk: SigningKey,
-        funder_addr: Address,
-        funder_vkh: VerificationKeyHash,
-    ): -> Funder:
-    pass
+# @pytest.fixture(scope='package')
+# def funder(
+#         funder_sk: SigningKey,
+#         funder_addr: Address,
+#         funder_vkh: VerificationKeyHash,
+#     ) -> Funder:
+#     pass
