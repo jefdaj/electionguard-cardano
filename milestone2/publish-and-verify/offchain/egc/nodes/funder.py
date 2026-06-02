@@ -10,10 +10,6 @@
 from pycardano import *
 # from egc import *
 import logging
-# from egc.plutus.types import *
-# from egc.plutus.utils import *
-# from egc.plutus.stt import *
-# from egc.wallet import *
 
 from pathlib import Path
 from typing import List
@@ -41,18 +37,18 @@ class Funder:
     ):
         LOG.debug('Funder.__init__')
         self.key_pair = key_pair
-        self.publisher = self._init_publisher()
+        self._init_publisher()
 
         # These need to be delayed because we won't know the deployment details
         # until after init_election().
         self.election = None
         self.subscriber = None
 
-    def _init_publisher(self, script):
+    def _init_publisher(self):
         LOG.debug('Funder._init_publisher')
         self.publisher = ElectionPublisher(
             role="funder",
-            index=1,
+            role_index=1,
             key_pair=self.key_pair,
             # script=script, TODO not needed, right?
         )

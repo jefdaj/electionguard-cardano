@@ -11,10 +11,6 @@ def oneshot_utxo(ogmios: OgmiosV6ChainContext, funder_keys: KeyPair) -> UTxO:
 #     '''Parameterize the contract with the oneshot_utxo.'''
 #     return ElectionScript(oneshot_utxo)
 
-# @pytest.fixture(scope='package')
-# def funder(
-#         funder_sk: SigningKey,
-#         funder_addr: Address,
-#         funder_vkh: VerificationKeyHash,
-#     ) -> Funder:
-#     pass
+@pytest.fixture(scope='package')
+def funder(funder_keys: KeyPair) -> Funder:
+    return Funder(funder_keys)
