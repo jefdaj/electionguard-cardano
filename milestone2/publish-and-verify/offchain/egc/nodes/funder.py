@@ -5,71 +5,27 @@
 # from egc import publisher as ep
 # from egc.plutus import script as eps
 # from egc.plutus import types as ept
-# from egc.plutus.types.channel_id import *
 # from egc.ogmios import OGMIOS_CTX, query_network_tip_sync
-# from egc import wallet as ew
+
+from pycardano import *
+# from egc import *
+import logging
+# from egc.plutus.types import *
+# from egc.plutus.utils import *
+# from egc.plutus.stt import *
+# from egc.wallet import *
 
 from pathlib import Path
 from typing import List
-import logging
 from pprint import pformat
 
 LOG = logging.getLogger(__name__)
 
 # import pycardano as pc
 # from pycardano import UTxO, ScriptHash, MultiAsset, TransactionBuilder, Asset, AssetName, Redeemer, Value
-from pycardano import *
 
-from ..ogmios import *
-from ..plutus.oneshot import *
+from ..core import *
 from .admin import Admin
-from ..election import ElectionScript
-
-# TODO is there really not a built in convenience function or constant for this?
-# TODO where should it live?
-LOVELACE_PER_ADA = 1_000_000
-
-# This should match the one defined in aiken.toml
-# TODO custom prefix set by funder
-STT_PREFIX: str = "egc-election"
-
-def full_stt_name(channel_id: ChannelId) -> bytes:
-    id_str = ept.ChannelIdHelper.to_string(channel_id)
-    full_str = STT_PREFIX + '-' + id_str + '-stt'
-    # return ept.ChannelIdHelper.from_string(full_str)
-    return full_str.encode('utf-8')
-
-def top_up_to_min_ada(output):
-    """The minimum lovelace for a UTXO depends on the serialized size of the
-    output, which includes the coin field itself. In most cases this doesn't
-    matter, but in edge cases: A small coin value serializes to fewer bytes than a
-    large one.  After you bump coin, the output size could cross a threshold that
-    changes the minimum. In practice this rarely causes issues because the min
-    lovelace calculation has enough headroom, but if you want to be defensive, you
-    can loop until it stabilizes.
-    """
-    for _ in range(3):  # shouldn't need more than 2 iterations
-        min_lv = min_lovelace(OGMIOS_CTX, output)
-        new_coin = max(output.amount.coin, min_lv)
-        if output.amount.coin == new_coin:
-            break
-        output.amount.coin = new_coin
-
-# TODO where should this live?
-def mint_channel_stt_assets(
-        policy_id: ScriptHash,
-        n_to_mint: int,
-        channel_ids: List[ChannelId]
-    ) -> MultiAsset:
-    '''Mint or burn (with negative n_to_mint) one or more channel STTs'''
-    # the quicker from_primitive way has some normalize error here
-    asset = Asset()
-    for channel_id in channel_ids:
-        stt = AssetName(full_stt_name(channel_id))
-        asset[stt] = n_to_mint
-    assets = MultiAsset()
-    assets[policy_id] = asset
-    return assets
 
 class Funder:
     """Wallet to create + fund the Admin, and to recover ADA after the election.
@@ -119,7 +75,7 @@ class Funder:
 
         LOG.debug('Funder.build_init_tx')
 
-        redeemer = Redeemer(data=ept.InitElection())
+        redeemer = Redeemer(data=InitElection())
         LOG.debug('redeemer: %s' % pformat(redeemer))
 
         admin_id = ChannelIdHelper.from_string('admin')
@@ -127,11 +83,11 @@ class Funder:
         LOG.debug('assets: %s' % pformat(assets))
 
         admin_vkh  = admin.publisher.verification_key_hash
-        state = ept.channel.AdminChannelState(
+        state = AdminChannelState(
             admin       = admin_vkh.payload,
             subchannels = [],
             new_records = [],
-            phase       = ept.phase.ElectionConfigPhase(ept.phase.ConfigAnnouncePhase()),
+            phase       = ElectionConfigPhase(ConfigAnnouncePhase()),
             seq         = 0,
         )
         LOG.debug('state: %s' % pformat(state))

@@ -15,7 +15,7 @@ import time
 LOG = logging.getLogger(__name__)
 
 from .ogmios   import OGMIOS_CTX
-from .election import Election
+from .election import ElectionContext
 from .wallet   import *
 
 from pycardano import *

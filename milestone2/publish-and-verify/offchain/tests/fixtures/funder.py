@@ -1,11 +1,8 @@
+from egc import *
 import logging
 import pytest
 
 LOG = logging.getLogger(__name__)
-
-from pycardano import *
-from egc.wallet import *
-from egc.roles.funder import *
 
 
 ### dev keypair with tADA is session scoped ###

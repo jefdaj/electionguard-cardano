@@ -8,10 +8,11 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-from ..ogmios     import OGMIOS_CTX
-from ..election   import Election
-from ..publisher  import ElectionPublisher
-from ..subscriber import ElectionSubscriber
+from ..core import *
+# from ..ogmios     import OGMIOS_CTX
+# from ..election   import Election
+# from ..publisher  import ElectionPublisher
+# from ..subscriber import ElectionSubscriber
 
 # from pycardano import UTxO
 # from pycardano import UTxO, OgmiosV6ChainContext
@@ -52,7 +53,7 @@ class Admin:
             role="admin",
             index=1,
             keys_dir=self.keys_dir,
-            script=script,
+            # script=script,
             # ogmios=self.ogmios
         )
 

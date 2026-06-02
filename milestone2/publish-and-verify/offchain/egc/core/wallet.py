@@ -53,7 +53,7 @@ LOG = logging.getLogger(__name__)
 from pycardano import *
 # from pycardano import Address, Network, SigningKey, PaymentSigningKey, PaymentVerificationKey, VerificationKeyHash
 
-DEF_KEYS_DIR = Path(__file__).parent / '../keys'
+DEF_KEYS_DIR = Path(__file__).parent.parent.parent / 'keys'
 
 def vkh_for_signing_key(sk: PaymentSigningKey) -> VerificationKeyHash:
     verification_key = PaymentVerificationKey.from_signing_key(sk)

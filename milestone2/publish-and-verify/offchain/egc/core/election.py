@@ -124,7 +124,7 @@ class ElectionDeployment:
         )
 
 @dataclass(frozen=True)
-class Election:
+class ElectionContext:
     """Immutable record of a deployed election contract.
 
     Contains the compiled script, its parameters, and the deployment context

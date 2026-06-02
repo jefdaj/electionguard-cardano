@@ -22,5 +22,5 @@ else:
 PLUTUS_JSON_PATH = PLUTUS_JSON_PATH_TRACED if USE_TRACED else PLUTUS_JSON_PATH_PROD
 
 LOG.info(
-    "Loading Plutus blueprint: %s (traced=%s)", PLUTUS_JSON_PATH, USE_TRACED
+    f"Plutus blueprint JSON: {PLUTUS_JSON_PATH} (variant='{_env}', traced={USE_TRACED})"
 )

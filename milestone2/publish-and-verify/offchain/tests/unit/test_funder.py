@@ -1,9 +1,9 @@
+from egc import *
+
 import logging
 import pytest
 
 LOG = logging.getLogger(__name__)
-
-from pycardano import *
 
 def test_funder_sk(funder_sk: SigningKey):
     assert isinstance(funder_sk, SigningKey)

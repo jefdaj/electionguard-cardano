@@ -1,6 +1,5 @@
 import pytest
-from pycardano import *
-from egc.ogmios import *
+from egc import *
 
 # from .conftest import *
 # from election.ogmios import *
