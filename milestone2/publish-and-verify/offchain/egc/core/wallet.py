@@ -107,12 +107,13 @@ def generate_keypair(keys_dir=DEF_KEYS_DIR, name='main', verbose=True) -> (Signi
     msg = f'''
     Your new Preview testnet keys are here:
 
-    {signing_key}
-    {address}
+    {sk_path}
+    {addr_path}
 
-    Your public address (2nd file) is: {str(addr_path)}
+    Your public address (2nd file) is: {address}
 
-    Before continuing, fund that address with tADA from the faucet:
+    If this is your main dev wallet, go fund that address with tADA from the
+    faucet before running any tests:
     https://docs.cardano.org/cardano-testnets/tools/faucet
 
     If you don't, local tests will still work but testnet tests will fail.
