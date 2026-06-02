@@ -4,6 +4,7 @@ pytest_plugins = [
     "fixtures.ogmios",
     "fixtures.wallet",
     "fixtures.funder",
+    "fixtures.admin",
     "fixtures.election",
 ]
 

@@ -14,3 +14,7 @@ def script(oneshot_utxo: UTxO) -> ElectionScript:
 @pytest.fixture(scope='package')
 def funder(funder_keys: KeyPair) -> Funder:
     return Funder(funder_keys)
+
+@pytest.fixture(scope='package')
+def init_tx(funder: Funder, script: ElectionScript) -> TransactionBuilder:
+    raise NotImplementedError
