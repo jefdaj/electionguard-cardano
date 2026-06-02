@@ -8,7 +8,6 @@
 # from egc.ogmios import OGMIOS_CTX, query_network_tip_sync
 
 from pycardano import *
-# from egc import *
 import logging
 
 from pathlib import Path
@@ -20,8 +19,9 @@ LOG = logging.getLogger(__name__)
 # import pycardano as pc
 # from pycardano import UTxO, ScriptHash, MultiAsset, TransactionBuilder, Asset, AssetName, Redeemer, Value
 
+# from egc import *
 from ..core import *
-from .admin import Admin
+from .admin import *
 
 class Funder:
     """Wallet to create + fund the Admin, and to recover ADA after the election.
@@ -53,14 +53,6 @@ class Funder:
             # script=script, TODO not needed, right?
         )
 
-    def _init_subscriber(self, kupo_args):
-        """Delayed init for subscriber because we need to know the args for `kupo --since`."""
-        LOG.debug('Funder._init_subscriber')
-        # TODO write this once publishing works
-        # script = ElectionScript(oneshot_utxo)
-        # self.subscriber = ElectionSubscriber(self.publisher.script)
-        raise NotImplementedError
-
     def build_init_tx(self, admin: Admin, channel_ada: int) -> TransactionBuilder:
         """Build an InitElection transaction.
         This is an unusual one because it doesn't have any options, so there's
@@ -74,8 +66,7 @@ class Funder:
         redeemer = Redeemer(data=InitElection())
         LOG.debug('redeemer: %s' % pformat(redeemer))
 
-        admin_id = ChannelIdHelper.from_string('admin')
-        assets = mint_channel_stt_assets(self.script.policy_id, 1, [admin_id])
+        assets = mint_channel_stt_assets(self.script.policy_id, 1, [ADMIN_ID])
         LOG.debug('assets: %s' % pformat(assets))
 
         admin_vkh  = admin.publisher.verification_key_hash
@@ -152,3 +143,11 @@ class Funder:
         init_tx_submitted = self.publisher.sign_and_submit(init_tx)
 
         return (sub_info, init_tx_submitted)
+
+    def _init_subscriber(self, kupo_args):
+        """Delayed init for subscriber because we need to know the args for `kupo --since`."""
+        LOG.debug('Funder._init_subscriber')
+        # TODO write this once publishing works
+        # script = ElectionScript(oneshot_utxo)
+        # self.subscriber = ElectionSubscriber(self.publisher.script)
+        raise NotImplementedError

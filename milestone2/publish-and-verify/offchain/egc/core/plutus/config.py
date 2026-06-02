@@ -6,7 +6,7 @@ from sys import modules
 
 LOG = logging.getLogger(__name__)
 
-PLUTUS_JSON_PATH_PROD   = realpath(Path(__file__).parent / '../../../onchain/election-plutus.json')
+PLUTUS_JSON_PATH_PROD   = realpath(Path(__file__).parent.parent.parent.parent.parent / 'onchain/election-plutus.json')
 PLUTUS_JSON_PATH_TRACED = PLUTUS_JSON_PATH_PROD.replace('.json', '-traced.json')
 
 # Explicit env var wins; otherwise default to traced under pytest, prod elsewhere.

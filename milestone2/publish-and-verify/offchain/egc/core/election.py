@@ -8,8 +8,11 @@ from datetime import datetime
 from functools import cached_property
 from pathlib import Path
 from typing import Self
+from pprint import pformat
 
-from pycardano import * # Address, Network, TransactionInput, PlutusV3Script, ScriptHash
+from pycardano import *
+
+from .plutus import *
 
 SCHEMA_VERSION = 1
 
@@ -49,6 +52,22 @@ class ElectionScript:
             # policy_id, mint_script, spend_script will be rederived from blueprint
         }
 
+    # TODO is this a reasonable way to initially create it, with a round-trip to json?
+    @classmethod
+    def from_oneshot_utxo(cls, oneshot_utxo: UTxO) -> Self:
+        oneshot_hex = utxo_to_ref_hex(oneshot_utxo)
+        hex_params = [oneshot_hex]
+        blueprint_dict = aiken_blueprint_apply_hex_params(PLUTUS_JSON_PATH, hex_params)
+        cls_dict = {
+            'oneshot_input': {
+                'tx_id': str(oneshot_utxo.input.transaction_id),
+                'output_index': oneshot_utxo.input.index,
+            },
+            'oneshot_hex': oneshot_hex,
+            'aiken_blueprint': blueprint_dict,
+        }
+        return cls.from_dict(cls_dict)
+
     @classmethod
     def from_dict(cls, data: dict) -> Self:
         LOG.debug('ElectionScript.from_dict')
@@ -57,25 +76,16 @@ class ElectionScript:
             data["oneshot_input"]["output_index"],
         )
         blueprint = data["aiken_blueprint"]
-        mint_dict  = next(v for v in data["validators"] if 'mint'  in v['title'])
-        spend_dict = next(v for v in data["validators"] if 'spend' in v['title'])
+        mint_dict  = next(v for v in blueprint["validators"] if 'mint'  in v['title'])
+        spend_dict = next(v for v in blueprint["validators"] if 'spend' in v['title'])
         mint_script  = PlutusV3Script(bytes.fromhex(  mint_dict["compiledCode"] ))
         spend_script = PlutusV3Script(bytes.fromhex( spend_dict["compiledCode"] ))
-
-        # extra check to be sure that my apply_params hack isn't breaking anything
-        rederived = ScriptHash(bytes.fromhex(mint_validator["hash"]))
-        from_blueprint = mint_script.hash()
-        if from_blueprint != rederived:
-            raise ValueError(
-                f"Blueprint inconsistency: compiledCode hashes to {rederived}, "
-                f"but blueprint claims {from_blueprint}. May have an apply_params bug."
-            )
-
+        policy_id = plutus_script_hash(mint_script)
         return cls(
             oneshot_input   = oneshot_input,
             oneshot_hex     = data["oneshot_hex"],
             aiken_blueprint = blueprint,
-            policy_id       = from_blueprint,
+            policy_id       = policy_id,
             mint_script     = mint_script,
             spend_script    = spend_script,
         )

@@ -32,6 +32,8 @@ from pycardano import *
 
 # TODO same for final election close/burn?
 
+ADMIN_ID = ChannelIdHelper.from_string('admin')
+
 class Admin:
     def __init__(
         self,
