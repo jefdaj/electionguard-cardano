@@ -1,4 +1,4 @@
-from .admin  import Admin, ADMIN_ID
+from .admin  import Admin
 from .funder import Funder
 
 # from . import admin

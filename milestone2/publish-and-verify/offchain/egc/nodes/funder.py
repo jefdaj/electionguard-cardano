@@ -53,23 +53,21 @@ class Funder:
             # script=script, TODO not needed, right?
         )
 
-    def build_init_tx(self, admin: Admin, channel_ada: int) -> TransactionBuilder:
+    def build_init_tx(self, script: ElectionScript, admin_vkh: VerificationKeyHash, admin_ada: int) -> TransactionBuilder:
         """Build an InitElection transaction.
         This is an unusual one because it doesn't have any options, so there's
         no point pulling them from static_records.py.
         """
-
-        # TODO merge this into init_election rather than separate builders?
 
         LOG.debug('Funder.build_init_tx')
 
         redeemer = Redeemer(data=InitElection())
         LOG.debug('redeemer: %s' % pformat(redeemer))
 
-        assets = mint_channel_stt_assets(self.script.policy_id, 1, [ADMIN_ID])
+        assets = mint_channel_stt_assets(script.policy_id, 1, [ADMIN_CHANNEL_ID])
         LOG.debug('assets: %s' % pformat(assets))
 
-        admin_vkh  = admin.publisher.verification_key_hash
+        # admin_vkh  = admin.publisher.verification_key_hash
         state = AdminChannelState(
             admin       = admin_vkh.payload,
             subchannels = [],
@@ -79,16 +77,19 @@ class Funder:
         )
         LOG.debug('state: %s' % pformat(state))
 
-        channel_lovelace = channel_ada * LOVELACE_PER_ADA
+        channel_lovelace = admin_ada * LOVELACE_PER_ADA
         current_value = Value(
             channel_lovelace, # start with the requested amount, then top up below if needed
             assets   # the minted STT
         )
         LOG.debug('current_value before top-up: %s' % pformat(current_value))
 
+        script_addr = Address(script.policy_id, network=Network.TESTNET)
+        LOG.debug(f'script_addr: {script_addr}')
+
         # Lock the STT at the script address
         stt_output = TransactionOutput(
-            address=self.script.address,
+            address=script_addr,
             amount=current_value,
             datum=state
         )
@@ -101,13 +102,13 @@ class Funder:
 
         init_tx = (
             TransactionBuilder(OGMIOS_CTX, mint=assets)
-            .add_input(self.script.oneshot_utxo)
-            .add_input_address(self.publisher.address)
-            .add_minting_script(script=self.script.mint_script, redeemer=redeemer)
+            .add_input(script.oneshot_utxo)
+            .add_input_address(self.publisher.key_pair.addr)
+            .add_minting_script(script=script.mint_script, redeemer=redeemer)
             .add_output(stt_output)
         )
-        funder_vkh = self.publisher.verification_key_hash
-        init_tx.required_signers = [funder_vkh]
+        # funder_vkh = self.publisher.verification_key_hash
+        init_tx.required_signers = [self.key_pair.vkh]
         LOG.debug('init_tx:\n%s\n' % pformat(init_tx))
 
         return init_tx
@@ -122,7 +123,7 @@ class Funder:
     #     oneshot_utxo = pick_oneshot_utxo(OGMIOS_CTX, fund_addr)
     #     self.script = ElectionScript(oneshot_utxo)
 
-    def init_election(self, admin: Admin, channel_ada: int = 100):
+    def init_election(self, script: ElectionScript, admin_vkh: VerificationKeyHash, admin_ada: int = 100):
         LOG.debug('Funder.init_election')
 
         # if self.script is None:
@@ -136,10 +137,10 @@ class Funder:
         LOG.info('sub_info: %s' % pformat(sub_info))
 
         # Now that we have the Script, we can create the Publisher normally.
-        self._init_publisher(self.script)
+        # self._init_publisher(self.script)
 
         # TODO move to election.py?
-        init_tx = self.build_init_tx(admin=admin, channel_ada=channel_ada)
+        init_tx = self.build_init_tx(script=script, admin_vkh=admin_vkh, admin_ada=admin_ada)
         init_tx_submitted = self.publisher.sign_and_submit(init_tx)
 
         return (sub_info, init_tx_submitted)
