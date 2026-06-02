@@ -32,8 +32,8 @@ markers = [
 ]
 
 # TODO back to false when not working on the tests
-# log_cli = false
-log_cli = true
+log_cli = false
+# log_cli = true
 log_cli_level = "INFO"
 
 # Write all logs to a file
