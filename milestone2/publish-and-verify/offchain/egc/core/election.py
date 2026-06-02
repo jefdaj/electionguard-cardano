@@ -25,8 +25,8 @@ class ElectionScript:
 
     # The input is used to construct the oneshot TX. The hex is the script parameter.
     # These are not duplicates of (reasonably accessible) info in the aiken_blueprint.
+    # TODO Is there a less awkward method than utxo as cbor_hex that's still reliable?
     # TODO later, make a list of params including token prefix below
-    # oneshot_input: TransactionInput
     oneshot_utxo: UTxO
     oneshot_hex: str
 
@@ -48,7 +48,7 @@ class ElectionScript:
             #     "tx_id": str(self.oneshot_input.transaction_id),
             #     "output_index": self.oneshot_input.index,
             # },
-            "oneshot_utxo": self.oneshot_utxo.to_primitive(), # TODO to_cbor_hex instead?
+            "oneshot_utxo": self.oneshot_utxo.to_cbor_hex(), # TODO to_cbor_hex instead?
             "oneshot_hex": self.oneshot_hex,
             "aiken_blueprint": self.aiken_blueprint,
             # policy_id, mint_script, spend_script will be rederived from blueprint
@@ -61,11 +61,7 @@ class ElectionScript:
         hex_params = [oneshot_hex]
         blueprint_dict = aiken_blueprint_apply_hex_params(PLUTUS_JSON_PATH, hex_params)
         cls_dict = {
-            # 'oneshot_input': {
-            #     'tx_id': str(oneshot_utxo.input.transaction_id),
-            #     'output_index': oneshot_utxo.input.index,
-            # },
-            'oneshot_utxo': oneshot_utxo,
+            'oneshot_utxo': oneshot_utxo.to_cbor_hex(),
             'oneshot_hex': oneshot_hex,
             'aiken_blueprint': blueprint_dict,
         }
@@ -74,11 +70,7 @@ class ElectionScript:
     @classmethod
     def from_dict(cls, data: dict) -> Self:
         LOG.debug('ElectionScript.from_dict')
-        # oneshot_input = TransactionInput(
-        #     TransactionId(bytes.fromhex(data["oneshot_input"]["tx_id"])),
-        #     data["oneshot_input"]["output_index"],
-        # )
-        # oneshot_utxo = UTxO.from_primitive(data["oneshot_utxo"]) # TODO from_cbor_hex instead?
+        oneshot_utxo = UTxO.from_cbor(bytes.fromhex(data["oneshot_utxo"]))
         blueprint = data["aiken_blueprint"]
         mint_dict  = next(v for v in blueprint["validators"] if 'mint'  in v['title'])
         spend_dict = next(v for v in blueprint["validators"] if 'spend' in v['title'])
@@ -86,7 +78,7 @@ class ElectionScript:
         spend_script = PlutusV3Script(bytes.fromhex( spend_dict["compiledCode"] ))
         policy_id = plutus_script_hash(mint_script)
         return cls(
-            oneshot_utxo    = data["oneshot_utxo"],
+            oneshot_utxo    = oneshot_utxo,
             oneshot_hex     = data["oneshot_hex"],
             aiken_blueprint = blueprint,
             policy_id       = policy_id,
