@@ -5,18 +5,21 @@ They publish TXs via Ogmios and files via IPFS (Kubo) (not Kupo).
 """
 
 from pathlib import Path
-from pycardano import UTxO, OgmiosV6ChainContext, SigningKey, Transaction, TransactionBuilder, Value
-from egc.ogmios import OGMIOS_CTX
-# from egc.plutus import script as es
-from egc import wallet as ew
+# from egc import wallet as ew
 from time import sleep
 from typing import List, Optional
-from egc.election import Election
 from pprint import pformat
 import logging
 import time
 
 LOG = logging.getLogger(__name__)
+
+from .ogmios   import OGMIOS_CTX
+from .election import Election
+from .wallet   import *
+
+from pycardano import *
+# from pycardano import UTxO, OgmiosV6ChainContext, SigningKey, Transaction, TransactionBuilder, Value
 
 # from .ogmios import query_network_tip_sync
 # from .wallet import addr_for_signing_key, vkh_for_signing_key
@@ -26,48 +29,58 @@ LOG = logging.getLogger(__name__)
 #     build_psopen_tx, build_pspublish_tx, build_psclose_tx
 # )
 
-# TODO refactor to take a Keypair object rather than 2 args?
-
 class ElectionPublisher:
 
-    # TODO pass kubo here and implement ipfs publishing
     def __init__(
         self,
         role: str,
-        index: int,
-        keys_dir: Path,
-        # script: ElectionScript,
-        election: Election,
+        role_index: int,
+        key_pair: Optional[KeyPair] = None,
+        key_dir:  Optional[Path] = None,
         key_name: Optional[Path] = None,
-        # TODO pass once using more than one: ogmios: OgmiosV6ChainContext,
         # TODO ipfs (kubo)
     ):
         """Create the publisher.
         """
         LOG.debug('ElectionPublisher.__init__')
+
         self.role = role
-        self.index = index
-        self.keys_dir = Path(keys_dir) # TODO ok if already a Path?
-        self.election = election
+        self.role_index = role_index
+
+        if key_pair is None:
+            LOG.debug('key_pair is None; create new KeyPair')
+            if key_dir is None:
+                key_dir = DEF_KEYS_DIR
+                LOG.debug(f'key_dir is None; default to {key_dir}')
+            key_dir = Path(key_dir) # TODO ok if already a Path?
+            if key_name is None:
+                key_name = self.channel_id()
+                LOG.debug(f'key_name is None; default to {key_name}')
+            self.key_pair = KeyPair(key_dir=key_dir, key_name=key_name, verbose=False)
+        else:
+            LOG.debug(f'use existing key_pair {key_pair}')
+            self.key_pair = key_pair
+
+        # TODO what did this need the election for?
+        # self.election = election
+
         # self.script = script
         # self.ogmios = OGMIOS_CTX
-        self.key_name = self.channel_id() if key_name is None else key_name
-        self._init_keypair()
         # self.pubsub_script = PubsubScript(self.oneshot_utxo)
         # self.channel_state: Optional[str] = None # TODO formalize a type
         # self.published_cids = []
         # self.tip_before_open: Optional[tuple[int, str]] = None
 
-    def _init_keypair(self):
-        """Load the keypair, creating it first if needed."""
-        LOG.debug('ElectionPublisher._init_keypair')
-        self.keys_dir.mkdir(exist_ok=True)
-        self.signing_key = ew.load_wallet_signing_key(keys_dir=self.keys_dir, name=self.key_name)
-        self.verification_key_hash = ew.vkh_for_signing_key(self.signing_key)
-        self.address = ew.addr_for_signing_key(self.signing_key)
-        LOG.debug(f'signing key: {self.signing_key}')
-        LOG.debug(f'verification key hash: {self.verification_key_hash}')
-        LOG.debug(f'address: {self.address}')
+    # def _init_keypair(self):
+    #     """Load the keypair, creating it first if needed."""
+    #     LOG.debug('ElectionPublisher._init_keypair')
+    #     self.key_dir.mkdir(exist_ok=True)
+    #     self.key_pair.sk = load_wallet_signing_key(key_dir=self.key_dir, name=self.key_name)
+    #     self.verification_key_hash = vkh_for_signing_key(self.key_pair.sk)
+    #     self.key_pair.addr = addr_for_signing_key(self.key_pair.sk)
+    #     LOG.debug(f'signing key: {self.key_pair.sk}')
+    #     LOG.debug(f'verification key hash: {self.verification_key_hash}')
+    #     LOG.debug(f'address: {self.key_pair.addr}')
 
     def channel_id(self) -> str:
         LOG.debug('ElectionPublisher.channel_id')
@@ -77,30 +90,30 @@ class ElectionPublisher:
         elif self.role == 'admin':
             return self.role
         else:
-            return f'{self.role}{self.index}'
+            return f'{self.role}{self.role_index}'
 
     def sign_and_submit(self, txb: TransactionBuilder):
         LOG.debug('ElectionPublisher.sign_and_submit')
 
         # Check what the node actually sees
-        utxos = OGMIOS_CTX.utxos(self.address)
+        utxos = OGMIOS_CTX.utxos(self.key_pair.addr)
         LOG.info('UTxOs at publisher address: %s' % len(utxos))
         for u in utxos:
             LOG.debug(
                 '  %s#%d  (%d lovelace)' % (
-                u.input.transaction_id, u.input.index, u.output.amount.coin
+                u.input.transaction_id, u.input.role_index, u.output.amount.coin
                 if isinstance(u.output.amount, Value) else u.output.amount)
             )
 
         tx_signed = txb.build_and_sign(
-            [self.signing_key],
-            change_address=self.address
+            [self.key_pair.sk],
+            change_address=self.key_pair.addr
         )
 
         # Log the actual inputs in the built transaction
         LOG.debug('tx inputs:')
         for inp in tx_signed.transaction_body.inputs:
-            LOG.debug('  %s#%d' % (inp.transaction_id, inp.index))
+            LOG.debug('  %s#%d' % (inp.transaction_id, inp.role_index))
 
         LOG.debug(f'tx_signed about to be submitted:\n%s:\n' % pformat(tx_signed))
         OGMIOS_CTX.submit_tx(tx_signed)

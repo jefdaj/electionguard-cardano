@@ -1,27 +1,31 @@
-from egc import Election, ElectionPublisher, ElectionSubscriber
+# from egc import Election, ElectionPublisher, ElectionSubscriber
 
-from egc import publisher as ep
+# from egc import publisher as ep
 # from egc.plutus import script as eps
-from egc.plutus import types as ept
-from egc.plutus.types.channel_id import *
-from egc.ogmios import OGMIOS_CTX, query_network_tip_sync
-from egc import wallet as ew
-# import pycardano as pc
-# from pycardano import UTxO, ScriptHash, MultiAsset, TransactionBuilder, Asset, AssetName, Redeemer, Value
-from pycardano import *
+# from egc.plutus import types as ept
+# from egc.plutus.types.channel_id import *
+# from egc.ogmios import OGMIOS_CTX, query_network_tip_sync
+# from egc import wallet as ew
+
 from pathlib import Path
-# from pycardano import UTxO, OgmiosV6ChainContext
 from typing import List
 import logging
 from pprint import pformat
 
+LOG = logging.getLogger(__name__)
+
+# import pycardano as pc
+# from pycardano import UTxO, ScriptHash, MultiAsset, TransactionBuilder, Asset, AssetName, Redeemer, Value
+from pycardano import *
+
+from ..ogmios import *
+from ..plutus.oneshot import *
 from .admin import Admin
+from ..election import ElectionScript
 
 # TODO is there really not a built in convenience function or constant for this?
 # TODO where should it live?
 LOVELACE_PER_ADA = 1_000_000
-
-LOG = logging.getLogger(__name__)
 
 # This should match the one defined in aiken.toml
 # TODO custom prefix set by funder
@@ -65,6 +69,15 @@ def mint_channel_stt_assets(
     assets[policy_id] = asset
     return assets
 
+# TODO have to create and/or load things in this order:
+# 1. funder key_pair
+# 2. oneshot_utxo from funder addr in key_pair
+# 3. script using oneshot_utxo as parameter
+# 4. publisher using script (TODO keep doing it that way vs election then?)
+# 5. init tx using publisher, oneshot_utxo, key_pair
+# 6. deployment info
+# 7. overall election object
+
 class Funder:
     """Wallet to create + fund the Admin, and to recover ADA after the election.
     Note that unlike other roles, this one has no built-in generate_keys functionality.
@@ -72,13 +85,14 @@ class Funder:
 
     def __init__(
         self,
-        keys_dir: Path,
-        wallet_name: str,
+        key_pair: KeyPair,
+        # keys_dir: Path,
+        # wallet_name: str,
         # TODO pass once using more than one: ogmios: OgmiosV6ChainContext,
     ):
         LOG.debug('Funder.__init__')
-        self.keys_dir = keys_dir
-        self.wallet_name = wallet_name # TODO rename key_name?
+        # self.keys_dir = keys_dir
+        # self.wallet_name = wallet_name # TODO rename key_name?
         self.publisher = None
         self.subscriber = None
         # self.ogmios = OGMIOS_CTX
@@ -86,6 +100,7 @@ class Funder:
     def _init_publisher(self, script):
         """Delayed init for publisher because we need to know the one-shot UTxO."""
         LOG.debug('Funder._init_publisher')
+        # TODO rewrite
         self.publisher = ElectionPublisher(
             role="funder",
             index=1,
@@ -165,10 +180,11 @@ class Funder:
     def init_script(self):
         """Pick oneshot_utxo and parameterize script."""
         # Need to load addr separately because self.publisher does not exist yet.
-        # TODO rewrite this
-        fund_addr = ew.load_wallet_addr(keys_dir=self.keys_dir, name=self.wallet_name)
-        oneshot_utxo = eps.pick_oneshot_utxo(OGMIOS_CTX, fund_addr)
-        self.script = eps.ElectionScript(oneshot_utxo)
+        # fund_addr = ew.load_wallet_addr(keys_dir=self.keys_dir, name=self.wallet_name)
+        # TODO no need to keep a direct reference to script?
+        fund_addr = self.key_pair.addr
+        oneshot_utxo = pick_oneshot_utxo(OGMIOS_CTX, fund_addr)
+        self.script = ElectionScript(oneshot_utxo)
 
     def init_election(self, admin: Admin, channel_ada: int = 100):
         LOG.debug('Funder.init_election')

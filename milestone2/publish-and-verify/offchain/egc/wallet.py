@@ -46,7 +46,12 @@ makes sense when generating each keypair in a separate docker data mount dir.
 """
 
 from pathlib import Path
-from pycardano import Address, Network, SigningKey, PaymentSigningKey, PaymentVerificationKey, VerificationKeyHash
+import logging
+
+LOG = logging.getLogger(__name__)
+
+from pycardano import *
+# from pycardano import Address, Network, SigningKey, PaymentSigningKey, PaymentVerificationKey, VerificationKeyHash
 
 DEF_KEYS_DIR = Path(__file__).parent / '../keys'
 
@@ -59,12 +64,15 @@ def addr_for_signing_key(sk: PaymentSigningKey) -> Address:
     address = Address(payment_part=verification_key.hash(), network=Network.TESTNET)
     return address
 
-def generate_keys(keys_dir=DEF_KEYS_DIR, name='main', verbose=True):
+def generate_keypair(keys_dir=DEF_KEYS_DIR, name='main', verbose=True):
+    LOG.debug('generate_keypair')
     keys_dir = Path(keys_dir)
     sk_path   = (keys_dir / (name + '.sk'  )).absolute()
     addr_path = (keys_dir / (name + '.addr')).absolute()
     if sk_path.exists():
+        LOG.debug('sk_path exists')
         assert addr_path.exists()
+        LOG.debug('addr_path exists')
         return
     keys_dir.mkdir(exist_ok=True)
     signing_key = PaymentSigningKey.generate()
@@ -85,22 +93,29 @@ def generate_keys(keys_dir=DEF_KEYS_DIR, name='main', verbose=True):
 
     If you don't, local tests will still work but testnet tests will fail.
     '''
+    LOG.info(msg)
     if verbose:
         print(msg)
  
 def load_wallet_addr(keys_dir=DEF_KEYS_DIR, name="main", verbose=False) -> Address:
     keys_dir = Path(keys_dir)
-    generate_keys(keys_dir=keys_dir, name=name, verbose=verbose)
+    generate_keypair(keys_dir=keys_dir, name=name, verbose=verbose)
     public_addr = (keys_dir / (name + '.addr')).absolute()
     with public_addr.open('r') as f:
         return Address.from_primitive(f.read())
 
 def load_wallet_signing_key(keys_dir=DEF_KEYS_DIR, name='main', verbose=False) -> SigningKey:
     keys_dir = Path(keys_dir)
-    generate_keys(keys_dir=keys_dir, name=name, verbose=verbose)
+    generate_keypair(keys_dir=keys_dir, name=name, verbose=verbose)
     signing_key = (keys_dir / (name + '.sk')).absolute()
     with signing_key.open('r') as f:
         # TODO would validate_type=True here help?
         return SigningKey.from_json(f.read())
 
-# TODO Keypair class to encapsulate a lot of this?
+class KeyPair:
+    def __init__(self, keys_dir=DEF_KEYS_DIR, name='main', verbose=True):
+        LOG.debug('KeyPair.__init__')
+        self.sk = generate_keypair(keys_dir=keys_dir, name=name, verbose=verbose)
+        self.addr = addr_for_signing_key(self.sk)
+        self.vkh = vkh_for_signing_key(self.sk)
+    # TODO repr?

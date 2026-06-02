@@ -12,6 +12,7 @@
 # from .roles.funder import *
 
 from .ogmios     import OGMIOS_CTX, query_network_tip_sync
+from .wallet     import KeyPair
 from .election   import ElectionScript, ElectionDeployment, Election
 from .publisher  import ElectionPublisher
 from .subscriber import ElectionSubscriber, SubscriberConfig
