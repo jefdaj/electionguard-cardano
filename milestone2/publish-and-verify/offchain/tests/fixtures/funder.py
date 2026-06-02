@@ -32,3 +32,16 @@ def funder(
         funder_vkh: VerificationKeyHash,
     ) -> Funder:
     pass
+
+@pytest.fixture(scope='package')
+def oneshot_utxo(ogmios: OgmiosV6ChainContext, funder_addr: Address) -> UTxO:
+    '''Pick a oneshot UTxO from the election wallet.'''
+    LOG.info('oneshot_utxo fixture')
+    return pick_oneshot_utxo(ogmios, funder_addr)
+ 
+@pytest.fixture(scope='package')
+def script(oneshot_utxo: UTxO) -> ElectionScript:
+    '''Parameterize the contract with the oneshot_utxo.'''
+    LOG.info('script fixture')
+    return ElectionScript(oneshot_utxo)
+ 

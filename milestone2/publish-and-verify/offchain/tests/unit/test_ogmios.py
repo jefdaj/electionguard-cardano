@@ -1,10 +1,6 @@
 import pytest
 from egc import *
 
-# from .conftest import *
-# from election.ogmios import *
-# from pprint import pprint
-
 def test_ogmios_up(ogmios: OgmiosV6ChainContext):
     assert ogmios.last_block_slot > 101181854
 
