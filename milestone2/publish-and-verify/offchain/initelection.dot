@@ -1,6 +1,8 @@
 digraph initelection {
-  funder_keypair -> oneshot_utxo -> script -> funder_publisher
+  funder_keypair -> oneshot_utxo -> script
+  funder_keypair -> funder_publisher
   {funder_keypair, funder_publisher, admin_keypair, oneshot_utxo, script} -> init_tx -> deployment_info
   {deployment_info, script} -> election_info
-  election_info -> {admin_publisher, admin_subscriber, funder_subscriber}
+  election_info -> {admin, funder_subscriber}
+  admin_keypair -> admin
 }

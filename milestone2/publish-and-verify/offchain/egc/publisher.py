@@ -33,12 +33,30 @@ class ElectionPublisher:
 
     def __init__(
         self,
+
+        # Election role and index: "guardian1", "verifier2" etc.
+        # Funders and Admins don't need the index.
+        # TODO restrict it to 1 in those cases?
         role: str,
         role_index: int,
+
+        # No need for key_dir or key_name if you pass an existing key_pair.
+        # You can also omit them without passing key_pair, in which case a new
+        # KeyPair will generated based on the role + index and saved in the
+        # default dir.
         key_pair: Optional[KeyPair] = None,
         key_dir:  Optional[Path] = None,
         key_name: Optional[Path] = None,
-        # TODO ipfs (kubo)
+
+        # If the script is not given here, you have to call _init_script()
+        # separately. That's expected when creating a Funder (and possibly
+        # Admin), because the script won't exist yet at that point. If the
+        # script is available, you should use it.
+        # TODO wait, can this be done without the script at all?
+        # script: Optional[ElectionScript],
+
+        # TODO ipfs (kubo) url for publishing files
+
     ):
         """Create the publisher.
         """
@@ -65,6 +83,7 @@ class ElectionPublisher:
         # self.election = election
 
         # self.script = script
+
         # self.ogmios = OGMIOS_CTX
         # self.pubsub_script = PubsubScript(self.oneshot_utxo)
         # self.channel_state: Optional[str] = None # TODO formalize a type
@@ -81,6 +100,13 @@ class ElectionPublisher:
     #     LOG.debug(f'signing key: {self.key_pair.sk}')
     #     LOG.debug(f'verification key hash: {self.verification_key_hash}')
     #     LOG.debug(f'address: {self.key_pair.addr}')
+
+    # TODO remove?
+    # def set_script(self, script: ElectionScript):
+    #     LOG.debug('ElectionPublisher.set_script')
+    #     if self.script is not None:
+    #         raise Exception(f'script already set to {self.script}')
+    #     self.script = script
 
     def channel_id(self) -> str:
         LOG.debug('ElectionPublisher.channel_id')

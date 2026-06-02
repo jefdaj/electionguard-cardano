@@ -1,3 +1,5 @@
+# TODO rename funder -> treasury? maybe later when treasuries involved
+
 # from egc import Election, ElectionPublisher, ElectionSubscriber
 
 # from egc import publisher as ep
@@ -69,45 +71,34 @@ def mint_channel_stt_assets(
     assets[policy_id] = asset
     return assets
 
-# TODO have to create and/or load things in this order:
-# 1. funder key_pair
-# 2. oneshot_utxo from funder addr in key_pair
-# 3. script using oneshot_utxo as parameter
-# 4. publisher using script (TODO keep doing it that way vs election then?)
-# 5. init tx using publisher, oneshot_utxo, key_pair
-# 6. deployment info
-# 7. overall election object
-
 class Funder:
     """Wallet to create + fund the Admin, and to recover ADA after the election.
-    Note that unlike other roles, this one has no built-in generate_keys functionality.
     """
 
     def __init__(
         self,
+
+        # Expected usage is to create and fund the Funder wallet manually,
+        # so no need for Funder to take key_dir + key_name like the other roles.
         key_pair: KeyPair,
-        # keys_dir: Path,
-        # wallet_name: str,
-        # TODO pass once using more than one: ogmios: OgmiosV6ChainContext,
+
     ):
         LOG.debug('Funder.__init__')
-        # self.keys_dir = keys_dir
-        # self.wallet_name = wallet_name # TODO rename key_name?
-        self.publisher = None
+        self.key_pair = key_pair
+        self.publisher = self._init_publisher()
+
+        # These need to be delayed because we won't know the deployment details
+        # until after init_election().
+        self.election = None
         self.subscriber = None
-        # self.ogmios = OGMIOS_CTX
 
     def _init_publisher(self, script):
-        """Delayed init for publisher because we need to know the one-shot UTxO."""
         LOG.debug('Funder._init_publisher')
-        # TODO rewrite
         self.publisher = ElectionPublisher(
             role="funder",
             index=1,
-            keys_dir=self.keys_dir,
-            script=script,
-            key_name=self.wallet_name,
-            # ogmios=self.ogmios
+            key_pair=self.key_pair,
+            # script=script, TODO not needed, right?
         )
 
     def _init_subscriber(self, kupo_args):
@@ -115,7 +106,8 @@ class Funder:
         LOG.debug('Funder._init_subscriber')
         # TODO write this once publishing works
         # script = ElectionScript(oneshot_utxo)
-        self.subscriber = ElectionSubscriber(self.publisher.script)
+        # self.subscriber = ElectionSubscriber(self.publisher.script)
+        raise NotImplementedError
 
     def build_init_tx(self, admin: Admin, channel_ada: int) -> TransactionBuilder:
         """Build an InitElection transaction.
@@ -177,21 +169,25 @@ class Funder:
 
         return init_tx
 
-    def init_script(self):
-        """Pick oneshot_utxo and parameterize script."""
-        # Need to load addr separately because self.publisher does not exist yet.
-        # fund_addr = ew.load_wallet_addr(keys_dir=self.keys_dir, name=self.wallet_name)
-        # TODO no need to keep a direct reference to script?
-        fund_addr = self.key_pair.addr
-        oneshot_utxo = pick_oneshot_utxo(OGMIOS_CTX, fund_addr)
-        self.script = ElectionScript(oneshot_utxo)
+    # TODO move to oneshot.py
+    # def init_script(self):
+    #     """Pick oneshot_utxo and parameterize script."""
+    #     # Need to load addr separately because self.publisher does not exist yet.
+    #     # fund_addr = ew.load_wallet_addr(keys_dir=self.keys_dir, name=self.wallet_name)
+    #     # TODO no need to keep a direct reference to script?
+    #     fund_addr = self.key_pair.addr
+    #     oneshot_utxo = pick_oneshot_utxo(OGMIOS_CTX, fund_addr)
+    #     self.script = ElectionScript(oneshot_utxo)
 
     def init_election(self, admin: Admin, channel_ada: int = 100):
         LOG.debug('Funder.init_election')
 
-        if self.script is None:
-            self.init_script()
+        # if self.script is None:
+        #     self.init_script()
 
+        # TODO create ElectionScript here
+
+        # TODO move to election.py?
         # Should be done before the first TX is published to ensure everyone indexes it.
         sub_info = query_network_tip_sync()
         LOG.info('sub_info: %s' % pformat(sub_info))
@@ -199,70 +195,8 @@ class Funder:
         # Now that we have the Script, we can create the Publisher normally.
         self._init_publisher(self.script)
 
+        # TODO move to election.py?
         init_tx = self.build_init_tx(admin=admin, channel_ada=channel_ada)
         init_tx_submitted = self.publisher.sign_and_submit(init_tx)
 
         return (sub_info, init_tx_submitted)
-
-    def burn_test_tokens(self):
-        "Cleans up test tokens so they don't pollute the testnet or dev wallet."
-        # TODO add an arg saying which tokens to burn once there are more than one
-        # TODO once subscribing works, have this auto-detect and burn all tokens
-        # TODO add a toggle to disable for production
-        # TODO can we add this as an error handler in pytest?
-
-        # TODO wait, basically need subscriber BEFORE doing anything with current states
-
-        LOG.debug('Funder.burn_test_tokens')
-
-#         redeemer = Redeemer(data=ept.BurnTestTokens())
-#         LOG.debug('redeemer: %s' % pformat(redeemer))
-#
-#         admin_id = ChannelIdHelper.from_string('admin')
-#         assets = mint_channel_stt_assets(self.script.policy_id, -1, [admin_id])
-#         LOG.debug('assets: %s' % pformat(assets))
-#
-#         vkh = self.publisher.verification_key_hash
-#
-#         current_value = Value(
-#             0, # start with 0, then top up to min below
-#             assets   # the minted STT
-#         )
-#         LOG.debug('current_value before top-up: %s' % pformat(current_value))
-#
-#         # Lock the STT at the script address
-#         stt_output = TransactionOutput(
-#             address=self.script.address,
-#             amount=current_value,
-#             datum=state
-#         )
-#         LOG.debug('stt_output before top-up: %s' % pformat(stt_output))
-#
-#         # top up to min ada
-#         current_value.coin += min_lovelace(OGMIOS_CTX, stt_output)
-#         LOG.debug('current_value after top-up: %s' % pformat(current_value))
-#
-#         # TODO is restating it with new current_value required?
-#         # stt_output = TransactionOutput(
-#             # address=self.script.address,
-#             # amount=current_value,
-#             # datum=state
-#         # )
-#         LOG.debug('stt_output after top-up: %s' % pformat(stt_output))
-#
-#         # TODO is redeemer what we need here? or a separate one?
-#         init_tx = (
-#             TransactionBuilder(OGMIOS_CTX, mint=assets)
-#             .add_input(self.script.oneshot_utxo)
-#             .add_input_address(self.publisher.address)
-#             .add_minting_script(script=self.script.mint_script, redeemer=redeemer)
-#             .add_output(stt_output)
-#         )
-#         init_tx.required_signers = [vkh]
-#         LOG.debug('init_tx:\n%s\n' % pformat(init_tx))
-#
-#         return init_tx
-
-
-
-    # TODO end_election
