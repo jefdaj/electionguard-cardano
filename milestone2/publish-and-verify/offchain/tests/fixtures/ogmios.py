@@ -1,11 +1,8 @@
-from egc import *
-import logging
 import pytest
+from egc import *
 
-LOG = logging.getLogger(__name__)
+### all tests share one cardano node ###
 
-# TODO disambiguate better from the module
 @pytest.fixture(scope='session')
 def ogmios() -> OgmiosV6ChainContext:
-    LOG.info('ogmios fixture')
     return OGMIOS_CTX

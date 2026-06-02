@@ -1,9 +1,5 @@
+import pytest
 from egc import *
-import logging
-
-LOG = logging.getLogger(__name__)
-
-
 
 # # TODO move? remove?
 # @pytest.fixture(scope='package')
