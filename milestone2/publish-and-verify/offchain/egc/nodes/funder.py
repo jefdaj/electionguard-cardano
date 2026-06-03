@@ -133,8 +133,7 @@ class Funder:
         tip = query_network_tip_sync()
         LOG.debug('tip before init_tx submitted: %s' % pformat(tip))
 
-        # TODO put back
-        # init_tx = self.publisher.sign_and_submit(init_txb)
+        init_tx = self.publisher.sign_and_submit(init_txb)
 
         deployment = ElectionDeployment(
             network               = Network.TESTNET,

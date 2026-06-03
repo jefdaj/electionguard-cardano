@@ -127,7 +127,7 @@ class ElectionPublisher:
         for u in utxos:
             LOG.debug(
                 '  %s#%d  (%d lovelace)' % (
-                u.input.transaction_id, u.input.role_index, u.output.amount.coin
+                u.input.transaction_id, u.input.index, u.output.amount.coin
                 if isinstance(u.output.amount, Value) else u.output.amount)
             )
 
@@ -139,7 +139,7 @@ class ElectionPublisher:
         # Log the actual inputs in the built transaction
         LOG.debug('tx inputs:')
         for inp in tx_signed.transaction_body.inputs:
-            LOG.debug('  %s#%d' % (inp.transaction_id, inp.role_index))
+            LOG.debug('  %s#%d' % (inp.transaction_id, inp.index))
 
         LOG.debug(f'tx_signed about to be submitted:\n%s:\n' % pformat(tx_signed))
         OGMIOS_CTX.submit_tx(tx_signed)
