@@ -6,4 +6,7 @@ offchain/*keys/
 # after a couple days.
 onchain/election-plutus-*.json
 
+# Every time we publish a new election on testnet, we save it as JSON too.
+offchain/election-*.json
+
 *.log
