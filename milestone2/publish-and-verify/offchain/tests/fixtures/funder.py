@@ -1,26 +1,14 @@
 import pytest
 from pycardano import *
 from egc import *
+import logging
+
+LOG = logging.getLogger(__name__)
 
 @pytest.fixture(scope='session')
 def funder_keys() -> KeyPair:
     kp = KeyPair(name='dev', verbose=False) # leave default, global keys_dir
     return kp
-
-@pytest.fixture(scope='package')
-def oneshot_utxo(ogmios: OgmiosV6ChainContext, funder_keys: KeyPair) -> UTxO:
-    '''Pick a oneshot UTxO from the election wallet.'''
-    return pick_oneshot_utxo(ogmios, funder_keys.addr)
- 
-@pytest.fixture(scope='package')
-def script(oneshot_utxo: UTxO) -> ElectionScript:
-    '''Parameterize the contract with the oneshot_utxo.'''
-    return ElectionScript.from_oneshot_utxo(oneshot_utxo)
-
-@pytest.fixture(scope='package')
-def script_addr(script: ElectionScript) -> Address:
-    # TODO configure network from cli later?
-    return Address(script.policy_id, network=Network.TESTNET)
 
 @pytest.fixture(scope='package')
 def funder(funder_keys: KeyPair) -> Funder:
@@ -37,3 +25,8 @@ def init_tx(
         admin_vkh=admin_vkh,
         admin_ada=100
     )
+
+# TODO try deploying manually before making a fixture
+# TODO should the fixture only be one thing? maybe wait for confirmation and then throw out the tx obj
+# @pytest.fixture(scope='package')
+# def deploy

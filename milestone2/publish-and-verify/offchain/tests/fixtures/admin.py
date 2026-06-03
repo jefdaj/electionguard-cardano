@@ -11,8 +11,4 @@ def admin_keys(keys_dir: Path) -> KeyPair:
 def admin_vkh(admin_keys: KeyPair) -> VerificationKeyHash:
     return admin_keys.vkh
 
-@pytest.fixture(scope='package')
-def admin_assets(script: ElectionScript) -> MultiAsset:
-    return mint_channel_stt_assets(script.policy_id, 1, [ADMIN_CHANNEL_ID])
-
 # TODO later, Admin itself

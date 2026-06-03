@@ -10,11 +10,12 @@
 from pycardano import *
 import logging
 
+LOG = logging.getLogger(__name__)
+
 from pathlib import Path
 from typing import List
 from pprint import pformat
-
-LOG = logging.getLogger(__name__)
+from datetime import datetime
 
 # import pycardano as pc
 # from pycardano import UTxO, ScriptHash, MultiAsset, TransactionBuilder, Asset, AssetName, Redeemer, Value
@@ -123,6 +124,22 @@ class Funder:
     #     oneshot_utxo = pick_oneshot_utxo(OGMIOS_CTX, fund_addr)
     #     self.script = ElectionScript(oneshot_utxo)
 
+    def deploy_election(self, script: ElectionScript, init_tx: TransactionBuilder): # TODO return type
+
+        tip = query_network_tip_sync()
+        LOG.info('tip before init_tx submitted: %s' % pformat(tip))
+
+        init_tx_submitted = self.publisher.sign_and_submit(init_tx)
+        deployment = ElectionDeployment(
+            network                = Network.TESTNET,
+            funder_address         = self.key_pair.addr,
+            deployment_date        = datetime.now().isoformat(),
+            index_since_slot       = tip['slot'],
+            index_since_block_hash = tip['block_hash'],
+        )
+        election_ctx = ElectionContext(script=script, deployment=deployment)
+        return (init_tx_submitted, election_ctx)
+
     def init_election(self, script: ElectionScript, admin_vkh: VerificationKeyHash, admin_ada: int = 100):
         LOG.debug('Funder.init_election')
 
@@ -133,17 +150,18 @@ class Funder:
 
         # TODO move to election.py?
         # Should be done before the first TX is published to ensure everyone indexes it.
-        sub_info = query_network_tip_sync()
-        LOG.info('sub_info: %s' % pformat(sub_info))
+        # sub_info = query_network_tip_sync()
+        # LOG.info('sub_info: %s' % pformat(sub_info))
 
         # Now that we have the Script, we can create the Publisher normally.
         # self._init_publisher(self.script)
 
         # TODO move to election.py?
         init_tx = self.build_init_tx(script=script, admin_vkh=admin_vkh, admin_ada=admin_ada)
-        init_tx_submitted = self.publisher.sign_and_submit(init_tx)
+        # init_tx_submitted = self.publisher.sign_and_submit(init_tx)
+        (init_tx_submitted, election_ctx) = self.deploy_election(script, init_tx)
 
-        return (sub_info, init_tx_submitted)
+        return (init_tx_submitted, election_ctx)
 
     def _init_subscriber(self, kupo_args):
         """Delayed init for subscriber because we need to know the args for `kupo --since`."""

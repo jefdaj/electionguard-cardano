@@ -1,5 +1,7 @@
 # Should be kept in sync with onchain/election/types/channel_id.ak
 
+# TODO should this also do the final AssetName wrapping/unwrapping?
+
 import re
 from typing import List
 from pydantic.v1 import validator
