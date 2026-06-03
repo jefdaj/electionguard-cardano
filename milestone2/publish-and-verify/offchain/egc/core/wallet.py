@@ -82,7 +82,7 @@ def load_wallet_signing_key(keys_dir=DEF_KEYS_DIR, name='main', verbose=False) -
         return SigningKey.from_json(f.read())
 
 def load_keypair(keys_dir=DEF_KEYS_DIR, name='main', verbose=True) -> (SigningKey, Address):
-    LOG.debug('generate_keypair')
+    LOG.debug('load_keypair')
     keys_dir = Path(keys_dir)
     sk   = load_wallet_signing_key(keys_dir=keys_dir, name=name, verbose=verbose)
     addr = load_wallet_address(keys_dir=keys_dir, name=name, verbose=verbose)

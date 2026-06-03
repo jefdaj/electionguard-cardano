@@ -40,12 +40,12 @@ class ElectionPublisher:
         role: str,
         role_index: int,
 
-        # No need for key_dir or key_name if you pass an existing key_pair.
+        # No need for keys_dir or key_name if you pass an existing key_pair.
         # You can also omit them without passing key_pair, in which case a new
         # KeyPair will generated based on the role + index and saved in the
         # default dir.
         key_pair: Optional[KeyPair] = None,
-        key_dir:  Optional[Path] = None,
+        keys_dir:  Optional[Path] = None,
         key_name: Optional[Path] = None,
 
         # If the script is not given here, you have to call _init_script()
@@ -67,14 +67,14 @@ class ElectionPublisher:
 
         if key_pair is None:
             LOG.debug('key_pair is None; create new KeyPair')
-            if key_dir is None:
-                key_dir = DEF_KEYS_DIR
-                LOG.debug(f'key_dir is None; default to {key_dir}')
-            key_dir = Path(key_dir) # TODO ok if already a Path?
+            if keys_dir is None:
+                keys_dir = DEF_KEYS_DIR
+                LOG.debug(f'keys_dir is None; default to {keys_dir}')
+            keys_dir = Path(keys_dir) # TODO ok if already a Path?
             if key_name is None:
                 key_name = self.channel_id()
                 LOG.debug(f'key_name is None; default to {key_name}')
-            self.key_pair = KeyPair(key_dir=key_dir, key_name=key_name, verbose=False)
+            self.key_pair = KeyPair(keys_dir=keys_dir, name=key_name, verbose=False)
         else:
             LOG.debug(f'use existing key_pair {key_pair}')
             self.key_pair = key_pair
@@ -93,8 +93,8 @@ class ElectionPublisher:
     # def _init_keypair(self):
     #     """Load the keypair, creating it first if needed."""
     #     LOG.debug('ElectionPublisher._init_keypair')
-    #     self.key_dir.mkdir(exist_ok=True)
-    #     self.key_pair.sk = load_wallet_signing_key(key_dir=self.key_dir, name=self.key_name)
+    #     self.keys_dir.mkdir(exist_ok=True)
+    #     self.key_pair.sk = load_wallet_signing_key(keys_dir=self.keys_dir, name=self.key_name)
     #     self.verification_key_hash = vkh_for_signing_key(self.key_pair.sk)
     #     self.key_pair.addr = addr_for_signing_key(self.key_pair.sk)
     #     LOG.debug(f'signing key: {self.key_pair.sk}')

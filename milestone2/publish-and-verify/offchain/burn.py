@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 '''Usage:
-  ./burn.py <policy_id> <slot> <block_hash> <keys_dir> <key_name>
+  ./burn.py <keys_dir> <key_name> <election_context_json>
 '''
 
 import json
@@ -24,6 +24,7 @@ from docopt import docopt
 
 from pycardano import *
 from egc import *
+from egc.core.subscriber import *
 
 from typing import Optional
 
@@ -32,7 +33,7 @@ import logging
 logging.basicConfig(
   filename='burn.log',
   encoding='utf-8',
-  level=logging.INFO,
+  level=logging.DEBUG,
   format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
 
@@ -40,59 +41,61 @@ logging.basicConfig(
 
 LOG = logging.getLogger(os.path.basename(__file__))
 
-args = docopt(__doc__)
+ARGS = docopt(__doc__)
 
 
 ### find and load script json by policy_id ###
 
 # TODO move to script.py
-def load_script_by_policy_id(policy_id: ScriptHash) -> Optional[ElectionScript]:
-    'So far, this is only needed when creating a burn TX.'
-    ptn1 = PLUTUS_JSON_PATH.replace('.json', '-*.json')
-    ptn2 = PLUTUS_JSON_PATH.replace('.json', '-[0-9a-f]*.json')
-    paths = [f for f in glob(ptn1) if re.match(ptn2, f)]
-    LOG.debug(f'possible plutus json paths: {paths}')
-    for path in paths:
-        script = ElectionScript(json_path=path)
-        if script.policy_id == policy_id:
-            return script
-    return None
+# def load_script_by_policy_id(policy_id: ScriptHash) -> Optional[ElectionScript]:
+#     'So far, this is only needed when creating a burn TX.'
+#     ptn1 = PLUTUS_JSON_PATH.replace('.json', '-*.json')
+#     ptn2 = PLUTUS_JSON_PATH.replace('.json', '-[0-9a-f]*.json')
+#     paths = [f for f in glob(ptn1) if re.match(ptn2, f)]
+#     LOG.debug(f'possible plutus json paths: {paths}')
+#     for path in paths:
+#         script = ElectionScript(json_path=path)
+#         if script.policy_id == policy_id:
+#             return script
+#     return None
 
-policy_id = ScriptHash(bytes.fromhex(args['<policy_id>']))
-LOG.info(f'policy_id: {policy_id}')
+CTX = ElectionContext.from_json(ARGS['<election_context_json>'])
+LOG.debug(f'CTX:\n{pformat(CTX)}\n')
 
-script = load_script_by_policy_id(policy_id)
-LOG.info(f'script: {script}')
+SCRIPT = CTX.script
+LOG.info(f'SCRIPT: {SCRIPT}')
 
+POLICY_ID = SCRIPT.policy_id
+LOG.info(f'POLICY_ID: {POLICY_ID}')
 
 ### load destination wallet ###
 
-keys_dir=os.path.realpath(args['<keys_dir>'])
-pub = ep.ElectionPublisher(
-    role    = 'burner',
-    index   = 1,
-    keys_dir= keys_dir,
-    script  = script,
-    key_name= args['<key_name>'],
+KEYS_DIR=os.path.realpath(ARGS['<keys_dir>'])
+PUB = ElectionPublisher(
+    role       = 'burner',
+    role_index = 1,
+    keys_dir   = KEYS_DIR,
+    key_name   = ARGS['<key_name>'],
 )
-LOG.info(f'pub: {pub}')
-
+LOG.info(f'PUB: {PUB}')
 
 ### subscribe to find latest utxos ###
 
-sub_cfg = es.SubscriberConfig(
-    since_slot = args['<slot>'],
-    since_block_hash = args['<block_hash>'],
-    policy_id = ScriptHash(bytes.fromhex(args['<policy_id>'])),
+SUB_CFG = SubscriberConfig(
+    since_slot       = CTX.deployment.index_from_slot,
+    since_block_hash = CTX.deployment.index_from_block_hash,
+    policy_id        = CTX.script.policy_id,
 )
-LOG.info(f'sub_cfg: {sub_cfg}')
+LOG.info(f'SUB_CFG: {SUB_CFG}')
 
-sub = es.Subscriber(sub_cfg, es.handle_match, es.handle_endelection)
-sub.start()
+SUB = ElectionSubscriber(SUB_CFG, handle_match, handle_endelection)
+SUB.start()
 time.sleep(3)
-sub.stop()
+SUB.stop()
 
-LOG.info(f'final utxos: {pformat(sub.utxos)}')
+LOG.info(f'final utxos: {pformat(SUB.utxos)}')
+
+raise SystemExit
 
 
 ### create tx to burn and sweep funds ###
@@ -104,7 +107,7 @@ channel_ids = list(sub.states.keys())
 LOG.info(f'channel_ids: {channel_ids}')
 
 burn_assets = mint_channel_stt_assets(
-    ScriptHash(bytes.fromhex(args['<policy_id>'])),
+    ScriptHash(bytes.fromhex(ARGS['<policy_id>'])),
     -1,
     channel_ids,
 )
