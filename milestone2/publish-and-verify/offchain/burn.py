@@ -1,27 +1,33 @@
 #!/usr/bin/env python3
 
 '''Usage:
-  ./burn.py <slot> <block_hash> <policy_id> <keys_dir> <key_name>
+  ./burn.py <policy_id> <slot> <block_hash> <keys_dir> <key_name>
 '''
 
 import json
-import logging
 import os
 import time
 import re
 from glob import glob
 from pprint import pformat
 from docopt import docopt
-from pycardano import Redeemer, ScriptHash, Address, TransactionBuilder
-from election.ogmios import OGMIOS_CTX
-from election.plutus import types as ept
-from election.plutus import script as eps
-from election.plutus.config import PLUTUS_JSON_PATH
-from election.plutus.types.channel import ADMIN_CHANNEL_ID
-from election import publisher as ep
-from election import subscriber as es
-from election.roles.funder import mint_channel_stt_assets
+
+# from pycardano import Redeemer, ScriptHash, Address, TransactionBuilder
+# from election.ogmios import OGMIOS_CTX
+# from election.plutus import types as ept
+# from election.plutus import script as eps
+# from election.plutus.config import PLUTUS_JSON_PATH
+# from election.plutus.types.channel import ADMIN_CHANNEL_ID
+# from election import publisher as ep
+# from election import subscriber as es
+# from election.roles.funder import mint_channel_stt_assets
+
+from pycardano import *
+from egc import *
+
 from typing import Optional
+
+import logging
 
 logging.basicConfig(
   filename='burn.log',
@@ -40,14 +46,14 @@ args = docopt(__doc__)
 ### find and load script json by policy_id ###
 
 # TODO move to script.py
-def load_script_by_policy_id(policy_id: ScriptHash) -> Optional[eps.ElectionScript]:
+def load_script_by_policy_id(policy_id: ScriptHash) -> Optional[ElectionScript]:
     'So far, this is only needed when creating a burn TX.'
     ptn1 = PLUTUS_JSON_PATH.replace('.json', '-*.json')
     ptn2 = PLUTUS_JSON_PATH.replace('.json', '-[0-9a-f]*.json')
     paths = [f for f in glob(ptn1) if re.match(ptn2, f)]
     LOG.debug(f'possible plutus json paths: {paths}')
     for path in paths:
-        script = eps.ElectionScript(json_path=path)
+        script = ElectionScript(json_path=path)
         if script.policy_id == policy_id:
             return script
     return None

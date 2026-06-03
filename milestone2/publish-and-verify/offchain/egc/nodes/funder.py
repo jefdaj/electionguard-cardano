@@ -138,8 +138,7 @@ class Funder:
         deployment = ElectionDeployment(
             network               = Network.TESTNET,
             funder_address        = self.key_pair.addr,
-            deployment_date       = datetime.now().isoformat(), # TODO get now() before sign_and_submit?
-            index_from_slot       = tip['slot'],
+            deployment_date       = datetime.now(), # TODO get now() before sign_and_submit?  index_from_slot       = tip['slot'],
             index_from_block_hash = tip['block_hash'],
         )
         LOG.debug('deployment: %s' % pformat(deployment))

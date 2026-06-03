@@ -53,6 +53,7 @@ async def query_network_tip() -> dict:
         # return json.dumps(result, indent=2)
 
 # TODO what's the proper idiom for this?
+# TODO should this take OGMIOS_CTX as an argument?
 def query_network_tip_sync() -> dict:
     return asyncio.run(query_network_tip())
 
