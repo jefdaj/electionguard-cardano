@@ -3,7 +3,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from functools import cached_property
 from pathlib import Path
@@ -13,6 +13,10 @@ from pprint import pformat
 from pycardano import *
 
 from .plutus import *
+
+import logging
+
+LOG = logging.getLogger(__name__)
 
 SCHEMA_VERSION = 1
 
@@ -61,6 +65,7 @@ class ElectionScript:
         hex_params = [oneshot_hex]
         blueprint_dict = aiken_blueprint_apply_hex_params(PLUTUS_JSON_PATH, hex_params)
         cls_dict = {
+            'schema_version': SCHEMA_VERSION,
             'oneshot_utxo': oneshot_utxo.to_cbor_hex(),
             'oneshot_hex': oneshot_hex,
             'aiken_blueprint': blueprint_dict,
@@ -104,8 +109,8 @@ class ElectionDeployment:
     deployment_date: datetime
 
     # The script-independent parts of the subscriber config.
-    index_since_slot: int
-    kupo_since_block_hash: str
+    index_from_slot: int
+    index_from_block_hash: str
 
     def to_dict(self) -> dict:
         LOG.debug('ElectionDeployment.to_dict')
@@ -113,8 +118,8 @@ class ElectionDeployment:
             "network":               self.network.name.lower(),  # "mainnet" / "testnet"
             "funder_address":        str(self.funder_address),
             "deployment_date":       self.deployment_date.isoformat(),
-            "index_since_slot":      self.index_since_slot,
-            "kupo_since_block_hash": self.kupo_since_block_hash,
+            "index_from_slot":      self.index_from_slot,
+            "index_from_block_hash": self.index_from_block_hash,
         }
 
 
@@ -125,11 +130,11 @@ class ElectionDeployment:
             network               = Network[data["network"].upper()],
             funder_address        = Address.from_primitive(data["funder_address"]),
             deployment_date       = datetime.fromisoformat(data["deployment_date"]),
-            index_since_slot      = data["index_since_slot"],
-            kupo_since_block_hash = data["kupo_since_block_hash"],
+            index_from_slot       = data["index_from_slot"],
+            index_from_block_hash = data["index_from_block_hash"],
         )
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class ElectionContext:
     """Immutable record of a deployed election contract.
 
@@ -143,7 +148,7 @@ class ElectionContext:
 
     # This should be incremented whenever something changes that affects to/from_json.
     # Note that it's different from the contract version in the aiken_blueprint.
-    schema_version: int
+    schema_version: int = field(default=SCHEMA_VERSION)
 
     script: ElectionScript
     deployment: ElectionDeployment
@@ -181,8 +186,11 @@ class ElectionContext:
     def to_json(self, path: str | Path) -> None:
         LOG.debug('Election.to_json')
         Path(path).write_text(json.dumps(self.to_dict(), indent=2))
+        LOG.debug(f'saved ElectionContext to {path}')
 
     @classmethod
     def from_json(cls, path: str | Path) -> Self:
         LOG.debug('Election.from_json')
-        return cls.from_dict(json.loads(Path(path).read_text()))
+        obj = cls.from_dict(json.loads(Path(path).read_text()))
+        LOG.debug(f'loaded ElectionContext from {path}')
+        return obj

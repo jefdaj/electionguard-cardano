@@ -48,39 +48,43 @@ keys_dir=os.path.realpath(args['<keys_dir>'])
 # For now, this loads my main dev wallet with tADA from the faucet.
 funder_keys = KeyPair(keys_dir=keys_dir, name=args['<funder_wallet_name>'], verbose=False)
 funder = Funder(key_pair=funder_keys)
-# f.init_script()
-# LOG.info(f'oneshot_utxo: {f.election.script.oneshot_utxo}')
+# funder.init_script()
+# LOG.info(f'oneshot_utxo: {funder.election.script.oneshot_utxo}')
 
 # TODO for now, just create the admin keypair. admin itself can wait until election exists
 # Create Admin separately in case it's a different person from the Funder.
 admin_keys = KeyPair(keys_dir=keys_dir, name='admin', verbose=False)
 # a = Admin(keys_dir)
-# a._init_publisher(f.script) # TODO make this less awkward
+# a._init_publisher(funder.script) # TODO make this less awkward
 
-raise SystemExit
+# TODO should this be hidden as part of init_election?
+script = funder.init_script()
 
 # Create the admin STT and run delayed admin init functions.
 # Also returns info needed for a Subscriber to index election events.
-(sub_info, init_tx) = f.init_election(admin=a, channel_ada=50)
-LOG.info(f'sub_info: {sub_info}')
+(init_tx, election_ctx) = funder.init_election(script=script, admin_vkh=admin_keys.vkh, admin_ada=50)
+LOG.debug(f'init_tx: {init_tx}')
+LOG.debug(f'election_ctx: {election_ctx}')
+
+raise SystemExit
 
 # TODO should the publisher just create and return this directly?
 # sub_cfg = es.SubscriberConfig(
 #   since_slot       = sub_info['slot'],
 #   since_block_hash = sub_info['block_hash'],
-#   policy_id        = f.publisher.script.policy_id,
+#   policy_id        = funder.publisher.script.policy_id,
 # )
 # LOG.info(f'sub_cfg: {sub_cfg}')
 
 # LOG.info('published init_tx')
 # LOG.debug(f'full init_tx:\n%s\n' % pformat(init_tx))
 
-# f.publisher.wait_for_confirmation(init_tx)
+# funder.publisher.wait_for_confirmation(init_tx)
 
-# f.burn_test_tokens()
+# funder.burn_test_tokens()
 
 # TODO test this
-# f.burn_test_tokens()
+# funder.burn_test_tokens()
 
 # TODO finish writing the rest of this
 # a.post_manifest()

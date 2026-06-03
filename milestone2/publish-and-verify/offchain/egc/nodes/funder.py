@@ -114,15 +114,13 @@ class Funder:
 
         return init_txb
 
-    # TODO move to oneshot.py
-    # def init_script(self):
-    #     """Pick oneshot_utxo and parameterize script."""
-    #     # Need to load addr separately because self.publisher does not exist yet.
-    #     # fund_addr = ew.load_wallet_addr(keys_dir=self.keys_dir, name=self.wallet_name)
-    #     # TODO no need to keep a direct reference to script?
-    #     fund_addr = self.key_pair.addr
-    #     oneshot_utxo = pick_oneshot_utxo(OGMIOS_CTX, fund_addr)
-    #     self.script = ElectionScript(oneshot_utxo)
+    def init_script(self):
+        """Pick oneshot_utxo and parameterize script."""
+        fund_addr = self.key_pair.addr
+        oneshot_utxo = pick_oneshot_utxo(OGMIOS_CTX, fund_addr)
+        script = ElectionScript.from_oneshot_utxo(oneshot_utxo)
+        LOG.debug('script:\n%s\n' % pformat(script))
+        return script
 
     def deploy_election(
             self,
@@ -135,14 +133,15 @@ class Funder:
         tip = query_network_tip_sync()
         LOG.debug('tip before init_tx submitted: %s' % pformat(tip))
 
+        # TODO put back
         # init_tx = self.publisher.sign_and_submit(init_txb)
 
         deployment = ElectionDeployment(
-            network                = Network.TESTNET,
-            funder_address         = self.key_pair.addr,
-            deployment_date        = datetime.now().isoformat(), # TODO get now() before sign_and_submit?
-            index_since_slot       = tip['slot'],
-            index_since_block_hash = tip['block_hash'],
+            network               = Network.TESTNET,
+            funder_address        = self.key_pair.addr,
+            deployment_date       = datetime.now().isoformat(), # TODO get now() before sign_and_submit?
+            index_from_slot       = tip['slot'],
+            index_from_block_hash = tip['block_hash'],
         )
         LOG.debug('deployment: %s' % pformat(deployment))
 
