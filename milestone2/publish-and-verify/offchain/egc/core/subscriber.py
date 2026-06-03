@@ -100,12 +100,12 @@ def channel_id_from_output(output: UTxO) -> Optional[ChannelId]:
 def handle_match(utxo: Dict[str, Any], session: requests.Session) -> (ChannelId, ChannelState):
     LOG.debug(f'Full match UTxO:\n{json.dumps(utxo, indent=2)}')
 
-    tx_id = utxo.get('transaction_id')
-    out_ix = utxo.get('output_index')
-    datum_hash = utxo.get('datum_hash')
-    datum_type = utxo.get('datum_type')
-    created = utxo.get('created_at') or {}
-    slot_no = created.get('slot_no')
+    tx_id       = utxo.get('transaction_id')
+    out_ix      = utxo.get('output_index')
+    datum_hash  = utxo.get('datum_hash')
+    datum_type  = utxo.get('datum_type')
+    created     = utxo.get('created_at') or {}
+    slot_no     = created.get('slot_no')
     header_hash = created.get('header_hash')
 
     assert datum_hash # TODO will this not exist in the final EndElection tx?
@@ -177,8 +177,7 @@ def kupo_to_utxo(kupo_dict: dict) -> UTxO:
 
 
 class ElectionSubscriber:
-    '''
-    Runs kupo and feeds matches to a callback.
+    '''Runs kupo and feeds matches to a callback.
     Note that since_slot and since_block_hash should be figured out *before* deploying the contract,
     to be sure the indexed range will include the first transaction.
     until_slot prevents open-ended scanning during tests.
@@ -187,15 +186,17 @@ class ElectionSubscriber:
     def __init__(
             self,
             config: SubscriberConfig,
-            on_match: SubscriberCallback,
-            on_close: SubscriberCallback,
+            # on_match: SubscriberCallback,
+            # on_close: SubscriberCallback,
         ):
 
         LOG.info('ElectionSubscriber.__init__')
 
         self.config = config
-        self.on_match = on_match
-        self.on_close = on_close
+
+        # TODO does having these be separate functions help anymore?
+        self.on_match = handle_match
+        self.on_close = handle_endelection
 
         # used to reconstruct subscribed_records() on demand
         self.history: Mapping[ChannelId, Mapping[int, ChannelState]] = {}

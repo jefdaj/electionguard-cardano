@@ -65,7 +65,7 @@ SUB_CFG = SubscriberConfig(
 )
 LOG.info(f'SUB_CFG: {SUB_CFG}')
 
-SUB = ElectionSubscriber(SUB_CFG, handle_match, handle_endelection)
+SUB = ElectionSubscriber(SUB_CFG)
 SUB.start()
 time.sleep(3)
 SUB.stop()

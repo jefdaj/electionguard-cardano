@@ -40,8 +40,8 @@ class Funder:
         self.key_pair = key_pair
         self._init_publisher()
 
-        # These need to be delayed because we won't know the deployment details
-        # until after init_election().
+        # These need to be delayed because we won't know the deployment details yet.
+        # They should be filled in by running init_election() and init_subscriber().
         self.election = None
         self.subscriber = None
 
@@ -51,7 +51,6 @@ class Funder:
             role="funder",
             role_index=1,
             key_pair=self.key_pair,
-            # script=script, TODO not needed, right?
         )
 
     def build_init_tx(self, script: ElectionScript, admin_vkh: VerificationKeyHash, admin_ada: int) -> TransactionBuilder:
@@ -165,14 +164,23 @@ class Funder:
         timestamp = election_ctx.deployment.deployment_date.strftime("%y%m%d%H%M%S")
         election_ctx.to_json(f'election-{timestamp}.json')
 
-        # All the info we really need should be in election_ctx now;
-        # the main reason to return init_tx is so the caller can wait for confirmation.
-        return (init_tx, election_ctx)
+        self.election = election_ctx
 
-    def _init_subscriber(self, kupo_args):
+        # All the info we really need should be in self.election now;
+        # the main reason to return init_tx is so the caller can wait for confirmation.
+        # TODO don't return self.election?
+        return (init_tx, self.election)
+
+    def init_subscriber(self):
         """Delayed init for subscriber because we need to know the args for `kupo --since`."""
-        LOG.debug('Funder._init_subscriber')
-        # TODO write this once publishing works
-        # script = ElectionScript(oneshot_utxo)
-        # self.subscriber = ElectionSubscriber(self.publisher.script)
-        raise NotImplementedError
+        LOG.debug('Funder.init_subscriber')
+        if self.election is None:
+            raise Exception('init_election must be called before init_subscriber')
+        sub_cfg = SubscriberConfig(
+            since_slot       = self.election.deployment.index_from_slot,
+            since_block_hash = self.election.deployment.index_from_block_hash,
+            policy_id        = self.election.script.policy_id,
+        )
+        LOG.debug(f'sub_cfg: {sub_cfg}')
+        self.subscriber = ElectionSubscriber(sub_cfg)
+        self.subscriber.start()
