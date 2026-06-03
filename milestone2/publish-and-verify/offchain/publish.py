@@ -62,11 +62,14 @@ script = funder.init_script()
 
 # Create the admin STT and run delayed admin init functions.
 # Also returns info needed for a Subscriber to index election events.
-(init_tx, election_ctx) = funder.init_election(script=script, admin_vkh=admin_keys.vkh, admin_ada=50)
+(init_tx, election_ctx) = funder.init_election(script=script, admin_vkh=admin_keys.vkh, admin_ada=10)
 LOG.debug(f'init_tx: {init_tx}')
 LOG.debug(f'election_ctx: {election_ctx}')
 
-raise SystemExit
+LOG.info(f'election deployed: {election_ctx.deployment.to_dict()}')
+
+funder.publisher.wait_for_confirmation(init_tx)
+LOG.info('init_tx confirmed')
 
 # TODO should the publisher just create and return this directly?
 # sub_cfg = es.SubscriberConfig(
