@@ -94,9 +94,9 @@ def generate_keypair(keys_dir=DEF_KEYS_DIR, name='main', verbose=True) -> (Signi
     sk_path   = (keys_dir / (name + '.sk'  )).absolute()
     addr_path = (keys_dir / (name + '.addr')).absolute()
     if sk_path.exists():
-        LOG.debug('sk_path exists')
+        LOG.debug(f'sk_path exists: {sk_path}')
         assert addr_path.exists()
-        LOG.debug('addr_path exists')
+        LOG.debug(f'addr_path exists: {addr_path}')
         return load_keypair(keys_dir=keys_dir, name=name, verbose=verbose)
     keys_dir.mkdir(exist_ok=True)
     signing_key = PaymentSigningKey.generate()

@@ -7,11 +7,13 @@
 import os
 from docopt import docopt
 from pprint import pformat
-import logging
 
-import egc
-from egc import subscriber as es
+from pycardano import *
+from egc import *
+
 from static_records import STATIC_PHASES, STATIC_TRANSACTIONS
+
+import logging
 
 logging.basicConfig(
   filename='publish.log',
@@ -32,43 +34,30 @@ LOG.debug(
   pformat(STATIC_TRANSACTIONS)
 )
 
-# TODO write a "generate multiple keypairs" function in wallet (and start wallet)
-# TODO if keys don't exist in --keys-dir:
-#        - gen 1 keypair per role: amdmin, guardian1, guardian2, guardian3, device1, verifier1
-#        - save files
-
-# TODO separate script to send ADA from on secret key file -> another? or use eternl?
-# TODO should be able to skip that if the admin already has ADA from a prev run
-
-# TODO init a publisher
-# publisher should start in "not ready" mode, and you either:
-# 1. tell it the oneshot utxo used (+ expected policy_id?)
-# 2. tell it to InitElection itself using a utxo from the admin wallet
-# but for now can just assume the 2nd case because this is a one-off demo script
-
-# TODO print the info needed by the verifier and generate a qr code if easy
-
 args = docopt(__doc__)
 
-# TODO arg for how much ada to give each channel? or just use a default
-
 # Keys will be arranged like:
-# test_keys/admin.{sk,addr}
-# test_keys/guardian1.{sk,addr}
-# test_keys/...
-# test_keys = 'test_keys'
+# <keys_dir>/admin.{sk,addr}
+# <keys_dir>/guardian1.{sk,addr}
+# <keys_dir>/...
 keys_dir=os.path.realpath(args['<keys_dir>'])
 
 # The wallet which funds the election and recovers remaining ADA afterward.
 # Often but not necesarily the personal wallet of the election admin.
 # In a future web interface, this will be the wallet you connect to the dApp.
-f = egc.roles.funder.Funder(keys_dir, wallet_name=args['<funder_wallet_name>'])
-f.init_script()
-LOG.info(f'oneshot_utxo: {f.script.oneshot_utxo}')
+# For now, this loads my main dev wallet with tADA from the faucet.
+funder_keys = KeyPair(keys_dir=keys_dir, name=args['<funder_wallet_name>'], verbose=False)
+funder = Funder(key_pair=funder_keys)
+# f.init_script()
+# LOG.info(f'oneshot_utxo: {f.election.script.oneshot_utxo}')
 
+# TODO for now, just create the admin keypair. admin itself can wait until election exists
 # Create Admin separately in case it's a different person from the Funder.
-a = egc.roles.admin.Admin(keys_dir)
-a._init_publisher(f.script) # TODO make this less awkward
+admin_keys = KeyPair(keys_dir=keys_dir, name='admin', verbose=False)
+# a = Admin(keys_dir)
+# a._init_publisher(f.script) # TODO make this less awkward
+
+raise SystemExit
 
 # Create the admin STT and run delayed admin init functions.
 # Also returns info needed for a Subscriber to index election events.
@@ -76,21 +65,19 @@ a._init_publisher(f.script) # TODO make this less awkward
 LOG.info(f'sub_info: {sub_info}')
 
 # TODO should the publisher just create and return this directly?
-sub_cfg = es.SubscriberConfig(
-  since_slot       = sub_info['slot'],
-  since_block_hash = sub_info['block_hash'],
-  policy_id        = f.publisher.script.policy_id,
-)
-LOG.info(f'sub_cfg: {sub_cfg}')
+# sub_cfg = es.SubscriberConfig(
+#   since_slot       = sub_info['slot'],
+#   since_block_hash = sub_info['block_hash'],
+#   policy_id        = f.publisher.script.policy_id,
+# )
+# LOG.info(f'sub_cfg: {sub_cfg}')
 
 # LOG.info('published init_tx')
 # LOG.debug(f'full init_tx:\n%s\n' % pformat(init_tx))
 
-f.publisher.wait_for_confirmation(init_tx)
+# f.publisher.wait_for_confirmation(init_tx)
 
 # f.burn_test_tokens()
-
-raise SystemExit
 
 # TODO test this
 # f.burn_test_tokens()

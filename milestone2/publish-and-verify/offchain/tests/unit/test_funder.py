@@ -11,5 +11,8 @@ def test_init_funder(funder: Funder):
     assert isinstance(funder, Funder)
     assert isinstance(funder.publisher, ElectionPublisher)
 
-def test_build_init_tx(init_tx: TransactionBuilder):
-    assert isinstance(init_tx, TransactionBuilder)
+def test_init_txb(init_txb: TransactionBuilder):
+    assert isinstance(init_txb, TransactionBuilder)
+
+def test_init_tx(funder: Funder, init_txb: TransactionBuilder):
+    raise NotImplementedError

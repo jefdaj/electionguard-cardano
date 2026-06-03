@@ -1,6 +1,6 @@
 # Generated with static_records_py.py. Consider editing and re-running that to make any changes.
 
-from election.plutus.types import *
+from egc import *
 
 STATIC_PHASES = \
 {0: ElectionConfigPhase(phase=ConfigAnnouncePhase()),

@@ -101,7 +101,7 @@ class Funder:
         LOG.debug('current_value after top-up: %s' % pformat(current_value))
         LOG.debug('stt_output after top-up: %s' % pformat(stt_output))
 
-        init_tx = (
+        init_txb = (
             TransactionBuilder(OGMIOS_CTX, mint=assets)
             .add_input(script.oneshot_utxo)
             .add_input_address(self.publisher.key_pair.addr)
@@ -109,10 +109,10 @@ class Funder:
             .add_output(stt_output)
         )
         # funder_vkh = self.publisher.verification_key_hash
-        init_tx.required_signers = [self.key_pair.vkh]
-        LOG.debug('init_tx:\n%s\n' % pformat(init_tx))
+        init_txb.required_signers = [self.key_pair.vkh]
+        LOG.debug('init_txb:\n%s\n' % pformat(init_txb))
 
-        return init_tx
+        return init_txb
 
     # TODO move to oneshot.py
     # def init_script(self):
@@ -124,44 +124,53 @@ class Funder:
     #     oneshot_utxo = pick_oneshot_utxo(OGMIOS_CTX, fund_addr)
     #     self.script = ElectionScript(oneshot_utxo)
 
-    def deploy_election(self, script: ElectionScript, init_tx: TransactionBuilder): # TODO return type
+    def deploy_election(
+            self,
+            script: ElectionScript,
+            init_txb: TransactionBuilder
+        ) -> (Transaction, ElectionContext):
+
+        LOG.debug('Funder.deploy_election')
 
         tip = query_network_tip_sync()
-        LOG.info('tip before init_tx submitted: %s' % pformat(tip))
+        LOG.debug('tip before init_tx submitted: %s' % pformat(tip))
 
-        init_tx_submitted = self.publisher.sign_and_submit(init_tx)
+        # init_tx = self.publisher.sign_and_submit(init_txb)
+
         deployment = ElectionDeployment(
             network                = Network.TESTNET,
             funder_address         = self.key_pair.addr,
-            deployment_date        = datetime.now().isoformat(),
+            deployment_date        = datetime.now().isoformat(), # TODO get now() before sign_and_submit?
             index_since_slot       = tip['slot'],
             index_since_block_hash = tip['block_hash'],
         )
-        election_ctx = ElectionContext(script=script, deployment=deployment)
-        return (init_tx_submitted, election_ctx)
+        LOG.debug('deployment: %s' % pformat(deployment))
 
-    def init_election(self, script: ElectionScript, admin_vkh: VerificationKeyHash, admin_ada: int = 100):
+        election_ctx = ElectionContext(script=script, deployment=deployment)
+        LOG.debug('election_ctx: %s' % pformat(election_ctx))
+
+        raise SystemExit
+        return (init_tx, election_ctx)
+
+    def init_election(
+            self,
+            script: ElectionScript,
+            admin_vkh: VerificationKeyHash,
+            admin_ada: int = 100
+        ) -> (Transaction, ElectionContext):
+
         LOG.debug('Funder.init_election')
 
-        # if self.script is None:
-        #     self.init_script()
+        init_txb = self.build_init_tx(script=script, admin_vkh=admin_vkh, admin_ada=admin_ada)
+        (init_tx, election_ctx) = self.deploy_election(script, init_txb)
 
-        # TODO create ElectionScript here
+        # TODO come up with a better default path here
+        timestamp = datetime.fromisoformat(election_ctx.deployment.deployment_date).strftime("%y%m%d%H%M%S")
+        election_ctx.to_json(f'election-{timestamp}.json')
 
-        # TODO move to election.py?
-        # Should be done before the first TX is published to ensure everyone indexes it.
-        # sub_info = query_network_tip_sync()
-        # LOG.info('sub_info: %s' % pformat(sub_info))
-
-        # Now that we have the Script, we can create the Publisher normally.
-        # self._init_publisher(self.script)
-
-        # TODO move to election.py?
-        init_tx = self.build_init_tx(script=script, admin_vkh=admin_vkh, admin_ada=admin_ada)
-        # init_tx_submitted = self.publisher.sign_and_submit(init_tx)
-        (init_tx_submitted, election_ctx) = self.deploy_election(script, init_tx)
-
-        return (init_tx_submitted, election_ctx)
+        # All the info we really need should be in election_ctx now;
+        # the main reason to return init_tx is so the caller can wait for confirmation.
+        return (init_tx, election_ctx)
 
     def _init_subscriber(self, kupo_args):
         """Delayed init for subscriber because we need to know the args for `kupo --since`."""

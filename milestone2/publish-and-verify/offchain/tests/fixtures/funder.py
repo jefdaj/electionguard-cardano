@@ -18,7 +18,7 @@ def funder(funder_keys: KeyPair) -> Funder:
     return f
 
 @pytest.fixture(scope='package')
-def init_tx(
+def init_txb(
         funder: Funder,
         script: ElectionScript,
         admin_vkh: VerificationKeyHash,
@@ -28,7 +28,7 @@ def init_tx(
         admin_vkh=admin_vkh,
         admin_ada=100
     )
-    LOG.info(f'init_tx (builder): {txb}')
+    LOG.info(f'init_txb: {txb}')
     return txb
 
 # TODO try deploying manually before making a fixture

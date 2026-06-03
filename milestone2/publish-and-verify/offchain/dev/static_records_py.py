@@ -4,7 +4,10 @@
 # nix develop .#offchain
 # ./static_records_py.py > static_election_records_py_out.py
 
-from election.plutus import types
+# TODO more standard logging?
+
+from pycardano import *
+from egc import *
 from multiformats_cid import cid, make_cid
 from pathlib import Path
 import json
@@ -16,7 +19,7 @@ IN_LOG = Path(IN_DIR) / 'egsync.log'
 
 print('''# Generated with static_records_py.py. Consider editing and re-running that to make any changes.
 
-from election.plutus.types import *
+from egc import *
 ''')
 
 #####################
