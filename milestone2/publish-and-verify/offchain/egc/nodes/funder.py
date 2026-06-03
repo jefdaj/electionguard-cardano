@@ -147,7 +147,6 @@ class Funder:
         election_ctx = ElectionContext(script=script, deployment=deployment)
         LOG.debug('election_ctx: %s' % pformat(election_ctx))
 
-        raise SystemExit
         return (init_tx, election_ctx)
 
     def init_election(
@@ -163,7 +162,7 @@ class Funder:
         (init_tx, election_ctx) = self.deploy_election(script, init_txb)
 
         # TODO come up with a better default path here
-        timestamp = datetime.fromisoformat(election_ctx.deployment.deployment_date).strftime("%y%m%d%H%M%S")
+        timestamp = election_ctx.deployment.deployment_date.strftime("%y%m%d%H%M%S")
         election_ctx.to_json(f'election-{timestamp}.json')
 
         # All the info we really need should be in election_ctx now;
