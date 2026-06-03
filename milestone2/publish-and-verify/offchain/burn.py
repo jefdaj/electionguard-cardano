@@ -84,7 +84,7 @@ LOG.info(f'PUB: {PUB}')
 SUB_CFG = SubscriberConfig(
     since_slot       = CTX.deployment.index_from_slot,
     since_block_hash = CTX.deployment.index_from_block_hash,
-    policy_id        = CTX.script.policy_id,
+    policy_id        = SCRIPT.policy_id,
 )
 LOG.info(f'SUB_CFG: {SUB_CFG}')
 
@@ -95,32 +95,32 @@ SUB.stop()
 
 LOG.info(f'final utxos: {pformat(SUB.utxos)}')
 
-raise SystemExit
-
 
 ### create tx to burn and sweep funds ###
 
-mint_redeemer = Redeemer(data=ept.BurnTestTokens())
-LOG.debug(f'mint_redeemer: {mint_redeemer}')
+MINT_REDEEMER = Redeemer(data=BurnTestTokens())
+LOG.debug(f'MINT_REDEEMER: {MINT_REDEEMER}')
 
-channel_ids = list(sub.states.keys())
-LOG.info(f'channel_ids: {channel_ids}')
+CHANNEL_IDS = list(SUB.states.keys())
+LOG.info(f'CHANNEL_IDS: {CHANNEL_IDS}')
 
-burn_assets = mint_channel_stt_assets(
-    ScriptHash(bytes.fromhex(ARGS['<policy_id>'])),
+BURN_ASSETS = mint_channel_stt_assets(
+    SCRIPT.policy_id,
     -1,
-    channel_ids,
+    CHANNEL_IDS,
 )
-LOG.info(f'burn_assets: {burn_assets}')
+LOG.info(f'BURN_ASSETS: {BURN_ASSETS}')
 
-burn_tx = (
-    TransactionBuilder(OGMIOS_CTX, mint=burn_assets)
-    .add_minting_script(script=script.mint_script, redeemer=mint_redeemer)
+raise SystemExit
+
+BURN_TXB = (
+    TransactionBuilder(OGMIOS_CTX, mint=BURN_ASSETS)
+    .add_minting_script(script=SCRIPT.mint_script, redeemer=MINT_REDEEMER)
 )
 
-for utxo in sub.utxos.values():
+for utxo in SUB.utxos.values():
     LOG.debug(f'utxo: {utxo}')
-    spend_redeemer = Redeemer(data=ept.BurnTestTokens()) # TODO need one per utxo, right?
+    spend_redeemer = Redeemer(data=BurnTestTokens()) # TODO need one per utxo, right?
     burn_tx = burn_tx.add_script_input(utxo, script=script.spend_script, redeemer=spend_redeemer)
 
 LOG.debug('burn_tx:\n%s\n' % pformat(burn_tx))
