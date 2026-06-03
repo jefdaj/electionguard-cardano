@@ -18,9 +18,9 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class ElectionScript:
     """The compiled, parameterized contract.
 
@@ -36,6 +36,11 @@ class ElectionScript:
 
     # The final JSON blueprint. Includes title, contract version, CBOR fields, etc.
     aiken_blueprint: dict
+
+    # Was the contract built with tracing?
+    # Example usage with tracing:
+    # ELECTION_PLUTUS_VARIANT=traced ./publish.py ...
+    aiken_tracing: bool = field(default=USE_TRACED)
 
     # Fields duplicated from the aiken_blueprint for convenience.
     policy_id:    ScriptHash
