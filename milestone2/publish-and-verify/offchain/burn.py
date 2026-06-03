@@ -111,8 +111,6 @@ BURN_ASSETS = mint_channel_stt_assets(
 )
 LOG.info(f'BURN_ASSETS: {BURN_ASSETS}')
 
-raise SystemExit
-
 BURN_TXB = (
     TransactionBuilder(OGMIOS_CTX, mint=BURN_ASSETS)
     .add_minting_script(script=SCRIPT.mint_script, redeemer=MINT_REDEEMER)
@@ -121,9 +119,9 @@ BURN_TXB = (
 for utxo in SUB.utxos.values():
     LOG.debug(f'utxo: {utxo}')
     spend_redeemer = Redeemer(data=BurnTestTokens()) # TODO need one per utxo, right?
-    burn_tx = burn_tx.add_script_input(utxo, script=script.spend_script, redeemer=spend_redeemer)
+    BURN_TXB = BURN_TXB.add_script_input(utxo, script=SCRIPT.spend_script, redeemer=spend_redeemer)
 
-LOG.debug('burn_tx:\n%s\n' % pformat(burn_tx))
+LOG.debug('BURN_TXB:\n%s\n' % pformat(BURN_TXB))
 
 
 ### confirm, then submit tx ###
@@ -131,18 +129,18 @@ LOG.debug('burn_tx:\n%s\n' % pformat(burn_tx))
 def confirm(prompt="Are you sure? (y/n): "):
     return input(prompt).strip().lower() in ("y", "yes")
 
-msg = f'''
+MSG = f'''
 About to burn these tokens:
-{pformat(burn_assets)}
+{pformat(BURN_ASSETS)}
 
-Channel ADA will be sent to {pub.address}
+Channel ADA will be sent to {PUB.address}
 
 Are you sure? (y/n):'''
 
-if confirm(prompt=msg):
+if confirm(prompt=MSG):
     try:
-        tx_submitted = pub.sign_and_submit(burn_tx)
-        pub.wait_for_confirmation(tx_submitted)
+        BURN_TX = pub.sign_and_submit(BURN_TXB)
+        PUB.wait_for_confirmation(BURN_TX)
     except Exception as e:
         LOG.error(e)
         raise
