@@ -133,13 +133,13 @@ MSG = f'''
 About to burn these tokens:
 {pformat(BURN_ASSETS)}
 
-Channel ADA will be sent to {PUB.address}
+Channel ADA will be sent to {PUB.key_pair.addr}
 
 Are you sure? (y/n):'''
 
 if confirm(prompt=MSG):
     try:
-        BURN_TX = pub.sign_and_submit(BURN_TXB)
+        BURN_TX = PUB.sign_and_submit(BURN_TXB)
         PUB.wait_for_confirmation(BURN_TX)
     except Exception as e:
         LOG.error(e)
