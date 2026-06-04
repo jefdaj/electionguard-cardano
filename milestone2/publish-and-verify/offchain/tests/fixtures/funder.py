@@ -13,22 +13,22 @@ def funder_keys() -> KeyPair:
     return kp
 
 @per_election_fixture
-def funder(funder_keys: KeyPair) -> Funder:
-    f = Funder(key_pair=funder_keys)
-    LOG.info(f'funder: {f}')
+def funder_node(funder_keys: KeyPair) -> FunderNode:
+    node = FunderNode(key_pair=funder_keys)
+    LOG.info(f'funder_node: {node}')
     try:
-        yield f
+        yield node
     finally:
-        if f.subscriber is not None:
-            f.subscriber.stop()
+        if node.subscriber is not None:
+            node.subscriber.stop()
 
 @per_election_fixture
 def init_txb(
-        funder: Funder,
+        funder_node: FunderNode,
         script: ElectionScript,
         admin_vkh: VerificationKeyHash,
     ) -> TransactionBuilder:
-    txb = funder._build_init_tx(
+    txb = funder_node._build_init_tx(
         script=script,
         admin_vkh=admin_vkh,
         admin_ada=100

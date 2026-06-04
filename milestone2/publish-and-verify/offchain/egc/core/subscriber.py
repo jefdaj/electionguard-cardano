@@ -508,10 +508,3 @@ class ElectionSubscriber:
     def is_done(self):
         return self._kupo_stop.is_set() \
            and self._kupo_thread is None
-
-    def phase(self) -> Optional[ElectionPhase]:
-        try:
-            return self.states[ADMIN_CHANNEL_ID].state.phase
-        except KeyError:
-            # no init_election tx published yet
-            return None

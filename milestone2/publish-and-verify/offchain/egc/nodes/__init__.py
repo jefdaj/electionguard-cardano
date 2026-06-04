@@ -1,5 +1,5 @@
-from .admin  import Admin
-from .funder import Funder
+from .admin  import AdminNode
+from .funder import FunderNode
 
 # from . import admin
 # from . import device

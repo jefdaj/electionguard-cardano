@@ -1,0 +1,59 @@
+from pathlib import Path
+from pycardano import *
+
+from .publisher  import *
+from .subscriber import *
+from .election   import *
+from .plutus     import *
+
+import logging
+
+LOG = logging.getLogger(__name__)
+
+
+class ElectionNode:
+
+    def __init__(
+        self,
+
+        # This should only be None in the case of the initial Funder,
+        # since at that point there isn't an ElectionContext yet.
+        election: Optional[ElectionContext] = None,
+
+        # No need for keys_dir or key_name if you pass an existing key_pair.
+        # You can also omit them without passing key_pair, in which case a new
+        # KeyPair will generated based on the role + index and saved in the
+        # default dir. This logic is handled by the Publisher.
+        key_pair: Optional[KeyPair] = None,
+        keys_dir: Optional[Path]    = None,
+        key_name: Optional[Path]    = None,
+
+        # TODO ipfs (kubo)
+    ):
+        LOG.debug('ElectionNode.__init__')
+
+        # May be None in case of a Funder.
+        self.election: Optional[ElectionContext] = election
+
+        self.publisher = ElectionPublisher(
+            role       = self.role,       # should have been set by the subclass
+            role_index = self.role_index, # should have been set by the subclass
+            key_pair   = key_pair,
+            keys_dir   = keys_dir,
+            key_name   = key_name,
+        )
+
+        if self.election is None:
+            LOG.debug('ElectionNode skipping subscriber init because election is None')
+            self.subscriber = None
+        else:
+            sub_cfg = SubscriberConfig.from_election(self.election)
+            self.subscriber = ElectionSubscriber(config=sub_cfg)
+            self.subscriber.start()
+
+    def phase(self) -> Optional[ElectionPhase]:
+        try:
+            return self.subscriber.states[ADMIN_CHANNEL_ID].state.phase
+        except KeyError:
+            # no init_election tx published yet
+            return None

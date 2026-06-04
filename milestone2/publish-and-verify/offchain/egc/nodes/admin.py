@@ -7,7 +7,8 @@ LOG = logging.getLogger(__name__)
 
 # TODO how should this relate to the eventual Quart server? guess it's the backend/model?
 
-class Admin:
+class AdminNode(ElectionNode):
+
     def __init__(
         self,
 
@@ -23,15 +24,25 @@ class Admin:
     ):
         LOG.debug('Admin.__init__')
 
-        self.key_pair = key_pair
-        self.election = election
+        # for creating the Subcscriber
+        self.role = "admin"
+        self.role_index = 1
 
-        self.publisher = ElectionPublisher(
-            role="admin",
-            role_index=1,
-            key_pair=self.key_pair,
-        )
+        super().__init__(election=election, key_pair=key_pair)
 
-        sub_cfg = SubscriberConfig.from_election(self.election)
-        self.subscriber = ElectionSubscriber(config=sub_cfg)
-        self.subscriber.start()
+    def _build_post_tx(
+            self,
+            new_records: List[PublicRecord],
+            new_phase: Optional[ElectionPhase] = None,
+        ) -> TransactionBuilder:
+        txb = None
+        return txb
+
+    def post_public_records(
+            self,
+            new_records: List[PublicRecord],
+            new_phase: Optional[ElectionPhase] = None,
+        ) -> Transaction:
+        txb = self._build_post_tx(new_records, new_phase)
+        tx  = self.publisher.sign_and_submit(tx)
+        return tx

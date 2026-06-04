@@ -15,8 +15,8 @@ import logging
 LOG = logging.getLogger(__name__)
 
 
-class Funder:
-    """Wallet to create + fund the Admin, and to recover ADA after the election.
+class FunderNode(ElectionNode):
+    """Node to create + fund the Admin, and to recover ADA after the election.
     """
 
     def __init__(
@@ -28,21 +28,14 @@ class Funder:
 
     ):
         LOG.debug('Funder.__init__')
-        self.key_pair = key_pair
-        self._init_publisher()
 
-        # These need to be delayed because we won't know the deployment details yet.
-        # They should be filled in by running init_election() and init_subscriber().
-        self.election = None
-        self.subscriber = None
+        self.role = "funder"
+        self.role_index = 1
 
-    def _init_publisher(self):
-        LOG.debug('Funder._init_publisher')
-        self.publisher = ElectionPublisher(
-            role="funder",
-            role_index=1,
-            key_pair=self.key_pair,
-        )
+        # No election here because the Funder has to exist in order to create
+        # it. And with no election, the ElectionNode class won't init a
+        # subscriber yet either.
+        super().__init__(key_pair=key_pair, election=None)
 
     def _build_init_tx(self, script: ElectionScript, admin_vkh: VerificationKeyHash, admin_ada: int) -> TransactionBuilder:
         """Build an InitElection transaction.
@@ -99,14 +92,14 @@ class Funder:
             .add_output(stt_output)
         )
         # funder_vkh = self.publisher.verification_key_hash
-        init_txb.required_signers = [self.key_pair.vkh]
+        init_txb.required_signers = [self.publisher.key_pair.vkh]
         LOG.debug('init_txb:\n%s\n' % pformat(init_txb))
 
         return init_txb
 
     def init_script(self):
         """Pick oneshot_utxo and parameterize script."""
-        fund_addr = self.key_pair.addr
+        fund_addr = self.publisher.key_pair.addr
         oneshot_utxo = pick_oneshot_utxo(OGMIOS_CTX, fund_addr)
         script = ElectionScript.from_oneshot_utxo(oneshot_utxo)
         LOG.debug('script:\n%s\n' % pformat(script))
@@ -141,7 +134,7 @@ class Funder:
 
         deployment = ElectionDeployment(
             network               = Network.TESTNET,
-            funder_address        = self.key_pair.addr,
+            funder_address        = self.publisher.key_pair.addr,
             deployment_date       = datetime.now(), # TODO get now() before sign_and_submit?
             index_from_slot       = tip['slot'],
             index_from_block_hash = tip['block_hash'],

@@ -45,8 +45,8 @@ class ElectionPublisher:
         # KeyPair will generated based on the role + index and saved in the
         # default dir.
         key_pair: Optional[KeyPair] = None,
-        keys_dir:  Optional[Path] = None,
-        key_name: Optional[Path] = None,
+        keys_dir: Optional[Path]    = None,
+        key_name: Optional[Path]    = None,
 
         # If the script is not given here, you have to call _init_script()
         # separately. That's expected when creating a Funder (and possibly
