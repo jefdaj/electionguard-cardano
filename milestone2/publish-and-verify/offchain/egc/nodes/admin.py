@@ -23,12 +23,12 @@ class AdminNode(ElectionNode):
         # TODO ipfs (kubo)
     ):
         LOG.debug('Admin.__init__')
-
-        # for creating the Subcscriber
-        self.role = "admin"
-        self.role_index = 1
-
-        super().__init__(election=election, key_pair=key_pair)
+        super().__init__(
+            role='admin',
+            role_index=1,
+            election=election,
+            key_pair=key_pair
+        )
 
     def _build_post_tx(
             self,
@@ -38,6 +38,7 @@ class AdminNode(ElectionNode):
         txb = None
         return txb
 
+    # TODO should this go in the base class?
     def post_public_records(
             self,
             new_records: List[PublicRecord],

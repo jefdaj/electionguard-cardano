@@ -29,13 +29,15 @@ class FunderNode(ElectionNode):
     ):
         LOG.debug('Funder.__init__')
 
-        self.role = "funder"
-        self.role_index = 1
-
         # No election here because the Funder has to exist in order to create
         # it. And with no election, the ElectionNode class won't init a
         # subscriber yet either.
-        super().__init__(key_pair=key_pair, election=None)
+        super().__init__(
+            role='funder',
+            role_index=1,
+            key_pair=key_pair,
+            election=None,
+        )
 
     def _build_init_tx(self, script: ElectionScript, admin_vkh: VerificationKeyHash, admin_ada: int) -> TransactionBuilder:
         """Build an InitElection transaction.

@@ -5,7 +5,6 @@ They publish TXs via Ogmios and files via IPFS (Kubo) (not Kupo).
 """
 
 from pathlib import Path
-# from egc import wallet as ew
 from time import sleep
 from typing import List, Optional
 from pprint import pformat
@@ -17,6 +16,7 @@ LOG = logging.getLogger(__name__)
 from .ogmios   import OGMIOS_CTX
 from .election import ElectionContext
 from .wallet   import *
+from .plutus   import ChannelId, ChannelIdHelper
 
 from pycardano import *
 # from pycardano import UTxO, OgmiosV6ChainContext, SigningKey, Transaction, TransactionBuilder, Value
@@ -72,7 +72,7 @@ class ElectionPublisher:
                 LOG.debug(f'keys_dir is None; default to {keys_dir}')
             keys_dir = Path(keys_dir) # TODO ok if already a Path?
             if key_name is None:
-                key_name = self.channel_id()
+                key_name = ChannelIdHelper.to_string(self.channel_id())
                 LOG.debug(f'key_name is None; default to {key_name}')
             self.key_pair = KeyPair(keys_dir=keys_dir, name=key_name, verbose=False)
         else:
@@ -108,15 +108,14 @@ class ElectionPublisher:
     #         raise Exception(f'script already set to {self.script}')
     #     self.script = script
 
-    def channel_id(self) -> str:
+    def channel_id(self) -> ChannelId:
         LOG.debug('ElectionPublisher.channel_id')
-        if self.role == 'funder':
-            # Funder doesn't have a channel and shouldn't need the id
-            raise NotImplementedError
-        elif self.role == 'admin':
-            return self.role
+        if self.role in ['funder', 'admin']:
+            # TODO is there ever a need for the Funder's "channel_id", since there's no channel?
+            channel_str = self.role
         else:
-            return f'{self.role}{self.role_index}'
+            channel_str = f'{self.role}{self.role_index}'
+        return ChannelIdHelper.from_string(channel_str)
 
     def sign_and_submit(self, txb: TransactionBuilder):
         LOG.debug('ElectionPublisher.sign_and_submit')

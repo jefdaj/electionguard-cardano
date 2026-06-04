@@ -16,6 +16,10 @@ class ElectionNode:
     def __init__(
         self,
 
+        # For deriving the ChannelId
+        role: str,
+        role_index: int,
+
         # This should only be None in the case of the initial Funder,
         # since at that point there isn't an ElectionContext yet.
         election: Optional[ElectionContext] = None,
@@ -36,8 +40,8 @@ class ElectionNode:
         self.election: Optional[ElectionContext] = election
 
         self.publisher = ElectionPublisher(
-            role       = self.role,       # should have been set by the subclass
-            role_index = self.role_index, # should have been set by the subclass
+            role       = role,
+            role_index = role_index,
             key_pair   = key_pair,
             keys_dir   = keys_dir,
             key_name   = key_name,
@@ -50,6 +54,9 @@ class ElectionNode:
             sub_cfg = SubscriberConfig.from_election(self.election)
             self.subscriber = ElectionSubscriber(config=sub_cfg)
             self.subscriber.start()
+
+    def channel_id(self) -> ChannelId:
+        return self.publisher.channel_id()
 
     def phase(self) -> Optional[ElectionPhase]:
         try:
