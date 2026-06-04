@@ -15,16 +15,13 @@ def admin_tx0(init_tx: Transaction) -> Transaction:
     # admin_tx0 is just the init_tx renamed for clarity.
     return init_tx
 
-def test_admin_tx0(admin_tx0: Transaction, admin: Admin):
-    LOG.debug(f'admin_tx0: {admin_tx0}')
-    assert isinstance(admin_tx0, Transaction)
-
-    history = admin.subscriber.history
-    states  = admin.subscriber.states
-    utxos   = admin.subscriber.utxos
-    seen    = admin.subscriber._seen_tx_ids
-    last    = admin.subscriber._last_tx_key
-    phase   = admin.subscriber.phase()
+def assert_admin_tx0_indexed(sub: ElectionSubscriber):
+    history = sub.history
+    states  = sub.states
+    utxos   = sub.utxos
+    seen    = sub._seen_tx_ids
+    last    = sub._last_tx_key
+    phase   = sub.phase()
 
     for sub_map in [history, states, utxos]:
         assert ADMIN_CHANNEL_ID in sub_map
@@ -36,6 +33,14 @@ def test_admin_tx0(admin_tx0: Transaction, admin: Admin):
     assert len(seen) == 1
     assert phase == ElectionConfigPhase(phase=ConfigAnnouncePhase())
 
+def test_admin_tx0(admin_tx0: Transaction, funder: Funder, admin: Admin):
+    LOG.debug(f'admin_tx0: {admin_tx0}')
+    assert isinstance(admin_tx0, Transaction)
+
+    # both (all) nodes should agree on the current election state
+    # TODO generalize this
+    assert_admin_tx0_indexed(funder.subscriber)
+    assert_admin_tx0_indexed(admin.subscriber)
 
 ### admin_tx1 ###
 
