@@ -53,14 +53,10 @@ class ElectionScript:
     def to_dict(self) -> dict:
         LOG.debug('ElectionScript.to_dict')
         return {
-            # "oneshot_input": {
-            #     "tx_id": str(self.oneshot_input.transaction_id),
-            #     "output_index": self.oneshot_input.index,
-            # },
             "oneshot_utxo": self.oneshot_utxo.to_cbor_hex(),
             "oneshot_hex": self.oneshot_hex,
             "aiken_blueprint": self.aiken_blueprint,
-            # policy_id, mint_script, spend_script will be rederived from blueprint
+            "aiken_tracing": self.aiken_tracing,
         }
 
     # TODO is this a reasonable way to initially create it, with a round-trip to json?
@@ -74,6 +70,7 @@ class ElectionScript:
             'oneshot_utxo': oneshot_utxo.to_cbor_hex(),
             'oneshot_hex': oneshot_hex,
             'aiken_blueprint': blueprint_dict,
+            "aiken_tracing": USE_TRACED,
         }
         return cls.from_dict(cls_dict)
 
@@ -91,6 +88,7 @@ class ElectionScript:
             oneshot_utxo    = oneshot_utxo,
             oneshot_hex     = data["oneshot_hex"],
             aiken_blueprint = blueprint,
+            aiken_tracing   = data["aiken_tracing"],
             policy_id       = policy_id,
             mint_script     = mint_script,
             spend_script    = spend_script,
