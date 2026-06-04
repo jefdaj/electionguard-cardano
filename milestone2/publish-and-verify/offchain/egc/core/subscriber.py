@@ -220,6 +220,19 @@ class ElectionSubscriber:
         # TODO remove once state map works
         self._last_tx_key = None # TODO type?
 
+    def __del__(self):
+        # Just a proactive warning in case of future thread stopping related issues:
+        proc = getattr(self, '_kupo_proc', None)
+        if proc is not None and proc.poll() is None:
+            print(
+                f'WARNING: ElectionSubscriber (kupo pid={proc.pid}) '
+                f'was garbage-collected without stop() being called',
+                file=sys.stderr,
+            )
+            try:
+                proc.kill()
+            except Exception:
+                pass
 
     def _start_kupo(self) -> None:
         '''
