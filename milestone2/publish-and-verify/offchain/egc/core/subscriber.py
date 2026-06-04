@@ -328,7 +328,9 @@ class ElectionSubscriber:
 
     def check_if_admin_channel_closed(self):
         LOG.info('ElectionSubscriber.check_if_admin_channel_closed')
-        (tx_id, output_ix) = self._last_tx_key
+        if self._last_tx_key is None:
+            # no tx has been published yet
+            return
         resp = self.session.get(KUPO_MATCHES_URL + f'/{output_ix}@{tx_id}') # TODO params? timeout?
         if resp.status_code == 200:
             utxos = resp.json() # TODO store a map of channel id -> latest utxo in the subscriber

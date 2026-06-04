@@ -112,10 +112,11 @@ About to burn these tokens:
 
 Channel ADA will be sent to {PUB.key_pair.addr}
 
-Are you sure? (y/n):'''
+Are you sure? (y/n): '''
 
 if confirm(prompt=MSG):
     try:
+        LOG.info('\nBurning tokens...')
         BURN_TX = PUB.sign_and_submit(BURN_TXB)
         PUB.wait_for_confirmation(BURN_TX)
         LOG.info('done')

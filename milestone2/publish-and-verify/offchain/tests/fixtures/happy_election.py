@@ -3,6 +3,7 @@ import time
 from pycardano import *
 from egc import *
 import logging
+from pprint import pformat
 
 LOG = logging.getLogger(__name__)
 
@@ -18,7 +19,7 @@ def happy_admin_tx0(
     """
     # TODO how to handle the electionguard vs cardano keys? do we need anything special?
 
-    (admin_tx0, _) = funder.init_election(script=script, admin_vkh=admin_vkh, admin_ada=10) # TODO what's a good amount?
+    admin_tx0 = funder.init_election(script=script, admin_vkh=admin_vkh, admin_ada=10) # TODO what's a good amount?
     funder.publisher.wait_for_confirmation(admin_tx0)
 
     # All other tests happen here
@@ -26,7 +27,12 @@ def happy_admin_tx0(
     time.sleep(3) # TODO is this needed?
 
     # TODO only burn if the election hasn't ended on its own yet
+    funder.subscriber.start()
+    time.sleep(3) # TODO is this needed?
     funder.subscriber.stop()
+    time.sleep(3) # TODO is this needed?
+    LOG.info(f'final utxos: {pformat(funder.subscriber.utxos)}')
+
     try:
         burn_tx = funder.burn_test_tokens()
         funder.publisher.wait_for_confirmation(burn_tx)

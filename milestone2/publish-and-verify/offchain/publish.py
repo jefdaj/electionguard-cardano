@@ -62,11 +62,11 @@ script = funder.init_script()
 
 # Create the admin STT and run delayed admin init functions.
 # Also returns info needed for a Subscriber to index election events.
-(init_tx, election_ctx) = funder.init_election(script=script, admin_vkh=admin_keys.vkh, admin_ada=10)
+init_tx = funder.init_election(script=script, admin_vkh=admin_keys.vkh, admin_ada=10)
 LOG.debug(f'init_tx: {init_tx}')
-LOG.debug(f'election_ctx: {election_ctx}')
+LOG.debug(f'election_ctx: {funder.election_ctx}')
 
-LOG.info(f'election deployed: {election_ctx.deployment.to_dict()}')
+LOG.info(f'election deployed: {funder.election_ctx.deployment.to_dict()}')
 
 funder.publisher.wait_for_confirmation(init_tx)
 LOG.info('init_tx confirmed')

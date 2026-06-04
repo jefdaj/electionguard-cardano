@@ -121,6 +121,20 @@ class Funder:
         LOG.debug('script:\n%s\n' % pformat(script))
         return script
 
+    def _init_subscriber(self):
+        """Delayed init for subscriber because we need to know the args for `kupo --since`."""
+        LOG.debug('Funder._init_subscriber')
+        if self.election is None:
+            raise Exception('_init_subscriber should be called as part of init_election')
+        sub_cfg = SubscriberConfig(
+            since_slot       = self.election.deployment.index_from_slot,
+            since_block_hash = self.election.deployment.index_from_block_hash,
+            policy_id        = self.election.script.policy_id,
+        )
+        LOG.debug(f'sub_cfg: {sub_cfg}')
+        self.subscriber = ElectionSubscriber(sub_cfg)
+        # self.subscriber.start()
+
     def deploy_election(
             self,
             script: ElectionScript,
@@ -165,26 +179,11 @@ class Funder:
         election_ctx.to_json(f'election-{timestamp}.json')
 
         self.election = election_ctx
-        self.init_subscriber()
+        self._init_subscriber()
 
         # All the info we really need should be in self.election now;
         # the main reason to return init_tx is so the caller can wait for confirmation.
-        # TODO don't return self.election?
-        return (init_tx, self.election)
-
-    def init_subscriber(self):
-        """Delayed init for subscriber because we need to know the args for `kupo --since`."""
-        LOG.debug('Funder.init_subscriber')
-        if self.election is None:
-            raise Exception('init_election must be called before init_subscriber')
-        sub_cfg = SubscriberConfig(
-            since_slot       = self.election.deployment.index_from_slot,
-            since_block_hash = self.election.deployment.index_from_block_hash,
-            policy_id        = self.election.script.policy_id,
-        )
-        LOG.debug(f'sub_cfg: {sub_cfg}')
-        self.subscriber = ElectionSubscriber(sub_cfg)
-        self.subscriber.start()
+        return init_tx
 
     def _build_burn_tx(self) -> TransactionBuilder:
 
@@ -207,7 +206,7 @@ class Funder:
         )
 
         for utxo in self.subscriber.utxos.values():
-            LOG.debug(f'utxo: {utxo}')
+            LOG.debug(f'script controlled utxo to spend: {utxo}')
             spend_redeemer = Redeemer(data=BurnTestTokens())
             burn_txb = burn_txb.add_script_input(
                 utxo,
