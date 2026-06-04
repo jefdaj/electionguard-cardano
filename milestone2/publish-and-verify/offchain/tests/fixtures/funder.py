@@ -23,7 +23,7 @@ def init_txb(
         script: ElectionScript,
         admin_vkh: VerificationKeyHash,
     ) -> TransactionBuilder:
-    txb = funder.build_init_tx(
+    txb = funder._build_init_tx(
         script=script,
         admin_vkh=admin_vkh,
         admin_ada=100
