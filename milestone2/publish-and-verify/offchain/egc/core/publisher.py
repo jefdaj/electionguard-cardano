@@ -151,18 +151,21 @@ class ElectionPublisher:
     def wait_for_confirmation(self, tx: Transaction, max_seconds: int = 300, interval_seconds: int = 5):
         LOG.debug('ElectionPublisher.wait_for_confirmation')
         tx_id = str(tx.id) # TODO is this the right way?
-        LOG.info(f'tx {tx_id} waiting up to {max_seconds} seconds for confirmation.')
+        LOG.info(f'Waiting up to {max_seconds} seconds for tx {tx_id} to be confirmed on chain...')
         waited_seconds = 0
         while True:
             time.sleep(interval_seconds)
             waited_seconds += interval_seconds
             utxo = OGMIOS_CTX.utxo_by_tx_id(tx_id, 0)
             if utxo is None:
-                if waited_seconds >= max_seconds:
-                    msg = f'tx {tx_id} still not confirmed after {waited_seconds} seconds'
+                remaining_seconds = max_seconds - waited_seconds
+                if remaining_seconds <= 0:
+                    msg = f'tx {tx_id} not confirmed after {waited_seconds} seconds.'
                     LOG.error(msg)
                     raise Exception(msg)
-                continue
+                else:
+                    msg = f'tx {tx_id} not confirmed after {waited_seconds} seconds. Will wait {remaining_seconds} more.'
+                    LOG.info(msg)
             else:
-                LOG.info(f' confirmed after {waited_seconds} seconds')
+                LOG.info(f'tx {tx_id} confirmed after {waited_seconds} seconds')
                 return

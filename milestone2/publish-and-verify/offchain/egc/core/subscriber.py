@@ -62,7 +62,7 @@ SubscriberCallback = Callable[[dict, requests.Session], ElectionAction]
 
 def fetch_datum(session: requests.Session, datum_hash: str) -> Any:
     url = f'http://{KUPO_HOST}:{KUPO_PORT}/v1/datums/{datum_hash}' # TODO global var?
-    LOG.info(f'fetch_datum: fetching datum {datum_hash}')
+    LOG.debug(f'fetch_datum: fetching datum {datum_hash}')
     resp = session.get(url, timeout=10)
     resp.raise_for_status()
     return resp.json()
@@ -116,7 +116,7 @@ def handle_match(utxo: Dict[str, Any], session: requests.Session) -> (ChannelId,
             state = AdminChannel(state=AdminChannelState.from_cbor(datum['datum']))
             channel_id = ADMIN_CHANNEL_ID
 
-        LOG.info(f'handle_match: decoded {channel_id} state {state.state.seq}: {state}')
+        LOG.debug(f'handle_match: decoded {channel_id} state {state.state.seq}: {state}')
         return (channel_id, state)
 
     except Exception as e:
@@ -185,7 +185,7 @@ class ElectionSubscriber:
             # on_close: SubscriberCallback,
         ):
 
-        LOG.info('ElectionSubscriber.__init__')
+        LOG.debug('ElectionSubscriber.__init__')
 
         self.config = config
 
@@ -226,11 +226,10 @@ class ElectionSubscriber:
         Start Kupo as a subprocess.
         Uses `--since {slot}.{hash}` and `--match '{policy_id}/*'`.
         '''
-        LOG.info('ElectionSubscriber._start_kupo')
+        LOG.debug('ElectionSubscriber._start_kupo')
 
         if self._kupo_proc is not None and self._kupo_proc.poll() is None:
-            # TODO error here?
-            LOG.info(f'Kupo already running (pid={self._kupo_proc.pid})')
+            LOG.warning(f'Kupo already running (pid={self._kupo_proc.pid})')
             return
 
         # os.makedirs(KUPO_WORKDIR, exist_ok=True)
@@ -291,7 +290,7 @@ class ElectionSubscriber:
         time.sleep(0.1) # prevents polling error during startup
 
     def _log_kupo_output(self) -> None:
-        LOG.info('ElectionSubscriber._log_kupo_output')
+        LOG.debug('ElectionSubscriber._log_kupo_output')
         proc = self._kupo_proc
         if proc.stdout is None:
             return
@@ -306,7 +305,10 @@ class ElectionSubscriber:
         LOG.info('Kupo subprocess output thread terminating')
 
     def stop_kupo(self) -> None:
+
+        # TODO something fishy here... why is info rather than debug required for pytest to exit properly??
         LOG.info('ElectionSubscriber.stop_kupo')
+
         proc = self._kupo_proc
         if proc is None:
             return
@@ -322,9 +324,9 @@ class ElectionSubscriber:
         self._kupo_proc = None
 
     def check_if_admin_channel_closed(self):
-        LOG.info('ElectionSubscriber.check_if_admin_channel_closed')
+        LOG.debug('ElectionSubscriber.check_if_admin_channel_closed')
         if self._last_tx_key is None:
-            # no tx has been published yet
+            LOG.debug('no transactions have been published yet?')
             return
         (tx_id, output_ix) = self._last_tx_key
         resp = self.session.get(KUPO_MATCHES_URL + f'/{output_ix}@{tx_id}') # TODO params? timeout?
@@ -334,15 +336,15 @@ class ElectionSubscriber:
             assert isinstance(utxos, list), "expected a list of UTXOs"
             for utxo in utxos:
                 # There should only be one
-                # TODO update once adding subchannels!
-                # TODO actually, need to update now to even find the admin stt?
+                # TODO update to handle subchannels
+                # TODO later, update to handle reference script utxo
                 if 'spent_at' in utxo and utxo['spent_at'] is not None:
-                    LOG.info(f'Confirmed: STT UTXO spent without creating a new one')
-                    # for some reason, actually printing spent_at here produces errors
+                    # something fishy goes on here related to printing or not printing...
+                    LOG.info(f'Confirmed: STT UTXO spent without creating a new one.')
                     self.on_close(utxo, self.session)
                     self.stop()
                     return
-        LOG.info(f'Channel not yet closed {resp}')
+        LOG.debug(f'Channel not yet closed {resp}')
 
     def _watch_kupo(self) -> None:
         LOG.info(f'Watcher thread started for policy_id={self.config.policy_id}')
@@ -387,7 +389,7 @@ class ElectionSubscriber:
                     try:
 
                         (channel_id, new_state) = self.on_match(utxo_dict, self.session)
-                        # LOG.info(f'new_state: {new_state} ({type(new_state)})')
+                        LOG.debug(f'new_state: {new_state} ({type(new_state)})')
 
                         # assert isinstance(new_state, AdminChannelState), 'Each TX should have a AdminChannelState'
                         if not channel_id in self.history:
@@ -406,12 +408,12 @@ class ElectionSubscriber:
                         LOG.error(f'Error in self.on_match: {e}')
 
                 if not any_new_utxo:
-                    LOG.info('No new UTXOs')
+                    LOG.debug('No new UTXOs')
                     self.check_if_admin_channel_closed()
                     # TODO is this the only check like this? or do we need one per channel?
 
             except requests.RequestException as e:
-                LOG.warning(f'Kupo polling error: {e}')
+                LOG.debug(f'Kupo polling error: {e}') # TODO back to warning?
                 time.sleep(5)
             except Exception as e:
                 LOG.error(f'Unexpected error in watcher: {e} {type(e)}')
@@ -434,7 +436,7 @@ class ElectionSubscriber:
         return records
 
     def start(self) -> None:
-        LOG.info('ElectionSubscriber.start')
+        LOG.debug('ElectionSubscriber.start')
         self._kupo_stop.clear()
 
         def _start_and_watch() -> None:
@@ -458,13 +460,13 @@ class ElectionSubscriber:
         self._kupo_thread.start()
 
     def join(self):
-        LOG.info('ElectionSubscriber.join')
+        LOG.debug('ElectionSubscriber.join')
         # TODO how is this actually supposed to be done?
         while not self.is_done():
             time.sleep(1)
 
     def stop(self) -> None:
-        LOG.info('ElectionSubscriber.stop')
+        LOG.debug('ElectionSubscriber.stop')
         self.stop_kupo()
         self._kupo_stop.set()
         if self._kupo_thread and self._kupo_thread.is_alive():
