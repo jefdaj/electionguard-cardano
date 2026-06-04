@@ -23,5 +23,5 @@ def test_init_funder(funder: FunderNode):
 
     # TODO any other init tests?
 
-def test_init_txb(init_txb: TransactionBuilder):
-    assert isinstance(init_txb, TransactionBuilder)
+def test_init_tx_builder(init_tx_builder: TransactionBuilder):
+    assert isinstance(init_tx_builder, TransactionBuilder)

@@ -23,7 +23,7 @@ def funder(funder_keys: KeyPair) -> FunderNode:
             node.subscriber.stop()
 
 @per_election_fixture
-def init_txb(
+def init_tx_builder(
         funder: FunderNode,
         script: ElectionScript,
         admin_vkh: VerificationKeyHash,

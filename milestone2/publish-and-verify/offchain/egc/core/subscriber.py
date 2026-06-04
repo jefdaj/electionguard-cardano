@@ -206,11 +206,11 @@ class ElectionSubscriber:
 
         # used to query the current state
         # TODO can these both be put in the same map without making it annoying/fragile?
-        self.states: Mapping[ChannelId, ChannelState] = {}
+        self.states: Mapping[ChannelId, (UTxO, ChannelState)] = {}
 
         # used to query raw utxos
-        # TODO is this useful for anything other than burning?
-        self.utxos: Mapping[ChannelId, UTxO] = {}
+        # TODO merge with self.states? do you usually need both?
+        # self.utxos: Mapping[ChannelId, UTxO] = {}
 
         # for managing the kupo process
         self._kupo_proc:   Optional[subprocess.Popen] = None
@@ -425,11 +425,11 @@ class ElectionSubscriber:
 
                         if not channel_id in self.states:
                             self.states[channel_id] = {}
-                        self.states[channel_id] = new_state
+                        self.states[channel_id] = (kupo_to_utxo(utxo_dict), new_state)
 
-                        if not channel_id in self.utxos:
-                            self.utxos[channel_id] = {}
-                        self.utxos[channel_id] = kupo_to_utxo(utxo_dict)
+                        # if not channel_id in self.utxos:
+                            # self.utxos[channel_id] = {}
+                        # self.utxos[channel_id] = 
 
                     except Exception as e:
                         LOG.error(f'Error in self.on_match: {e}')

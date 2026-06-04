@@ -191,7 +191,7 @@ class FunderNode(ElectionNode):
             .add_minting_script(script=self.election.script.mint_script, redeemer=mint_redeemer)
         )
 
-        for utxo in self.subscriber.utxos.values():
+        for (utxo, _) in self.subscriber.states.values():
             LOG.debug(f'script controlled utxo to spend: {utxo}')
             spend_redeemer = Redeemer(data=BurnTestTokens())
             burn_txb = burn_txb.add_script_input(

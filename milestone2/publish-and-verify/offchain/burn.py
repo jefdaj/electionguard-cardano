@@ -70,7 +70,7 @@ SUB.start()
 time.sleep(3)
 SUB.stop()
 
-LOG.info(f'final utxos: {pformat(SUB.utxos)}')
+# LOG.info(f'final utxos: {pformat(SUB.utxos)}')
 
 
 ### create tx to burn and sweep funds ###
@@ -93,7 +93,7 @@ BURN_TXB = (
     .add_minting_script(script=SCRIPT.mint_script, redeemer=MINT_REDEEMER)
 )
 
-for utxo in SUB.utxos.values():
+for (utxo, _) in SUB.states.values():
     LOG.debug(f'utxo: {utxo}')
     spend_redeemer = Redeemer(data=BurnTestTokens())
     BURN_TXB = BURN_TXB.add_script_input(utxo, script=SCRIPT.spend_script, redeemer=spend_redeemer)

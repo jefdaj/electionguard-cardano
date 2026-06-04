@@ -58,9 +58,19 @@ class ElectionNode:
     def channel_id(self) -> ChannelId:
         return self.publisher.channel_id()
 
-    def phase(self) -> Optional[ElectionPhase]:
+    def state(self) -> Optional[Tuple[UTxO, ChannelState]]:
         try:
-            return self.subscriber.states[ADMIN_CHANNEL_ID].state.phase
+            return self.subscriber.states[self.channel_id()] # .state
+        except KeyError:
+            # no state yet
+            # TODO should this be a warning?
+            return None
+
+    def election_phase(self) -> Optional[ElectionPhase]:
+        try:
+            (_, state) = self.subscriber.states[ADMIN_CHANNEL_ID]
+            return state.state.phase
         except KeyError:
             # no init_election tx published yet
+            # TODO should this be an error? warning?
             return None

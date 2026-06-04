@@ -2,6 +2,7 @@ import pytest
 from pycardano import *
 from egc import *
 from test_utils import per_election_fixture, assert_subscribers_in_sync
+from static_records import STATIC_PHASES, STATIC_TRANSACTIONS
 import logging
 import time
 
@@ -18,16 +19,18 @@ def admin_tx0(init_tx: Transaction) -> Transaction:
 def assert_admin_tx0_indexed(node: ElectionNode):
     history = node.subscriber.history
     states  = node.subscriber.states
-    utxos   = node.subscriber.utxos
+    # utxos   = node.subscriber.utxos
     seen    = node.subscriber._seen_tx_ids
     last    = node.subscriber._last_tx_key
-    phase   = node.phase()
+    phase   = node.election_phase()
 
-    for sub_map in [history, states, utxos]:
+    # for sub_map in [history, states, utxos]:
+    for sub_map in [history, states]:
         assert ADMIN_CHANNEL_ID in sub_map
         assert len(sub_map) == 1
 
-    assert states[ADMIN_CHANNEL_ID].state.seq == 0
+    (_, state) = states[ADMIN_CHANNEL_ID]
+    assert state.state.seq == 0
     assert len(history[ADMIN_CHANNEL_ID]) == 1
     assert last is not None
     assert len(seen) == 1
@@ -46,6 +49,17 @@ def test_admin_tx0(
     assert_subscribers_in_sync([funder, admin])
 
 ### admin_tx1 ###
+
+@per_election_fixture
+def admin_tx1_builder(admin_tx0: Transaction, admin: AdminNode) -> TransactionBuilder:
+    phase = STATIC_PHASES[1]
+    (_, records) = STATIC_TRANSACTIONS['admin'][1]
+    txb = admin._build_post_tx(new_records=records, new_phase=phase)
+    LOG.debug(f'admin_tx1_builder: {txb}')
+    return txb
+
+def test_admin_tx1_builder(admin_tx1_builder: TransactionBuilder):
+    assert isinstance(admin_tx1_builder, TransactionBuilder)
 
 @per_election_fixture
 def admin_tx1(
