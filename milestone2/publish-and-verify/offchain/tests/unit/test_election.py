@@ -16,9 +16,6 @@ def test_roundtrip_electioncontext(dummy_electioncontext: ElectionContext):
     dec2 = ElectionContext.from_dict(tmp)
     assert dec2 == dummy_electioncontext
 
-# def test_init_script(script: ElectionScript):
-#     assert isinstance(script, ElectionScript)
-#     assert isinstance(script.mint_script, bytes)
-#     assert isinstance(script.spend_script, bytes)
-#     assert isinstance(script.policy_id, ScriptHash)
-#     assert isinstance(script.address, Address)
+# TODO rename something less ambiguous?
+def test_election(election: ElectionContext):
+    assert isinstance(election, ElectionContext)

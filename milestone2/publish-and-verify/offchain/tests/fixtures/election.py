@@ -36,3 +36,10 @@ def dummy_electioncontext(
     LOG.debug(f'dummy_electioncontext: {dec}')
     return dec
  
+# TODO are phony tx dependencies like this a good way to enforce temporal ordering?
+@pytest.fixture(scope='package')
+def election(happy_admin_tx0: Transaction, funder: Funder) -> ElectionContext:
+    # happy_admin_tx0 ensures that this exists, and cleans up after it:
+    ctx = funder.election
+    LOG.debug(f'ctx: {ctx}')
+    return ctx

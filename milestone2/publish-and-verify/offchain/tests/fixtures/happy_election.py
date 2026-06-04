@@ -14,10 +14,9 @@ def happy_admin_tx0(
         admin_vkh: VerificationKeyHash
     ) -> Transaction:
     """Yields an already submitted and confirmed InitElection transaction.
-    This one is special because it also cleans up by running BurnTestTokens if
-    needed. All other Transaction fixtures should depend on this one.
+    For now, all other Transaction fixtures should depend on this one,
+    because it does the cleanup step (BurnTestTokens) if needed.
     """
-    # TODO how to handle the electionguard vs cardano keys? do we need anything special?
 
     admin_tx0 = funder.init_election(script=script, admin_vkh=admin_vkh, admin_ada=10) # TODO what's a good amount?
     funder.publisher.wait_for_confirmation(admin_tx0)
@@ -35,3 +34,10 @@ def happy_admin_tx0(
     except Exception as e:
         LOG.error(e)
         raise
+
+@pytest.fixture(scope='package')
+def happy_admin_tx1(
+        admin: Admin,
+        happy_admin_tx0: Transaction,
+    ) -> Transaction:
+    raise NotImplementedError

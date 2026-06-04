@@ -32,12 +32,13 @@ from pprint import pformat
 #     Address,
 # )
 
-from typing import Any, Callable, Dict, List, Tuple, Optional
+from typing import Any, Callable, Dict, List, Tuple, Optional, Self
 
 from .ogmios import OGMIOS_HOST, OGMIOS_PORT
 from .plutus.types.channel import *
 from .plutus.types.action import *
 from .plutus.types.channel import *
+from .election import ElectionContext
 
 LOG = logging.getLogger(__name__)
 
@@ -60,6 +61,14 @@ class SubscriberConfig:
     since_block_hash: str # For kupo --since
     policy_id:   str # For kupo --match TODO remove?
     until_slot: Optional[int] = None # For kupo --until, to prevent open-ended scans during tests
+
+    def from_election(cls, election: ElectionContext) -> Self:
+        return cls(
+            election.deployment.index_from_slot,
+            election.deployment.index_from_block_hash,
+            str(election.script.policy_id), # TODO use the pycardano object?
+            None,
+        )
 
 # Handles a single kupo match response json obj.
 # TODO can the response type be more specific than dict?
