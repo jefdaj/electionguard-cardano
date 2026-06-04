@@ -41,15 +41,15 @@ def dummy_electioncontext(
 ### actual (on chain) election context ###
  
 @per_election_fixture
-def election(init_tx: Transaction, funder_node: FunderNode) -> ElectionContext:
+def election(init_tx: Transaction, funder: FunderNode) -> ElectionContext:
     # init_tx ensures that this exists, and cleans up after it:
-    ctx = funder_node.election
+    ctx = funder.election
     LOG.debug(f'ctx: {ctx}')
     return ctx
 
 @per_election_fixture
 def init_tx(
-        funder_node: FunderNode,
+        funder: FunderNode,
         script: ElectionScript,
         admin_vkh: VerificationKeyHash
     ) -> Transaction:
@@ -58,8 +58,8 @@ def init_tx(
     because it does the cleanup step (BurnTestTokens) if needed.
     """
 
-    init_tx = funder_node.init_election(script=script, admin_vkh=admin_vkh, admin_ada=10) # TODO what's a good amount?
-    funder_node.publisher.wait_for_confirmation(init_tx)
+    init_tx = funder.init_election(script=script, admin_vkh=admin_vkh, admin_ada=10) # TODO what's a good amount?
+    funder.publisher.wait_for_confirmation(init_tx)
 
     # TODO is this needed?
     time.sleep(KUPO_DELAY_SEC)
@@ -72,8 +72,8 @@ def init_tx(
     time.sleep(KUPO_DELAY_SEC)
 
     try:
-        burn_tx = funder_node.burn_test_tokens()
-        funder_node.publisher.wait_for_confirmation(burn_tx)
+        burn_tx = funder.burn_test_tokens()
+        funder.publisher.wait_for_confirmation(burn_tx)
     except Exception as e:
         LOG.error(e)
         raise

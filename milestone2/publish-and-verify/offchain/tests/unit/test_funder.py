@@ -13,13 +13,13 @@ def test_funder_keys(funder_keys: KeyPair):
 def test_pick_oneshot_utxo(oneshot_utxo: UTxO):
     assert isinstance(oneshot_utxo, UTxO)
 
-def test_init_funder_node(funder_node: FunderNode):
-    assert isinstance(funder_node, FunderNode)
-    assert isinstance(funder_node.publisher, ElectionPublisher)
+def test_init_funder(funder: FunderNode):
+    assert isinstance(funder, FunderNode)
+    assert isinstance(funder.publisher, ElectionPublisher)
 
     # TODO is there a good way to test these before init_election?
-    # assert funder_node.election is None
-    # assert funder_node.subscriber is None
+    # assert funder.election is None
+    # assert funder.subscriber is None
 
     # TODO any other init tests?
 

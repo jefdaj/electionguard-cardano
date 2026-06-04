@@ -13,9 +13,9 @@ def funder_keys() -> KeyPair:
     return kp
 
 @per_election_fixture
-def funder_node(funder_keys: KeyPair) -> FunderNode:
+def funder(funder_keys: KeyPair) -> FunderNode:
     node = FunderNode(key_pair=funder_keys)
-    LOG.info(f'funder_node: {node}')
+    LOG.info(f'funder: {node}')
     try:
         yield node
     finally:
@@ -24,11 +24,11 @@ def funder_node(funder_keys: KeyPair) -> FunderNode:
 
 @per_election_fixture
 def init_txb(
-        funder_node: FunderNode,
+        funder: FunderNode,
         script: ElectionScript,
         admin_vkh: VerificationKeyHash,
     ) -> TransactionBuilder:
-    txb = funder_node._build_init_tx(
+    txb = funder._build_init_tx(
         script=script,
         admin_vkh=admin_vkh,
         admin_ada=100

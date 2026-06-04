@@ -17,9 +17,9 @@ def admin_vkh(admin_keys: KeyPair) -> VerificationKeyHash:
     return admin_keys.vkh
 
 @per_election_fixture
-def admin_node(election: ElectionContext, admin_keys: KeyPair) -> AdminNode:
+def admin(election: ElectionContext, admin_keys: KeyPair) -> AdminNode:
     node = AdminNode(election=election, key_pair=admin_keys)
-    LOG.debug(f'admin_node: {node}')
+    LOG.debug(f'admin: {node}')
     try:
         # TODO should this be part of start()?
         time.sleep(KUPO_DELAY_SEC)

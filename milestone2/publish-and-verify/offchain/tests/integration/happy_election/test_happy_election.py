@@ -35,22 +35,22 @@ def assert_admin_tx0_indexed(node: ElectionNode):
 
 def test_admin_tx0(
         admin_tx0: Transaction,
-        funder_node: FunderNode,
-        admin_node: AdminNode,
+        funder: FunderNode,
+        admin: AdminNode,
     ):
     LOG.debug(f'admin_tx0: {admin_tx0}')
     assert isinstance(admin_tx0, Transaction)
 
     # both (all) nodes should agree on the current election state
-    assert_admin_tx0_indexed(funder_node)
-    assert_subscribers_in_sync([funder_node, admin_node])
+    assert_admin_tx0_indexed(funder)
+    assert_subscribers_in_sync([funder, admin])
 
 ### admin_tx1 ###
 
 @per_election_fixture
 def admin_tx1(
         admin_tx0: Transaction,
-        admin_node: AdminNode,
+        admin: AdminNode,
     ) -> Transaction:
     raise NotImplementedError
 
