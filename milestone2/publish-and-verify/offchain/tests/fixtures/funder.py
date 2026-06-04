@@ -1,17 +1,18 @@
 import pytest
 from pycardano import *
 from egc import *
+from test_utils import global_fixture, per_election_fixture
 import logging
 
 LOG = logging.getLogger(__name__)
 
-@pytest.fixture(scope='session')
+@global_fixture
 def funder_keys() -> KeyPair:
     kp = KeyPair(name='dev', verbose=False) # leave default, global keys_dir
     LOG.info(f'funder_keys: {kp}')
     return kp
 
-@pytest.fixture(scope='package')
+@per_election_fixture
 def funder(funder_keys: KeyPair) -> Funder:
     f = Funder(key_pair=funder_keys)
     LOG.info(f'funder: {f}')
@@ -21,7 +22,7 @@ def funder(funder_keys: KeyPair) -> Funder:
         if f.subscriber is not None:
             f.subscriber.stop()
 
-@pytest.fixture(scope='package')
+@per_election_fixture
 def init_txb(
         funder: Funder,
         script: ElectionScript,

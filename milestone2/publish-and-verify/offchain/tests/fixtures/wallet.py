@@ -1,5 +1,6 @@
 import pytest
 from egc import *
+from test_utils import per_election_fixture
 from pathlib import Path
 import os
 import tempfile
@@ -9,7 +10,7 @@ import logging
 LOG = logging.getLogger(__name__)
 
 # TODO document this
-@pytest.fixture(scope="package")
+@per_election_fixture
 def keys_dir():
     keep = os.environ.get("EGC_KEEP_KEYS", "").lower() in ("1", "true", "yes")
     LOG.debug(f'EGC_KEEP_KEYS = {keep}')

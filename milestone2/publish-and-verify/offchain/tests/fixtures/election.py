@@ -2,17 +2,17 @@ import pytest
 from datetime import datetime
 from pycardano import *
 from egc import *
+from test_utils import per_election_fixture
 import logging
 import time
 
 LOG = logging.getLogger(__name__)
 
-# TODO package (election, scenario) scope Election object, which:
-#      1. is a thin wrapper around helper fns from the init_and_burn scenario
-#      2. yields the election, then checks if it finished and burns test tokens if needed
+
+### dummy election context ###
 
 # Mainly for testing serialization
-@pytest.fixture(scope='package')
+@per_election_fixture
 def dummy_deployment(
         ogmios: OgmiosV6ChainContext,
         funder_keys: KeyPair
@@ -28,7 +28,7 @@ def dummy_deployment(
     LOG.debug(f'dummy_deployment: {dd}')
     return dd
 
-@pytest.fixture(scope='package')
+@per_election_fixture
 def dummy_electioncontext(
         script: ElectionScript,
         dummy_deployment: ElectionDeployment,
@@ -36,16 +36,18 @@ def dummy_electioncontext(
     dec = ElectionContext(script=script, deployment=dummy_deployment)
     LOG.debug(f'dummy_electioncontext: {dec}')
     return dec
+
+
+### actual (on chain) election context ###
  
-# TODO are phony tx dependencies like this a good way to enforce temporal ordering?
-@pytest.fixture(scope='package')
+@per_election_fixture
 def election(init_tx: Transaction, funder: Funder) -> ElectionContext:
     # init_tx ensures that this exists, and cleans up after it:
     ctx = funder.election
     LOG.debug(f'ctx: {ctx}')
     return ctx
 
-@pytest.fixture(scope='package')
+@per_election_fixture
 def init_tx(
         funder: Funder,
         script: ElectionScript,

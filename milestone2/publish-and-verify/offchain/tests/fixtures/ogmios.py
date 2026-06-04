@@ -1,12 +1,11 @@
 import pytest
 from egc import *
+from test_utils import global_fixture
 import logging
 
 LOG = logging.getLogger(__name__)
 
-### all tests share one cardano node ###
-
-@pytest.fixture(scope='session')
+@global_fixture
 def ogmios() -> OgmiosV6ChainContext:
     ctx = OGMIOS_CTX
     LOG.debug(f'ogmios: {ctx}')
