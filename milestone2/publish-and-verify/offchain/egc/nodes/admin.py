@@ -37,22 +37,45 @@ class AdminNode(ElectionNode):
             new_records: List[PublicRecord],
             new_phase: Optional[ElectionPhase] = None,
         ) -> TransactionBuilder:
+
         LOG.debug('Admin._build_post_tx')
-        (utxo, st) = self.state() # TODO error handling here?
-        LOG.debug('st: %s' % pformat(st))
-        cont = AdminChannel(state=replace(
-            st,
+
+        (in_utxo, in_datum) = self.state()
+        in_state = in_datum.state
+        LOG.debug('in_state: %s' % pformat(in_state))
+
+        out_datum = AdminChannel(state=replace(
+            in_state,
             new_records = new_records,
-            phase = st.phase if new_phase is None else new_phase,
-            seq = st.seq + 1,
+            phase = in_state.phase if new_phase is None else new_phase,
+            seq = in_state.seq + 1,
         ))
-        LOG.debug('cont: %s' % pformat(cont))
+        LOG.debug('out_datum: %s' % pformat(out_datum))
+
+        # We need the in_value unmutated because PyCardano will use it to
+        # calculate the inputs, so create a separate out_value to top up.
+        in_value = in_utxo.output.amount
+        out_value = Value.from_primitive(in_value.to_primitive())  # deep copy
+
+        out_utxo = TransactionOutput(
+            address=self.election.address,
+            amount=out_value,
+            datum=out_datum,
+        )
+
+        LOG.debug('out_utxo before top-up: %s' % pformat(out_utxo))
+        top_up_to_min_ada(out_utxo)
+        LOG.debug('out_utxo after top-up: %s' % pformat(out_utxo))
+
+        redeemer = PostPublicRecords()
+
         txb = (
             TransactionBuilder(OGMIOS_CTX, mint=assets)
-            .add_input(script.oneshot_utxo)
-            .add_output(stt_output)
+            .add_script_input(in_utxo, script=self.election.script.spend_script, redeemer=redeemer)
+            .add_output(out_utxo)
         )
         txb.required_signers = [self.publisher.key_pair.vkh] # TODO remove?
+
         return txb
 
     # TODO should this go in the base class?
