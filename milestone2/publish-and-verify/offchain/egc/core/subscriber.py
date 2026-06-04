@@ -514,5 +514,4 @@ class ElectionSubscriber:
             return self.states[ADMIN_CHANNEL_ID].state.phase
         except KeyError:
             # no init_election tx published yet
-            # TODO should there be an explicit separate phase for this?
             return None

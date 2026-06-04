@@ -12,17 +12,29 @@ LOG = logging.getLogger(__name__)
 
 @per_election_fixture
 def admin_tx0(init_tx: Transaction) -> Transaction:
-    # admin_tx0 is just the init_tx.
-    # We re-export it here to avoid any confusion.
+    # admin_tx0 is just the init_tx renamed for clarity.
     return init_tx
 
 def test_admin_tx0(admin_tx0: Transaction, admin: Admin):
     LOG.debug(f'admin_tx0: {admin_tx0}')
     assert isinstance(admin_tx0, Transaction)
 
-    # TODO test that the init_tx went through according to the admin subscriber
+    history = admin.subscriber.history
+    states  = admin.subscriber.states
+    utxos   = admin.subscriber.utxos
+    seen    = admin.subscriber._seen_tx_ids
+    last    = admin.subscriber._last_tx_key
+    phase   = admin.subscriber.phase()
 
-    assert admin.subscriber.phase() == ElectionConfigPhase(phase=ConfigAnnouncePhase())
+    for sub_map in [history, states, utxos]:
+        assert ADMIN_CHANNEL_ID in sub_map
+        assert len(sub_map) == 1
+
+    assert states[ADMIN_CHANNEL_ID].state.seq == 0
+    assert len(history[ADMIN_CHANNEL_ID]) == 1
+    assert last is not None
+    assert len(seen) == 1
+    assert phase == ElectionConfigPhase(phase=ConfigAnnouncePhase())
 
 
 ### admin_tx1 ###
