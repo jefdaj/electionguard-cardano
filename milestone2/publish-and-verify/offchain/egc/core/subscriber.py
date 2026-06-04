@@ -34,10 +34,14 @@ from pycardano import *
 KUPO_HOST        = environ.get('KUPO_HOST', '127.0.0.1')
 KUPO_PORT        = int(environ.get('KUPO_PORT', '1442'))
 KUPO_MATCHES_URL = f'http://{KUPO_HOST}:{KUPO_PORT}/v1/matches'
-KUPO_POLL_SEC    = 0.5 # TODO what's reasonable during live operation?
 
-# Approximate upper limit of how long it might take to propagate transactions to subscribers.
-# TODO is there a better way to estimate this when using the real network?
+# How often to poll the local Ogmios instance for new UTxOs.
+# TODO what's reasonable?
+KUPO_POLL_SEC = 0.5
+
+# Approximate upper limit of how long it might take to propagate transactions
+# to subscribers.
+# TODO how to estimate this when using the testnet?
 KUPO_DELAY_SEC = 3
 
 # TODO pull this from ogmios module, and rename
