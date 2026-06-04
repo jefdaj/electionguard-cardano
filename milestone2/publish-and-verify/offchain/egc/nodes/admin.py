@@ -28,10 +28,10 @@ class Admin:
 
         self.publisher = ElectionPublisher(
             role="admin",
-            index=1,
+            role_index=1,
             key_pair=self.key_pair,
         )
 
         sub_cfg = SubscriberConfig.from_election(self.election)
-        self.subscriber = ElectionSubscriber(sub_cfg)
+        self.subscriber = ElectionSubscriber(config=sub_cfg)
         self.subscriber.start()

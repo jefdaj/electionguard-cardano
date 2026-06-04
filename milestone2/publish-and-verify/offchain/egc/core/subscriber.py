@@ -18,20 +18,6 @@ from dataclasses import dataclass
 from os import environ
 from pprint import pformat
 
-# long list to avoid logging conflict
-# from pycardano import (
-#     UTxO,
-#     TransactionInput,
-#     TransactionOutput,
-#     TransactionId,
-#     Value,
-#     Asset,
-#     MultiAsset,
-#     ScriptHash,
-#     AssetName,
-#     Address,
-# )
-
 from typing import Any, Callable, Dict, List, Tuple, Optional, Self
 
 from .ogmios import OGMIOS_HOST, OGMIOS_PORT
@@ -41,7 +27,6 @@ from .plutus.types.channel import *
 from .election import ElectionContext
 
 LOG = logging.getLogger(__name__)
-
 
 from pycardano import *
 
@@ -62,6 +47,7 @@ class SubscriberConfig:
     policy_id:   str # For kupo --match TODO remove?
     until_slot: Optional[int] = None # For kupo --until, to prevent open-ended scans during tests
 
+    @classmethod
     def from_election(cls, election: ElectionContext) -> Self:
         return cls(
             election.deployment.index_from_slot,
@@ -134,7 +120,7 @@ def handle_match(utxo: Dict[str, Any], session: requests.Session) -> (ChannelId,
         return (channel_id, state)
 
     except Exception as e:
-        LOG.error('handle_match: failed to fetch datum {}: {}', datum_hash, e)
+        LOG.error(f'handle_match: failed to fetch datum {datum_hash}: {e}')
         raise
 
 def kupo_to_utxo(kupo_dict: dict) -> UTxO:
@@ -330,7 +316,7 @@ class ElectionSubscriber:
             try:
                 proc.wait(timeout=5)
             except subprocess.TimeoutExpired:
-                LOG.warn('Kupo did not exit in time, killing...')
+                LOG.warning('Kupo did not exit in time, killing...')
                 proc.kill()
                 proc.wait() # TODO remove?
         self._kupo_proc = None
@@ -417,7 +403,7 @@ class ElectionSubscriber:
                         self.utxos[channel_id] = kupo_to_utxo(utxo_dict)
 
                     except Exception as e:
-                        LOG.error('Error in self.on_match: {}', e)
+                        LOG.error(f'Error in self.on_match: {e}')
 
                 if not any_new_utxo:
                     LOG.info('No new UTXOs')
@@ -425,10 +411,10 @@ class ElectionSubscriber:
                     # TODO is this the only check like this? or do we need one per channel?
 
             except requests.RequestException as e:
-                LOG.warn('Kupo polling error: {}', e)
+                LOG.warning(f'Kupo polling error: {e}')
                 time.sleep(5)
             except Exception as e:
-                LOG.error('Unexpected error in watcher: {} {}', e, type(e))
+                LOG.error(f'Unexpected error in watcher: {e} {type(e)}')
                 time.sleep(5)
 
             time.sleep(KUPO_POLL_SEC)
@@ -456,7 +442,7 @@ class ElectionSubscriber:
                 self._start_kupo()
                 self._watch_kupo()
             except Exception as e:
-                LOG.error('Error in watcher: {}', e)
+                LOG.error(f'Error in watcher: {e}')
 
         def handle_sigint(sig, frame):
             LOG.info(f'Signal {sig} recieved, shutting down...')
