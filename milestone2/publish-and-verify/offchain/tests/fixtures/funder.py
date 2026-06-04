@@ -15,7 +15,11 @@ def funder_keys() -> KeyPair:
 def funder(funder_keys: KeyPair) -> Funder:
     f = Funder(key_pair=funder_keys)
     LOG.info(f'funder: {f}')
-    return f
+    yield f
+    try:
+        f.subscriber.stop()
+    except:
+        pass
 
 @pytest.fixture(scope='package')
 def init_txb(

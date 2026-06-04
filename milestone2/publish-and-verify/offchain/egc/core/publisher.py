@@ -143,7 +143,7 @@ class ElectionPublisher:
 
         LOG.debug(f'tx_signed about to be submitted:\n%s:\n' % pformat(tx_signed))
         OGMIOS_CTX.submit_tx(tx_signed)
-        LOG.info(f'submitted tx with id={tx_signed.id}')
+        LOG.info(f'Submitted tx with id={tx_signed.id}')
 
         return tx_signed
 
@@ -158,14 +158,14 @@ class ElectionPublisher:
             waited_seconds += interval_seconds
             utxo = OGMIOS_CTX.utxo_by_tx_id(tx_id, 0)
             if utxo is None:
+                msg = f'tx {tx_id} not confirmed after {waited_seconds} seconds.'
                 remaining_seconds = max_seconds - waited_seconds
                 if remaining_seconds <= 0:
-                    msg = f'tx {tx_id} not confirmed after {waited_seconds} seconds.'
                     LOG.error(msg)
                     raise Exception(msg)
                 else:
-                    msg = f'tx {tx_id} not confirmed after {waited_seconds} seconds. Will wait {remaining_seconds} more.'
-                    LOG.info(msg)
+                    msg += f' Will wait {remaining_seconds} more.'
+                    LOG.debug(msg)
             else:
                 LOG.info(f'tx {tx_id} confirmed after {waited_seconds} seconds')
                 return

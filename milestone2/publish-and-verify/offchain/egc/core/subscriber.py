@@ -280,12 +280,12 @@ class ElectionSubscriber:
         )
 
         # Log Kupo output in a helper thread
-        # TODO does this really need a separate thread?
-        threading.Thread(
+        self._log_thread = threading.Thread(
             target=self._log_kupo_output,
             args=(),
             daemon=True,
-        ).start()
+        )
+        self._log_thread.start()
 
         time.sleep(0.1) # prevents polling error during startup
 
@@ -305,9 +305,7 @@ class ElectionSubscriber:
         LOG.info('Kupo subprocess output thread terminating')
 
     def stop_kupo(self) -> None:
-
-        # TODO something fishy here... why is info rather than debug required for pytest to exit properly??
-        LOG.info('ElectionSubscriber.stop_kupo')
+        LOG.debug('ElectionSubscriber.stop_kupo')
 
         proc = self._kupo_proc
         if proc is None:
@@ -321,6 +319,15 @@ class ElectionSubscriber:
                 LOG.warning('Kupo did not exit in time, killing...')
                 proc.kill()
                 proc.wait() # TODO remove?
+
+        # Pipe gets EOF when proc exits; reader thread will return.
+        # Explicitly join it so it can't be mid-log at interpreter shutdown.
+        if self._log_thread is not None:
+            self._log_thread.join(timeout=2)
+            if self._log_thread.is_alive():
+                LOG.warning('Kupo log reader did not exit')
+            self._log_thread = None
+
         self._kupo_proc = None
 
     def check_if_admin_channel_closed(self):
@@ -339,8 +346,7 @@ class ElectionSubscriber:
                 # TODO update to handle subchannels
                 # TODO later, update to handle reference script utxo
                 if 'spent_at' in utxo and utxo['spent_at'] is not None:
-                    # something fishy goes on here related to printing or not printing...
-                    LOG.info(f'Confirmed: STT UTXO spent without creating a new one.')
+                    LOG.debug(f'Confirmed: STT UTXO spent without creating a new one.')
                     self.on_close(utxo, self.session)
                     self.stop()
                     return

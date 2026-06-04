@@ -19,4 +19,8 @@ def admin_vkh(admin_keys: KeyPair) -> VerificationKeyHash:
 def admin(election: ElectionContext, admin_keys: KeyPair) -> Admin:
     a = Admin(election=election, key_pair=admin_keys)
     LOG.debug(f'admin: {a}')
-    return a
+    yield a
+    try:
+        a.subscriber.stop()
+    except:
+        pass
