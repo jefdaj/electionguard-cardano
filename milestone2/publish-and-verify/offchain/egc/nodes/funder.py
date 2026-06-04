@@ -1,28 +1,19 @@
 # TODO rename funder -> treasury? maybe later when treasuries involved
 
-# from egc import Election, ElectionPublisher, ElectionSubscriber
-
-# from egc import publisher as ep
-# from egc.plutus import script as eps
-# from egc.plutus import types as ept
-# from egc.ogmios import OGMIOS_CTX, query_network_tip_sync
-
-from pycardano import *
-import logging
-
-LOG = logging.getLogger(__name__)
-
 from pathlib import Path
 from typing import List
 from pprint import pformat
 from datetime import datetime
 
-# import pycardano as pc
-# from pycardano import UTxO, ScriptHash, MultiAsset, TransactionBuilder, Asset, AssetName, Redeemer, Value
-
-# from egc import *
+from pycardano import *
 from ..core import *
 from .admin import *
+
+# careful, admin and pycardano can both shadow this
+import logging
+
+LOG = logging.getLogger(__name__)
+
 
 class Funder:
     """Wallet to create + fund the Admin, and to recover ADA after the election.
