@@ -23,7 +23,7 @@ import logging
 logging.basicConfig(
   filename='burn.log',
   encoding='utf-8',
-  level=logging.DEBUG,
+  level=logging.INFO,
   format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
 
@@ -118,6 +118,7 @@ if confirm(prompt=MSG):
     try:
         BURN_TX = PUB.sign_and_submit(BURN_TXB)
         PUB.wait_for_confirmation(BURN_TX)
+        LOG.info('done')
     except Exception as e:
         LOG.error(e)
         raise
