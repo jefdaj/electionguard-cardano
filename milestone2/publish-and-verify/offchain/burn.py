@@ -95,7 +95,7 @@ BURN_TXB = (
 
 for utxo in SUB.utxos.values():
     LOG.debug(f'utxo: {utxo}')
-    spend_redeemer = Redeemer(data=BurnTestTokens()) # TODO need one per utxo, right?
+    spend_redeemer = Redeemer(data=BurnTestTokens())
     BURN_TXB = BURN_TXB.add_script_input(utxo, script=SCRIPT.spend_script, redeemer=spend_redeemer)
 
 LOG.debug('BURN_TXB:\n%s\n' % pformat(BURN_TXB))

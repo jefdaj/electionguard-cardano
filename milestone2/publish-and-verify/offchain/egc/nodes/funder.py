@@ -53,13 +53,13 @@ class Funder:
             key_pair=self.key_pair,
         )
 
-    def build_init_tx(self, script: ElectionScript, admin_vkh: VerificationKeyHash, admin_ada: int) -> TransactionBuilder:
+    def _build_init_tx(self, script: ElectionScript, admin_vkh: VerificationKeyHash, admin_ada: int) -> TransactionBuilder:
         """Build an InitElection transaction.
         This is an unusual one because it doesn't have any options, so there's
         no point pulling them from static_records.py.
         """
 
-        LOG.debug('Funder.build_init_tx')
+        LOG.debug('Funder._build_init_tx')
 
         redeemer = Redeemer(data=InitElection())
         LOG.debug('redeemer: %s' % pformat(redeemer))
@@ -157,7 +157,7 @@ class Funder:
 
         LOG.debug('Funder.init_election')
 
-        init_txb = self.build_init_tx(script=script, admin_vkh=admin_vkh, admin_ada=admin_ada)
+        init_txb = self._build_init_tx(script=script, admin_vkh=admin_vkh, admin_ada=admin_ada)
         (init_tx, election_ctx) = self.deploy_election(script, init_txb)
 
         # TODO come up with a better default path here
@@ -165,6 +165,7 @@ class Funder:
         election_ctx.to_json(f'election-{timestamp}.json')
 
         self.election = election_ctx
+        self.init_subscriber()
 
         # All the info we really need should be in self.election now;
         # the main reason to return init_tx is so the caller can wait for confirmation.
@@ -184,3 +185,52 @@ class Funder:
         LOG.debug(f'sub_cfg: {sub_cfg}')
         self.subscriber = ElectionSubscriber(sub_cfg)
         self.subscriber.start()
+
+    def _build_burn_tx(self) -> TransactionBuilder:
+
+        mint_redeemer = Redeemer(data=BurnTestTokens())
+        LOG.debug(f'mint_redeemer: {mint_redeemer}')
+
+        channel_ids = list(self.subscriber.states.keys())
+        LOG.info(f'channel_ids: {channel_ids}')
+
+        burn_assets = mint_channel_stt_assets(
+            self.election.script.policy_id,
+            -1,
+            channel_ids,
+        )
+        LOG.info(f'burn_assets: {burn_assets}')
+
+        burn_txb = (
+            TransactionBuilder(OGMIOS_CTX, mint=burn_assets)
+            .add_minting_script(script=self.election.script.mint_script, redeemer=mint_redeemer)
+        )
+
+        for utxo in self.subscriber.utxos.values():
+            LOG.debug(f'utxo: {utxo}')
+            spend_redeemer = Redeemer(data=BurnTestTokens())
+            burn_txb = burn_txb.add_script_input(
+                utxo,
+                script=self.election.script.spend_script,
+                redeemer=spend_redeemer
+            )
+
+        LOG.debug('burn_txb:\n%s\n' % pformat(burn_txb))
+
+        return burn_txb
+
+    def burn_test_tokens(self):
+        """Clean up test tokens.
+
+        WARNING: The on-chain code lets anyone do this, not just the funder.
+        BurnTestTokens should be removed before prodcution use.
+        """
+
+        if self.election is None:
+            raise Exception('init_election must be called before burn_test_tokens')
+        if self.subscriber is None:
+            raise Exception('init_subscriber must be called before burn_test_tokens')
+
+        burn_txb = self._build_burn_tx()
+        burn_tx  = self.publisher.sign_and_submit(burn_txb)
+        return burn_tx
