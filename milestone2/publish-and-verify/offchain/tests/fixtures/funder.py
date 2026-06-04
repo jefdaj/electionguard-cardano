@@ -18,7 +18,8 @@ def funder(funder_keys: KeyPair) -> Funder:
     try:
         yield f
     finally:
-        f.subscriber.stop()
+        if f.subscriber is not None:
+            f.subscriber.stop()
 
 @pytest.fixture(scope='package')
 def init_txb(
@@ -33,8 +34,3 @@ def init_txb(
     )
     LOG.info(f'init_txb: {txb}')
     return txb
-
-# TODO try deploying manually before making a fixture
-# TODO should the fixture only be one thing? maybe wait for confirmation and then throw out the tx obj
-# @pytest.fixture(scope='package')
-# def deploy

@@ -9,7 +9,6 @@ pytest_plugins = [
     "fixtures.ogmios",
     "fixtures.script",
     "fixtures.wallet",
-    "fixtures.happy_election",
 ]
 
 def pytest_configure(config):

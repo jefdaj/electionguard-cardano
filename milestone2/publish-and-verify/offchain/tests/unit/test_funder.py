@@ -19,6 +19,3 @@ def test_init_funder(funder: Funder):
 
 def test_init_txb(init_txb: TransactionBuilder):
     assert isinstance(init_txb, TransactionBuilder)
-
-# def test_init_tx(funder: Funder, init_txb: TransactionBuilder):
-#     raise NotImplementedError
