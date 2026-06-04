@@ -1,7 +1,7 @@
 import pytest
 from pycardano import *
 from egc import *
-from test_utils import per_election_fixture
+from test_utils import per_election_fixture, assert_subscribers_in_sync
 import logging
 import time
 
@@ -42,9 +42,8 @@ def test_admin_tx0(
     assert isinstance(admin_tx0, Transaction)
 
     # both (all) nodes should agree on the current election state
-    # TODO generalize this
     assert_admin_tx0_indexed(funder_node)
-    assert_admin_tx0_indexed(admin_node)
+    assert_subscribers_in_sync([funder_node, admin_node])
 
 ### admin_tx1 ###
 
