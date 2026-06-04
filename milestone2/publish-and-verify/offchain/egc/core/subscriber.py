@@ -34,7 +34,11 @@ from pycardano import *
 KUPO_HOST        = environ.get('KUPO_HOST', '127.0.0.1')
 KUPO_PORT        = int(environ.get('KUPO_PORT', '1442'))
 KUPO_MATCHES_URL = f'http://{KUPO_HOST}:{KUPO_PORT}/v1/matches'
-KUPO_POLL_SEC    = 3 # TODO what's reasonable during live operation?
+KUPO_POLL_SEC    = 0.5 # TODO what's reasonable during live operation?
+
+# Approximate upper limit of how long it might take to propagate transactions to subscribers.
+# TODO is there a better way to estimate this when using the real network?
+KUPO_DELAY_SEC = 3
 
 # TODO pull this from ogmios module, and rename
 NODE_SOCKET = environ.get('CARDANO_NODE_SOCKET_PATH', '../../cardano-node-ogmios/data/node-ipc/node.socket')
@@ -500,3 +504,11 @@ class ElectionSubscriber:
     def is_done(self):
         return self._kupo_stop.is_set() \
            and self._kupo_thread is None
+
+    def phase(self) -> Optional[ElectionPhase]:
+        try:
+            return self.states[ADMIN_CHANNEL_ID].state.phase
+        except KeyError:
+            # no init_election tx published yet
+            # TODO should there be an explicit separate phase for this?
+            return None

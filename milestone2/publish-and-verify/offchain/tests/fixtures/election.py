@@ -59,12 +59,15 @@ def init_tx(
     init_tx = funder.init_election(script=script, admin_vkh=admin_vkh, admin_ada=10) # TODO what's a good amount?
     funder.publisher.wait_for_confirmation(init_tx)
 
+    # TODO is this needed?
+    time.sleep(KUPO_DELAY_SEC)
+
     # All other tests happen here
     yield init_tx
 
     # TODO is this needed? Meant to catch the edge case where everything
     # finishes immediately before the subscriber picks up any transactions.
-    time.sleep(KUPO_POLL_SEC)
+    time.sleep(KUPO_DELAY_SEC)
 
     try:
         burn_tx = funder.burn_test_tokens()

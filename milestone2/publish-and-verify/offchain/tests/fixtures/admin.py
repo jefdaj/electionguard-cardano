@@ -2,6 +2,7 @@ import pytest
 from pycardano import *
 from egc import *
 import logging
+import time
 
 LOG = logging.getLogger(__name__)
 
@@ -20,6 +21,8 @@ def admin(election: ElectionContext, admin_keys: KeyPair) -> Admin:
     a = Admin(election=election, key_pair=admin_keys)
     LOG.debug(f'admin: {a}')
     try:
+        a.subscriber.start()
+        time.sleep(KUPO_DELAY_SEC)
         yield a
     finally:
         a.subscriber.stop()
