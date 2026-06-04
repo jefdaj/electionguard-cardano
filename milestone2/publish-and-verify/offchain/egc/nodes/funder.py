@@ -133,7 +133,7 @@ class Funder:
         )
         LOG.debug(f'sub_cfg: {sub_cfg}')
         self.subscriber = ElectionSubscriber(sub_cfg)
-        # self.subscriber.start()
+        self.subscriber.start()
 
     def deploy_election(
             self,

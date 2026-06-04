@@ -1,4 +1,5 @@
 import pytest
+import logging
 
 pytest_plugins = [
     "fixtures.admin",
@@ -10,3 +11,7 @@ pytest_plugins = [
     "fixtures.wallet",
     "fixtures.happy_election",
 ]
+
+def pytest_configure(config):
+    logging.getLogger('websockets').setLevel(logging.WARNING)
+    logging.getLogger('urllib3').setLevel(logging.WARNING)

@@ -24,14 +24,10 @@ def happy_admin_tx0(
 
     # All other tests happen here
     yield admin_tx0
-    time.sleep(3) # TODO is this needed?
 
-    # TODO only burn if the election hasn't ended on its own yet
-    funder.subscriber.start()
-    time.sleep(3) # TODO is this needed?
-    funder.subscriber.stop()
-    time.sleep(3) # TODO is this needed?
-    LOG.info(f'final utxos: {pformat(funder.subscriber.utxos)}')
+    # TODO is this needed? Meant to catch the edge case where everything
+    # finishes immediately before the subscriber picks up any transactions.
+    time.sleep(KUPO_POLL_SEC)
 
     try:
         burn_tx = funder.burn_test_tokens()

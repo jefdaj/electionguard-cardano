@@ -48,7 +48,7 @@ from pycardano import *
 KUPO_HOST        = environ.get('KUPO_HOST', '127.0.0.1')
 KUPO_PORT        = int(environ.get('KUPO_PORT', '1442'))
 KUPO_MATCHES_URL = f'http://{KUPO_HOST}:{KUPO_PORT}/v1/matches'
-KUPO_POLL_SEC    = 0.5 # TODO what's reasonable during live operation?
+KUPO_POLL_SEC    = 3 # TODO what's reasonable during live operation?
 
 # TODO pull this from ogmios module, and rename
 NODE_SOCKET = environ.get('CARDANO_NODE_SOCKET_PATH', '../../cardano-node-ogmios/data/node-ipc/node.socket')
@@ -331,6 +331,7 @@ class ElectionSubscriber:
         if self._last_tx_key is None:
             # no tx has been published yet
             return
+        (tx_id, output_ix) = self._last_tx_key
         resp = self.session.get(KUPO_MATCHES_URL + f'/{output_ix}@{tx_id}') # TODO params? timeout?
         if resp.status_code == 200:
             utxos = resp.json() # TODO store a map of channel id -> latest utxo in the subscriber
