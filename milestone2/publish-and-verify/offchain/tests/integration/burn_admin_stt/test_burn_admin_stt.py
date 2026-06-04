@@ -5,8 +5,8 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-def test_init_tx(init_tx: Transaction):
-    # This verifies that the init_tx fixture burns
-    # everything properly after a trivial test.
+def test_burn_admin_stt(init_tx: Transaction):
+    # When cleanup succeeds, it verifies that the init_tx fixture burns
+    # the admin STT properly after a trivial test.
     LOG.debug(f'init_tx: {init_tx}')
     assert isinstance(init_tx, Transaction)
