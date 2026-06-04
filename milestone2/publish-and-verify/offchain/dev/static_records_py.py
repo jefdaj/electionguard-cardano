@@ -2,19 +2,26 @@
 
 # Usage:
 # nix develop .#offchain
-# ./static_records_py.py > static_election_records_py_out.py
+# ./dev/static_records_py.py > static_election_records_py_out.py
 
 # TODO more standard logging?
 
 from pycardano import *
-from egc import *
+import sys
+import os
 from multiformats_cid import cid, make_cid
 from pathlib import Path
 import json
 import re
 from pprint import pprint
 
-IN_DIR = 'static_records'
+
+# Add the parent directory to sys.path so we can import egc
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from egc import *
+
+IN_DIR = os.path.join(os.path.dirname(__file__), 'static_records')
 IN_LOG = Path(IN_DIR) / 'egsync.log'
 
 print('''# Generated with static_records_py.py. Consider editing and re-running that to make any changes.
@@ -27,14 +34,14 @@ from egc import *
 #####################
 
 PHASES = {
-    0: types.ElectionConfigPhase(phase=types.ConfigAnnouncePhase()),
-    1: types.ElectionConfigPhase(phase=types.ConfigOnboardingPhase()),
-    2: types.ElectionConfigPhase(phase=types.ConfigCeremonyPhase()),
-    3: types.ElectionVotingPhase(),
-    4: types.ElectionResultsPhase(phase=types.ResultsTallyPhase()),
-    5: types.ElectionResultsPhase(phase=types.ResultsDecryptPhase()),
-    6: types.ElectionVerifyPhase(),
-    7: types.ElectionFinalizePhase(),
+    0: ElectionConfigPhase(phase=ConfigAnnouncePhase()),
+    1: ElectionConfigPhase(phase=ConfigOnboardingPhase()),
+    2: ElectionConfigPhase(phase=ConfigCeremonyPhase()),
+    3: ElectionVotingPhase(),
+    4: ElectionResultsPhase(phase=ResultsTallyPhase()),
+    5: ElectionResultsPhase(phase=ResultsDecryptPhase()),
+    6: ElectionVerifyPhase(),
+    7: ElectionFinalizePhase(),
 }
 
 print('STATIC_PHASES = \\')
@@ -54,39 +61,39 @@ with open(IN_LOG, 'r') as f:
     JSONS = [json.loads(j) for j in json_strs]
 
 def manifest(n, j, s):
-    m = types.Manifest()
-    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    m = Manifest()
+    r = PublicRecord(ipfs_cid=s, metadata=m)
     return (1, r)
 
 def ceremony_details(n, j, s):
-    m = types.CeremonyDetails()
-    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    m = CeremonyDetails()
+    r = PublicRecord(ipfs_cid=s, metadata=m)
     return (1, r)
 
 def guardian_pubkey(n, j, s):
     i = int(j["guardian_id"].split('_')[-1])
-    m = types.GuardianPubkey(i)
-    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    m = GuardianPubkey(i)
+    r = PublicRecord(ipfs_cid=s, metadata=m)
     return (1, r)
 
 def guardian_backup(n, j, s):
     i = int(j["guardian_id"].split('_')[-1])
     b = int(j["backup_order"])
-    m = types.GuardianBackup(guardian_number=i, backup_order=b)
-    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    m = GuardianBackup(guardian_number=i, backup_order=b)
+    r = PublicRecord(ipfs_cid=s, metadata=m)
     return (2, r)
 
 def guardian_verification(n, j, s):
     i = int(j["guardian_id"].split('_')[-1])
     b = int(j["backup_order"])
-    m = types.GuardianVerification(guardian_number=i, backup_order=b)
-    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    m = GuardianVerification(guardian_number=i, backup_order=b)
+    r = PublicRecord(ipfs_cid=s, metadata=m)
     return (3, r)
 
 def summary(n, j, s):
-    i = j["verifier_id"].replace('_', '') # TODO leave underscore?
-    m = types.Summary(verifier_id=i)
-    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    i = j["verifier_id"].replace('_', '')
+    m = Summary(verifier_id=i)
+    r = PublicRecord(ipfs_cid=s, metadata=m)
     seqs = {
         'admin': 7,
         'guardian': 5,
@@ -99,41 +106,41 @@ def summary(n, j, s):
 
 def tally_share(n, j, s):
     i = int(j["guardian_id"].split('_')[-1])
-    m = types.TallyShare(guardian_number=i)
-    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    m = TallyShare(guardian_number=i)
+    r = PublicRecord(ipfs_cid=s, metadata=m)
     return (4, r)
 
 def spoiled_share(n, j, s):
     i = int(j["guardian_id"].split('_')[-1])
     i2 = j["spoiled_id"]
-    m = types.SpoiledShare(guardian_number=i, spoiled_id=i2)
-    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    m = SpoiledShare(guardian_number=i, spoiled_id=i2)
+    r = PublicRecord(ipfs_cid=s, metadata=m)
     return (4, r)
 
 def joint_key(n, j, s):
-    m = types.JointKey()
-    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    m = JointKey()
+    r = PublicRecord(ipfs_cid=s, metadata=m)
     return (3, r)
 
 def constants(n, j, s):
-    m = types.Constants()
-    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    m = Constants()
+    r = PublicRecord(ipfs_cid=s, metadata=m)
     return (3, r)
 
 def ciphertext_tally(n, j, s):
-    m = types.CiphertextTally()
-    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    m = CiphertextTally()
+    r = PublicRecord(ipfs_cid=s, metadata=m)
     return (5, r)
 
 def plaintext_tally(n, j, s):
-    m = types.PlaintextTally()
-    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    m = PlaintextTally()
+    r = PublicRecord(ipfs_cid=s, metadata=m)
     return (6, r)
 
 def device(n, j, s):
     i = int(j["device_number"])
-    m = types.Device(device_number=i)
-    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    m = Device(device_number=i)
+    r = PublicRecord(ipfs_cid=s, metadata=m)
     return (1, r)
 
 def ballot_name(prefix, j, key='ballot_id'):
@@ -143,26 +150,26 @@ def ballot_name(prefix, j, key='ballot_id'):
 
 def ballot_submitted(n, j, s):
     i = j["ballot_id"]
-    m = types.BallotSubmitted(ballot_id=i)
-    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    m = BallotSubmitted(ballot_id=i)
+    r = PublicRecord(ipfs_cid=s, metadata=m)
     return (2, r)
 
 def spoiled_result(n, j, s):
     i = j["ballot_id"]
-    m = types.SpoiledResult(ballot_id=i)
-    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    m = SpoiledResult(ballot_id=i)
+    r = PublicRecord(ipfs_cid=s, metadata=m)
     return (6, r)
 
 def ballot_spoiled(n, j, s):
     i = j["ballot_id"]
-    m = types.BallotSpoiled(ballot_id=i)
-    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    m = BallotSpoiled(ballot_id=i)
+    r = PublicRecord(ipfs_cid=s, metadata=m)
     return (3, r)
 
 def cast_notice(n, j, s):
     i = j["ballot_id"]
-    m = types.CastNotice(ballot_id=i)
-    r = types.PublicRecord(ipfs_cid=s, metadata=m)
+    m = CastNotice(ballot_id=i)
+    r = PublicRecord(ipfs_cid=s, metadata=m)
     return (3, r)
 
 render_fns = [
@@ -187,7 +194,7 @@ render_fns = [
 ]
 
 SUBCHANNELS = [
-  types.ChannelIdHelper().from_string(i)
+  ChannelIdHelper().from_string(i)
   for i in ['guardian1', 'guardian2', 'guardian3', 'device1', 'verifier1']
 ]
 
@@ -195,11 +202,11 @@ SUBCHANNELS = [
 
 # role: block: (ElectionAction, List[PublicRecord])
 TXS = {
-        'admin': {0: (types.InitElection(), []),
-                  2: (types.AddSubChannels(channels=SUBCHANNELS)),
-                  4: (types.AdvancePhase(), []), # TODO handle other advances!
-                  8: (types.RmSubChannels(channels=SUBCHANNELS)),
-                  9: (types.EndElection(), [])
+        'admin': {0: (InitElection()                      , []),
+                  2: (AddSubChannels(channels=SUBCHANNELS), []),
+                  4: (AdvancePhase()                      , []), # TODO handle other advances!
+                  8: (RmSubChannels(channels=SUBCHANNELS) , []),
+                  9: (EndElection()                       , [])
                   }
 }
 
@@ -213,17 +220,26 @@ for fn in render_fns:
         fn_name = fn.__name__
         if j["record_type"] == fn.__name__:
             # print(json.dumps(j, indent=2))
-            (seq, records) = fn(fn_name, j, cid_str)
-            item = (types.PostPublicRecords(), records)
+            (seq, record) = fn(fn_name, j, cid_str)
+            # item = (PostPublicRecords(), records)
             if not channel in TXS:
                 TXS[channel] = {}
             # TODO figure out the proper offset here while writing publisher
             # TODO might need an admin offset partway through too?
             # if channel != 'admin':
             #     seq += 4 # align all to admin seq
-            if not seq in TXS[channel]:
-                TXS[channel][seq] = []
-            TXS[channel][seq].append(item)
+
+            if seq in TXS[channel]:
+                (act, recs) = TXS[channel][seq]
+                recs.append(record)
+            else:
+                act = PostPublicRecords()
+                recs = [record]
+            TXS[channel][seq] = (act, recs)
+            # if not seq in TXS[channel]:
+            #     TXS[channel][seq] = []
+            # TXS[channel][seq].append(item)
+
         # print(j["record_type"])
 
 print('STATIC_TRANSACTIONS = \\')
