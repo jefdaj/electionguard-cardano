@@ -39,6 +39,11 @@ class FunderNode(ElectionNode):
             election=None,
         )
 
+        # Funder is the only node that needs to set its own collateral, I think...
+        # TODO where should this live? Is it part of the Publisher? Node?
+        self.collateral_utxo = ensure_collateral_utxo(self.publisher.key_pair)
+
+
     def _build_init_tx(self, script: ElectionScript, admin_vkh: VerificationKeyHash, admin_ada: int) -> TransactionBuilder:
         """Build an InitElection transaction.
         This is an unusual one because it doesn't have any options, so there's
@@ -85,6 +90,9 @@ class FunderNode(ElectionNode):
         top_up_to_min_ada(stt_output)
         LOG.debug('current_value after top-up: %s' % pformat(current_value))
         LOG.debug('stt_output after top-up: %s' % pformat(stt_output))
+
+        # TODO Add non-contract collateral so the admin can do script operations.
+        # TODO actually, not needed during init right? but for close and maybe to fund other channels
 
         init_txb = (
             TransactionBuilder(OGMIOS_CTX, mint=assets)
