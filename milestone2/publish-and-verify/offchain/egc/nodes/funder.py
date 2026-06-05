@@ -39,9 +39,10 @@ class FunderNode(ElectionNode):
             election=None,
         )
 
-        # Funder is the only node that needs to set its own collateral, I think...
+        # Funder is the only node that needs to set its own collateral, I think?
+        # TODO but they should all test for it and throw a visible error if there isn't one
         # TODO where should this live? Is it part of the Publisher? Node?
-        self.collateral_utxo = ensure_collateral_utxo(self.publisher.key_pair)
+        self.collateral_utxo = ensure_own_collateral_utxo(self.publisher.key_pair)
 
 
     def _build_init_tx(self, script: ElectionScript, admin_vkh: VerificationKeyHash, admin_ada: int) -> TransactionBuilder:

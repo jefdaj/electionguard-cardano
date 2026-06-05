@@ -18,7 +18,7 @@ LOG = logging.getLogger(__name__)
 # TODO where should it live?
 LOVELACE_PER_ADA = 1_000_000
 
-COLLATERAL_LOVELACE = 5_000_000
+COLLATERAL_ADA = 5
 
 # TODO load these from somewhere?
 
@@ -122,35 +122,9 @@ def set_out_value_and_fee(
 
     txb.fee = fee
 
-def ensure_collateral_utxo(
-    # ctx,
-    # sk: SigningKey,
-    # addr: Address,
-    key_pair: KeyPair,
-    # amount: int = COLLATERAL_LOVELACE,
-    # timeout: float = OGMIOS_TIMEOUT_SEC,
-    # poll_interval: float = OGMIOS_POLL_SEC,
-) -> UTxO:
-    """Return a pure-ADA UTxO at `addr` holding exactly `COLLATERAL_LOVELACE` lovelace,
-    creating one by self-payment if none exists.
-
-    Suitable for use as a Plutus script collateral input: the returned UTxO
-    is guaranteed to be vkey-locked (at `addr`), pure ADA (no native assets),
-    and of exact size (so it isn't accidentally a large general UTxO).
-
-    Args:
-        key_pair.sk: The PaymentSigningKey controlling `addr`. Used only if a
-                     new UTxO must be created.
-        key_pair.addr: The Address to search at and, if needed, send to.
-
-    Returns:
-        A UTxO at `addr` with `COLLATERAL_LOVELACE` lovelace and no multi-asset.
-
-    Raises:
-        TimeoutError: If a newly submitted self-payment doesn't appear
-            within `OGMIOS_TIMEOUT_SEC` seconds.
-    """
-    existing = _find_exact_ada_utxo(key_pair.addr, COLLATERAL_LOVELACE)
+def ensure_own_collateral_utxo(key_pair: KeyPair) -> UTxO:
+    amt = COLLATERAL_ADA * LOVELACE_PER_ADA
+    existing = _find_exact_ada_utxo(key_pair.addr, amt)
     if existing is not None:
         LOG.debug(
             'Found existing collateral UTxO: %s#%d (%d lovelace)',
@@ -158,26 +132,33 @@ def ensure_collateral_utxo(
             existing.output.amount.coin,
         )
         return existing
+    else:
+        LOG.info(f'No {amt}-lovelace pure-ADA UTxO at {key_pair.addr}; creating one')
+        # send to self, returning change to self, and return collateral utxo after it confirms
+        return send_collateral(src_keys=key_pair, dst_addr=key_pair.addr)
 
-    LOG.info(
-        'No %d-lovelace pure-ADA UTxO at %s; creating one',
-        COLLATERAL_LOVELACE, key_pair.addr,
-    )
 
+def send_collateral(src_keys: KeyPair, dst_addr: Address) -> UTxO:
+    # TODO fix this up so it can work for both the funder -> admin send and admin -> subchannels
+    #      (the 2nd part won't work if it uses a change address; have to calculate fee manually?)
+    # TODO there should also be a version for returning collateral from subchannels -> admin (or funder)
+    # TODO and actually, people might do either: return to admin or return to funder... 2-step sweep then?
+	# TODO refactor to deduplicate this with the version in Publisher?
+    val = Value(coin=COLLATERAL_ADA * LOVELACE_PER_ADA)
     txb = TransactionBuilder(OGMIOS_CTX)
-    txb.add_input_address(key_pair.addr)
-    txb.add_output(TransactionOutput(address=key_pair.addr, amount=Value(coin=COLLATERAL_LOVELACE)))
-    tx = txb.build_and_sign(signing_keys=[key_pair.sk], change_address=key_pair.addr)
+    txb.add_input_address(src_keys.addr)
+    txb.add_output(TransactionOutput(address=dst_addr, amount=val))
+    tx = txb.build_and_sign(signing_keys=[src_keys.sk], change_address=src_keys.addr)
     OGMIOS_CTX.submit_tx(tx)
-    LOG.info('Submitted collateral-creation tx id=%s', tx.id)
-
-	# TODO refactor to deduplicate this with the version in Publisher
+    LOG.info(f'Submitted collateral-creation tx id={tx.id}')
     deadline = time.time() + OGMIOS_TIMEOUT_SEC
+    # TODO refactor: wait for confirmation, then find collateral utxo and return it, or raise
+    #      (2 possible errors: timeout, collateral not found)
     while time.time() < deadline:
         for u in OGMIOS_CTX.utxos(key_pair.addr):
             if (
                 u.input.transaction_id == tx.id
-                and _is_exact_ada(u, COLLATERAL_LOVELACE)
+                and _is_exact_ada(u, collateral_lovelace)
             ):
                 LOG.debug(
                     'New collateral UTxO confirmed: %s#%d',
@@ -185,8 +166,7 @@ def ensure_collateral_utxo(
                 )
                 return u
         time.sleep(OGMIOS_POLL_SEC)
-
-	# TODO custom egc error classes?
+	# TODO custom egc error classes
     raise TimeoutError(
         f'Collateral UTxO from tx {tx.id} did not appear at {key_pair.addr} '
         f'within {OGMIOS_TIMEOUT_SEC}s'
