@@ -19,6 +19,7 @@ LOG = logging.getLogger(__name__)
 LOVELACE_PER_ADA = 1_000_000
 
 COLLATERAL_ADA = 5
+COLLATERAL_LOVELACE = COLLATERAL_ADA * LOVELACE_PER_ADA
 
 # TODO load these from somewhere?
 
@@ -122,70 +123,145 @@ def set_out_value_and_fee(
 
     txb.fee = fee
 
-def ensure_own_collateral_utxo(key_pair: KeyPair) -> UTxO:
-    amt = COLLATERAL_ADA * LOVELACE_PER_ADA
-    existing = _find_exact_ada_utxo(key_pair.addr, amt)
-    if existing is not None:
-        LOG.debug(
-            'Found existing collateral UTxO: %s#%d (%d lovelace)',
-            existing.input.transaction_id, existing.input.index,
-            existing.output.amount.coin,
-        )
-        return existing
-    else:
-        LOG.info(f'No {amt}-lovelace pure-ADA UTxO at {key_pair.addr}; creating one')
-        # send to self, returning change to self, and return collateral utxo after it confirms
-        return send_collateral(src_keys=key_pair, dst_addr=key_pair.addr)
 
+def find_collateral_utxo(address: Address) -> UTxO | None:
+    """Return a collateral-eligible UTXO at `address`, or None.
 
-def send_collateral(src_keys: KeyPair, dst_addr: Address) -> UTxO:
-    # TODO fix this up so it can work for both the funder -> admin send and admin -> subchannels
-    #      (the 2nd part won't work if it uses a change address; have to calculate fee manually?)
-    # TODO there should also be a version for returning collateral from subchannels -> admin (or funder)
-    # TODO and actually, people might do either: return to admin or return to funder... 2-step sweep then?
-	# TODO refactor to deduplicate this with the version in Publisher?
-    val = Value(coin=COLLATERAL_ADA * LOVELACE_PER_ADA)
-    txb = TransactionBuilder(OGMIOS_CTX)
-    txb.add_input_address(src_keys.addr)
-    txb.add_output(TransactionOutput(address=dst_addr, amount=val))
-    tx = txb.build_and_sign(signing_keys=[src_keys.sk], change_address=src_keys.addr)
-    OGMIOS_CTX.submit_tx(tx)
-    LOG.info(f'Submitted collateral-creation tx id={tx.id}')
-    deadline = time.time() + OGMIOS_TIMEOUT_SEC
-    # TODO refactor: wait for confirmation, then find collateral utxo and return it, or raise
-    #      (2 possible errors: timeout, collateral not found)
-    while time.time() < deadline:
-        for u in OGMIOS_CTX.utxos(key_pair.addr):
-            if (
-                u.input.transaction_id == tx.id
-                and _is_exact_ada(u, collateral_lovelace)
-            ):
-                LOG.debug(
-                    'New collateral UTxO confirmed: %s#%d',
-                    u.input.transaction_id, u.input.index,
-                )
-                return u
-        time.sleep(OGMIOS_POLL_SEC)
-	# TODO custom egc error classes
-    raise TimeoutError(
-        f'Collateral UTxO from tx {tx.id} did not appear at {key_pair.addr} '
-        f'within {OGMIOS_TIMEOUT_SEC}s'
-    )
-
-
-def _find_exact_ada_utxo(addr: Address, amount: int):
-    """Return a UTxO at `addr` holding exactly `amount` lovelace and no
-    other assets, or None."""
-    for u in OGMIOS_CTX.utxos(addr):
-        if _is_exact_ada(u, amount):
-            return u
+    "Collateral-eligible" means: exactly COLLATERAL_LOVELACE lovelace,
+    no native assets, no datum, no script ref. This is stricter than
+    the ledger requires, but it guarantees the UTXO matches what our
+    funding functions produce and won't collide with other holdings.
+    """
+    utxos = OGMIOS_CTX.utxos(address)
+    for utxo in utxos:
+        amt = utxo.output.amount
+        if amt.coin != COLLATERAL_LOVELACE:
+            continue
+        if amt.multi_asset and len(amt.multi_asset) > 0:
+            continue
+        if utxo.output.datum is not None:
+            continue
+        if utxo.output.datum_hash is not None:
+            continue
+        if utxo.output.script is not None:
+            continue
+        return utxo
     return None
 
 
-def _is_exact_ada(u: UTxO, amount: int) -> bool:
-    """True iff `u` holds exactly `amount` lovelace and no native assets."""
-    val = u.output.amount
-    if isinstance(val, Value):
-        return val.coin == amount and not val.multi_asset
-    # Some chain contexts return a bare int for ADA-only outputs
-    return val == amount
+def get_my_collateral(address: Address) -> UTxO:
+    """Like find_collateral_utxo but raises if missing. Publishers call
+    this when building any contract tx and pass the result as the
+    collateral input."""
+    utxo = find_collateral_utxo(address)
+    if utxo is None:
+        raise RuntimeError(
+            f"No collateral UTXO ({COLLATERAL_ADA} ADA, no assets, no datum) "
+            f"found at {address}. Run create_own_collateral or ask the "
+            f"funder to send one."
+        )
+    return utxo
+
+
+def wait_for_collateral(address: Address) -> UTxO:
+    """Poll for a collateral UTXO at `address` until one appears or
+    OGMIOS_TIMEOUT_SEC elapses. Used right after a funding tx to bridge
+    the gap between submission and the publisher's address being
+    re-indexed."""
+    deadline = time.monotonic() + OGMIOS_TIMEOUT_SEC
+    while True:
+        utxo = find_collateral_utxo(address)
+        if utxo is not None:
+            return utxo
+        if time.monotonic() >= deadline:
+            raise TimeoutError(
+                f"Collateral UTXO did not appear at {address} within "
+                f"{OGMIOS_TIMEOUT_SEC}s"
+            )
+        time.sleep(OGMIOS_POLL_SEC)
+
+
+def _send_ada(
+    sender: KeyPair,
+    recipient: Address,
+    lovelace: int,
+) -> TransactionId:
+    """Plain wallet-to-wallet ADA send. Internal helper shared by the
+    collateral funding / return / sweep functions. Not for spending from
+    a script address."""
+    builder = TransactionBuilder(OGMIOS_CTX)
+    builder.add_input_address(sender.addr)
+    builder.add_output(TransactionOutput(recipient, Value(lovelace)))
+    signed = builder.build_and_sign([sender.sk], change_address=sender.addr)
+    OGMIOS_CTX.submit_tx(signed)
+    LOG.info(
+        "Sent %d lovelace from %s to %s (tx %s)",
+        lovelace, sender.addr, recipient, signed.id,
+    )
+    return signed.id
+
+
+def create_own_collateral(funder: KeyPair) -> TransactionId:
+    """Op 1: Funder sends themselves exactly COLLATERAL_ADA to create a
+    usable collateral UTXO. No-op (returns None-ish? see below) if one
+    already exists — callers that want to force a new one should spend
+    the existing one first."""
+    existing = find_collateral_utxo(funder.addr)
+    if existing is not None:
+        LOG.info(
+            "Collateral UTXO already exists at %s (%s#%d); skipping",
+            funder.addr, existing.input.transaction_id, existing.input.index,
+        )
+        return existing.input.transaction_id
+    LOG.info(f'Creating own collateral UTXO at {funder.addr}')
+    return _send_ada(funder, funder.addr, COLLATERAL_LOVELACE)
+
+
+def fund_admin_collateral(
+    funder: KeyPair,
+    admin_address: Address,
+) -> TransactionId:
+    """Op 2 (standalone variant): Funder sends COLLATERAL_ADA to the
+    admin address. In practice this is usually folded into the admin
+    STT mint tx as an extra output — keep this around for tests and
+    for the case where the admin needs a fresh collateral mid-election."""
+    return _send_ada(funder, admin_address, COLLATERAL_LOVELACE)
+
+
+def return_collateral(
+    publisher: KeyPair,
+    funder_address: Address,
+) -> TransactionId | None:
+    """Op 5: Publisher voluntarily returns their collateral UTXO to the
+    original funder. Convention, not enforced on-chain. Returns None if
+    the publisher has no collateral UTXO to return."""
+    utxo = find_collateral_utxo(publisher.key_pair.addr)
+    if utxo is None:
+        LOG.info("No collateral UTXO at %s to return", publisher.key_pair.addr)
+        return None
+
+    builder = TransactionBuilder(OGMIOS_CTX)
+    builder.add_input(utxo)
+    builder.add_output(TransactionOutput(funder_address, Value(COLLATERAL_LOVELACE)))
+    signed = builder.build_and_sign(
+        [publisher.sk], change_address=publisher.key_pair.addr
+    )
+    OGMIOS_CTX.submit_tx(signed)
+    LOG.info(
+        "Returned collateral from %s to %s (tx %s)",
+        publisher.key_pair.addr, funder_address, signed.id,
+    )
+    return signed.id
+
+
+def sweep_publisher_collateral(
+    publisher: KeyPair,
+    funder_address: Address,
+) -> TransactionId | None:
+    """Op 6a: Per-publisher collateral sweep, signed by that publisher.
+    Functionally identical to return_collateral right now; kept as a
+    separate name because the cleanup script's semantics ("forcibly
+    reclaim everything") may diverge from the voluntary-return
+    semantics later (e.g., logging, error handling, batching across
+    fixtures)."""
+    return return_collateral(publisher, funder_address)

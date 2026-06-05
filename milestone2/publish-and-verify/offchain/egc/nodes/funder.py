@@ -39,11 +39,17 @@ class FunderNode(ElectionNode):
             election=None,
         )
 
+        # Will fail if the funder wallet doesn't have ADA in it.
+        # TODO document that funding is required before creating the FunderNode
+        # TODO or, set this to None initially and ensure it before init_election?
+        self.ensure_own_collateral()
+
+
+    def ensure_own_collateral(self):
         # Funder is the only node that needs to set its own collateral, I think?
         # TODO but they should all test for it and throw a visible error if there isn't one
-        # TODO where should this live? Is it part of the Publisher? Node?
-        self.collateral_utxo = ensure_own_collateral_utxo(self.publisher.key_pair)
-
+        create_own_collateral(self.publisher.key_pair)
+        self.collateral_utxo = wait_for_collateral(self.publisher.key_pair.addr)
 
     def _build_init_tx(self, script: ElectionScript, admin_vkh: VerificationKeyHash, admin_ada: int) -> TransactionBuilder:
         """Build an InitElection transaction.
@@ -69,6 +75,9 @@ class FunderNode(ElectionNode):
         )
         LOG.debug('state: %s' % pformat(state))
 
+        # TODO just don't allow admin_ada < some reasonable minimum like 5 or 10
+        # TODO constant for the amount below which you should get a warning to top up a channel
+        # TODO and that should probably also be the minimum, or the minimum is larger at least
         channel_lovelace = admin_ada * LOVELACE_PER_ADA
         current_value = Value(
             channel_lovelace, # start with the requested amount, then top up below if needed
