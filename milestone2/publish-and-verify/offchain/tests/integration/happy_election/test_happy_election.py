@@ -51,22 +51,15 @@ def test_admin_tx0(
 ### admin_tx1 ###
 
 @per_election_fixture
-def admin_tx1_builder(admin_tx0: Transaction, admin: AdminNode) -> TransactionBuilder:
+def admin_tx1(admin_tx0: Transaction, admin: AdminNode) -> TransactionBuilder:
     phase = STATIC_PHASES[1]
     (_, records) = STATIC_TRANSACTIONS['admin'][1]
-    txb = admin._build_post_tx(new_records=records, new_phase=phase)
-    LOG.debug(f'admin_tx1_builder: {txb}')
-    return txb
+    tx = admin.post_public_records(new_records=records, new_phase=phase)
+    LOG.debug(f'admin_tx1: {tx}')
+    return tx
 
-def test_admin_tx1_builder(admin_tx1_builder: TransactionBuilder):
-    assert isinstance(admin_tx1_builder, TransactionBuilder)
-
-@per_election_fixture
-def admin_tx1(
-        admin_tx0: Transaction,
-        admin: AdminNode,
-    ) -> Transaction:
-    raise NotImplementedError
+def test_admin_tx1(admin_tx1: Transaction):
+    assert isinstance(admin_tx1, Transaction)
 
 # def test_admin_tx1(admin_tx1: Transaction):
 #     LOG.debug(f'admin_tx1: {admin_tx1}')

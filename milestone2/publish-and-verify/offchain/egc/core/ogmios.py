@@ -5,7 +5,7 @@ import json
 import websockets
 
 from typing import Any, Dict
-from pycardano import OgmiosV6ChainContext, Network, UTxO, min_lovelace
+from pycardano import *
 
 # TODO is there really not a built in convenience function or constant for this?
 # TODO where should it live?
@@ -72,3 +72,40 @@ def top_up_to_min_ada(output: UTxO):
         if output.amount.coin == new_coin:
             break
         output.amount.coin = new_coin
+
+def set_out_value_and_fee(
+    txb: TransactionBuilder,
+    in_value: Value,
+    out_utxo: TransactionOutput,
+) -> None:
+    """For a 1-in/1-out continuation pattern (no change output):
+    set out_utxo.amount.coin = in_value.coin - fee, iterating until the fee
+    stabilizes. Mutates out_utxo and txb.fee in place.
+    """
+    # Seed with a plausible coin value so CBOR-size estimation is realistic.
+    out_utxo.amount.coin = in_value.coin
+
+    fee = 0
+    for _ in range(5):
+        # _estimate_fee() reads txb.fee internally to build the body, so we
+        # need to set it first; it also accounts for redeemer ex-units that
+        # have already been evaluated.
+        txb.fee = fee if fee else max_tx_fee(OGMIOS_CTX)  # overestimate on first pass
+        new_fee = txb._estimate_fee()
+        new_coin = in_value.coin - new_fee
+
+        # Defensive min-ADA check
+        min_lv = min_lovelace(OGMIOS_CTX, out_utxo)
+        if new_coin < min_lv:
+            raise ValueError(
+                f"Script UTxO under-funded: have {in_value.coin} lovelace, "
+                f"need {min_lv + new_fee} (min_ada {min_lv} + fee {new_fee})"
+            )
+
+        if out_utxo.amount.coin == new_coin and txb.fee == new_fee:
+            txb.fee = new_fee
+            return
+        out_utxo.amount.coin = new_coin
+        fee = new_fee
+
+    txb.fee = fee

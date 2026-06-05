@@ -55,9 +55,12 @@ from pycardano import *
 
 DEF_KEYS_DIR = Path(__file__).parent.parent.parent / 'keys'
 
-def vkh_for_signing_key(sk: PaymentSigningKey) -> VerificationKeyHash:
+def vk_for_signing_key(sk: PaymentSigningKey) -> VerificationKey:
     verification_key = PaymentVerificationKey.from_signing_key(sk)
-    return verification_key.hash()
+    return verification_key
+
+# def vkh_for_signing_key(vk: VerificationKey) -> VerificationKeyHash:
+#     return vk.hash()
 
 def addr_for_signing_key(sk: PaymentSigningKey) -> Address:
     verification_key = PaymentVerificationKey.from_signing_key(sk)
@@ -123,11 +126,13 @@ def generate_keypair(keys_dir=DEF_KEYS_DIR, name='main', verbose=True) -> (Signi
         print(msg)
     return (signing_key, address)
  
+# TODO rename? not really a pair anymore
 class KeyPair:
     def __init__(self, keys_dir=DEF_KEYS_DIR, name='main', verbose=True):
         LOG.debug('KeyPair.__init__')
         (sk, addr) = generate_keypair(keys_dir=keys_dir, name=name, verbose=verbose)
-        self.sk = sk
+        self.sk   = sk
         self.addr = addr
-        self.vkh = vkh_for_signing_key(self.sk)
+        self.vk   = vk_for_signing_key(self.sk)
+        self.vkh  = self.vk.hash()
     # TODO repr?

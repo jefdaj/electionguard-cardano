@@ -31,14 +31,15 @@ class AdminNode(ElectionNode):
             key_pair=key_pair
         )
 
+    # TODO new function like sign_and_submit for single-output continutions if this works
     # TODO how to refactor this for admin vs subchannels?
-    def _build_post_tx(
+    # TODO should this go in the base class?
+    def post_public_records(
             self,
             new_records: List[PublicRecord],
             new_phase: Optional[ElectionPhase] = None,
-        ) -> TransactionBuilder:
-
-        LOG.debug('Admin._build_post_tx')
+        ) -> Transaction:
+        LOG.debug('Admin.post_public_records')
 
         (in_utxo, in_datum) = self.state()
         in_state = in_datum.state
@@ -52,8 +53,8 @@ class AdminNode(ElectionNode):
         ))
         LOG.debug('out_datum: %s' % pformat(out_datum))
 
-        # We need the in_value unmutated because PyCardano will use it to
-        # calculate the inputs, so create a separate out_value to top up.
+        # We need the in_value alone because PyCardano will use it to
+        # calculate the inputs, so create a separate out_value to mess with.
         in_value = in_utxo.output.amount
         out_value = Value.from_primitive(in_value.to_primitive())  # deep copy
 
@@ -63,11 +64,17 @@ class AdminNode(ElectionNode):
             datum=out_datum,
         )
 
-        LOG.debug('out_utxo before top-up: %s' % pformat(out_utxo))
-        top_up_to_min_ada(out_utxo)
-        LOG.debug('out_utxo after top-up: %s' % pformat(out_utxo))
+        # LOG.debug('out_utxo before top-up: %s' % pformat(out_utxo))
+        # top_up_to_min_ada(out_utxo)
+        # LOG.debug('out_utxo after top-up: %s' % pformat(out_utxo))
 
-        redeemer = Redeemer(data=PostPublicRecords())
+        # Because we're bypassing build() to do a manual thing instead,
+        # we have to set ex_units manually here. It can be an over estimate though;
+        # they'll be lowered to their final values by set_out_value_and_fee below.
+        redeemer = Redeemer(
+            data=PostPublicRecords(),
+            ex_units=ExecutionUnits(mem=500_000, steps=200_000_000) # TODO what are good defaults here?
+        )
 
         txb = (
             TransactionBuilder(OGMIOS_CTX)
@@ -76,15 +83,40 @@ class AdminNode(ElectionNode):
         )
         txb.required_signers = [self.publisher.key_pair.vkh] # TODO remove?
 
-        return txb
+        set_out_value_and_fee(txb, in_value, out_utxo)
 
-    # TODO should this go in the base class?
-    def post_public_records(
-            self,
-            new_records: List[PublicRecord],
-            new_phase: Optional[ElectionPhase] = None,
-        ) -> Transaction:
-        LOG.debug('Admin.post_public_records')
-        txb = self._build_post_tx(new_records, new_phase)
-        tx  = self.publisher.sign_and_submit(tx)
-        return tx
+        # tx  = self.publisher.sign_and_submit(txb)
+
+        # Build the body without letting the builder add change or recompute fee.
+        # _build_tx_body() uses txb.fee as-is (which we've already pinned).
+        tx_body = txb._build_tx_body()
+
+        # Double check the manual calculations
+        total_in = sum(u.output.amount.coin for u in [in_utxo])  # plus any others
+        total_out = sum(o.amount.coin for o in tx_body.outputs)
+        assert total_in == total_out + tx_body.fee, (
+            f"Unbalanced: in={total_in}, out={total_out}, fee={tx_body.fee}"
+        )
+
+        # Witness set: Plutus script + datum + redeemer come from the builder;
+        # we append the publisher's vkey witness manually.
+        witness_set = txb.build_witness_set()
+        if witness_set.vkey_witnesses is None:
+            witness_set.vkey_witnesses = []
+        
+        signature = self.publisher.key_pair.sk.sign(tx_body.hash())
+        witness_set.vkey_witnesses.append(
+            VerificationKeyWitness(self.publisher.key_pair.vk, signature)
+        )
+
+        tx_signed = Transaction(
+            transaction_body=tx_body,
+            transaction_witness_set=witness_set,
+            auxiliary_data=txb.auxiliary_data,
+        )
+
+        LOG.debug(f'tx_signed about to be submitted:\n%s:\n' % pformat(tx_signed))
+        OGMIOS_CTX.submit_tx(tx_signed)
+        LOG.info(f'Submitted tx with id={tx_signed.id}')
+
+        return tx_signed

@@ -19,15 +19,6 @@ from .wallet   import *
 from .plutus   import ChannelId, ChannelIdHelper
 
 from pycardano import *
-# from pycardano import UTxO, OgmiosV6ChainContext, SigningKey, Transaction, TransactionBuilder, Value
-
-# from .ogmios import query_network_tip_sync
-# from .wallet import addr_for_signing_key, vkh_for_signing_key
-# from .plutus import (
-#     pick_oneshot_utxo,
-#     PubsubScript, PubsubAction, PsOpen, PsPublish, PsClose,
-#     build_psopen_tx, build_pspublish_tx, build_psclose_tx
-# )
 
 class ElectionPublisher:
 
