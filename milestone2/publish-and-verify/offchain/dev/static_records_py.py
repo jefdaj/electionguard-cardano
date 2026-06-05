@@ -210,6 +210,8 @@ TXS = {
                   }
 }
 
+# pprint(JSONS)
+
 for fn in render_fns:
     for j in JSONS:
         channel = j["mockchain_channel"]
@@ -217,10 +219,11 @@ for fn in render_fns:
             channel = 'admin'
         # print(channel)
         cid_str = j["cid"]
+        cid = IpfsCidHelper.from_string(cid_str)
         fn_name = fn.__name__
         if j["record_type"] == fn.__name__:
             # print(json.dumps(j, indent=2))
-            (seq, record) = fn(fn_name, j, cid_str)
+            (seq, record) = fn(fn_name, j, cid)
             # item = (PostPublicRecords(), records)
             if not channel in TXS:
                 TXS[channel] = {}
@@ -236,9 +239,6 @@ for fn in render_fns:
                 act = PostPublicRecords()
                 recs = [record]
             TXS[channel][seq] = (act, recs)
-            # if not seq in TXS[channel]:
-            #     TXS[channel][seq] = []
-            # TXS[channel][seq].append(item)
 
         # print(j["record_type"])
 

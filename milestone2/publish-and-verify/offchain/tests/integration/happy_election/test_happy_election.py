@@ -53,7 +53,7 @@ def test_admin_tx0(
 @per_election_fixture
 def admin_tx1_builder(admin_tx0: Transaction, admin: AdminNode) -> TransactionBuilder:
     phase = STATIC_PHASES[1]
-    records = [pair[1] for pair in STATIC_TRANSACTIONS['admin'][1]]
+    (_, records) = STATIC_TRANSACTIONS['admin'][1]
     txb = admin._build_post_tx(new_records=records, new_phase=phase)
     LOG.debug(f'admin_tx1_builder: {txb}')
     return txb

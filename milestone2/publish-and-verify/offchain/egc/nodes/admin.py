@@ -67,10 +67,10 @@ class AdminNode(ElectionNode):
         top_up_to_min_ada(out_utxo)
         LOG.debug('out_utxo after top-up: %s' % pformat(out_utxo))
 
-        redeemer = PostPublicRecords()
+        redeemer = Redeemer(data=PostPublicRecords())
 
         txb = (
-            TransactionBuilder(OGMIOS_CTX, mint=assets)
+            TransactionBuilder(OGMIOS_CTX)
             .add_script_input(in_utxo, script=self.election.script.spend_script, redeemer=redeemer)
             .add_output(out_utxo)
         )
