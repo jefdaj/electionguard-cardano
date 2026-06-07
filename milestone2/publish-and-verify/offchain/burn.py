@@ -78,11 +78,11 @@ POLICY_ID = SCRIPT.policy_id
 LOG.info(f'POLICY_ID: {POLICY_ID}')
 
 # Keys already loaded from disk
-KEYS_BY_ADDR: Mapping[Address, KeyPair] = {}
+KEYS_BY_STR: Mapping[str, KeyPair] = {}
 
 # Addrs we want to find keys for by channel_str
-ADDRS_BY_ID: Mapping[str, Address] = {}
-ADDRS_BY_ID[FUNDER_CHANNEL_STR] = CTX.deployment.funder_address # TODO already encoded, right?
+ADDRS_BY_STR: Mapping[str, Address] = {}
+ADDRS_BY_STR[FUNDER_CHANNEL_STR] = CTX.deployment.funder_address # TODO already encoded, right?
 
 
 ### get current on-chain channel states ###
@@ -108,6 +108,9 @@ STATES: Mapping[str, Tuple[UTxO, ChannelState]] = {
 LOG.info(f'STATES keys: {pformat(STATES.keys())}')
 LOG.info(f'admin state: {pformat(STATES[ADMIN_CHANNEL_STR][1])}')
 
+
+### figure out which keys to look for ###
+
 # TODO move to a util function, but where?
 for (channel_str, (_, channel_wrap)) in sorted(STATES.items()):
     if channel_str == 'admin':
@@ -116,12 +119,29 @@ for (channel_str, (_, channel_wrap)) in sorted(STATES.items()):
         vkh_bytes = channel_wrap.state.publisher
     vkh = VerificationKeyHash(vkh_bytes)
     addr = Address(payment_part=vkh, network=Network.TESTNET)
-    ADDRS_BY_ID[channel_str] = addr
+    ADDRS_BY_STR[channel_str] = addr
 
-LOG.info(f'ADDRS_BY_ID:\n{pformat(ADDRS_BY_ID)}')
+LOG.info(f'ADDRS_BY_STR:\n{pformat(ADDRS_BY_STR)}')
+
+
+### load keys ###
+
+SK_PATHS = []
+for key_dir in ARGS['<key_dirs>']:
+    SK_PATHS += glob(os.path.join(key_dir, '*.sk'))
+SK_PATHS = sorted(SK_PATHS)
+LOG.info(f'SK_PATHS: {SK_PATHS}')
+
+for sk_path in SK_PATHS:
+    keys_dir = os.path.dirname(sk_path)
+    key_name = os.path.splitext(os.path.basename(sk_path))[0]
+    keys = KeyPair(keys_dir, key_name)
+    for (s, a) in ADDRS_BY_STR.items():
+        if keys.addr == a:
+            KEYS_BY_STR[s] = keys
+LOG.info(f'KEYS_BY_STR:\n{pformat(KEYS_BY_STR)}')
 
 raise SystemExit
-
 
 ### load destination wallet ###
 
