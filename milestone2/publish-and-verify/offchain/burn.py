@@ -80,10 +80,9 @@ LOG.info(f'POLICY_ID: {POLICY_ID}')
 # Keys already loaded from disk
 KEYS_BY_ADDR: Mapping[Address, KeyPair] = {}
 
-# Addrs we want to find keys for by channel_id
+# Addrs we want to find keys for by channel_str
 ADDRS_BY_ID: Mapping[str, Address] = {}
 ADDRS_BY_ID[FUNDER_CHANNEL_STR] = CTX.deployment.funder_address # TODO already encoded, right?
-LOG.info(f'ADDRS_BY_ID: {ADDRS_BY_ID}')
 
 
 ### get current on-chain channel states ###
@@ -97,7 +96,7 @@ LOG.info(f'SUB_CFG: {SUB_CFG}')
 
 SUB = ElectionSubscriber(SUB_CFG)
 SUB.start()
-time.sleep(3)
+time.sleep(1)
 SUB.stop()
 
 # This is almost like SUB.states, but it uses str keys because technically
@@ -108,6 +107,19 @@ STATES: Mapping[str, Tuple[UTxO, ChannelState]] = {
 }
 LOG.info(f'STATES keys: {pformat(STATES.keys())}')
 LOG.info(f'admin state: {pformat(STATES[ADMIN_CHANNEL_STR][1])}')
+
+# TODO move to a util function, but where?
+for (channel_str, (_, channel_wrap)) in sorted(STATES.items()):
+    if channel_str == 'admin':
+        vkh_bytes = channel_wrap.state.admin
+    else:
+        vkh_bytes = channel_wrap.state.publisher
+    vkh = VerificationKeyHash(vkh_bytes)
+    addr = Address(payment_part=vkh, network=Network.TESTNET)
+    ADDRS_BY_ID[channel_str] = addr
+
+LOG.info(f'ADDRS_BY_ID:\n{pformat(ADDRS_BY_ID)}')
+
 raise SystemExit
 
 
