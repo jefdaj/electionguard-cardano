@@ -53,7 +53,8 @@ LOG.info(f'ARGS: {pformat(ARGS)}')
 
 ### constants ###
 
-FUNDER_CHANNEL_STR = 'funder'
+# TODO do we actually need the funder private key at all?
+# FUNDER_CHANNEL_STR = 'funder'
 ADMIN_CHANNEL_STR = ChannelIdHelper.to_string(ADMIN_CHANNEL_ID)
 
 
@@ -82,7 +83,7 @@ KEYS_BY_STR: Mapping[str, KeyPair] = {}
 
 # Addrs we want to find keys for by channel_str
 ADDRS_BY_STR: Mapping[str, Address] = {}
-ADDRS_BY_STR[FUNDER_CHANNEL_STR] = CTX.deployment.funder_address # TODO already encoded, right?
+# ADDRS_BY_STR[FUNDER_CHANNEL_STR] = CTX.deployment.funder_address # TODO already encoded, right?
 
 
 ### get current on-chain channel states ###
@@ -140,6 +141,13 @@ for sk_path in SK_PATHS:
         if keys.addr == a:
             KEYS_BY_STR[s] = keys
 LOG.info(f'KEYS_BY_STR:\n{pformat(KEYS_BY_STR)}')
+
+for needed_str in ADDRS_BY_STR.keys():
+    if not needed_str in KEYS_BY_STR:
+        LOG.error(
+            f'Failed to load {needed_str} key pair!'
+            f' {needed_str} collateral will not be returned.'
+        )
 
 raise SystemExit
 
