@@ -39,19 +39,12 @@ class FunderNode(ElectionNode):
             election=None,
         )
 
-        # Will fail if the funder wallet doesn't have ADA in it.
-        # TODO document that funding is required before creating the FunderNode
-        # TODO or, set this to None initially and ensure it before init_election?
-        self.ensure_own_collateral()
-
-
-    def ensure_own_collateral(self):
-        # Funder is the only node that needs to set its own collateral, I think?
-        # TODO but they should all test for it and throw a visible error if there isn't one
-        create_own_collateral(self.publisher.key_pair)
-        self.collateral_utxo = wait_for_collateral(self.publisher.key_pair.addr)
-
-    def _build_init_tx(self, script: ElectionScript, admin_vkh: VerificationKeyHash, admin_ada: int) -> TransactionBuilder:
+    def _build_init_tx(
+            self,
+            script: ElectionScript,
+            admin_vkh: VerificationKeyHash,
+            admin_ada: int
+        ) -> TransactionBuilder:
         """Build an InitElection transaction.
         This is an unusual one because it doesn't have any options, so there's
         no point pulling them from static_records.py.
@@ -59,13 +52,17 @@ class FunderNode(ElectionNode):
 
         LOG.debug('Funder._build_init_tx')
 
+        # This isn't technically required, since the Funder never does any
+        # contract operation during a normal election. It's only needed in case
+        # of using BurnTestTokens.
+        # TODO think about: will it ever be needed for other operations?
+        # TODO if not, move to the burn pytest helper + stanalone burn.py
+        # self.ensure_own_collateral()
+
         redeemer = Redeemer(data=InitElection())
-        LOG.debug('redeemer: %s' % pformat(redeemer))
+        LOG.debug('init redeemer: %s' % pformat(redeemer))
 
-        assets = mint_channel_stt_assets(script.policy_id, 1, [ADMIN_CHANNEL_ID])
-        LOG.debug('assets: %s' % pformat(assets))
-
-        # admin_vkh  = admin.publisher.verification_key_hash
+        # TODO extract as a constant and use in pytest too?
         state = AdminChannelState(
             admin       = admin_vkh.payload,
             subchannels = [],
@@ -73,49 +70,48 @@ class FunderNode(ElectionNode):
             phase       = ElectionConfigPhase(ConfigAnnouncePhase()),
             seq         = 0,
         )
-        LOG.debug('state: %s' % pformat(state))
+        LOG.debug('init state: %s' % pformat(state))
 
-        # TODO just don't allow admin_ada < some reasonable minimum like 5 or 10
+        assets = mint_channel_stt_assets(script.policy_id, 1, [ADMIN_CHANNEL_ID])
+        LOG.debug('init assets: %s' % pformat(assets))
+
+        # TODO no need to top up! just don't allow admin_ada < some reasonable minimum like 5 or 10
         # TODO constant for the amount below which you should get a warning to top up a channel
         # TODO and that should probably also be the minimum, or the minimum is larger at least
-        channel_lovelace = admin_ada * LOVELACE_PER_ADA
-        current_value = Value(
-            channel_lovelace, # start with the requested amount, then top up below if needed
-            assets   # the minted STT
-        )
-        LOG.debug('current_value before top-up: %s' % pformat(current_value))
+        value = Value(admin_ada * LOVELACE_PER_ADA, assets)
+        LOG.debug('value: %s' % pformat(value))
 
+        # Normally we get the addr via self.election.address,
+        # but that won't exist until after init_election.
         script_addr = Address(script.policy_id, network=Network.TESTNET)
         LOG.debug(f'script_addr: {script_addr}')
 
         # Lock the STT at the script address
         stt_output = TransactionOutput(
             address=script_addr,
-            amount=current_value,
+            amount=value,
             datum=state
         )
-        LOG.debug('stt_output before top-up: %s' % pformat(stt_output))
+        LOG.debug('init stt_output: %s' % pformat(stt_output))
 
         # top up to min ada (warning: mutates in place)
-        top_up_to_min_ada(stt_output)
-        LOG.debug('current_value after top-up: %s' % pformat(current_value))
-        LOG.debug('stt_output after top-up: %s' % pformat(stt_output))
+        # top_up_to_min_ada(stt_output)
+        # LOG.debug('value after top-up: %s' % pformat(value))
+        # LOG.debug('stt_output after top-up: %s' % pformat(stt_output))
 
-        # TODO Add non-contract collateral so the admin can do script operations.
-        # TODO actually, not needed during init right? but for close and maybe to fund other channels
+        # The 
 
-        init_txb = (
+        txb = (
             TransactionBuilder(OGMIOS_CTX, mint=assets)
             .add_input(script.oneshot_utxo)
             .add_input_address(self.publisher.key_pair.addr)
             .add_minting_script(script=script.mint_script, redeemer=redeemer)
             .add_output(stt_output)
         )
-        # funder_vkh = self.publisher.verification_key_hash
-        init_txb.required_signers = [self.publisher.key_pair.vkh]
-        LOG.debug('init_txb:\n%s\n' % pformat(init_txb))
+        txb.required_signers = [self.publisher.key_pair.vkh]
+        LOG.debug('init txb:\n%s\n' % pformat(txb))
 
-        return init_txb
+        return txb
 
     def init_script(self):
         """Pick oneshot_utxo and parameterize script."""
@@ -171,7 +167,7 @@ class FunderNode(ElectionNode):
             script: ElectionScript,
             admin_vkh: VerificationKeyHash,
             admin_ada: int = 100
-        ) -> (Transaction, ElectionContext):
+        ) -> Transaction:
 
         LOG.debug('Funder.init_election')
 
