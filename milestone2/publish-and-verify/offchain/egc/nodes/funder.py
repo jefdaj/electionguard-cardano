@@ -53,12 +53,10 @@ class FunderNode(ElectionNode):
 
         LOG.debug('Funder._build_init_tx')
 
-        # This isn't technically required, since the Funder never does any
-        # contract operation during a normal election. It's only needed in case
-        # of using BurnTestTokens.
-        # TODO think about: will it ever be needed for other operations?
-        # TODO if not, move to the burn pytest helper + stanalone burn.py
-        # self.ensure_own_collateral()
+        # Without this set, the FunderNode risks the entire dev wallet when
+        # deploying a contract.
+        create_own_collateral(self.publisher.wallet)
+        collateral_utxo = wait_for_collateral(self.publisher.wallet.addr)
 
         redeemer = Redeemer(data=InitElection())
         LOG.debug('init redeemer: %s' % pformat(redeemer))
@@ -115,6 +113,7 @@ class FunderNode(ElectionNode):
             .add_output(stt_output)
             .add_output(admin_output)
         )
+        txb.collaterals.append(collateral_utxo)
         txb.required_signers = [self.publisher.wallet.vkh]
         LOG.debug('init txb:\n%s\n' % pformat(txb))
 
@@ -172,13 +171,19 @@ class FunderNode(ElectionNode):
     def init_election(
             self,
             script: ElectionScript,
+            admin_addr: Address,
             admin_vkh: VerificationKeyHash,
             admin_ada: int = 100
         ) -> Transaction:
 
         LOG.debug('Funder.init_election')
 
-        init_txb = self._build_init_tx(script=script, admin_vkh=admin_vkh, admin_ada=admin_ada)
+        init_txb = self._build_init_tx(
+            script     = script,
+            admin_addr = admin_addr,
+            admin_vkh  = admin_vkh,
+            admin_ada  = admin_ada
+        )
         (init_tx, election_ctx) = self.deploy_election(script, init_txb)
 
         # TODO come up with a better default path here
@@ -225,9 +230,6 @@ class FunderNode(ElectionNode):
 
         return burn_txb
 
-    def sweep_collateral(self, key_dirs: List[Path]):
-        raise NotImplementedError
-
     def burn_test_tokens(self):
         """Clean up test tokens.
 
@@ -243,3 +245,24 @@ class FunderNode(ElectionNode):
         burn_txb = self._build_burn_tx()
         burn_tx  = self.publisher.sign_and_submit(burn_txb)
         return burn_tx
+
+    def sweep_all_collateral(self, keys_dir: Path):
+        if not IS_TEST:
+            err = 'sweep_all_collateral is only for use in test mode'
+            LOG.error(err)
+            raise Exception(err)
+        for (utxo, state) in sorted(self.subscriber.states.values()):
+            pub_addr   = publisher_address(state)
+            pub_wallet = load_wallet_by_address(pub_addr, keys_dir=keys_dir)
+            errors = []
+            try:
+                tx = return_collateral(pub_wallet, self.publisher.wallet.addr)
+                self.publisher.wait_for_confirmation(tx)
+            except Exception as e:
+                LOG.error(e)
+                errors.append(e)
+                continue # still want to get the other collateral back if possible
+            finally:
+                if len(errors) > 0:
+                    msg = '\n'.join(str(e) for e in errors)
+                    raise Exception(msg)

@@ -53,6 +53,7 @@ def init_tx(
         script: ElectionScript,
         admin_addr: Address,
         admin_vkh: VerificationKeyHash,
+        keys_dir: Path,
     ) -> Transaction:
     """Yields an already submitted and confirmed InitElection transaction.
     For now, all other Transaction fixtures should depend on this one,
@@ -81,7 +82,8 @@ def init_tx(
     try:
         burn_tx = funder.burn_test_tokens()
         funder.publisher.wait_for_confirmation(burn_tx)
-        # TODO iterate through collateral and sweep it all back to funder here (finally?)
     except Exception as e:
         LOG.error(e)
         raise
+    finally:
+        funder.sweep_all_collateral(keys_dir)

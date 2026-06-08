@@ -4,7 +4,7 @@ import asyncio
 import json
 import websockets
 import time
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from pycardano import *
 
@@ -190,7 +190,7 @@ def _send_ada(
     sender: Wallet,
     recipient: Address,
     lovelace: int,
-) -> TransactionId:
+) -> Transaction:
     """Plain wallet-to-wallet ADA send. Internal helper shared by the
     collateral funding / return / sweep functions. Not for spending from
     a script address."""
@@ -203,10 +203,10 @@ def _send_ada(
         "Sent %d lovelace from %s to %s (tx %s)",
         lovelace, sender.addr, recipient, signed.id,
     )
-    return signed.id
+    return signed
 
 
-def create_own_collateral(funder: Wallet) -> TransactionId:
+def create_own_collateral(funder: Wallet) -> Transaction:
     """Op 1: Funder sends themselves exactly COLLATERAL_ADA to create a
     usable collateral UTXO. No-op (returns None-ish? see below) if one
     already exists — callers that want to force a new one should spend
@@ -225,7 +225,7 @@ def create_own_collateral(funder: Wallet) -> TransactionId:
 def fund_admin_collateral(
     funder: Wallet,
     admin_address: Address,
-) -> TransactionId:
+) -> Transaction:
     """Op 2 (standalone variant): Funder sends COLLATERAL_ADA to the
     admin address. In practice this is usually folded into the admin
     STT mint tx as an extra output — keep this around for tests and
@@ -234,16 +234,16 @@ def fund_admin_collateral(
 
 
 def return_collateral(
-    publisher: Wallet,
+    publisher_wallet: Wallet,
     funder_address: Address,
-) -> TransactionId | None:
+) -> Optional[TransactionId]:
     """Op 5: Publisher voluntarily returns their collateral UTXO to the
     original funder, less tx fee. The publisher is expected to do this,
     but it can't be enforced on chain. Returns None if the publisher has
     no collateral UTXO to return."""
-    utxo = find_collateral_utxo(publisher.address)
+    utxo = find_collateral_utxo(publisher_wallet.addr)
     if utxo is None:
-        LOG.info("No collateral UTXO at %s to return", publisher.address)
+        LOG.info("No collateral UTXO at %s to return", publisher_wallet.addr)
         return None
     builder = TransactionBuilder(OGMIOS_CTX)
     builder.add_input(utxo)
@@ -252,24 +252,11 @@ def return_collateral(
     # funder as the change address makes the builder route the remainder
     # (collateral - fee) to them automatically.
     signed = builder.build_and_sign(
-        [publisher.skey], change_address=funder_address,
+        [publisher_wallet.sk], change_address=funder_address,
     )
     OGMIOS_CTX.submit_tx(signed)
     LOG.info(
         "Returned collateral from %s to %s, less tx fee (tx %s)",
-        publisher.address, funder_address, signed.id,
+        publisher_wallet.addr, funder_address, signed.id,
     )
-    return signed.id
-
-
-def sweep_publisher_collateral(
-    publisher: Wallet,
-    funder_address: Address,
-) -> TransactionId | None:
-    """Op 6a: Per-publisher collateral sweep, signed by that publisher.
-    Functionally identical to return_collateral right now; kept as a
-    separate name because the cleanup script's semantics ("forcibly
-    reclaim everything") may diverge from the voluntary-return
-    semantics later (e.g., logging, error handling, batching across
-    fixtures)."""
-    return return_collateral(publisher, funder_address)
+    return signed
