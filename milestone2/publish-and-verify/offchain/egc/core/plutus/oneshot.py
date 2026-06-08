@@ -9,7 +9,7 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import List, Optional
 
-from .config import PLUTUS_JSON_PATH
+from ..config import PLUTUS_JSON_PATH
 
 LOG = logging.getLogger(__name__)
 

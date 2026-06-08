@@ -8,7 +8,7 @@ import time
 from typing import Any, Dict
 from pycardano import *
 
-from .wallet import KeyPair
+from .wallet import Wallet
 
 import logging
 
@@ -182,7 +182,7 @@ def wait_for_collateral(address: Address) -> UTxO:
 
 
 def _send_ada(
-    sender: KeyPair,
+    sender: Wallet,
     recipient: Address,
     lovelace: int,
 ) -> TransactionId:
@@ -201,7 +201,7 @@ def _send_ada(
     return signed.id
 
 
-def create_own_collateral(funder: KeyPair) -> TransactionId:
+def create_own_collateral(funder: Wallet) -> TransactionId:
     """Op 1: Funder sends themselves exactly COLLATERAL_ADA to create a
     usable collateral UTXO. No-op (returns None-ish? see below) if one
     already exists — callers that want to force a new one should spend
@@ -218,7 +218,7 @@ def create_own_collateral(funder: KeyPair) -> TransactionId:
 
 
 def fund_admin_collateral(
-    funder: KeyPair,
+    funder: Wallet,
     admin_address: Address,
 ) -> TransactionId:
     """Op 2 (standalone variant): Funder sends COLLATERAL_ADA to the
@@ -229,33 +229,33 @@ def fund_admin_collateral(
 
 
 def return_collateral(
-    publisher: KeyPair,
+    publisher: Wallet,
     funder_address: Address,
 ) -> TransactionId | None:
     """Op 5: Publisher voluntarily returns their collateral UTXO to the
     original funder. Convention, not enforced on-chain. Returns None if
     the publisher has no collateral UTXO to return."""
-    utxo = find_collateral_utxo(publisher.key_pair.addr)
+    utxo = find_collateral_utxo(publisher.wallet.addr)
     if utxo is None:
-        LOG.info("No collateral UTXO at %s to return", publisher.key_pair.addr)
+        LOG.info("No collateral UTXO at %s to return", publisher.wallet.addr)
         return None
 
     builder = TransactionBuilder(OGMIOS_CTX)
     builder.add_input(utxo)
     builder.add_output(TransactionOutput(funder_address, Value(COLLATERAL_LOVELACE)))
     signed = builder.build_and_sign(
-        [publisher.sk], change_address=publisher.key_pair.addr
+        [publisher.wallet.sk], change_address=publisher.wallet.addr
     )
     OGMIOS_CTX.submit_tx(signed)
     LOG.info(
         "Returned collateral from %s to %s (tx %s)",
-        publisher.key_pair.addr, funder_address, signed.id,
+        publisher.wallet.addr, funder_address, signed.id,
     )
     return signed.id
 
 
 def sweep_publisher_collateral(
-    publisher: KeyPair,
+    publisher: Wallet,
     funder_address: Address,
 ) -> TransactionId | None:
     """Op 6a: Per-publisher collateral sweep, signed by that publisher.

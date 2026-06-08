@@ -24,7 +24,7 @@ class FunderNode(ElectionNode):
 
         # Expected usage is to create and fund the Funder wallet manually,
         # so no need for Funder to take key_dir + key_name like the other roles.
-        key_pair: KeyPair,
+        wallet: Wallet,
 
     ):
         LOG.debug('Funder.__init__')
@@ -35,7 +35,7 @@ class FunderNode(ElectionNode):
         super().__init__(
             role='funder',
             role_index=1,
-            key_pair=key_pair,
+            wallet=wallet,
             election=None,
         )
 
@@ -104,18 +104,18 @@ class FunderNode(ElectionNode):
         txb = (
             TransactionBuilder(OGMIOS_CTX, mint=assets)
             .add_input(script.oneshot_utxo)
-            .add_input_address(self.publisher.key_pair.addr)
+            .add_input_address(self.publisher.wallet.addr)
             .add_minting_script(script=script.mint_script, redeemer=redeemer)
             .add_output(stt_output)
         )
-        txb.required_signers = [self.publisher.key_pair.vkh]
+        txb.required_signers = [self.publisher.wallet.vkh]
         LOG.debug('init txb:\n%s\n' % pformat(txb))
 
         return txb
 
     def init_script(self):
         """Pick oneshot_utxo and parameterize script."""
-        fund_addr = self.publisher.key_pair.addr
+        fund_addr = self.publisher.wallet.addr
         oneshot_utxo = pick_oneshot_utxo(OGMIOS_CTX, fund_addr)
         script = ElectionScript.from_oneshot_utxo(oneshot_utxo)
         LOG.debug('script:\n%s\n' % pformat(script))
@@ -150,7 +150,7 @@ class FunderNode(ElectionNode):
 
         deployment = ElectionDeployment(
             network               = Network.TESTNET,
-            funder_address        = self.publisher.key_pair.addr,
+            funder_address        = self.publisher.wallet.addr,
             deployment_date       = datetime.now(), # TODO get now() before sign_and_submit?
             index_from_slot       = tip['slot'],
             index_from_block_hash = tip['block_hash'],
@@ -190,7 +190,7 @@ class FunderNode(ElectionNode):
         mint_redeemer = Redeemer(data=BurnTestTokens())
         LOG.debug(f'mint_redeemer: {mint_redeemer}')
 
-        channel_ids = list(self.subscriber.states.keys())
+        channel_ids = sorted(self.subscriber.states.keys())
         LOG.info(f'channel_ids: {channel_ids}')
 
         burn_assets = mint_channel_stt_assets(
@@ -217,6 +217,9 @@ class FunderNode(ElectionNode):
         LOG.debug('burn_txb:\n%s\n' % pformat(burn_txb))
 
         return burn_txb
+
+    def sweep_collateral(self, key_dirs: List[Path]):
+        raise NotImplementedError
 
     def burn_test_tokens(self):
         """Clean up test tokens.

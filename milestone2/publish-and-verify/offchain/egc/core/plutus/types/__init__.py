@@ -20,6 +20,7 @@ from .channel import (
     AdminChannelState,
     SubChannel,
     SubChannelState,
+    publisher_address,
 )
 
 from .ipfs_cid import IpfsCid, IpfsCidHelper

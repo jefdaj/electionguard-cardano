@@ -8,17 +8,17 @@ import time
 LOG = logging.getLogger(__name__)
 
 @per_election_fixture
-def admin_keys(keys_dir: Path) -> KeyPair:
-    kp = KeyPair(keys_dir=keys_dir, name='admin', verbose=False)
+def admin_wallet(keys_dir: Path) -> Wallet:
+    kp = Wallet.load_or_create(keys_dir=keys_dir, name='admin', verbose=False)
     return kp
 
 @per_election_fixture
-def admin_vkh(admin_keys: KeyPair) -> VerificationKeyHash:
-    return admin_keys.vkh
+def admin_vkh(admin_wallet: Wallet) -> VerificationKeyHash:
+    return admin_wallet.vkh
 
 @per_election_fixture
-def admin(election: ElectionContext, admin_keys: KeyPair) -> AdminNode:
-    node = AdminNode(election=election, key_pair=admin_keys)
+def admin(election: ElectionContext, admin_wallet: Wallet) -> AdminNode:
+    node = AdminNode(election=election, wallet=admin_wallet)
     LOG.debug(f'admin: {node}')
     try:
         # TODO should this be part of start()?

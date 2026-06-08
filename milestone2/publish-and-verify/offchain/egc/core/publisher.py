@@ -31,13 +31,13 @@ class ElectionPublisher:
         role: str,
         role_index: int,
 
-        # No need for keys_dir or key_name if you pass an existing key_pair.
-        # You can also omit them without passing key_pair, in which case a new
-        # KeyPair will generated based on the role + index and saved in the
+        # No need for keys_dir or key_name if you pass an existing wallet.
+        # You can also omit them without passing wallet, in which case a new
+        # Wallet will generated based on the role + index and saved in the
         # default dir.
-        key_pair: Optional[KeyPair] = None,
-        keys_dir: Optional[Path]    = None,
-        key_name: Optional[Path]    = None,
+        wallet: Optional[Wallet] = None,
+        keys_dir: Optional[Path] = None,
+        key_name: Optional[Path] = None,
 
         # If the script is not given here, you have to call _init_script()
         # separately. That's expected when creating a Funder (and possibly
@@ -56,8 +56,8 @@ class ElectionPublisher:
         self.role = role
         self.role_index = role_index
 
-        if key_pair is None:
-            LOG.debug('key_pair is None; create new KeyPair')
+        if wallet is None:
+            LOG.debug('wallet is None; create new Wallet')
             if keys_dir is None:
                 keys_dir = DEF_KEYS_DIR
                 LOG.debug(f'keys_dir is None; default to {keys_dir}')
@@ -65,39 +65,10 @@ class ElectionPublisher:
             if key_name is None:
                 key_name = ChannelIdHelper.to_string(self.channel_id())
                 LOG.debug(f'key_name is None; default to {key_name}')
-            self.key_pair = KeyPair(keys_dir=keys_dir, name=key_name, verbose=False)
+            self.wallet = Wallet(keys_dir=keys_dir, name=key_name, verbose=False)
         else:
-            LOG.debug(f'use existing key_pair {key_pair}')
-            self.key_pair = key_pair
-
-        # TODO what did this need the election for?
-        # self.election = election
-
-        # self.script = script
-
-        # self.ogmios = OGMIOS_CTX
-        # self.pubsub_script = PubsubScript(self.oneshot_utxo)
-        # self.channel_state: Optional[str] = None # TODO formalize a type
-        # self.published_cids = []
-        # self.tip_before_open: Optional[tuple[int, str]] = None
-
-    # def _init_keypair(self):
-    #     """Load the keypair, creating it first if needed."""
-    #     LOG.debug('ElectionPublisher._init_keypair')
-    #     self.keys_dir.mkdir(exist_ok=True)
-    #     self.key_pair.sk = load_wallet_signing_key(keys_dir=self.keys_dir, name=self.key_name)
-    #     self.verification_key_hash = vkh_for_signing_key(self.key_pair.sk)
-    #     self.key_pair.addr = addr_for_signing_key(self.key_pair.sk)
-    #     LOG.debug(f'signing key: {self.key_pair.sk}')
-    #     LOG.debug(f'verification key hash: {self.verification_key_hash}')
-    #     LOG.debug(f'address: {self.key_pair.addr}')
-
-    # TODO remove?
-    # def set_script(self, script: ElectionScript):
-    #     LOG.debug('ElectionPublisher.set_script')
-    #     if self.script is not None:
-    #         raise Exception(f'script already set to {self.script}')
-    #     self.script = script
+            LOG.debug(f'use existing wallet {wallet}')
+            self.wallet = wallet
 
     def channel_id(self) -> ChannelId:
         LOG.debug('ElectionPublisher.channel_id')
@@ -112,7 +83,7 @@ class ElectionPublisher:
         LOG.debug('ElectionPublisher.sign_and_submit')
 
         # Check what the node actually sees
-        utxos = OGMIOS_CTX.utxos(self.key_pair.addr)
+        utxos = OGMIOS_CTX.utxos(self.wallet.addr)
         LOG.info('UTxOs at publisher address: %s' % len(utxos))
         for u in utxos:
             LOG.debug(
@@ -122,8 +93,8 @@ class ElectionPublisher:
             )
 
         tx_signed = txb.build_and_sign(
-            [self.key_pair.sk],
-            change_address=self.key_pair.addr
+            [self.wallet.sk],
+            change_address=self.wallet.addr
         )
 
         # Log the actual inputs in the built transaction

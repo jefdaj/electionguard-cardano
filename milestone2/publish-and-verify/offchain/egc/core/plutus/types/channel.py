@@ -5,7 +5,7 @@ from .ipfs_cid import IpfsCid, IpfsCidHelper
 from .phase import ElectionPhase
 from .record import PublicRecord
 from dataclasses import dataclass
-from pycardano import PlutusData
+from pycardano import PlutusData, Network, VerificationKeyHash, Address
 from typing import List, Union, TYPE_CHECKING
 
 @dataclass
@@ -65,3 +65,14 @@ class SubChannel(PlutusData):
         return f'SubChannel({repr(self.state)})'
 
 ChannelState = Union[AdminChannel, SubChannel]
+
+def publisher_address(state: ChannelState, network=Network.TESTNET) -> Address:
+    "Mainly to help return collateral in test fixtures."
+    # TODO later, don't assume testnet
+    if isinstance(state, AdminChannel):
+        vkh_bytes = state.state.admin
+    else:
+        vkh_bytes = state.state.publisher
+    vkh = VerificationKeyHash(vkh_bytes)
+    addr = Address(payment_part=vkh, network=network)
+    return addr

@@ -12,6 +12,7 @@ from pprint import pformat
 
 from pycardano import *
 
+from .config import IS_TEST
 from .plutus import *
 
 import logging
@@ -40,7 +41,7 @@ class ElectionScript:
     # Was the contract built with tracing?
     # Example usage with tracing:
     # ELECTION_PLUTUS_VARIANT=traced ./publish.py ...
-    aiken_tracing: bool = field(default=USE_TRACED)
+    aiken_tracing: bool = field(default=IS_TEST)
 
     # Fields duplicated from the aiken_blueprint for convenience.
     policy_id:    ScriptHash
@@ -70,7 +71,7 @@ class ElectionScript:
             'oneshot_utxo': oneshot_utxo.to_cbor_hex(),
             'oneshot_hex': oneshot_hex,
             'aiken_blueprint': blueprint_dict,
-            "aiken_tracing": USE_TRACED,
+            "aiken_tracing": IS_TEST,
         }
         return cls.from_dict(cls_dict)
 

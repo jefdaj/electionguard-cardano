@@ -24,13 +24,13 @@ class ElectionNode:
         # since at that point there isn't an ElectionContext yet.
         election: Optional[ElectionContext] = None,
 
-        # No need for keys_dir or key_name if you pass an existing key_pair.
-        # You can also omit them without passing key_pair, in which case a new
-        # KeyPair will generated based on the role + index and saved in the
+        # No need for keys_dir or key_name if you pass an existing wallet.
+        # You can also omit them without passing wallet, in which case a new
+        # Wallet will generated based on the role + index and saved in the
         # default dir. This logic is handled by the Publisher.
-        key_pair: Optional[KeyPair] = None,
-        keys_dir: Optional[Path]    = None,
-        key_name: Optional[Path]    = None,
+        wallet: Optional[Wallet] = None,
+        keys_dir: Optional[Path] = None,
+        key_name: Optional[Path] = None,
 
         # TODO ipfs (kubo)
     ):
@@ -42,7 +42,7 @@ class ElectionNode:
         self.publisher = ElectionPublisher(
             role       = role,
             role_index = role_index,
-            key_pair   = key_pair,
+            wallet     = wallet,
             keys_dir   = keys_dir,
             key_name   = key_name,
         )

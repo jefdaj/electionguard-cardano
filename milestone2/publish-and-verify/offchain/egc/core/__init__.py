@@ -1,3 +1,4 @@
+from .config     import *
 from .ogmios     import *
 from .wallet     import *
 from .publisher  import ElectionPublisher

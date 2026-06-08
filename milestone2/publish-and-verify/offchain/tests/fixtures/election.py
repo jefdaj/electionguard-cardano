@@ -15,12 +15,12 @@ LOG = logging.getLogger(__name__)
 @per_election_fixture
 def dummy_deployment(
         ogmios: OgmiosV6ChainContext,
-        funder_keys: KeyPair
+        funder_wallet: Wallet
     ) -> ElectionDeployment:
     tip = query_network_tip_sync()
     dd = ElectionDeployment(
         network               = Network.TESTNET,
-        funder_address        = funder_keys.addr,
+        funder_address        = funder_wallet.addr,
         deployment_date       = datetime.now(),
         index_from_slot       = tip['slot'],
         index_from_block_hash = tip['block_hash'],
@@ -74,6 +74,7 @@ def init_tx(
     try:
         burn_tx = funder.burn_test_tokens()
         funder.publisher.wait_for_confirmation(burn_tx)
+        # TODO iterate through collateral and sweep it all back to funder here (finally?)
     except Exception as e:
         LOG.error(e)
         raise

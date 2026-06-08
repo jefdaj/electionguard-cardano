@@ -19,7 +19,7 @@ class AdminNode(ElectionNode):
         # VerificationKeyHash needs to be known by the Funder when creating the
         # admin STT. We can't create the Admin itself at that point though,
         # because there's no ElectionContext yet.
-        key_pair: KeyPair,
+        wallet: Wallet,
 
         # TODO ipfs (kubo)
     ):
@@ -28,7 +28,7 @@ class AdminNode(ElectionNode):
             role='admin',
             role_index=1,
             election=election,
-            key_pair=key_pair
+            wallet=wallet
         )
 
     # TODO new function like sign_and_submit for single-output continutions if this works
@@ -81,7 +81,7 @@ class AdminNode(ElectionNode):
             .add_script_input(in_utxo, script=self.election.script.spend_script, redeemer=redeemer)
             .add_output(out_utxo)
         )
-        txb.required_signers = [self.publisher.key_pair.vkh] # TODO remove?
+        txb.required_signers = [self.publisher.wallet.vkh] # TODO remove?
 
         set_out_value_and_fee(txb, in_value, out_utxo)
 
@@ -104,9 +104,9 @@ class AdminNode(ElectionNode):
         if witness_set.vkey_witnesses is None:
             witness_set.vkey_witnesses = []
         
-        signature = self.publisher.key_pair.sk.sign(tx_body.hash())
+        signature = self.publisher.wallet.sk.sign(tx_body.hash())
         witness_set.vkey_witnesses.append(
-            VerificationKeyWitness(self.publisher.key_pair.vk, signature)
+            VerificationKeyWitness(self.publisher.wallet.vk, signature)
         )
 
         tx_signed = Transaction(

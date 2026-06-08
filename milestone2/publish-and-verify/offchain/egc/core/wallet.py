@@ -1,119 +1,156 @@
-"""Generate and manage test wallets.
+"""Generate and manage wallets with a focus on testing.
 
 Expects that there will be one main dev wallet with a supply of (t)ADA,
-and then lots of temporary test wallets. To avoid accidentally losing ADA
-to failed tests, it saves copies of all generated keys.
-This can be turned off by setting SAVE_BACKUPS=False.
+and then lots of temporary test wallets.
 
-Temporary wallets are distinguished first by their KEYS_DIR, which should be
-unique at least per test, and then optionally by election role + index.
+When EGC_MODE=test, it will:
 
-Example of a main wallet and two different valid test layouts:
-
-keys/
-├── main.addr
-├── main.sk
-├── test001
-│   ├── admin.addr
-│   ├── admin.sk
-│   ├── device1.addr
-│   ├── device1.sk
-│   ├── guardian1.addr
-│   ├── guardian1.sk
-│   ├── guardian2.addr
-│   ├── guardian2.sk
-│   ├── verifier1.addr
-│   └── verifier1.sk
-└── test002
-    ├── admin
-    │   ├── admin.addr
-    │   └── admin.sk
-    ├── device1
-    │   ├── device1.addr
-    │   └── device1.sk
-    ├── guardian1
-    │   ├── guardian1.addr
-    │   └── guardian1.sk
-    ├── guardian2
-    │   ├── guardian2.addr
-    │   └── guardian2.sk
-    └── verifier1
-        ├── verifier1.addr
-        └── verifier1.sk
-
-The test001 format is simplest for pytest, but something more like test002
-makes sense when generating each keypair in a separate docker data mount dir.
+- leave of generated keys in the tmpdir (normally /tmp/nix-shell.XXXXX)
+- log signing keys to <keys_dir>/test-keys.log
 """
 
+from __future__ import annotations
+
 from pathlib import Path
+from typing import Optional, Self
+from dataclasses import dataclass
+from pycardano import *
+from .config import IS_TEST
 import logging
 
-LOG = logging.getLogger(__name__)
-
-from pycardano import *
-# from pycardano import Address, Network, SigningKey, PaymentSigningKey, PaymentVerificationKey, VerificationKeyHash
 
 DEF_KEYS_DIR = Path(__file__).parent.parent.parent / 'keys'
+
+# Regular logger
+LOG = logging.getLogger(__name__)
+
+# Separate logger for test keys
+KEYS_LOG = logging.getLogger('test-keys')
+if IS_TEST:
+    keys_fh = logging.FileHandler(DEF_KEYS_DIR / 'test-keys.log')
+    keys_fh.setFormatter(
+        logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
+    )
+    KEYS_LOG.addHandler(keys_fh)
+    KEYS_LOG.setLevel(logging.DEBUG)
+    del keys_fh
+    KEYS_LOG.debug('Running with EGC_MODE=test')
+else:
+    KEYS_LOG.setLevel(logging.CRITICAL + 1)
+    KEYS_LOG.propagate = False
+    KEYS_LOG.critical('IF YOU CAN READ THIS, YOU MAY BE LEAKING PRIVATE KEYS!')
+
+
+@dataclass(frozen=True, slots=True)
+class Wallet:
+    """A convenience bundle around a Cardano `SigningKey`.
+
+    Everything except `sk` is derived, so equality, serialization, and
+    persistence are all driven by the signing key alone.
+    """
+
+    sk:   SigningKey
+    vk:   VerificationKey
+    vkh:  VerificationKeyHash
+    addr: Address
+
+    @classmethod
+    def from_signing_key(cls, sk: SigningKey) -> Self:
+        LOG.debug('Wallet.from_signing_key')
+        vk = vk_for_signing_key(sk)
+        return cls(
+            sk=sk,
+            vk=vk,
+            vkh=vk.hash(),
+            addr=addr_for_signing_key(sk),
+        )
+
+    @classmethod
+    def from_json(cls, data: str) -> Self:
+        return cls.from_signing_key(SigningKey.from_json(data))
+
+    @classmethod
+    def from_sk_path(cls, sk_path: Path) -> Self:
+        LOG.debug('Wallet.from_sk_path: %s', sk_path)
+        return cls.from_json(Path(sk_path).read_text())
+
+    @classmethod
+    def load_or_create(
+        cls,
+        keys_dir: Path = DEF_KEYS_DIR,
+        name: str = 'default',
+        verbose: bool = True,
+    ) -> Self:
+        """Load the wallet named `name` from `keys_dir`, generating it if absent."""
+        keys_dir = Path(keys_dir)
+        sk_path = keys_dir / f'{name}.sk'
+
+        if sk_path.exists():
+            LOG.debug('sk_path exists; loading: %s', sk_path)
+            return load_wallet(sk_path)
+
+        LOG.debug('sk_path does not exist; generating: %s', sk_path)
+        return create_wallet(keys_dir=keys_dir, name=name, verbose=verbose)
+
+    def to_json(self, *args, **kwargs) -> str:
+        return self.sk.to_json(*args, **kwargs)
+
+    def save(self, sk_path: Path) -> None:
+        Path(sk_path).write_text(self.to_json())
+
+    def __repr__(self) -> str:
+        return f'Wallet(addr={self.addr!r}, vkh={self.vkh.to_cbor_hex()[:12]}…)'
+
 
 def vk_for_signing_key(sk: PaymentSigningKey) -> VerificationKey:
     verification_key = PaymentVerificationKey.from_signing_key(sk)
     return verification_key
-
-# def vkh_for_signing_key(vk: VerificationKey) -> VerificationKeyHash:
-#     return vk.hash()
 
 def addr_for_signing_key(sk: PaymentSigningKey) -> Address:
     verification_key = PaymentVerificationKey.from_signing_key(sk)
     address = Address(payment_part=verification_key.hash(), network=Network.TESTNET)
     return address
 
-def load_wallet_address(keys_dir=DEF_KEYS_DIR, name="main", verbose=False) -> Address:
-    keys_dir = Path(keys_dir)
-    public_addr = (keys_dir / (name + '.addr')).absolute()
-    if not public_addr.exists():
-        generate_keypair(keys_dir=keys_dir, name=name, verbose=verbose)
-    with public_addr.open('r') as f:
-        return Address.from_primitive(f.read())
+def load_wallet(sk_path: Optional[Path] = None, keys_dir=DEF_KEYS_DIR, name='default') -> Wallet:
+    LOG.debug('load_wallet')
+    if sk_path is None:
+        keys_dir = Path(keys_dir)
+        sk_path = keys_dir / f'{name}.sk'
+    return Wallet.from_sk_path(sk_path)
 
-def load_wallet_signing_key(keys_dir=DEF_KEYS_DIR, name='main', verbose=False) -> SigningKey:
+def load_wallet_by_address(address: Address, keys_dir=DEF_KEYS_DIR) -> Optional[Wallet]:
+    "Mainly to help return collateral in test fixtures."
+    LOG.debug('load_wallet_for_address')
     keys_dir = Path(keys_dir)
-    signing_key = (keys_dir / (name + '.sk')).absolute()
-    if not signing_key.exists():
-        generate_keypair(keys_dir=keys_dir, name=name, verbose=verbose)
-    with signing_key.open('r') as f:
-        # TODO would validate_type=True here help?
-        return SigningKey.from_json(f.read())
+    for sk_path in sorted(keys_dir.glob('*.sk')):
+        w = Wallet.from_sk_path(sk_path)
+        if w.addr == address:
+            return w
+    return None
 
-def load_keypair(keys_dir=DEF_KEYS_DIR, name='main', verbose=True) -> (SigningKey, Address):
-    LOG.debug('load_keypair')
+def create_wallet(keys_dir=DEF_KEYS_DIR, name='default', verbose=True) -> Wallet:
+    LOG.debug('create_wallet')
     keys_dir = Path(keys_dir)
-    sk   = load_wallet_signing_key(keys_dir=keys_dir, name=name, verbose=verbose)
-    addr = load_wallet_address(keys_dir=keys_dir, name=name, verbose=verbose)
-    return (sk, addr)
-
-def generate_keypair(keys_dir=DEF_KEYS_DIR, name='main', verbose=True) -> (SigningKey, Address):
-    LOG.debug('generate_keypair')
-    keys_dir = Path(keys_dir)
-    sk_path   = (keys_dir / (name + '.sk'  )).absolute()
-    addr_path = (keys_dir / (name + '.addr')).absolute()
-    if sk_path.exists():
-        LOG.debug(f'sk_path exists: {sk_path}')
-        assert addr_path.exists()
-        LOG.debug(f'addr_path exists: {addr_path}')
-        return load_keypair(keys_dir=keys_dir, name=name, verbose=verbose)
+    sk_path   = keys_dir / f'{name}.sk'
+    addr_path = keys_dir / f'{name}.addr'
+    if sk_path.exists() or addr_path.exists():
+        err = f'ERROR: at least one wallet file already exists: {sk_path}, {addr_path}'
+        LOG.error(err)
+        raise Exception(err)
     keys_dir.mkdir(exist_ok=True)
     signing_key = PaymentSigningKey.generate()
     signing_key.save(str(sk_path))
-    address = addr_for_signing_key(signing_key)
-    with addr_path.open("w") as f:
-        f.write(str(address))
+    wallet = Wallet.from_sk_path(sk_path)
     msg = f'''
-    Your new Preview testnet keys are here:
+    Your new Preview testnet key is here:
 
     {sk_path}
-    {addr_path}
 
-    Your public address (2nd file) is: {address}
+    You can load it in Python like this:
+
+    wallet = Wallet.from_sk_path("{sk_path}")
+
+    Its public address is: {wallet.addr}
 
     If this is your main dev wallet, go fund that address with tADA from the
     faucet before running any tests:
@@ -124,15 +161,17 @@ def generate_keypair(keys_dir=DEF_KEYS_DIR, name='main', verbose=True) -> (Signi
     LOG.info(msg)
     if verbose:
         print(msg)
-    return (signing_key, address)
- 
-# TODO rename? not really a pair anymore
-class KeyPair:
-    def __init__(self, keys_dir=DEF_KEYS_DIR, name='main', verbose=True):
-        LOG.debug('KeyPair.__init__')
-        (sk, addr) = generate_keypair(keys_dir=keys_dir, name=name, verbose=verbose)
-        self.sk   = sk
-        self.addr = addr
-        self.vk   = vk_for_signing_key(self.sk)
-        self.vkh  = self.vk.hash()
-    # TODO repr?
+    KEYS_LOG.debug(
+        'Created Wallet:\n\n'
+        '  name = %s\n'
+        '  addr = %s\n'
+        '  vkh  = %s\n'
+        '  vk   = %s\n'
+        '  sk   = %s\n',
+        name,
+        wallet.addr,
+        wallet.vkh.to_cbor_hex(),
+        wallet.vk.to_json(),
+        wallet.sk.to_json(),
+    )
+    return wallet

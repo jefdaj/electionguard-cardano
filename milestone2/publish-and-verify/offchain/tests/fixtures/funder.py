@@ -7,14 +7,18 @@ import logging
 LOG = logging.getLogger(__name__)
 
 @global_fixture
-def funder_keys() -> KeyPair:
-    kp = KeyPair(name='dev', verbose=False) # leave default, global keys_dir
-    LOG.info(f'funder_keys: {kp}')
+def funder_wallet() -> Wallet:
+    kp = Wallet.load_or_create(name='dev', verbose=False) # leave default, global keys_dir
+    LOG.info(f'funder_wallet: {kp}')
     return kp
 
 @per_election_fixture
-def funder(funder_keys: KeyPair) -> FunderNode:
-    node = FunderNode(key_pair=funder_keys)
+def funder_addr(funder_wallet: Wallet) -> Address:
+    return funder_wallet.addr
+
+@per_election_fixture
+def funder(funder_wallet: Wallet) -> FunderNode:
+    node = FunderNode(wallet=funder_wallet)
     LOG.info(f'funder: {node}')
     try:
         yield node
