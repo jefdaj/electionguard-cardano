@@ -40,6 +40,7 @@ class AdminNode(ElectionNode):
             new_records: List[PublicRecord],
             new_phase: Optional[ElectionPhase] = None,
         ) -> Transaction:
+
         LOG.debug('Admin.post_public_records')
 
         collateral_utxo = wait_for_collateral(self.publisher.wallet.addr)
@@ -74,39 +75,42 @@ class AdminNode(ElectionNode):
         # top_up_to_min_ada(out_utxo)
         # LOG.debug('out_utxo after top-up: %s' % pformat(out_utxo))
 
-        # Because we're bypassing build() to do a manual thing instead,
-        # we have to set ex_units manually here. It can be an over estimate though;
-        # they'll be lowered to their final values by set_out_value_and_fee below.
-        redeemer = Redeemer(
-            data=PostPublicRecords(),
-            ex_units=ExecutionUnits(mem=500_000, steps=200_000_000) # TODO what are good defaults here?
-        )
+        # Create the redeemer with ex_units=None so the builder's
+        # _consolidate_redeemer puts it into "needs estimation" mode (ExecutionUnits(0,0)).
+        redeemer = Redeemer(data=PostPublicRecords())
 
         txb = (
             TransactionBuilder(OGMIOS_CTX)
-            .add_script_input(in_utxo, script=self.election.script.spend_script, redeemer=redeemer)
+            .add_script_input(
+                in_utxo,
+                script=self.election.script.spend_script,
+                redeemer=redeemer
+            )
             .add_output(out_utxo)
         )
         txb.collaterals.append(collateral_utxo)
-        txb.required_signers = [self.publisher.wallet.vkh] # TODO remove?
+        txb.required_signers = [self.publisher.wallet.vkh]
 
+        # 1. Have Ogmios compute real ex_units, write them onto the redeemer.
+        evaluate_and_set_ex_units(txb, out_utxo, in_value, redeemer)
+
+        # 2. Now that ex_units are pinned, converge fee + output coin.
         set_out_value_and_fee(txb, in_value, out_utxo)
 
         # tx  = self.publisher.sign_and_submit(txb)
 
-        # Build the body without letting the builder add change or recompute fee.
-        # _build_tx_body() uses txb.fee as-is (which we've already pinned).
+
+        # 3. Final body (bakes script_data_hash from the now-final redeemer).
         tx_body = txb._build_tx_body()
 
-        # Double check the manual calculations
-        total_in = sum(u.output.amount.coin for u in [in_utxo])  # plus any others
+        # Sanity check: inputs balance outputs.
+        total_in = sum(u.output.amount.coin for u in txb.inputs)
         total_out = sum(o.amount.coin for o in tx_body.outputs)
         assert total_in == total_out + tx_body.fee, (
             f"Unbalanced: in={total_in}, out={total_out}, fee={tx_body.fee}"
         )
 
-        # Witness set: Plutus script + datum + redeemer come from the builder;
-        # we append the publisher's vkey witness manually.
+        # Witness set + sign body hash.
         witness_set = txb.build_witness_set()
         if witness_set.vkey_witnesses is None:
             witness_set.vkey_witnesses = []
@@ -117,9 +121,9 @@ class AdminNode(ElectionNode):
         )
 
         tx_signed = Transaction(
-            transaction_body=tx_body,
-            transaction_witness_set=witness_set,
-            auxiliary_data=txb.auxiliary_data,
+            transaction_body        = tx_body,
+            transaction_witness_set = witness_set,
+            auxiliary_data          = txb.auxiliary_data,
         )
 
         LOG.debug(f'tx_signed about to be submitted:\n%s:\n' % pformat(tx_signed))
