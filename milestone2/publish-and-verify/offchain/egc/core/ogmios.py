@@ -4,13 +4,14 @@ import asyncio
 import json
 import websockets
 import time
-
 from typing import Any, Dict
+
 from pycardano import *
 
 from .wallet import Wallet
 
 import logging
+
 
 LOG = logging.getLogger(__name__)
 
@@ -20,8 +21,6 @@ LOVELACE_PER_ADA = 1_000_000
 
 COLLATERAL_ADA = 5
 COLLATERAL_LOVELACE = COLLATERAL_ADA * LOVELACE_PER_ADA
-
-# TODO load these from somewhere?
 
 OGMIOS_HOST = "localhost"
 OGMIOS_PORT = 1337
@@ -34,8 +33,10 @@ OGMIOS_CTX = OgmiosV6ChainContext(
 OGMIOS_POLL_SEC    =   3.0
 OGMIOS_TIMEOUT_SEC = 300.0
 
+
+### info for subscriber config ###
+
 # TODO rename to make it more obvious this is for the --since args?
-# TODO and also to check if ogmios is up I guess
 async def query_network_tip() -> dict:
     # TODO is there an equivalent context function?
     url = f"ws://{OGMIOS_HOST}:{OGMIOS_PORT}"
@@ -63,13 +64,15 @@ async def query_network_tip() -> dict:
         result["block_hash"] = result["id"]
         del result["id"]
         return result
-        # return json.dumps(result, indent=2)
 
-# TODO what's the proper idiom for this?
-# TODO should this take OGMIOS_CTX as an argument?
+# TODO is this the only way we ever want to run it?
 def query_network_tip_sync() -> dict:
     return asyncio.run(query_network_tip())
 
+
+### fee calculations ###
+
+# TODO remove if not using anywhere
 def top_up_to_min_ada(output: UTxO):
     """The minimum lovelace for a UTXO depends on the serialized size of the
     output, which includes the coin field itself. In most cases this doesn't
@@ -123,6 +126,8 @@ def set_out_value_and_fee(
 
     txb.fee = fee
 
+
+### collateral operations ###
 
 def find_collateral_utxo(address: Address) -> UTxO | None:
     """Return a collateral-eligible UTXO at `address`, or None.
