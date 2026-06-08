@@ -1,3 +1,4 @@
+import time
 from pathlib import Path
 from ..core import *
 from pycardano import *
@@ -41,6 +42,11 @@ class AdminNode(ElectionNode):
         ) -> Transaction:
         LOG.debug('Admin.post_public_records')
 
+        collateral_utxo = wait_for_collateral(self.publisher.wallet.addr)
+        LOG.debug('collateral_utxo: %s' % pformat(collateral_utxo))
+
+        time.sleep(OGMIOS_POLL_SEC) # TODO remove?
+
         (in_utxo, in_datum) = self.state()
         in_state = in_datum.state
         LOG.debug('in_state: %s' % pformat(in_state))
@@ -81,6 +87,7 @@ class AdminNode(ElectionNode):
             .add_script_input(in_utxo, script=self.election.script.spend_script, redeemer=redeemer)
             .add_output(out_utxo)
         )
+        txb.collaterals.append(collateral_utxo)
         txb.required_signers = [self.publisher.wallet.vkh] # TODO remove?
 
         set_out_value_and_fee(txb, in_value, out_utxo)

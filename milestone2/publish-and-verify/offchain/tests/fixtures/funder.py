@@ -30,12 +30,14 @@ def funder(funder_wallet: Wallet) -> FunderNode:
 def init_tx_builder(
         funder: FunderNode,
         script: ElectionScript,
+        admin_addr: Address,
         admin_vkh: VerificationKeyHash,
     ) -> TransactionBuilder:
     txb = funder._build_init_tx(
-        script=script,
-        admin_vkh=admin_vkh,
-        admin_ada=100
+        script     = script,
+        admin_addr = admin_addr,
+        admin_vkh  = admin_vkh,
+        admin_ada  = 10, # TODO what should this default to?
     )
     LOG.info(f'init_txb: {txb}')
     return txb
