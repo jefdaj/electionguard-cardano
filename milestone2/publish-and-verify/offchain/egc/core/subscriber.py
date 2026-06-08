@@ -118,10 +118,10 @@ def handle_match(utxo: Dict[str, Any], session: requests.Session) -> (ChannelId,
 
         # try subchannel first because that should be more common long term
         try:
-            state = SubChannel(state=SubChannelState.from_cbor(datum['datum']))
+            state = SubChannel.from_cbor(datum['datum'])
             channel_id = state.state.channel_id
         except:
-            state = AdminChannel(state=AdminChannelState.from_cbor(datum['datum']))
+            state = AdminChannel.from_cbor(datum['datum'])
             channel_id = ADMIN_CHANNEL_ID
 
         LOG.debug(f'handle_match: decoded {channel_id} state {state.state.seq}: {state}')

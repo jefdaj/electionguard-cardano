@@ -56,7 +56,7 @@ class FunderNode(ElectionNode):
         # Without this set, the FunderNode risks the entire dev wallet when
         # deploying a contract.
         create_own_collateral(self.publisher.wallet)
-        collateral_utxo = wait_for_collateral(self.publisher.wallet.addr)
+        funder_collateral = wait_for_collateral(self.publisher.wallet.addr)
 
         redeemer = Redeemer(data=InitElection())
         LOG.debug('init redeemer: %s' % pformat(redeemer))
@@ -70,6 +70,11 @@ class FunderNode(ElectionNode):
             seq         = 0,
         )
         LOG.debug('init state: %s' % pformat(state))
+        assert isinstance(state, AdminChannelState)
+
+        datum: ChannelState = AdminChannel(state=state)
+        LOG.debug('init datum: %s' % pformat(datum))
+        assert isinstance(datum, ChannelState)
 
         assets = mint_channel_stt_assets(script.policy_id, 1, [ADMIN_CHANNEL_ID])
         LOG.debug('init assets: %s' % pformat(assets))
@@ -77,43 +82,38 @@ class FunderNode(ElectionNode):
         # TODO no need to top up! just don't allow admin_ada < some reasonable minimum like 5 or 10
         # TODO constant for the amount below which you should get a warning to top up a channel
         # TODO and that should probably also be the minimum, or the minimum is larger at least
-        value = Value(admin_ada * LOVELACE_PER_ADA, assets)
-        LOG.debug('value: %s' % pformat(value))
+        admin_stt_amount = Value(admin_ada * LOVELACE_PER_ADA, assets)
+        LOG.debug('admin_stt_amount: %s' % pformat(admin_stt_amount))
 
         # Normally we get the addr via self.election.address,
         # but that won't exist until after init_election.
         script_addr = Address(script.policy_id, network=Network.TESTNET)
         LOG.debug(f'script_addr: {script_addr}')
 
-        # Lock the STT at the script address
-        stt_output = TransactionOutput(
+        # Lock the STT at the script address along with the initial state datum
+        admin_stt_output = TransactionOutput(
             address=script_addr,
-            amount=value,
-            datum=state
+            amount=admin_stt_amount,
+            datum=datum,
         )
-        LOG.debug('init stt_output: %s' % pformat(stt_output))
-
-        # top up to min ada (warning: mutates in place)
-        # top_up_to_min_ada(stt_output)
-        # LOG.debug('value after top-up: %s' % pformat(value))
-        # LOG.debug('stt_output after top-up: %s' % pformat(stt_output))
+        LOG.debug('init admin_stt_output: %s' % pformat(admin_stt_output))
 
         # Collateral so the admin can interact with the contract.
-        admin_output = TransactionOutput(
+        admin_collateral = TransactionOutput(
             address = admin_addr,
             amount = Value(coin=COLLATERAL_LOVELACE),
         )
-        LOG.debug('init admin_output: %s' % pformat(admin_output))
+        LOG.debug('init admin_collateral: %s' % pformat(admin_collateral))
 
         txb = (
             TransactionBuilder(OGMIOS_CTX, mint=assets)
             .add_input(script.oneshot_utxo)
             .add_input_address(self.publisher.wallet.addr)
             .add_minting_script(script=script.mint_script, redeemer=redeemer)
-            .add_output(stt_output)
-            .add_output(admin_output)
+            .add_output(admin_stt_output)
+            .add_output(admin_collateral)
         )
-        txb.collaterals.append(collateral_utxo)
+        txb.collaterals.append(funder_collateral)
         txb.required_signers = [self.publisher.wallet.vkh]
         LOG.debug('init txb:\n%s\n' % pformat(txb))
 
@@ -257,7 +257,8 @@ class FunderNode(ElectionNode):
             errors = []
             try:
                 tx = return_collateral(pub_wallet, self.publisher.wallet.addr)
-                self.publisher.wait_for_confirmation(tx)
+                if tx is not None:
+                    self.publisher.wait_for_confirmation(tx)
             except Exception as e:
                 LOG.error(e)
                 errors.append(e)

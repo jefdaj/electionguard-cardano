@@ -30,7 +30,7 @@ pub fn full_stt_name(channel_id: ChannelId) -> ByteArray {
   let prefix = string.from_bytearray(config.stt_prefix)
   let id = string.from_bytearray(channel_id)
   let full_name = string.join([prefix, id, @"stt"], @"-")
-  // trace @"full_name" : full_name
+  trace @"full_name" : full_name
   string.to_bytearray(full_name)
 }
 
@@ -39,7 +39,7 @@ pub fn full_stt_name(channel_id: ChannelId) -> ByteArray {
 pub fn get_stt_name(state: Option<ChannelState>) -> ByteArray {
   trace @"get_stt_name"
   let channel_id = get_channel_id(state)
-  // trace @"string channel_id" : string.from_bytearray(channel_id)
+  trace @"string channel_id" : string.from_bytearray(channel_id)
   full_stt_name(channel_id)
 }
 
@@ -160,9 +160,10 @@ pub fn get_stt_state(
     list.find(outputs, fn(output) {
       assets.has_nft(output.value, policy_id, stt_name)
     })
-  // trace @"stt_output" : stt_output
+  trace @"stt_output" : stt_output
   when stt_output.datum is {
     InlineDatum(datum) -> {
+      trace @"datum" : datum
       expect state: Option<ChannelState> = datum
       state
     }

@@ -131,7 +131,7 @@ fn validate_initelection_spend(
   let init_state: AdminChannelState = get_initial_state(tx)
 
   // TODO does this obsolete the other checks below?
-  let expected = init_election(init_state.admin)
+  let expected: AdminChannelState = init_election(init_state.admin)
   let cont_as_expected = (init_state == expected) ?
 
   let new_records_empty = (list.length(init_state.new_records) == 0) ?

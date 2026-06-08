@@ -43,21 +43,31 @@ class AdminNode(ElectionNode):
 
         LOG.debug('Admin.post_public_records')
 
-        collateral_utxo = wait_for_collateral(self.publisher.wallet.addr)
-        LOG.debug('collateral_utxo: %s' % pformat(collateral_utxo))
+        admin_collateral = wait_for_collateral(self.publisher.wallet.addr)
+        LOG.debug('admin_collateral: %s' % pformat(admin_collateral))
 
         time.sleep(OGMIOS_POLL_SEC) # TODO remove?
 
         (in_utxo, in_datum) = self.state()
-        in_state = in_datum.state
+
+        assert isinstance(in_datum, ChannelState)
+        LOG.debug('in_datum: %s' % pformat(in_datum))
+
+        in_state: AdminChannelState = in_datum.state
+        assert isinstance(in_state, AdminChannelState)
         LOG.debug('in_state: %s' % pformat(in_state))
 
-        out_datum = AdminChannel(state=replace(
+        out_state: AdminChannelState = replace(
             in_state,
             new_records = new_records,
             phase = in_state.phase if new_phase is None else new_phase,
             seq = in_state.seq + 1,
-        ))
+        )
+        assert isinstance(out_state, AdminChannelState)
+        LOG.debug('out_state: %s' % pformat(out_state))
+
+        out_datum = AdminChannel(state=out_state)
+        assert isinstance(out_datum, ChannelState)
         LOG.debug('out_datum: %s' % pformat(out_datum))
 
         # We need the in_value alone because PyCardano will use it to
@@ -88,7 +98,7 @@ class AdminNode(ElectionNode):
             )
             .add_output(out_utxo)
         )
-        txb.collaterals.append(collateral_utxo)
+        txb.collaterals.append(admin_collateral)
         txb.required_signers = [self.publisher.wallet.vkh]
 
         # 1. Have Ogmios compute real ex_units, write them onto the redeemer.

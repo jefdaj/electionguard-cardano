@@ -52,7 +52,7 @@ pub type SubChannelState {
 pub fn get_channel_id(state: Option<ChannelState>) -> ChannelId {
   trace @"get_channel_id"
   when state is {
-    None -> "admin"
+    None -> "admin" // first tx (InitElection)
     Some(AdminChannel(_)) -> "admin"
     Some(SubChannel(sub_state)) -> sub_state.channel_id
   }

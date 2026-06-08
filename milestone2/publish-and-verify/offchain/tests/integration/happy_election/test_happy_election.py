@@ -29,8 +29,8 @@ def assert_admin_tx0_indexed(node: ElectionNode):
         assert ADMIN_CHANNEL_ID in sub_map
         assert len(sub_map) == 1
 
-    (_, state) = states[ADMIN_CHANNEL_ID]
-    assert state.state.seq == 0
+    (_, datum) = states[ADMIN_CHANNEL_ID]
+    assert datum.state.seq == 0
     assert len(history[ADMIN_CHANNEL_ID]) == 1
     assert last is not None
     assert len(seen) == 1
