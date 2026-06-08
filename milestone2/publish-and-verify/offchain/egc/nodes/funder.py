@@ -42,6 +42,7 @@ class FunderNode(ElectionNode):
     def _build_init_tx(
             self,
             script: ElectionScript,
+            admin_addr: Address,
             admin_vkh: VerificationKeyHash,
             admin_ada: int
         ) -> TransactionBuilder:
@@ -99,7 +100,12 @@ class FunderNode(ElectionNode):
         # LOG.debug('value after top-up: %s' % pformat(value))
         # LOG.debug('stt_output after top-up: %s' % pformat(stt_output))
 
-        # The 
+        # Collateral so the admin can interact with the contract.
+        admin_output = TransactionOutput(
+            address = admin_addr,
+            amount = Value(coin=COLLATERAL_LOVELACE),
+        )
+        LOG.debug('init admin_output: %s' % pformat(admin_output))
 
         txb = (
             TransactionBuilder(OGMIOS_CTX, mint=assets)
@@ -107,6 +113,7 @@ class FunderNode(ElectionNode):
             .add_input_address(self.publisher.wallet.addr)
             .add_minting_script(script=script.mint_script, redeemer=redeemer)
             .add_output(stt_output)
+            .add_output(admin_output)
         )
         txb.required_signers = [self.publisher.wallet.vkh]
         LOG.debug('init txb:\n%s\n' % pformat(txb))

@@ -238,23 +238,26 @@ def return_collateral(
     funder_address: Address,
 ) -> TransactionId | None:
     """Op 5: Publisher voluntarily returns their collateral UTXO to the
-    original funder. Convention, not enforced on-chain. Returns None if
-    the publisher has no collateral UTXO to return."""
-    utxo = find_collateral_utxo(publisher.wallet.addr)
+    original funder, less tx fee. The publisher is expected to do this,
+    but it can't be enforced on chain. Returns None if the publisher has
+    no collateral UTXO to return."""
+    utxo = find_collateral_utxo(publisher.address)
     if utxo is None:
-        LOG.info("No collateral UTXO at %s to return", publisher.wallet.addr)
+        LOG.info("No collateral UTXO at %s to return", publisher.address)
         return None
-
     builder = TransactionBuilder(OGMIOS_CTX)
     builder.add_input(utxo)
-    builder.add_output(TransactionOutput(funder_address, Value(COLLATERAL_LOVELACE)))
+    # No add_output / no change_address pointing at publisher — we want
+    # the entire UTXO to go to the funder, minus the fee. Using the
+    # funder as the change address makes the builder route the remainder
+    # (collateral - fee) to them automatically.
     signed = builder.build_and_sign(
-        [publisher.wallet.sk], change_address=publisher.wallet.addr
+        [publisher.skey], change_address=funder_address,
     )
     OGMIOS_CTX.submit_tx(signed)
     LOG.info(
-        "Returned collateral from %s to %s (tx %s)",
-        publisher.wallet.addr, funder_address, signed.id,
+        "Returned collateral from %s to %s, less tx fee (tx %s)",
+        publisher.address, funder_address, signed.id,
     )
     return signed.id
 

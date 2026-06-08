@@ -51,14 +51,21 @@ def election(init_tx: Transaction, funder: FunderNode) -> ElectionContext:
 def init_tx(
         funder: FunderNode,
         script: ElectionScript,
-        admin_vkh: VerificationKeyHash
+        admin_addr: Address,
+        admin_vkh: VerificationKeyHash,
     ) -> Transaction:
     """Yields an already submitted and confirmed InitElection transaction.
     For now, all other Transaction fixtures should depend on this one,
     because it does the cleanup step (BurnTestTokens) if needed.
+    Also tries to recover all possible collateral during cleanup.
     """
 
-    init_tx = funder.init_election(script=script, admin_vkh=admin_vkh, admin_ada=10) # TODO what's a good amount?
+    init_tx = funder.init_election(
+        script     = script,
+        admin_addr = admin_addr,
+        admin_vkh  = admin_vkh,
+        admin_ada  = 10, # TODO what's a good amount?
+    )
     funder.publisher.wait_for_confirmation(init_tx)
 
     # TODO is this needed?

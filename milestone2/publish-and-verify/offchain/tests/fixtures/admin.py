@@ -17,6 +17,10 @@ def admin_vkh(admin_wallet: Wallet) -> VerificationKeyHash:
     return admin_wallet.vkh
 
 @per_election_fixture
+def admin_addr(admin_wallet: Wallet) -> Address:
+    return admin_wallet.addr
+
+@per_election_fixture
 def admin(election: ElectionContext, admin_wallet: Wallet) -> AdminNode:
     node = AdminNode(election=election, wallet=admin_wallet)
     LOG.debug(f'admin: {node}')
