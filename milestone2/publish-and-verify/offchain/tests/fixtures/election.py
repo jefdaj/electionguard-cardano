@@ -65,7 +65,7 @@ def init_tx(
         script     = script,
         admin_addr = admin_addr,
         admin_vkh  = admin_vkh,
-        admin_ada  = 10, # TODO what's a good amount?
+        admin_ada  = 100, # TODO what's a good amount?
     )
     funder.publisher.wait_for_confirmation(init_tx)
 
@@ -85,4 +85,4 @@ def init_tx(
 
     finally:
         time.sleep(KUPO_DELAY_SEC) # TODO remove?
-        funder.sweep_all_collateral(keys_dir)
+        funder.sweep_all_collateral(keys_dir) # TODO make this part of keys_dir fixture?

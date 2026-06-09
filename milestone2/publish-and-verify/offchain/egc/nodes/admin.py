@@ -1,6 +1,6 @@
 import time
 from pathlib import Path
-from typing import Bool, List, Optional
+from typing import List, Optional
 from ..core import *
 from pycardano import *
 from dataclasses import replace
@@ -146,9 +146,9 @@ class AdminNode(ElectionNode):
     # TODO once both work, factor common parts out of this + post_public_records
     def add_subchannels(
             self,
-            subchannels: Map[ChannelId, VerificationKeyHash],
+            subchannels: dict[ChannelId, VerificationKeyHash],
             subchannel_ada: int = 10, # TODO proper default constant
-            done_onboarding: Bool = False,
+            done_onboarding: bool = False,
         ) -> Transaction:
 
         LOG.debug('Admin.add_subchannels')
@@ -166,8 +166,8 @@ class AdminNode(ElectionNode):
 
         # Create the redeemer with ex_units=None so the builder's
         # _consolidate_redeemer puts it into "needs estimation" mode (ExecutionUnits(0,0)).
-        # TODO sort this?
-        redeemer = Redeemer(data=AddSubChannels(channels=subchannels.values()))
+        sub_ids = list(subchannels.keys()) # TODO sort?
+        redeemer = Redeemer(data=AddSubChannels(channels=sub_ids))
         LOG.debug('redeemer: %s' % pformat(redeemer))
 
         # TODO more comprehensive guards based on subscriber phase
@@ -176,6 +176,7 @@ class AdminNode(ElectionNode):
 
         admin_out_state: AdminChannelState = replace(
             in_state,
+            subchannels = in_state.subchannels + sub_ids, # TODO sort? assert unique?
             new_records = [],
             phase = next_phase if done_onboarding else in_state.phase,
             seq = in_state.seq + 1,
@@ -215,11 +216,11 @@ class AdminNode(ElectionNode):
         # Add the STT and fee pool ADA for each subchannel
         for (sub_id, sub_vkh) in subchannels.items():
 
-            stt_assets = mint_channel_stt_assets(script.policy_id, 1, [sub_id])
-            LOG.debug(f'{sub_id} stt_assets: {pformat(stt_assets)}'
+            stt_assets = mint_channel_stt_assets(self.election.script.policy_id, 1, [sub_id])
+            LOG.debug(f'{sub_id} stt_assets: {pformat(stt_assets)}')
 
             stt_amt = Value(subchannel_ada * LOVELACE_PER_ADA, stt_assets)
-            LOG.debug(f'{sub_id} stt_amt: {pformat(stt_amt)}'
+            LOG.debug(f'{sub_id} stt_amt: {pformat(stt_amt)}')
 
             stt_datum = SubChannel(state=SubChannelState(
                 channel_id  = sub_id,
@@ -227,14 +228,14 @@ class AdminNode(ElectionNode):
                 new_records = [],
                 seq         = 0,
             ))
-            LOG.debug(f'{sub_id} stt_datum: {pformat(stt_datum)}'
+            LOG.debug(f'{sub_id} stt_datum: {pformat(stt_datum)}')
 
             stt_utxo = TransactionOutput(
                 address = self.election.address,
                 amount  = stt_amt,
                 datum   = stt_datum,
             )
-            LOG.debug(f'{sub_id} stt_utxo: {pformat(stt_utxo)}'
+            LOG.debug(f'{sub_id} stt_utxo: {pformat(stt_utxo)}')
 
             txb.add_output(stt_utxo)
 
@@ -242,7 +243,7 @@ class AdminNode(ElectionNode):
         for (sub_id, sub_vkh) in subchannels.items():
 
             sub_addr = addr_for_vkh(sub_vkh)
-            LOG.debug(f'{sub_id} sub_addr: {sub_addr}'
+            LOG.debug(f'{sub_id} sub_addr: {sub_addr}')
 
             col_utxo = TransactionOutput(
                 address = sub_addr,
