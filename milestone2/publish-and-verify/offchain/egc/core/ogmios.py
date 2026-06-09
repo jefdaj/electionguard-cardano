@@ -92,56 +92,43 @@ def top_up_to_min_ada(output: UTxO):
             break
         output.amount.coin = new_coin
 
+def _other_outputs_coin(txb: "TransactionBuilder", out_utxo: TransactionOutput) -> int:
+    """Sum of coin in every output except the continuation `out_utxo`."""
+    return sum(o.amount.coin for o in txb.outputs if o is not out_utxo)
 
-# TODO fix txb type?
+
+def _total_input_coin(txb: "TransactionBuilder") -> int:
+    """Sum of coin across every spending input. Excludes collateral inputs,
+    which don't enter the balance equation unless a script fails."""
+    return sum(i.output.amount.coin for i in txb.inputs)
+
+
 def evaluate_and_set_ex_units(
     txb: "TransactionBuilder",
     out_utxo: TransactionOutput,
-    in_value: Value,
-    redeemer: Redeemer,
+    redeemers: list[Redeemer],
 ) -> None:
-    """Ask the node (via Ogmios EvaluateTransaction) for the real ex_units
-    needed by every redeemer in `txb`, and write them back into the Redeemer
-    objects. Must be called before any final fee/body computation.
+    """Evaluate ex_units via Ogmios and write results back to each redeemer.
 
-    Per Ogmios' guidance, the tx we send to evaluate should be as structurally
-    close to the final tx as possible (same inputs, outputs, datums, script
-    integrity hash), otherwise the script context size — and thus the cost —
-    will differ. Coin values in outputs only affect CBOR size by a byte or two,
-    so seeding with the input coin minus a stub fee is good enough.
+    Seeds `out_utxo.coin` and `txb.fee` with plausible values so the draft
+    tx's CBOR size matches the final tx (script context cost depends on it).
     """
+    STUB_FEE = 200_000
+    total_in = _total_input_coin(txb)
+    others = _other_outputs_coin(txb, out_utxo)
 
-    # 1. Seed a plausible coin value and a placeholder fee so the draft is
-    #    structurally close to the final tx.
-
-    # TODO nope! document that doing it yourself first works better
-    # out_utxo.amount.coin = in_value.coin - 200_000   # rough stub fee
-
+    out_utxo.amount.coin = total_in - others - STUB_FEE
     txb.fee = max_tx_fee(txb.context)
 
-    # 2. PyCardano requires *some* ex_units on the redeemer before it can build
-    #    the body (it serialises them into script_data_hash). Use zeros, which
-    #    is exactly what Ogmios expects for evaluation anyway.
-    redeemer.ex_units = ExecutionUnits(mem=0, steps=0)
+    for r in redeemers:
+        r.ex_units = ExecutionUnits(mem=0, steps=0)
 
-    # 3. Build a *draft* body + witness set, assemble a Transaction, ship it
-    #    to Ogmios for evaluation.
-    draft_body = txb._build_tx_body()
-    draft_ws = txb.build_witness_set()
-    # vkey witness only needs to be present if a script actually inspects it;
-    # for evaluation, Ogmios is fine without real signatures, but it does need
-    # a placeholder for size purposes if `required_signers` is set. PyCardano's
-    # build_witness_set() already takes care of script/datum/redeemer pieces.
     draft_tx = Transaction(
-        transaction_body=draft_body,
-        transaction_witness_set=draft_ws,
+        transaction_body=txb._build_tx_body(),
+        transaction_witness_set=txb.build_witness_set(),
     )
-
-    # 4. Evaluate. Keys are "spend:0", "mint:1", etc. matching
-    #    (redeemer.tag, redeemer.index).
     result: Dict[str, ExecutionUnits] = txb.context.evaluate_tx(draft_tx)
 
-    # 5. Write results back, with a safety margin (matching pycardano defaults).
     def _pointer(r: Redeemer) -> str:
         tag_str = {
             RedeemerTag.SPEND: "spend",
@@ -151,7 +138,7 @@ def evaluate_and_set_ex_units(
         }[r.tag]
         return f"{tag_str}:{r.index}"
 
-    mem_buf = 1.0 + txb.execution_memory_buffer   # default 0.2 → 20%
+    mem_buf = 1.0 + txb.execution_memory_buffer
     step_buf = 1.0 + txb.execution_step_buffer
     for r in txb._redeemer_list:
         ptr = _pointer(r)
@@ -169,37 +156,39 @@ def evaluate_and_set_ex_units(
 
 def set_out_value_and_fee(
     txb: "TransactionBuilder",
-    in_value: Value,
     out_utxo: TransactionOutput,
 ) -> None:
-    """1-in/1-out continuation: out_coin = in_coin - fee, iterating to a fixed
-    point. Assumes redeemer ex_units are already finalised."""
+    """N-in / M-out: continuation output absorbs `Σ inputs − Σ others − fee`,
+    iterating to a fixed point. Assumes redeemer ex_units are finalised and
+    all other outputs have their final coin values set."""
 
-    # TODO nope! document that doing it yourself first works better
-    # out_utxo.amount.coin = in_value.coin   # realistic-size seed
+    total_in = _total_input_coin(txb)
+    others = _other_outputs_coin(txb, out_utxo)
 
+    out_utxo.amount.coin = total_in - others   # realistic-size seed
     txb.fee = max_tx_fee(txb.context)
 
     prev_fee = None
-    for _ in range(8):
+    for _ in range(16):
         new_fee = txb._estimate_fee()
         if txb.fee_buffer:
             new_fee += txb.fee_buffer
-        if new_fee == prev_fee:
-            break
-        new_coin = in_value.coin - new_fee
+
+        new_coin = total_in - others - new_fee
         min_lv = min_lovelace_post_alonzo(out_utxo, txb.context)
         if new_coin < min_lv:
             raise ValueError(
-                f"Script UTxO under-funded: have {in_value.coin} lovelace, "
-                f"need {min_lv + new_fee} (min_ada {min_lv} + fee {new_fee})"
+                f"Continuation under-funded: residual {new_coin} < min_ada "
+                f"{min_lv} (in={total_in}, others={others}, fee={new_fee})"
             )
+
         txb.fee = new_fee
         out_utxo.amount.coin = new_coin
+        if new_fee == prev_fee:
+            break
         prev_fee = new_fee
     else:
-        raise RuntimeError("Fee did not converge in 8 iterations")
-
+        raise RuntimeError("Fee did not converge in 16 iterations")
 
 
 ### collateral operations ###

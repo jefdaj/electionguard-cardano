@@ -102,11 +102,11 @@ class AdminNode(ElectionNode):
         txb.collaterals.append(admin_collateral)
         txb.required_signers = [self.publisher.wallet.vkh]
 
-        # 1. Have Ogmios compute real ex_units, write them onto the redeemer.
-        evaluate_and_set_ex_units(txb, out_utxo, in_value, redeemer)
+        # 1. Have Ogmios compute real ex_units, write them onto the redeemers.
+        evaluate_and_set_ex_units(txb, out_utxo, [redeemer])
 
         # 2. Now that ex_units are pinned, converge fee + output coin.
-        set_out_value_and_fee(txb, in_value, out_utxo)
+        set_out_value_and_fee(txb, out_utxo)
 
         # tx  = self.publisher.sign_and_submit(txb)
 
@@ -167,8 +167,8 @@ class AdminNode(ElectionNode):
         # Create the redeemer with ex_units=None so the builder's
         # _consolidate_redeemer puts it into "needs estimation" mode (ExecutionUnits(0,0)).
         sub_ids = list(subchannels.keys()) # TODO sort?
-        redeemer = Redeemer(data=AddSubChannels(channels=sub_ids))
-        LOG.debug('redeemer: %s' % pformat(redeemer))
+        admin_spend_redeemer = Redeemer(data=AddSubChannels(channels=sub_ids))
+        LOG.debug('admin_spend_redeemer: %s' % pformat(admin_spend_redeemer))
 
         # TODO more comprehensive guards based on subscriber phase
         assert in_state.phase == ElectionConfigPhase(phase=ConfigOnboardingPhase())
@@ -211,16 +211,23 @@ class AdminNode(ElectionNode):
             .add_script_input(
                 in_utxo,
                 script=self.election.script.spend_script,
-                redeemer=redeemer
+                redeemer=admin_spend_redeemer
             )
             .add_output(admin_out_utxo)
         )
+
+
+        # Accumulate the mint across all subchannels so it ends up as a single
+        # MultiAsset under one policy_id.
+        mint_assets = MultiAsset()
 
         # Add the STT and fee pool ADA for each subchannel
         for (sub_id, sub_vkh) in subchannels.items():
 
             stt_assets = mint_channel_stt_assets(self.election.script.policy_id, 1, [sub_id])
             LOG.debug(f'{sub_id} stt_assets: {pformat(stt_assets)}')
+
+            mint_assets += stt_assets
 
             stt_amt = Value(subchannel_ada * LOVELACE_PER_ADA, stt_assets)
             LOG.debug(f'{sub_id} stt_amt: {pformat(stt_amt)}')
@@ -256,16 +263,25 @@ class AdminNode(ElectionNode):
 
             txb.add_output(col_utxo)
 
+
+        # Tell the builder to actually mint the STTs.
+        txb.mint = mint_assets
+
+        mint_redeemer = Redeemer(data=AddSubChannels(channels=sub_ids))
+        LOG.debug(f'mint_redeemer: {mint_redeemer}')
+
+        txb.add_minting_script(script=self.election.script.mint_script, redeemer=mint_redeemer)
+
         # Add our own collateral for this contract interaction
         txb.collaterals.append(admin_collateral)
         txb.required_signers = [self.publisher.wallet.vkh]
 
         # 1. Have Ogmios compute real ex_units, write them onto the redeemer.
-        evaluate_and_set_ex_units(txb, admin_out_utxo, in_value, redeemer)
-        LOG.debug(f'adjusted admin redeemer with ex_units: {redeemer}')
+        evaluate_and_set_ex_units(txb, admin_out_utxo, [admin_spend_redeemer])
+        LOG.debug(f'adjusted admin redeemer with ex_units: {admin_spend_redeemer}')
 
         # 2. Now that ex_units are pinned, converge fee + output coin.
-        set_out_value_and_fee(txb, in_value, admin_out_utxo)
+        set_out_value_and_fee(txb, admin_out_utxo)
         LOG.debug(f'adjusted admin_out_value: {admin_out_value}')
 
         # 3. Final body (bakes script_data_hash from the now-final redeemer).
