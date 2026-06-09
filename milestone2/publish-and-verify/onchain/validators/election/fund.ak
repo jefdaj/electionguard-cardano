@@ -2,14 +2,17 @@ use aiken/collection/list
 use cardano/transaction.{Transaction, Input, OutputReference}
 use cardano/assets.{PolicyId, Value, lovelace_of, policies}
 
-use election/types/action.{ElectionAction, InitElection, EndElection, BurnTestTokens}
+use election/types/action.{ElectionAction, AddSubChannels, InitElection, EndElection, BurnTestTokens}
 use election/stt.{get_policy_id}
 
-// During the election, we want to make sure that no one takes ADA out of
-// the channel fee pools, but also allow change from top-up transactions.
-// At the end of the election, the admin can send remaining ADA wherever
-// they want. In future versions, this would be a good place to add
-// treasury logic.
+// Collateral to be sent to each subchannel publisher.
+pub const collateral_lovelace: Int = 5_000_000
+
+// During the election, we want to make sure that no one takes ADA out of the
+// channel fee pools, but also allow change from top-up transactions and
+// collateral payouts to new publishers. At the end of the election, the admin
+// can send remaining ADA wherever they want. In future versions, this would be
+// a good place to add treasury logic.
 pub fn ada_retained_during_election(
   redeemer: ElectionAction,
   own_ref: OutputReference,
@@ -19,23 +22,30 @@ pub fn ada_retained_during_election(
   when redeemer is {
     BurnTestTokens -> True // TODO remove for production
     InitElection | EndElection -> True
+    AddSubChannels { channels } -> {
+      let policy_id = get_policy_id(own_ref, tx.inputs)
+      let allowance = list.length(channels) * collateral_lovelace
+      script_ada_retained(tx, policy_id, allowance)
+    }
     _ -> {
       let policy_id = get_policy_id(own_ref, tx.inputs)
-      script_ada_retained(tx, policy_id)
+      script_ada_retained(tx, policy_id, 0)
     }
   }
 }
 
-/// Checks that the script controlled ADA is retained minus transaction fees.
-/// Allows external contributions and change outputs.
+// Checks that the script controlled ADA is retained minus transaction fees
+// and an "allowance" (collateral payouts to new publishers). Allows external
+// contributions and change outputs.
 fn script_ada_retained(
   tx: Transaction,
   policy_id: PolicyId,
+  allowance: Int,
 ) -> Bool {
   trace @"script_ada_retained"
   let script_input_ada  =  ada_in_inputs_with_policy(tx, policy_id)
   let script_output_ada = ada_in_outputs_with_policy(tx, policy_id)
-  script_output_ada + tx.fee >= script_input_ada
+  script_output_ada + tx.fee + allowance >= script_input_ada
 }
 
 /// Calculates total ADA in inputs that contain tokens from the policy
