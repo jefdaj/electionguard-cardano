@@ -61,7 +61,6 @@ class FunderNode(ElectionNode):
         redeemer = Redeemer(data=InitElection())
         LOG.debug('init redeemer: %s' % pformat(redeemer))
 
-        # TODO extract as a constant and use in pytest too?
         state = AdminChannelState(
             admin       = admin_vkh.payload,
             subchannels = [],
