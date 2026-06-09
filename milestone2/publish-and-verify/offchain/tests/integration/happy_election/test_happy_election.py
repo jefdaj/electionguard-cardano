@@ -190,23 +190,28 @@ def admin_tx2(
     admin.publisher.wait_for_confirmation(tx)
     return tx
 
-def sub_s0(channel_id: ChannelId) -> ChannelState:
+def sub_s0(sub_id: ChannelId, sub_wallet: Wallet) -> ChannelState:
     return SubChannel(state=SubChannelState(
+        channel_id  = sub_id,
+        publisher   = sub_wallet.vkh.payload,
+        new_records = [],
+        seq         = 0,
     ))
 
 def test_admin_tx2(
         admin: AdminNode,
+        subchannel_onboarding_info: Map[ChannelId, VerificationKeyHash],
         admin_s2: ChannelState,
         admin_tx2: Transaction,
     ):
     assert isinstance(admin_tx2, Transaction)
-    for channel_id in [ADMIN_CHANNEL_ID] + SUBCHANNEL_IDS:
-        (_, state) = admin.subscriber.states[channel_id]
-        if channel_id == ADMIN_CHANNEL_id:
-            assert state == admin_s2
-        else:
-            assert state == sub_s0(channel_id)
-    # TODO also assert the subchannel states here
+
+    admin_s2_actual = admin.subscriber.states[channel_id][1]
+    assert admin_s2_actual == admin_s2, 'admin unexpected state'
+
+    for (sub_id, sub_wallet) in subchannel_onboarding_info.items():
+        sub_state_actual = admin.subscriber.states[channel_id][1]
+        assert sub_state_actual == sub_s0(sub_id, sub_wallet), f'{sub_id} unexpected state'
 
 def test_admin_tx2_sub(
         admin_tx2: Transaction,
