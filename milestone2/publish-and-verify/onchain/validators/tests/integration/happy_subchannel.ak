@@ -202,16 +202,18 @@ const sub_post_add_outputs_multi =
     }
   )
 
+const sub_collateral_outputs = list.map(subchannel_ids, mock.collateral)
+
 fn add_tx_multi() -> Transaction {
   let mint_val = mock.mint_stts(subchannel_ids)
+  let outputs = [admin_post_add_output_multi]
+    |> list.concat(sub_post_add_outputs_multi)
+    |> list.concat(sub_collateral_outputs)
   Transaction {
     ..transaction.placeholder,
     inputs: [admin_pre_add_input],
     mint: mint_val,
-    outputs: [
-      admin_post_add_output_multi,
-      ..sub_post_add_outputs_multi
-    ],
+    outputs: outputs,
     extra_signatories: [mock.admin_vkh],
   }
 }
