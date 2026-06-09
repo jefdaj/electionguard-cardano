@@ -17,7 +17,7 @@ use election/types/channel.{
 // From Rhys's Aiken Language Test Lib 3/5 video
 // TODO remove
 pub fn scriptAddress(hash: ByteArray) -> Address {
-  trace @"scriptAddress"
+  // trace @"scriptAddress"
   let addr = Address {
     payment_credential: Script(hash),
     stake_credential: None,
@@ -26,7 +26,7 @@ pub fn scriptAddress(hash: ByteArray) -> Address {
 }
 
 pub fn full_stt_name(channel_id: ChannelId) -> ByteArray {
-  trace @"full_stt_name"
+  // trace @"full_stt_name"
   let prefix = string.from_bytearray(config.stt_prefix)
   let id = string.from_bytearray(channel_id)
   let full_name = string.join([prefix, id, @"stt"], @"-")
@@ -37,9 +37,9 @@ pub fn full_stt_name(channel_id: ChannelId) -> ByteArray {
 // Note that you can set state to None to use this in the admin mint validator.
 // TODO is that actually true? or did it fail?
 pub fn get_stt_name(state: ChannelState) -> ByteArray {
-  trace @"get_stt_name"
+  // trace @"get_stt_name"
   let channel_id = get_channel_id(state)
-  trace @"string channel_id" : string.from_bytearray(channel_id)
+  // trace @"string channel_id" : string.from_bytearray(channel_id)
   full_stt_name(channel_id)
 }
 
@@ -149,9 +149,9 @@ pub fn get_initial_state(
            },
          )
   expect [datum] = matching_datums
-  trace @"datum": datum
+  // trace @"datum": datum
   expect AdminChannel(init_state) = datum
-  trace @"init_state": init_state
+  // trace @"init_state": init_state
   init_state
 }
 
@@ -166,11 +166,11 @@ pub fn get_stt_state(
     list.find(outputs, fn(output) {
       assets.has_nft(output.value, policy_id, stt_name)
     })
-  trace @"stt_output" : stt_output
+  // trace @"stt_output" : stt_output
   expect InlineDatum(d) = stt_output.datum
-  trace @"d" : d
+  // trace @"d" : d
   expect state: ChannelState = d
-  trace @"state" : state
+  // trace @"state" : state
   state
 }
 

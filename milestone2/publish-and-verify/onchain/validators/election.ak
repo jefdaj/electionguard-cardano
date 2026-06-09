@@ -54,7 +54,7 @@ pub fn validate_admin_channel_mint(
   when redeemer is {
     InitElection -> {
 
-      trace @"initelection mint"
+      // trace @"initelection mint"
       // No need to check for authorization here because whoever mints a
       // new admin STT will become the admin of their new election.
       expect Some(_) = tx.inputs |> find_input(oneshot_ref)
@@ -65,7 +65,7 @@ pub fn validate_admin_channel_mint(
       // - the funder collateral utxo?
       // - the admin collateral utxo?
 
-      trace @"initelection spend (sort of)"
+      // trace @"initelection spend (sort of)"
       // Special case: we validate the cont state here rather than in spend(),
       // because for InitElection there is no spend:
       let init_state: AdminChannelState = get_initial_state(tx)
@@ -463,7 +463,7 @@ validator election(oneshot_ref: OutputReference) {
     policy_id: PolicyId,
     tx: Transaction
   ) {
-    trace @"mint"
+    // trace @"mint"
     validate_mint(oneshot_ref, redeemer, policy_id, tx)
   }
   // TODO ah I get it: spend isn't called in the initial tx, so it can always expect a datum
@@ -473,7 +473,7 @@ validator election(oneshot_ref: OutputReference) {
     own_ref: OutputReference,
     tx: Transaction,
   ) {
-    trace @"spend"
+    // trace @"spend"
     expect Some(state) = datum
     validate_spend(state, redeemer, own_ref, tx)
   }
