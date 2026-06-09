@@ -20,6 +20,7 @@ use cardano/transaction.{
 }
 
 use election
+use election/utils.{inputs_from_script}
 use election/types/action.{ElectionAction}
 use election/types/channel_id.{ChannelId}
 use election/types/channel.{
@@ -77,15 +78,13 @@ pub fn election_validate(
 
   // spend is run once per input consumed, and doesn't use oneshot_ref
   let all_spends_pass = list.all(
-    tx.inputs,
+
+    // gotcha! have to remove one-shot utxo here,
+    // unlike with the actual validator, because this function
+    // doesn't know to only call it on the script-owned inputs otherwise
+    inputs_from_script(tx.inputs, policy_id()),
+
     fn(input) {
-      // let datum: Option<ChannelState> = when input.output.datum is {
-// 	InlineDatum(data) -> {
-// 	  expect state: Option<ChannelState> = data
-// 	  state
-// 	}
-// 	_ -> None
-  //     }
       election_validate_spend(
 	input.output.datum,
         redeemer,
@@ -113,6 +112,9 @@ fn election_validate_spend(
   own_ref: OutputReference,
   tx: Transaction,
 ) -> Bool {
+  trace @"election_validate_spend"
+  trace @"datum" : datum
+  // TODO have to filter out inputs that aren't from the contract here, so it doesn't fail on the oneshot utxo?
   expect InlineDatum(d) = datum
   expect state: ChannelState = d
   election.validate_spend(state, redeemer, own_ref, tx)

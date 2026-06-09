@@ -1,7 +1,7 @@
 use aiken/collection/list
 use cardano/assets.{PolicyId}
 use cardano/transaction.{
-  Datum, InlineDatum, NoDatum, OutputReference, Transaction, find_input
+  OutputReference, Transaction, find_input
 }
 
 use election/types/action.{
@@ -16,7 +16,7 @@ use election/cont.{
   advance_phase, rebalance_funds_admin, rebalance_funds_subchannel,
 }
 use election/fund.{ada_retained_during_election}
-use election/types/phase.{is_initial_phase, is_final_phase, is_valid_phase_transition}
+use election/types/phase.{is_final_phase, is_valid_phase_transition}
 use election/types/record.{validate_records}
 use election/types/channel_id.{ChannelId}
 use election/types/channel.{
@@ -53,12 +53,19 @@ pub fn validate_admin_channel_mint(
   let channel_id = "admin"
   when redeemer is {
     InitElection -> {
-      trace @"initelection branch"
+
+      trace @"initelection mint"
       // No need to check for authorization here because whoever mints a
       // new admin STT will become the admin of their new election.
       expect Some(_) = tx.inputs |> find_input(oneshot_ref)
       let mints_admin_stt_only = exact_channels_minted(tx, policy_id, [channel_id]) ?
 
+      // TODO could the trouble here be about needing to filter out...
+      // - the oneshot utxo?
+      // - the funder collateral utxo?
+      // - the admin collateral utxo?
+
+      trace @"initelection spend (sort of)"
       // Special case: we validate the cont state here rather than in spend(),
       // because for InitElection there is no spend:
       let init_state: AdminChannelState = get_initial_state(tx)
@@ -466,12 +473,5 @@ validator election(oneshot_ref: OutputReference) {
     trace @"spend"
     expect Some(state) = datum
     validate_spend(state, redeemer, own_ref, tx)
-    // when datum is {
-      // NoDatum -> validate_initelection_spend(redeemer, tx)
-      // InlineDatum(d) -> {
-        // expect state: ChannelState = d
-      // }
-      // _ -> False
-    // }
   }
 }

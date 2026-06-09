@@ -140,7 +140,9 @@ pub fn get_initial_state(
            },
          )
   expect [datum] = matching_datums
-  expect Some(AdminChannel(init_state)) = datum
+  trace @"datum": datum
+  expect AdminChannel(init_state) = datum
+  trace @"init_state": init_state
   init_state
 }
 
@@ -157,6 +159,7 @@ pub fn get_stt_state(
     })
   trace @"stt_output" : stt_output
   expect InlineDatum(d) = stt_output.datum
+  trace @"d" : d
   expect state: ChannelState = d
   trace @"state" : state
   state

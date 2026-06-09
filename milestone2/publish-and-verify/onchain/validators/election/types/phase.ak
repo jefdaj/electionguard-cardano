@@ -75,6 +75,7 @@ pub type ResultsPhase {
 
 }
 
+// TODO remove?
 pub fn is_initial_phase(phase: ElectionPhase) -> Bool {
   trace @"is_initial_phase"
   phase == ElectionConfigPhase(ConfigAnnouncePhase)
