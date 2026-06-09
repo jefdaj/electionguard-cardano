@@ -113,7 +113,10 @@ def evaluate_and_set_ex_units(
 
     # 1. Seed a plausible coin value and a placeholder fee so the draft is
     #    structurally close to the final tx.
-    out_utxo.amount.coin = in_value.coin - 200_000   # rough stub fee
+
+    # TODO nope! document that doing it yourself first works better
+    # out_utxo.amount.coin = in_value.coin - 200_000   # rough stub fee
+
     txb.fee = max_tx_fee(txb.context)
 
     # 2. PyCardano requires *some* ex_units on the redeemer before it can build
@@ -171,7 +174,10 @@ def set_out_value_and_fee(
 ) -> None:
     """1-in/1-out continuation: out_coin = in_coin - fee, iterating to a fixed
     point. Assumes redeemer ex_units are already finalised."""
+
+    # TODO nope! document that doing it yourself first works better
     # out_utxo.amount.coin = in_value.coin   # realistic-size seed
+
     txb.fee = max_tx_fee(txb.context)
 
     prev_fee = None

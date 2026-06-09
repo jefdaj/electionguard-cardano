@@ -262,11 +262,11 @@ class AdminNode(ElectionNode):
 
         # 1. Have Ogmios compute real ex_units, write them onto the redeemer.
         evaluate_and_set_ex_units(txb, admin_out_utxo, in_value, redeemer)
+        LOG.debug(f'adjusted admin redeemer with ex_units: {redeemer}')
 
         # 2. Now that ex_units are pinned, converge fee + output coin.
         set_out_value_and_fee(txb, in_value, admin_out_utxo)
-
-        LOG.debug(f'final admin_out_value: {admin_out_value}')
+        LOG.debug(f'adjusted admin_out_value: {admin_out_value}')
 
         # 3. Final body (bakes script_data_hash from the now-final redeemer).
         tx_body = txb._build_tx_body()
