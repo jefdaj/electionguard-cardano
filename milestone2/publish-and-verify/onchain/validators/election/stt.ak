@@ -36,7 +36,7 @@ pub fn full_stt_name(channel_id: ChannelId) -> ByteArray {
 
 // Note that you can set state to None to use this in the admin mint validator.
 // TODO is that actually true? or did it fail?
-pub fn get_stt_name(state: Option<ChannelState>) -> ByteArray {
+pub fn get_stt_name(state: ChannelState) -> ByteArray {
   trace @"get_stt_name"
   let channel_id = get_channel_id(state)
   trace @"string channel_id" : string.from_bytearray(channel_id)
@@ -145,55 +145,45 @@ pub fn get_initial_state(
 }
 
 
-// TODO rename stt -> own?
-// The state is optional because there isn't one during InitElection.
-// TODO find instead of get? not sure if None is helpful
 pub fn get_stt_state(
-  datum: Option<ChannelState>, // TODO remove option because can't handle initial state
   outputs: List<Output>,
   policy_id: PolicyId,
-) -> Option<ChannelState> {
+  stt_name: ByteArray,
+) -> ChannelState {
   trace @"get_stt_state"
-  let stt_name = get_stt_name(datum)
-  // Find the input containing the STT
   expect Some(stt_output) =
     list.find(outputs, fn(output) {
       assets.has_nft(output.value, policy_id, stt_name)
     })
   trace @"stt_output" : stt_output
-  when stt_output.datum is {
-    InlineDatum(datum) -> {
-      trace @"datum" : datum
-      expect state: Option<ChannelState> = datum
-      state
-    }
-    _ -> None
-  }
+  expect InlineDatum(d) = stt_output.datum
+  expect state: ChannelState = d
+  trace @"state" : state
+  state
 }
 
 pub fn get_input_state(
-  datum: Option<ChannelState>,
   own_ref: OutputReference,
   tx: Transaction,
+  stt_name: ByteArray,
 ) -> ChannelState {
   trace @"get_input_state"
   let input_outputs = list.map(tx.inputs, fn(input) { input.output })
   let policy_id = get_policy_id(own_ref, tx.inputs)
-  expect Some(state) = get_stt_state(datum, input_outputs, policy_id)
-  state
+  get_stt_state(input_outputs, policy_id, stt_name)
 }
 
 
 // The state is optional because there isn't one during InitElection.
 pub fn get_continuation_state(
-  datum: Option<ChannelState>,
+  state: ChannelState,
   own_ref: OutputReference,
   tx: Transaction,
 ) -> ChannelState {
   trace @"get_continuation_state"
   let policy_id = get_policy_id(own_ref, tx.inputs)
-  expect Some(state) = get_stt_state(datum, tx.outputs, policy_id)
-  state
+  let stt_name = get_stt_name(state)
+  get_stt_state(tx.outputs, policy_id, stt_name)
 }
 
 // This prevents more than one STT being sent to a given UTxO.

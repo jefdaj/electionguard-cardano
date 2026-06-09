@@ -2,7 +2,7 @@ use aiken/collection/list
 use aiken/crypto.{VerificationKeyHash}
 use cardano/assets.{PolicyId}
 use cardano/transaction.{Transaction, OutputReference}
-use election/stt.{find_admin_stt_output, get_input_state}
+use election/stt.{find_admin_stt_output, full_stt_name, get_input_state}
 use election/types/channel.{ChannelState, AdminChannel, SubChannel}
 
 // Whether a transaction was signed by the required key.
@@ -29,17 +29,18 @@ pub fn get_admin_vkh(
   tx: Transaction,
 ) -> VerificationKeyHash {
   trace @"get_admin_vkh"
-  expect AdminChannel(state) = get_input_state(None, own_ref, tx)
+  // TODO use find_admin_stt_output instead?
+  let stt_name = full_stt_name("admin")
+  expect AdminChannel(state) = get_input_state(own_ref, tx, stt_name)
   state.admin
 }
 
 pub fn get_publisher_vkh(
-  datum: Option<ChannelState>,
-  own_ref: OutputReference,
-  tx: Transaction,
+  state: ChannelState,
+  // own_ref: OutputReference,
+  // tx: Transaction,
 ) -> VerificationKeyHash {
   trace @"get_publisher_vkh"
-  let state = get_input_state(datum, own_ref, tx)
   when state is {
     AdminChannel(admin_state) -> admin_state.admin
     SubChannel(sub_state) -> sub_state.publisher
@@ -47,12 +48,12 @@ pub fn get_publisher_vkh(
 }
 
 pub fn publisher_signed(
-  datum: Option<ChannelState>,
-  own_ref: OutputReference,
+  state: ChannelState,
+  // own_ref: OutputReference,
   tx: Transaction,
 ) -> Bool {
   trace @"publisher_signed"
-  let pub_vkh = get_publisher_vkh(datum, own_ref, tx)
+  let pub_vkh = get_publisher_vkh(state)
   let pub_sig = tx_signed_by(tx, pub_vkh) ?
   pub_sig
 }

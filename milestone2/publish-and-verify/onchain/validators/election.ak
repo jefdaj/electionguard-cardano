@@ -1,7 +1,7 @@
 use aiken/collection/list
 use cardano/assets.{PolicyId}
 use cardano/transaction.{
-  OutputReference, Transaction, find_input
+  Datum, InlineDatum, NoDatum, OutputReference, Transaction, find_input
 }
 
 use election/types/action.{
@@ -58,7 +58,14 @@ pub fn validate_admin_channel_mint(
       // new admin STT will become the admin of their new election.
       expect Some(_) = tx.inputs |> find_input(oneshot_ref)
       let mints_admin_stt_only = exact_channels_minted(tx, policy_id, [channel_id]) ?
-      mints_admin_stt_only
+
+      // Special case: we validate the cont state here rather than in spend(),
+      // because for InitElection there is no spend:
+      let init_state: AdminChannelState = get_initial_state(tx)
+      let expected: AdminChannelState = init_election(init_state.admin)
+      let cont_as_expected = (init_state == expected) ?
+
+      mints_admin_stt_only && cont_as_expected
     }
     EndElection -> {
       // No need to check for authorization here because the ledger will
@@ -117,61 +124,62 @@ pub fn validate_mint(
 // Spend validator
 // ===========================================
 
-fn validate_initelection_spend(
-  datum: Option<ChannelState>,
-  tx: Transaction,
-) -> Bool {
-  trace @"validate_initelection_spend"
-
-  // This is currently true, but remember to remove it if we run into a
-  // use case for opening a channel starting from another script.
-  expect None = datum
-
-  // Special case because there's no input STT to get it the regular way.
-  let init_state: AdminChannelState = get_initial_state(tx)
-
-  // TODO does this obsolete the other checks below?
-  let expected: AdminChannelState = init_election(init_state.admin)
-  let cont_as_expected = (init_state == expected) ?
-
-  let new_records_empty = (list.length(init_state.new_records) == 0) ?
-  let subchannels_empty = (list.length(init_state.subchannels) == 0) ?
-  let seq_zero = (init_state.seq == 0) ?
-  let initial_phase = is_initial_phase(init_state.phase) ?
-  and {
-    cont_as_expected,
-    new_records_empty,
-    subchannels_empty,
-    seq_zero,
-    initial_phase,
-  }
-}
+// TODO should this be part of the mint validator?
+// fn validate_initelection_spend(
+//   redeemer: ElectionAction,
+//   tx: Transaction,
+// ) -> Bool {
+//   trace @"validate_initelection_spend"
+// 
+//   // TODO is there a cleaner way?
+//   expect InitElection = redeemer
+// 
+//   // Special case because there's no input STT to get it the regular way.
+//   let init_state: AdminChannelState = get_initial_state(tx)
+// 
+//   // TODO does this obsolete the other checks below?
+//   let expected: AdminChannelState = init_election(init_state.admin)
+//   let cont_as_expected = (init_state == expected) ?
+// 
+//   let new_records_empty = (list.length(init_state.new_records) == 0) ?
+//   let subchannels_empty = (list.length(init_state.subchannels) == 0) ?
+//   let seq_zero = (init_state.seq == 0) ?
+//   let initial_phase = is_initial_phase(init_state.phase) ?
+//   and {
+//     cont_as_expected,
+//     new_records_empty,
+//     subchannels_empty,
+//     seq_zero,
+//     initial_phase,
+//   }
+// }
 
 // TODO any reason to check or restrict where the new channel STTs are sent?
 fn validate_addsubchannels_spend(
-  datum: Option<ChannelState>,
+  state: ChannelState,
   own_ref: OutputReference,
   tx: Transaction,
   new_channels: List<ChannelId>
 ) -> Bool {
   trace @"validate_addsubchannels_spend"
 
+  expect AdminChannel(admin_state) = state
+
   // The new subchannel STTs aren't being spent, so this will only be called once with the admin STT.
-  expect Some(AdminChannel(state)) = datum
-  expect AdminChannel(cont_state) = get_continuation_state(datum, own_ref, tx)
+  expect AdminChannel(cont_state) = get_continuation_state(state, own_ref, tx)
 
   // TODO merge into one lib fn?
   let new_channels_valid  = are_disjoint(new_channels, ["admin"]) ? // TODO enforce [a-z]*[0-9]*?
-  let new_channels_unique = are_disjoint(state.subchannels, new_channels) ?
+  let new_channels_unique = are_disjoint(admin_state.subchannels, new_channels) ?
 
-  let expected = add_subchannels(state, new_channels, cont_state.phase)
+  let expected = add_subchannels(admin_state, new_channels, cont_state.phase)
   // trace @"expected" : expected
   // trace @"cont_state" : cont_state
   let cont_as_expected = (cont_state == expected) ?
   
   // The new phase could still be ConfigOnboardingPhase,
   // or it could advance to ConfigCeremonyPhase.
-  let phase_valid = is_valid_phase_transition(state.phase, cont_state.phase) ?
+  let phase_valid = is_valid_phase_transition(admin_state.phase, cont_state.phase) ?
 
   let channels_separate = channels_kept_separate(own_ref, tx) ?
 
@@ -185,15 +193,15 @@ fn validate_addsubchannels_spend(
 }
 
 fn validate_advancephase_spend(
-  datum: Option<ChannelState>,
+  state: ChannelState,
   own_ref: OutputReference,
   tx: Transaction,
 ) -> Bool {
   trace @"validate_advancephase_spend"
-  expect Some(AdminChannel(state)) = datum
-  expect AdminChannel(cont_state) = get_continuation_state(datum, own_ref, tx)
-  let valid_transition = is_valid_phase_transition(state.phase, cont_state.phase) ?
-  let expected = advance_phase(state, cont_state.phase)
+  expect AdminChannel(admin_state) = state
+  expect AdminChannel(cont_state) = get_continuation_state(state, own_ref, tx)
+  let valid_transition = is_valid_phase_transition(admin_state.phase, cont_state.phase) ?
+  let expected = advance_phase(admin_state, cont_state.phase)
   // trace @"expected" : expected
   // trace @"cont_state" : cont_state
   let cont_as_expected = (cont_state == expected) ?
@@ -201,11 +209,11 @@ fn validate_advancephase_spend(
 }
 
 fn validate_endelection_spend(
-  datum: Option<ChannelState>,
+  state: ChannelState,
 ) -> Bool {
   trace @"validate_endelection_spend"
   // No need to check for lack of a continuation STT here; mint() handles that.
-  expect Some(AdminChannel(AdminChannelState { subchannels, phase, .. })) = datum
+  expect AdminChannel(AdminChannelState { subchannels, phase, .. }) = state
   let final_phase = is_final_phase(phase) ?
   let subchannels_empty = (list.length(subchannels) == 0) ?
   final_phase && subchannels_empty
@@ -213,7 +221,7 @@ fn validate_endelection_spend(
 
 // Will be called once with Some(admin STT), or None for InitElection.
 pub fn validate_admin_single_channel_spend(
-  datum: Option<ChannelState>,
+  state: ChannelState,
   redeemer: ElectionAction,
   own_ref: OutputReference,
   tx: Transaction,
@@ -221,9 +229,9 @@ pub fn validate_admin_single_channel_spend(
   trace @"validate_admin_single_channel_spend"
   let authorized = admin_signed(own_ref, tx) ?
   authorized && when redeemer is {
-    AddSubChannels { channels } -> validate_addsubchannels_spend(datum, own_ref, tx, channels)
-    AdvancePhase                -> validate_advancephase_spend(datum, own_ref, tx)
-    EndElection                 -> validate_endelection_spend(datum)
+    AddSubChannels { channels } -> validate_addsubchannels_spend(state, own_ref, tx, channels)
+    AdvancePhase                -> validate_advancephase_spend(state, own_ref, tx)
+    EndElection                 -> validate_endelection_spend(state)
     _                           -> False
   }
 }
@@ -274,16 +282,15 @@ fn validate_rmsubchannels_sub_spend(
 }
 
 fn validate_rmsubchannels_spend(
-  datum: Option<ChannelState>,
+  state: ChannelState,
   own_ref: OutputReference,
   tx: Transaction,
   channels: List<ChannelId>,
 ) -> Bool {
   trace @"validate_rmsubchannels_spend"
-  expect Some(state) = datum
   when state is {
     AdminChannel(admin_state) -> {
-      let cont_state = get_continuation_state(datum, own_ref, tx)
+      let cont_state = get_continuation_state(state, own_ref, tx)
       validate_rmsubchannels_admin_spend(admin_state, cont_state, own_ref, tx, channels)
     }
     SubChannel(sub_state) ->
@@ -340,14 +347,13 @@ fn validate_rebalancefunds_sub_spend(
 // the overall script amount is retained, so this is almost a no-op: just
 // increment seq. Phase can optionally also be advanced.
 fn validate_rebalancefunds_spend(
-  datum: Option<ChannelState>,
+  state: ChannelState,
   own_ref: OutputReference,
   tx: Transaction,
   channels: List<ChannelId>,
 ) -> Bool {
   trace @"validate_rebalancefunds_spend"
-  expect Some(state) = datum
-  let cont_state = get_continuation_state(datum, own_ref, tx)
+  let cont_state = get_continuation_state(state, own_ref, tx)
   when state is {
     AdminChannel(admin_state) ->
       validate_rebalancefunds_admin_spend(admin_state, cont_state, own_ref, tx, channels)
@@ -358,7 +364,7 @@ fn validate_rebalancefunds_spend(
 
 // Will be called once with admin STT + once with each subchannel STT.
 pub fn validate_admin_multi_channel_spend(
-  datum: Option<ChannelState>,
+  state: ChannelState,
   redeemer: ElectionAction,
   own_ref: OutputReference,
   tx: Transaction,
@@ -367,15 +373,15 @@ pub fn validate_admin_multi_channel_spend(
   let authorized = admin_signed(own_ref, tx) ?
   let separate = channels_kept_separate(own_ref, tx) ?
   authorized && separate && when redeemer is {
-    RmSubChannels  { channels } -> validate_rmsubchannels_spend(datum, own_ref, tx, channels)
-    RebalanceFunds { channels } -> validate_rebalancefunds_spend(datum, own_ref, tx, channels)
+    RmSubChannels  { channels } -> validate_rmsubchannels_spend(state, own_ref, tx, channels)
+    RebalanceFunds { channels } -> validate_rebalancefunds_spend(state, own_ref, tx, channels)
     _ -> False
   }
 }
 
 // Will be called once with either the admin or a subchannel STT.
 pub fn validate_anyone_single_channel_spend(
-  datum: Option<ChannelState>,
+  state: ChannelState,
   redeemer: ElectionAction,
   own_ref: OutputReference,
   tx: Transaction,
@@ -384,13 +390,12 @@ pub fn validate_anyone_single_channel_spend(
 
   // Gotcha: admin_signed wouldn't do here, because we don't want the admin to
   // be able to post to a non-admin channel.
-  let authorized = publisher_signed(datum, own_ref, tx) ?
+  let authorized = publisher_signed(state, tx) ?
 
   // The only "anyone, single channel" redeemer so far
   expect PostPublicRecords = redeemer
 
-  expect Some(state) = datum
-  let cont_state = get_continuation_state(datum, own_ref, tx)
+  let cont_state = get_continuation_state(state, own_ref, tx)
   let new_records = get_new_records(state, cont_state)
 
   // The new records (or at least their CIDs + metadata) must be valid
@@ -419,7 +424,7 @@ pub fn validate_anyone_single_channel_spend(
 }
 
 pub fn validate_spend(
-  datum: Option<ChannelState>,
+  state: ChannelState,
   redeemer: ElectionAction,
   own_ref: OutputReference,
   tx: Transaction,
@@ -428,14 +433,13 @@ pub fn validate_spend(
   let ada_retained = ada_retained_during_election(redeemer, own_ref, tx) ?
   ada_retained && when redeemer is {
     BurnTestTokens -> tx_burns_all(own_ref, tx)
-    InitElection ->
-      validate_initelection_spend(datum, tx)
+    InitElection -> False // init should never need to spend a contract output
     AddSubChannels { .. } | AdvancePhase | EndElection ->
-      validate_admin_single_channel_spend(datum, redeemer, own_ref, tx)
+      validate_admin_single_channel_spend(state, redeemer, own_ref, tx)
     RmSubChannels { .. } | RebalanceFunds { .. } ->
-      validate_admin_multi_channel_spend(datum, redeemer, own_ref, tx)
+      validate_admin_multi_channel_spend(state, redeemer, own_ref, tx)
     PostPublicRecords ->
-      validate_anyone_single_channel_spend(datum, redeemer, own_ref, tx)
+      validate_anyone_single_channel_spend(state, redeemer, own_ref, tx)
   }
 }
 
@@ -452,6 +456,7 @@ validator election(oneshot_ref: OutputReference) {
     trace @"mint"
     validate_mint(oneshot_ref, redeemer, policy_id, tx)
   }
+  // TODO ah I get it: spend isn't called in the initial tx, so it can always expect a datum
   spend(
     datum: Option<ChannelState>,
     redeemer: ElectionAction,
@@ -459,6 +464,14 @@ validator election(oneshot_ref: OutputReference) {
     tx: Transaction,
   ) {
     trace @"spend"
-    validate_spend(datum, redeemer, own_ref, tx)
+    expect Some(state) = datum
+    validate_spend(state, redeemer, own_ref, tx)
+    // when datum is {
+      // NoDatum -> validate_initelection_spend(redeemer, tx)
+      // InlineDatum(d) -> {
+        // expect state: ChannelState = d
+      // }
+      // _ -> False
+    // }
   }
 }

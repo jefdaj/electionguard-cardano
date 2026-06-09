@@ -79,15 +79,15 @@ pub fn election_validate(
   let all_spends_pass = list.all(
     tx.inputs,
     fn(input) {
-      let datum: Option<ChannelState> = when input.output.datum is {
-	InlineDatum(data) -> {
-	  expect state: Option<ChannelState> = data
-	  state
-	}
-	_ -> None
-      }
+      // let datum: Option<ChannelState> = when input.output.datum is {
+// 	InlineDatum(data) -> {
+// 	  expect state: Option<ChannelState> = data
+// 	  state
+// 	}
+// 	_ -> None
+  //     }
       election_validate_spend(
-        datum,
+	input.output.datum,
         redeemer,
         input.output_reference,
         tx
@@ -108,20 +108,22 @@ fn election_validate_mint(
 }
 
 fn election_validate_spend(
-  datum: Option<ChannelState>,
+  datum: Datum,
   redeemer: ElectionAction,
   own_ref: OutputReference,
   tx: Transaction,
 ) -> Bool {
-  election.validate_spend(datum, redeemer, own_ref, tx)
+  expect InlineDatum(d) = datum
+  expect state: ChannelState = d
+  election.validate_spend(state, redeemer, own_ref, tx)
 }
 
 pub fn admin_datum(state: AdminChannelState) -> Datum {
-  InlineDatum(Some(AdminChannel(state)))
+  InlineDatum(AdminChannel(state))
 }
 
 pub fn subchannel_datum(state: SubChannelState) -> Datum {
-  InlineDatum(Some(SubChannel(state)))
+  InlineDatum(SubChannel(state))
 }
 
 pub fn mint_stt(channel_id: ChannelId) -> Value {
