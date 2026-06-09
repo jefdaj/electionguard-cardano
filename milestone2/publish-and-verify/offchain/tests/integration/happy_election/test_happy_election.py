@@ -1,3 +1,5 @@
+# Test order roughly matches onchain/tests/integration/happy_election.ak
+
 import pytest
 from pycardano import *
 from egc import *
@@ -8,9 +10,54 @@ import time
 
 LOG = logging.getLogger(__name__)
 
-# shorthand
 SUBCHANNEL_IDS = STATIC_TRANSACTIONS['admin'][2][0].channels
 [G1, G2, G3, D1, V1] = SUBCHANNEL_IDS
+
+
+### subchannel wallets ###
+
+@per_election_fixture
+def guardian1_wallet() -> Wallet:
+    w = Wallet.load_or_create(name='guardian1', verbose=False)
+    LOG.info(f'guardian1_wallet: {w}')
+    return w
+
+@per_election_fixture
+def guardian2_wallet() -> Wallet:
+    w = Wallet.load_or_create(name='guardian2', verbose=False)
+    LOG.info(f'guardian2_wallet: {w}')
+    return w
+
+@per_election_fixture
+def guardian3_wallet() -> Wallet:
+    w = Wallet.load_or_create(name='guardian3', verbose=False)
+    LOG.info(f'guardian3_wallet: {w}')
+    return w
+
+@per_election_fixture
+def device1_wallet() -> Wallet:
+    w = Wallet.load_or_create(name='device1', verbose=False)
+    LOG.info(f'device1_wallet: {w}')
+    return w
+
+@per_election_fixture
+def verifier1_wallet() -> Wallet:
+    w = Wallet.load_or_create(name='verifier1', verbose=False)
+    LOG.info(f'verifier1_wallet: {w}')
+    return w
+
+def test_subchannel_wallets(
+        guardian1_wallet: Wallet,
+        guardian2_wallet: Wallet,
+        guardian3_wallet: Wallet,
+        device3_wallet: Wallet,
+        verifier3_wallet: Wallet,
+    ):
+        assert isinstance(guardian1_wallet, Wallet)
+        assert isinstance(guardian2_wallet, Wallet)
+        assert isinstance(guardian3_wallet, Wallet)
+        assert isinstance(device1_wallet, Wallet)
+        assert isinstance(verifier1_wallet, Wallet)
 
 
 ### admin_tx0 ###
@@ -67,9 +114,10 @@ def admin_s1(admin_vkh: VerificationKeyHash) -> ChannelState:
 
 @per_election_fixture
 def admin_tx1(admin_tx0: Transaction, admin: AdminNode) -> Transaction:
-    phase = STATIC_PHASES[1]
-    (_, records) = STATIC_TRANSACTIONS['admin'][1]
-    tx = admin.post_public_records(new_records=records, new_phase=phase)
+    tx = admin.post_public_records(
+        new_records = STATIC_TRANSACTIONS['admin'][1][1],
+        new_phase   = STATIC_PHASES[1],
+    )
     LOG.debug(f'admin_tx1: {tx}')
     admin.publisher.wait_for_confirmation(tx)
     return tx
@@ -94,6 +142,23 @@ def test_admin_tx1_sub(
 ### admin_tx2 ###
 
 @per_election_fixture
+def subchannel_onboarding_info(
+        guardian1_wallet: Wallet,
+        guardian2_wallet: Wallet,
+        guardian3_wallet: Wallet,
+        device1_wallet: Wallet,
+        verifier1_wallet: Wallet,
+    ) -> Map[ChannelId, VerificationKeyHash]:
+    wallets = [
+        guardian1_wallet,
+        guardian2_wallet,
+        guardian3_wallet,
+        device1_wallet,
+        verifier1_wallet,
+    ]
+    return {w.channel_id: w.publisher for w in wallets}
+
+@per_election_fixture
 def admin_s2(admin_vkh: VerificationKeyHash) -> ChannelState:
     return AdminChannel(state=AdminChannelState(
         admin       = admin_vkh.payload,
@@ -105,8 +170,47 @@ def admin_s2(admin_vkh: VerificationKeyHash) -> ChannelState:
 
 # all the subchannels also have this one as their state0
 # aliases for clarity:
-g1_s0 = admin_s2
-g2_s0 = admin_s2
-g3_s0 = admin_s2
-d1_s0 = admin_s2
-v1_s0 = admin_s2
+guardian1_s0 = admin_s2
+guardian_s0  = admin_s2
+guardian3_s0 = admin_s2
+device1_s0   = admin_s2
+verifier1_s0 = admin_s2
+
+@per_election_fixture
+def admin_tx2(
+        admin_tx1: Transaction,
+        admin: AdminNode,
+        subchannel_onboarding_info: Map[ChannelId, VerificationKeyHash],
+    ) -> Transaction:
+    tx = admin.add_subchannels(
+        subchannels = subchannel_onboarding_info,
+        done_onboarding = True,
+    )
+    LOG.debug(f'admin_tx2: {tx}')
+    admin.publisher.wait_for_confirmation(tx)
+    return tx
+
+def sub_s0(channel_id: ChannelId) -> ChannelState:
+    return SubChannel(state=SubChannelState(
+    ))
+
+def test_admin_tx2(
+        admin: AdminNode,
+        admin_s2: ChannelState,
+        admin_tx2: Transaction,
+    ):
+    assert isinstance(admin_tx2, Transaction)
+    for channel_id in [ADMIN_CHANNEL_ID] + SUBCHANNEL_IDS:
+        (_, state) = admin.subscriber.states[channel_id]
+        if channel_id == ADMIN_CHANNEL_id:
+            assert state == admin_s2
+        else:
+            assert state == sub_s0(channel_id)
+    # TODO also assert the subchannel states here
+
+def test_admin_tx2_sub(
+        admin_tx2: Transaction,
+        funder: FunderNode,
+        admin: AdminNode,
+    ):
+    assert_subscribers_in_sync([funder, admin])

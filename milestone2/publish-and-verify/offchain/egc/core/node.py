@@ -74,3 +74,5 @@ class ElectionNode:
             # no init_election tx published yet
             # TODO should this be an error? warning?
             return None
+
+    # TODO wait_for_confirmation method that uses both pub and sub state?

@@ -16,6 +16,7 @@
 // - happy_election_admin_tx0
 // - happy_election_device1_tx3
 //
+// See also the roughly matching offchain/tests/integration/test_happy_election.py
 
 use cardano/assets
 use cardano/transaction.{NoDatum, Transaction, Input, Output}

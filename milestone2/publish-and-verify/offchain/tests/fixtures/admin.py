@@ -9,8 +9,8 @@ LOG = logging.getLogger(__name__)
 
 @per_election_fixture
 def admin_wallet(keys_dir: Path) -> Wallet:
-    kp = Wallet.load_or_create(keys_dir=keys_dir, name='admin', verbose=False)
-    return kp
+    w = Wallet.load_or_create(keys_dir=keys_dir, name='admin', verbose=False)
+    return w
 
 @per_election_fixture
 def admin_vkh(admin_wallet: Wallet) -> VerificationKeyHash:

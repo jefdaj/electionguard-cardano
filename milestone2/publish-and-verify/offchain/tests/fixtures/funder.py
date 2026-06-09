@@ -8,9 +8,9 @@ LOG = logging.getLogger(__name__)
 
 @global_fixture
 def funder_wallet() -> Wallet:
-    kp = Wallet.load_or_create(name='dev', verbose=False) # leave default, global keys_dir
-    LOG.info(f'funder_wallet: {kp}')
-    return kp
+    w = Wallet.load_or_create(name='dev', verbose=False) # leave default, global keys_dir
+    LOG.info(f'funder_wallet: {w}')
+    return w
 
 @per_election_fixture
 def funder_addr(funder_wallet: Wallet) -> Address:

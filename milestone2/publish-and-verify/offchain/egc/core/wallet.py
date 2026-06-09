@@ -107,9 +107,11 @@ def vk_for_signing_key(sk: PaymentSigningKey) -> VerificationKey:
     return verification_key
 
 def addr_for_signing_key(sk: PaymentSigningKey) -> Address:
-    verification_key = PaymentVerificationKey.from_signing_key(sk)
-    address = Address(payment_part=verification_key.hash(), network=Network.TESTNET)
-    return address
+    vk = PaymentVerificationKey.from_signing_key(sk)
+    return addr_for_vkh(vk.hash())
+
+def addr_for_vkh(vkh: VerificationKeyHash) -> Address:
+    return Address(payment_part=vkh, network=Network.TESTNET)
 
 def load_wallet(sk_path: Optional[Path] = None, keys_dir=DEF_KEYS_DIR, name='default') -> Wallet:
     LOG.debug('load_wallet')
