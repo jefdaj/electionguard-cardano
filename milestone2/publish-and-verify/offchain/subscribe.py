@@ -36,14 +36,14 @@ sub_cfg = SubscriberConfig(
     since_block_hash = args['<block_hash>'],
     policy_id = ScriptHash(bytes.fromhex(args['<policy_id>'])),
 )
-LOG.info(f'sub_cfg: {sub_cfg}')
+LOG.debug(f'sub_cfg: {sub_cfg}')
 
 # TODO does handle_endelection need to be separate? maybe combine after all
 sub = ElectionSubscriber(sub_cfg, handle_match, handle_endelection)
 sub.start()
 time.sleep(1)
 sub.stop()
-LOG.info(f'final history:\n{pformat(sub.history)}')
+LOG.debug(f'final history:\n{pformat(sub.history)}')
 
 records = sub.subscribed_records(ADMIN_CHANNEL_ID)
-LOG.info(f'final records: {pformat(records)}')
+LOG.debug(f'final records: {pformat(records)}')

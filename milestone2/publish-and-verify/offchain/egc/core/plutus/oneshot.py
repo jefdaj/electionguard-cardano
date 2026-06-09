@@ -20,7 +20,7 @@ def pick_oneshot_utxo(context, addr):
     # No particular logic to max here; any UTXO should work for the initial tests
     # TODO pick a smaller one so you can't lock most of the tADA accidentally?
     utxos = context.utxos(addr)
-    LOG.info(f'pick_oneshot_utxo addr:{addr} utxos:{utxos}')
+    LOG.debug(f'pick_oneshot_utxo addr:{addr} utxos:{utxos}')
     if not utxos:
         raise Exception(f'addr {addr} has no UTXOs')
     utxo = max(utxos, key=lambda utxo: utxo.output.amount.coin)
@@ -103,9 +103,9 @@ def aiken_blueprint_apply_hex_params(plutus_json_path: str, hex_params: List[str
 #             msg =  f"Oneshot UTXO being used:"
 #             msg += f"\n  tx_hash: {self.oneshot_utxo.input.transaction_id.payload.hex()}"
 #             msg += f"\n  index: {self.oneshot_utxo.input.index}"
-#             LOG.info(msg)
+#             LOG.debug(msg)
 #             self.oneshot_hex = utxo_to_ref_hex(self.oneshot_utxo)
-#             LOG.info(f'oneshot_hex from oneshot_utxo: {self.oneshot_hex}')
+#             LOG.debug(f'oneshot_hex from oneshot_utxo: {self.oneshot_hex}')
 #             hex_params = [self.oneshot_hex]
 #             json_dict = aiken_blueprint_apply_hex_params(PLUTUS_JSON_PATH, hex_params)
 #             self._init_from_json(json_dict)
@@ -113,7 +113,7 @@ def aiken_blueprint_apply_hex_params(plutus_json_path: str, hex_params: List[str
 # 
 #         elif json_path is not None:
 #             self.oneshot_hex = splitext(json_path.split('-')[-1])[0]
-#             LOG.info(f'oneshot_hex from json_path: {self.oneshot_hex}')
+#             LOG.debug(f'oneshot_hex from json_path: {self.oneshot_hex}')
 #             with open(json_path, 'r') as f:
 #                 json_dict = json.load(f)
 #             self._init_from_json(json_dict)
@@ -157,4 +157,4 @@ def aiken_blueprint_apply_hex_params(plutus_json_path: str, hex_params: List[str
 #         makedirs(dirname(plutus_json_path), exist_ok=True)
 #         with open(plutus_json_path, 'w') as f:
 #             json.dump(self._json_dict, f, indent=2) # TODO pydantic style?
-#         LOG.info(f'saved {plutus_json_path}')
+#         LOG.debug(f'saved {plutus_json_path}')

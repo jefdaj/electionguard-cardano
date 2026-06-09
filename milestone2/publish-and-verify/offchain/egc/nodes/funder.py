@@ -202,14 +202,14 @@ class FunderNode(ElectionNode):
         LOG.debug(f'mint_redeemer: {mint_redeemer}')
 
         channel_ids = sorted(self.subscriber.states.keys())
-        LOG.info(f'channel_ids: {channel_ids}')
+        LOG.debug(f'channel_ids: {channel_ids}')
 
         burn_assets = mint_channel_stt_assets(
             self.election.script.policy_id,
             -1,
             channel_ids,
         )
-        LOG.info(f'burn_assets: {burn_assets}')
+        LOG.debug(f'burn_assets: {burn_assets}')
 
         burn_txb = (
             TransactionBuilder(OGMIOS_CTX, mint=burn_assets)
@@ -249,20 +249,24 @@ class FunderNode(ElectionNode):
         if not IS_TEST:
             err = 'sweep_all_collateral is only for use in test mode'
             LOG.error(err)
-            raise Exception(err)
-        for (utxo, state) in sorted(self.subscriber.states.values()):
-            pub_addr   = publisher_address(state)
-            pub_wallet = load_wallet_by_address(pub_addr, keys_dir=keys_dir)
-            errors = []
+            raise RuntimeError(err)
+        errors = []
+        last_tx = None # only have to wait once
+        for (utxo, state) in self.subscriber.states.values():
             try:
+                LOG.debug(f'state: {state}')
+                pub_addr   = publisher_address(state)
+                LOG.debug(f'pub_addr: {pub_addr}')
+                pub_wallet = load_wallet_by_address(pub_addr, keys_dir=keys_dir)
+                LOG.debug(f'pub_wallet: {pub_wallet}')
                 tx = return_collateral(pub_wallet, self.publisher.wallet.addr)
                 if tx is not None:
-                    self.publisher.wait_for_confirmation(tx)
+                    last_tx = tx
+                    LOG.debug(f'Recovered collateral from {pub_addr}')
             except Exception as e:
-                LOG.error(e)
+                LOG.exception(f'Failed to recover collateral from {pub_addr}')
                 errors.append(e)
-                continue # still want to get the other collateral back if possible
-            finally:
-                if len(errors) > 0:
-                    msg = '\n'.join(str(e) for e in errors)
-                    raise Exception(msg)
+        if last_tx is not None:
+            self.publisher.wait_for_confirmation(last_tx)
+        if errors:
+            raise ExceptionGroup('sweep_all_collateral had failures', errors)

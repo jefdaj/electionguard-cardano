@@ -32,8 +32,8 @@ markers = [
 ]
 
 # Keep the printed output clean but don't hide errors
-log_cli = false
-log_cli_level = "WARNING"
+log_cli = true
+log_cli_level = "INFO"
 
 # Write all logs to a file.
 # See also tests/conftest.py for per-component log level tweaks.

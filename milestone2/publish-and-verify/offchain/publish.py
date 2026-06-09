@@ -49,7 +49,7 @@ keys_dir=os.path.realpath(args['<keys_dir>'])
 funder_keys = KeyPair(keys_dir=keys_dir, name=args['<funder_wallet_name>'], verbose=False)
 funder = Funder(key_pair=funder_keys)
 # funder.init_script()
-# LOG.info(f'oneshot_utxo: {funder.election.script.oneshot_utxo}')
+# LOG.debug(f'oneshot_utxo: {funder.election.script.oneshot_utxo}')
 
 # TODO for now, just create the admin keypair. admin itself can wait until election exists
 # Create Admin separately in case it's a different person from the Funder.
@@ -66,10 +66,10 @@ init_tx = funder.init_election(script=script, admin_vkh=admin_keys.vkh, admin_ad
 LOG.debug(f'init_tx: {init_tx}')
 LOG.debug(f'election_ctx: {funder.election_ctx}')
 
-LOG.info(f'election deployed: {funder.election_ctx.deployment.to_dict()}')
+LOG.debug(f'election deployed: {funder.election_ctx.deployment.to_dict()}')
 
 funder.publisher.wait_for_confirmation(init_tx)
-LOG.info('init_tx confirmed')
+LOG.debug('init_tx confirmed')
 
 # TODO should the publisher just create and return this directly?
 # sub_cfg = es.SubscriberConfig(
@@ -77,9 +77,9 @@ LOG.info('init_tx confirmed')
 #   since_block_hash = sub_info['block_hash'],
 #   policy_id        = funder.publisher.script.policy_id,
 # )
-# LOG.info(f'sub_cfg: {sub_cfg}')
+# LOG.debug(f'sub_cfg: {sub_cfg}')
 
-# LOG.info('published init_tx')
+# LOG.debug('published init_tx')
 # LOG.debug(f'full init_tx:\n%s\n' % pformat(init_tx))
 
 # funder.publisher.wait_for_confirmation(init_tx)

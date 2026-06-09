@@ -9,7 +9,7 @@ LOG = logging.getLogger(__name__)
 @global_fixture
 def funder_wallet() -> Wallet:
     w = Wallet.load_or_create(name='dev', verbose=False) # leave default, global keys_dir
-    LOG.info(f'funder_wallet: {w}')
+    LOG.debug(f'funder_wallet: {w}')
     return w
 
 @per_election_fixture
@@ -19,7 +19,7 @@ def funder_addr(funder_wallet: Wallet) -> Address:
 @per_election_fixture
 def funder(funder_wallet: Wallet) -> FunderNode:
     node = FunderNode(wallet=funder_wallet)
-    LOG.info(f'funder: {node}')
+    LOG.debug(f'funder: {node}')
     try:
         yield node
     finally:
@@ -39,5 +39,5 @@ def init_tx_builder(
         admin_vkh  = admin_vkh,
         admin_ada  = 10, # TODO what should this default to?
     )
-    LOG.info(f'init_txb: {txb}')
+    LOG.debug(f'init_txb: {txb}')
     return txb

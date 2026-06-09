@@ -9,7 +9,7 @@ LOG = logging.getLogger(__name__)
 
 @per_election_fixture
 def admin_id() -> ChannelId:
-    LOG.info(f'admin_id: {ADMIN_CHANNEL_ID}')
+    LOG.debug(f'admin_id: {ADMIN_CHANNEL_ID}')
     return ADMIN_CHANNEL_ID
 
 @per_election_fixture
@@ -20,7 +20,7 @@ def admin_assets(script: ElectionScript) -> MultiAsset:
 def subchannel_ids() -> List[ChannelId]:
     strs = ['guardian1', 'guardian2', 'guardian3', 'device1', 'verifier1']
     ids = [ChannelIdHelper.from_string(s) for s in strs]
-    LOG.info(f'subchannel_ids: {ids}')
+    LOG.debug(f'subchannel_ids: {ids}')
     return ids
 
 @per_election_fixture
@@ -29,5 +29,5 @@ def subchannel_assets(
         subchannel_ids: List[ChannelId]
     ) -> MultiAsset:
     assets = mint_channel_stt_assets(script.policy_id, 1, subchannel_ids)
-    LOG.info(f'subchannel_stt_assets: {assets}')
+    LOG.debug(f'subchannel_stt_assets: {assets}')
     return assets

@@ -38,7 +38,7 @@ logging.basicConfig(
 LOG = logging.getLogger(os.path.basename(__file__))
 
 ARGS = docopt(__doc__)
-LOG.info(f'ARGS: {pformat(ARGS)}')
+LOG.debug(f'ARGS: {pformat(ARGS)}')
 
 # TODO:
 # 1. load funder addr from ctx
@@ -73,10 +73,10 @@ CTX = ElectionContext.from_json(ARGS['<election_json>'])
 LOG.debug(f'CTX:\n{pformat(CTX)}\n')
 
 SCRIPT = CTX.script
-LOG.info(f'SCRIPT: {SCRIPT}')
+LOG.debug(f'SCRIPT: {SCRIPT}')
 
 POLICY_ID = SCRIPT.policy_id
-LOG.info(f'POLICY_ID: {POLICY_ID}')
+LOG.debug(f'POLICY_ID: {POLICY_ID}')
 
 # Keys already loaded from disk
 KEYS_BY_STR: Mapping[str, KeyPair] = {}
@@ -93,7 +93,7 @@ SUB_CFG = SubscriberConfig(
     since_block_hash = CTX.deployment.index_from_block_hash,
     policy_id        = SCRIPT.policy_id,
 )
-LOG.info(f'SUB_CFG: {SUB_CFG}')
+LOG.debug(f'SUB_CFG: {SUB_CFG}')
 
 SUB = ElectionSubscriber(SUB_CFG)
 SUB.start()
@@ -106,8 +106,8 @@ STATES: Mapping[str, Tuple[UTxO, ChannelState]] = {
     ChannelIdHelper.to_string(channel_id): (channel_utxo, channel_state)
     for (channel_id, (channel_utxo, channel_state)) in SUB.states.items()
 }
-LOG.info(f'STATES keys: {pformat(STATES.keys())}')
-LOG.info(f'admin state: {pformat(STATES[ADMIN_CHANNEL_STR][1])}')
+LOG.debug(f'STATES keys: {pformat(STATES.keys())}')
+LOG.debug(f'admin state: {pformat(STATES[ADMIN_CHANNEL_STR][1])}')
 
 
 ### figure out which keys to look for ###
@@ -122,7 +122,7 @@ for (channel_str, (_, channel_wrap)) in sorted(STATES.items()):
     addr = Address(payment_part=vkh, network=Network.TESTNET)
     ADDRS_BY_STR[channel_str] = addr
 
-LOG.info(f'ADDRS_BY_STR:\n{pformat(ADDRS_BY_STR)}')
+LOG.debug(f'ADDRS_BY_STR:\n{pformat(ADDRS_BY_STR)}')
 
 
 ### load keys ###
@@ -131,7 +131,7 @@ SK_PATHS = []
 for key_dir in ARGS['<key_dirs>']:
     SK_PATHS += glob(os.path.join(key_dir, '*.sk'))
 SK_PATHS = sorted(SK_PATHS)
-LOG.info(f'SK_PATHS: {SK_PATHS}')
+LOG.debug(f'SK_PATHS: {SK_PATHS}')
 
 for sk_path in SK_PATHS:
     keys_dir = os.path.dirname(sk_path)
@@ -140,7 +140,7 @@ for sk_path in SK_PATHS:
     for (s, a) in ADDRS_BY_STR.items():
         if keys.addr == a:
             KEYS_BY_STR[s] = keys
-LOG.info(f'KEYS_BY_STR:\n{pformat(KEYS_BY_STR)}')
+LOG.debug(f'KEYS_BY_STR:\n{pformat(KEYS_BY_STR)}')
 
 for needed_str in ADDRS_BY_STR.keys():
     if not needed_str in KEYS_BY_STR:
@@ -160,7 +160,7 @@ PUB = ElectionPublisher(
     keys_dir   = KEYS_DIR,
     key_name   = ARGS['<key_name>'],
 )
-LOG.info(f'PUB: {PUB}')
+LOG.debug(f'PUB: {PUB}')
 
 
 ### create tx to burn and sweep funds ###
@@ -169,14 +169,14 @@ MINT_REDEEMER = Redeemer(data=BurnTestTokens())
 LOG.debug(f'MINT_REDEEMER: {MINT_REDEEMER}')
 
 CHANNEL_IDS = list(SUB.states.keys())
-LOG.info(f'CHANNEL_IDS: {CHANNEL_IDS}')
+LOG.debug(f'CHANNEL_IDS: {CHANNEL_IDS}')
 
 BURN_ASSETS = mint_channel_stt_assets(
     SCRIPT.policy_id,
     -1,
     CHANNEL_IDS,
 )
-LOG.info(f'BURN_ASSETS: {BURN_ASSETS}')
+LOG.debug(f'BURN_ASSETS: {BURN_ASSETS}')
 
 BURN_TXB = (
     TransactionBuilder(OGMIOS_CTX, mint=BURN_ASSETS)
@@ -206,10 +206,10 @@ Are you sure? (y/n): '''
 
 if confirm(prompt=MSG):
     try:
-        LOG.info('\nBurning tokens...')
+        LOG.debug('\nBurning tokens...')
         BURN_TX = PUB.sign_and_submit(BURN_TXB)
         PUB.wait_for_confirmation(BURN_TX)
-        LOG.info('done')
+        LOG.debug('done')
     except Exception as e:
         LOG.error(e)
         raise

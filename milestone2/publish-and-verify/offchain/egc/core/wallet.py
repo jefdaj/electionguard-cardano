@@ -160,7 +160,7 @@ def create_wallet(keys_dir=DEF_KEYS_DIR, name='default', verbose=True) -> Wallet
 
     If you don't, local tests will still work but testnet tests will fail.
     '''
-    LOG.info(msg)
+    LOG.debug(msg)
     if verbose:
         print(msg)
     KEYS_LOG.debug(

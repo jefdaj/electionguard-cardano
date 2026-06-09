@@ -17,41 +17,41 @@ SUBCHANNEL_IDS = STATIC_TRANSACTIONS['admin'][2][0].channels
 ### subchannel wallets ###
 
 @per_election_fixture
-def guardian1_wallet() -> Wallet:
-    w = Wallet.load_or_create(name='guardian1', verbose=False)
-    LOG.info(f'guardian1_wallet: {w}')
+def guardian1_wallet(keys_dir: Path) -> Wallet:
+    w = Wallet.load_or_create(name='guardian1', keys_dir=keys_dir, verbose=False)
+    LOG.debug(f'guardian1_wallet: {w}')
     return w
 
 @per_election_fixture
-def guardian2_wallet() -> Wallet:
-    w = Wallet.load_or_create(name='guardian2', verbose=False)
-    LOG.info(f'guardian2_wallet: {w}')
+def guardian2_wallet(keys_dir: Path) -> Wallet:
+    w = Wallet.load_or_create(name='guardian2', keys_dir=keys_dir, verbose=False)
+    LOG.debug(f'guardian2_wallet: {w}')
     return w
 
 @per_election_fixture
-def guardian3_wallet() -> Wallet:
-    w = Wallet.load_or_create(name='guardian3', verbose=False)
-    LOG.info(f'guardian3_wallet: {w}')
+def guardian3_wallet(keys_dir: Path) -> Wallet:
+    w = Wallet.load_or_create(name='guardian3', keys_dir=keys_dir, verbose=False)
+    LOG.debug(f'guardian3_wallet: {w}')
     return w
 
 @per_election_fixture
-def device1_wallet() -> Wallet:
-    w = Wallet.load_or_create(name='device1', verbose=False)
-    LOG.info(f'device1_wallet: {w}')
+def device1_wallet(keys_dir: Path) -> Wallet:
+    w = Wallet.load_or_create(name='device1', keys_dir=keys_dir, verbose=False)
+    LOG.debug(f'device1_wallet: {w}')
     return w
 
 @per_election_fixture
-def verifier1_wallet() -> Wallet:
-    w = Wallet.load_or_create(name='verifier1', verbose=False)
-    LOG.info(f'verifier1_wallet: {w}')
+def verifier1_wallet(keys_dir: Path) -> Wallet:
+    w = Wallet.load_or_create(name='verifier1', keys_dir=keys_dir, verbose=False)
+    LOG.debug(f'verifier1_wallet: {w}')
     return w
 
 def test_subchannel_wallets(
         guardian1_wallet: Wallet,
         guardian2_wallet: Wallet,
         guardian3_wallet: Wallet,
-        device3_wallet: Wallet,
-        verifier3_wallet: Wallet,
+        device1_wallet: Wallet,
+        verifier1_wallet: Wallet,
     ):
         assert isinstance(guardian1_wallet, Wallet)
         assert isinstance(guardian2_wallet, Wallet)

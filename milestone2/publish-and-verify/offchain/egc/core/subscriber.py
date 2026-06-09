@@ -77,7 +77,7 @@ def fetch_datum(session: requests.Session, datum_hash: str) -> Any:
 
 # TODO remove? merge into Subscriber class?
 def handle_endelection(utxo: Dict[str, Any], session: requests.Session) -> ElectionAction:
-    LOG.info('handle_endelection: admin channel closed')
+    LOG.debug('handle_endelection: admin channel closed')
     return EndElection()
 
 # TODO move to channel_id.py
@@ -290,7 +290,7 @@ class ElectionSubscriber:
 
         ]
 
-        LOG.info(f'Starting Kupo: {' '.join(cmd)}')
+        LOG.debug(f'Starting Kupo: {' '.join(cmd)}')
         self._kupo_proc = subprocess.Popen(
             cmd,
             preexec_fn=os.setsid, # makes handling signals more reliable
@@ -319,11 +319,11 @@ class ElectionSubscriber:
             line = line.rstrip('\n')
             if not line:
                 continue
-            LOG.info(f'Kupo output: {line}')
+            LOG.debug(f'Kupo output: {line}')
             if proc.poll() is not None:
                 break
         # TODO why does this seem to happen immediately?
-        LOG.info('Kupo subprocess output thread terminating')
+        LOG.debug('Kupo subprocess output thread terminating')
 
     def stop_kupo(self) -> None:
         LOG.debug('ElectionSubscriber.stop_kupo')
@@ -332,7 +332,7 @@ class ElectionSubscriber:
         if proc is None:
             return
         if proc.poll() is None:
-            LOG.info(f'Terminating Kupo (pid={proc.pid})')
+            LOG.debug(f'Terminating Kupo (pid={proc.pid})')
             proc.terminate()
             try:
                 proc.wait(timeout=5)
@@ -374,7 +374,7 @@ class ElectionSubscriber:
         LOG.debug(f'Channel not yet closed {resp}')
 
     def _watch_kupo(self) -> None:
-        LOG.info(f'Watcher thread started for policy_id={self.config.policy_id}')
+        LOG.debug(f'Watcher thread started for policy_id={self.config.policy_id}')
 
         while not self._kupo_stop.is_set():
             try:
@@ -408,7 +408,7 @@ class ElectionSubscriber:
                     if tx_id and key in self._seen_tx_ids:
                         continue
                     if tx_id:
-                        # LOG.info(f'last_tx_key: {key}')
+                        # LOG.debug(f'last_tx_key: {key}')
                         self._seen_tx_ids.add(key)
                         self._last_tx_key = key
                         any_new_utxo = True
@@ -448,7 +448,7 @@ class ElectionSubscriber:
 
             time.sleep(KUPO_POLL_SEC)
 
-        LOG.info('Watcher thread exiting')
+        LOG.debug('Watcher thread exiting')
 
     def subscribed_records(self, channel_id: ChannelId):
         LOG.debug('ElectionSubscriber.subscribed_records')
@@ -474,7 +474,7 @@ class ElectionSubscriber:
                 LOG.error(f'Error in watcher: {e}')
 
         def handle_sigint(sig, frame):
-            LOG.info(f'Signal {sig} recieved, shutting down...')
+            LOG.debug(f'Signal {sig} recieved, shutting down...')
             self.stop()
 
         signal.signal(signal.SIGINT , handle_sigint)
@@ -497,7 +497,7 @@ class ElectionSubscriber:
         self.stop_kupo()
         self._kupo_stop.set()
         if self._kupo_thread and self._kupo_thread.is_alive():
-            LOG.info('Waiting for watcher thread to exit...')
+            LOG.debug('Waiting for watcher thread to exit...')
             try:
                 self._kupo_thread.join(timeout=5)
             except Exception as e:

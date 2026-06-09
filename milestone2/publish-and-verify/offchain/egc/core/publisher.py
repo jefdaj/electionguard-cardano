@@ -84,7 +84,7 @@ class ElectionPublisher:
 
         # Check what the node actually sees
         utxos = OGMIOS_CTX.utxos(self.wallet.addr)
-        LOG.info('UTxOs at publisher address: %s' % len(utxos))
+        LOG.debug('UTxOs at publisher address: %s' % len(utxos))
         for u in utxos:
             LOG.debug(
                 '  %s#%d  (%d lovelace)' % (
@@ -104,7 +104,7 @@ class ElectionPublisher:
 
         LOG.debug(f'tx_signed about to be submitted:\n%s:\n' % pformat(tx_signed))
         OGMIOS_CTX.submit_tx(tx_signed)
-        LOG.info(f'Submitted tx with id={tx_signed.id}')
+        LOG.debug(f'Submitted tx with id={tx_signed.id}')
 
         return tx_signed
 
@@ -112,7 +112,7 @@ class ElectionPublisher:
     def wait_for_confirmation(self, tx: Transaction, max_seconds: int = 300, interval_seconds: int = 5):
         LOG.debug('ElectionPublisher.wait_for_confirmation')
         tx_id = str(tx.id) # TODO is this the right way?
-        LOG.info(f'Waiting up to {max_seconds} seconds for tx {tx_id} to be confirmed on chain...')
+        LOG.debug(f'Waiting up to {max_seconds} seconds for tx {tx_id} to be confirmed on chain...')
         waited_seconds = 0
         while True:
             time.sleep(interval_seconds)
@@ -128,5 +128,5 @@ class ElectionPublisher:
                     msg += f' Will wait {remaining_seconds} more.'
                     LOG.debug(msg)
             else:
-                LOG.info(f'tx {tx_id} confirmed after {waited_seconds} seconds')
+                LOG.debug(f'tx {tx_id} confirmed after {waited_seconds} seconds')
                 return

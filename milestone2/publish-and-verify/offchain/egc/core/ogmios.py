@@ -263,7 +263,7 @@ def _send_ada(
     builder.add_output(TransactionOutput(recipient, Value(lovelace)))
     signed = builder.build_and_sign([sender.sk], change_address=sender.addr)
     OGMIOS_CTX.submit_tx(signed)
-    LOG.info(
+    LOG.debug(
         "Sent %d lovelace from %s to %s (tx %s)",
         lovelace, sender.addr, recipient, signed.id,
     )
@@ -277,12 +277,12 @@ def create_own_collateral(funder: Wallet) -> Transaction:
     the existing one first."""
     existing = find_collateral_utxo(funder.addr)
     if existing is not None:
-        LOG.info(
+        LOG.debug(
             "Collateral UTXO already exists at %s (%s#%d); skipping",
             funder.addr, existing.input.transaction_id, existing.input.index,
         )
         return existing.input.transaction_id
-    LOG.info(f'Creating own collateral UTXO at {funder.addr}')
+    LOG.debug(f'Creating own collateral UTXO at {funder.addr}')
     return _send_ada(funder, funder.addr, COLLATERAL_LOVELACE)
 
 
@@ -307,7 +307,7 @@ def return_collateral(
     no collateral UTXO to return."""
     utxo = find_collateral_utxo(publisher_wallet.addr)
     if utxo is None:
-        LOG.info("No collateral UTXO at %s to return", publisher_wallet.addr)
+        LOG.debug("No collateral UTXO at %s to return", publisher_wallet.addr)
         return None
     builder = TransactionBuilder(OGMIOS_CTX)
     builder.add_input(utxo)
@@ -319,7 +319,7 @@ def return_collateral(
         [publisher_wallet.sk], change_address=funder_address,
     )
     OGMIOS_CTX.submit_tx(signed)
-    LOG.info(
+    LOG.debug(
         "Returned collateral from %s to %s, less tx fee (tx %s)",
         publisher_wallet.addr, funder_address, signed.id,
     )

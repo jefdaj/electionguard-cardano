@@ -139,7 +139,7 @@ class AdminNode(ElectionNode):
 
         LOG.debug(f'tx_signed about to be submitted:\n%s:\n' % pformat(tx_signed))
         OGMIOS_CTX.submit_tx(tx_signed)
-        LOG.info(f'Submitted tx with id={tx_signed.id}')
+        LOG.debug(f'Submitted tx with id={tx_signed.id}')
 
         return tx_signed
 
@@ -312,6 +312,6 @@ class AdminNode(ElectionNode):
 
         LOG.debug(f'tx_signed about to be submitted:\n%s:\n' % pformat(tx_signed))
         OGMIOS_CTX.submit_tx(tx_signed)
-        LOG.info(f'Submitted tx with id={tx_signed.id}')
+        LOG.debug(f'Submitted tx with id={tx_signed.id}')
 
         return tx_signed
