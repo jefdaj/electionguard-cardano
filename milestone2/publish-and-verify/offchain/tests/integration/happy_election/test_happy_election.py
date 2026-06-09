@@ -75,13 +75,13 @@ def admin_s0(admin_vkh: VerificationKeyHash) -> ChannelState:
 @per_election_fixture
 def admin_tx0(init_tx: Transaction) -> Transaction:
     # admin_tx0 is just the init_tx renamed for clarity.
+    time.sleep(5) # TODO remove?
     return init_tx
 
 def test_admin_tx0(
+        admin: AdminNode,
         admin_s0: ChannelState,
         admin_tx0: Transaction,
-        funder: FunderNode,
-        admin: AdminNode,
     ):
     LOG.debug(f'admin_tx0: {admin_tx0}')
     assert isinstance(admin_tx0, Transaction)
@@ -93,9 +93,9 @@ def test_admin_tx0(
 
 # ... in fact, all nodes should agree on the current state
 def test_admin_tx0_sub(
-        admin_tx0: Transaction,
         funder: FunderNode,
         admin: AdminNode,
+        admin_tx0: Transaction,
     ):
     assert_subscribers_in_sync([funder, admin])
 
@@ -113,13 +113,17 @@ def admin_s1(admin_vkh: VerificationKeyHash) -> ChannelState:
     ))
 
 @per_election_fixture
-def admin_tx1(admin_tx0: Transaction, admin: AdminNode) -> Transaction:
+def admin_tx1(
+        admin: AdminNode
+        admin_tx0: Transaction,
+    ) -> Transaction:
     tx = admin.post_public_records(
         new_records = STATIC_TRANSACTIONS['admin'][1][1],
         new_phase   = STATIC_PHASES[1],
     )
     LOG.debug(f'admin_tx1: {tx}')
     admin.publisher.wait_for_confirmation(tx)
+    time.sleep(5) # TODO remove?
     return tx
 
 def test_admin_tx1(
@@ -128,13 +132,13 @@ def test_admin_tx1(
         admin_tx1: Transaction,
     ):
     assert isinstance(admin_tx1, Transaction)
-    (_, state) = admin.subscriber.states[ADMIN_CHANNEL_ID]
-    assert state == admin_s1
+    admin_s1_actual = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
+    assert admin_s1_actual == admin_s1
 
 def test_admin_tx1_sub(
-        admin_tx1: Transaction,
         funder: FunderNode,
         admin: AdminNode,
+        admin_tx1: Transaction,
     ):
     assert_subscribers_in_sync([funder, admin])
 

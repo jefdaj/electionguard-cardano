@@ -198,7 +198,7 @@ class AdminNode(ElectionNode):
         to_collateral = len(subchannels) * COLLATERAL_LOVELACE
         admin_out_value -= to_fee_pools
         admin_out_value -= to_collateral
-        LOG.debug(f'approximate admin_out_value: {admin_out_value}')
+        LOG.debug(f'initial admin_out_value: {admin_out_value}')
 
         admin_out_utxo = TransactionOutput(
             address = self.election.address,
@@ -266,11 +266,13 @@ class AdminNode(ElectionNode):
         # 2. Now that ex_units are pinned, converge fee + output coin.
         set_out_value_and_fee(txb, in_value, admin_out_utxo)
 
+        LOG.debug(f'final admin_out_value: {admin_out_value}')
+
         # 3. Final body (bakes script_data_hash from the now-final redeemer).
         tx_body = txb._build_tx_body()
 
         # Sanity check: inputs balance outputs.
-        total_in = sum(u.output.amount.coin for u in txb.inputs)
+        total_in = sum(u.output.amount.coin for u in txb.inputs) # TODO tx_body?
         total_out = sum(o.amount.coin for o in tx_body.outputs)
         assert total_in == total_out + tx_body.fee, (
             f"Unbalanced: in={total_in}, out={total_out}, fee={tx_body.fee}"
