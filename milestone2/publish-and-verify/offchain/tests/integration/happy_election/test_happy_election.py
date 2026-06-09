@@ -8,6 +8,10 @@ import time
 
 LOG = logging.getLogger(__name__)
 
+# shorthand
+SUBCHANNEL_IDS = STATIC_TRANSACTIONS['admin'][2][0].channels
+[G1, G2, G3, D1, V1] = SUBCHANNEL_IDS
+
 
 ### admin_tx0 ###
 
@@ -85,3 +89,24 @@ def test_admin_tx1_sub(
         admin: AdminNode,
     ):
     assert_subscribers_in_sync([funder, admin])
+
+
+### admin_tx2 ###
+
+@per_election_fixture
+def admin_s2(admin_vkh: VerificationKeyHash) -> ChannelState:
+    return AdminChannel(state=AdminChannelState(
+        admin       = admin_vkh.payload,
+        subchannels = SUBCHANNEL_IDS,
+        new_records = [],
+        phase       = STATIC_PHASES[2],
+        seq         = 2,
+    ))
+
+# all the subchannels also have this one as their state0
+# aliases for clarity:
+g1_s0 = admin_s2
+g2_s0 = admin_s2
+g3_s0 = admin_s2
+d1_s0 = admin_s2
+v1_s0 = admin_s2
