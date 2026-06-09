@@ -1,9 +1,13 @@
 use aiken/collection/list
-use cardano/transaction.{Transaction, Input, OutputReference}
+use aiken/crypto.{VerificationKeyHash}
+use cardano/address.{VerificationKey}
+use cardano/transaction.{NoDatum, Transaction, Input, Output, OutputReference}
 use cardano/assets.{PolicyId, Value, lovelace_of, policies}
 
 use election/types/action.{ElectionAction, AddSubChannels, InitElection, EndElection, BurnTestTokens}
-use election/stt.{get_policy_id}
+use election/stt.{get_policy_id, full_stt_name, get_stt_state}
+use election/types/channel_id.{ChannelId}
+use election/types/channel.{SubChannel}
 
 // Collateral to be sent to each subchannel publisher.
 pub const collateral_lovelace: Int = 5_000_000
@@ -93,4 +97,56 @@ fn ada_in_outputs_with_policy(
 fn has_policy(val: Value, policy_id: PolicyId) -> Bool {
   trace @"has_policy"
   list.has(policies(val), policy_id)
+}
+
+pub fn collateral_sent_to_publisher(
+  tx: Transaction,
+  policy_id: PolicyId,
+  new_channel: ChannelId,
+) -> Bool {
+  trace @"collateral_sent_to_publisher"
+  let stt_name = full_stt_name(new_channel)
+  let state = get_stt_state(tx.outputs, policy_id, stt_name)
+  expect SubChannel(sub_state) = state
+  has_collateral_utxo(tx.outputs, sub_state.publisher)
+}
+
+pub fn collateral_sent_to_publishers(
+  tx: Transaction,
+  own_ref: OutputReference,
+  new_channels: List<ChannelId>,
+) -> Bool {
+  trace @"collateral_sent_to_publishers"
+  let policy_id = get_policy_id(own_ref, tx.inputs)
+  list.all(
+    new_channels,
+    fn(ch) { collateral_sent_to_publisher(tx, policy_id, ch) },
+  )
+}
+
+/// True iff `outputs` contains a UTXO that is valid as a collateral UTXO
+/// for the given publisher:
+///   - addressed to the publisher's VKH,
+///   - exactly `collateral_lovelace` lovelace,
+///   - ADA-only (no other assets),
+///   - no datum (collateral UTXOs must be datum-free),
+///   - no reference script.
+fn has_collateral_utxo(
+  outputs: List<Output>,
+  publisher: VerificationKeyHash,
+) -> Bool {
+  list.any(outputs, fn(o) { is_collateral_utxo(o, publisher) })
+}
+
+fn is_collateral_utxo(
+  output: Output,
+  publisher: VerificationKeyHash,
+) -> Bool {
+  and {
+    output.address.payment_credential == VerificationKey(publisher),
+    assets.lovelace_of(output.value) == collateral_lovelace,
+    assets.without_lovelace(output.value) == assets.zero,
+    output.datum == NoDatum,
+    output.reference_script == None,
+  }
 }

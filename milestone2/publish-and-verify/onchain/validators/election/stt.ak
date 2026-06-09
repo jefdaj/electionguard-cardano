@@ -43,13 +43,22 @@ pub fn get_stt_name(state: ChannelState) -> ByteArray {
   full_stt_name(channel_id)
 }
 
+pub fn find_stt_output(
+  tx: Transaction,
+  policy_id: PolicyId,
+  channel_id: ByteArray,
+) -> Option<OutputReference> {
+  trace @"find_stt_output"
+  let stt_name = full_stt_name(channel_id)
+  find_input_with_token(tx, policy_id, stt_name)
+}
+
 pub fn find_admin_stt_output(
   tx: Transaction,
   policy_id: PolicyId
 ) -> Option<OutputReference> {
   trace @"find_admin_stt_output"
-  let stt_name = full_stt_name("admin")
-  find_input_with_token(tx, policy_id, stt_name)
+  find_stt_output(tx, policy_id, "admin")
 }
 
 fn find_input_with_token(

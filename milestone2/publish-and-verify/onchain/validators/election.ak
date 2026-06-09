@@ -15,7 +15,7 @@ use election/cont.{
   add_subchannels, rm_subchannels, post_public_records,
   advance_phase, rebalance_funds_admin, rebalance_funds_subchannel,
 }
-use election/fund.{ada_retained_during_election}
+use election/fund.{ada_retained_during_election, collateral_sent_to_publishers}
 use election/types/phase.{is_final_phase, is_valid_phase_transition}
 use election/types/record.{validate_records}
 use election/types/channel_id.{ChannelId}
@@ -190,12 +190,15 @@ fn validate_addsubchannels_spend(
 
   let channels_separate = channels_kept_separate(own_ref, tx) ?
 
+  let collateral_ok = collateral_sent_to_publishers(tx, own_ref, new_channels)
+
   and {
     new_channels_valid,
     new_channels_unique,
     cont_as_expected,
     phase_valid,
     channels_separate,
+    collateral_ok,
   }
 }
 
