@@ -18,6 +18,7 @@
 //
 // See also the roughly matching offchain/tests/integration/test_happy_election.py
 
+use aiken/collection/list
 use cardano/assets
 use cardano/transaction.{NoDatum, Transaction, Input, Output}
 use election/types/action as ea
@@ -169,6 +170,8 @@ pub const guardian3_tx1_in0 = mock.input(@"admin_tx2", 3, guardian3_tx0_out0)
 pub const device1_tx1_in0   = mock.input(@"admin_tx2", 4, device1_tx0_out0  )
 pub const verifier1_tx1_in0 = mock.input(@"admin_tx2", 5, verifier1_tx0_out0)
 
+const sub_collateral_outputs = list.map(subchannel_ids, mock.collateral)
+
 const admin_tx2 = Transaction {
   ..transaction.placeholder,
   inputs: [admin_tx2_in0],
@@ -180,7 +183,7 @@ const admin_tx2 = Transaction {
     guardian3_tx0_out0,
     device1_tx0_out0,
     verifier1_tx0_out0,
- ],
+ ] |> list.concat(sub_collateral_outputs),
   extra_signatories: [mock.admin_vkh],
 }
 
