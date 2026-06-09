@@ -56,6 +56,7 @@ def admin_tx1(admin_tx0: Transaction, admin: AdminNode) -> TransactionBuilder:
     (_, records) = STATIC_TRANSACTIONS['admin'][1]
     tx = admin.post_public_records(new_records=records, new_phase=phase)
     LOG.debug(f'admin_tx1: {tx}')
+    admin.publisher.wait_for_confirmation(tx)
     return tx
 
 def test_admin_tx1(admin_tx1: Transaction):

@@ -69,21 +69,20 @@ def init_tx(
     )
     funder.publisher.wait_for_confirmation(init_tx)
 
-    # TODO is this needed?
-    time.sleep(KUPO_DELAY_SEC)
+    time.sleep(KUPO_DELAY_SEC) # TODO remove?
 
     # All other tests happen here
     yield init_tx
 
-    # TODO is this needed? Meant to catch the edge case where everything
-    # finishes immediately before the subscriber picks up any transactions.
-    time.sleep(KUPO_DELAY_SEC)
-
     try:
+        time.sleep(KUPO_DELAY_SEC) # TODO remove?
         burn_tx = funder.burn_test_tokens()
         funder.publisher.wait_for_confirmation(burn_tx)
+
     except Exception as e:
         LOG.error(e)
         raise
+
     finally:
+        time.sleep(KUPO_DELAY_SEC) # TODO remove?
         funder.sweep_all_collateral(keys_dir)
