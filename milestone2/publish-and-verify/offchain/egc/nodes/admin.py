@@ -193,9 +193,12 @@ class AdminNode(ElectionNode):
 
         # Adjust out value by by everything we expect to use except the TX fee.
         # TODO would it make more sense to adjust this during iteration below?
+        # TODO or is there no need to pre-set it at all?
         to_fee_pools  = len(subchannels) * LOVELACE_PER_ADA * subchannel_ada
         to_collateral = len(subchannels) * COLLATERAL_LOVELACE
-        admin_out_value -= Value(coin=to_fee_pools + to_collateral)
+        admin_out_value -= to_fee_pools
+        admin_out_value -= to_collateral
+        LOG.debug(f'approximate admin_out_value: {admin_out_value}')
 
         admin_out_utxo = TransactionOutput(
             address = self.election.address,
@@ -249,7 +252,7 @@ class AdminNode(ElectionNode):
                 address = sub_addr,
                 amount = Value(coin=COLLATERAL_LOVELACE),
             )
-            LOG.debug(f'col_utxo: {pformat(col_utxo)}')
+            LOG.debug(f'{sub_id} col_utxo: {pformat(col_utxo)}')
 
             txb.add_output(col_utxo)
 

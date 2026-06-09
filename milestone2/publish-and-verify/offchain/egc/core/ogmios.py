@@ -171,7 +171,7 @@ def set_out_value_and_fee(
 ) -> None:
     """1-in/1-out continuation: out_coin = in_coin - fee, iterating to a fixed
     point. Assumes redeemer ex_units are already finalised."""
-    out_utxo.amount.coin = in_value.coin   # realistic-size seed
+    # out_utxo.amount.coin = in_value.coin   # realistic-size seed
     txb.fee = max_tx_fee(txb.context)
 
     prev_fee = None
