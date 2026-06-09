@@ -77,6 +77,7 @@ fn add_tx() -> Transaction {
     outputs: [
       admin_post_add_output,
       sub_post_add_output,
+      mock.collateral(subchannel_id),
     ],
     extra_signatories: [mock.admin_vkh],
   }

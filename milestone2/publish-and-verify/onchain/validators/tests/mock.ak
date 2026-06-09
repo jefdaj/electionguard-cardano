@@ -11,7 +11,7 @@ use aiken/primitive/string
 use aiken/collection/list
 use aiken/crypto.{VerificationKeyHash}
 
-use cardano/assets.{Value}
+use cardano/assets.{Value, from_lovelace}
 use cardano/address.{Script, Address, VerificationKey}
 use cardano/assets.{PolicyId}
 use cardano/transaction.{
@@ -29,6 +29,7 @@ use election/types/channel.{
   SubChannel, SubChannelState
 }
 use election/stt
+use election/fund.{collateral_lovelace}
 
 pub fn vkh(seed: ByteArray) -> Hash<Blake2b_224, ByteArray> {
   crypto.blake2b_224(seed)
@@ -201,6 +202,22 @@ pub fn script_output(channel_id: ChannelId, datum: Datum) -> Output {
     address: script_address(),
     value: stt_value(channel_id),
     datum: datum,
+    reference_script: None,
+  }
+}
+
+pub fn address_from_vkh(vkh: VerificationKeyHash) -> Address {
+  Address {
+    payment_credential: VerificationKey(vkh),
+    stake_credential: None,
+  }
+}
+
+pub fn collateral(channel_id: ChannelId) -> Output {
+  Output {
+    address: address_from_vkh(vkh(channel_id)),
+    value: from_lovelace(collateral_lovelace),
+    datum: NoDatum,
     reference_script: None,
   }
 }
