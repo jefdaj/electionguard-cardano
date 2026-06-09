@@ -114,7 +114,7 @@ def admin_s1(admin_vkh: VerificationKeyHash) -> ChannelState:
 
 @per_election_fixture
 def admin_tx1(
-        admin: AdminNode
+        admin: AdminNode,
         admin_tx0: Transaction,
     ) -> Transaction:
     tx = admin.post_public_records(
@@ -199,6 +199,7 @@ def admin_tx2(
     )
     LOG.debug(f'admin_tx2: {tx}')
     admin.publisher.wait_for_confirmation(tx)
+    time.sleep(5) # TODO remove?
     return tx
 
 def sub_s0(sub_id: ChannelId, sub_wallet: Wallet) -> ChannelState:
