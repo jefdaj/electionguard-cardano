@@ -12,14 +12,15 @@ LOG = logging.getLogger(__name__)
 global_fixture       = pytest.fixture(scope='session')
 per_election_fixture = pytest.fixture(scope='package')
 
-def assert_subscribers_in_sync(nodes: List[ElectionNode]):
+def assert_nodes_in_sync(nodes: List[ElectionNode]):
     if len(nodes) < 2:
-        LOG.warning('assert_subscribers_in_sync called with < 2 nodes')
+        LOG.warning('assert_nodes_in_sync called with < 2 nodes')
         return
+    ch_strs = [n.channel_str() for n in nodes]
     # one node to compare the others against
     ref = nodes[0]; nodes = nodes[1:]
     for node in nodes:
         assert node.election_phase()   == ref.election_phase()  , "phase mismatch"
         assert node.subscriber.history == ref.subscriber.history, "history mismatch"
         assert node.subscriber.states  == ref.subscriber.states , "state mismatch"
-        # assert node.subscriber.utxos   == ref.subscriber.utxos  , "utxos mismatch"
+    LOG.info('Nodes in sync: ' + ', '.join(s for s in ch_strs))

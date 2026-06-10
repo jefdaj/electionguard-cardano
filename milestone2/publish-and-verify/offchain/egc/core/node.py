@@ -60,6 +60,8 @@ class ElectionNode:
             self.subscriber.start()
             time.sleep(OGMIOS_POLL_SEC + 1) # TODO how long is actually needed?
 
+        LOG.info(f'Started {self.channel_str()} node.')
+
     def channel_id(self) -> ChannelId:
         return self.publisher.channel_id()
 
@@ -222,3 +224,16 @@ class ElectionNode:
             LOG.info(msg)
 
         return tx_signed
+
+    def channel_str(self):
+        "Like channel_id, but informal for logs. Includes funder as valid."
+        try:
+            return ChannelIdHelper.to_string(self.channel_id())
+        except:
+            return 'funder' # TODO safer way?
+
+    def stop(self):
+        if self.subscriber is not None:
+            self.subscriber.stop()
+            self.subscriber.join()
+        LOG.info(f'Stopped {self.channel_str()} node.')

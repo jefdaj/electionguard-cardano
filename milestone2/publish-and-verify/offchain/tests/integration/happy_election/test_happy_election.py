@@ -4,7 +4,7 @@ import pytest
 from dataclasses import replace
 from pycardano import *
 from egc import *
-from test_utils import per_election_fixture, assert_subscribers_in_sync
+from test_utils import per_election_fixture, assert_nodes_in_sync
 from static_records import STATIC_PHASES, STATIC_TRANSACTIONS
 import logging
 import time
@@ -60,7 +60,8 @@ def test_admin_tx0_sub(
         admin: AdminNode,
         admin_tx0: Transaction,
     ):
-    assert_subscribers_in_sync([funder, admin])
+    nodes = [funder, admin]
+    assert_nodes_in_sync(nodes)
 
 
 ## ----------- admin_tx1 -----------
@@ -102,7 +103,8 @@ def test_admin_tx1_sub(
         admin: AdminNode,
         admin_tx1: Transaction,
     ):
-    assert_subscribers_in_sync([funder, admin])
+    nodes = [funder, admin]
+    assert_nodes_in_sync(nodes)
 
 
 ## ------ subchannel wallets -------
@@ -230,7 +232,8 @@ def test_admin_tx2_sub(
         funder: FunderNode,
         admin: AdminNode,
     ):
-    assert_subscribers_in_sync([funder, admin])
+    nodes = [funder, admin]
+    assert_nodes_in_sync(nodes)
 
 
 ## =================================
@@ -260,7 +263,7 @@ def guardian1(
     try:
         yield node
     finally:
-        node.subscriber.stop()
+        node.stop()
 
 @per_election_fixture
 def guardian2(
@@ -276,7 +279,7 @@ def guardian2(
     try:
         yield node
     finally:
-        node.subscriber.stop()
+        node.stop()
 
 @per_election_fixture
 def guardian3(
@@ -292,14 +295,14 @@ def guardian3(
     try:
         yield node
     finally:
-        node.subscriber.stop()
+        node.stop()
 
 @per_election_fixture
 def device1(
         election: ElectionContext,
         device1_wallet: Wallet
-    ) -> GuardianNode:
-    node = GuardianNode(
+    ) -> DeviceNode:
+    node = DeviceNode(
         election   = election,
         wallet     = device1_wallet,
         role_index = 1,
@@ -308,14 +311,14 @@ def device1(
     try:
         yield node
     finally:
-        node.subscriber.stop()
+        node.stop()
 
 @per_election_fixture
 def verifier1(
         election: ElectionContext,
         verifier1_wallet: Wallet
-    ) -> GuardianNode:
-    node = GuardianNode(
+    ) -> VerifierNode:
+    node = VerifierNode(
         election   = election,
         wallet     = verifier1_wallet,
         role_index = 1,
@@ -324,7 +327,7 @@ def verifier1(
     try:
         yield node
     finally:
-        node.subscriber.stop()
+        node.stop()
 
 
 ## ----------- admin_tx3 -----------
@@ -386,4 +389,4 @@ def test_admin_tx3_sub(
         admin_tx3: Transaction,
         all_nodes: list[ElectionNode],
     ):
-    assert_subscribers_in_sync(all_nodes)
+    assert_nodes_in_sync(all_nodes)
