@@ -19,9 +19,9 @@ SUBCHANNEL_IDS = STATIC_TRANSACTIONS['admin'][2][0].channels
 ## initial solo admin transactions:
 ## 0. init election
 ## 1. announce config
-## subchannel wallets
-## subchannel nodes
 ## 2. onboarding (add subchannels)
+##    - subchannel wallets
+##    - subchannel nodes
 ## =================================
 
 
@@ -56,7 +56,7 @@ def test_admin_tx0(
     assert actual_state == admin_s0
 
 # ... in fact, all nodes should agree on the current state
-def test_admin_tx0_sub(
+def test_admin_tx0_sync(
         funder: FunderNode,
         admin: AdminNode,
         admin_tx0: Transaction,
@@ -99,7 +99,7 @@ def test_admin_tx1(
     actual_state = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
     assert actual_state == admin_s1
 
-def test_admin_tx1_sub(
+def test_admin_tx1_sync(
         funder: FunderNode,
         admin: AdminNode,
         admin_tx1: Transaction,
@@ -342,7 +342,7 @@ def test_admin_tx2(
         actual_state = admin.subscriber.states[sub_id][1]
         assert actual_state == sub_s0(sub_id, sub_wallet), f'{sub_id} unexpected state'
 
-def test_admin_tx2_sub(
+def test_admin_tx2_sync(
         admin_tx2: Transaction,
         all_nodes: list[ElectionNode],
     ):
@@ -393,8 +393,51 @@ def test_admin_tx3(
     actual_state = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
     assert actual_state == admin_s3
 
-def test_admin_tx3_sub(
+def test_admin_tx3_sync(
         admin_tx3: Transaction,
+        all_nodes: list[ElectionNode],
+    ):
+    assert_nodes_in_sync(all_nodes)
+
+
+## ----------- admin_tx4 -----------
+
+# This could be combined with posting the tally, but in later versions I think
+# it would make more sense to have this be a definite stopping point where
+# devices post any last votes and their STTs are burned (channels removed). So
+# for now I'll keep it as an advance-only step.
+
+@per_election_fixture
+def admin_s4(admin_s3: ChannelState) -> ChannelState:
+    prev = admin_s3.state
+    return AdminChannel(state=replace(
+        prev,
+        new_records = [],
+        phase       = STATIC_PHASES[4],
+        seq         = 4,
+    ))
+
+@per_election_fixture
+def admin_tx4(
+        admin: AdminNode,
+        admin_tx3: Transaction,
+    ) -> Transaction:
+    tx = admin.advance_phase(STATIC_PHASES[4])
+    LOG.debug(f'admin_tx4: {tx}')
+    admin.wait_for_confirmation(tx)
+    return tx
+
+def test_admin_tx4(
+        admin: AdminNode,
+        admin_s4: ChannelState,
+        admin_tx4: Transaction,
+    ):
+    assert isinstance(admin_tx4, Transaction)
+    actual_state = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
+    assert actual_state == admin_s4
+
+def test_admin_tx4_sync(
+        admin_tx4: Transaction,
         all_nodes: list[ElectionNode],
     ):
     assert_nodes_in_sync(all_nodes)

@@ -33,6 +33,82 @@ class AdminNode(ElectionNode):
             wallet=wallet
         )
 
+    def advance_phase(
+            self,
+            next_phase: ElectionPhase,
+        ) -> Transaction:
+
+        LOG.debug('AdminNode.advance_phase')
+
+        ch_str = self.channel_str()
+        tx_msgs = []
+
+        # ensure own collateral
+        admin_collateral = wait_for_collateral(self.publisher.wallet.addr)
+        LOG.debug('admin_collateral: %s' % pformat(admin_collateral))
+
+        (in_utxo, in_datum) = self.state()
+        LOG.debug('in_datum: %s' % pformat(in_datum))
+
+        in_state: AdminChannelState = in_datum.state
+        LOG.debug('in_state: %s' % pformat(in_state))
+
+        cont_redeemer = Redeemer(data=AdvancePhase())
+        LOG.debug('cont_redeemer: %s' % pformat(cont_redeemer))
+
+        cont_state: AdminChannelState = replace(
+            in_state,
+            new_records = [],
+            phase = next_phase,
+            seq = in_state.seq + 1,
+        )
+        LOG.debug('cont_state: %s' % pformat(cont_state))
+
+        tx_msgs.append(f'{ch_str} advanced phase to {next_phase}')
+
+        cont_datum = AdminChannel(state=cont_state)
+        LOG.debug('cont_datum: %s' % pformat(cont_datum))
+
+        # See ElectionNode.post_public_records for more on this pattern:
+        cont_value = Value.from_primitive(in_utxo.output.amount.to_primitive())
+        cont_utxo = TransactionOutput(
+            address = self.election.address,
+            amount  = cont_value,
+            datum   = cont_datum,
+        )
+
+        txb = (
+            TransactionBuilder(OGMIOS_CTX)
+            .add_script_input(
+                in_utxo,
+                script=self.election.script.spend_script,
+                redeemer=cont_redeemer
+            )
+            .add_output(cont_utxo)
+        )
+
+        # Add our own collateral for this contract interaction
+        txb.collaterals.append(admin_collateral)
+
+        # Add our own signature
+        txb.required_signers = [self.publisher.wallet.vkh]
+
+        tx_signed = self.balance_and_sign_state_transition_tx(
+            txb,
+            cont_utxo,
+            cont_redeemer,
+        )
+
+        LOG.debug(f'tx_signed about to be submitted:\n%s:\n' % pformat(tx_signed))
+        OGMIOS_CTX.submit_tx(tx_signed)
+        LOG.debug(f'Submitted tx with id={tx_signed.id}')
+
+        for msg in tx_msgs:
+            LOG.info(msg)
+
+        return tx_signed
+
+
     def add_subchannels(
             self,
             subchannels: dict[ChannelId, VerificationKeyHash],
