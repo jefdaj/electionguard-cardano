@@ -84,6 +84,53 @@ class ElectionNode:
         self.publisher.wait_for_confirmation(tx)
         time.sleep(OGMIOS_DELAY_SEC)
 
+    def balance_and_sign_state_transition_tx(
+            self,
+            txb: TransactionBuilder,
+            cont_utxo: UTxO,
+            cont_redeemer: Redeemer,
+        ) -> Transaction:
+
+        """Balance a transaction where rather than using a change address as
+        PyCardano assumes, we want the deduct it from the value of cont_utxo
+        (the STT continuation). This requires some specific setup of the
+        builder, cont_utxo, and cont_redeemer. See post_public_records below
+        for an example."""
+
+        # 1. Have Ogmios compute real ex_units, write them onto the redeemers.
+        evaluate_and_set_ex_units(txb, cont_utxo, [cont_redeemer])
+
+        # 2. Now that ex_units are pinned, converge fee + output coin.
+        set_out_value_and_fee(txb, cont_utxo)
+
+        # 3. Final body (bakes script_data_hash from the now-final redeemer).
+        tx_body = txb._build_tx_body()
+
+        # Sanity check: inputs balance outputs.
+        total_in = sum(u.output.amount.coin for u in txb.inputs)
+        total_out = sum(o.amount.coin for o in tx_body.outputs)
+        assert total_in == total_out + tx_body.fee, (
+            f"Unbalanced: in={total_in}, out={total_out}, fee={tx_body.fee}"
+        )
+
+        # Witness set + sign body hash.
+        witness_set = txb.build_witness_set()
+        if witness_set.vkey_witnesses is None:
+            witness_set.vkey_witnesses = []
+
+        signature = self.publisher.wallet.sk.sign(tx_body.hash())
+        witness_set.vkey_witnesses.append(
+            VerificationKeyWitness(self.publisher.wallet.vk, signature)
+        )
+
+        tx_signed = Transaction(
+            transaction_body        = tx_body,
+            transaction_witness_set = witness_set,
+            auxiliary_data          = txb.auxiliary_data,
+        )
+
+        return tx_signed
+
     def post_public_records(
             self,
             new_records: List[PublicRecord],
@@ -129,63 +176,39 @@ class ElectionNode:
         assert isinstance(out_datum, ChannelState)
         LOG.debug('out_datum: %s' % pformat(out_datum))
 
-        # We need the in_value alone because PyCardano will use it to
-        # calculate the inputs, so create a separate out_value to mess with.
-        in_value = in_utxo.output.amount
-        out_value = Value.from_primitive(in_value.to_primitive())  # deep copy
-
-        out_utxo = TransactionOutput(
-            address=self.election.address,
-            amount=out_value,
-            datum=out_datum,
+        # The continuation UTXO will have its ADA value auto-adjusted to make the
+        # TX balance, but needs the other assets to be correct already. So we
+        # start with a copy of the in_utxo Value with the STT. The original
+        # is left alone (not mutated) so we don't mess up PyCardano calculations.
+        cont_value = Value.from_primitive(in_utxo.output.amount.to_primitive()) # deep copy
+        cont_utxo = TransactionOutput(
+            address = self.election.address,
+            amount  = cont_value,
+            datum   = out_datum,
         )
 
-        # Create the redeemer with ex_units=None so the builder's
-        # _consolidate_redeemer puts it into "needs estimation" mode (ExecutionUnits(0,0)).
-        spend_redeemer = Redeemer(data=PostPublicRecords())
+        # The continuation redeemer will have its ex_units set to make the TX
+        # balance, so it's important not to set them here.
+        cont_redeemer = Redeemer(data=PostPublicRecords())
 
+        # TX building is pretty standard other than the cont_* parts above.
         txb = (
             TransactionBuilder(OGMIOS_CTX)
             .add_script_input(
                 in_utxo,
                 script=self.election.script.spend_script,
-                redeemer=spend_redeemer
+                redeemer=cont_redeemer
             )
-            .add_output(out_utxo)
+            .add_output(cont_utxo)
         )
         txb.collaterals.append(pub_col_utxo)
         txb.required_signers = [self.publisher.wallet.vkh]
 
-        # 1. Have Ogmios compute real ex_units, write them onto the redeemers.
-        evaluate_and_set_ex_units(txb, out_utxo, [spend_redeemer])
-
-        # 2. Now that ex_units are pinned, converge fee + output coin.
-        set_out_value_and_fee(txb, out_utxo)
-
-        # 3. Final body (bakes script_data_hash from the now-final redeemer).
-        tx_body = txb._build_tx_body()
-
-        # Sanity check: inputs balance outputs.
-        total_in = sum(u.output.amount.coin for u in txb.inputs)
-        total_out = sum(o.amount.coin for o in tx_body.outputs)
-        assert total_in == total_out + tx_body.fee, (
-            f"Unbalanced: in={total_in}, out={total_out}, fee={tx_body.fee}"
-        )
-
-        # Witness set + sign body hash.
-        witness_set = txb.build_witness_set()
-        if witness_set.vkey_witnesses is None:
-            witness_set.vkey_witnesses = []
-
-        signature = self.publisher.wallet.sk.sign(tx_body.hash())
-        witness_set.vkey_witnesses.append(
-            VerificationKeyWitness(self.publisher.wallet.vk, signature)
-        )
-
-        tx_signed = Transaction(
-            transaction_body        = tx_body,
-            transaction_witness_set = witness_set,
-            auxiliary_data          = txb.auxiliary_data,
+        # Fancy stuff here.
+        tx_signed = self.balance_and_sign_state_transition_tx(
+            txb,
+            cont_utxo,
+            cont_redeemer,
         )
 
         LOG.debug(f'tx_signed about to be submitted:\n%s:\n' % pformat(tx_signed))
