@@ -191,7 +191,7 @@ class FunderNode(ElectionNode):
         self.election = election_ctx
         json_path = self.election_json_path()
         self.election.to_json(json_path)
-        LOG.info(f'Deployed contract and saved context to {json_path}')
+        LOG.info(f'Deployed contract and saved details to {json_path}')
 
         self._init_subscriber()
 
@@ -244,25 +244,25 @@ class FunderNode(ElectionNode):
         """Clean up test tokens.
 
         WARNING: The on-chain code lets anyone do this, not just the funder.
-        BurnTestTokens should be removed before prodcution use.
+        BurnTestTokens should be removed before production use.
         """
-
+        if not IS_TEST:
+            err = 'burn_test_tokens is only for test mode'
+            LOG.error(err)
+            raise RuntimeError(err)
         if self.election is None:
             raise Exception('init_election must be called before burn_test_tokens')
         if self.subscriber is None:
             raise Exception('init_subscriber must be called before burn_test_tokens')
-
         burn_txb = self._build_burn_tx()
         burn_tx  = self.publisher.sign_and_submit(burn_txb)
-
         json_path = self.election_json_path()
-        LOG.info(f'Burned all test tokens and recovered ADA from {json_path}')
-
+        LOG.info(f'Burned test tokens and recovered ADA from {json_path}')
         return burn_tx
 
-    def sweep_all_collateral(self, keys_dir: Path):
+    def recover_all_collateral(self, keys_dir: Path):
         if not IS_TEST:
-            err = 'sweep_all_collateral is only for use in test mode'
+            err = 'recover_all_collateral is only for test mode'
             LOG.error(err)
             raise RuntimeError(err)
         errors = []
@@ -278,11 +278,11 @@ class FunderNode(ElectionNode):
                 tx = return_collateral(pub_wallet, self.publisher.wallet.addr)
                 if tx is not None:
                     last_tx = tx
-                    LOG.info(f'Swept collateral from {sk_path}')
+                    LOG.info(f'Recovered collateral from {sk_path}')
             except Exception as e:
-                LOG.exception(f'Failed to sweep collateral from {pub_addr}')
+                LOG.exception(f'Failed to recover collateral from {pub_addr}')
                 errors.append(e)
         if last_tx is not None:
             self.publisher.wait_for_confirmation(last_tx)
         if errors:
-            raise ExceptionGroup('sweep_all_collateral had failures', errors)
+            raise ExceptionGroup('recover_all_collateral had failures', errors)

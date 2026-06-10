@@ -85,4 +85,4 @@ def init_tx(
 
     finally:
         time.sleep(KUPO_DELAY_SEC) # TODO remove?
-        funder.sweep_all_collateral(keys_dir) # TODO make this part of keys_dir fixture?
+        funder.recover_all_collateral(keys_dir) # TODO make this part of keys_dir fixture?

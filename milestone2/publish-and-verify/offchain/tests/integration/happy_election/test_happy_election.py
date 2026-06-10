@@ -218,16 +218,16 @@ def test_admin_tx2(
     ):
     assert isinstance(admin_tx2, Transaction)
 
-    # admin_s2_actual = admin.subscriber.states[channel_id][1]
-    # assert admin_s2_actual == admin_s2, 'admin unexpected state'
+    admin_s2_actual = admin.subscriber.states[channel_id][1]
+    assert admin_s2_actual == admin_s2, 'admin unexpected state'
 
-    # for (sub_id, sub_wallet) in subchannel_wallets.items():
-    #     sub_state_actual = admin.subscriber.states[channel_id][1]
-    #     assert sub_state_actual == sub_s0(sub_id, sub_wallet), f'{sub_id} unexpected state'
+    for (sub_id, sub_wallet) in subchannel_wallets.items():
+        sub_state_actual = admin.subscriber.states[channel_id][1][1]
+        assert sub_state_actual == sub_s0(sub_id, sub_wallet), f'{sub_id} unexpected state'
 
-# def test_admin_tx2_sub(
-#         admin_tx2: Transaction,
-#         funder: FunderNode,
-#         admin: AdminNode,
-#     ):
-#     assert_subscribers_in_sync([funder, admin])
+def test_admin_tx2_sub(
+        admin_tx2: Transaction,
+        funder: FunderNode,
+        admin: AdminNode,
+    ):
+    assert_subscribers_in_sync([funder, admin])
