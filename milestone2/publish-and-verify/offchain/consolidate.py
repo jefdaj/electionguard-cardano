@@ -20,8 +20,8 @@ OGMIOS_HOST = "localhost"
 OGMIOS_PORT = 1337
 NETWORK = Network.TESTNET  # preview is a testnet
 
-SK_PATH   = Path("test-keys/dev.sk")
-ADDR_PATH = Path("test-keys/dev.addr")
+SK_PATH   = Path("keys/dev.sk")
+ADDR_PATH = Path("keys/dev.addr")
 
 # Txs with native assets are larger per input than pure-ADA ones.
 # Lower this if you hit tx-too-large errors.
