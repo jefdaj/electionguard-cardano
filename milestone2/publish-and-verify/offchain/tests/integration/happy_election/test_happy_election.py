@@ -294,6 +294,38 @@ def guardian3(
     finally:
         node.subscriber.stop()
 
+@per_election_fixture
+def device1(
+        election: ElectionContext,
+        device1_wallet: Wallet
+    ) -> GuardianNode:
+    node = GuardianNode(
+        election   = election,
+        wallet     = device1_wallet,
+        role_index = 1,
+    )
+    LOG.debug(f'device1: {node}')
+    try:
+        yield node
+    finally:
+        node.subscriber.stop()
+
+@per_election_fixture
+def verifier1(
+        election: ElectionContext,
+        verifier1_wallet: Wallet
+    ) -> GuardianNode:
+    node = GuardianNode(
+        election   = election,
+        wallet     = verifier1_wallet,
+        role_index = 1,
+    )
+    LOG.debug(f'verifier1: {node}')
+    try:
+        yield node
+    finally:
+        node.subscriber.stop()
+
 
 ## ----------- admin_tx3 -----------
 
@@ -337,8 +369,8 @@ def all_nodes(
         guardian1: GuardianNode,
         guardian2: GuardianNode,
         guardian3: GuardianNode,
-        # TODO device1: DeviceNode,
-        # TODO verifier1: VerifierNode,
+        device1: DeviceNode,
+        verifier1: VerifierNode,
     ) -> list[ElectionNode]:
     return [
         funder,
@@ -346,8 +378,8 @@ def all_nodes(
         guardian1,
         guardian2,
         guardian3,
-        # TODO device1,
-        # TODO verifier1,
+        device1,
+        verifier1,
     ]
 
 def test_admin_tx3_sub(
