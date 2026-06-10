@@ -53,6 +53,7 @@ class FunderNode(ElectionNode):
 
         LOG.debug('Funder._build_init_tx')
 
+        ch_str = self.channel_str()
         tx_msgs = []
 
         # Without this set, the FunderNode risks the entire dev wallet when
@@ -120,9 +121,9 @@ class FunderNode(ElectionNode):
         txb.required_signers = [self.publisher.wallet.vkh]
         LOG.debug('init txb:\n%s\n' % pformat(txb))
 
-        tx_msgs.append(f'Set initial phase to {phase}')
-        tx_msgs.append(f'Minted admin channel STT and locked {admin_ada} ADA with it to pay fees.')
-        tx_msgs.append('Sent 5 ADA to admin for use as collateral.')
+        tx_msgs.append(f'{ch_str} set initial phase to {phase}')
+        tx_msgs.append(f'{ch_str} minted admin channel STT and locked {admin_ada} ADA with it to pay fees.')
+        tx_msgs.append(f'{ch_str} sent 5 ADA to admin for use as collateral.')
 
         return (tx_msgs, txb)
 
@@ -199,7 +200,7 @@ class FunderNode(ElectionNode):
         self.election = election_ctx
         json_path = self.election_json_path()
         self.election.to_json(json_path)
-        LOG.info(f'Deployed contract and saved details to {json_path}')
+        LOG.info(f'{self.channel_str()} deployed contract and saved details to {json_path}')
         for msg in tx_msgs:
             LOG.info(msg)
 
@@ -220,6 +221,7 @@ class FunderNode(ElectionNode):
     def _build_burn_tx(self) -> Tuple[List[str], TransactionBuilder]:
 
         # Messages to log if/when the TX succeeds
+        ch_str = self.channel_str()
         tx_msgs = []
 
         mint_redeemer = Redeemer(data=BurnTestTokens())
@@ -249,7 +251,7 @@ class FunderNode(ElectionNode):
                 redeemer=spend_redeemer
             )
             channel_id = ChannelIdHelper.to_string(channel_id_from_state(state))
-            tx_msgs.append(f'Burned {channel_id} channel STT and recovered fee pool ADA.')
+            tx_msgs.append(f'{ch_str} burned {channel_id} channel STT and recovered fee pool ADA.')
 
         LOG.debug('burn_txb:\n%s\n' % pformat(burn_txb))
 
@@ -274,7 +276,8 @@ class FunderNode(ElectionNode):
         json_path = self.election_json_path()
         for msg in tx_msgs:
             LOG.info(msg)
-        LOG.info(f'Burned all test tokens and recovered fee pool ADA from {json_path}')
+        ch_str = self.channel_str()
+        LOG.info(f'{ch_str} burned all test tokens and recovered fee pool ADA from {json_path}')
         return burn_tx
 
     def recover_all_collateral(self, keys_dir: Path) -> Transaction:
@@ -282,6 +285,7 @@ class FunderNode(ElectionNode):
             err = 'recover_all_collateral is only for test mode'
             LOG.error(err)
             raise RuntimeError(err)
+        ch_str = self.channel_str()
         errors = []
         last_tx = None # only have to wait once
         for (utxo, state) in self.subscriber.states.values():
@@ -295,9 +299,9 @@ class FunderNode(ElectionNode):
                 tx = return_collateral(pub_wallet, self.publisher.wallet.addr)
                 if tx is not None:
                     last_tx = tx
-                    LOG.info(f'Recovered collateral from {sk_path}')
+                    LOG.info(f'{ch_str} recovered collateral from {sk_path}')
             except Exception as e:
-                LOG.exception(f'Failed to recover collateral from {pub_addr}')
+                LOG.exception(f'{ch_str} failed to recover collateral from {pub_addr}')
                 errors.append(e)
         # if last_tx is not None:
             # self.wait_for_confirmation(last_tx)

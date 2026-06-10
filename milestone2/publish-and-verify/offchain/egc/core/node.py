@@ -143,6 +143,7 @@ class ElectionNode:
 
         assert len(new_records) > 0, 'post_public_records new_records empty'
 
+        ch_str = self.channel_str()
         tx_msgs = []
 
         pub_col_utxo = wait_for_collateral(self.publisher.wallet.addr)
@@ -171,7 +172,7 @@ class ElectionNode:
         LOG.debug('out_state: %s' % pformat(out_state))
 
         for record in new_records:
-            tx_msgs.append(f'Posted {record}')
+            tx_msgs.append(f'{ch_str} posted {record}')
 
         # Re-wrap in original ChannelState type.
         out_datum = replace(in_datum, state=out_state)
@@ -218,7 +219,7 @@ class ElectionNode:
         LOG.debug(f'Submitted tx with id={tx_signed.id}')
 
         if new_phase is not None:
-            tx_msgs.append(f'Advanced phase to {new_phase}')
+            tx_msgs.append(f'{ch_str} advanced phase to {new_phase}')
 
         for msg in tx_msgs:
             LOG.info(msg)

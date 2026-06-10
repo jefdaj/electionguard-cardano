@@ -42,6 +42,7 @@ class AdminNode(ElectionNode):
 
         LOG.debug('AdminNode.add_subchannels')
 
+        ch_str = self.channel_str()
         tx_msgs = []
 
         # ensure own collateral
@@ -125,7 +126,7 @@ class AdminNode(ElectionNode):
 
             txb.add_output(stt_utxo)
             tx_msgs.append(
-                f'Minted {sub_str} channel STT and locked {subchannel_ada} ADA with it to pay fees.'
+                f'{ch_str} minted {sub_str} channel STT and locked {subchannel_ada} ADA from admin channel fee pool with it to pay fees.'
             )
 
         # Send subchannel publishers their collateral
@@ -142,10 +143,10 @@ class AdminNode(ElectionNode):
             LOG.debug(f'{sub_id} col_utxo: {pformat(col_utxo)}')
 
             txb.add_output(col_utxo)
-            tx_msgs.append(f'Sent 5 ADA to {sub_str} for use as collateral.')
+            tx_msgs.append(f'{ch_str} sent 5 ADA from admin channel fee pool to {sub_str} for use as collateral.')
 
         if done_onboarding:
-            tx_msgs.append(f'Advanced phase to {next_phase}')
+            tx_msgs.append(f'{ch_str} advanced phase to {next_phase}')
 
         # Tell the builder to actually mint the STTs.
         txb.mint = mint_assets
