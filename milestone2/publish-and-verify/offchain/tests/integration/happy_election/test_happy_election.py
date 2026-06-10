@@ -60,7 +60,15 @@ def test_subchannel_wallets(
         assert isinstance(verifier1_wallet, Wallet)
 
 
-### admin_tx0 ###
+## =================================
+## initial solo admin transactions:
+## 0. init election
+## 1. announce config
+## 2. onboarding (add subchannels)
+## =================================
+
+
+## ----------- admin_tx0 -----------
 
 @per_election_fixture
 def admin_s0(admin_vkh: VerificationKeyHash) -> ChannelState:
@@ -99,7 +107,7 @@ def test_admin_tx0_sub(
     assert_subscribers_in_sync([funder, admin])
 
 
-### admin_tx1 ###
+## ----------- admin_tx1 -----------
 
 @per_election_fixture
 def admin_s1(admin_vkh: VerificationKeyHash) -> ChannelState:
@@ -141,7 +149,7 @@ def test_admin_tx1_sub(
     assert_subscribers_in_sync([funder, admin])
 
 
-### admin_tx2 ###
+## ----------- admin_tx2 -----------
 
 @per_election_fixture
 def subchannel_wallets(
@@ -175,14 +183,6 @@ def admin_s2(admin_vkh: VerificationKeyHash) -> ChannelState:
         phase       = STATIC_PHASES[2],
         seq         = 2,
     ))
-
-# all the subchannels also have this one as their state0
-# aliases for clarity:
-guardian1_s0 = admin_s2
-guardian_s0  = admin_s2
-guardian3_s0 = admin_s2
-device1_s0   = admin_s2
-verifier1_s0 = admin_s2
 
 @per_election_fixture
 def admin_tx2(
@@ -228,3 +228,75 @@ def test_admin_tx2_sub(
         admin: AdminNode,
     ):
     assert_subscribers_in_sync([funder, admin])
+
+
+## =================================
+## parallel admin section:
+## 3. finalize config
+## 4. advance voting -> tally
+## 5. results tally
+## 6. results decrypt
+## 7. verify
+## =================================
+
+
+## ----------- admin_tx3 -----------
+
+@per_election_fixture
+def admin_s3(admin_vkh: VerificationKeyHash) -> ChannelState:
+    return AdminChannel(state=AdminChannelState(
+        admin       = admin_vkh.payload,
+        subchannels = SUBCHANNEL_IDS,
+        new_records = STATIC_TRANSACTIONS['admin'][3][1],
+        phase       = STATIC_PHASES[3],
+        seq         = 3,
+    ))
+
+@per_election_fixture
+def admin_tx3(
+        admin: AdminNode,
+        admin_tx2: Transaction,
+    ) -> Transaction:
+    tx = admin.post_public_records(
+        new_records = STATIC_TRANSACTIONS['admin'][3][1],
+        new_phase   = STATIC_PHASES[3],
+    )
+    LOG.debug(f'admin_tx3: {tx}')
+    admin.wait_for_confirmation(tx)
+    return tx
+
+def test_admin_tx3(
+        admin: AdminNode,
+        admin_s3: ChannelState,
+        admin_tx3: Transaction,
+    ):
+    assert isinstance(admin_tx3, Transaction)
+    actual_state = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
+    assert actual_state == admin_s3
+
+# from here on all the nodes can be started and should stay in sync
+@per_election_fixture
+def all_nodes(
+        funder: FunderNode,
+        admin: AdminNode,
+        # TODO guardian1: GuardianNode,
+        # TODO guardian2: GuardianNode,
+        # TODO guardian3: GuardianNode,
+        # TODO device1: DeviceNode,
+        # TODO verifier1: VerifierNode,
+    ) -> list[ElectionNode]:
+    return [
+        funder,
+        admin,
+        # TODO guardian1,
+        # TODO guardian2,
+        # TODO guardian3,
+        # TODO device1,
+        # TODO verifier1,
+    ]
+
+def test_admin_tx3_sub(
+        admin_tx3: Transaction,
+        all_nodes: list[ElectionNode],
+    ):
+    assert_subscribers_in_sync(all_nodes)
