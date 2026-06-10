@@ -187,7 +187,10 @@ class FunderNode(ElectionNode):
 
         # TODO come up with a better default path here
         timestamp = election_ctx.deployment.deployment_date.strftime("%y%m%d%H%M%S")
-        election_ctx.to_json(f'election-{timestamp}.json')
+        json_path = f'election-{timestamp}.json'
+        election_ctx.to_json(json_path)
+
+        LOG.info(f'deployed contract and saved election context to {json_path}')
 
         self.election = election_ctx
         self._init_subscriber()
@@ -243,6 +246,7 @@ class FunderNode(ElectionNode):
 
         burn_txb = self._build_burn_tx()
         burn_tx  = self.publisher.sign_and_submit(burn_txb)
+        LOG.info('Burned test tokens and recovered ADA.')
         return burn_tx
 
     def sweep_all_collateral(self, keys_dir: Path):
@@ -262,7 +266,7 @@ class FunderNode(ElectionNode):
                 tx = return_collateral(pub_wallet, self.publisher.wallet.addr)
                 if tx is not None:
                     last_tx = tx
-                    LOG.debug(f'Recovered collateral from {pub_addr}')
+                    LOG.info(f'Recovered collateral from {pub_addr}')
             except Exception as e:
                 LOG.exception(f'Failed to recover collateral from {pub_addr}')
                 errors.append(e)
