@@ -37,6 +37,13 @@ def test_load_static_files_by_cid(
         static_transactions: dict[str, dict[int, Tuple[ElectionAction, list[PublicRecord]]]],
         static_files_by_cid: dict[str, Path],
     ):
+
+    # There are actually 79 records, but the verifications all have the same
+    # CID because they all agree.
+    # TODO add something unique to prevent that?
+    # TODO lean more on the reverse path -> cid lookup instead?
+    assert len(static_files_by_cid) == 75
+
     for tx_dict in static_transactions.values():
         for (act, recs) in tx_dict.values():
             if act != PostPublicRecords():
