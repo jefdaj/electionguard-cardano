@@ -30,23 +30,20 @@ def test_load_static_transactions(
                 assert isinstance(rec, PublicRecord)
 
 def test_load_static_files_by_cid(
-        static_transactions: dict[str, dict[int, Tuple[ElectionAction, list[PublicRecord]]]],
+        static_records_list: list[PublicRecord],
         static_files_by_cid: dict[str, Path],
     ):
 
-    # There are actually 79 records, but the verifications all have the same
+    # There are 79 records, but the verifications all have the same
     # CID because they all agree.
     # TODO add something unique to prevent that?
     # TODO lean more on the reverse path -> cid lookup instead?
+    assert len(static_records_list) == 79
     assert len(static_files_by_cid) == 75
 
-    for tx_dict in static_transactions.values():
-        for (act, recs) in tx_dict.values():
-            if act != PostPublicRecords():
-                continue
-            for rec in recs:
-                cid = str(rec.ipfs_cid)
-                path = static_files_by_cid[cid]
-                assert isinstance(path, Path)
-                with path.open('r') as f:
-                    assert json.load(f)
+    for rec in static_records_list:
+        cid = str(rec.ipfs_cid)
+        path = static_files_by_cid[cid]
+        assert isinstance(path, Path)
+        with path.open('r') as f:
+            assert json.load(f)

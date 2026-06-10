@@ -37,6 +37,8 @@ class GuardianVerification(PlutusData):
 class JointKey(PlutusData):
     CONSTR_ID = 5
 
+# TODO Context??
+
 @dataclass
 class Constants(PlutusData):
     CONSTR_ID = 6

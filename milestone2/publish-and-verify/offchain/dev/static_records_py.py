@@ -180,7 +180,7 @@ render_fns = [
     guardian_verification,
     joint_key,
     constants,
-    # TODO context?
+    # TODO context? YES
     device,
     ballot_submitted,
     ballot_spoiled,

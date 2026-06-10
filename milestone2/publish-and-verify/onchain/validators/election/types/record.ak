@@ -7,6 +7,7 @@ use election/types/ballot_id.{validate_ballot_id}
 // These aren't part of the ElectionGuard protocol as far as I know,
 // but it seems reasonable to err on the side of safety for now.
 // I've run elections with up to 99 guardians in the Python code.
+// TODO will we hit any Cardano TX size limits before that?
 const max_guardians: Int = 100
 const max_devices  : Int = 100
 // const max_verifiers: Int = 100
@@ -26,6 +27,7 @@ pub type PublicRecordMetadata {
     backup_order: Int
   }
   JointKey
+  // TODO Context??
   Constants
   Device {
     device_number: Int

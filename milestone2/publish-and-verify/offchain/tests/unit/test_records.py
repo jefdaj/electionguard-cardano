@@ -8,4 +8,6 @@ from pprint import pprint
 
 LOG = logging.getLogger(__name__)
 
-# TODO round-trip a few hand written records here to test byte encode/decode
+# TODO round-trip all static records to test bytes encode/decode
+
+# def test_roundtrip_static_records():
