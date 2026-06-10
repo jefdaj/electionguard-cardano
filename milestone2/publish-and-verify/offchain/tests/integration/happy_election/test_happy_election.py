@@ -5,17 +5,10 @@ from dataclasses import replace
 from pycardano import *
 from egc import *
 from test_utils import per_election_fixture, assert_nodes_in_sync
-
-# TODO rework this
-from data.static_records import STATIC_PHASES, STATIC_TRANSACTIONS
-
 import logging
 import time
 
 LOG = logging.getLogger(__name__)
-
-SUBCHANNEL_IDS = STATIC_TRANSACTIONS['admin'][2][0].channels
-[G1, G2, G3, D1, V1] = SUBCHANNEL_IDS
 
 
 ## =================================
@@ -71,12 +64,16 @@ def test_admin_tx0_sub(
 ## ----------- admin_tx1 -----------
 
 @per_election_fixture
-def admin_s1(admin_s0: ChannelState) -> ChannelState:
+def admin_s1(
+        admin_s0: ChannelState,
+        static_transactions,
+        static_phases,
+    ) -> ChannelState:
     prev = admin_s0.state
     return AdminChannel(state=replace(
         prev,
-        new_records = STATIC_TRANSACTIONS['admin'][1][1],
-        phase       = STATIC_PHASES[1],
+        new_records = static_transactions['admin'][1][1],
+        phase       = static_phases[1],
         seq         = 1,
     ))
 
@@ -84,10 +81,12 @@ def admin_s1(admin_s0: ChannelState) -> ChannelState:
 def admin_tx1(
         admin: AdminNode,
         admin_tx0: Transaction,
+        static_transactions,
+        static_phases,
     ) -> Transaction:
     tx = admin.post_public_records(
-        new_records = STATIC_TRANSACTIONS['admin'][1][1],
-        new_phase   = STATIC_PHASES[1],
+        new_records = static_transactions['admin'][1][1],
+        new_phase   = static_phases[1],
     )
     LOG.debug(f'admin_tx1: {tx}')
     admin.wait_for_confirmation(tx)
@@ -269,6 +268,7 @@ def all_nodes(
 
 @per_election_fixture
 def subchannel_wallets(
+        subchannel_ids,
         guardian1_wallet: Wallet,
         guardian2_wallet: Wallet,
         guardian3_wallet: Wallet,
@@ -282,7 +282,7 @@ def subchannel_wallets(
         device1_wallet,
         verifier1_wallet,
     ]
-    return {k:v for (k,v) in zip(SUBCHANNEL_IDS, wallets)} # TODO sort?
+    return {k:v for (k,v) in zip(subchannel_ids, wallets)} # TODO sort?
 
 @per_election_fixture
 def subchannel_onboarding_info(
@@ -297,13 +297,17 @@ def subchannel_onboarding_info(
     return info
 
 @per_election_fixture
-def admin_s2(admin_s1: ChannelState) -> ChannelState:
+def admin_s2(
+        admin_s1: ChannelState,
+        subchannel_ids,
+        static_phases,
+    ) -> ChannelState:
     prev = admin_s1.state
     return AdminChannel(state=replace(
         prev,
-        subchannels = SUBCHANNEL_IDS,
+        subchannels = subchannel_ids,
         new_records = [],
-        phase       = STATIC_PHASES[2],
+        phase       = static_phases[2],
         seq         = 2,
     ))
 
@@ -365,12 +369,16 @@ def test_admin_tx2_sub(
 ## ----------- admin_tx3 -----------
 
 @per_election_fixture
-def admin_s3(admin_s2: ChannelState) -> ChannelState:
+def admin_s3(
+        admin_s2: ChannelState,
+        static_transactions,
+        static_phases,
+    ) -> ChannelState:
     prev = admin_s2.state
     return AdminChannel(state=replace(
         prev,
-        new_records = STATIC_TRANSACTIONS['admin'][3][1],
-        phase       = STATIC_PHASES[3],
+        new_records = static_transactions['admin'][3][1],
+        phase       = static_phases[3],
         seq         = 3,
     ))
 
@@ -378,10 +386,12 @@ def admin_s3(admin_s2: ChannelState) -> ChannelState:
 def admin_tx3(
         admin: AdminNode,
         admin_tx2: Transaction,
+        static_transactions,
+        static_phases,
     ) -> Transaction:
     tx = admin.post_public_records(
-        new_records = STATIC_TRANSACTIONS['admin'][3][1],
-        new_phase   = STATIC_PHASES[3],
+        new_records = static_transactions['admin'][3][1],
+        new_phase   = static_phases[3],
     )
     LOG.debug(f'admin_tx3: {tx}')
     admin.wait_for_confirmation(tx)
@@ -411,12 +421,15 @@ def test_admin_tx3_sub(
 # for now I'll keep it as an advance-only step.
 
 @per_election_fixture
-def admin_s4(admin_s3: ChannelState) -> ChannelState:
+def admin_s4(
+        admin_s3: ChannelState,
+        static_phases,
+    ) -> ChannelState:
     prev = admin_s3.state
     return AdminChannel(state=replace(
         prev,
         new_records = [],
-        phase       = STATIC_PHASES[4],
+        phase       = static_phases[4],
         seq         = 4,
     ))
 
@@ -424,8 +437,9 @@ def admin_s4(admin_s3: ChannelState) -> ChannelState:
 def admin_tx4(
         admin: AdminNode,
         admin_tx3: Transaction,
+        static_phases,
     ) -> Transaction:
-    tx = admin.advance_phase(STATIC_PHASES[4])
+    tx = admin.advance_phase(static_phases[4])
     LOG.debug(f'admin_tx4: {tx}')
     admin.wait_for_confirmation(tx)
     return tx
@@ -449,12 +463,16 @@ def test_admin_tx4_sub(
 ## ----------- admin_tx5 -----------
 
 @per_election_fixture
-def admin_s5(admin_s4: ChannelState) -> ChannelState:
+def admin_s5(
+        admin_s4: ChannelState,
+        static_transactions,
+        static_phases,
+    ) -> ChannelState:
     prev = admin_s4.state
     return AdminChannel(state=replace(
         prev,
-        new_records = STATIC_TRANSACTIONS['admin'][5][1],
-        phase       = STATIC_PHASES[5],
+        new_records = static_transactions['admin'][5][1],
+        phase       = static_phases[5],
         seq         = 5,
     ))
 
@@ -462,10 +480,12 @@ def admin_s5(admin_s4: ChannelState) -> ChannelState:
 def admin_tx5(
         admin: AdminNode,
         admin_tx4: Transaction,
+        static_transactions,
+        static_phases,
     ) -> Transaction:
     tx = admin.post_public_records(
-        new_records = STATIC_TRANSACTIONS['admin'][5][1],
-        new_phase   = STATIC_PHASES[5],
+        new_records = static_transactions['admin'][5][1],
+        new_phase   = static_phases[5],
     )
     LOG.debug(f'admin_tx5: {tx}')
     admin.wait_for_confirmation(tx)
@@ -490,12 +510,16 @@ def test_admin_tx5_sub(
 ## ----------- admin_tx6 -----------
 
 @per_election_fixture
-def admin_s6(admin_s5: ChannelState) -> ChannelState:
+def admin_s6(
+        admin_s5: ChannelState,
+        static_transactions,
+        static_phases,
+    ) -> ChannelState:
     prev = admin_s5.state
     return AdminChannel(state=replace(
         prev,
-        new_records = STATIC_TRANSACTIONS['admin'][6][1],
-        phase       = STATIC_PHASES[6],
+        new_records = static_transactions['admin'][6][1],
+        phase       = static_phases[6],
         seq         = 6,
     ))
 
@@ -503,10 +527,12 @@ def admin_s6(admin_s5: ChannelState) -> ChannelState:
 def admin_tx6(
         admin: AdminNode,
         admin_tx5: Transaction,
+        static_transactions,
+        static_phases,
     ) -> Transaction:
     tx = admin.post_public_records(
-        new_records = STATIC_TRANSACTIONS['admin'][6][1],
-        new_phase   = STATIC_PHASES[6],
+        new_records = static_transactions['admin'][6][1],
+        new_phase   = static_phases[6],
     )
     LOG.debug(f'admin_tx6: {tx}')
     admin.wait_for_confirmation(tx)
@@ -532,12 +558,16 @@ def test_admin_tx6_sub(
 ## ----------- admin_tx7 -----------
 
 @per_election_fixture
-def admin_s7(admin_s6: ChannelState) -> ChannelState:
+def admin_s7(
+        admin_s6: ChannelState,
+        static_transactions,
+        static_phases,
+    ) -> ChannelState:
     prev = admin_s6.state
     return AdminChannel(state=replace(
         prev,
-        new_records = STATIC_TRANSACTIONS['admin'][7][1],
-        phase       = STATIC_PHASES[7],
+        new_records = static_transactions['admin'][7][1],
+        phase       = static_phases[7],
         seq         = 7,
     ))
 
@@ -545,10 +575,12 @@ def admin_s7(admin_s6: ChannelState) -> ChannelState:
 def admin_tx7(
         admin: AdminNode,
         admin_tx6: Transaction,
+        static_transactions,
+        static_phases,
     ) -> Transaction:
     tx = admin.post_public_records(
-        new_records = STATIC_TRANSACTIONS['admin'][7][1],
-        new_phase   = STATIC_PHASES[7],
+        new_records = static_transactions['admin'][7][1],
+        new_phase   = static_phases[7],
     )
     LOG.debug(f'admin_tx7: {tx}')
     admin.wait_for_confirmation(tx)
