@@ -26,6 +26,8 @@ def keys_dir() -> Path:
         path = Path(tempfile.mkdtemp(prefix="egc-test-keys-"))
         LOG.debug(f'EGC_KEYS (temporary) = {path}')
 
+    LOG.info(f'Temporary keys will go in {path}')
+
     try:
         yield path
     finally:

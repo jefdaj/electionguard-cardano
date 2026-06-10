@@ -12,7 +12,7 @@ When EGC_MODE=test, it will:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional, Self
+from typing import Optional, Self, Tuple
 from dataclasses import dataclass
 from pycardano import *
 from .config import IS_TEST
@@ -89,7 +89,6 @@ class Wallet:
             LOG.debug('sk_path exists; loading: %s', sk_path)
             return load_wallet(sk_path)
 
-        LOG.debug('sk_path does not exist; generating: %s', sk_path)
         return create_wallet(keys_dir=keys_dir, name=name, verbose=verbose)
 
     def to_json(self, *args, **kwargs) -> str:
@@ -120,14 +119,14 @@ def load_wallet(sk_path: Optional[Path] = None, keys_dir=DEF_KEYS_DIR, name='def
         sk_path = keys_dir / f'{name}.sk'
     return Wallet.from_sk_path(sk_path)
 
-def load_wallet_by_address(address: Address, keys_dir=DEF_KEYS_DIR) -> Optional[Wallet]:
+def load_wallet_by_address(address: Address, keys_dir=DEF_KEYS_DIR) -> Optional[Tuple[Path, Wallet]]:
     "Mainly to help return collateral in test fixtures."
     LOG.debug('load_wallet_for_address')
     keys_dir = Path(keys_dir)
     for sk_path in sorted(keys_dir.glob('*.sk')):
         w = Wallet.from_sk_path(sk_path)
         if w.addr == address:
-            return w
+            return (sk_path, w)
     return None
 
 def create_wallet(keys_dir=DEF_KEYS_DIR, name='default', verbose=True) -> Wallet:
@@ -142,6 +141,7 @@ def create_wallet(keys_dir=DEF_KEYS_DIR, name='default', verbose=True) -> Wallet
     keys_dir.mkdir(exist_ok=True)
     signing_key = PaymentSigningKey.generate()
     signing_key.save(str(sk_path))
+    LOG.info(f'Generated {sk_path}')
     wallet = Wallet.from_sk_path(sk_path)
     msg = f'''
     Your new Preview testnet key is here:

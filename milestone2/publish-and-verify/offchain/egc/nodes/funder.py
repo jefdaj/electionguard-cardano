@@ -186,18 +186,26 @@ class FunderNode(ElectionNode):
         (init_tx, election_ctx) = self.deploy_election(script, init_txb)
 
         # TODO come up with a better default path here
-        timestamp = election_ctx.deployment.deployment_date.strftime("%y%m%d%H%M%S")
-        json_path = f'election-{timestamp}.json'
-        election_ctx.to_json(json_path)
-
-        LOG.info(f'deployed contract and saved election context to {json_path}')
-
+        # timestamp = election_ctx.deployment.deployment_date.strftime("%y%m%d%H%M%S")
+        # json_path = f'election-{timestamp}.json'
         self.election = election_ctx
+        json_path = self.election_json_path()
+        self.election.to_json(json_path)
+        LOG.info(f'Deployed contract and saved context to {json_path}')
+
         self._init_subscriber()
 
         # All the info we really need should be in self.election now;
         # the main reason to return init_tx is so the caller can wait for confirmation.
         return init_tx
+
+    def election_json_path(self) -> Optional[Path]:
+        # TODO default dir?
+        if self.election is None:
+            return None
+        timestamp = self.election.deployment.deployment_date.strftime("%y%m%d%H%M%S")
+        json_path = f'election-{timestamp}.json'
+        return json_path
 
     def _build_burn_tx(self) -> TransactionBuilder:
 
@@ -246,7 +254,10 @@ class FunderNode(ElectionNode):
 
         burn_txb = self._build_burn_tx()
         burn_tx  = self.publisher.sign_and_submit(burn_txb)
-        LOG.info('Burned test tokens and recovered ADA.')
+
+        json_path = self.election_json_path()
+        LOG.info(f'Burned all test tokens and recovered ADA from {json_path}')
+
         return burn_tx
 
     def sweep_all_collateral(self, keys_dir: Path):
@@ -261,14 +272,15 @@ class FunderNode(ElectionNode):
                 LOG.debug(f'state: {state}')
                 pub_addr   = publisher_address(state)
                 LOG.debug(f'pub_addr: {pub_addr}')
-                pub_wallet = load_wallet_by_address(pub_addr, keys_dir=keys_dir)
+                (sk_path, pub_wallet) = load_wallet_by_address(pub_addr, keys_dir=keys_dir)
+                LOG.debug(f'sk_path: {sk_path}')
                 LOG.debug(f'pub_wallet: {pub_wallet}')
                 tx = return_collateral(pub_wallet, self.publisher.wallet.addr)
                 if tx is not None:
                     last_tx = tx
-                    LOG.info(f'Recovered collateral from {pub_addr}')
+                    LOG.info(f'Swept collateral from {sk_path}')
             except Exception as e:
-                LOG.exception(f'Failed to recover collateral from {pub_addr}')
+                LOG.exception(f'Failed to sweep collateral from {pub_addr}')
                 errors.append(e)
         if last_tx is not None:
             self.publisher.wait_for_confirmation(last_tx)
