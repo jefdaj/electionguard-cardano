@@ -5,7 +5,10 @@ from dataclasses import replace
 from pycardano import *
 from egc import *
 from test_utils import per_election_fixture, assert_nodes_in_sync
-from static_records import STATIC_PHASES, STATIC_TRANSACTIONS
+
+# TODO rework this
+from data.static_records import STATIC_PHASES, STATIC_TRANSACTIONS
+
 import logging
 import time
 

@@ -1,6 +1,7 @@
 import pytest
 from egc import *
 import logging
+from pprint import pprint
 
 LOG = logging.getLogger(__name__)
 
@@ -18,3 +19,10 @@ LOG = logging.getLogger(__name__)
 #     assert all(
 #         exists(k) for (k, v) in election_records
 #     )
+
+def test_static_phases(static_phases):
+    assert len(static_phases) == 8
+    assert all(
+        isinstance(k, int) and isinstance(v, ElectionPhase)
+        for (k, v) in static_phases.items()
+    )
