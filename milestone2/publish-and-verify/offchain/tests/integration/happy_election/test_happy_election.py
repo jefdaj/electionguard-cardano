@@ -1,6 +1,7 @@
 # Test order roughly matches onchain/tests/integration/happy_election.ak
 
 import pytest
+from dataclasses import replace
 from pycardano import *
 from egc import *
 from test_utils import per_election_fixture, assert_subscribers_in_sync
@@ -110,10 +111,10 @@ def test_admin_tx0_sub(
 ## ----------- admin_tx1 -----------
 
 @per_election_fixture
-def admin_s1(admin_vkh: VerificationKeyHash) -> ChannelState:
-    return AdminChannel(state=AdminChannelState(
-        admin       = admin_vkh.payload,
-        subchannels = [],
+def admin_s1(admin_s0: ChannelState) -> ChannelState:
+    prev = admin_s0.state
+    return AdminChannel(state=replace(
+        prev,
         new_records = STATIC_TRANSACTIONS['admin'][1][1],
         phase       = STATIC_PHASES[1],
         seq         = 1,
@@ -175,9 +176,10 @@ def subchannel_onboarding_info(
     return {i:w.vkh for (i,w) in subchannel_wallets.items()} # TODO sort?
 
 @per_election_fixture
-def admin_s2(admin_vkh: VerificationKeyHash) -> ChannelState:
-    return AdminChannel(state=AdminChannelState(
-        admin       = admin_vkh.payload,
+def admin_s2(admin_s1: ChannelState) -> ChannelState:
+    prev = admin_s1.state
+    return AdminChannel(state=replace(
+        prev,
         subchannels = SUBCHANNEL_IDS,
         new_records = [],
         phase       = STATIC_PHASES[2],
@@ -243,10 +245,10 @@ def test_admin_tx2_sub(
 ## ----------- admin_tx3 -----------
 
 @per_election_fixture
-def admin_s3(admin_vkh: VerificationKeyHash) -> ChannelState:
-    return AdminChannel(state=AdminChannelState(
-        admin       = admin_vkh.payload,
-        subchannels = SUBCHANNEL_IDS,
+def admin_s3(admin_s2: ChannelState) -> ChannelState:
+    prev = admin_s2.state
+    return AdminChannel(state=replace(
+        prev,
         new_records = STATIC_TRANSACTIONS['admin'][3][1],
         phase       = STATIC_PHASES[3],
         seq         = 3,
