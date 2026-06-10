@@ -33,7 +33,6 @@ class AdminNode(ElectionNode):
             wallet=wallet
         )
 
-    # TODO once both work, factor common parts out of this + post_public_records
     def add_subchannels(
             self,
             subchannels: dict[ChannelId, VerificationKeyHash],
@@ -41,7 +40,7 @@ class AdminNode(ElectionNode):
             done_onboarding: bool = False,
         ) -> Transaction:
 
-        LOG.debug('Admin.add_subchannels')
+        LOG.debug('AdminNode.add_subchannels')
 
         tx_msgs = []
 
@@ -55,46 +54,32 @@ class AdminNode(ElectionNode):
         in_state: AdminChannelState = in_datum.state
         LOG.debug('in_state: %s' % pformat(in_state))
 
-        # Create the redeemer with ex_units=None so the builder's
-        # _consolidate_redeemer puts it into "needs estimation" mode (ExecutionUnits(0,0)).
         sub_ids = list(subchannels.keys()) # TODO sort?
-        admin_spend_redeemer = Redeemer(data=AddSubChannels(channels=sub_ids))
-        LOG.debug('admin_spend_redeemer: %s' % pformat(admin_spend_redeemer))
+        cont_redeemer = Redeemer(data=AddSubChannels(channels=sub_ids))
+        LOG.debug('cont_redeemer: %s' % pformat(cont_redeemer))
 
         # TODO more comprehensive guards based on subscriber phase
         assert in_state.phase == ElectionConfigPhase(phase=ConfigOnboardingPhase())
         next_phase = ElectionConfigPhase(phase=ConfigCeremonyPhase())
 
-        admin_out_state: AdminChannelState = replace(
+        cont_state: AdminChannelState = replace(
             in_state,
             subchannels = in_state.subchannels + sub_ids, # TODO sort? assert unique?
             new_records = [],
             phase = next_phase if done_onboarding else in_state.phase,
             seq = in_state.seq + 1,
         )
-        LOG.debug('admin_out_state: %s' % pformat(admin_out_state))
+        LOG.debug('cont_state: %s' % pformat(cont_state))
 
-        admin_out_datum = AdminChannel(state=admin_out_state)
-        LOG.debug('admin_out_datum: %s' % pformat(admin_out_datum))
+        cont_datum = AdminChannel(state=cont_state)
+        LOG.debug('cont_datum: %s' % pformat(cont_datum))
 
-        # We need the in_value alone because PyCardano will use it to
-        # calculate the inputs, so we do a deep copy first.
-        in_value = in_utxo.output.amount
-        admin_out_value = Value.from_primitive(in_value.to_primitive())  # deep copy
-
-        # Adjust out value by by everything we expect to use except the TX fee.
-        # TODO would it make more sense to adjust this during iteration below?
-        # TODO or is there no need to pre-set it at all?
-        to_fee_pools  = len(subchannels) * LOVELACE_PER_ADA * subchannel_ada
-        to_collateral = len(subchannels) * COLLATERAL_LOVELACE
-        admin_out_value -= to_fee_pools
-        admin_out_value -= to_collateral
-        LOG.debug(f'initial admin_out_value: {admin_out_value}')
-
-        admin_out_utxo = TransactionOutput(
+        # See ElectionNode.post_public_records for more on this pattern:
+        cont_value = Value.from_primitive(in_utxo.output.amount.to_primitive())
+        cont_utxo = TransactionOutput(
             address = self.election.address,
-            amount  = admin_out_value,
-            datum   = admin_out_datum,
+            amount  = cont_value,
+            datum   = cont_datum,
         )
 
         txb = (
@@ -102,11 +87,10 @@ class AdminNode(ElectionNode):
             .add_script_input(
                 in_utxo,
                 script=self.election.script.spend_script,
-                redeemer=admin_spend_redeemer
+                redeemer=cont_redeemer
             )
-            .add_output(admin_out_utxo)
+            .add_output(cont_utxo)
         )
-
 
         # Accumulate the mint across all subchannels so it ends up as a single
         # MultiAsset under one policy_id.
@@ -140,7 +124,9 @@ class AdminNode(ElectionNode):
             LOG.debug(f'{sub_id} stt_utxo: {pformat(stt_utxo)}')
 
             txb.add_output(stt_utxo)
-            tx_msgs.append(f'Minted {sub_str} channel STT and locked {subchannel_ada} ADA with it to pay fees.')
+            tx_msgs.append(
+                f'Minted {sub_str} channel STT and locked {subchannel_ada} ADA with it to pay fees.'
+            )
 
         # Send subchannel publishers their collateral
         for (sub_id, sub_vkh) in subchannels.items():
@@ -158,59 +144,30 @@ class AdminNode(ElectionNode):
             txb.add_output(col_utxo)
             tx_msgs.append(f'Sent 5 ADA to {sub_str} for use as collateral.')
 
+        if done_onboarding:
+            tx_msgs.append(f'Advanced phase to {next_phase}')
 
         # Tell the builder to actually mint the STTs.
         txb.mint = mint_assets
-
         mint_redeemer = Redeemer(data=AddSubChannels(channels=sub_ids))
         LOG.debug(f'mint_redeemer: {mint_redeemer}')
-
         txb.add_minting_script(script=self.election.script.mint_script, redeemer=mint_redeemer)
 
         # Add our own collateral for this contract interaction
         txb.collaterals.append(admin_collateral)
+
+        # Add our own signature
         txb.required_signers = [self.publisher.wallet.vkh]
 
-        # 1. Have Ogmios compute real ex_units, write them onto the redeemer.
-        evaluate_and_set_ex_units(txb, admin_out_utxo, [admin_spend_redeemer])
-        LOG.debug(f'adjusted admin redeemer with ex_units: {admin_spend_redeemer}')
-
-        # 2. Now that ex_units are pinned, converge fee + output coin.
-        set_out_value_and_fee(txb, admin_out_utxo)
-        LOG.debug(f'adjusted admin_out_value: {admin_out_value}')
-
-        # 3. Final body (bakes script_data_hash from the now-final redeemer).
-        tx_body = txb._build_tx_body()
-
-        # Sanity check: inputs balance outputs.
-        total_in = sum(u.output.amount.coin for u in txb.inputs) # TODO tx_body?
-        total_out = sum(o.amount.coin for o in tx_body.outputs)
-        assert total_in == total_out + tx_body.fee, (
-            f"Unbalanced: in={total_in}, out={total_out}, fee={tx_body.fee}"
-        )
-
-        # Witness set + sign body hash.
-        witness_set = txb.build_witness_set()
-        if witness_set.vkey_witnesses is None:
-            witness_set.vkey_witnesses = []
-
-        signature = self.publisher.wallet.sk.sign(tx_body.hash())
-        witness_set.vkey_witnesses.append(
-            VerificationKeyWitness(self.publisher.wallet.vk, signature)
-        )
-
-        tx_signed = Transaction(
-            transaction_body        = tx_body,
-            transaction_witness_set = witness_set,
-            auxiliary_data          = txb.auxiliary_data,
+        tx_signed = self.balance_and_sign_state_transition_tx(
+            txb,
+            cont_utxo,
+            cont_redeemer,
         )
 
         LOG.debug(f'tx_signed about to be submitted:\n%s:\n' % pformat(tx_signed))
         OGMIOS_CTX.submit_tx(tx_signed)
         LOG.debug(f'Submitted tx with id={tx_signed.id}')
-
-        if done_onboarding:
-            tx_msgs.append(f'Advanced phase to {next_phase}')
 
         for msg in tx_msgs:
             LOG.info(msg)
