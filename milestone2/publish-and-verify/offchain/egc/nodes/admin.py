@@ -35,7 +35,7 @@ class AdminNode(ElectionNode):
 
     def advance_phase(
             self,
-            next_phase: ElectionPhase,
+            new_phase: ElectionPhase,
         ) -> Transaction:
 
         LOG.debug('AdminNode.advance_phase')
@@ -59,12 +59,12 @@ class AdminNode(ElectionNode):
         cont_state: AdminChannelState = replace(
             in_state,
             new_records = [],
-            phase = next_phase,
+            phase = new_phase,
             seq = in_state.seq + 1,
         )
         LOG.debug('cont_state: %s' % pformat(cont_state))
 
-        tx_msgs.append(f'{ch_str} advanced phase to {next_phase}')
+        tx_msgs.append(f'{ch_str} advanced phase to {new_phase}')
 
         cont_datum = AdminChannel(state=cont_state)
         LOG.debug('cont_datum: %s' % pformat(cont_datum))
@@ -137,13 +137,13 @@ class AdminNode(ElectionNode):
 
         # TODO more comprehensive guards based on subscriber phase
         assert in_state.phase == ElectionConfigPhase(phase=ConfigOnboardingPhase())
-        next_phase = ElectionConfigPhase(phase=ConfigCeremonyPhase())
+        new_phase = ElectionConfigPhase(phase=ConfigCeremonyPhase())
 
         cont_state: AdminChannelState = replace(
             in_state,
             subchannels = in_state.subchannels + sub_ids, # TODO sort? assert unique?
             new_records = [],
-            phase = next_phase if done_onboarding else in_state.phase,
+            phase = new_phase if done_onboarding else in_state.phase,
             seq = in_state.seq + 1,
         )
         LOG.debug('cont_state: %s' % pformat(cont_state))
@@ -222,7 +222,7 @@ class AdminNode(ElectionNode):
             tx_msgs.append(f'{ch_str} sent 5 ADA from admin channel fee pool to {sub_str} for use as collateral.')
 
         if done_onboarding:
-            tx_msgs.append(f'{ch_str} advanced phase to {next_phase}')
+            tx_msgs.append(f'{ch_str} advanced phase to {new_phase}')
 
         # Tell the builder to actually mint the STTs.
         txb.mint = mint_assets

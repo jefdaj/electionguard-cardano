@@ -56,7 +56,7 @@ def test_admin_tx0(
     assert actual_state == admin_s0
 
 # ... in fact, all nodes should agree on the current state
-def test_admin_tx0_sync(
+def test_admin_tx0_sub(
         funder: FunderNode,
         admin: AdminNode,
         admin_tx0: Transaction,
@@ -99,7 +99,7 @@ def test_admin_tx1(
     actual_state = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
     assert actual_state == admin_s1
 
-def test_admin_tx1_sync(
+def test_admin_tx1_sub(
         funder: FunderNode,
         admin: AdminNode,
         admin_tx1: Transaction,
@@ -342,7 +342,7 @@ def test_admin_tx2(
         actual_state = admin.subscriber.states[sub_id][1]
         assert actual_state == sub_s0(sub_id, sub_wallet), f'{sub_id} unexpected state'
 
-def test_admin_tx2_sync(
+def test_admin_tx2_sub(
         admin_tx2: Transaction,
         all_nodes: list[ElectionNode],
     ):
@@ -393,7 +393,7 @@ def test_admin_tx3(
     actual_state = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
     assert actual_state == admin_s3
 
-def test_admin_tx3_sync(
+def test_admin_tx3_sub(
         admin_tx3: Transaction,
         all_nodes: list[ElectionNode],
     ):
@@ -436,8 +436,134 @@ def test_admin_tx4(
     actual_state = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
     assert actual_state == admin_s4
 
-def test_admin_tx4_sync(
+def test_admin_tx4_sub(
         admin_tx4: Transaction,
         all_nodes: list[ElectionNode],
     ):
     assert_nodes_in_sync(all_nodes)
+
+
+## ----------- admin_tx5 -----------
+
+@per_election_fixture
+def admin_s5(admin_s4: ChannelState) -> ChannelState:
+    prev = admin_s4.state
+    return AdminChannel(state=replace(
+        prev,
+        new_records = STATIC_TRANSACTIONS['admin'][5][1],
+        phase       = STATIC_PHASES[5],
+        seq         = 5,
+    ))
+
+@per_election_fixture
+def admin_tx5(
+        admin: AdminNode,
+        admin_tx4: Transaction,
+    ) -> Transaction:
+    tx = admin.post_public_records(
+        new_records = STATIC_TRANSACTIONS['admin'][5][1],
+        new_phase   = STATIC_PHASES[5],
+    )
+    LOG.debug(f'admin_tx5: {tx}')
+    admin.wait_for_confirmation(tx)
+    return tx
+
+def test_admin_tx5(
+        admin: AdminNode,
+        admin_s5: ChannelState,
+        admin_tx5: Transaction,
+    ):
+    assert isinstance(admin_tx5, Transaction)
+    actual_state = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
+    assert actual_state == admin_s5
+
+def test_admin_tx5_sub(
+        admin_tx5: Transaction,
+        all_nodes: list[ElectionNode],
+    ):
+    assert_nodes_in_sync(all_nodes)
+
+
+## ----------- admin_tx6 -----------
+
+@per_election_fixture
+def admin_s6(admin_s5: ChannelState) -> ChannelState:
+    prev = admin_s5.state
+    return AdminChannel(state=replace(
+        prev,
+        new_records = STATIC_TRANSACTIONS['admin'][6][1],
+        phase       = STATIC_PHASES[6],
+        seq         = 6,
+    ))
+
+@per_election_fixture
+def admin_tx6(
+        admin: AdminNode,
+        admin_tx5: Transaction,
+    ) -> Transaction:
+    tx = admin.post_public_records(
+        new_records = STATIC_TRANSACTIONS['admin'][6][1],
+        new_phase   = STATIC_PHASES[6],
+    )
+    LOG.debug(f'admin_tx6: {tx}')
+    admin.wait_for_confirmation(tx)
+    return tx
+
+def test_admin_tx6(
+        admin: AdminNode,
+        admin_s6: ChannelState,
+        admin_tx6: Transaction,
+    ):
+    assert isinstance(admin_tx6, Transaction)
+    actual_state = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
+    assert actual_state == admin_s6
+
+def test_admin_tx6_sub(
+        admin_tx6: Transaction,
+        all_nodes: list[ElectionNode],
+    ):
+    assert_nodes_in_sync(all_nodes)
+
+
+
+## ----------- admin_tx7 -----------
+
+@per_election_fixture
+def admin_s7(admin_s6: ChannelState) -> ChannelState:
+    prev = admin_s6.state
+    return AdminChannel(state=replace(
+        prev,
+        new_records = STATIC_TRANSACTIONS['admin'][7][1],
+        phase       = STATIC_PHASES[7],
+        seq         = 7,
+    ))
+
+@per_election_fixture
+def admin_tx7(
+        admin: AdminNode,
+        admin_tx6: Transaction,
+    ) -> Transaction:
+    tx = admin.post_public_records(
+        new_records = STATIC_TRANSACTIONS['admin'][7][1],
+        new_phase   = STATIC_PHASES[7],
+    )
+    LOG.debug(f'admin_tx7: {tx}')
+    admin.wait_for_confirmation(tx)
+    return tx
+
+def test_admin_tx7(
+        admin: AdminNode,
+        admin_s7: ChannelState,
+        admin_tx7: Transaction,
+    ):
+    assert isinstance(admin_tx7, Transaction)
+    actual_state = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
+    assert actual_state == admin_s7
+
+def test_admin_tx7_sub(
+        admin_tx7: Transaction,
+        all_nodes: list[ElectionNode],
+    ):
+    assert_nodes_in_sync(all_nodes)
+
+
