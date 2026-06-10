@@ -20,9 +20,21 @@ LOG = logging.getLogger(__name__)
 #         exists(k) for (k, v) in election_records
 #     )
 
-def test_static_phases(static_phases):
+def test_load_static_phases(static_phases: dict[int, ElectionPhase]):
     assert len(static_phases) == 8
     assert all(
         isinstance(k, int) and isinstance(v, ElectionPhase)
         for (k, v) in static_phases.items()
     )
+
+def test_load_static_transactions(
+        static_transactions: dict[str, dict[int, Tuple[ElectionAction, list[PublicRecord]]]]
+    ):
+    assert len(static_transactions) == 6
+    for (channel_str, tx_dict) in static_transactions.items():
+        assert isinstance(channel_str, str)
+        for (seq, (act, recs)) in tx_dict.items():
+            assert isinstance(seq, int)
+            assert isinstance(act, ElectionAction)
+            for rec in recs:
+                assert isinstance(rec, PublicRecord)

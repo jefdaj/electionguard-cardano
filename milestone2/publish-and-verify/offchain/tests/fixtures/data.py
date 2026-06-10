@@ -10,3 +10,7 @@ LOG = logging.getLogger(__name__)
 @global_fixture
 def static_phases():
     return STATIC_PHASES
+
+@global_fixture
+def static_transactions():
+    return STATIC_TRANSACTIONS
