@@ -72,9 +72,6 @@ class AdminNode(ElectionNode):
         for record in new_records:
             tx_msgs.append(f'Posted {record}')
 
-        if new_phase is not None:
-            tx_msgs.append(f'Advanced phase to {new_phase}')
-
         out_datum = AdminChannel(state=out_state)
         assert isinstance(out_datum, ChannelState)
         LOG.debug('out_datum: %s' % pformat(out_datum))
@@ -148,6 +145,9 @@ class AdminNode(ElectionNode):
         LOG.debug(f'tx_signed about to be submitted:\n%s:\n' % pformat(tx_signed))
         OGMIOS_CTX.submit_tx(tx_signed)
         LOG.debug(f'Submitted tx with id={tx_signed.id}')
+
+        if new_phase is not None:
+            tx_msgs.append(f'Advanced phase to {new_phase}')
 
         for msg in tx_msgs:
             LOG.info(msg)
@@ -261,7 +261,7 @@ class AdminNode(ElectionNode):
             LOG.debug(f'{sub_id} stt_utxo: {pformat(stt_utxo)}')
 
             txb.add_output(stt_utxo)
-            tx_msgs.append(f'Minted {sub_str} STT and locked {subchannel_ada} ADA with it to pay fees.')
+            tx_msgs.append(f'Minted {sub_str} channel STT and locked {subchannel_ada} ADA with it to pay fees.')
 
         # Send subchannel publishers their collateral
         for (sub_id, sub_vkh) in subchannels.items():

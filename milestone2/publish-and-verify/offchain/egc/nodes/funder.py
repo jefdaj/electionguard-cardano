@@ -117,7 +117,7 @@ class FunderNode(ElectionNode):
         txb.collaterals.append(funder_collateral)
         txb.required_signers = [self.publisher.wallet.vkh]
         LOG.debug('init txb:\n%s\n' % pformat(txb))
-        tx_msgs.append(f'Minted admin STT and locked {admin_ada} ADA with it to pay fees.')
+        tx_msgs.append(f'Minted admin channel STT and locked {admin_ada} ADA with it to pay fees.')
         tx_msgs.append('Sent 5 ADA to admin for use as collateral.')
 
         return (tx_msgs, txb)
@@ -140,9 +140,9 @@ class FunderNode(ElectionNode):
             since_block_hash = self.election.deployment.index_from_block_hash,
             policy_id        = self.election.script.policy_id,
         )
-        LOG.debug(f'sub_cfg: {sub_cfg}')
         self.subscriber = ElectionSubscriber(sub_cfg)
         self.subscriber.start()
+        LOG.info(f'Subscribe to this election with:\n\n{pformat(sub_cfg)}\n')
 
     def deploy_election(
             self,
