@@ -277,7 +277,7 @@ class FunderNode(ElectionNode):
         LOG.info(f'Burned all test tokens and recovered fee pool ADA from {json_path}')
         return burn_tx
 
-    def recover_all_collateral(self, keys_dir: Path):
+    def recover_all_collateral(self, keys_dir: Path) -> Transaction:
         if not IS_TEST:
             err = 'recover_all_collateral is only for test mode'
             LOG.error(err)
@@ -299,7 +299,8 @@ class FunderNode(ElectionNode):
             except Exception as e:
                 LOG.exception(f'Failed to recover collateral from {pub_addr}')
                 errors.append(e)
-        if last_tx is not None:
-            self.wait_for_confirmation(last_tx)
+        # if last_tx is not None:
+            # self.wait_for_confirmation(last_tx)
         if errors:
             raise ExceptionGroup('recover_all_collateral had failures', errors)
+        return last_tx
