@@ -63,11 +63,13 @@ class FunderNode(ElectionNode):
         redeemer = Redeemer(data=InitElection())
         LOG.debug('init redeemer: %s' % pformat(redeemer))
 
+        phase = ElectionConfigPhase(ConfigAnnouncePhase())
+
         state = AdminChannelState(
             admin       = admin_vkh.payload,
             subchannels = [],
             new_records = [],
-            phase       = ElectionConfigPhase(ConfigAnnouncePhase()),
+            phase       = phase,
             seq         = 0,
         )
         LOG.debug('init state: %s' % pformat(state))
@@ -117,6 +119,8 @@ class FunderNode(ElectionNode):
         txb.collaterals.append(funder_collateral)
         txb.required_signers = [self.publisher.wallet.vkh]
         LOG.debug('init txb:\n%s\n' % pformat(txb))
+
+        tx_msgs.append(f'Set initial phase to {phase}')
         tx_msgs.append(f'Minted admin channel STT and locked {admin_ada} ADA with it to pay fees.')
         tx_msgs.append('Sent 5 ADA to admin for use as collateral.')
 
@@ -245,7 +249,7 @@ class FunderNode(ElectionNode):
                 redeemer=spend_redeemer
             )
             channel_id = ChannelIdHelper.to_string(channel_id_from_state(state))
-            tx_msgs.append(f'Burned {channel_id} STT and recovered fee pool ADA.')
+            tx_msgs.append(f'Burned {channel_id} channel STT and recovered fee pool ADA.')
 
         LOG.debug('burn_txb:\n%s\n' % pformat(burn_txb))
 
