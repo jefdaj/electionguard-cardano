@@ -66,6 +66,12 @@ class SubChannel(PlutusData):
 
 ChannelState = Union[AdminChannel, SubChannel]
 
+def channel_id_from_state(state: ChannelState) -> ChannelId:
+    if isinstance(state, AdminChannel):
+        return ADMIN_CHANNEL_ID
+    else:
+        return state.state.channel_id
+
 def publisher_address(state: ChannelState, network=Network.TESTNET) -> Address:
     "Mainly to help return collateral in test fixtures."
     # TODO later, don't assume testnet

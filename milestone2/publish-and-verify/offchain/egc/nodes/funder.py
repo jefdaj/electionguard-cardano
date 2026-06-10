@@ -209,6 +209,9 @@ class FunderNode(ElectionNode):
 
     def _build_burn_tx(self) -> (List[str], TransactionBuilder):
 
+        # Messages to log if/when the TX succeeds
+        tx_msgs = []
+
         mint_redeemer = Redeemer(data=BurnTestTokens())
         LOG.debug(f'mint_redeemer: {mint_redeemer}')
 
@@ -227,7 +230,7 @@ class FunderNode(ElectionNode):
             .add_minting_script(script=self.election.script.mint_script, redeemer=mint_redeemer)
         )
 
-        for (utxo, _) in self.subscriber.states.values():
+        for (utxo, state) in self.subscriber.states.values():
             LOG.debug(f'script controlled utxo to spend: {utxo}')
             spend_redeemer = Redeemer(data=BurnTestTokens())
             burn_txb = burn_txb.add_script_input(
@@ -235,10 +238,12 @@ class FunderNode(ElectionNode):
                 script=self.election.script.spend_script,
                 redeemer=spend_redeemer
             )
+            channel_id = channel_id_from_state(state)
+            tx_msgs.append(f'Burned {channel_id} STT and recovered fee pool ADA.')
 
         LOG.debug('burn_txb:\n%s\n' % pformat(burn_txb))
 
-        return burn_txb
+        return (tx_msgs, burn_txb)
 
     def burn_test_tokens(self):
         """Clean up test tokens.
@@ -254,10 +259,12 @@ class FunderNode(ElectionNode):
             raise Exception('init_election must be called before burn_test_tokens')
         if self.subscriber is None:
             raise Exception('init_subscriber must be called before burn_test_tokens')
-        burn_txb = self._build_burn_tx()
+        (tx_msgs, burn_txb) = self._build_burn_tx()
         burn_tx  = self.publisher.sign_and_submit(burn_txb)
         json_path = self.election_json_path()
-        LOG.info(f'Burned test tokens and recovered fee pools from {json_path}')
+        for msg in tx_msgs:
+            LOG.info(msg)
+        LOG.info(f'Burned all test tokens and recovered fee pool ADA from {json_path}')
         return burn_tx
 
     def recover_all_collateral(self, keys_dir: Path):

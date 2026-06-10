@@ -20,6 +20,7 @@ from .channel import (
     AdminChannelState,
     SubChannel,
     SubChannelState,
+    channel_id_from_state,
     publisher_address,
 )
 
