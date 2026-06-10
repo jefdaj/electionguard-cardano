@@ -227,12 +227,12 @@ for fn in render_fns:
 
             # TODO fix plutus data types, then hopefully this will clear itself up:
 
-            print('record dict:', record.__dict__)
+            # print('record dict:', record.__dict__)
 
-            print(f'record: {record}')
-            print(f'record type: {type(record)}')
-            print(f'channel: {channel}')
-            print(f'channel type: {type(channel)}')
+            # print(f'record: {record}')
+            # print(f'record type: {type(record)}')
+            # print(f'channel: {channel}')
+            # print(f'channel type: {type(channel)}')
 
             if not channel in TXS:
                 TXS[channel] = {}
@@ -242,7 +242,7 @@ for fn in render_fns:
                 TXS[channel][seq] = (ppr, [])
                 # print(f'init {channel} seq {seq}')
 
-            TXS[channel][seq][1].append(record)
+            TXS[channel][seq][1].append(str(record)) # TODO fix properly
             # pprint(TXS, width=250)
 
 print('STATIC_TRANSACTIONS = \\')
