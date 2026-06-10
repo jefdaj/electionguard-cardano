@@ -17,7 +17,7 @@ def keys_dir() -> Path:
 
     if custom_keys_dir:
         path = Path(custom_keys_dir)
-        LOG.debug(f'using custom key dir EGC_KEYS = {path}')
+        LOG.warning(f'Custom key dir EGC_KEYS={path}')
         path.mkdir(parents=True, exist_ok=True)
         yield path
         return  # never delete a user-supplied dir
@@ -32,7 +32,7 @@ def keys_dir() -> Path:
         yield path
     finally:
         if not IS_TEST and not custom_keys_dir:
-            LOG.debug(f'rm EGC_KEYS {path}')
             shutil.rmtree(path, ignore_errors=True)
+            LOG.info(f'Removed keys from {path}')
         else:
-            LOG.debug(f'preserve EGC_KEYS {path}')
+            LOG.warning(f'Leaving keys in {path}')

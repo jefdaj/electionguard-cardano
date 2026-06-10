@@ -88,8 +88,8 @@ def test_admin_tx0(
 
     # admin state should match admin_s0
     # we could use funder.subscriber here; they should match
-    (_, state) = admin.subscriber.states[ADMIN_CHANNEL_ID]
-    assert state == admin_s0
+    actual_state = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
+    assert actual_state == admin_s0
 
 # ... in fact, all nodes should agree on the current state
 def test_admin_tx0_sub(
@@ -132,8 +132,8 @@ def test_admin_tx1(
         admin_tx1: Transaction,
     ):
     assert isinstance(admin_tx1, Transaction)
-    admin_s1_actual = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
-    assert admin_s1_actual == admin_s1
+    actual_state = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
+    assert actual_state == admin_s1
 
 def test_admin_tx1_sub(
         funder: FunderNode,
@@ -218,12 +218,12 @@ def test_admin_tx2(
     ):
     assert isinstance(admin_tx2, Transaction)
 
-    admin_s2_actual = admin.subscriber.states[channel_id][1]
-    assert admin_s2_actual == admin_s2, 'admin unexpected state'
+    actual_state = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
+    assert actual_state == admin_s2, 'admin unexpected state'
 
     for (sub_id, sub_wallet) in subchannel_wallets.items():
-        sub_state_actual = admin.subscriber.states[channel_id][1][1]
-        assert sub_state_actual == sub_s0(sub_id, sub_wallet), f'{sub_id} unexpected state'
+        actual_state = admin.subscriber.states[sub_id][1]
+        assert actual_state == sub_s0(sub_id, sub_wallet), f'{sub_id} unexpected state'
 
 def test_admin_tx2_sub(
         admin_tx2: Transaction,

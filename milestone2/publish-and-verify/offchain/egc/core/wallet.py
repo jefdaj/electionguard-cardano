@@ -27,18 +27,20 @@ LOG = logging.getLogger(__name__)
 # Separate logger for test keys
 KEYS_LOG = logging.getLogger('test-keys')
 if IS_TEST:
-    keys_fh = logging.FileHandler(DEF_KEYS_DIR / 'test-keys.log')
+    log_path = (DEF_KEYS_DIR / 'test-keys.log').absolute()
+    keys_fh = logging.FileHandler(log_path)
     keys_fh.setFormatter(
         logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
     )
     KEYS_LOG.addHandler(keys_fh)
     KEYS_LOG.setLevel(logging.DEBUG)
+    LOG.warning(f'Running in test mode, so all keys will be logged to {log_path}')
     del keys_fh
-    KEYS_LOG.debug('Running with EGC_MODE=test')
+    del log_path
 else:
     KEYS_LOG.setLevel(logging.CRITICAL + 1)
     KEYS_LOG.propagate = False
-    KEYS_LOG.critical('IF YOU CAN READ THIS, YOU MAY BE LEAKING PRIVATE KEYS!')
+    KEYS_LOG.critical('IF YOU CAN READ THIS, YOU MAY BE LEAKING PRODUCTION KEYS!')
 
 
 @dataclass(frozen=True, slots=True)

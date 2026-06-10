@@ -109,7 +109,12 @@ class ElectionPublisher:
         return tx_signed
 
     # TODO get this working for the case where the utxo is confirmed + consumed between polls
-    def wait_for_confirmation(self, tx: Transaction, max_seconds: int = 300, interval_seconds: int = 5):
+    def wait_for_confirmation(
+            self,
+            tx: Transaction,
+            max_seconds: int = 300,
+            interval_seconds: int = 5
+        ):
         LOG.debug('ElectionPublisher.wait_for_confirmation')
         tx_id = str(tx.id) # TODO is this the right way?
         LOG.debug(f'Waiting up to {max_seconds} seconds for tx {tx_id} to be confirmed on chain...')

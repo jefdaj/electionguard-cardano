@@ -207,7 +207,7 @@ class FunderNode(ElectionNode):
         json_path = f'election-{timestamp}.json'
         return json_path
 
-    def _build_burn_tx(self) -> TransactionBuilder:
+    def _build_burn_tx(self) -> (List[str], TransactionBuilder):
 
         mint_redeemer = Redeemer(data=BurnTestTokens())
         LOG.debug(f'mint_redeemer: {mint_redeemer}')

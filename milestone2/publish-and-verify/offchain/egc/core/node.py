@@ -76,3 +76,5 @@ class ElectionNode:
             return None
 
     # TODO wait_for_confirmation method that uses both pub and sub state?
+    # def wait_for_confirmation(self, tx: Transaction):
+    #     self.publisher.wait_for_confirmation(tx)
