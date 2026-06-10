@@ -45,13 +45,15 @@ class FunderNode(ElectionNode):
             admin_addr: Address,
             admin_vkh: VerificationKeyHash,
             admin_ada: int
-        ) -> TransactionBuilder:
+        ) -> Tuple[List[str], TransactionBuilder]:
         """Build an InitElection transaction.
         This is an unusual one because it doesn't have any options, so there's
         no point pulling them from static_records.py.
         """
 
         LOG.debug('Funder._build_init_tx')
+
+        tx_msgs = []
 
         # Without this set, the FunderNode risks the entire dev wallet when
         # deploying a contract.
@@ -115,8 +117,10 @@ class FunderNode(ElectionNode):
         txb.collaterals.append(funder_collateral)
         txb.required_signers = [self.publisher.wallet.vkh]
         LOG.debug('init txb:\n%s\n' % pformat(txb))
+        tx_msgs.append(f'Minted admin STT and locked {admin_ada} ADA with it to pay fees.')
+        tx_msgs.append('Sent 5 ADA to admin for use as collateral.')
 
-        return txb
+        return (tx_msgs, txb)
 
     def init_script(self):
         """Pick oneshot_utxo and parameterize script."""
@@ -177,7 +181,7 @@ class FunderNode(ElectionNode):
 
         LOG.debug('Funder.init_election')
 
-        init_txb = self._build_init_tx(
+        (tx_msgs, init_txb) = self._build_init_tx(
             script     = script,
             admin_addr = admin_addr,
             admin_vkh  = admin_vkh,
@@ -192,6 +196,8 @@ class FunderNode(ElectionNode):
         json_path = self.election_json_path()
         self.election.to_json(json_path)
         LOG.info(f'Deployed contract and saved details to {json_path}')
+        for msg in tx_msgs:
+            LOG.info(msg)
 
         self._init_subscriber()
 
@@ -207,7 +213,7 @@ class FunderNode(ElectionNode):
         json_path = f'election-{timestamp}.json'
         return json_path
 
-    def _build_burn_tx(self) -> (List[str], TransactionBuilder):
+    def _build_burn_tx(self) -> Tuple[List[str], TransactionBuilder]:
 
         # Messages to log if/when the TX succeeds
         tx_msgs = []
@@ -238,7 +244,7 @@ class FunderNode(ElectionNode):
                 script=self.election.script.spend_script,
                 redeemer=spend_redeemer
             )
-            channel_id = channel_id_from_state(state)
+            channel_id = ChannelIdHelper.to_string(channel_id_from_state(state))
             tx_msgs.append(f'Burned {channel_id} STT and recovered fee pool ADA.')
 
         LOG.debug('burn_txb:\n%s\n' % pformat(burn_txb))
