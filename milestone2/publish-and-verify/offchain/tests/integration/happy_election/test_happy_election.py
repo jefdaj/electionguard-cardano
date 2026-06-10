@@ -20,6 +20,7 @@ SUBCHANNEL_IDS = STATIC_TRANSACTIONS['admin'][2][0].channels
 ## 0. init election
 ## 1. announce config
 ## subchannel wallets
+## subchannel nodes
 ## 2. onboarding (add subchannels)
 ## =================================
 
@@ -153,100 +154,6 @@ def test_subchannel_wallets(
         assert isinstance(verifier1_wallet, Wallet)
 
 
-## ----------- admin_tx2 -----------
-
-@per_election_fixture
-def subchannel_wallets(
-        guardian1_wallet: Wallet,
-        guardian2_wallet: Wallet,
-        guardian3_wallet: Wallet,
-        device1_wallet: Wallet,
-        verifier1_wallet: Wallet,
-    ) -> dict[ChannelId, Wallet]:
-    wallets = [
-        guardian1_wallet,
-        guardian2_wallet,
-        guardian3_wallet,
-        device1_wallet,
-        verifier1_wallet,
-    ]
-    return {k:v for (k,v) in zip(SUBCHANNEL_IDS, wallets)} # TODO sort?
-
-@per_election_fixture
-def subchannel_onboarding_info(
-        subchannel_wallets: dict[ChannelId, Wallet]
-    ) -> dict[ChannelId, VerificationKeyHash]:
-    return {i:w.vkh for (i,w) in subchannel_wallets.items()} # TODO sort?
-
-@per_election_fixture
-def admin_s2(admin_s1: ChannelState) -> ChannelState:
-    prev = admin_s1.state
-    return AdminChannel(state=replace(
-        prev,
-        subchannels = SUBCHANNEL_IDS,
-        new_records = [],
-        phase       = STATIC_PHASES[2],
-        seq         = 2,
-    ))
-
-@per_election_fixture
-def admin_tx2(
-        admin_tx1: Transaction,
-        admin: AdminNode,
-        subchannel_onboarding_info: dict[ChannelId, VerificationKeyHash],
-    ) -> Transaction:
-    tx = admin.add_subchannels(
-        subchannels = subchannel_onboarding_info,
-        subchannel_ada = 10,
-        done_onboarding = True,
-    )
-    LOG.debug(f'admin_tx2: {tx}')
-    admin.wait_for_confirmation(tx)
-    return tx
-
-def sub_s0(sub_id: ChannelId, sub_wallet: Wallet) -> ChannelState:
-    return SubChannel(state=SubChannelState(
-        channel_id  = sub_id,
-        publisher   = sub_wallet.vkh.payload,
-        new_records = [],
-        seq         = 0,
-    ))
-
-def test_admin_tx2(
-        admin: AdminNode,
-        subchannel_wallets: dict[ChannelId, Wallet],
-        admin_s2: ChannelState,
-        admin_tx2: Transaction,
-    ):
-    assert isinstance(admin_tx2, Transaction)
-
-    actual_state = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
-    assert actual_state == admin_s2, 'admin unexpected state'
-
-    for (sub_id, sub_wallet) in subchannel_wallets.items():
-        actual_state = admin.subscriber.states[sub_id][1]
-        assert actual_state == sub_s0(sub_id, sub_wallet), f'{sub_id} unexpected state'
-
-def test_admin_tx2_sub(
-        admin_tx2: Transaction,
-        funder: FunderNode,
-        admin: AdminNode,
-    ):
-    nodes = [funder, admin]
-    assert_nodes_in_sync(nodes)
-
-
-## =================================
-## parallel admin section:
-## subchannel nodes
-## 3. finalize config
-## 4. advance voting -> tally
-## 5. results tally
-## 6. results decrypt
-## 7. verify
-## =================================
-
-
 ## ------- subchannel nodes --------
 
 @per_election_fixture
@@ -329,6 +236,128 @@ def verifier1(
     finally:
         node.stop()
 
+@per_election_fixture
+def subchannel_nodes(
+        guardian1: GuardianNode,
+        guardian2: GuardianNode,
+        guardian3: GuardianNode,
+        device1: DeviceNode,
+        verifier1: VerifierNode,
+    ) -> list[ElectionNode]:
+    return [
+        guardian1,
+        guardian2,
+        guardian3,
+        device1,
+        verifier1,
+    ]
+
+# from here on all the nodes can be started and should stay in sync
+@per_election_fixture
+def all_nodes(
+        funder: FunderNode,
+        admin: AdminNode,
+        subchannel_nodes: list[ElectionNode],
+    ) -> list[ElectionNode]:
+    return [funder, admin] + subchannel_nodes
+
+
+## ----------- admin_tx2 -----------
+
+@per_election_fixture
+def subchannel_wallets(
+        guardian1_wallet: Wallet,
+        guardian2_wallet: Wallet,
+        guardian3_wallet: Wallet,
+        device1_wallet: Wallet,
+        verifier1_wallet: Wallet,
+    ) -> dict[ChannelId, Wallet]:
+    wallets = [
+        guardian1_wallet,
+        guardian2_wallet,
+        guardian3_wallet,
+        device1_wallet,
+        verifier1_wallet,
+    ]
+    return {k:v for (k,v) in zip(SUBCHANNEL_IDS, wallets)} # TODO sort?
+
+@per_election_fixture
+def subchannel_onboarding_info(
+        subchannel_nodes: list[ElectionNode],
+    ) -> dict[ChannelId, VerificationKeyHash]:
+    info = {
+        node.channel_id() : node.publisher.wallet.vkh
+        for node in subchannel_nodes
+    }
+    ch_strs = [ChannelIdHelper.to_string(k) for k in info.keys()]
+    LOG.info(f'Gathered subchannel onboarding info from {', '.join(ch_strs)}')
+    return info
+
+@per_election_fixture
+def admin_s2(admin_s1: ChannelState) -> ChannelState:
+    prev = admin_s1.state
+    return AdminChannel(state=replace(
+        prev,
+        subchannels = SUBCHANNEL_IDS,
+        new_records = [],
+        phase       = STATIC_PHASES[2],
+        seq         = 2,
+    ))
+
+@per_election_fixture
+def admin_tx2(
+        admin_tx1: Transaction,
+        admin: AdminNode,
+        subchannel_onboarding_info: dict[ChannelId, VerificationKeyHash],
+    ) -> Transaction:
+    tx = admin.add_subchannels(
+        subchannels = subchannel_onboarding_info,
+        subchannel_ada = 10,
+        done_onboarding = True,
+    )
+    LOG.debug(f'admin_tx2: {tx}')
+    admin.wait_for_confirmation(tx)
+    return tx
+
+def sub_s0(sub_id: ChannelId, sub_wallet: Wallet) -> ChannelState:
+    return SubChannel(state=SubChannelState(
+        channel_id  = sub_id,
+        publisher   = sub_wallet.vkh.payload,
+        new_records = [],
+        seq         = 0,
+    ))
+
+def test_admin_tx2(
+        admin: AdminNode,
+        subchannel_wallets: dict[ChannelId, Wallet],
+        admin_s2: ChannelState,
+        admin_tx2: Transaction,
+    ):
+    assert isinstance(admin_tx2, Transaction)
+
+    actual_state = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
+    assert actual_state == admin_s2, 'admin unexpected state'
+
+    for (sub_id, sub_wallet) in subchannel_wallets.items():
+        actual_state = admin.subscriber.states[sub_id][1]
+        assert actual_state == sub_s0(sub_id, sub_wallet), f'{sub_id} unexpected state'
+
+def test_admin_tx2_sub(
+        admin_tx2: Transaction,
+        all_nodes: list[ElectionNode],
+    ):
+    assert_nodes_in_sync(all_nodes)
+
+
+## =================================
+## parallel admin section:
+## 3. finalize config
+## 4. advance voting -> tally
+## 5. results tally
+## 6. results decrypt
+## 7. verify
+## =================================
+
 
 ## ----------- admin_tx3 -----------
 
@@ -363,27 +392,6 @@ def test_admin_tx3(
     assert isinstance(admin_tx3, Transaction)
     actual_state = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
     assert actual_state == admin_s3
-
-# from here on all the nodes can be started and should stay in sync
-@per_election_fixture
-def all_nodes(
-        funder: FunderNode,
-        admin: AdminNode,
-        guardian1: GuardianNode,
-        guardian2: GuardianNode,
-        guardian3: GuardianNode,
-        device1: DeviceNode,
-        verifier1: VerifierNode,
-    ) -> list[ElectionNode]:
-    return [
-        funder,
-        admin,
-        guardian1,
-        guardian2,
-        guardian3,
-        device1,
-        verifier1,
-    ]
 
 def test_admin_tx3_sub(
         admin_tx3: Transaction,

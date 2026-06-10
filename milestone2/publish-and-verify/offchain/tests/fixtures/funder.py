@@ -23,8 +23,7 @@ def funder(funder_wallet: Wallet) -> FunderNode:
     try:
         yield node
     finally:
-        if node.subscriber is not None:
-            node.subscriber.stop()
+        node.stop()
 
 @per_election_fixture
 def init_tx_builder(

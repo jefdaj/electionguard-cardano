@@ -27,4 +27,4 @@ def admin(election: ElectionContext, admin_wallet: Wallet) -> AdminNode:
     try:
         yield node
     finally:
-        node.subscriber.stop()
+        node.stop()
