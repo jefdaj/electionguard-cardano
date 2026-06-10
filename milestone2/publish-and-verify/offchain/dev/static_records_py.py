@@ -193,10 +193,11 @@ render_fns = [
     summary,
 ]
 
-SUBCHANNELS = [
-  ChannelIdHelper().from_string(i)
-  for i in ['guardian1', 'guardian2', 'guardian3', 'device1', 'verifier1']
-]
+# SUBCHANNELS = [
+#   ChannelIdHelper().from_string(i)
+#   for i in ['guardian1', 'guardian2', 'guardian3', 'device1', 'verifier1']
+# ]
+SUBCHANNELS = ['guardian1', 'guardian2', 'guardian3', 'device1', 'verifier1']
 
 # TODO how to add info for when the admin advances phase?
 
@@ -214,33 +215,35 @@ TXS = {
 
 for fn in render_fns:
     for j in JSONS:
+        ppr = PostPublicRecords()
         channel = j["mockchain_channel"]
         if channel == 'admin_1':
             channel = 'admin'
-        # print(channel)
         cid_str = j["cid"]
-        cid = IpfsCidHelper.from_string(cid_str)
         fn_name = fn.__name__
-        if j["record_type"] == fn.__name__:
+        if j["record_type"] == fn_name:
             # print(json.dumps(j, indent=2))
-            (seq, record) = fn(fn_name, j, cid)
-            # item = (PostPublicRecords(), records)
+            (seq, record) = fn(fn_name, j, cid_str)
+
+            # TODO fix plutus data types, then hopefully this will clear itself up:
+
+            print('record dict:', record.__dict__)
+
+            print(f'record: {record}')
+            print(f'record type: {type(record)}')
+            print(f'channel: {channel}')
+            print(f'channel type: {type(channel)}')
+
             if not channel in TXS:
                 TXS[channel] = {}
-            # TODO figure out the proper offset here while writing publisher
-            # TODO might need an admin offset partway through too?
-            # if channel != 'admin':
-            #     seq += 4 # align all to admin seq
+                # print(f'init {channel}')
 
-            if seq in TXS[channel]:
-                (act, recs) = TXS[channel][seq]
-                recs.append(record)
-            else:
-                act = PostPublicRecords()
-                recs = [record]
-            TXS[channel][seq] = (act, recs)
+            if not seq in TXS[channel]:
+                TXS[channel][seq] = (ppr, [])
+                # print(f'init {channel} seq {seq}')
 
-        # print(j["record_type"])
+            TXS[channel][seq][1].append(record)
+            # pprint(TXS, width=250)
 
 print('STATIC_TRANSACTIONS = \\')
 pprint(TXS, width=250)
