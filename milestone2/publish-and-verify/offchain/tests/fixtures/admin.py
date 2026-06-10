@@ -25,8 +25,6 @@ def admin(election: ElectionContext, admin_wallet: Wallet) -> AdminNode:
     node = AdminNode(election=election, wallet=admin_wallet)
     LOG.debug(f'admin: {node}')
     try:
-        # TODO should this be part of start()?
-        time.sleep(KUPO_DELAY_SEC)
         yield node
     finally:
         node.subscriber.stop()

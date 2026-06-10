@@ -20,7 +20,7 @@ from pprint import pformat
 
 from typing import Any, Callable, Dict, List, Tuple, Optional, Self
 
-from .ogmios import OGMIOS_HOST, OGMIOS_PORT
+from .ogmios import *
 from .plutus.types.channel import *
 from .plutus.types.action import *
 from .plutus.types.channel import *
@@ -34,15 +34,6 @@ from pycardano import *
 KUPO_HOST        = environ.get('KUPO_HOST', '127.0.0.1')
 KUPO_PORT        = int(environ.get('KUPO_PORT', '1442'))
 KUPO_MATCHES_URL = f'http://{KUPO_HOST}:{KUPO_PORT}/v1/matches'
-
-# How often to poll the local Ogmios instance for new UTxOs.
-# TODO what's reasonable?
-KUPO_POLL_SEC = 0.5
-
-# Approximate upper limit of how long it might take to propagate transactions
-# to subscribers.
-# TODO how to estimate this when using the testnet?
-KUPO_DELAY_SEC = 3
 
 # TODO pull this from ogmios module, and rename
 NODE_SOCKET = environ.get('CARDANO_NODE_SOCKET_PATH', '../../cardano-node-ogmios/data/node-ipc/node.socket')
@@ -446,7 +437,7 @@ class ElectionSubscriber:
                 LOG.error(f'Unexpected error in watcher: {e} {type(e)}')
                 time.sleep(5)
 
-            time.sleep(KUPO_POLL_SEC)
+            time.sleep(OGMIOS_POLL_SEC)
 
         LOG.debug('Watcher thread exiting')
 

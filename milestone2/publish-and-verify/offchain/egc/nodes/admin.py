@@ -47,8 +47,6 @@ class AdminNode(ElectionNode):
         admin_collateral = wait_for_collateral(self.publisher.wallet.addr)
         LOG.debug('admin_collateral: %s' % pformat(admin_collateral))
 
-        time.sleep(OGMIOS_POLL_SEC) # TODO remove?
-
         (in_utxo, in_datum) = self.state()
 
         assert isinstance(in_datum, ChannelState)
@@ -156,7 +154,6 @@ class AdminNode(ElectionNode):
         # ensure own collateral
         admin_collateral = wait_for_collateral(self.publisher.wallet.addr)
         LOG.debug('admin_collateral: %s' % pformat(admin_collateral))
-        time.sleep(OGMIOS_POLL_SEC)
 
         (in_utxo, in_datum) = self.state()
         LOG.debug('in_datum: %s' % pformat(in_datum))

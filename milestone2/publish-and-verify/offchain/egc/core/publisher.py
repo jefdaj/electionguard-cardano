@@ -13,7 +13,7 @@ import time
 
 LOG = logging.getLogger(__name__)
 
-from .ogmios   import OGMIOS_CTX
+from .ogmios   import *
 from .election import ElectionContext
 from .wallet   import *
 from .plutus   import ChannelId, ChannelIdHelper
@@ -112,20 +112,20 @@ class ElectionPublisher:
     def wait_for_confirmation(
             self,
             tx: Transaction,
-            max_seconds: int = 300,
-            interval_seconds: int = 5
+            # max_seconds: int = 300,
+            # interval_seconds: int = 5
         ):
         LOG.debug('ElectionPublisher.wait_for_confirmation')
         tx_id = str(tx.id) # TODO is this the right way?
-        LOG.debug(f'Waiting up to {max_seconds} seconds for tx {tx_id} to be confirmed on chain...')
+        LOG.debug(f'Waiting up to {OGMIOS_TIMEOUT_SEC} seconds for tx {tx_id} to be confirmed on chain...')
         waited_seconds = 0
         while True:
-            time.sleep(interval_seconds)
-            waited_seconds += interval_seconds
+            time.sleep(OGMIOS_POLL_SEC)
+            waited_seconds += OGMIOS_POLL_SEC
             utxo = OGMIOS_CTX.utxo_by_tx_id(tx_id, 0)
             if utxo is None:
                 msg = f'tx {tx_id} not confirmed after {waited_seconds} seconds.'
-                remaining_seconds = max_seconds - waited_seconds
+                remaining_seconds = OGMIOS_TIMEOUT_SEC - waited_seconds
                 if remaining_seconds <= 0:
                     LOG.error(msg)
                     raise Exception(msg)

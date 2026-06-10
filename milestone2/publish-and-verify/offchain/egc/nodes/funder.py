@@ -257,7 +257,7 @@ class FunderNode(ElectionNode):
         burn_txb = self._build_burn_tx()
         burn_tx  = self.publisher.sign_and_submit(burn_txb)
         json_path = self.election_json_path()
-        LOG.info(f'Burned test tokens and recovered ADA from {json_path}')
+        LOG.info(f'Burned test tokens and recovered fee pools from {json_path}')
         return burn_tx
 
     def recover_all_collateral(self, keys_dir: Path):
@@ -283,6 +283,6 @@ class FunderNode(ElectionNode):
                 LOG.exception(f'Failed to recover collateral from {pub_addr}')
                 errors.append(e)
         if last_tx is not None:
-            self.publisher.wait_for_confirmation(last_tx)
+            self.wait_for_confirmation(last_tx)
         if errors:
             raise ExceptionGroup('recover_all_collateral had failures', errors)

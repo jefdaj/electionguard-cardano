@@ -75,7 +75,6 @@ def admin_s0(admin_vkh: VerificationKeyHash) -> ChannelState:
 @per_election_fixture
 def admin_tx0(init_tx: Transaction) -> Transaction:
     # admin_tx0 is just the init_tx renamed for clarity.
-    time.sleep(5) # TODO remove?
     return init_tx
 
 def test_admin_tx0(
@@ -122,8 +121,7 @@ def admin_tx1(
         new_phase   = STATIC_PHASES[1],
     )
     LOG.debug(f'admin_tx1: {tx}')
-    admin.publisher.wait_for_confirmation(tx)
-    time.sleep(5) # TODO remove?
+    admin.wait_for_confirmation(tx)
     return tx
 
 def test_admin_tx1(
@@ -198,8 +196,7 @@ def admin_tx2(
         done_onboarding = True,
     )
     LOG.debug(f'admin_tx2: {tx}')
-    admin.publisher.wait_for_confirmation(tx)
-    time.sleep(5) # TODO remove?
+    admin.wait_for_confirmation(tx)
     return tx
 
 def sub_s0(sub_id: ChannelId, sub_wallet: Wallet) -> ChannelState:

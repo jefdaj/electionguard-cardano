@@ -36,6 +36,9 @@ OGMIOS_CTX = OgmiosV6ChainContext(
 OGMIOS_POLL_SEC    =   3.0
 OGMIOS_TIMEOUT_SEC = 300.0
 
+# Estimate of how long it might take a new TX to show up in the node.
+# TODO how much longer should this be for production use?
+OGMIOS_DELAY_SEC = 3.0
 
 ### info for subscriber config ###
 
@@ -232,6 +235,7 @@ def get_my_collateral(address: Address) -> UTxO:
     return utxo
 
 
+# TODO unify with wait_for_confirmation?
 def wait_for_collateral(address: Address) -> UTxO:
     """Poll for a collateral UTXO at `address` until one appears or
     OGMIOS_TIMEOUT_SEC elapses. Used right after a funding tx to bridge

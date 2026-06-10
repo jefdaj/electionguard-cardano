@@ -68,7 +68,7 @@ LOG.debug(f'election_ctx: {funder.election_ctx}')
 
 LOG.debug(f'election deployed: {funder.election_ctx.deployment.to_dict()}')
 
-funder.publisher.wait_for_confirmation(init_tx)
+funder.wait_for_confirmation(init_tx)
 LOG.debug('init_tx confirmed')
 
 # TODO should the publisher just create and return this directly?
@@ -82,7 +82,7 @@ LOG.debug('init_tx confirmed')
 # LOG.debug('published init_tx')
 # LOG.debug(f'full init_tx:\n%s\n' % pformat(init_tx))
 
-# funder.publisher.wait_for_confirmation(init_tx)
+# funder.wait_for_confirmation(init_tx)
 
 # funder.burn_test_tokens()
 

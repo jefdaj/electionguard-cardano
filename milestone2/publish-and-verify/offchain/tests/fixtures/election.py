@@ -67,22 +67,18 @@ def init_tx(
         admin_vkh  = admin_vkh,
         admin_ada  = 100, # TODO what's a good amount?
     )
-    funder.publisher.wait_for_confirmation(init_tx)
-
-    time.sleep(KUPO_DELAY_SEC) # TODO remove?
+    funder.wait_for_confirmation(init_tx)
 
     # All other tests happen here
     yield init_tx
 
     try:
-        time.sleep(KUPO_DELAY_SEC) # TODO remove?
         burn_tx = funder.burn_test_tokens()
-        funder.publisher.wait_for_confirmation(burn_tx)
+        funder.wait_for_confirmation(burn_tx)
 
     except Exception as e:
         LOG.error(e)
         raise
 
     finally:
-        time.sleep(KUPO_DELAY_SEC) # TODO remove?
-        funder.recover_all_collateral(keys_dir) # TODO make this part of keys_dir fixture?
+        funder.recover_all_collateral(keys_dir) # TODO move to another fixture?

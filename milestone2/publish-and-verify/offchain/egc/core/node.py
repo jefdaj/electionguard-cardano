@@ -1,6 +1,8 @@
+import time
 from pathlib import Path
 from pycardano import *
 
+from .ogmios     import *
 from .publisher  import *
 from .subscriber import *
 from .election   import *
@@ -54,6 +56,7 @@ class ElectionNode:
             sub_cfg = SubscriberConfig.from_election(self.election)
             self.subscriber = ElectionSubscriber(config=sub_cfg)
             self.subscriber.start()
+            time.sleep(OGMIOS_POLL_SEC + 1) # TODO how long is actually needed?
 
     def channel_id(self) -> ChannelId:
         return self.publisher.channel_id()
@@ -75,6 +78,6 @@ class ElectionNode:
             # TODO should this be an error? warning?
             return None
 
-    # TODO wait_for_confirmation method that uses both pub and sub state?
-    # def wait_for_confirmation(self, tx: Transaction):
-    #     self.publisher.wait_for_confirmation(tx)
+    def wait_for_confirmation(self, tx: Transaction):
+        self.publisher.wait_for_confirmation(tx)
+        time.sleep(OGMIOS_DELAY_SEC)
