@@ -1,5 +1,6 @@
 # Should be kept in sync with onchain/validators/election/cid.ak
 
+import dataclasses
 from multiformats_cid import make_cid
 from pydantic.v1 import validator
 
@@ -87,3 +88,14 @@ class IpfsCidMixin:
         except UnicodeDecodeError:
             raise ValueError("ipfs_cid must be valid UTF-8")
         return v
+
+    def __str__(self) -> str:
+        cls_name = type(self).__name__
+        fields = []
+        for f in dataclasses.fields(self):
+            value = getattr(self, f.name)
+            if f.name == 'ipfs_cid' and isinstance(value, bytes):
+                fields.append(f"ipfs_cid='{IpfsCidHelper.to_string(value)}'")
+            else:
+                fields.append(f"{f.name}={value!r}")
+        return f"{cls_name}({', '.join(fields)})"

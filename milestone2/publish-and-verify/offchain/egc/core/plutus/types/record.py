@@ -111,7 +111,7 @@ PublicRecordMetadata = Union[
 ]
 
 # TODO metadata mixin?
-@dataclass
+@dataclass(repr=False)
 class PublicRecord(IpfsCidMixin, PlutusData):
     CONSTR_ID = 0
     ipfs_cid: bytes
