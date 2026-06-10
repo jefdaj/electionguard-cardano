@@ -1,3 +1,4 @@
+import json
 import pytest
 from egc import *
 import logging
@@ -45,6 +46,4 @@ def test_load_static_files_by_cid(
                 path = static_files_by_cid[cid]
                 assert isinstance(path, Path)
                 with path.open('r') as f:
-                    txt = f.read()
-                    assert txt # TODO anything more specific?
-                    assert 'stuff' == txt
+                    assert json.load(f)

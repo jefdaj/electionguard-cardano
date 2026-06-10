@@ -5,13 +5,14 @@ import json
 from pathlib import Path
 
 # TODO is absolute the best choice here?
-STATIC_FILES_DIR = Path(__file__).absolute().parent / 'files'
-STATIC_CIDS_JSON = Path(__file__).absolute().parent / 'cids.json'
+STATIC_FILES_DIR   = Path(__file__).absolute().parent / 'files'
 
-STATIC_FILES_BY_CID: dict[str, Path] = {}
+def make_static_files_by_cid():
+    cids_path  = Path(__file__).absolute().parent / 'file_cids.txt'
+    files_path = Path(__file__).absolute().parent / 'file_paths.txt'
+    cids  = cids_path.read_text().splitlines()
+    paths = files_path.read_text().splitlines()
+    paths = [STATIC_FILES_DIR / p for p in paths]
+    return {c: p for (c, p) in zip(cids, paths)}
 
-with STATIC_CIDS_JSON.open('r') as f:
-    json_dict = json.load(f)
-    for (filename, cid) in json_dict.items():
-        path = STATIC_FILES_DIR / filename
-        STATIC_FILES_BY_CID[cid] = path
+STATIC_FILES_BY_CID = make_static_files_by_cid()
