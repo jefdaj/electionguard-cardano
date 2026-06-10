@@ -14,3 +14,9 @@ def static_phases():
 @global_fixture
 def static_transactions():
     return STATIC_TRANSACTIONS
+
+@global_fixture
+def static_files_by_cid() -> dict[str, Path]:
+    return STATIC_FILES_BY_CID
+
+

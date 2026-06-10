@@ -1,6 +1,8 @@
 import pytest
 from egc import *
 import logging
+from pathlib import Path
+from typing import Tuple
 from pprint import pprint
 
 LOG = logging.getLogger(__name__)
@@ -9,18 +11,9 @@ LOG = logging.getLogger(__name__)
 # TODO then reference that fixture from other tests
 # TODO then write new round-trip tests here
 
-# old test for reference:
-# def test_load_election_records(election_records: ElectionRecords):
-#     assert isinstance(election_records, List)
-#     assert all(
-#         isinstance(k, Path) and isinstance(v, CID)
-#         for (k, v) in election_records
-#     )
-#     assert all(
-#         exists(k) for (k, v) in election_records
-#     )
-
-def test_load_static_phases(static_phases: dict[int, ElectionPhase]):
+def test_load_static_phases(
+        static_phases: dict[int, ElectionPhase],
+    ):
     assert len(static_phases) == 8
     assert all(
         isinstance(k, int) and isinstance(v, ElectionPhase)
@@ -28,7 +21,7 @@ def test_load_static_phases(static_phases: dict[int, ElectionPhase]):
     )
 
 def test_load_static_transactions(
-        static_transactions: dict[str, dict[int, Tuple[ElectionAction, list[PublicRecord]]]]
+        static_transactions: dict[str, dict[int, Tuple[ElectionAction, list[PublicRecord]]]],
     ):
     assert len(static_transactions) == 6
     for (channel_str, tx_dict) in static_transactions.items():
@@ -38,3 +31,21 @@ def test_load_static_transactions(
             assert isinstance(act, ElectionAction)
             for rec in recs:
                 assert isinstance(rec, PublicRecord)
+
+def test_load_static_files_by_cid(
+        static_transactions: dict[str, dict[int, Tuple[ElectionAction, list[PublicRecord]]]],
+        static_files_by_cid: dict[str, Path],
+    ):
+    for tx_dict in static_transactions.values():
+        for (act, recs) in tx_dict.values():
+            if act != PostPublicRecords():
+                continue
+            for rec in recs:
+                cid = str(rec.ipfs_cid)
+                # assert cid in static_files_by_cid, f'static_files_by_cid missing cid {cid}'
+                path = static_files_by_cid[cid]
+                assert isinstance(path, Path)
+                with path.open('r') as f:
+                    txt = f.read()
+                    assert txt # TODO anything more specific?
+                    assert 'stuff' == txt
