@@ -286,8 +286,9 @@ def create_own_collateral(funder: Wallet) -> Transaction:
             funder.addr, existing.input.transaction_id, existing.input.index,
         )
         return existing.input.transaction_id
-    LOG.debug(f'Creating own collateral UTXO at {funder.addr}')
-    return _send_ada(funder, funder.addr, COLLATERAL_LOVELACE)
+    res = _send_ada(funder, funder.addr, COLLATERAL_LOVELACE)
+    LOG.info(f'Created own collateral UTXO at {funder.addr}')
+    return res
 
 
 def fund_admin_collateral(

@@ -33,7 +33,7 @@ def init_tx_builder(
         admin_addr: Address,
         admin_vkh: VerificationKeyHash,
     ) -> TransactionBuilder:
-    txb = funder._build_init_tx(
+    (_, txb) = funder._build_init_tx(
         script     = script,
         admin_addr = admin_addr,
         admin_vkh  = admin_vkh,

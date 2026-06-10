@@ -44,6 +44,10 @@ class AdminNode(ElectionNode):
 
         LOG.debug('Admin.post_public_records')
 
+        assert len(new_records) > 0, 'post_public_records new_records empty'
+
+        tx_msgs = []
+
         admin_collateral = wait_for_collateral(self.publisher.wallet.addr)
         LOG.debug('admin_collateral: %s' % pformat(admin_collateral))
 
@@ -64,6 +68,12 @@ class AdminNode(ElectionNode):
         )
         assert isinstance(out_state, AdminChannelState)
         LOG.debug('out_state: %s' % pformat(out_state))
+
+        for record in new_records:
+            tx_msgs.append(f'Posted {record}')
+
+        if new_phase is not None:
+            tx_msgs.append(f'Advanced phase to {new_phase}')
 
         out_datum = AdminChannel(state=out_state)
         assert isinstance(out_datum, ChannelState)
@@ -139,6 +149,9 @@ class AdminNode(ElectionNode):
         OGMIOS_CTX.submit_tx(tx_signed)
         LOG.debug(f'Submitted tx with id={tx_signed.id}')
 
+        for msg in tx_msgs:
+            LOG.info(msg)
+
         return tx_signed
 
     # TODO once both work, factor common parts out of this + post_public_records
@@ -150,6 +163,8 @@ class AdminNode(ElectionNode):
         ) -> Transaction:
 
         LOG.debug('Admin.add_subchannels')
+
+        tx_msgs = []
 
         # ensure own collateral
         admin_collateral = wait_for_collateral(self.publisher.wallet.addr)
@@ -220,6 +235,7 @@ class AdminNode(ElectionNode):
 
         # Add the STT and fee pool ADA for each subchannel
         for (sub_id, sub_vkh) in subchannels.items():
+            sub_str = ChannelIdHelper.to_string(sub_id)
 
             stt_assets = mint_channel_stt_assets(self.election.script.policy_id, 1, [sub_id])
             LOG.debug(f'{sub_id} stt_assets: {pformat(stt_assets)}')
@@ -245,9 +261,11 @@ class AdminNode(ElectionNode):
             LOG.debug(f'{sub_id} stt_utxo: {pformat(stt_utxo)}')
 
             txb.add_output(stt_utxo)
+            tx_msgs.append(f'Minted {sub_str} STT and locked {subchannel_ada} ADA with it to pay fees.')
 
         # Send subchannel publishers their collateral
         for (sub_id, sub_vkh) in subchannels.items():
+            sub_str = ChannelIdHelper.to_string(sub_id)
 
             sub_addr = addr_for_vkh(sub_vkh)
             LOG.debug(f'{sub_id} sub_addr: {sub_addr}')
@@ -259,6 +277,7 @@ class AdminNode(ElectionNode):
             LOG.debug(f'{sub_id} col_utxo: {pformat(col_utxo)}')
 
             txb.add_output(col_utxo)
+            tx_msgs.append(f'Sent 5 ADA to {sub_str} for use as collateral.')
 
 
         # Tell the builder to actually mint the STTs.
@@ -310,5 +329,11 @@ class AdminNode(ElectionNode):
         LOG.debug(f'tx_signed about to be submitted:\n%s:\n' % pformat(tx_signed))
         OGMIOS_CTX.submit_tx(tx_signed)
         LOG.debug(f'Submitted tx with id={tx_signed.id}')
+
+        if done_onboarding:
+            tx_msgs.append(f'Advanced phase to {next_phase}')
+
+        for msg in tx_msgs:
+            LOG.info(msg)
 
         return tx_signed
