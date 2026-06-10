@@ -8,10 +8,6 @@ from pprint import pprint
 
 LOG = logging.getLogger(__name__)
 
-# TODO make new fixtures for the static records
-# TODO then reference that fixture from other tests
-# TODO then write new round-trip tests here
-
 def test_load_static_phases(
         static_phases: dict[int, ElectionPhase],
     ):
