@@ -15,56 +15,11 @@ SUBCHANNEL_IDS = STATIC_TRANSACTIONS['admin'][2][0].channels
 [G1, G2, G3, D1, V1] = SUBCHANNEL_IDS
 
 
-### subchannel wallets ###
-
-@per_election_fixture
-def guardian1_wallet(keys_dir: Path) -> Wallet:
-    w = Wallet.load_or_create(name='guardian1', keys_dir=keys_dir, verbose=False)
-    LOG.debug(f'guardian1_wallet: {w}')
-    return w
-
-@per_election_fixture
-def guardian2_wallet(keys_dir: Path) -> Wallet:
-    w = Wallet.load_or_create(name='guardian2', keys_dir=keys_dir, verbose=False)
-    LOG.debug(f'guardian2_wallet: {w}')
-    return w
-
-@per_election_fixture
-def guardian3_wallet(keys_dir: Path) -> Wallet:
-    w = Wallet.load_or_create(name='guardian3', keys_dir=keys_dir, verbose=False)
-    LOG.debug(f'guardian3_wallet: {w}')
-    return w
-
-@per_election_fixture
-def device1_wallet(keys_dir: Path) -> Wallet:
-    w = Wallet.load_or_create(name='device1', keys_dir=keys_dir, verbose=False)
-    LOG.debug(f'device1_wallet: {w}')
-    return w
-
-@per_election_fixture
-def verifier1_wallet(keys_dir: Path) -> Wallet:
-    w = Wallet.load_or_create(name='verifier1', keys_dir=keys_dir, verbose=False)
-    LOG.debug(f'verifier1_wallet: {w}')
-    return w
-
-def test_subchannel_wallets(
-        guardian1_wallet: Wallet,
-        guardian2_wallet: Wallet,
-        guardian3_wallet: Wallet,
-        device1_wallet: Wallet,
-        verifier1_wallet: Wallet,
-    ):
-        assert isinstance(guardian1_wallet, Wallet)
-        assert isinstance(guardian2_wallet, Wallet)
-        assert isinstance(guardian3_wallet, Wallet)
-        assert isinstance(device1_wallet, Wallet)
-        assert isinstance(verifier1_wallet, Wallet)
-
-
 ## =================================
 ## initial solo admin transactions:
 ## 0. init election
 ## 1. announce config
+## subchannel wallets
 ## 2. onboarding (add subchannels)
 ## =================================
 
@@ -148,6 +103,52 @@ def test_admin_tx1_sub(
         admin_tx1: Transaction,
     ):
     assert_subscribers_in_sync([funder, admin])
+
+
+## ------ subchannel wallets -------
+
+@per_election_fixture
+def guardian1_wallet(keys_dir: Path) -> Wallet:
+    w = Wallet.load_or_create(name='guardian1', keys_dir=keys_dir, verbose=False)
+    LOG.debug(f'guardian1_wallet: {w}')
+    return w
+
+@per_election_fixture
+def guardian2_wallet(keys_dir: Path) -> Wallet:
+    w = Wallet.load_or_create(name='guardian2', keys_dir=keys_dir, verbose=False)
+    LOG.debug(f'guardian2_wallet: {w}')
+    return w
+
+@per_election_fixture
+def guardian3_wallet(keys_dir: Path) -> Wallet:
+    w = Wallet.load_or_create(name='guardian3', keys_dir=keys_dir, verbose=False)
+    LOG.debug(f'guardian3_wallet: {w}')
+    return w
+
+@per_election_fixture
+def device1_wallet(keys_dir: Path) -> Wallet:
+    w = Wallet.load_or_create(name='device1', keys_dir=keys_dir, verbose=False)
+    LOG.debug(f'device1_wallet: {w}')
+    return w
+
+@per_election_fixture
+def verifier1_wallet(keys_dir: Path) -> Wallet:
+    w = Wallet.load_or_create(name='verifier1', keys_dir=keys_dir, verbose=False)
+    LOG.debug(f'verifier1_wallet: {w}')
+    return w
+
+def test_subchannel_wallets(
+        guardian1_wallet: Wallet,
+        guardian2_wallet: Wallet,
+        guardian3_wallet: Wallet,
+        device1_wallet: Wallet,
+        verifier1_wallet: Wallet,
+    ):
+        assert isinstance(guardian1_wallet, Wallet)
+        assert isinstance(guardian2_wallet, Wallet)
+        assert isinstance(guardian3_wallet, Wallet)
+        assert isinstance(device1_wallet, Wallet)
+        assert isinstance(verifier1_wallet, Wallet)
 
 
 ## ----------- admin_tx2 -----------
@@ -234,12 +235,64 @@ def test_admin_tx2_sub(
 
 ## =================================
 ## parallel admin section:
+## subchannel nodes
 ## 3. finalize config
 ## 4. advance voting -> tally
 ## 5. results tally
 ## 6. results decrypt
 ## 7. verify
 ## =================================
+
+
+## ------- subchannel nodes --------
+
+@per_election_fixture
+def guardian1(
+        election: ElectionContext,
+        guardian1_wallet: Wallet
+    ) -> GuardianNode:
+    node = GuardianNode(
+        election   = election,
+        wallet     = guardian1_wallet,
+        role_index = 1,
+    )
+    LOG.debug(f'guardian1: {node}')
+    try:
+        yield node
+    finally:
+        node.subscriber.stop()
+
+@per_election_fixture
+def guardian2(
+        election: ElectionContext,
+        guardian2_wallet: Wallet
+    ) -> GuardianNode:
+    node = GuardianNode(
+        election   = election,
+        wallet     = guardian2_wallet,
+        role_index = 2,
+    )
+    LOG.debug(f'guardian2: {node}')
+    try:
+        yield node
+    finally:
+        node.subscriber.stop()
+
+@per_election_fixture
+def guardian3(
+        election: ElectionContext,
+        guardian3_wallet: Wallet
+    ) -> GuardianNode:
+    node = GuardianNode(
+        election   = election,
+        wallet     = guardian3_wallet,
+        role_index = 3,
+    )
+    LOG.debug(f'guardian3: {node}')
+    try:
+        yield node
+    finally:
+        node.subscriber.stop()
 
 
 ## ----------- admin_tx3 -----------
@@ -281,18 +334,18 @@ def test_admin_tx3(
 def all_nodes(
         funder: FunderNode,
         admin: AdminNode,
-        # TODO guardian1: GuardianNode,
-        # TODO guardian2: GuardianNode,
-        # TODO guardian3: GuardianNode,
+        guardian1: GuardianNode,
+        guardian2: GuardianNode,
+        guardian3: GuardianNode,
         # TODO device1: DeviceNode,
         # TODO verifier1: VerifierNode,
     ) -> list[ElectionNode]:
     return [
         funder,
         admin,
-        # TODO guardian1,
-        # TODO guardian2,
-        # TODO guardian3,
+        guardian1,
+        guardian2,
+        guardian3,
         # TODO device1,
         # TODO verifier1,
     ]
