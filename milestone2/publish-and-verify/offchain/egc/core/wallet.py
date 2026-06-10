@@ -34,6 +34,7 @@ if IS_TEST:
     )
     KEYS_LOG.addHandler(keys_fh)
     KEYS_LOG.setLevel(logging.DEBUG)
+    # TODO why isn't this logged during pytest?
     LOG.warning(f'Running in test mode, so all keys will be logged to {log_path}')
     del keys_fh
     del log_path

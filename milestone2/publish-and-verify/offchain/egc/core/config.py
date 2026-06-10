@@ -34,6 +34,6 @@ PLUTUS_JSON_PATH = PLUTUS_JSON_PATH_TEST if IS_TEST else PLUTUS_JSON_PATH_PROD
 
 if IS_TEST:
     LOG.warning('=' * 60)
-    LOG.warning('RUNNING IN TEST MODE — secrets may be logged!')
+    LOG.warning('RUNNING IN TEST MODE — secrets will be logged!')
     LOG.warning('Using traced Plutus script: %s', PLUTUS_JSON_PATH)
     LOG.warning('=' * 60)
