@@ -42,7 +42,6 @@ def test_load_static_files_by_cid(
                 continue
             for rec in recs:
                 cid = str(rec.ipfs_cid)
-                # assert cid in static_files_by_cid, f'static_files_by_cid missing cid {cid}'
                 path = static_files_by_cid[cid]
                 assert isinstance(path, Path)
                 with path.open('r') as f:

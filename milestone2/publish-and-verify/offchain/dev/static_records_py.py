@@ -2,7 +2,7 @@
 
 # Usage:
 # nix develop .#offchain
-# ./dev/static_records_py.py > static_election_records_py_out.py
+# ./dev/static_records_py.py > tests/data/static_records/code.py
 
 # TODO more standard logging?
 
@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from egc import *
 
-IN_DIR = os.path.join(os.path.dirname(__file__), 'static_records')
+IN_DIR = os.path.join(os.path.dirname(__file__), 'data/tests/static_records/files')
 IN_LOG = Path(IN_DIR) / 'egsync.log'
 
 print('''# Generated with static_records_py.py. Consider editing and re-running that to make any changes.
