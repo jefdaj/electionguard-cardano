@@ -285,15 +285,13 @@ def subchannel_wallets(
     return {k:v for (k,v) in zip(subchannel_ids, wallets)} # TODO sort?
 
 @per_election_fixture
-def subchannel_onboarding_info(
+def onboarding_info(
         subchannel_nodes: list[ElectionNode],
     ) -> dict[ChannelId, VerificationKeyHash]:
     info = {
         node.channel_id() : node.publisher.wallet.vkh
         for node in subchannel_nodes
     }
-    ch_strs = [channel_id_to_string(k) for k in info.keys()]
-    LOG.info(f'Gathered subchannel onboarding info from {', '.join(ch_strs)}')
     return info
 
 @per_election_fixture
@@ -315,10 +313,12 @@ def admin_s2(
 def admin_tx2(
         admin_tx1: Transaction,
         admin: AdminNode,
-        subchannel_onboarding_info: dict[ChannelId, VerificationKeyHash],
+        onboarding_info: dict[ChannelId, VerificationKeyHash],
     ) -> Transaction:
+    ch_strs = [channel_id_to_string(k) for k in onboarding_info.keys()]
+    LOG.info(f'admin got onboarding info from {', '.join(ch_strs)}')
     tx = admin.add_subchannels(
-        subchannels = subchannel_onboarding_info,
+        subchannels = onboarding_info,
         subchannel_ada = 10,
         done_onboarding = True,
     )
