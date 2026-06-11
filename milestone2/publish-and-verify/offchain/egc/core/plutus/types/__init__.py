@@ -13,7 +13,6 @@ from .action import (
 
 from .channel import (
     ChannelId,
-    ChannelIdHelper,
     ADMIN_CHANNEL_ID,
     ChannelState,
     AdminChannel,
@@ -22,6 +21,8 @@ from .channel import (
     SubChannelState,
     channel_id_from_state,
     publisher_address,
+    channel_id_to_string,
+    coerce_channel_id,
 )
 
 from .ipfs_cid import IpfsCid

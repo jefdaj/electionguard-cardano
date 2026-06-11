@@ -31,7 +31,7 @@ STATIC_TRANSACTIONS = \
                 PublicRecord(ipfs_cid='bafkreiea23ycqgsptmpgckbpudwekyt6jgiqlt2klky5nkr7dvzotdd6vy', metadata=SpoiledResult(ballot_id='ballot-49fb726a-1d64-11f1-ad12-768fd7ed4145')),
                 PublicRecord(ipfs_cid='bafkreifvqpg4fiw5lfpt7pzgzwb5snnhayagyzbsbtectxw2ulaof6s2vi', metadata=SpoiledResult(ballot_id='ballot-4aa15ab8-1d64-11f1-bc23-768fd7ed4145')),
                 PublicRecord(ipfs_cid='bafkreihesgn7p3n2nt6tjcfduezo66ywphat3s75dxtqakrolootf2xpby', metadata=SpoiledResult(ballot_id='ballot-4c9f842a-1d64-11f1-94d0-768fd7ed4145'))]),
-           7: (PostPublicRecords(), [PublicRecord(ipfs_cid='bafkreifvzqqtpbiln42xeu3bxgstcy3wnabh3vnxroxfwkhkai6fvidjtq', metadata=Summary(verifier_id='admin1'))]),
+           7: (PostPublicRecords(), [PublicRecord(ipfs_cid='bafkreifvzqqtpbiln42xeu3bxgstcy3wnabh3vnxroxfwkhkai6fvidjtq', metadata=Summary(verifier_id='admin'))]),
            8: (RmSubChannels(channels=['guardian1', 'guardian2', 'guardian3', 'device1', 'verifier1']), []),
            9: (EndElection(), [])},
  'device_1': {1: (PostPublicRecords(), [PublicRecord(ipfs_cid='bafkreif73tr5sgi2qm23r3l3ahmn5z73le7lh2mfw267jzeackvrvzacb4', metadata=Device(device_number=1))]),

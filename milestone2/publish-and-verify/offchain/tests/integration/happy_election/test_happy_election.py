@@ -292,7 +292,7 @@ def subchannel_onboarding_info(
         node.channel_id() : node.publisher.wallet.vkh
         for node in subchannel_nodes
     }
-    ch_strs = [ChannelIdHelper.to_string(k) for k in info.keys()]
+    ch_strs = [channel_id_to_string(k) for k in info.keys()]
     LOG.info(f'Gathered subchannel onboarding info from {', '.join(ch_strs)}')
     return info
 

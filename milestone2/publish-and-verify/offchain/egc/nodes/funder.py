@@ -250,7 +250,7 @@ class FunderNode(ElectionNode):
                 script=self.election.script.spend_script,
                 redeemer=spend_redeemer
             )
-            channel_id = ChannelIdHelper.to_string(channel_id_from_state(state))
+            channel_id = channel_id_to_string(channel_id_from_state(state))
             tx_msgs.append(f'{ch_str} burned {channel_id} channel STT and recovered fee pool ADA.')
 
         LOG.debug('burn_txb:\n%s\n' % pformat(burn_txb))

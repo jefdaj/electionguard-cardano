@@ -19,7 +19,7 @@ def admin_assets(script: ElectionScript) -> MultiAsset:
 @per_election_fixture
 def subchannel_ids() -> List[ChannelId]:
     strs = ['guardian1', 'guardian2', 'guardian3', 'device1', 'verifier1']
-    ids = [ChannelIdHelper.from_string(s) for s in strs]
+    ids = [coerce_channel_id(s) for s in strs]
     LOG.debug(f'subchannel_ids: {ids}')
     return ids
 

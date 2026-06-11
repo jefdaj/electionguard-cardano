@@ -55,7 +55,7 @@ LOG.debug(f'ARGS: {pformat(ARGS)}')
 
 # TODO do we actually need the funder private key at all?
 # FUNDER_CHANNEL_STR = 'funder'
-ADMIN_CHANNEL_STR = ChannelIdHelper.to_string(ADMIN_CHANNEL_ID)
+ADMIN_CHANNEL_STR = channel_id_to_string(ADMIN_CHANNEL_ID)
 
 
 # For reference:
@@ -103,7 +103,7 @@ SUB.stop()
 # This is almost like SUB.states, but it uses str keys because technically
 # 'funder' isn't a valid channel id.
 STATES: Mapping[str, Tuple[UTxO, ChannelState]] = {
-    ChannelIdHelper.to_string(channel_id): (channel_utxo, channel_state)
+    channel_id_to_string(channel_id): (channel_utxo, channel_state)
     for (channel_id, (channel_utxo, channel_state)) in SUB.states.items()
 }
 LOG.debug(f'STATES keys: {pformat(STATES.keys())}')

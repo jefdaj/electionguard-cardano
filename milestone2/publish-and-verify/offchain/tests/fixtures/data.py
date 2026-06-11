@@ -25,7 +25,7 @@ def subchannel_ids(static_transactions) -> list[ChannelId]:
 
 @global_fixture
 def subchannel_strs(subchannel_ids: list[ChannelId]) -> list[str]:
-    return [ChannelIdHelper.to_string(i) for i in subchannel_ids]
+    return [channel_id_to_string(i) for i in subchannel_ids]
 
 @global_fixture
 def static_records_list(static_transactions) -> list[PublicRecord]:

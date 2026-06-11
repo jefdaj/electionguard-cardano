@@ -175,7 +175,7 @@ class AdminNode(ElectionNode):
 
         # Add the STT and fee pool ADA for each subchannel
         for (sub_id, sub_vkh) in subchannels.items():
-            sub_str = ChannelIdHelper.to_string(sub_id)
+            sub_str = channel_id_to_string(sub_id)
 
             stt_assets = mint_channel_stt_assets(self.election.script.policy_id, 1, [sub_id])
             LOG.debug(f'{sub_id} stt_assets: {pformat(stt_assets)}')
@@ -207,7 +207,7 @@ class AdminNode(ElectionNode):
 
         # Send subchannel publishers their collateral
         for (sub_id, sub_vkh) in subchannels.items():
-            sub_str = ChannelIdHelper.to_string(sub_id)
+            sub_str = channel_id_to_string(sub_id)
 
             sub_addr = addr_for_vkh(sub_vkh)
             LOG.debug(f'{sub_id} sub_addr: {sub_addr}')

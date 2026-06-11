@@ -16,7 +16,7 @@ LOG = logging.getLogger(__name__)
 from .ogmios   import *
 from .election import ElectionContext
 from .wallet   import *
-from .plutus   import ChannelId, ChannelIdHelper
+from .plutus   import *
 
 from pycardano import *
 
@@ -63,7 +63,7 @@ class ElectionPublisher:
                 LOG.debug(f'keys_dir is None; default to {keys_dir}')
             keys_dir = Path(keys_dir) # TODO ok if already a Path?
             if key_name is None:
-                key_name = ChannelIdHelper.to_string(self.channel_id())
+                key_name = channel_id_to_string(self.channel_id())
                 LOG.debug(f'key_name is None; default to {key_name}')
             self.wallet = Wallet(keys_dir=keys_dir, name=key_name, verbose=False)
         else:
@@ -77,7 +77,7 @@ class ElectionPublisher:
             channel_str = self.role
         else:
             channel_str = f'{self.role}{self.role_index}'
-        return ChannelIdHelper.from_string(channel_str)
+        return coerce_channel_id(channel_str)
 
     def sign_and_submit(self, txb: TransactionBuilder):
         LOG.debug('ElectionPublisher.sign_and_submit')
