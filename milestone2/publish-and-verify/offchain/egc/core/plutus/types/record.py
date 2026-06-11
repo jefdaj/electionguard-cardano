@@ -2,7 +2,7 @@
 
 from .ballot_id import BallotId, BallotIdMixin
 from .channel_id import ChannelIdMixin
-from .ipfs_cid import IpfsCidHelper, IpfsCidMixin
+from .ipfs_cid import IpfsCid, IpfsCidMixin
 from dataclasses import dataclass
 from pycardano import PlutusData
 from pydantic.v1 import validator
@@ -117,5 +117,5 @@ PublicRecordMetadata = Union[
 @dataclass(repr=False)
 class PublicRecord(IpfsCidMixin, PlutusData):
     CONSTR_ID = 0
-    ipfs_cid: bytes
+    ipfs_cid: IpfsCid
     metadata: PublicRecordMetadata

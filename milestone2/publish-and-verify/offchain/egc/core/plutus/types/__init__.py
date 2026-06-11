@@ -24,7 +24,7 @@ from .channel import (
     publisher_address,
 )
 
-from .ipfs_cid import IpfsCid, IpfsCidHelper
+from .ipfs_cid import IpfsCid
 
 from .record import (
   Manifest,

@@ -1,12 +1,14 @@
 # Should be kept in sync with onchain/validators/election/types/channel.ak
 
 from .channel_id import ChannelId, ChannelIdHelper, ADMIN_CHANNEL_ID
-from .ipfs_cid import IpfsCid, IpfsCidHelper
+# from .ipfs_cid import IpfsCid, IpfsCidHelper
 from .phase import ElectionPhase
 from .record import PublicRecord
 from dataclasses import dataclass
 from pycardano import PlutusData, Network, VerificationKeyHash, Address
 from typing import List, Union, TYPE_CHECKING
+
+# TODO rewrite these to use __repr__ rather than __str__ and standardize on JSON?
 
 @dataclass
 class AdminChannelState(PlutusData):
@@ -17,16 +19,16 @@ class AdminChannelState(PlutusData):
     phase: ElectionPhase
     seq: int
 
-    def __repr__(self):
+    def __str__(self):
         # TODO are these missing their list brackets?
         subchannels_str = [ch.hex() for ch in self.subchannels]
-        records_str = [repr(r) for r in self.new_records] # TODO is this right?
+        records_str = [str(r) for r in self.new_records] # TODO is this right?
         return (
             'AdminChannelState('
-            f'admin={self.admin.hex()}, '
-            f'subchannels={subchannels_str}, '
+            f'admin={self.admin.hex()}, '      # TODO clean up to avoid bytes.fromhex
+            f'subchannels={subchannels_str}, ' # TODO clean up to avoid bytes.fromhex
             f'new_records={records_str}, '
-            f'phase={repr(self.phase)}, '
+            f'phase={str(self.phase)}, '
             f'seq={self.seq})'
         )
 
@@ -38,13 +40,13 @@ class SubChannelState(PlutusData):
     new_records: List[PublicRecord]
     seq: int
 
-    def __repr__(self):
-        records_repr = [repr(r) for r in self.new_records] # TODO is this right?
+    def __str__(self):
+        records_str = [str(r) for r in self.new_records] # TODO is this right?
         return (
             'SubChannelState('
-            f'channel_id={self.channel_id.hex()}, '
-            f'publisher={self.publisher.hex()}, '
-            f'new_records={records_repr}, '
+            f'channel_id={self.channel_id.hex()}, ' # TODO clean up to avoid bytes.fromhex
+            f'publisher={self.publisher.hex()}, '   # TODO clean up to avoid bytes.fromhex
+            f'new_records={records_str}, '
             f'seq={self.seq})'
         )
 
@@ -53,16 +55,16 @@ class AdminChannel(PlutusData):
     CONSTR_ID = 0
     state: AdminChannelState
 
-    def __repr__(self):
-        return f'AdminChannel({repr(self.state)})'
+    def __str__(self):
+        return f'AdminChannel({str(self.state)})'
 
 @dataclass
 class SubChannel(PlutusData):
     CONSTR_ID = 1
     state: SubChannelState
 
-    def __repr__(self):
-        return f'SubChannel({repr(self.state)})'
+    def __str__(self):
+        return f'SubChannel({str(self.state)})'
 
 ChannelState = Union[AdminChannel, SubChannel]
 
