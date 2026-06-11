@@ -114,10 +114,27 @@ def _pointer(r: Redeemer) -> str:
     }[r.tag]
     return f"{tag_str}:{r.index}"
 
+def _assign_spend_redeemer_indices(txb: "TransactionBuilder") -> None:
+    """Set redeemer.index for each spend redeemer to the position of its
+    UTxO in the lexicographically sorted inputs set (per Cardano ledger spec)."""
+    # Sort inputs the same way the ledger will: by (tx_id bytes, output index).
+    sorted_inputs = sorted(
+        txb.inputs,
+        key=lambda u: (bytes(u.input.transaction_id), u.input.index),
+    )
+    for i, utxo in enumerate(sorted_inputs):
+        redeemer = txb._inputs_to_redeemers.get(utxo)
+        if redeemer is not None:
+            redeemer.index = i
+
 def evaluate_and_set_ex_units(
     txb: "TransactionBuilder",
     out_utxo: TransactionOutput,
 ) -> None:
+
+    # TODO is it a pycardano bug that this needs to be done manually?
+    _assign_spend_redeemer_indices(txb)
+
     STUB_FEE = 200_000
     total_in = _total_input_coin(txb)
     others = _other_outputs_coin(txb, out_utxo)
@@ -134,6 +151,11 @@ def evaluate_and_set_ex_units(
         transaction_body=txb._build_tx_body(),
         transaction_witness_set=txb.build_witness_set(),
     )
+
+    for r in txb._redeemer_list:
+        LOG.warning(f"redeemer tag={r.tag} index={r.index} data={r.data}")
+    LOG.warning(f"num script inputs: {len([i for i in txb.inputs if ...])}")
+
     result = txb.context.evaluate_tx(draft_tx)
 
     # Add a defensive assertion right before the pointer lookup so the failure
