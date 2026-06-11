@@ -4,7 +4,6 @@ import pytest
 from dataclasses import replace
 from pycardano import *
 from egc import *
-from test_utils import local_test, testnet_test
 from test_utils import per_election_fixture, assert_nodes_in_sync
 import logging
 import time
@@ -39,7 +38,7 @@ def admin_tx0(init_tx: Transaction) -> Transaction:
     # admin_tx0 is just the init_tx renamed for clarity.
     return init_tx
 
-@testnet_test
+@pytest.mark.testnet
 def test_admin_tx0(
         admin: AdminNode,
         admin_s0: ChannelState,
@@ -54,7 +53,7 @@ def test_admin_tx0(
     assert actual_state == admin_s0
 
 # ... in fact, all nodes should agree on the current state
-@testnet_test
+@pytest.mark.testnet
 def test_admin_tx0_sub(
         funder: FunderNode,
         admin: AdminNode,
@@ -95,7 +94,7 @@ def admin_tx1(
     admin.wait_for_confirmation(tx)
     return tx
 
-@testnet_test
+@pytest.mark.testnet
 def test_admin_tx1(
         admin: AdminNode,
         admin_s1: ChannelState,
@@ -105,7 +104,7 @@ def test_admin_tx1(
     actual_state = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
     assert actual_state == admin_s1
 
-@testnet_test
+@pytest.mark.testnet
 def test_admin_tx1_sub(
         funder: FunderNode,
         admin: AdminNode,
@@ -147,7 +146,7 @@ def verifier1_wallet(keys_dir: Path) -> Wallet:
     LOG.debug(f'verifier1_wallet: {w}')
     return w
 
-@local_test
+@pytest.mark.local
 def test_subchannel_wallets(
         guardian1_wallet: Wallet,
         guardian2_wallet: Wallet,
@@ -340,7 +339,7 @@ def sub_s0(sub_id: ChannelId, sub_wallet: Wallet) -> ChannelState:
         seq         = 0,
     ))
 
-@testnet_test
+@pytest.mark.testnet
 def test_admin_tx2(
         admin: AdminNode,
         subchannel_wallets: dict[ChannelId, Wallet],
@@ -356,7 +355,7 @@ def test_admin_tx2(
         actual_state = admin.subscriber.states[sub_id][1]
         assert actual_state == sub_s0(sub_id, sub_wallet), f'{sub_id} unexpected state'
 
-@testnet_test
+@pytest.mark.testnet
 def test_admin_tx2_sub(
         admin_tx2: Transaction,
         all_nodes: list[ElectionNode],
@@ -405,7 +404,7 @@ def admin_tx3(
     admin.wait_for_confirmation(tx)
     return tx
 
-@testnet_test
+@pytest.mark.testnet
 def test_admin_tx3(
         admin: AdminNode,
         admin_s3: ChannelState,
@@ -415,7 +414,7 @@ def test_admin_tx3(
     actual_state = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
     assert actual_state == admin_s3
 
-@testnet_test
+@pytest.mark.testnet
 def test_admin_tx3_sub(
         admin_tx3: Transaction,
         all_nodes: list[ElectionNode],
@@ -454,7 +453,7 @@ def admin_tx4(
     admin.wait_for_confirmation(tx)
     return tx
 
-@testnet_test
+@pytest.mark.testnet
 def test_admin_tx4(
         admin: AdminNode,
         admin_s4: ChannelState,
@@ -464,7 +463,7 @@ def test_admin_tx4(
     actual_state = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
     assert actual_state == admin_s4
 
-@testnet_test
+@pytest.mark.testnet
 def test_admin_tx4_sub(
         admin_tx4: Transaction,
         all_nodes: list[ElectionNode],
@@ -503,7 +502,7 @@ def admin_tx5(
     admin.wait_for_confirmation(tx)
     return tx
 
-@testnet_test
+@pytest.mark.testnet
 def test_admin_tx5(
         admin: AdminNode,
         admin_s5: ChannelState,
@@ -513,7 +512,7 @@ def test_admin_tx5(
     actual_state = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
     assert actual_state == admin_s5
 
-@testnet_test
+@pytest.mark.testnet
 def test_admin_tx5_sub(
         admin_tx5: Transaction,
         all_nodes: list[ElectionNode],
@@ -552,7 +551,7 @@ def admin_tx6(
     admin.wait_for_confirmation(tx)
     return tx
 
-@testnet_test
+@pytest.mark.testnet
 def test_admin_tx6(
         admin: AdminNode,
         admin_s6: ChannelState,
@@ -562,7 +561,7 @@ def test_admin_tx6(
     actual_state = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
     assert actual_state == admin_s6
 
-@testnet_test
+@pytest.mark.testnet
 def test_admin_tx6_sub(
         admin_tx6: Transaction,
         all_nodes: list[ElectionNode],
@@ -602,7 +601,7 @@ def admin_tx7(
     admin.wait_for_confirmation(tx)
     return tx
 
-@testnet_test
+@pytest.mark.testnet
 def test_admin_tx7(
         admin: AdminNode,
         admin_s7: ChannelState,
@@ -612,7 +611,7 @@ def test_admin_tx7(
     actual_state = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
     assert actual_state == admin_s7
 
-@testnet_test
+@pytest.mark.testnet
 def test_admin_tx7_sub(
         admin_tx7: Transaction,
         all_nodes: list[ElectionNode],
@@ -656,7 +655,7 @@ def admin_tx8(
     admin.wait_for_confirmation(tx)
     return tx
 
-@testnet_test
+@pytest.mark.testnet
 def test_admin_tx8(
         admin: AdminNode,
         admin_s8: ChannelState,
@@ -666,7 +665,7 @@ def test_admin_tx8(
     actual_state = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
     assert actual_state == admin_s8
 
-# @testnet_test
+# @pytest.mark.testnet
 # def test_admin_tx8_sub(
 #         admin_tx8: Transaction,
 #         all_nodes: list[ElectionNode],

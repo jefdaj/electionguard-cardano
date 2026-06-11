@@ -1,6 +1,5 @@
 import json
 import pytest
-from test_utils import local_test
 from egc import *
 import logging
 from pathlib import Path
@@ -9,7 +8,7 @@ from pprint import pprint
 
 LOG = logging.getLogger(__name__)
 
-@local_test
+@pytest.mark.local
 def test_roundtrip_static_records_to_str(
         static_records_list: list[PublicRecord],
     ):

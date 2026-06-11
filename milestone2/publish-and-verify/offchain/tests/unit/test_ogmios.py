@@ -1,12 +1,11 @@
 import pytest
-from test_utils import testnet_test
 from egc import *
 
-@testnet_test
+@pytest.mark.testnet
 def test_ogmios_up(ogmios: OgmiosV6ChainContext):
     assert ogmios.last_block_slot > 101181854
 
-@testnet_test
+@pytest.mark.testnet
 def test_query_network_tip(ogmios: OgmiosV6ChainContext):
     tip = query_network_tip_sync()
     assert isinstance(tip, dict)
