@@ -220,6 +220,11 @@ class FunderNode(ElectionNode):
 
     def _build_burn_tx(self) -> Tuple[List[str], TransactionBuilder]:
 
+        # Without this set, the FunderNode risks the entire dev wallet when
+        # deploying a contract.
+        create_own_collateral(self.publisher.wallet)
+        funder_collateral = wait_for_collateral(self.publisher.wallet.addr)
+
         # Messages to log if/when the TX succeeds
         ch_str = self.channel_str()
         tx_msgs = []
@@ -241,6 +246,8 @@ class FunderNode(ElectionNode):
             TransactionBuilder(OGMIOS_CTX, mint=burn_assets)
             .add_minting_script(script=self.election.script.mint_script, redeemer=mint_redeemer)
         )
+
+        burn_txb.collaterals.append(funder_collateral)
 
         for (utxo, state) in self.subscriber.states.values():
             LOG.debug(f'script controlled utxo to spend: {utxo}')

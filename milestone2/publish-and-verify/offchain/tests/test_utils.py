@@ -1,5 +1,6 @@
 import pytest
 from typing import List
+from pprint import pformat
 from egc import *
 import logging
 
@@ -23,4 +24,5 @@ def assert_nodes_in_sync(nodes: List[ElectionNode]):
         assert node.election_phase()   == ref.election_phase()  , "phase mismatch"
         assert node.subscriber.history == ref.subscriber.history, "history mismatch"
         assert node.subscriber.states  == ref.subscriber.states , "state mismatch"
-    LOG.info('Nodes in sync: ' + ', '.join(s for s in ch_strs))
+    LOG.info(f'All {len(nodes)+1} nodes in sync: ' + ', '.join(s for s in ch_strs))
+    LOG.debug(f'Current state:\n\n{pformat(ref.subscriber.states)}\n')

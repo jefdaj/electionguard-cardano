@@ -274,20 +274,20 @@ def _send_ada(
     return signed
 
 
-def create_own_collateral(funder: Wallet) -> Transaction:
+def create_own_collateral(wallet: Wallet) -> Transaction:
     """Op 1: Funder sends themselves exactly COLLATERAL_ADA to create a
     usable collateral UTXO. No-op (returns None-ish? see below) if one
     already exists — callers that want to force a new one should spend
     the existing one first."""
-    existing = find_collateral_utxo(funder.addr)
+    existing = find_collateral_utxo(wallet.addr)
     if existing is not None:
         LOG.debug(
             "Collateral UTXO already exists at %s (%s#%d); skipping",
-            funder.addr, existing.input.transaction_id, existing.input.index,
+            wallet.addr, existing.input.transaction_id, existing.input.index,
         )
         return existing.input.transaction_id
-    res = _send_ada(funder, funder.addr, COLLATERAL_LOVELACE)
-    LOG.info(f'Created own collateral UTXO at {funder.addr}')
+    res = _send_ada(wallet, wallet.addr, COLLATERAL_LOVELACE)
+    LOG.info(f'Created own collateral UTXO at {wallet.addr}')
     return res
 
 
