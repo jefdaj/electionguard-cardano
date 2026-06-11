@@ -27,7 +27,7 @@ pub type PublicRecordMetadata {
     backup_order: Int
   }
   JointKey
-  // TODO Context??
+  Context
   Constants
   Device {
     device_number: Int
@@ -153,6 +153,7 @@ pub fn validate_metadata(metadata: PublicRecordMetadata) -> Bool {
 
     Manifest        -> True
     JointKey        -> True
+    Context         -> True
     CeremonyDetails -> True
     Constants       -> True
     CiphertextTally -> True

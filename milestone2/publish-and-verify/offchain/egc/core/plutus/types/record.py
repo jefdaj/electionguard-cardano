@@ -37,59 +37,61 @@ class GuardianVerification(PlutusData):
 class JointKey(PlutusData):
     CONSTR_ID = 5
 
-# TODO Context??
-
 @dataclass
-class Constants(PlutusData):
+class Context(PlutusData):
     CONSTR_ID = 6
 
 @dataclass
-class Device(PlutusData):
+class Constants(PlutusData):
     CONSTR_ID = 7
+
+@dataclass
+class Device(PlutusData):
+    CONSTR_ID = 8
     device_number: int
 
 @dataclass
 class BallotSubmitted(BallotIdMixin, PlutusData):
-    CONSTR_ID = 8
-    ballot_id: bytes
-
-@dataclass
-class CastNotice(BallotIdMixin, PlutusData):
     CONSTR_ID = 9
     ballot_id: bytes
 
 @dataclass
-class BallotSpoiled(BallotIdMixin, PlutusData):
+class CastNotice(BallotIdMixin, PlutusData):
     CONSTR_ID = 10
     ballot_id: bytes
 
 @dataclass
-class CiphertextTally(PlutusData):
+class BallotSpoiled(BallotIdMixin, PlutusData):
     CONSTR_ID = 11
+    ballot_id: bytes
+
+@dataclass
+class CiphertextTally(PlutusData):
+    CONSTR_ID = 12
 
 @dataclass
 class TallyShare(PlutusData):
-    CONSTR_ID = 12
+    CONSTR_ID = 13
     guardian_number: int
 
 @dataclass
 class SpoiledShare(BallotIdMixin, PlutusData):
-    CONSTR_ID = 13
+    CONSTR_ID = 14
     spoiled_id: bytes # TODO same ballot- prefix, right?
     guardian_number: int
 
 @dataclass
 class PlaintextTally(PlutusData):
-    CONSTR_ID = 14
+    CONSTR_ID = 15
 
 @dataclass
 class SpoiledResult(BallotIdMixin, PlutusData):
-    CONSTR_ID = 15
+    CONSTR_ID = 16
     ballot_id: bytes
 
 @dataclass
 class Summary(ChannelIdMixin, PlutusData):
-    CONSTR_ID = 16
+    CONSTR_ID = 17
     verifier_id: bytes
 
 PublicRecordMetadata = Union[

@@ -35,7 +35,7 @@ def test_load_static_files_by_cid(
     ):
 
     # There are 79 records, but the verifications all have the same
-    # CID because they all agree.
+    # CID because they agree exactly.
     # TODO add something unique to prevent that?
     # TODO lean more on the reverse path -> cid lookup instead?
     assert len(static_records_list) == 79
