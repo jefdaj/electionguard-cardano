@@ -8,6 +8,13 @@ from pprint import pprint
 
 LOG = logging.getLogger(__name__)
 
-# TODO round-trip all static records to test bytes encode/decode
-
-# def test_roundtrip_static_records():
+def test_roundtrip_static_records_to_str(
+        static_records_list: list[PublicRecord],
+    ):
+    for rec in static_records_list:
+        # PyCardano uses repr() for JSON, which is a little suprising in Python
+        # but reasonable for comparing with cardano-cli etc. So we round-trip
+        # to str instead.
+        tmp  = str(rec)
+        rec2 = eval(tmp)
+        assert rec2 == rec

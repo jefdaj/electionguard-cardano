@@ -1,106 +1,63 @@
 import re
-from pydantic.v1 import validator
+# from pydantic.v1 import validator
+from dataclasses import dataclass
+from pycardano import PlutusData
 
 type BallotId = bytes
 
-class BallotIdHelper:
-    """
-    Helper class for working with ballot IDs.
-    Stores as bytes internally (for PlutusData), but provides string conversion.
-    """
+_BALLOT_ID_RE = re.compile(
+    r'^ballot-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-'
+    r'[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+)
 
-    # TODO any need for variants like spoiled-?
-    REGEX = re.compile(
-        r'^ballot-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
-    )
 
-    @staticmethod
-    def from_string(ballot_id: str) -> bytes:
-        if not BallotIdHelper.validate(ballot_id):
-            raise ValueError(
-                f"Invalid ballot ID format. Expected 'ballot-<uuid>', got: {ballot_id}"
-            )
+# Field names that should be treated as ballot IDs in PlutusData types.
+BALLOT_ID_FIELDS = frozenset({'ballot_id', 'spoiled_id'})
 
-        return ballot_id.encode('utf-8')
 
-    @staticmethod
-    def to_string(ballot_id_bytes: bytes) -> str:
+def coerce_ballot_id(value: str | bytes) -> bytes:
+    """Accept str or bytes, validate format, return bytes."""
+    if isinstance(value, str):
+        s = value
+        b = value.encode('utf-8')
+    elif isinstance(value, bytes):
         try:
-            decoded = ballot_id_bytes.decode('utf-8')
-            if not BallotIdHelper.validate(decoded):
-                raise ValueError(f"Decoded ballot ID has invalid format: {decoded}")
-            return decoded
+            s = value.decode('utf-8')
         except UnicodeDecodeError as e:
-            raise ValueError(f"Invalid UTF-8 bytes for ballot ID: {e}")
+            raise ValueError(f"ballot id must be valid UTF-8: {e}") from e
+        b = value
+    else:
+        raise TypeError(
+            f"ballot id must be str or bytes, got {type(value).__name__}"
+        )
 
-    @staticmethod
-    def validate(ballot_id: str) -> bool:
-        return BallotIdHelper.REGEX.match(ballot_id) is not None
+    if not _BALLOT_ID_RE.match(s):
+        raise ValueError(f"Invalid ballot ID format: {s!r}")
+    return b
+
+
+def ballot_id_to_string(value: bytes) -> str:
+    """Decode and validate a ballot-id bytes value."""
+    s = value.decode('utf-8')
+    if not _BALLOT_ID_RE.match(s):
+        raise ValueError(f"Decoded ballot ID has invalid format: {s!r}")
+    return s
+
 
 class BallotIdMixin:
-    """Mixin that provides ballot_id validation via BallotIdHelper."""
+    """
+    Mixin for PlutusData subclasses that have one or more ballot-id fields.
+    Coerces str -> bytes and validates format in __post_init__.
 
-    # TODO any other field names?
-    @validator('ballot_id', 'spoiled_id', allow_reuse=True)
-    def validate_ballot_id_field(cls, v):
-        """Validate any ballot ID field."""
-        try:
-            ballot_str = v.decode('utf-8')
-            if not BallotIdHelper.validate(ballot_str):
-                raise ValueError(f"Invalid ballot ID format: {ballot_str}")
-        except UnicodeDecodeError:
-            raise ValueError("ballot_id must be valid UTF-8")
-        return v
+    Must come BEFORE PlutusData in the MRO so this __post_init__ runs.
+    """
 
-# from typing import Optional
-# from pycardano import PlutusData
-# from pydantic.v1 import validator
-#
-# # Example PlutusData class using ballot IDs
-# class BallotDatum(PlutusData):
-#     """
-#     Example datum containing a ballot ID.
-#     """
-#     CONSTR_ID = 0
-# 
-#     ballot_id: bytes  # Stored as bytes for Plutus
-#     # ... other fields
-# 
-#     @validator('ballot_id')
-#     def validate_ballot_id(cls, v):
-#         """Validate ballot_id bytes represent a valid ballot ID."""
-#         try:
-#             ballot_str = v.decode('utf-8')
-#             if not BallotIdHelper.validate(ballot_str):
-#                 raise ValueError(f"Invalid ballot ID format: {ballot_str}")
-#         except UnicodeDecodeError:
-#             raise ValueError("ballot_id must be valid UTF-8")
-#         return v
-# 
-#     def get_ballot_id_str(self) -> str:
-#         """Helper to get ballot ID as a string."""
-#         return BallotIdHelper.to_string(self.ballot_id)
-# 
-# 
-# # Usage examples
-# if __name__ == "__main__":
-#     import uuid
-# 
-#     # Generate a UUID and create ballot ID
-#     uuid_v1 = uuid.uuid1()
-#     full_id = f"ballot-{uuid_v1}"
-# 
-#     # Convert to bytes
-#     ballot_id_bytes = BallotIdHelper.from_string(full_id)
-#     print(f"Created ballot ID (bytes): {ballot_id_bytes}")
-#     print(f"As string: {BallotIdHelper.to_string(ballot_id_bytes)}")
-# 
-#     # Create datum
-#     datum = BallotDatum(ballot_id=ballot_id_bytes)
-#     print(f"\nDatum ballot ID: {datum.get_ballot_id_str()}")
-# 
-#     # Validation examples
-#     print(f"\nValidation tests:")
-#     print(f"Valid: {BallotIdHelper.validate('ballot-550e8400-e29b-41d4-a716-446655440000')}")
-#     print(f"Invalid (no prefix): {BallotIdHelper.validate('550e8400-e29b-41d4-a716-446655440000')}")
-#     print(f"Invalid (wrong format): {BallotIdHelper.validate('ballot-invalid-uuid')}")
+    def __post_init__(self):
+        for field_name in BALLOT_ID_FIELDS:
+            if hasattr(self, field_name):
+                current = getattr(self, field_name)
+                object.__setattr__(self, field_name, coerce_ballot_id(current))
+        # Chain to PlutusData's __post_init__ if it has one
+        super_post = getattr(super(), '__post_init__', None)
+        if super_post is not None:
+            super_post()

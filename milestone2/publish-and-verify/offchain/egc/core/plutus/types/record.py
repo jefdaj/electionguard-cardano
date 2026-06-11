@@ -1,6 +1,6 @@
 # Should be kept in sync with onchain/validators/election/types/record.ak
 
-from .ballot_id import BallotIdMixin
+from .ballot_id import BallotId, BallotIdMixin
 from .channel_id import ChannelIdMixin
 from .ipfs_cid import IpfsCidHelper, IpfsCidMixin
 from dataclasses import dataclass
@@ -53,17 +53,17 @@ class Device(PlutusData):
 @dataclass
 class BallotSubmitted(BallotIdMixin, PlutusData):
     CONSTR_ID = 9
-    ballot_id: bytes
+    ballot_id: BallotId
 
 @dataclass
 class CastNotice(BallotIdMixin, PlutusData):
     CONSTR_ID = 10
-    ballot_id: bytes
+    ballot_id: BallotId
 
 @dataclass
 class BallotSpoiled(BallotIdMixin, PlutusData):
     CONSTR_ID = 11
-    ballot_id: bytes
+    ballot_id: BallotId
 
 @dataclass
 class CiphertextTally(PlutusData):
@@ -77,7 +77,7 @@ class TallyShare(PlutusData):
 @dataclass
 class SpoiledShare(BallotIdMixin, PlutusData):
     CONSTR_ID = 14
-    spoiled_id: bytes # TODO same ballot- prefix, right?
+    spoiled_id: BallotId # TODO same ballot- prefix, right?
     guardian_number: int
 
 @dataclass
@@ -87,12 +87,12 @@ class PlaintextTally(PlutusData):
 @dataclass
 class SpoiledResult(BallotIdMixin, PlutusData):
     CONSTR_ID = 16
-    ballot_id: bytes
+    ballot_id: BallotId
 
 @dataclass
 class Summary(ChannelIdMixin, PlutusData):
     CONSTR_ID = 17
-    verifier_id: bytes
+    verifier_id: BallotId
 
 PublicRecordMetadata = Union[
     Manifest,
@@ -114,7 +114,6 @@ PublicRecordMetadata = Union[
     Summary,
 ]
 
-# TODO metadata mixin?
 @dataclass(repr=False)
 class PublicRecord(IpfsCidMixin, PlutusData):
     CONSTR_ID = 0
