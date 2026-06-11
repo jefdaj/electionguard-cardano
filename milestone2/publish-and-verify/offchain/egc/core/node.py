@@ -90,17 +90,16 @@ class ElectionNode:
             self,
             txb: TransactionBuilder,
             cont_utxo: UTxO,
-            redeemers: list[Redeemer],
         ) -> Transaction:
 
         """Balance a transaction where rather than using a change address as
         PyCardano assumes, we want the deduct it from the value of cont_utxo
         (the STT continuation). This requires some specific setup of the
-        builder, cont_utxo, and cont_redeemer. See post_public_records below
+        builder and cont_utxo. See post_public_records below
         for an example."""
 
         # 1. Have Ogmios compute real ex_units, write them onto the redeemers.
-        evaluate_and_set_ex_units(txb, cont_utxo, redeemers)
+        evaluate_and_set_ex_units(txb, cont_utxo)
 
         # 2. Now that ex_units are pinned, converge fee + output coin.
         set_out_value_and_fee(txb, cont_utxo)
@@ -211,7 +210,6 @@ class ElectionNode:
         tx_signed = self.balance_and_sign_state_transition_tx(
             txb,
             cont_utxo,
-            [cont_redeemer],
         )
 
         LOG.debug(f'tx_signed about to be submitted:\n%s:\n' % pformat(tx_signed))

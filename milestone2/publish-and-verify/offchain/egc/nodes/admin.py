@@ -96,7 +96,6 @@ class AdminNode(ElectionNode):
         tx_signed = self.balance_and_sign_state_transition_tx(
             txb,
             cont_utxo,
-            [cont_redeemer],
         )
 
         LOG.debug(f'tx_signed about to be submitted:\n%s:\n' % pformat(tx_signed))
@@ -244,7 +243,6 @@ class AdminNode(ElectionNode):
         tx_signed = self.balance_and_sign_state_transition_tx(
             txb,
             cont_utxo,
-            [cont_redeemer],
         )
 
         LOG.debug(f'tx_signed about to be submitted:\n%s:\n' % pformat(tx_signed))
@@ -265,7 +263,6 @@ class AdminNode(ElectionNode):
 
         # Things to accumulate and handle together at the end of the building process.
         tx_msgs = []
-        redeemers = []
         burn_assets = MultiAsset()
 
         # ensure own collateral
@@ -281,7 +278,6 @@ class AdminNode(ElectionNode):
         LOG.debug('in_state: %s' % pformat(in_state))
 
         cont_redeemer = Redeemer(data=RmSubChannels(channels=subchannels))
-        redeemers.append(cont_redeemer)
         LOG.debug('cont_redeemer: %s' % pformat(cont_redeemer))
 
         remaining_ids = [i for i in in_state.subchannels if not i in subchannels]
@@ -325,7 +321,6 @@ class AdminNode(ElectionNode):
             LOG.debug(f'{sub_str} sub_assets: {pformat(sub_assets)}')
             burn_assets += sub_assets
             sub_redeemer = Redeemer(data=RmSubChannels(channels=subchannels))
-            redeemers.append(sub_redeemer)
             LOG.debug(f'{sub_str} sub_redeemer: {sub_redeemer}')
             txb.add_script_input(
                 sub_utxo,
@@ -339,9 +334,7 @@ class AdminNode(ElectionNode):
 
         # Tell the builder to actually burn the STTs.
         txb.mint = burn_assets
-        # TODO does this also get appended to redeemers?
         burn_redeemer = Redeemer(data=RmSubChannels(channels=subchannels))
-        redeemers.append(burn_redeemer) # TODO required when spending but not minting?
         LOG.debug(f'burn_redeemer: {burn_redeemer}')
         txb.add_minting_script(script=self.election.script.mint_script, redeemer=burn_redeemer)
 
@@ -356,7 +349,6 @@ class AdminNode(ElectionNode):
         tx_signed = self.balance_and_sign_state_transition_tx(
             txb,
             cont_utxo,
-            redeemers,
         )
 
         LOG.debug(f'tx_signed about to be submitted:\n%s:\n' % pformat(tx_signed))

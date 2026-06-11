@@ -105,17 +105,19 @@ def _total_input_coin(txb: "TransactionBuilder") -> int:
     which don't enter the balance equation unless a script fails."""
     return sum(i.output.amount.coin for i in txb.inputs)
 
+def _pointer(r: Redeemer) -> str:
+    tag_str = {
+        RedeemerTag.SPEND: "spend",
+        RedeemerTag.MINT: "mint",
+        RedeemerTag.CERTIFICATE: "certificate",
+        RedeemerTag.WITHDRAWAL: "withdrawal",
+    }[r.tag]
+    return f"{tag_str}:{r.index}"
 
 def evaluate_and_set_ex_units(
     txb: "TransactionBuilder",
     out_utxo: TransactionOutput,
-    redeemers: list[Redeemer],
 ) -> None:
-    """Evaluate ex_units via Ogmios and write results back to each redeemer.
-
-    Seeds `out_utxo.coin` and `txb.fee` with plausible values so the draft
-    tx's CBOR size matches the final tx (script context cost depends on it).
-    """
     STUB_FEE = 200_000
     total_in = _total_input_coin(txb)
     others = _other_outputs_coin(txb, out_utxo)
@@ -123,23 +125,23 @@ def evaluate_and_set_ex_units(
     out_utxo.amount.coin = total_in - others - STUB_FEE
     txb.fee = max_tx_fee(txb.context)
 
-    for r in redeemers:
+    # Force the builder to finalize tags/indices before we read them.
+    # _build_tx_body() (or equivalent) populates tag/index on the internal redeemers.
+    for r in txb._redeemer_list:
         r.ex_units = ExecutionUnits(mem=0, steps=0)
 
     draft_tx = Transaction(
         transaction_body=txb._build_tx_body(),
         transaction_witness_set=txb.build_witness_set(),
     )
-    result: Dict[str, ExecutionUnits] = txb.context.evaluate_tx(draft_tx)
+    result = txb.context.evaluate_tx(draft_tx)
 
-    def _pointer(r: Redeemer) -> str:
-        tag_str = {
-            RedeemerTag.SPEND: "spend",
-            RedeemerTag.MINT: "mint",
-            RedeemerTag.CERTIFICATE: "certificate",
-            RedeemerTag.WITHDRAWAL: "withdrawal",
-        }[r.tag]
-        return f"{tag_str}:{r.index}"
+    # Add a defensive assertion right before the pointer lookup so the failure
+    # mode is loud and clear if a future PyCardano version changes when
+    # tags/indices get assigned.
+    # for r in txb._redeemer_list:
+    #     assert r.tag is not None, f"Redeemer tag not set: {r}"
+    #     assert r.index is not None, f"Redeemer index not set: {r}"
 
     mem_buf = 1.0 + txb.execution_memory_buffer
     step_buf = 1.0 + txb.execution_step_buffer
