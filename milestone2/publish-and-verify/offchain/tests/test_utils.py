@@ -13,6 +13,10 @@ LOG = logging.getLogger(__name__)
 global_fixture       = pytest.fixture(scope='session')
 per_election_fixture = pytest.fixture(scope='package')
 
+# Mark tests as local (fast) or testnet (slow)
+local_test   = pytest.mark.local
+testnet_test = pytest.mark.testnet
+
 def assert_nodes_in_sync(nodes: List[ElectionNode]):
     if len(nodes) < 2:
         LOG.warning('assert_nodes_in_sync called with < 2 nodes')

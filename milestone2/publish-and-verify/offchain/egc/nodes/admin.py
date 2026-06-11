@@ -96,7 +96,7 @@ class AdminNode(ElectionNode):
         tx_signed = self.balance_and_sign_state_transition_tx(
             txb,
             cont_utxo,
-            cont_redeemer,
+            [cont_redeemer],
         )
 
         LOG.debug(f'tx_signed about to be submitted:\n%s:\n' % pformat(tx_signed))
@@ -202,7 +202,8 @@ class AdminNode(ElectionNode):
 
             txb.add_output(stt_utxo)
             tx_msgs.append(
-                f'{ch_str} minted {sub_str} channel STT and locked {subchannel_ada} ADA from admin channel fee pool with it to pay fees.'
+                f'{ch_str} minted {sub_str} channel STT and locked '
+                f'{subchannel_ada} ADA from admin channel with it to pay fees.'
             )
 
         # Send subchannel publishers their collateral
@@ -219,13 +220,17 @@ class AdminNode(ElectionNode):
             LOG.debug(f'{sub_id} col_utxo: {pformat(col_utxo)}')
 
             txb.add_output(col_utxo)
-            tx_msgs.append(f'{ch_str} sent 5 ADA from admin channel fee pool to {sub_str} for use as collateral.')
+            tx_msgs.append(
+                f'{ch_str} sent 5 ADA from admin channel fee pool to '
+                f'{sub_str} for use as collateral.'
+            )
 
         if done_onboarding:
             tx_msgs.append(f'{ch_str} advanced phase to {new_phase}')
 
         # Tell the builder to actually mint the STTs.
         txb.mint = mint_assets
+        # TODO does this also get added to balance_and_sign...?
         mint_redeemer = Redeemer(data=AddSubChannels(channels=sub_ids))
         LOG.debug(f'mint_redeemer: {mint_redeemer}')
         txb.add_minting_script(script=self.election.script.mint_script, redeemer=mint_redeemer)
@@ -239,7 +244,119 @@ class AdminNode(ElectionNode):
         tx_signed = self.balance_and_sign_state_transition_tx(
             txb,
             cont_utxo,
-            cont_redeemer,
+            [cont_redeemer],
+        )
+
+        LOG.debug(f'tx_signed about to be submitted:\n%s:\n' % pformat(tx_signed))
+        OGMIOS_CTX.submit_tx(tx_signed)
+        LOG.debug(f'Submitted tx with id={tx_signed.id}')
+
+        for msg in tx_msgs:
+            LOG.info(msg)
+
+        return tx_signed
+
+    def rm_subchannels(
+            self,
+            subchannels: list[ChannelId],
+        ) -> Transaction:
+
+        LOG.debug('AdminNode.rm_subchannels')
+
+        # Things to accumulate and handle together at the end of the building process.
+        tx_msgs = []
+        redeemers = []
+        burn_assets = MultiAsset()
+
+        # ensure own collateral
+        # TODO factor out
+        admin_collateral = wait_for_collateral(self.publisher.wallet.addr)
+        LOG.debug('admin_collateral: %s' % pformat(admin_collateral))
+
+        # TODO start state transition edit section
+        (in_utxo, in_datum) = self.state()
+        LOG.debug('in_datum: %s' % pformat(in_datum))
+
+        in_state: AdminChannelState = in_datum.state
+        LOG.debug('in_state: %s' % pformat(in_state))
+
+        cont_redeemer = Redeemer(data=RmSubChannels(channels=subchannels))
+        redeemers.append(cont_redeemer)
+        LOG.debug('cont_redeemer: %s' % pformat(cont_redeemer))
+
+        remaining_ids = [i for i in in_state.subchannels if not i in subchannels]
+        LOG.debug('remaining_ids: %s' % remaining_ids)
+
+        cont_state: AdminChannelState = replace(
+            in_state,
+            subchannels = remaining_ids,
+            new_records = [],
+            seq = in_state.seq + 1,
+        )
+        LOG.debug('cont_state: %s' % pformat(cont_state))
+
+        cont_datum = AdminChannel(state=cont_state)
+        LOG.debug('cont_datum: %s' % pformat(cont_datum))
+
+        # See ElectionNode.post_public_records for more on this pattern:
+        cont_value = Value.from_primitive(in_utxo.output.amount.to_primitive())
+        cont_utxo = TransactionOutput(
+            address = self.election.address,
+            amount  = cont_value,
+            datum   = cont_datum,
+        )
+        # TODO end state transition edit section?
+
+        txb = (
+            TransactionBuilder(OGMIOS_CTX)
+            .add_script_input(
+                in_utxo,
+                script=self.election.script.spend_script,
+                redeemer=cont_redeemer
+            )
+            .add_output(cont_utxo)
+        )
+
+        # Burn each subchannel STT, add its UTXO as an input, and add its spend redeemer
+        for sub_id in subchannels:
+            sub_str = channel_id_to_string(sub_id)
+            (sub_utxo, sub_state) = self.subscriber.states[sub_id]
+            sub_assets = mint_channel_stt_assets(self.election.script.policy_id, -1, [sub_id])
+            LOG.debug(f'{sub_str} sub_assets: {pformat(sub_assets)}')
+            burn_assets += sub_assets
+            sub_redeemer = Redeemer(data=RmSubChannels(channels=subchannels))
+            redeemers.append(sub_redeemer)
+            LOG.debug(f'{sub_str} sub_redeemer: {sub_redeemer}')
+            txb.add_script_input(
+                sub_utxo,
+                script=self.election.script.spend_script,
+                redeemer=sub_redeemer,
+            )
+            tx_msgs.append(
+                f'admin burned {sub_str} channel STT '
+                'and returned its ADA to the admin channel fee pool.'
+            )
+
+        # Tell the builder to actually burn the STTs.
+        txb.mint = burn_assets
+        # TODO does this also get appended to redeemers?
+        burn_redeemer = Redeemer(data=RmSubChannels(channels=subchannels))
+        redeemers.append(burn_redeemer) # TODO required when spending but not minting?
+        LOG.debug(f'burn_redeemer: {burn_redeemer}')
+        txb.add_minting_script(script=self.election.script.mint_script, redeemer=burn_redeemer)
+
+        # Add our own collateral for this contract interaction
+        # TODO factor out, either to balance_and_sign or a new fn
+        txb.collaterals.append(admin_collateral)
+
+        # Add our own signature
+        # TODO move to balance_and_sign_state_transition_tx
+        txb.required_signers = [self.publisher.wallet.vkh]
+
+        tx_signed = self.balance_and_sign_state_transition_tx(
+            txb,
+            cont_utxo,
+            redeemers,
         )
 
         LOG.debug(f'tx_signed about to be submitted:\n%s:\n' % pformat(tx_signed))

@@ -245,6 +245,7 @@ def wait_for_collateral(address: Address) -> UTxO:
     while True:
         utxo = find_collateral_utxo(address)
         if utxo is not None:
+            time.sleep(OGMIOS_POLL_SEC) # TODO remove?
             return utxo
         if time.monotonic() >= deadline:
             raise TimeoutError(

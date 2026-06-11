@@ -26,6 +26,11 @@ include = ["egc*"]
 
 [tool.pytest.ini_options]
 
+# Show error tracebacks while the rest of the tests are still running.
+# Helpful because the testnet test suite can be pretty slow.
+# You can also run the local (non-testnet) tests separately. See markers.
+addopts = "--instafail"
+
 markers = [
   "local: marks tests as local (not requiring testnet) tests",
   "testnet: marks tests as (slow) testnet tests",

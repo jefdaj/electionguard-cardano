@@ -1,5 +1,6 @@
 import json
 import pytest
+from test_utils import local_test
 from egc import *
 import logging
 from pathlib import Path
@@ -8,6 +9,7 @@ from pprint import pprint
 
 LOG = logging.getLogger(__name__)
 
+@local_test
 def test_load_static_phases(
         static_phases: dict[int, ElectionPhase],
     ):
@@ -17,6 +19,7 @@ def test_load_static_phases(
         for (k, v) in static_phases.items()
     )
 
+@local_test
 def test_load_static_transactions(
         static_transactions: dict[str, dict[int, Tuple[ElectionAction, list[PublicRecord]]]],
     ):
@@ -29,6 +32,7 @@ def test_load_static_transactions(
             for rec in recs:
                 assert isinstance(rec, PublicRecord)
 
+@local_test
 def test_load_static_files_by_cid(
         static_records_list: list[PublicRecord],
         static_files_by_cid: dict[str, Path],
