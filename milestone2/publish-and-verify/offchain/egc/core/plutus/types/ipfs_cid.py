@@ -1,14 +1,11 @@
-# Should be kept in sync with onchain/validators/election/cid.ak
-
-import dataclasses
-from multiformats_cid import make_cid
-from pydantic.v1 import validator
-
-IpfsCid = bytes
 from dataclasses import dataclass, fields as dc_fields
 from multiformats_cid import make_cid
 from pycardano import PlutusData
 
+# Should be kept in sync with onchain/validators/election/types/ipfs_cid.ak
+
+
+type IpfsCid = bytes
 
 # CID Structure: [version(1)][codec(1)][hash_type(1)][hash_length(1)][hash(32)]
 # Expected:      0x01        0x55       0x12          0x20             [32-byte SHA-256]

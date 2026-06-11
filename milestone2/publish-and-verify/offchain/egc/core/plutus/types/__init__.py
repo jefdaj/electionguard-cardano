@@ -25,7 +25,11 @@ from .channel import (
     coerce_channel_id,
 )
 
-from .ipfs_cid import IpfsCid
+from .ipfs_cid import (
+  IpfsCid,
+  coerce_ipfs_cid,
+  ipfs_cid_to_string,
+)
 
 from .record import (
   Manifest,

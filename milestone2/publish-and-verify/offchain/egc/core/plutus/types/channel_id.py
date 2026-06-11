@@ -10,6 +10,7 @@ from pycardano import PlutusData
 # - "device1"   through "device100"
 # - "verifier1" through "verifier100"
 
+
 type ChannelId = bytes
 
 _CHANNEL_ID_RE = re.compile(

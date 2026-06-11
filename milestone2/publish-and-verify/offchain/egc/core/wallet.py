@@ -100,6 +100,7 @@ class Wallet:
     def save(self, sk_path: Path) -> None:
         Path(sk_path).write_text(self.to_json())
 
+    # TODO __str__ here?
     def __repr__(self) -> str:
         return f'Wallet(addr={self.addr!r}, vkh={self.vkh.to_cbor_hex()[:12]}…)'
 

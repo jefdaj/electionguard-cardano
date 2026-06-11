@@ -1,12 +1,13 @@
 # Should be kept in sync with onchain/validators/election/types/record.ak
 
-from .ballot_id import BallotId, BallotIdMixin
-from .channel_id import ChannelIdMixin
-from .ipfs_cid import IpfsCid, IpfsCidMixin
 from dataclasses import dataclass
 from pycardano import PlutusData
 from pydantic.v1 import validator
 from typing import Union
+
+from .ballot_id  import BallotIdMixin
+from .channel_id import ChannelIdMixin
+from .ipfs_cid   import IpfsCidMixin
 
 @dataclass
 class Manifest(PlutusData):
@@ -53,17 +54,17 @@ class Device(PlutusData):
 @dataclass
 class BallotSubmitted(BallotIdMixin, PlutusData):
     CONSTR_ID = 9
-    ballot_id: BallotId
+    ballot_id: bytes
 
 @dataclass
 class CastNotice(BallotIdMixin, PlutusData):
     CONSTR_ID = 10
-    ballot_id: BallotId
+    ballot_id: bytes
 
 @dataclass
 class BallotSpoiled(BallotIdMixin, PlutusData):
     CONSTR_ID = 11
-    ballot_id: BallotId
+    ballot_id: bytes
 
 @dataclass
 class CiphertextTally(PlutusData):
@@ -77,7 +78,7 @@ class TallyShare(PlutusData):
 @dataclass
 class SpoiledShare(BallotIdMixin, PlutusData):
     CONSTR_ID = 14
-    spoiled_id: BallotId # TODO same ballot- prefix, right?
+    spoiled_id: bytes # TODO same ballot- prefix, right?
     guardian_number: int
 
 @dataclass
@@ -87,12 +88,12 @@ class PlaintextTally(PlutusData):
 @dataclass
 class SpoiledResult(BallotIdMixin, PlutusData):
     CONSTR_ID = 16
-    ballot_id: BallotId
+    ballot_id: bytes
 
 @dataclass
 class Summary(ChannelIdMixin, PlutusData):
     CONSTR_ID = 17
-    verifier_id: BallotId
+    verifier_id: bytes
 
 PublicRecordMetadata = Union[
     Manifest,
@@ -101,6 +102,7 @@ PublicRecordMetadata = Union[
     GuardianBackup,
     GuardianVerification,
     JointKey,
+    Context,
     Constants,
     Device,
     BallotSubmitted,
@@ -117,5 +119,5 @@ PublicRecordMetadata = Union[
 @dataclass(repr=False)
 class PublicRecord(IpfsCidMixin, PlutusData):
     CONSTR_ID = 0
-    ipfs_cid: IpfsCid
+    ipfs_cid: bytes
     metadata: PublicRecordMetadata

@@ -42,8 +42,8 @@ def test_load_static_files_by_cid(
     assert len(static_files_by_cid) == 75
 
     for rec in static_records_list:
-        cid = str(rec.ipfs_cid)
-        path = static_files_by_cid[cid]
+        cid_str = ipfs_cid_to_string(rec.ipfs_cid)
+        path = static_files_by_cid[cid_str]
         assert isinstance(path, Path)
         with path.open('r') as f:
             assert json.load(f)

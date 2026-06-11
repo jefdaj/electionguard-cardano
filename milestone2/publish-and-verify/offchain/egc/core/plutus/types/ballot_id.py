@@ -1,7 +1,8 @@
 import re
-# from pydantic.v1 import validator
 from dataclasses import dataclass
 from pycardano import PlutusData
+
+# Should be kept in sync with onchain/validators/election/types/ballot_id.ak
 
 type BallotId = bytes
 
