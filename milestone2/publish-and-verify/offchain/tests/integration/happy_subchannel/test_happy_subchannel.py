@@ -129,11 +129,7 @@ def test_admin_tx1_sub(
     assert_nodes_in_sync(nodes)
 
 
-## -------- alternate admin_tx2: add single subchannel --------
-
-# @per_election_fixture
-# def add_action(subchannel_id: ChannelId) -> ElectionAction:
-#     return AddSubChannels(channels=[subchannel_id])
+## -------- admin_tx2: add single subchannel --------
 
 @per_election_fixture
 def single_onboarding_info(
@@ -168,7 +164,7 @@ def admin_s2(
     ))
 
 @per_election_fixture
-def single_add_tx(
+def admin_tx2(
         admin_tx1: Transaction,
         admin: AdminNode,
         single_onboarding_info: dict[ChannelId, VerificationKeyHash],
@@ -180,18 +176,58 @@ def single_add_tx(
         subchannel_ada = 10,
         done_onboarding = True, # TODO remove?
     )
-    LOG.debug(f'single_add_tx: {tx}')
+    LOG.debug(f'admin_tx2: {tx}')
     admin.wait_for_confirmation(tx)
     return tx
 
 @pytest.mark.testnet
-def test_single_add_tx(
-        single_add_tx: Transaction,
+def test_add_subchannel(
+        admin_tx2: Transaction,
         admin: AdminNode,
         single_nodes: list[ElectionNode],
         admin_s2: ChannelState,
     ):
-    assert isinstance(single_add_tx, Transaction)
+    assert isinstance(admin_tx2, Transaction)
     actual_state = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
     assert actual_state == admin_s2, 'admin unexpected state'
-    # assert_nodes_in_sync(single_nodes)
+    assert_nodes_in_sync(single_nodes)
+
+
+## ----------- admin_tx3: rm single subchannel -----------
+
+@per_election_fixture
+def admin_s3(
+        admin_s2: ChannelState,
+    ) -> ChannelState:
+    prev = admin_s2.state
+    return AdminChannel(state=replace(
+        prev,
+        subchannels = [],
+        new_records = [],
+        seq         = 3,
+    ))
+
+@per_election_fixture
+def admin_tx3(
+        admin_tx2: Transaction,
+        admin: AdminNode,
+        single_onboarding_info: dict[ChannelId, VerificationKeyHash],
+    ) -> Transaction:
+    sub_ids = list(single_onboarding_info.keys())
+    ch_strs = [channel_id_to_string(k) for k in sub_ids]
+    tx = admin.rm_subchannels(subchannels = sub_ids)
+    LOG.debug(f'admin_tx3: {tx}')
+    admin.wait_for_confirmation(tx)
+    return tx
+
+@pytest.mark.testnet
+def test_rm_subchannel(
+        admin: AdminNode,
+        single_nodes: list[ElectionNode],
+        admin_s3: ChannelState,
+        admin_tx3: Transaction,
+    ):
+    assert isinstance(admin_tx3, Transaction)
+    actual_state = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
+    assert actual_state == admin_s3
+    assert_nodes_in_sync(all_nodes)
