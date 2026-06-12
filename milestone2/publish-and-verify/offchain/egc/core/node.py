@@ -84,6 +84,8 @@ class ElectionNode:
 
     def wait_for_confirmation(self, tx: Transaction):
         self.publisher.wait_for_confirmation(tx)
+        ch_str = self.channel_str()
+        LOG.debug(f'{ch_str} confirmed tx {tx.id}')
         time.sleep(OGMIOS_DELAY_SEC)
 
     def balance_and_sign_state_transition_tx(

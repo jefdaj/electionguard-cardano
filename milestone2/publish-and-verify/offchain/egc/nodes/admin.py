@@ -98,7 +98,7 @@ class AdminNode(ElectionNode):
             cont_utxo,
         )
 
-        LOG.debug(f'tx_signed about to be submitted:\n%s:\n' % pformat(tx_signed))
+        LOG.debug(f'tx_signed about to be submitted:\n%s\n' % pformat(tx_signed))
         OGMIOS_CTX.submit_tx(tx_signed)
         LOG.debug(f'Submitted tx with id={tx_signed.id}')
 
@@ -245,7 +245,7 @@ class AdminNode(ElectionNode):
             cont_utxo,
         )
 
-        LOG.debug(f'tx_signed about to be submitted:\n%s:\n' % pformat(tx_signed))
+        LOG.debug(f'tx_signed about to be submitted:\n%s\n' % pformat(tx_signed))
         OGMIOS_CTX.submit_tx(tx_signed)
         LOG.debug(f'Submitted tx with id={tx_signed.id}')
 
@@ -320,11 +320,15 @@ class AdminNode(ElectionNode):
             sub_assets = mint_channel_stt_assets(self.election.script.policy_id, -1, [sub_id])
             LOG.debug(f'{sub_str} sub_assets: {pformat(sub_assets)}')
             burn_assets += sub_assets
+
+            # TODO does anything in the contract force this to be the same across all utxos?
+            # TODO if not, would it make more sense to have singletons for the subchannels?
             sub_redeemer = Redeemer(data=RmSubChannels(channels=subchannels))
             LOG.debug(f'{sub_str} sub_redeemer: {sub_redeemer}')
+
             txb.add_script_input(
                 sub_utxo,
-                script=self.election.script.spend_script,
+                script=self.election.script.spend_script, # deep copy here doesn't help
                 redeemer=sub_redeemer,
             )
             tx_msgs.append(
@@ -351,7 +355,7 @@ class AdminNode(ElectionNode):
             cont_utxo,
         )
 
-        LOG.debug(f'tx_signed about to be submitted:\n%s:\n' % pformat(tx_signed))
+        LOG.debug(f'tx_signed about to be submitted:\n%s\n' % pformat(tx_signed))
         OGMIOS_CTX.submit_tx(tx_signed)
         LOG.debug(f'Submitted tx with id={tx_signed.id}')
 

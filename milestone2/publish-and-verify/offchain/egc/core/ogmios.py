@@ -118,9 +118,11 @@ def _assign_spend_redeemer_indices(txb: "TransactionBuilder") -> None:
     """Set redeemer.index for each spend redeemer to the position of its
     UTxO in the lexicographically sorted inputs set (per Cardano ledger spec)."""
     # Sort inputs the same way the ledger will: by (tx_id bytes, output index).
+    # TODO is this actually limited to spend redeemers? i guess there's only one mint
     sorted_inputs = sorted(
         txb.inputs,
-        key=lambda u: (bytes(u.input.transaction_id), u.input.index),
+        key=lambda u: u.input.to_cbor(),
+        # key=lambda u: (bytes(u.input.transaction_id), u.input.index),
     )
     for i, utxo in enumerate(sorted_inputs):
         redeemer = txb._inputs_to_redeemers.get(utxo)
@@ -132,7 +134,8 @@ def evaluate_and_set_ex_units(
     out_utxo: TransactionOutput,
 ) -> None:
 
-    # TODO is it a pycardano bug that this needs to be done manually?
+    # TODO try each option with, without this
+    # TODO if it works, is it a pycardano bug that this needs to be done manually?
     _assign_spend_redeemer_indices(txb)
 
     STUB_FEE = 200_000
