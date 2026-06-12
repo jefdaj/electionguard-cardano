@@ -257,7 +257,7 @@ fn validate_rmsubchannels_admin_spend(
   expect AdminChannel(admin_cont_state) = cont_state
 
   // TODO allow at other times too?
-  let final_phase = is_final_phase(admin_state.phase) ?
+  // let final_phase = is_final_phase(admin_state.phase) ?
 
   let valid_transition = is_valid_phase_transition(admin_state.phase, admin_cont_state.phase) ?
 
@@ -269,7 +269,7 @@ fn validate_rmsubchannels_admin_spend(
   let n_channels_correct = correct_n_channels_updated(own_ref, tx, channels_to_rm)
 
   and {
-    final_phase,
+    // final_phase,
     valid_transition,
     cont_as_expected,
     n_channels_correct,
