@@ -62,7 +62,7 @@
         pygments
         watchdog
         pytest
-        pytest-instafail
+        # pytest-instafail
         py-multiformats-cid # exposed on its own to help generate static CID examples
         rich
       ];

@@ -23,7 +23,7 @@ const admin_pre_add_state = AdminChannelState {
   subchannels: [],
   new_records: [],
   phase: ep.ElectionConfigPhase(ep.ConfigOnboardingPhase),
-  seq: 2 // doesn't matter as long as it increases each step
+  seq: 2 // doesn't matter as long as it increments each step
 }
 
 const admin_pre_add_output = Output {
