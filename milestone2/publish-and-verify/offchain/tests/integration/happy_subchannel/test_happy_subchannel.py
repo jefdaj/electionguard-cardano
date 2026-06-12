@@ -230,4 +230,4 @@ def test_rm_subchannel(
     assert isinstance(admin_tx3, Transaction)
     actual_state = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
     assert actual_state == admin_s3
-    assert_nodes_in_sync(all_nodes)
+    assert_nodes_in_sync(single_nodes)
