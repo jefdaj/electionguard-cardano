@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pycardano import PlutusData, Network, VerificationKeyHash, Address
 from typing import List, Union, TYPE_CHECKING
 
-# TODO rewrite these to use __repr__ rather than __str__ and standardize on JSON?
+# TODO rewrite these to use __str__ rather than __repr__ and standardize on JSON?
 
 @dataclass
 class AdminChannelState(PlutusData):
@@ -18,7 +18,7 @@ class AdminChannelState(PlutusData):
     phase: ElectionPhase
     seq: int
 
-    def __str__(self):
+    def __repr__(self):
         # TODO are these missing their list brackets?
         subchannels_str = [ch.hex() for ch in self.subchannels]
         records_str = [str(r) for r in self.new_records] # TODO is this right?
@@ -39,7 +39,7 @@ class SubChannelState(PlutusData):
     new_records: List[PublicRecord]
     seq: int
 
-    def __str__(self):
+    def __repr__(self):
         records_str = [str(r) for r in self.new_records] # TODO is this right?
         return (
             'SubChannelState('
@@ -54,7 +54,7 @@ class AdminChannel(PlutusData):
     CONSTR_ID = 0
     state: AdminChannelState
 
-    def __str__(self):
+    def __repr__(self):
         return f'AdminChannel({str(self.state)})'
 
 @dataclass
@@ -62,7 +62,7 @@ class SubChannel(PlutusData):
     CONSTR_ID = 1
     state: SubChannelState
 
-    def __str__(self):
+    def __repr__(self):
         return f'SubChannel({str(self.state)})'
 
 ChannelState = Union[AdminChannel, SubChannel]

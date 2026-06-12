@@ -177,12 +177,12 @@ class AdminNode(ElectionNode):
             sub_str = channel_id_to_string(sub_id)
 
             stt_assets = mint_channel_stt_assets(self.election.script.policy_id, 1, [sub_id])
-            LOG.debug(f'{sub_id} stt_assets: {pformat(stt_assets)}')
+            LOG.debug(f'{sub_str} stt_assets: {pformat(stt_assets)}')
 
             mint_assets += stt_assets
 
             stt_amt = Value(subchannel_ada * LOVELACE_PER_ADA, stt_assets)
-            LOG.debug(f'{sub_id} stt_amt: {pformat(stt_amt)}')
+            LOG.debug(f'{sub_str} stt_amt: {pformat(stt_amt)}')
 
             stt_datum = SubChannel(state=SubChannelState(
                 channel_id  = sub_id,
@@ -190,14 +190,14 @@ class AdminNode(ElectionNode):
                 new_records = [],
                 seq         = 0,
             ))
-            LOG.debug(f'{sub_id} stt_datum: {pformat(stt_datum)}')
+            LOG.debug(f'{sub_str} stt_datum: {pformat(stt_datum)}')
 
             stt_utxo = TransactionOutput(
                 address = self.election.address,
                 amount  = stt_amt,
                 datum   = stt_datum,
             )
-            LOG.debug(f'{sub_id} stt_utxo: {pformat(stt_utxo)}')
+            LOG.debug(f'{sub_str} stt_utxo: {pformat(stt_utxo)}')
 
             txb.add_output(stt_utxo)
             tx_msgs.append(
@@ -210,13 +210,13 @@ class AdminNode(ElectionNode):
             sub_str = channel_id_to_string(sub_id)
 
             sub_addr = addr_for_vkh(sub_vkh)
-            LOG.debug(f'{sub_id} sub_addr: {sub_addr}')
+            LOG.debug(f'{sub_str} sub_addr: {sub_addr}')
 
             col_utxo = TransactionOutput(
                 address = sub_addr,
                 amount = Value(coin=COLLATERAL_LOVELACE),
             )
-            LOG.debug(f'{sub_id} col_utxo: {pformat(col_utxo)}')
+            LOG.debug(f'{sub_str} col_utxo: {pformat(col_utxo)}')
 
             txb.add_output(col_utxo)
             tx_msgs.append(
