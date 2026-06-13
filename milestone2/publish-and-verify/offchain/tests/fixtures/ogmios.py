@@ -1,6 +1,6 @@
 import pytest
 from egc import *
-from test_utils import global_fixture
+from helpers import global_fixture
 import logging
 
 LOG = logging.getLogger(__name__)

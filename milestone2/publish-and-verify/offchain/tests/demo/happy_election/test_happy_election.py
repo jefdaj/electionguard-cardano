@@ -4,7 +4,7 @@ import pytest
 from dataclasses import replace
 from pycardano import *
 from egc import *
-from test_utils import per_election_fixture, assert_nodes_in_sync
+from helpers import per_election_fixture, assert_nodes_in_sync
 import logging
 import time
 
@@ -655,7 +655,7 @@ def admin_tx8(
     admin.wait_for_confirmation(tx)
     return tx
 
-# TODO move to test_utils and use everywhere?
+# TODO move to helpers and use everywhere?
 # TODO rename _sub tests -> checkpoints and add cross-channel dependencies
 def assert_node_state(
         node: ElectionNode,

@@ -26,9 +26,11 @@ include = ["egc*"]
 
 [tool.pytest.ini_options]
 
-# Run tests in non-alphabetical order.
+pythonpath = ["tests"]
+
+# Run tests in a particular non-alphabetical order.
 # I also run tests marked local before the ones marked testnet,
-# but that's controlled via test.sh
+# but that's controlled via CLI args in test.sh
 testpaths = [
   "tests/setup",
   "tests/unit",
@@ -51,5 +53,3 @@ log_file = "pytest.log"
 log_file_level = "DEBUG"
 log_format = "%(asctime)s [%(levelname)s] %(name)s (%(filename)s:%(lineno)d): %(message)s"
 log_date_format = "%Y-%m-%d %H:%M:%S"
-
-pythonpath = ["tests"]

@@ -1,7 +1,7 @@
 import pytest
 from pycardano import *
 from egc import *
-from test_utils import global_fixture, per_election_fixture
+from helpers import global_fixture, per_election_fixture
 import logging
 
 LOG = logging.getLogger(__name__)
