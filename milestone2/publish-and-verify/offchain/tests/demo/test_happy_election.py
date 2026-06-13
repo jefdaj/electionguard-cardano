@@ -201,6 +201,7 @@ def test_phase1_onboarding(
     assert_node_state(guardian3, guardian3_s0)
     assert_node_state(device1, device1_s0)
     assert_node_state(verifier1, verifier1_s0)
+    # TODO test that subchannel nodes can find their collateral now?
 
 
 ## =================================
@@ -254,6 +255,26 @@ def test_admin_tx3(
     assert isinstance(admin_tx3, Transaction)
     assert_node_state(admin, admin_s3)
     assert_nodes_in_sync(all_nodes)
+
+@pytest.mark.testnet
+def test_phase2_ceremony(
+        admin, admin_s3, admin_tx3,
+        guardian1, guardian1_s1, guardian1_tx1,
+        guardian2, guardian2_s0,
+        guardian3, guardian3_s0,
+        device1, device1_s0,
+        verifier1, verifier1_s0,
+        all_nodes: list[ElectionNode],
+    ):
+    assert_nodes_in_sync(all_nodes)
+    assert_node_state(admin, admin_s3)
+    assert_node_state(guardian1, guardian1_s1)
+    assert_node_state(guardian2, guardian2_s0)
+    assert_node_state(guardian3, guardian3_s0)
+    assert_node_state(device1, device1_s0)
+    assert_node_state(verifier1, verifier1_s0)
+
+# TODO test_phase3_voting goes here too, because admin doesn't post anything more first?
 
 
 ## ----------- admin_tx4 -----------
