@@ -166,9 +166,17 @@ class ElectionNode:
         out_state = replace(
             in_state,
             new_records = new_records,
-            phase = in_state.phase if new_phase is None else new_phase,
             seq = in_state.seq + 1,
         )
+
+        if isinstance(out_state, AdminChannelState):
+            out_state = replace(
+                out_state,
+                phase = in_state.phase if new_phase is None else new_phase,
+            )
+        else:
+            assert new_phase is None, f'{ch_str} tried to advance phase, but is not an admin'
+
         # assert isinstance(out_state, AdminChannelState)
         LOG.debug('out_state: %s' % pformat(out_state))
 
