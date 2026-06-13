@@ -7,6 +7,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
+# TODO remove?
 @global_fixture
 def static_phases():
     return STATIC_PHASES

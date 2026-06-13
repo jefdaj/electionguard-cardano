@@ -11,6 +11,17 @@ import time
 LOG = logging.getLogger(__name__)
 
 
+# STATIC_PHASES = \
+# {0: ElectionConfigPhase(phase=ConfigAnnouncePhase()),
+#  1: ElectionConfigPhase(phase=ConfigOnboardingPhase()),
+#  2: ElectionConfigPhase(phase=ConfigCeremonyPhase()),
+#  3: ElectionVotingPhase(),
+#  4: ElectionResultsPhase(phase=ResultsTallyPhase()),
+#  5: ElectionResultsPhase(phase=ResultsDecryptPhase()),
+#  6: ElectionVerifyPhase(),
+#  7: ElectionFinalizePhase()}
+
+
 ## =================================
 ## initial solo admin transactions:
 ## 0. init election
@@ -55,13 +66,12 @@ def test_admin_tx0(
 def admin_s1(
         admin_s0: ChannelState,
         static_transactions,
-        static_phases,
     ) -> ChannelState:
     prev = admin_s0.state
     return AdminChannel(state=replace(
         prev,
         new_records = static_transactions['admin'][1][1],
-        phase       = static_phases[1],
+        phase       = ElectionConfigPhase(phase=ConfigOnboardingPhase()),
         seq         = 1,
     ))
 
@@ -70,11 +80,10 @@ def admin_tx1(
         admin: AdminNode,
         admin_tx0: Transaction,
         static_transactions,
-        static_phases,
     ) -> Transaction:
     tx = admin.post_public_records(
         new_records = static_transactions['admin'][1][1],
-        new_phase   = static_phases[1],
+        new_phase   = ElectionConfigPhase(phase=ConfigOnboardingPhase()),
     )
     LOG.debug(f'admin_tx1: {tx}')
     admin.wait_for_confirmation(tx)
@@ -102,6 +111,19 @@ def all_nodes(
     ) -> list[ElectionNode]:
     return [funder, admin] + subchannel_nodes
 
+# test_phase* make sure the TXs are submitted in a realistic order,
+# and that all the states line up as expected at each checkpoint. It's a
+# little confusing because each one is tested right after the phase variable
+# has advanced to the next phase. For example this one (phase 0) should be
+# tested right after having updated to phase 1.
+@pytest.mark.testnet
+def test_phase0_announce(
+        funder,
+        admin, admin_s1, admin_tx1,
+    ):
+    assert_nodes_in_sync([funder, admin])
+    assert_node_state(admin, admin_s1)
+
 
 ## ----------- admin_tx2 -----------
 
@@ -126,7 +148,7 @@ def admin_s2(
         prev,
         subchannels = subchannel_ids,
         new_records = [],
-        phase       = static_phases[2],
+        phase       = ElectionConfigPhase(phase=ConfigCeremonyPhase()),
         seq         = 2,
     ))
 
@@ -162,32 +184,23 @@ def test_admin_tx2(
         expected_state = sub_s0(sub_node.channel_id(), sub_node.publisher.wallet.vkh)
         assert_node_state(sub_node, expected_state)
 
-
-# STATIC_PHASES = \
-# {0: ElectionConfigPhase(phase=ConfigAnnouncePhase()),
-#  1: ElectionConfigPhase(phase=ConfigOnboardingPhase()),
-#  2: ElectionConfigPhase(phase=ConfigCeremonyPhase()),
-#  3: ElectionVotingPhase(),
-#  4: ElectionResultsPhase(phase=ResultsTallyPhase()),
-#  5: ElectionResultsPhase(phase=ResultsDecryptPhase()),
-#  6: ElectionVerifyPhase(),
-#  7: ElectionFinalizePhase()}
-
-# TODO test_p0_announce
-# TODO test_p1_onboarding
-# ...
-
-# makes sure the TXs are tested in a plausible order
-# TODO how to do this without depending on order of fn definitions?
 @pytest.mark.testnet
-def test_p2_ceremony(
+def test_phase1_onboarding(
         admin, admin_s2, admin_tx2,
-        guardian1, guardian1_s1, guardian1_tx1,
+        guardian1, guardian1_s0,
+        guardian2, guardian2_s0,
+        guardian3, guardian3_s0,
+        device1, device1_s0,
+        verifier1, verifier1_s0,
         all_nodes: list[ElectionNode],
     ):
     assert_nodes_in_sync(all_nodes)
     assert_node_state(admin, admin_s2)
-    assert_node_state(guardian1, guardian1_s1)
+    assert_node_state(guardian1, guardian1_s0)
+    assert_node_state(guardian2, guardian2_s0)
+    assert_node_state(guardian3, guardian3_s0)
+    assert_node_state(device1, device1_s0)
+    assert_node_state(verifier1, verifier1_s0)
 
 
 ## =================================
