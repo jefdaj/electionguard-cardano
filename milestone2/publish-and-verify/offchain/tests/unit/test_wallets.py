@@ -17,9 +17,16 @@ def test_load_admin_wallet_by_address(admin_wallet: Wallet, keys_dir: Path) -> W
     (_, w2) = load_wallet_by_address(admin_wallet.addr, keys_dir)
     assert w2 == admin_wallet
 
-@pytest.mark.testnet
-def test_init_admin(admin: AdminNode):
-    assert isinstance(admin, AdminNode)
-    assert isinstance(admin.election, ElectionContext)
-    assert isinstance(admin.publisher, ElectionPublisher)
-    assert isinstance(admin.subscriber, ElectionSubscriber)
+@pytest.mark.local
+def test_subchannel_wallets(
+        guardian1_wallet: Wallet,
+        guardian2_wallet: Wallet,
+        guardian3_wallet: Wallet,
+        device1_wallet: Wallet,
+        verifier1_wallet: Wallet,
+    ):
+        assert isinstance(guardian1_wallet, Wallet)
+        assert isinstance(guardian2_wallet, Wallet)
+        assert isinstance(guardian3_wallet, Wallet)
+        assert isinstance(device1_wallet, Wallet)
+        assert isinstance(verifier1_wallet, Wallet)

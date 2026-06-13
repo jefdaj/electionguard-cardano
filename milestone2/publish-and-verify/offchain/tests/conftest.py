@@ -10,6 +10,7 @@ pytest_plugins = [
     "fixtures.script",
     "fixtures.wallet",
     "fixtures.data",
+    "fixtures.subchannels",
 ]
 
 def pytest_configure(config):

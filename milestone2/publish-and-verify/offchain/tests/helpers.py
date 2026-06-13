@@ -26,3 +26,16 @@ def assert_nodes_in_sync(nodes: List[ElectionNode]):
         assert node.subscriber.states  == ref.subscriber.states , "state mismatch"
     LOG.info(f'All {len(nodes)+1} nodes in sync: ' + ', '.join(s for s in ch_strs))
     LOG.debug(f'Current state:\n\n{pformat(ref.subscriber.states)}\n')
+
+# TODO rename _sub tests -> checkpoints and add cross-channel dependencies
+def assert_node_state(
+        node: ElectionNode,
+        expected_state: ChannelState,
+    ):
+    assert isinstance(node, ElectionNode)
+    assert isinstance(expected_state, ChannelState)
+    node_str = node.channel_str()
+    (state_utxo, actual_state) = node.state()
+    LOG.debug(f'{node_str} latest state utxo: {state_utxo}')
+    assert actual_state == expected_state, f'{node_str} unexpected state: {actual_state}'
+    LOG.debug(f'{node_str} state as expected: {actual_state}')
