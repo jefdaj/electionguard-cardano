@@ -11,7 +11,7 @@ LOG = logging.getLogger(__name__)
 # is a particular usage path through the contract. Most fixtures are package
 # scoped.
 global_fixture       = pytest.fixture(scope='session')
-per_election_fixture = pytest.fixture(scope='package')
+per_election_fixture = pytest.fixture(scope='module')
 
 def assert_nodes_in_sync(nodes: List[ElectionNode]):
     if len(nodes) < 2:

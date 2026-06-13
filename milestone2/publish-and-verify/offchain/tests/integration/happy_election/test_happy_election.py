@@ -655,6 +655,20 @@ def admin_tx8(
     admin.wait_for_confirmation(tx)
     return tx
 
+# TODO move to test_utils and use everywhere?
+# TODO rename _sub tests -> checkpoints and add cross-channel dependencies
+def assert_node_state(
+        node: ElectionNode,
+        expected_state: ChannelState,
+    ):
+    assert isinstance(node, ElectionNode)
+    assert isinstance(state, ChannelState)
+    node_str = node.channel_str()
+    (state_utxo, actual_state) = node.state()
+    LOG.debug(f'{node_str} latest state utxo: {state_utxo}')
+    LOG.debug(f'{node_str} state as expected: {actual_state}')
+    assert actual_state == expected_state
+
 @pytest.mark.testnet
 def test_admin_tx8(
         admin: AdminNode,
@@ -662,8 +676,9 @@ def test_admin_tx8(
         admin_tx8: Transaction,
     ):
     assert isinstance(admin_tx8, Transaction)
-    actual_state = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
-    assert actual_state == admin_s8
+    # actual_state = admin.subscriber.states[ADMIN_CHANNEL_ID][1]
+    # assert actual_state == admin_s8
+    assert_node_state(admin, admin_s8)
 
 # @pytest.mark.testnet
 # def test_admin_tx8_sub(

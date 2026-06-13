@@ -155,18 +155,16 @@ def evaluate_and_set_ex_units(
         transaction_witness_set=txb.build_witness_set(),
     )
 
-    for r in txb._redeemer_list:
-        LOG.warning(f"redeemer tag={r.tag} index={r.index} data={r.data}")
-    LOG.warning(f"num script inputs: {len([i for i in txb.inputs if ...])}")
-
     result = txb.context.evaluate_tx(draft_tx)
 
     # Add a defensive assertion right before the pointer lookup so the failure
     # mode is loud and clear if a future PyCardano version changes when
     # tags/indices get assigned.
-    # for r in txb._redeemer_list:
-    #     assert r.tag is not None, f"Redeemer tag not set: {r}"
-    #     assert r.index is not None, f"Redeemer index not set: {r}"
+    for r in txb._redeemer_list:
+        LOG.debug(f"redeemer tag={r.tag} index={r.index} data={r.data}")
+        assert r.tag   is not None, f"Redeemer tag not set: {r}"
+        assert r.index is not None, f"Redeemer index not set: {r}"
+    LOG.debug(f"num script inputs: {len([i for i in txb.inputs if ...])}")
 
     mem_buf = 1.0 + txb.execution_memory_buffer
     step_buf = 1.0 + txb.execution_step_buffer
@@ -357,3 +355,10 @@ def return_collateral(
         publisher_wallet.addr, funder_address, signed.id,
     )
     return signed
+
+
+### misc utils ###
+
+def utxo_for_input(tx_in: TransactionInput) -> UTxO | None:
+    tx_id_hex = tx_in.transaction_id.payload.hex()
+    return OGMIOS_CTX.utxo_by_tx_id(tx_id_hex, tx_in.index)

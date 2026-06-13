@@ -125,6 +125,7 @@ class AdminNode(ElectionNode):
         LOG.debug('admin_collateral: %s' % pformat(admin_collateral))
 
         (in_utxo, in_datum) = self.state()
+        LOG.debug('admin in_utxo: %s' % pformat(in_utxo))
         LOG.debug('in_datum: %s' % pformat(in_datum))
 
         in_state: AdminChannelState = in_datum.state
@@ -272,6 +273,7 @@ class AdminNode(ElectionNode):
 
         # TODO start state transition edit section
         (in_utxo, in_datum) = self.state()
+        LOG.debug('in_utxo: %s' % pformat(in_utxo))
         LOG.debug('in_datum: %s' % pformat(in_datum))
 
         in_state: AdminChannelState = in_datum.state
@@ -317,6 +319,7 @@ class AdminNode(ElectionNode):
         for sub_id in subchannels:
             sub_str = channel_id_to_string(sub_id)
             (sub_utxo, sub_state) = self.subscriber.states[sub_id]
+            LOG.debug(f'{sub_str} sub_utxo: {pformat(sub_utxo)}')
             sub_assets = mint_channel_stt_assets(self.election.script.policy_id, -1, [sub_id])
             LOG.debug(f'{sub_str} sub_assets: {pformat(sub_assets)}')
             burn_assets += sub_assets
@@ -354,6 +357,11 @@ class AdminNode(ElectionNode):
             txb,
             cont_utxo,
         )
+
+        for tx_in in tx_signed.transaction_body.inputs:
+            utxo = utxo_for_input(tx_in)
+            LOG.debug(f'Input UTXO found: {utxo}')
+            assert utxo is not None, f"Input UTXO not found: {tx_in}"
 
         LOG.debug(f'tx_signed about to be submitted:\n%s\n' % pformat(tx_signed))
         OGMIOS_CTX.submit_tx(tx_signed)

@@ -18,7 +18,8 @@ def test_roundtrip_electioncontext(dummy_electioncontext: ElectionContext):
     dec2 = ElectionContext.from_dict(tmp)
     assert dec2 == dummy_electioncontext
 
-# TODO rename something less ambiguous?
 @pytest.mark.testnet
-def test_election(election: ElectionContext):
+def test_election_fixture(election: ElectionContext):
+    # This is mainly for that the teardown works.
+    # TODO is there a better way to do that explicitly?
     assert isinstance(election, ElectionContext)

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -x
+set -e
 
 # This tells it to use the traced plutus blueprint,
 # to leave generated keys in the tmpdir after tests,
@@ -10,4 +11,6 @@ set -x
 export EGC_MODE=test
 
 EXTRA_ARGS="$@"
-time pytest -vv $EXTRA_ARGS # 2>&1 | tee test.log
+
+time pytest -vv -m 'local' $EXTRA_ARGS
+time pytest -vv -m testnet $EXTRA_ARGS
