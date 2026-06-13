@@ -163,6 +163,33 @@ def test_admin_tx2(
         assert_node_state(sub_node, expected_state)
 
 
+# STATIC_PHASES = \
+# {0: ElectionConfigPhase(phase=ConfigAnnouncePhase()),
+#  1: ElectionConfigPhase(phase=ConfigOnboardingPhase()),
+#  2: ElectionConfigPhase(phase=ConfigCeremonyPhase()),
+#  3: ElectionVotingPhase(),
+#  4: ElectionResultsPhase(phase=ResultsTallyPhase()),
+#  5: ElectionResultsPhase(phase=ResultsDecryptPhase()),
+#  6: ElectionVerifyPhase(),
+#  7: ElectionFinalizePhase()}
+
+# TODO test_p0_announce
+# TODO test_p1_onboarding
+# ...
+
+# makes sure the TXs are tested in a plausible order
+# TODO how to do this without depending on order of fn definitions?
+@pytest.mark.testnet
+def test_p2_ceremony(
+        admin, admin_s2, admin_tx2,
+        guardian1, guardian1_s1, guardian1_tx1,
+        all_nodes: list[ElectionNode],
+    ):
+    assert_nodes_in_sync(all_nodes)
+    assert_node_state(admin, admin_s2)
+    assert_node_state(guardian1, guardian1_s1)
+
+
 ## =================================
 ## parallel admin section:
 ## 3. finalize config
@@ -461,7 +488,6 @@ def admin_s8(
 
 @per_election_fixture
 def admin_tx8(
-        guardian1_tx1: Transaction,
         admin_tx7: Transaction,
         admin: AdminNode,
         onboarding_info: dict[ChannelId, VerificationKeyHash],
