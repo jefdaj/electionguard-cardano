@@ -2,8 +2,15 @@ import pytest
 from egc import *
 
 @pytest.mark.testnet
-def test_ogmios_up(ogmios: OgmiosV6ChainContext):
-    assert ogmios.last_block_slot > 101181854
+def test_ogmios_ready(ogmios: OgmiosV6ChainContext):
+    health = ogmios_health_sync()
+    status = health.get("connectionStatus")
+    sync   = health.get("networkSynchronization")
+    if status != "connected":
+        raise RuntimeError(f"Ogmios not connected to node: {health}")
+    if not isinstance(sync, (int, float)) or sync < 0.999:
+        raise RuntimeError(f"Ogmios not synced (networkSynchronization={sync}): {health}")
+    assert health["network"] == "preview", "Cardano node running wrong network!" # TODO testnet?
 
 @pytest.mark.testnet
 def test_query_network_tip(ogmios: OgmiosV6ChainContext):

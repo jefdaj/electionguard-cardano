@@ -662,7 +662,7 @@ def assert_node_state(
         expected_state: ChannelState,
     ):
     assert isinstance(node, ElectionNode)
-    assert isinstance(state, ChannelState)
+    assert isinstance(expected_state, ChannelState)
     node_str = node.channel_str()
     (state_utxo, actual_state) = node.state()
     LOG.debug(f'{node_str} latest state utxo: {state_utxo}')

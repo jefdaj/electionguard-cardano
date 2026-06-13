@@ -1,5 +1,4 @@
-# TODO rename node everywhere?
-
+import aiohttp
 import asyncio
 import json
 import websockets
@@ -39,6 +38,21 @@ OGMIOS_TIMEOUT_SEC = 300.0
 # Estimate of how long it might take a new TX to show up in the node.
 # TODO how much longer should this be for production use?
 OGMIOS_DELAY_SEC = 3.0
+
+
+### inital health check before running any testnet tests ###
+
+async def ogmios_health() -> dict:
+    url = f"http://{OGMIOS_HOST}:{OGMIOS_PORT}/health"
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as resp:
+            resp.raise_for_status()
+            health = await resp.json()
+    return health
+
+def ogmios_health_sync() -> dict:
+    return asyncio.run(ogmios_health())
+
 
 ### info for subscriber config ###
 
