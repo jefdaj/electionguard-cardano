@@ -39,3 +39,11 @@ def assert_node_state(
     LOG.debug(f'{node_str} latest state utxo: {state_utxo}')
     assert actual_state == expected_state, f'{node_str} unexpected state: {actual_state}'
     LOG.debug(f'{node_str} state as expected: {actual_state}')
+
+def sub_s0(sub_id: ChannelId, sub_vkh: VerificationKeyHash) -> ChannelState:
+    return SubChannel(state=SubChannelState(
+        channel_id  = sub_id,
+        publisher   = sub_vkh.payload,
+        new_records = [],
+        seq         = 0,
+    ))

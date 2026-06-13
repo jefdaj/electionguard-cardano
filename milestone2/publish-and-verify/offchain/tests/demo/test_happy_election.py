@@ -4,7 +4,7 @@ import pytest
 from dataclasses import replace
 from pycardano import *
 from egc import *
-from helpers import per_election_fixture, assert_nodes_in_sync, assert_node_state
+from helpers import per_election_fixture, assert_nodes_in_sync, assert_node_state, sub_s0
 import logging
 import time
 
@@ -105,25 +105,6 @@ def all_nodes(
 
 ## ----------- admin_tx2 -----------
 
-# TODO remove?
-# @per_election_fixture
-# def subchannel_wallets(
-#         subchannel_ids,
-#         guardian1_wallet: Wallet,
-#         guardian2_wallet: Wallet,
-#         guardian3_wallet: Wallet,
-#         device1_wallet: Wallet,
-#         verifier1_wallet: Wallet,
-#     ) -> dict[ChannelId, Wallet]:
-#     wallets = [
-#         guardian1_wallet,
-#         guardian2_wallet,
-#         guardian3_wallet,
-#         device1_wallet,
-#         verifier1_wallet,
-#     ]
-#     return {k:v for (k,v) in zip(subchannel_ids, wallets)} # TODO sort?
-
 @per_election_fixture
 def onboarding_info(
         subchannel_nodes: list[ElectionNode],
@@ -166,14 +147,6 @@ def admin_tx2(
     admin.wait_for_confirmation(tx)
     return tx
 
-def sub_s0(sub_id: ChannelId, sub_wallet: Wallet) -> ChannelState:
-    return SubChannel(state=SubChannelState(
-        channel_id  = sub_id,
-        publisher   = sub_wallet.vkh.payload,
-        new_records = [],
-        seq         = 0,
-    ))
-
 @pytest.mark.testnet
 def test_admin_tx2(
         admin: AdminNode,
@@ -186,7 +159,7 @@ def test_admin_tx2(
     assert_nodes_in_sync(all_nodes)
     assert_node_state(admin, admin_s2)
     for sub_node in subchannel_nodes:
-        expected_state = sub_s0(sub_node.channel_id(), sub_node.publisher.wallet)
+        expected_state = sub_s0(sub_node.channel_id(), sub_node.publisher.wallet.vkh)
         assert_node_state(sub_node, expected_state)
 
 
@@ -415,6 +388,54 @@ def test_admin_tx7(
     assert_node_state(admin, admin_s7)
 
 
+##  =================================
+##  guardian1 transactions:
+##  1. key ceremony round 1
+##  2. key ceremony round 2
+##  3. key ceremony round 3
+##  4. decrypt results
+##  5. summary (verification)
+##  =================================
+
+## ----------- guardian1_tx1 -----------
+
+@per_election_fixture
+def guardian1_s1(
+        guardian1_s0: ChannelState,
+        static_transactions,
+    ) -> ChannelState:
+    prev = guardian1_s0.state
+    return SubChannel(state=replace(
+        prev,
+        new_records = static_transactions['guardian1'][1][1],
+        seq = 1,
+    ))
+
+@per_election_fixture
+def guardian1_tx1(
+        admin_tx2: Transaction,
+        guardian1: GuardianNode,
+        static_transactions,
+    ) -> Transaction:
+    tx = guardian1.post_public_records(
+        new_records = static_transactions['guardian1'][1][1],
+    )
+    LOG.debug(f'guardian1_tx1: {tx}')
+    guardian1.wait_for_confirmation(tx)
+    return tx
+
+@pytest.mark.testnet
+def test_guardian1_tx1(
+        guardian1: GuardianNode,
+        guardian1_s1: ChannelState,
+        guardian1_tx1: Transaction,
+        all_nodes: list[ElectionNode],
+    ):
+    assert isinstance(guardian1_tx1, Transaction)
+    assert_node_state(guardian1, guardian1_s1)
+    assert_nodes_in_sync(all_nodes)
+
+
 ## =================================
 ## final admin section:
 ## 8. rm subchannels
@@ -440,6 +461,7 @@ def admin_s8(
 
 @per_election_fixture
 def admin_tx8(
+        guardian1_tx1: Transaction,
         admin_tx7: Transaction,
         admin: AdminNode,
         onboarding_info: dict[ChannelId, VerificationKeyHash],

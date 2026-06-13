@@ -28,6 +28,7 @@ def tx0(init_tx: Transaction) -> Transaction:
     # tx0 is just the init_tx renamed for clarity.
     return init_tx
 
+# TODO remove?
 @pytest.mark.testnet
 def test_tx0(
         funder: FunderNode,
@@ -69,6 +70,7 @@ def tx1(
     admin.wait_for_confirmation(tx)
     return tx
 
+# TODO remove?
 @pytest.mark.testnet
 def test_tx1(
         funder: FunderNode,

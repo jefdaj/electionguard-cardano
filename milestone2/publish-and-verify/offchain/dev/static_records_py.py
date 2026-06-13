@@ -5,6 +5,7 @@
 # ./dev/static_records_py.py > tests/data/static_records/code.py
 
 # TODO more standard logging?
+# TODO fix underscores in node names
 
 from pycardano import *
 import sys

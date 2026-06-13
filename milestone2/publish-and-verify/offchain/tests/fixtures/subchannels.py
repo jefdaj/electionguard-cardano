@@ -1,7 +1,7 @@
 import pytest
 from pycardano import *
 from egc import *
-from helpers import per_election_fixture
+from helpers import per_election_fixture, sub_s0
 import logging
 
 LOG = logging.getLogger(__name__)
@@ -45,7 +45,7 @@ def verifier1_wallet(keys_dir: Path) -> Wallet:
 @per_election_fixture
 def guardian1(
         election: ElectionContext,
-        guardian1_wallet: Wallet
+        guardian1_wallet: Wallet,
     ) -> GuardianNode:
     node = GuardianNode(
         election   = election,
@@ -61,7 +61,7 @@ def guardian1(
 @per_election_fixture
 def guardian2(
         election: ElectionContext,
-        guardian2_wallet: Wallet
+        guardian2_wallet: Wallet,
     ) -> GuardianNode:
     node = GuardianNode(
         election   = election,
@@ -77,7 +77,7 @@ def guardian2(
 @per_election_fixture
 def guardian3(
         election: ElectionContext,
-        guardian3_wallet: Wallet
+        guardian3_wallet: Wallet,
     ) -> GuardianNode:
     node = GuardianNode(
         election   = election,
@@ -93,7 +93,7 @@ def guardian3(
 @per_election_fixture
 def device1(
         election: ElectionContext,
-        device1_wallet: Wallet
+        device1_wallet: Wallet,
     ) -> DeviceNode:
     node = DeviceNode(
         election   = election,
@@ -109,7 +109,7 @@ def device1(
 @per_election_fixture
 def verifier1(
         election: ElectionContext,
-        verifier1_wallet: Wallet
+        verifier1_wallet: Wallet,
     ) -> VerifierNode:
     node = VerifierNode(
         election   = election,
@@ -137,3 +137,26 @@ def subchannel_nodes(
         device1,
         verifier1,
     ]
+
+
+## ------- subchannel initial states --------
+
+@per_election_fixture
+def guardian1_s0(guardian1: GuardianNode) -> ChannelState:
+    return sub_s0(guardian1.channel_id(), guardian1.publisher.wallet.vkh)
+
+@per_election_fixture
+def guardian2_s0(guardian2: GuardianNode) -> ChannelState:
+    return sub_s0(guardian2.channel_id(), guardian2.publisher.wallet.vkh)
+
+@per_election_fixture
+def guardian3_s0(guardian3: GuardianNode) -> ChannelState:
+    return sub_s0(guardian3.channel_id(), guardian3.publisher.wallet.vkh)
+
+@per_election_fixture
+def device1_s0(device1: DeviceNode) -> ChannelState:
+    return sub_s0(device1.channel_id(), device1.publisher.wallet.vkh)
+
+@per_election_fixture
+def verifier1_s0(verifier1: VerifierNode) -> ChannelState:
+    return sub_s0(verifier1.channel_id(), verifier1.publisher.wallet.vkh)
