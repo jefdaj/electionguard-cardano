@@ -153,49 +153,44 @@ def _pointer(r: Redeemer) -> str:
     }[r.tag]
     return f"{tag_str}:{r.index}"
 
-def _assign_spend_redeemer_indices(txb: "TransactionBuilder") -> None:
-    """Set redeemer.index for each spend redeemer to the position of its
-    UTxO in the lexicographically sorted inputs set (per Cardano ledger spec)."""
-    # Sort inputs the same way the ledger will: by (tx_id bytes, output index).
+def _assign_spend_redeemer_indices(txb):
     sorted_inputs = sorted(
         txb.inputs,
-
-        # TODO is either of these correct in all circumstances?
-        key=lambda u: u.input.to_cbor(),
-        # key=lambda u: (bytes(u.input.transaction_id), u.input.index),
-
+        key=lambda u: (bytes(u.input.transaction_id), u.input.index),
     )
     for i, utxo in enumerate(sorted_inputs):
-        redeemer = txb._inputs_to_redeemers.get(utxo)
-        if redeemer is not None:
-            redeemer.index = i
+        r = txb._inputs_to_redeemers.get(utxo)
+        if r is not None and r.tag in (None, RedeemerTag.SPEND):
+            r.index = i
 
 def evaluate_and_set_ex_units(
     txb: "TransactionBuilder",
     out_utxo: TransactionOutput,
 ) -> None:
 
-    # TODO is this actually causing the burn TXs to fail?
-    # _assign_spend_redeemer_indices(txb)
+    # Sanity: every script input must have its OWN Redeemer instance.
+    seen = set()
+    for utxo, r in txb._inputs_to_redeemers.items():
+        assert id(r) not in seen, f"Redeemer instance shared across inputs: {utxo}"
+        seen.add(id(r))
 
-    STUB_FEE = 200_000
+    _assign_spend_redeemer_indices(txb)
+
+    # zero ex_units, seed fee/coin, then build
+    for r in txb._redeemer_list:
+        r.ex_units = ExecutionUnits(0, 0)
     total_in = _total_input_coin(txb)
-    others = _other_outputs_coin(txb, out_utxo)
-
-    out_utxo.amount.coin = total_in - others - STUB_FEE
+    others   = _other_outputs_coin(txb, out_utxo)
+    out_utxo.amount.coin = total_in - others - 200_000
     txb.fee = max_tx_fee(txb.context)
 
-    # Force the builder to finalize tags/indices before we read them.
-    # _build_tx_body() (or equivalent) populates tag/index on the internal redeemers.
-    # TODO is setting these to 0 rather than removing or ignoring them the bug?
-    for r in txb._redeemer_list:
-        r.ex_units = ExecutionUnits(mem=0, steps=0)
+    tx_body = txb._build_tx_body()
 
-    draft_tx = Transaction(
-        transaction_body=txb._build_tx_body(),
-        transaction_witness_set=txb.build_witness_set(),
-    )
+    # Post-build invariant: unique (tag, index) per redeemer
+    keys = [(r.tag, r.index) for r in txb._redeemer_list]
+    assert len(keys) == len(set(keys)), f"Redeemer pointer collision: {keys}"
 
+    draft_tx = Transaction(tx_body, txb.build_witness_set())
     result = txb.context.evaluate_tx(draft_tx)
 
     # Add a defensive assertion right before the pointer lookup so the failure
