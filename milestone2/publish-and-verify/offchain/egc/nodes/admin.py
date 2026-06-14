@@ -98,9 +98,7 @@ class AdminNode(ElectionNode):
             cont_utxo,
         )
 
-        LOG.debug(f'tx_signed about to be submitted:\n%s\n' % pformat(tx_signed))
-        OGMIOS_CTX.submit_tx(tx_signed)
-        LOG.debug(f'Submitted tx with id={tx_signed.id}')
+        self.publisher.submit_tx(tx_signed)
 
         for msg in tx_msgs:
             LOG.info(msg)
@@ -246,9 +244,7 @@ class AdminNode(ElectionNode):
             cont_utxo,
         )
 
-        LOG.debug(f'tx_signed about to be submitted:\n%s\n' % pformat(tx_signed))
-        OGMIOS_CTX.submit_tx(tx_signed)
-        LOG.debug(f'Submitted tx with id={tx_signed.id}')
+        self.publisher.submit_tx(tx_signed)
 
         for msg in tx_msgs:
             LOG.info(msg)
@@ -363,9 +359,7 @@ class AdminNode(ElectionNode):
             LOG.debug(f'Input UTXO found: {utxo}')
             assert utxo is not None, f"Input UTXO not found: {tx_in}"
 
-        LOG.debug(f'tx_signed about to be submitted:\n%s\n' % pformat(tx_signed))
-        OGMIOS_CTX.submit_tx(tx_signed)
-        LOG.debug(f'Submitted tx with id={tx_signed.id}')
+        self.publisher.submit_tx(tx_signed)
 
         for msg in tx_msgs:
             LOG.info(msg)

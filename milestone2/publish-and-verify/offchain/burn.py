@@ -207,7 +207,7 @@ Are you sure? (y/n): '''
 if confirm(prompt=MSG):
     try:
         LOG.debug('\nBurning tokens...')
-        BURN_TX = PUB.sign_and_submit(BURN_TXB)
+        BURN_TX = PUB.sign_and_submit_tx(BURN_TXB)
         PUB.wait_for_confirmation(BURN_TX)
         LOG.debug('done')
     except Exception as e:

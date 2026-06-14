@@ -70,6 +70,11 @@ class ElectionPublisher:
             LOG.debug(f'use existing wallet {wallet}')
             self.wallet = wallet
 
+        # Lovelace per TX submitted. Useful to estimate what future elections
+        # will cost, and to make sure that we aren't forgetting anything in the
+        # test cleanup fns.
+        self.fee_history: list[int] = []
+
     def channel_id(self) -> ChannelId:
         LOG.debug('ElectionPublisher.channel_id')
         if self.role in ['funder', 'admin']:
@@ -79,7 +84,7 @@ class ElectionPublisher:
             channel_str = f'{self.role}{self.role_index}'
         return coerce_channel_id(channel_str)
 
-    def sign_and_submit(self, txb: TransactionBuilder):
+    def sign_and_submit_tx(self, txb: TransactionBuilder):
         LOG.debug('ElectionPublisher.sign_and_submit')
 
         # Check what the node actually sees
@@ -97,14 +102,23 @@ class ElectionPublisher:
             change_address=self.wallet.addr
         )
 
+        return self.submit_tx(tx_signed)
+
+    def submit_tx(self, tx_signed: Transaction):
+
         # Log the actual inputs in the built transaction
         LOG.debug('tx inputs:')
         for inp in tx_signed.transaction_body.inputs:
             LOG.debug('  %s#%d' % (inp.transaction_id, inp.index))
 
+        fee = tx_signed.transaction_body.fee
+
         LOG.debug(f'tx_signed about to be submitted:\n%s:\n' % pformat(tx_signed))
-        OGMIOS_CTX.submit_tx(tx_signed)
+        OGMIOS_CTX.submit_tx(tx_signed) # always returns None?
         LOG.debug(f'Submitted tx with id={tx_signed.id}')
+
+        # TODO move to wait_for_confirmation instead?
+        self.fee_history.append(fee)
 
         return tx_signed
 
@@ -135,3 +149,6 @@ class ElectionPublisher:
             else:
                 LOG.debug(f'tx {tx_id} confirmed after {waited_seconds} seconds')
                 return
+
+    def total_fees(self) -> int:
+        return sum(self.fee_history)

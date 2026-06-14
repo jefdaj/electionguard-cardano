@@ -160,12 +160,12 @@ class FunderNode(ElectionNode):
         tip = query_network_tip_sync()
         LOG.debug('tip before init_tx submitted: %s' % pformat(tip))
 
-        init_tx = self.publisher.sign_and_submit(init_txb)
+        init_tx = self.publisher.sign_and_submit_tx(init_txb)
 
         deployment = ElectionDeployment(
             network               = Network.TESTNET,
             funder_address        = self.publisher.wallet.addr,
-            deployment_date       = datetime.now(), # TODO get now() before sign_and_submit?
+            deployment_date       = datetime.now(), # TODO get now() before sign_and_submit_tx?
             index_from_slot       = tip['slot'],
             index_from_block_hash = tip['block_hash'],
         )
@@ -279,7 +279,7 @@ class FunderNode(ElectionNode):
         if self.subscriber is None:
             raise Exception('init_subscriber must be called before burn_test_tokens')
         (tx_msgs, burn_txb) = self._build_burn_tx()
-        burn_tx  = self.publisher.sign_and_submit(burn_txb)
+        burn_tx  = self.publisher.sign_and_submit_tx(burn_txb)
         json_path = self.election_json_path()
         for msg in tx_msgs:
             LOG.info(msg)

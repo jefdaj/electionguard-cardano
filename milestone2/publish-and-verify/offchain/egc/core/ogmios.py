@@ -306,6 +306,7 @@ def _send_ada(
     builder.add_input_address(sender.addr)
     builder.add_output(TransactionOutput(recipient, Value(lovelace)))
     signed = builder.build_and_sign([sender.sk], change_address=sender.addr)
+    # TODO should probably route this through a publisher?
     OGMIOS_CTX.submit_tx(signed)
     LOG.debug(
         "Sent %d lovelace from %s to %s (tx %s)",
@@ -363,6 +364,7 @@ def return_collateral(
     signed = builder.build_and_sign(
         [publisher_wallet.sk], change_address=funder_address,
     )
+    # TODO route this through a publisher?
     OGMIOS_CTX.submit_tx(signed)
     LOG.debug(
         "Returned collateral from %s to %s, less tx fee (tx %s)",

@@ -222,9 +222,7 @@ class ElectionNode:
             cont_utxo,
         )
 
-        LOG.debug(f'tx_signed about to be submitted:\n%s:\n' % pformat(tx_signed))
-        OGMIOS_CTX.submit_tx(tx_signed)
-        LOG.debug(f'Submitted tx with id={tx_signed.id}')
+        self.publisher.submit_tx(tx_signed)
 
         if new_phase is not None:
             tx_msgs.append(f'{ch_str} advanced phase to {new_phase}')
