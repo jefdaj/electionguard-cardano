@@ -173,9 +173,8 @@ def evaluate_and_set_ex_units(
     out_utxo: TransactionOutput,
 ) -> None:
 
-    # TODO try each option with, without this
-    # TODO if it works, is it a pycardano bug that this needs to be done manually?
-    _assign_spend_redeemer_indices(txb)
+    # TODO is this actually causing the burn TXs to fail?
+    # _assign_spend_redeemer_indices(txb)
 
     STUB_FEE = 200_000
     total_in = _total_input_coin(txb)
@@ -186,6 +185,7 @@ def evaluate_and_set_ex_units(
 
     # Force the builder to finalize tags/indices before we read them.
     # _build_tx_body() (or equivalent) populates tag/index on the internal redeemers.
+    # TODO is setting these to 0 rather than removing or ignoring them the bug?
     for r in txb._redeemer_list:
         r.ex_units = ExecutionUnits(mem=0, steps=0)
 
