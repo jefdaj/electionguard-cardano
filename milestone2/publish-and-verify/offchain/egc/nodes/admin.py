@@ -44,7 +44,7 @@ class AdminNode(ElectionNode):
         tx_msgs = []
 
         # ensure own collateral
-        admin_collateral = wait_for_collateral(self.publisher.wallet.addr)
+        admin_collateral = self.publisher.wait_for_collateral()
         LOG.debug('admin_collateral: %s' % pformat(admin_collateral))
 
         (in_utxo, in_datum) = self.state()
@@ -119,7 +119,7 @@ class AdminNode(ElectionNode):
         tx_msgs = []
 
         # ensure own collateral
-        admin_collateral = wait_for_collateral(self.publisher.wallet.addr)
+        admin_collateral = self.publisher.wait_for_collateral()
         LOG.debug('admin_collateral: %s' % pformat(admin_collateral))
 
         (in_utxo, in_datum) = self.state()
@@ -264,7 +264,7 @@ class AdminNode(ElectionNode):
 
         # ensure own collateral
         # TODO factor out
-        admin_collateral = wait_for_collateral(self.publisher.wallet.addr)
+        admin_collateral = self.publisher.wait_for_collateral()
         LOG.debug('admin_collateral: %s' % pformat(admin_collateral))
 
         # TODO start state transition edit section

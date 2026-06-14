@@ -170,3 +170,136 @@ class ElectionPublisher:
             sum(self.fee_history) / LOVELACE_PER_ADA,
             ndigits=2
         )
+
+    def send_lovelace(
+        self,
+        recipient: Address,
+        lovelace: int,
+    ) -> Transaction:
+        """Plain wallet-to-wallet ADA send. Internal helper shared by the
+        collateral funding / return / sweep functions. Not for spending from
+        a script address."""
+        txb = TransactionBuilder(OGMIOS_CTX)
+        txb.add_input_address(self.wallet.addr)
+        txb.add_output(TransactionOutput(recipient, Value(lovelace)))
+        signed = txb.build_and_sign([self.wallet.sk], change_address=self.wallet.addr)
+        self.submit_tx(signed)
+        LOG.debug(
+            "Sent %d lovelace from %s to %s (tx %s)",
+            lovelace, self.wallet.addr, recipient, signed.id,
+        )
+        return signed
+
+    def find_collateral_utxo(self, from_wallet: Optional[Wallet] = None) -> UTxO | None:
+        """Return a collateral-eligible UTXO, or None.
+
+        "Collateral-eligible" means: exactly COLLATERAL_LOVELACE lovelace,
+        no native assets, no datum, no script ref. This is stricter than
+        the ledger requires, but it guarantees the UTXO matches what our
+        funding functions produce and won't collide with other holdings.
+        """
+        if from_wallet is None:
+            wallet = self.wallet
+        else:
+            wallet = from_wallet
+        utxos = OGMIOS_CTX.utxos(wallet.addr)
+        for utxo in utxos:
+            amt = utxo.output.amount
+            if amt.coin != COLLATERAL_LOVELACE:
+                continue
+            if amt.multi_asset and len(amt.multi_asset) > 0:
+                continue
+            if utxo.output.datum is not None:
+                continue
+            if utxo.output.datum_hash is not None:
+                continue
+            if utxo.output.script is not None:
+                continue
+            return utxo
+        return None
+
+    # TODO use this
+    def get_my_collateral(self) -> UTxO:
+        """Like find_collateral_utxo but raises if missing. Publishers call
+        this when building any contract tx and pass the result as the
+        collateral input."""
+        utxo = self.find_collateral_utxo()
+        if utxo is None:
+            raise RuntimeError(
+                f"No collateral UTXO ({COLLATERAL_ADA} ADA, no assets, no datum) "
+                f"found at {self.wallet.addr}. Run create_own_collateral or ask the "
+                f"funder to send one."
+            )
+        return utxo
+
+    # TODO unify with wait_for_confirmation?
+    def wait_for_collateral(self) -> UTxO:
+        """Poll for a collateral UTXO at `address` until one appears or
+        OGMIOS_TIMEOUT_SEC elapses. Used right after a funding tx to bridge
+        the gap between submission and the publisher's address being
+        re-indexed."""
+        deadline = time.monotonic() + OGMIOS_TIMEOUT_SEC
+        while True:
+            utxo = self.find_collateral_utxo()
+            if utxo is not None:
+                time.sleep(OGMIOS_POLL_SEC) # TODO remove?
+                return utxo
+            if time.monotonic() >= deadline:
+                raise TimeoutError(
+                    f"Collateral UTXO did not appear at {self.wallet.addr} within "
+                    f"{OGMIOS_TIMEOUT_SEC}s"
+                )
+            time.sleep(OGMIOS_POLL_SEC)
+
+
+    # TODO move to FunderNode? they're the only ones generally expected to use it
+    def create_own_collateral(self) -> Transaction:
+        """Funder sends themselves exactly COLLATERAL_ADA to create a
+        usable collateral UTXO. No-op (returns None-ish? see below) if one
+        already exists — callers that want to force a new one should spend
+        the existing one first."""
+        ch_str = self.channel_str()
+        existing = self.find_collateral_utxo()
+        if existing is not None:
+            LOG.debug(
+                "%s found existing collateral UTXO at %s (%s#%d)",
+                ch_str, self.wallet.addr,
+                existing.input.transaction_id, existing.input.index,
+            )
+            return existing.input.transaction_id
+        res = self.send_lovelace(self.wallet.addr, COLLATERAL_LOVELACE)
+        LOG.info(f'{ch_str} created own collateral UTXO at {self.wallet.addr}')
+        return res
+
+    def return_collateral(
+        self,
+        return_addr: Address,
+        from_wallet: Optional[Wallet] = None, # used by funder for BurnTestTokens
+    ) -> Optional[TransactionId]:
+        """Publisher voluntarily returns their collateral UTXO to the
+        original funder, less tx fee. The publisher is expected to do this,
+        but it can't be enforced on chain. Returns None if the publisher has
+        no collateral UTXO to return."""
+        if from_wallet is None:
+            wallet = self.wallet
+        else:
+            wallet = from_wallet
+        utxo = self.find_collateral_utxo(from_wallet=wallet)
+        if utxo is None:
+            LOG.debug(f"No collateral UTXO at {wallet.addr} to return")
+            return None
+        txb = TransactionBuilder(OGMIOS_CTX)
+        txb.add_input(utxo)
+        # No add_output / no change_address pointing at publisher — we want
+        # the entire UTXO to go to the funder, minus the fee. Using the
+        # funder as the change address makes the builder route the remainder
+        # (collateral - fee) to them automatically.
+        signed = txb.build_and_sign(
+            [wallet.sk], change_address=return_addr,
+        )
+        self.submit_tx(signed)
+        LOG.debug(
+            "%s returned collateral from %s to %s, less tx fee (tx %s)",
+            self.channel_str(), wallet.addr, return_addr, signed.id,
+        )
+        return signed

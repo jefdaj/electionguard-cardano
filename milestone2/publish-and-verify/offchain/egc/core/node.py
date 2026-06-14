@@ -150,7 +150,7 @@ class ElectionNode:
         ch_str = self.channel_str()
         tx_msgs = []
 
-        pub_col_utxo = wait_for_collateral(self.publisher.wallet.addr)
+        pub_col_utxo = self.publisher.wait_for_collateral()
         LOG.debug('pub_col_utxo: %s' % pformat(pub_col_utxo))
 
         (in_utxo, in_datum) = self.state()

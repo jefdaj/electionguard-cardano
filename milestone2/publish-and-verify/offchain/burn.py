@@ -58,15 +58,6 @@ LOG.debug(f'ARGS: {pformat(ARGS)}')
 ADMIN_CHANNEL_STR = channel_id_to_string(ADMIN_CHANNEL_ID)
 
 
-# For reference:
-#     def ensure_own_collateral(self):
-#         # Funder is the only node that needs to set its own collateral, I think?
-#         # TODO but they should all test for it and throw a visible error if there isn't one
-#         LOG.debug('Funder.ensure_own_collateral')
-#         create_own_collateral(self.publisher.key_pair)
-#         # TODO unify wait_for_collateral with Publisher.wait_for_confirmation
-#         self.collateral_utxo = wait_for_collateral(self.publisher.key_pair.addr)
-
 ### load election context ###
 
 CTX = ElectionContext.from_json(ARGS['<election_json>'])

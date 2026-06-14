@@ -58,8 +58,8 @@ class FunderNode(ElectionNode):
 
         # Without this set, the FunderNode risks the entire dev wallet when
         # deploying a contract.
-        create_own_collateral(self.publisher.wallet)
-        funder_collateral = wait_for_collateral(self.publisher.wallet.addr)
+        self.publisher.create_own_collateral()
+        funder_collateral = self.publisher.wait_for_collateral()
 
         redeemer = Redeemer(data=InitElection())
         LOG.debug('init redeemer: %s' % pformat(redeemer))
@@ -126,6 +126,16 @@ class FunderNode(ElectionNode):
         tx_msgs.append(f'{ch_str} sent 5 ADA to admin for use as collateral.')
 
         return (tx_msgs, txb)
+
+    # TODO remove?
+    def fund_admin_collateral(
+        admin_address: Address,
+    ) -> Transaction:
+        """Funder sends COLLATERAL_ADA to the admin address. In practice this
+        is usually folded into the admin STT mint tx as an extra output — keep
+        this around for tests and for the case where the admin needs a fresh
+        collateral mid-election."""
+        return self.publisher.send_ada(admin_address, COLLATERAL_LOVELACE)
 
     def init_script(self):
         """Pick oneshot_utxo and parameterize script."""
@@ -222,8 +232,8 @@ class FunderNode(ElectionNode):
 
         # Without this set, the FunderNode risks the entire dev wallet when
         # deploying a contract.
-        create_own_collateral(self.publisher.wallet)
-        funder_collateral = wait_for_collateral(self.publisher.wallet.addr)
+        self.publisher.create_own_collateral()
+        funder_collateral = self.publisher.wait_for_collateral()
 
         # Messages to log if/when the TX succeeds
         ch_str = self.channel_str()
@@ -303,7 +313,10 @@ class FunderNode(ElectionNode):
                 (sk_path, pub_wallet) = load_wallet_by_address(pub_addr, keys_dir=keys_dir)
                 LOG.debug(f'sk_path: {sk_path}')
                 LOG.debug(f'pub_wallet: {pub_wallet}')
-                tx = return_collateral(pub_wallet, self.publisher.wallet.addr)
+                tx = self.publisher.return_collateral(
+                    return_addr = self.publisher.wallet.addr,
+                    from_wallet = pub_wallet,
+                )
                 if tx is not None:
                     last_tx = tx
                     LOG.info(f'{ch_str} recovered collateral from {sk_path}')
