@@ -79,10 +79,8 @@ def init_tx(
     yield init_tx
 
     try:
-
-        # Make reasonably sure the latest TX confirms first.
         # TODO is there a more reliable way?
-        wait_n_blocks(3)
+        wait_for_confirmation_generic()
 
         burn_tx = funder.burn_test_tokens()
         funder.wait_for_confirmation(burn_tx)
