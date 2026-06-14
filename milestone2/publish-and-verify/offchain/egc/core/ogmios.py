@@ -157,11 +157,13 @@ def _assign_spend_redeemer_indices(txb: "TransactionBuilder") -> None:
     """Set redeemer.index for each spend redeemer to the position of its
     UTxO in the lexicographically sorted inputs set (per Cardano ledger spec)."""
     # Sort inputs the same way the ledger will: by (tx_id bytes, output index).
-    # TODO is this actually limited to spend redeemers? i guess there's only one mint
     sorted_inputs = sorted(
         txb.inputs,
+
+        # TODO is either of these correct in all circumstances?
         key=lambda u: u.input.to_cbor(),
         # key=lambda u: (bytes(u.input.transaction_id), u.input.index),
+
     )
     for i, utxo in enumerate(sorted_inputs):
         redeemer = txb._inputs_to_redeemers.get(utxo)
