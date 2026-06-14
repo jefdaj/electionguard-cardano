@@ -71,7 +71,7 @@ def admin_s1(
     return AdminChannel(state=replace(
         prev,
         new_records = static_transactions['admin'][1][1],
-        phase       = ElectionConfigPhase(phase=ConfigOnboardingPhase()),
+        phase       = ElectionConfigPhase(ConfigOnboardingPhase()),
         seq         = 1,
     ))
 
@@ -83,7 +83,7 @@ def admin_tx1(
     ) -> Transaction:
     tx = admin.post_public_records(
         new_records = static_transactions['admin'][1][1],
-        new_phase   = ElectionConfigPhase(phase=ConfigOnboardingPhase()),
+        new_phase   = ElectionConfigPhase(ConfigOnboardingPhase()),
     )
     LOG.debug(f'admin_tx1: {tx}')
     admin.wait_for_confirmation(tx)
@@ -148,7 +148,7 @@ def admin_s2(
         prev,
         subchannels = subchannel_ids,
         new_records = [],
-        phase       = ElectionConfigPhase(phase=ConfigCeremonyPhase()),
+        phase       = ElectionConfigPhase(ConfigCeremonyPhase()),
         seq         = 2,
     ))
 
@@ -255,6 +255,8 @@ def test_admin_tx3(
     assert isinstance(admin_tx3, Transaction)
     assert_node_state(admin, admin_s3)
     assert_nodes_in_sync(all_nodes)
+
+# TODO should guardian1_tx1 go here? maybe just do them all linearly and group by phase
 
 @pytest.mark.testnet
 def test_phase2_ceremony(

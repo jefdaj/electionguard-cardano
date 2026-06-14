@@ -13,7 +13,7 @@ export EGC_MODE=test
 EXTRA_ARGS="$@"
 
 echo "running local tests"
-pytest -vv -m 'local' $EXTRA_ARGS
+pytest -v -m 'local' $EXTRA_ARGS
 exit_code=$?
 
 # Exit code 5 = no tests collected, which is fine.
@@ -21,5 +21,5 @@ exit_code=$?
 # That way we get a much faster dev feedback loop.
 if [[ $exit_code == 0 || $exit_code == 5 ]]; then
   echo "running testnet tests"
-  pytest -vv -m testnet $EXTRA_ARGS
+  pytest -v -m testnet $EXTRA_ARGS
 fi

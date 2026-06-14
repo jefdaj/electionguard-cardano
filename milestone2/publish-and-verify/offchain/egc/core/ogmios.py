@@ -321,8 +321,8 @@ def create_own_collateral(wallet: Wallet) -> Transaction:
     the existing one first."""
     existing = find_collateral_utxo(wallet.addr)
     if existing is not None:
-        LOG.debug(
-            "Collateral UTXO already exists at %s (%s#%d); skipping",
+        LOG.info(
+            "Found existing collateral UTXO at %s (%s#%d)",
             wallet.addr, existing.input.transaction_id, existing.input.index,
         )
         return existing.input.transaction_id
