@@ -80,9 +80,9 @@ def init_tx(
 
     try:
 
-        # TODO what if this happens too soon, and that's related to rm_subchannels failing?
-        # LOG.debug('waiting 300sec extra to make sure burn does not interfere')
-        # time.sleep(300)
+        # Make reasonably sure the latest TX confirms first.
+        # TODO is there a more reliable way?
+        wait_n_blocks(3)
 
         burn_tx = funder.burn_test_tokens()
         funder.wait_for_confirmation(burn_tx)

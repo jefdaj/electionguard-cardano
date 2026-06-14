@@ -260,3 +260,44 @@ def set_out_value_and_fee(
 def utxo_for_input(tx_in: TransactionInput) -> UTxO | None:
     tx_id_hex = tx_in.transaction_id.payload.hex()
     return OGMIOS_CTX.utxo_by_tx_id(tx_id_hex, tx_in.index)
+
+
+# def wait_n_blocks(n: int) -> int:
+#     """Block until the chain tip has advanced by `n` blocks. Returns the new tip height."""
+#     if n <= 0:
+#         return OGMIOS_CTX.last_block_slot  # or fetch tip; nothing to wait for
+#     start_height = OGMIOS_CTX.network_info().height \
+#                      if hasattr(OGMIOS_CTX, "network_info") \
+#                      else _tip_height()
+#     target = start_height + n
+#     while True:
+#         current = _tip_height()
+#         if current >= target:
+#             return current
+#         time.sleep(OGMIOS_POLL_SEC)
+# 
+# def _tip_height() -> int:
+#     # OgmiosV6ChainContext exposes the underlying client; use queryNetwork/blockHeight
+#     res = OGMIOS_CTX._client.query_network.block_height.execute()
+#     # Ogmios returns either an int or {"blockHeight": <int>} / "origin"
+#     if isinstance(res, dict):
+#         return int(res.get("blockHeight", 0))
+#     if isinstance(res, int):
+#         return res
+#     return 0  # "origin"
+
+def wait_n_blocks(n: int) -> int:
+    "Wait n blocks as measured by query_network_tip."
+    # TODO that's accurate, right?
+    prev = None
+    count = 0
+    while count < n:
+        time.sleep(OGMIOS_POLL_SEC)
+        tip = query_network_tip_sync()
+        if tip == prev:
+            continue
+        else:
+            count += 1
+            LOG.debug(f'waited {count} blocks')
+            prev = tip
+    return

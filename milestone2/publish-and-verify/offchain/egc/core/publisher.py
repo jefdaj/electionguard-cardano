@@ -252,6 +252,7 @@ class ElectionPublisher:
             time.sleep(OGMIOS_POLL_SEC)
 
 
+    # TODO verify this isn't being run more often than needed
     # TODO move to FunderNode? they're the only ones generally expected to use it
     def create_own_collateral(self) -> Transaction:
         """Funder sends themselves exactly COLLATERAL_ADA to create a
