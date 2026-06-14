@@ -84,6 +84,13 @@ class ElectionPublisher:
             channel_str = f'{self.role}{self.role_index}'
         return coerce_channel_id(channel_str)
 
+    def channel_str(self):
+        "Like channel_id, but informal for logs. Includes funder as valid."
+        try:
+            return channel_id_to_string(self.channel_id())
+        except:
+            return 'funder' # TODO safer way?
+
     def sign_and_submit_tx(self, txb: TransactionBuilder):
         LOG.debug('ElectionPublisher.sign_and_submit')
 

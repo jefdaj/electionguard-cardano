@@ -65,6 +65,9 @@ class ElectionNode:
     def channel_id(self) -> ChannelId:
         return self.publisher.channel_id()
 
+    def channel_str(self) -> str:
+        return self.publisher.channel_str()
+
     def state(self) -> Optional[Tuple[UTxO, ChannelState]]:
         try:
             return self.subscriber.states[self.channel_id()]
@@ -231,13 +234,6 @@ class ElectionNode:
             LOG.info(msg)
 
         return tx_signed
-
-    def channel_str(self):
-        "Like channel_id, but informal for logs. Includes funder as valid."
-        try:
-            return channel_id_to_string(self.channel_id())
-        except:
-            return 'funder' # TODO safer way?
 
     def stop(self):
         if self.subscriber is not None:
