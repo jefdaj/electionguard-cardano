@@ -114,13 +114,15 @@ class ElectionPublisher:
         fee = tx_signed.transaction_body.fee
 
         LOG.debug(f'tx_signed about to be submitted:\n%s:\n' % pformat(tx_signed))
-        OGMIOS_CTX.submit_tx(tx_signed) # always returns None?
-        LOG.debug(f'Submitted tx with id={tx_signed.id}')
 
-        # TODO move to wait_for_confirmation instead?
-        self.fee_history.append(fee)
-
-        return tx_signed
+        try:
+            OGMIOS_CTX.submit_tx(tx_signed) # always returns None?
+            LOG.debug(f'Submitted tx with id={tx_signed.id}')
+            self.fee_history.append(fee)
+            return tx_signed
+        except Exception as e:
+            LOG.debug(f'Failed to submit tx with id={tx_signed.id}')
+            raise
 
     # TODO get this working for the case where the utxo is confirmed + consumed between polls
     def wait_for_confirmation(
@@ -131,7 +133,10 @@ class ElectionPublisher:
         ):
         LOG.debug('ElectionPublisher.wait_for_confirmation')
         tx_id = str(tx.id) # TODO is this the right way?
-        LOG.debug(f'Waiting up to {OGMIOS_TIMEOUT_SEC} seconds for tx {tx_id} to be confirmed on chain...')
+        LOG.debug(
+            f'Waiting up to {OGMIOS_TIMEOUT_SEC} seconds for tx '
+            f'{tx_id} to be confirmed.'
+        )
         waited_seconds = 0
         while True:
             time.sleep(OGMIOS_POLL_SEC)

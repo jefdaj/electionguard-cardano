@@ -54,6 +54,31 @@ def ogmios_health_sync() -> dict:
     return asyncio.run(ogmios_health())
 
 
+### get balances in order to track fees ###
+
+def get_balance_ada(address: Address) -> float:
+    """Return total lovelace balance at an address."""
+    utxos = OGMIOS_CTX.utxos(address)
+    balance_ll = sum(u.output.amount.coin for u in utxos)
+    balance_ada = float(balance_ll) / LOVELACE_PER_ADA
+    return balance_ada
+
+# def get_balance_with_assets(ctx, address: Address):
+#     """Return (lovelace, {policy_id: {asset_name: qty}})."""
+#     utxos = ctx.utxos(address)
+#     lovelace = 0
+#     assets = {}
+#     for u in utxos:
+#         amt = u.output.amount
+#         lovelace += amt.coin
+#         if amt.multi_asset:
+#             for pid, names in amt.multi_asset.items():
+#                 bucket = assets.setdefault(pid, {})
+#                 for name, qty in names.items():
+#                     bucket[name] = bucket.get(name, 0) + qty
+#     return lovelace, assets
+
+
 ### info for subscriber config ###
 
 # TODO rename to make it more obvious this is for the --since args?

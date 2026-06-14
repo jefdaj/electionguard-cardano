@@ -54,12 +54,18 @@ def init_tx(
         admin_addr: Address,
         admin_vkh: VerificationKeyHash,
         keys_dir: Path,
+        request, # exposes pytest info
     ) -> Transaction:
-    """Yields an already submitted and confirmed InitElection transaction.
-    For now, all other Transaction fixtures should depend on this one,
-    because it does the cleanup step (BurnTestTokens) if needed.
-    Also tries to recover all possible collateral during cleanup.
+
+    """Yields an already submitted and confirmed InitElection transaction. All
+    other Transaction fixtures should depend on this one because it does the
+    cleanup step (BurnTestTokens) if needed, tries to recover collateral, and
+    logs total costs.
     """
+
+    name = request.node.name
+    ada_before = get_balance_ada(funder.publisher.wallet.addr)
+    LOG.debug(f'funder balance before {name}: {ada_before} ADA.')
 
     init_tx = funder.init_election(
         script     = script,
@@ -81,4 +87,10 @@ def init_tx(
         raise
 
     finally:
-        funder.recover_all_collateral(keys_dir) # TODO move to another fixture?
+        # TODO should this be another fixture/helper?
+        last_tx = funder.recover_all_collateral(keys_dir)
+        funder.wait_for_confirmation(last_tx)
+        ada_after = get_balance_ada(funder.publisher.wallet.addr)
+        LOG.debug(f'funder balance after {name}: {ada_after} ADA.')
+        ada_diff = round(ada_before - ada_after, ndigits=2)
+        LOG.info(f'Total cost of {name}: {ada_diff} ADA.')
