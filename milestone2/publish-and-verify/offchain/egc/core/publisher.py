@@ -120,7 +120,7 @@ class ElectionPublisher:
 
         fee = tx_signed.transaction_body.fee
 
-        LOG.debug(f'tx_signed about to be submitted:\n%s:\n' % pformat(tx_signed))
+        LOG.debug(f'tx_signed about to be submitted:\n%s\n' % pformat(tx_signed))
 
         try:
             OGMIOS_CTX.submit_tx(tx_signed) # always returns None?
