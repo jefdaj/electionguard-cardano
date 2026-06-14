@@ -65,7 +65,7 @@ def init_tx(
 
     name = request.node.name
     ada_before = get_balance_ada(funder.publisher.wallet.addr)
-    LOG.debug(f'funder balance before {name}: {ada_before} ADA.')
+    LOG.debug(f'funder balance before {name} is {ada_before} ADA.')
 
     init_tx = funder.init_election(
         script     = script,
@@ -79,6 +79,11 @@ def init_tx(
     yield init_tx
 
     try:
+
+        # TODO what if this happens too soon, and that's related to rm_subchannels failing?
+        # LOG.debug('waiting 300sec extra to make sure burn does not interfere')
+        # time.sleep(300)
+
         burn_tx = funder.burn_test_tokens()
         funder.wait_for_confirmation(burn_tx)
 
@@ -91,6 +96,6 @@ def init_tx(
         last_tx = funder.recover_all_collateral(keys_dir)
         funder.wait_for_confirmation(last_tx)
         ada_after = get_balance_ada(funder.publisher.wallet.addr)
-        LOG.debug(f'funder balance after {name}: {ada_after} ADA.')
+        LOG.debug(f'funder balance after {name} is {ada_after} ADA.')
         ada_diff = round(ada_before - ada_after, ndigits=2)
-        LOG.info(f'Total cost of {name}: {ada_diff} ADA.')
+        LOG.info(f'Total cost of {name} was {ada_diff} ADA.')

@@ -119,6 +119,7 @@ class ElectionPublisher:
             OGMIOS_CTX.submit_tx(tx_signed) # always returns None?
             LOG.debug(f'Submitted tx with id={tx_signed.id}')
             self.fee_history.append(fee)
+            LOG.debug(f'{self.channel_str()} fees so far: {self.total_fees()} Lovelace')
             return tx_signed
         except Exception as e:
             LOG.debug(f'Failed to submit tx with id={tx_signed.id}')
