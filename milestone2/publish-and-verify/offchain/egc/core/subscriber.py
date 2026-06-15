@@ -36,10 +36,6 @@ KUPO_HOST        = environ.get('KUPO_HOST', '127.0.0.1')
 KUPO_PORT        = int(environ.get('KUPO_PORT', '1442'))
 KUPO_MATCHES_URL = f'http://{KUPO_HOST}:{KUPO_PORT}/v1/matches'
 
-# TODO pull this from ogmios module, and rename
-# NODE_SOCKET = environ.get('CARDANO_NODE_SOCKET_PATH', '../../cardano-node-ogmios/data/node-ipc/node.socket')
-# NODE_CONFIG = environ.get('NODE_CONFIG', '../../cardano-node-ogmios/config/network/preview/cardano-node/config.json')
-
 
 # TODO also use this in subscriberconfig?
 @dataclass
@@ -76,11 +72,6 @@ class SubscriberConfig:
             str(election.script.policy_id), # TODO use the pycardano object?
             None,
         )
-
-# TODO remove?
-# Handles a single kupo match response json obj.
-# TODO can the response type be more specific than dict?
-# SubscriberCallback = Callable[[dict, requests.Session], ElectionAction]
 
 # TODO move to channel_id.py
 # def channel_id_from_asset_name(encoded: str) -> ChannelId:
@@ -150,6 +141,12 @@ def pycardano_utxo_from_kupo(kupo_dict: dict) -> UTxO:
     return UTxO(tx_input, tx_output)
 
 
+def mk_example_callback(callback_name: str):
+    def fn(hist: HistoryEntry) -> None:
+        LOG.info(f'{callback_name} called with: {hist}')
+    return fn
+
+
 class ElectionSubscriber:
     '''Runs kupo and feeds matches to a callback.
     Note that since_slot and since_block_hash should be figured out *before* deploying the contract,
@@ -160,25 +157,20 @@ class ElectionSubscriber:
     def __init__(
             self,
             config: SubscriberConfig,
-
-            # TODO wait you probably do still want these, but they're additional!
-            #      they're for showing things in an interface, fetching ipfs files, calling the verifier, ...
-            # TODO start by just having subscribe.py print important events using them instead of logging
-            # TODO should they take a custom event type?
-            # TODO think about what they should return if anything
-            # TODO should they take ElectionActions as args? they certainly shouldn't return them
-            # on_match: SubscriberCallback,
-            # on_close: SubscriberCallback,
-
+            on_initelection  = mk_example_callback('on_initelection'),
+            on_addsubchannel = mk_example_callback('on_addsubchannel'),
+            on_rmsubchannel  = mk_example_callback('on_rmsubchannel'),
+            on_endelection   = mk_example_callback('on_endelection'),
         ):
 
         LOG.debug('ElectionSubscriber.__init__')
 
         self.config = config
 
-        # TODO build in the important parts but allow extra ones here too
-        # self.on_match: SubscriberCallback = handle_match
-        # self.on_close: SubscriberCallback = handle_endelection
+        self.on_initelection  = on_initelection
+        self.on_addsubchannel = on_addsubchannel
+        self.on_rmsubchannel  = on_rmsubchannel
+        self.on_endelection   = on_endelection
 
         # used to construct channel_ids(), channel_history(), current_state()
         # self.history: Mapping[ChannelId, Mapping[int, ChannelState]] = {}
@@ -459,7 +451,6 @@ class ElectionSubscriber:
 
     ## election state management guts ##
 
-    # TODO merge with on_match
     def _on_utxo(self, utxo_dict: dict[str, Any]):
         LOG.debug('ElectionSubscriber._on_utxo')
         LOG.debug(f'utxo_dict: {pformat(utxo_dict)}')
@@ -478,27 +469,20 @@ class ElectionSubscriber:
             # any_new_utxo = True
 
         try:
-
-            (channel_id, new_state) = self._on_match(utxo_dict)
+            (channel_id, hist) = self._parse_history_entry(utxo_dict)
             LOG.debug(f'channel_id: {channel_id} ({type(channel_id)})')
-            LOG.debug(f'new_state: {new_state} ({type(new_state)})')
-
-            # assert isinstance(new_state, AdminChannelState), 'Each TX should have a AdminChannelState'
-            if not channel_id in self.history:
-                self.history[channel_id] = {}
-            self.history[channel_id][new_state.state.seq] = new_state
-
-            if not channel_id in self.states:
-                self.states[channel_id] = {}
-            # self.states[channel_id] = (pycardano_utxo_from_kupo(utxo_dict), new_state)
-            self.states[channel_id] = (utxo_dict, new_state)
-
-            # if not channel_id in self.utxos:
-                # self.utxos[channel_id] = {}
-            # self.utxos[channel_id] = 
-
+            LOG.debug(f'hist: {hist} ({type(hist)})')
+            channel_added = bool(not channel_id in self.history)
+            if channel_added:
+                self.history[channel_id] = []
+            self.history[channel_id].append(hist)
+            if channel_added:
+                if channel_id == ADMIN_CHANNEL_ID:
+                    self.on_initelection(hist)
+                else:
+                    self.on_addsubchannel(hist)
         except Exception as e:
-            LOG.error(f'Error in self._on_match: {e}')
+            LOG.error(f'Error in self._parse_history_entry: {e}')
 
     def _fetch_datum(self, datum_hash: str) -> Any:
         LOG.debug('ElectionSubscriber._fetch_datum')
@@ -508,18 +492,16 @@ class ElectionSubscriber:
         resp.raise_for_status()
         return resp.json()
 
-    # TODO merge most of this into the subscriber and START from (id, state) or similar useful type
-    # TODO maybe the simplest useful type would be (old_state, new_state)?
-    def _on_match(self, utxo_dict: Dict[str, Any]) -> (ChannelId, ChannelState):
-        LOG.debug('ElectionSubscriber._on_match')
+    def _parse_history_entry(self, utxo_dict: Dict[str, Any]) -> (ChannelId, HistoryEntry):
+        LOG.debug('ElectionSubscriber._parse_history_entry')
         LOG.debug(f'utxo_dict:\n{json.dumps(utxo_dict, indent=2)}')
 
         tx_id       = utxo_dict.get('transaction_id')
         out_ix      = utxo_dict.get('output_index')
         datum_hash  = utxo_dict.get('datum_hash')
         datum_type  = utxo_dict.get('datum_type')
-        created     = utxo_dict.get('created_at') or {}
-        slot_no     = created.get('slot_no')
+        created     = utxo_dict.get('created_at') # TODO is it ever not there? or {}
+        created_slot = int(created.get('slot_no'))
         header_hash = created.get('header_hash')
 
         assert datum_hash # TODO will this not exist in the final EndElection tx?
@@ -539,8 +521,17 @@ class ElectionSubscriber:
                 channel_id = ADMIN_CHANNEL_ID
 
             ch_str = channel_id_to_string(channel_id)
-            LOG.debug(f'handle_match: decoded {ch_str} state {state.state.seq}: {state}')
-            return (channel_id, state)
+            LOG.debug(f'decoded {ch_str} state {state.state.seq}: {state}')
+
+            hist = HistoryEntry(
+                state         = state,
+                utxo_dict     = utxo_dict,
+                created_slot  = created_slot,
+                removed_slot  = None, # will be filled in by _on_spend later
+            )
+            LOG.debug(f'hist: {hist}')
+
+            return (channel_id, hist)
 
         except Exception as e:
             LOG.error(f'handle_match: failed to fetch datum {datum_hash}: {e}')
