@@ -36,17 +36,17 @@ sub_cfg = SubscriberConfig(
     since_block_hash = args['<block_hash>'],
     policy_id = ScriptHash(bytes.fromhex(args['<policy_id>'])),
 )
-LOG.debug(f'sub_cfg: {sub_cfg}')
+LOG.info(f'sub_cfg: {sub_cfg}')
 
 sub = ElectionSubscriber(sub_cfg)
 sub.start()
 time.sleep(1)
 sub.stop()
-LOG.debug(f'final history:\n{pformat(sub.history)}')
+LOG.info(f'final history:\n{pformat(sub.history)}')
 
-admin_records = sub.channel_history(ADMIN_CHANNEL_ID)
-LOG.debug(f'final admin_records: {pformat(admin_records)}')
+# admin_records = sub.channel_history(ADMIN_CHANNEL_ID)
+# LOG.info(f'final admin_records: {pformat(admin_records)}')
 
 # TODO what should marking a channel done look like?
 channel_ids = sub.channel_ids()
-LOG.debug(f'final channel_ids: {channel_ids}')
+LOG.info(f'final channel_ids: {channel_ids}')

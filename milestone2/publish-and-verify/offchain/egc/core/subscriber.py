@@ -63,119 +63,24 @@ class SubscriberConfig:
 # TODO can the response type be more specific than dict?
 SubscriberCallback = Callable[[dict, requests.Session], ElectionAction]
 
-def fetch_datum(session: requests.Session, datum_hash: str) -> Any:
-    url = f'http://{KUPO_HOST}:{KUPO_PORT}/v1/datums/{datum_hash}' # TODO global var?
-    LOG.debug(f'fetch_datum: fetching datum {datum_hash}')
-    resp = session.get(url, timeout=10)
-    resp.raise_for_status()
-    return resp.json()
-
-# TODO remove? merge into Subscriber class?
-def handle_endelection(utxo: Dict[str, Any], session: requests.Session) -> ElectionAction:
-    LOG.debug('handle_endelection: admin channel closed')
-    return EndElection()
-
 # TODO move to channel_id.py
-def channel_id_from_asset_name(encoded: str) -> ChannelId:
-    channel_id = bytes.fromhex(encoded)
-    assert ChannelIdHelper.validate_bytes(channel_id)
-    LOG.debug(f'decoded {asset_name} -> {channel_id}')
-    return channel_id
+# def channel_id_from_asset_name(encoded: str) -> ChannelId:
+#     channel_id = bytes.fromhex(encoded)
+#     assert ChannelIdHelper.validate_bytes(channel_id)
+#     LOG.debug(f'decoded {asset_name} -> {channel_id}')
+#     return channel_id
 
 # TODO remove in favor of getting channel_ids from states?
 # TODO where should this live?
-def channel_id_from_output(output: UTxO) -> Optional[ChannelId]:
-    for asset_key in output.value.assets.keys():
-        policy_id, asset_name = asset_key.split('.')
-        try:
-            return channel_id_from_asset_name(asset_name)
-        except:
-            continue
-    LOG.error(f'Output does not match any channel:\n{output}')
-    return None
-
-# TODO merge most of this into the subscriber and START from (id, state) or similar useful type
-# TODO maybe the simplest useful type would be (old_state, new_state)?
-def handle_match(utxo: Dict[str, Any], session: requests.Session) -> (ChannelId, ChannelState):
-    LOG.debug(f'Full match UTxO:\n{json.dumps(utxo, indent=2)}')
-
-    tx_id       = utxo.get('transaction_id')
-    out_ix      = utxo.get('output_index')
-    datum_hash  = utxo.get('datum_hash')
-    datum_type  = utxo.get('datum_type')
-    created     = utxo.get('created_at') or {}
-    slot_no     = created.get('slot_no')
-    header_hash = created.get('header_hash')
-
-    assert datum_hash # TODO will this not exist in the final EndElection tx?
-
-    try:
-        datum = fetch_datum(session, datum_hash)
-
-        # try subchannel first because that should be more common long term
-        try:
-            state = SubChannel.from_cbor(datum['datum'])
-            channel_id = state.state.channel_id
-        except:
-
-            # TODO would a minimal, messy fix be to check for channels removed here?
-
-            state = AdminChannel.from_cbor(datum['datum'])
-            channel_id = ADMIN_CHANNEL_ID
-
-        LOG.debug(f'handle_match: decoded {channel_id} state {state.state.seq}: {state}')
-        return (channel_id, state)
-
-    except Exception as e:
-        LOG.error(f'handle_match: failed to fetch datum {datum_hash}: {e}')
-        raise
-
-def kupo_to_utxo(kupo_dict: dict) -> UTxO:
-    """Convert a Kupo UTXO response dict to a PyCardano UTxO.
-    WARNING: Does not handle a lot of edge cases! Mainly for BurnTestTokens.
-    """
-    tx_input = TransactionInput.from_primitive(
-        [kupo_dict["transaction_id"], kupo_dict["output_index"]]
-    )
-
-    coins = kupo_dict["value"]["coins"]
-    assets = kupo_dict["value"].get("assets", {})
-
-    if assets:
-        multi_asset = MultiAsset()
-        for asset_id, amount in assets.items():
-            if "." in asset_id:
-                policy_hex, asset_name_hex = asset_id.split(".", 1)
-            else:
-                policy_hex = asset_id
-                asset_name_hex = ""
-
-            policy_id = ScriptHash.from_primitive(policy_hex)
-            asset_name = AssetName(bytes.fromhex(asset_name_hex))
-
-            if policy_id not in multi_asset:
-                multi_asset[policy_id] = Asset()  # <-- Asset(), not {}
-
-            multi_asset[policy_id][asset_name] = amount
-
-        value = Value(coin=coins, multi_asset=multi_asset)
-    else:
-        value = Value(coin=coins)
-
-    address = Address.from_primitive(kupo_dict["address"])
-
-    datum_hash = None
-    if kupo_dict.get("datum_hash"):
-        from pycardano import DatumHash
-        datum_hash = DatumHash.from_primitive(kupo_dict["datum_hash"])
-
-    tx_output = TransactionOutput(
-        address=address,
-        amount=value,
-        datum_hash=datum_hash,
-    )
-
-    return UTxO(tx_input, tx_output)
+# def channel_id_from_output(output: UTxO) -> Optional[ChannelId]:
+#     for asset_key in output.value.assets.keys():
+#         policy_id, asset_name = asset_key.split('.')
+#         try:
+#             return channel_id_from_asset_name(asset_name)
+#         except:
+#             continue
+#     LOG.error(f'Output does not match any channel:\n{output}')
+#     return None
 
 
 class ElectionSubscriber:
@@ -205,8 +110,8 @@ class ElectionSubscriber:
         self.config = config
 
         # TODO build in the important parts but allow extra ones here too
-        self.on_match: SubscriberCallback = handle_match
-        self.on_close: SubscriberCallback = handle_endelection
+        # self.on_match: SubscriberCallback = handle_match
+        # self.on_close: SubscriberCallback = handle_endelection
 
         # used to reconstruct channel_history() on demand
         self.history: Mapping[ChannelId, Mapping[int, ChannelState]] = {}
@@ -228,14 +133,36 @@ class ElectionSubscriber:
         self._seen_tx_ids: set[str] = set() # TODO remove once sure they're not needed
 
         # for http requests to the kupo process
-        self.session = requests.Session()
-        self.session.headers.update({'Accept': 'application/json'})
+        self._session = requests.Session()
+        self._session.headers.update({'Accept': 'application/json'})
 
         # TODO remove
         self._last_tx_key = None
 
 
-    ## kupo process managment ##
+    ## query interface ##
+
+    # self.history and self.states can also be accessed directly
+    # TODO write lock just in case that's an issue?
+
+    def channel_ids(self) -> list[ChannelId]:
+        LOG.debug('ElectionSubscriber.channel_ids')
+        return sorted(self.history.keys())
+
+    def channel_history(self, channel_id: ChannelId):
+        LOG.debug('ElectionSubscriber.channel_history')
+        LOG.debug(f'history: {self.history}')
+        records = []
+        # TODO fix so even if one is missing, iteration doesn't get messed up
+        if not channel_id in self.history:
+            return []
+        for seq in range(0, len(self.history[channel_id])):
+            assert seq in self.history[channel_id], f'Missing records with channel_id={channel_id} seq={seq}.'
+            records += list(self.history[channel_id][seq].state.new_records)
+        return records
+
+
+    ## process managment interface ##
 
     def start(self) -> None:
         LOG.debug('ElectionSubscriber.start')
@@ -269,7 +196,7 @@ class ElectionSubscriber:
 
     def stop(self) -> None:
         LOG.debug('ElectionSubscriber.stop')
-        self.stop_kupo()
+        self._stop_kupo()
         self._kupo_stop.set()
         if self._kupo_thread and self._kupo_thread.is_alive():
             LOG.debug('Waiting for watcher thread to exit...')
@@ -281,10 +208,15 @@ class ElectionSubscriber:
         self._kupo_thread = None
 
     def is_done(self):
+        LOG.debug('ElectionSubscriber.is_done')
         return self._kupo_stop.is_set() \
            and self._kupo_thread is None
 
+
+    ## process management guts ##
+
     def __del__(self):
+        LOG.debug('ElectionSubscriber.__del__')
         # Just a proactive warning in case of future thread stopping related issues:
         proc = getattr(self, '_kupo_proc', None)
         if proc is not None and proc.poll() is None:
@@ -337,7 +269,7 @@ class ElectionSubscriber:
             '--host', KUPO_HOST,
             '--port', str(KUPO_PORT),
 
-            '--log-level', 'Notice'
+            '--log-level', 'Warning'
 
             # '--prune-utxo',
 
@@ -381,8 +313,8 @@ class ElectionSubscriber:
         # TODO why does this seem to happen immediately?
         LOG.debug('Kupo subprocess output thread terminating')
 
-    def stop_kupo(self) -> None:
-        LOG.debug('ElectionSubscriber.stop_kupo')
+    def _stop_kupo(self) -> None:
+        LOG.debug('ElectionSubscriber._stop_kupo')
 
         proc = self._kupo_proc
         if proc is None:
@@ -407,12 +339,61 @@ class ElectionSubscriber:
 
         self._kupo_proc = None
 
+    def _kupo_to_utxo(self, kupo_dict: dict) -> UTxO:
+        """Convert a Kupo UTXO response dict to a PyCardano UTxO.
+        WARNING: Does not handle a lot of edge cases! Mainly for BurnTestTokens.
+        """
+        LOG.debug('ElectionSubscriber._kupo_to_utxo')
+        tx_input = TransactionInput.from_primitive(
+            [kupo_dict["transaction_id"], kupo_dict["output_index"]]
+        )
+
+        coins = kupo_dict["value"]["coins"]
+        assets = kupo_dict["value"].get("assets", {})
+
+        if assets:
+            multi_asset = MultiAsset()
+            for asset_id, amount in assets.items():
+                if "." in asset_id:
+                    policy_hex, asset_name_hex = asset_id.split(".", 1)
+                else:
+                    policy_hex = asset_id
+                    asset_name_hex = ""
+
+                policy_id = ScriptHash.from_primitive(policy_hex)
+                asset_name = AssetName(bytes.fromhex(asset_name_hex))
+
+                if policy_id not in multi_asset:
+                    multi_asset[policy_id] = Asset()  # <-- Asset(), not {}
+
+                multi_asset[policy_id][asset_name] = amount
+
+            value = Value(coin=coins, multi_asset=multi_asset)
+        else:
+            value = Value(coin=coins)
+
+        address = Address.from_primitive(kupo_dict["address"])
+
+        datum_hash = None
+        if kupo_dict.get("datum_hash"):
+            from pycardano import DatumHash
+            datum_hash = DatumHash.from_primitive(kupo_dict["datum_hash"])
+
+        tx_output = TransactionOutput(
+            address=address,
+            amount=value,
+            datum_hash=datum_hash,
+        )
+
+        return UTxO(tx_input, tx_output)
+
     def _watch_kupo(self) -> None:
+        LOG.debug('ElectionSubscriber._watch_kupo')
         LOG.debug(f'Watcher thread started for policy_id={self.config.policy_id}')
 
         while not self._kupo_stop.is_set():
             try:
-                resp = self.session.get(
+                resp = self._session.get(
                     KUPO_MATCHES_URL,
                     timeout=10,
                     params={
@@ -451,7 +432,7 @@ class ElectionSubscriber:
 
                     try:
 
-                        (channel_id, new_state) = self.on_match(utxo_dict, self.session)
+                        (channel_id, new_state) = self._on_match(utxo_dict)
                         LOG.debug(f'new_state: {new_state} ({type(new_state)})')
 
                         # assert isinstance(new_state, AdminChannelState), 'Each TX should have a AdminChannelState'
@@ -461,18 +442,18 @@ class ElectionSubscriber:
 
                         if not channel_id in self.states:
                             self.states[channel_id] = {}
-                        self.states[channel_id] = (kupo_to_utxo(utxo_dict), new_state)
+                        self.states[channel_id] = (_kupo_to_utxo(utxo_dict), new_state)
 
                         # if not channel_id in self.utxos:
                             # self.utxos[channel_id] = {}
                         # self.utxos[channel_id] = 
 
                     except Exception as e:
-                        LOG.error(f'Error in self.on_match: {e}')
+                        LOG.error(f'Error in self._on_match: {e}')
 
                 if not any_new_utxo:
                     LOG.debug('No new UTXOs')
-                    self.check_if_admin_channel_closed()
+                    self._check_if_admin_channel_closed()
                     # TODO is this the only check like this? or do we need one per channel?
 
                 # TODO end section to factor out here
@@ -489,17 +470,68 @@ class ElectionSubscriber:
         LOG.debug('Watcher thread exiting')
 
 
-    ## election state management ##
+    ## election state management guts ##
 
     # TODO move the bulk of the module level fns here
 
-    def check_if_admin_channel_closed(self):
+    def _fetch_datum(self, datum_hash: str) -> Any:
+        LOG.debug('ElectionSubscriber._fetch_datum')
+        url = f'http://{KUPO_HOST}:{KUPO_PORT}/v1/datums/{datum_hash}' # TODO global var?
+        LOG.debug(f'fetching datum {datum_hash}')
+        resp = self._session.get(url, timeout=10)
+        resp.raise_for_status()
+        return resp.json()
+
+    # TODO merge most of this into the subscriber and START from (id, state) or similar useful type
+    # TODO maybe the simplest useful type would be (old_state, new_state)?
+    def _on_match(self, utxo_dict: Dict[str, Any]) -> (ChannelId, ChannelState):
+        LOG.debug('ElectionSubscriber._on_match')
+        LOG.debug(f'utxo_dict:\n{json.dumps(utxo_dict, indent=2)}')
+
+        tx_id       = utxo_dict.get('transaction_id')
+        out_ix      = utxo_dict.get('output_index')
+        datum_hash  = utxo_dict.get('datum_hash')
+        datum_type  = utxo_dict.get('datum_type')
+        created     = utxo_dict.get('created_at') or {}
+        slot_no     = created.get('slot_no')
+        header_hash = created.get('header_hash')
+
+        assert datum_hash # TODO will this not exist in the final EndElection tx?
+
+        try:
+            datum = self._fetch_datum(datum_hash)
+
+            # try subchannel first because that should be more common long term
+            try:
+                state = SubChannel.from_cbor(datum['datum'])
+                channel_id = state.state.channel_id
+            except:
+
+                # TODO would a minimal, messy fix be to check for channels removed here?
+
+                state = AdminChannel.from_cbor(datum['datum'])
+                channel_id = ADMIN_CHANNEL_ID
+
+            ch_str = channel_id_to_string(channel_id)
+            LOG.debug(f'handle_match: decoded {ch_str} state {state.state.seq}: {state}')
+            return (channel_id, state)
+
+        except Exception as e:
+            LOG.error(f'handle_match: failed to fetch datum {datum_hash}: {e}')
+            raise
+
+    # TODO remove?
+    def _on_close(self, utxo: Dict[str, Any]) -> ElectionAction:
+        LOG.debug('handle_endelection: admin channel closed')
+        return EndElection()
+
+    def _check_if_admin_channel_closed(self):
         LOG.debug('ElectionSubscriber.check_if_admin_channel_closed')
         if self._last_tx_key is None:
             LOG.debug('no transactions have been published yet?')
             return
         (tx_id, output_ix) = self._last_tx_key
-        resp = self.session.get(KUPO_MATCHES_URL + f'/{output_ix}@{tx_id}') # TODO params? timeout?
+        resp = self._session.get(KUPO_MATCHES_URL + f'/{output_ix}@{tx_id}') # TODO params? timeout?
         if resp.status_code == 200:
             utxos = resp.json() # TODO store a map of channel id -> latest utxo in the subscriber
             LOG.debug(f'utxos: {pformat(utxos)}')
@@ -510,25 +542,7 @@ class ElectionSubscriber:
                 # TODO later, update to handle reference script utxo
                 if 'spent_at' in utxo and utxo['spent_at'] is not None:
                     LOG.debug(f'Confirmed: STT UTXO spent without creating a new one.')
-                    self.on_close(utxo, self.session)
+                    self._on_close(utxo)
                     self.stop()
                     return
         LOG.debug(f'Channel not yet closed {resp}')
-
-
-    ## query functions ##
-
-    def channel_ids(self) -> list[ChannelId]:
-        return sorted(self.history.keys())
-
-    def channel_history(self, channel_id: ChannelId):
-        LOG.debug('ElectionSubscriber.channel_history')
-        LOG.debug(f'history: {self.history}')
-        records = []
-        # TODO fix so even if one is missing, iteration doesn't get messed up
-        if not channel_id in self.history:
-            return []
-        for seq in range(0, len(self.history[channel_id])):
-            assert seq in self.history[channel_id], f'Missing records with channel_id={channel_id} seq={seq}.'
-            records += list(self.history[channel_id][seq].state.new_records)
-        return records
