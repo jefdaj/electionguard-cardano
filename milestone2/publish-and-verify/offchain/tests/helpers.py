@@ -22,10 +22,10 @@ def assert_nodes_in_sync(nodes: List[ElectionNode]):
     ref = nodes[0]; nodes = nodes[1:]
     for node in nodes:
         assert node.election_phase()   == ref.election_phase()  , "phase mismatch"
+        # TODO use interface here rather than raw history dict?
         assert node.subscriber.history == ref.subscriber.history, "history mismatch"
-        assert node.subscriber.states  == ref.subscriber.states , "state mismatch"
     LOG.info(f'All {len(nodes)+1} nodes in sync: ' + ', '.join(s for s in ch_strs))
-    LOG.debug(f'Current state:\n\n{pformat(ref.subscriber.states)}\n')
+    # LOG.debug(f'Current state:\n\n{pformat(ref.subscriber.states)}\n')
 
 # TODO rename _sub tests -> checkpoints and add cross-channel dependencies
 def assert_node_state(

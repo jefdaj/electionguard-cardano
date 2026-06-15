@@ -242,19 +242,19 @@ class FunderNode(ElectionNode):
         mint_redeemer = Redeemer(data=BurnTestTokens())
         LOG.debug(f'mint_redeemer: {mint_redeemer}')
 
-        channel_ids = sorted(self.subscriber.states.keys())
+        channel_ids = self.subscriber.channel_ids()
         LOG.debug(f'channel_ids: {channel_ids}')
 
         # TODO aha! the subscribers aren't noticing when they're done?
         # temporary workaround before rewriting subscriber, to confirm the issue:
-        bad_ids = []
-        for channel_id in channel_ids:
-            (utxo, state) = self.subscriber.states[channel_id]
-            still_good = is_utxo_unspent(utxo)
-            if not still_good:
-                LOG.error(f'Spent UTXO should have been removed from subscriber: {utxo}')
-                bad_ids.append(channel_id)
-        channel_ids = [i for i in channel_ids if not i in bad_ids]
+        # bad_ids = []
+        # for channel_id in channel_ids:
+        #     (utxo, state) = self.subscriber.current_state(channel_id)
+        #     still_good = is_utxo_unspent(utxo)
+        #     if not still_good:
+        #         LOG.error(f'Spent UTXO should have been removed from subscriber: {utxo}')
+        #         bad_ids.append(channel_id)
+        # channel_ids = [i for i in channel_ids if not i in bad_ids]
 
         burn_assets = mint_channel_stt_assets(
             self.election.script.policy_id,
@@ -271,7 +271,8 @@ class FunderNode(ElectionNode):
         burn_txb.collaterals.append(funder_collateral)
 
         for channel_id in channel_ids:
-            (utxo, state) = self.subscriber.states[channel_id]
+            hist = self.subscriber.channel_state(channel_id)
+            utxo = pycardano_utxo_from_kupo(hist.utxo_dict)
             LOG.debug(f'script controlled utxo to spend: {utxo}')
             spend_redeemer = Redeemer(data=BurnTestTokens())
             burn_txb = burn_txb.add_script_input(
@@ -279,7 +280,7 @@ class FunderNode(ElectionNode):
                 script=self.election.script.spend_script,
                 redeemer=spend_redeemer
             )
-            channel_id = channel_id_to_string(channel_id_from_state(state))
+            # channel_id = channel_id_to_string(channel_id_from_state(state))
             tx_msgs.append(f'{ch_str} burned {channel_id} channel STT and recovered fee pool ADA.')
 
         LOG.debug('burn_txb:\n%s\n' % pformat(burn_txb))
@@ -317,7 +318,8 @@ class FunderNode(ElectionNode):
         ch_str = self.channel_str()
         errors = []
         last_tx = None # only have to wait once
-        for (utxo, state) in self.subscriber.states.values():
+        for channel_id in self.subscriber.channel_ids():
+            state = self.subscriber.channel_state(channel_id).state
             try:
                 LOG.debug(f'state: {state}')
                 pub_addr   = publisher_address(state)

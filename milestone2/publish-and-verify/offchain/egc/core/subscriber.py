@@ -41,6 +41,24 @@ KUPO_MATCHES_URL = f'http://{KUPO_HOST}:{KUPO_PORT}/v1/matches'
 # NODE_CONFIG = environ.get('NODE_CONFIG', '../../cardano-node-ogmios/config/network/preview/cardano-node/config.json')
 
 
+# TODO also use this in subscriberconfig?
+@dataclass
+class Point:
+    slot_no: int
+    header_hash: str
+
+    def as_param(self) -> str:
+        return f"{self.slot_no}.{self.header_hash}"
+
+
+@dataclass
+class HistoryEntry:
+    state: ChannelState
+    utxo_dict: dict[str, Any] # TODO fn to convert to pycardano utxo as before
+    created_slot: int
+    removed_slot: int | None = None # set on final entry when channel is removed
+
+
 @dataclass
 class SubscriberConfig:
     since_slot:       int # For kupo --since
@@ -83,11 +101,11 @@ class SubscriberConfig:
 #     LOG.error(f'Output does not match any channel:\n{output}')
 #     return None
 
-def _kupo_to_utxo(kupo_dict: dict) -> UTxO:
+def pycardano_utxo_from_kupo(kupo_dict: dict) -> UTxO:
     """Convert a Kupo UTXO response dict to a PyCardano UTxO.
     WARNING: Does not handle a lot of edge cases! Mainly for BurnTestTokens.
     """
-    LOG.debug('ElectionSubscriber._kupo_to_utxo')
+    LOG.debug('ElectionSubscriber.pycardano_utxo_from_kupo')
     tx_input = TransactionInput.from_primitive(
         [kupo_dict["transaction_id"], kupo_dict["output_index"]]
     )
@@ -162,16 +180,15 @@ class ElectionSubscriber:
         # self.on_match: SubscriberCallback = handle_match
         # self.on_close: SubscriberCallback = handle_endelection
 
-        # used to reconstruct channel_history() on demand
-        self.history: Mapping[ChannelId, Mapping[int, ChannelState]] = {}
+        # used to construct channel_ids(), channel_history(), current_state()
+        # self.history: Mapping[ChannelId, Mapping[int, ChannelState]] = {}
+        self.history: Mapping[ChannelId, list[HistoryEntry]] = {}
 
         # used to query the current state
         # TODO remove channels from this when they're burned; use history to access after
-        self.states: Mapping[ChannelId, (UTxO, ChannelState)] = {}
-
-        # used to query raw utxos
-        # TODO merge with self.states? do you usually need both?
-        # self.utxos: Mapping[ChannelId, UTxO] = {}
+        # self.states: Mapping[ChannelId, (UTxO, ChannelState)] = {}
+        # TODO replace with just getting the latest from the history list or none if burned
+        # self.states: Mapping[ChannelId, HistoryEntry] = {}
 
         # for managing the kupo process
         self._kupo_proc:   Optional[subprocess.Popen] = None
@@ -188,6 +205,13 @@ class ElectionSubscriber:
         # TODO remove
         self._last_tx_key = None
 
+        # The latest created_at.slot_no seen in a result so far.
+        # Kupo guarantees ordering by slot when you pass created_after, so
+        # dedup-by-id is unnecessary once you only fetch slots strictly after
+        # your cursor.
+        # TODO hook this up
+        self._created_cursor_slot: int = 0   # advance to max(created_at.slot_no) seen
+
 
     ## query interface ##
 
@@ -198,17 +222,23 @@ class ElectionSubscriber:
         LOG.debug('ElectionSubscriber.channel_ids')
         return sorted(self.history.keys())
 
-    def channel_history(self, channel_id: ChannelId):
+    def channel_history(self, channel_id: ChannelId) -> list[HistoryEntry]:
         LOG.debug('ElectionSubscriber.channel_history')
-        LOG.debug(f'history: {self.history}')
-        records = []
+        return self.history[channel_id] # TODO return None rather than raise KeyError?
+
+        # LOG.debug(f'history: {self.history}')
+        # records = []
         # TODO fix so even if one is missing, iteration doesn't get messed up
-        if not channel_id in self.history:
-            return []
-        for seq in range(0, len(self.history[channel_id])):
-            assert seq in self.history[channel_id], f'Missing records with channel_id={channel_id} seq={seq}.'
-            records += list(self.history[channel_id][seq].state.new_records)
-        return records
+        # if not channel_id in self.history:
+        #     return []
+        # for seq in range(0, len(self.history[channel_id])):
+        #     assert seq in self.history[channel_id], f'Missing records with channel_id={channel_id} seq={seq}.'
+        #     records += list(self.history[channel_id][seq].state.new_records)
+        # return records
+
+    def channel_state(self, channel_id: ChannelId) -> HistoryEntry:
+        LOG.debug('ElectionSubscriber.channel_state')
+        return self.channel_history(channel_id)[-1] # TODO return None rather than raise KeyError?
 
 
     ## process managment interface ##
@@ -398,66 +428,22 @@ class ElectionSubscriber:
                     KUPO_MATCHES_URL,
                     timeout=10,
                     params={
-                        'with_spent': 'false',
+                        'with_spent': 'true',
                         'order': 'oldest_first',
                     }
                 )
                 resp.raise_for_status()
-                unspent_utxos = resp.json()
+                utxo_dicts = resp.json()
+                # LOG.debug(f'resp.json:\n{json.dumps(utxo_dicts, indent=2)}')
 
-                if not isinstance(unspent_utxos, list):
-                    raise Exception(f'Unexpected Kupo response type: {type(unspent_utxos)}')
+                if not isinstance(utxo_dicts, list):
+                    raise Exception(f'Unexpected Kupo response type: {type(utxo_dicts)}')
 
-                # TODO start section to factor out here
-
-                any_new_utxo = False
-
-                for utxo_dict in unspent_utxos:
+                for utxo_dict in utxo_dicts:
                     if not isinstance(utxo_dict, dict):
-                        # continue
                         raise Exception(f'Unexpected utxo format {type(utxo_dict)}:\n{utxo_dict}')
 
-                    # skip already-processed transactions
-                    # TODO is this ever actually needed?
-                    # TODO is this wrong in case of a roll-back?
-                    tx_id = utxo_dict.get('transaction_id')
-                    out_ix = utxo_dict.get('output_index')
-                    key = (tx_id, out_ix)
-                    if tx_id and key in self._seen_tx_ids:
-                        continue
-                    if tx_id:
-                        # LOG.debug(f'last_tx_key: {key}')
-                        self._seen_tx_ids.add(key)
-                        self._last_tx_key = key
-                        any_new_utxo = True
-
-                    try:
-
-                        (channel_id, new_state) = self._on_match(utxo_dict)
-                        LOG.debug(f'new_state: {new_state} ({type(new_state)})')
-
-                        # assert isinstance(new_state, AdminChannelState), 'Each TX should have a AdminChannelState'
-                        if not channel_id in self.history:
-                            self.history[channel_id] = {}
-                        self.history[channel_id][new_state.state.seq] = new_state
-
-                        if not channel_id in self.states:
-                            self.states[channel_id] = {}
-                        self.states[channel_id] = (_kupo_to_utxo(utxo_dict), new_state)
-
-                        # if not channel_id in self.utxos:
-                            # self.utxos[channel_id] = {}
-                        # self.utxos[channel_id] = 
-
-                    except Exception as e:
-                        LOG.error(f'Error in self._on_match: {e}')
-
-                if not any_new_utxo:
-                    LOG.debug('No new UTXOs')
-                    self._check_if_admin_channel_closed()
-                    # TODO is this the only check like this? or do we need one per channel?
-
-                # TODO end section to factor out here
+                    self._on_utxo(utxo_dict)
 
             except requests.RequestException as e:
                 LOG.debug(f'Kupo polling error: {e}') # TODO back to warning?
@@ -473,7 +459,46 @@ class ElectionSubscriber:
 
     ## election state management guts ##
 
-    # TODO move the bulk of the module level fns here
+    # TODO merge with on_match
+    def _on_utxo(self, utxo_dict: dict[str, Any]):
+        LOG.debug('ElectionSubscriber._on_utxo')
+        LOG.debug(f'utxo_dict: {pformat(utxo_dict)}')
+        # skip already-processed transactions
+        # TODO is this ever actually needed?
+        # TODO is this wrong in case of a roll-back?
+        tx_id = utxo_dict.get('transaction_id')
+        out_ix = utxo_dict.get('output_index')
+        key = (tx_id, out_ix)
+        if tx_id and key in self._seen_tx_ids:
+            return
+        if tx_id:
+            # LOG.debug(f'last_tx_key: {key}')
+            self._seen_tx_ids.add(key)
+            self._last_tx_key = key
+            # any_new_utxo = True
+
+        try:
+
+            (channel_id, new_state) = self._on_match(utxo_dict)
+            LOG.debug(f'channel_id: {channel_id} ({type(channel_id)})')
+            LOG.debug(f'new_state: {new_state} ({type(new_state)})')
+
+            # assert isinstance(new_state, AdminChannelState), 'Each TX should have a AdminChannelState'
+            if not channel_id in self.history:
+                self.history[channel_id] = {}
+            self.history[channel_id][new_state.state.seq] = new_state
+
+            if not channel_id in self.states:
+                self.states[channel_id] = {}
+            # self.states[channel_id] = (pycardano_utxo_from_kupo(utxo_dict), new_state)
+            self.states[channel_id] = (utxo_dict, new_state)
+
+            # if not channel_id in self.utxos:
+                # self.utxos[channel_id] = {}
+            # self.utxos[channel_id] = 
+
+        except Exception as e:
+            LOG.error(f'Error in self._on_match: {e}')
 
     def _fetch_datum(self, datum_hash: str) -> Any:
         LOG.debug('ElectionSubscriber._fetch_datum')
@@ -547,3 +572,25 @@ class ElectionSubscriber:
                     self.stop()
                     return
         LOG.debug(f'Channel not yet closed {resp}')
+
+    def _rollback_to(self, safe_slot: int):
+        for channel_id, entries in list(self.history.items()):
+            kept = [e for e in entries if e.created_slot <= safe_slot]
+
+            if not kept:
+                self.history.pop(channel_id)
+                # self.current_state.pop(channel_id, None)
+                continue
+
+            self.history[channel_id] = kept
+            last = kept[-1]
+
+            # Un-burn if the burn was rolled back
+            if last.removed_slot is not None and last.removed_slot > safe_slot:
+                last.removed_slot = None
+
+            # If channel is live (not burned), make sure it's in current_state
+            # if last.removed_slot is None:
+            #     self.current_state[channel_id] = (last.utxo, last.state)
+            # else:
+            #     self.current_state.pop(channel_id, None)

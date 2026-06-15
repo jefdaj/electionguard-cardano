@@ -68,9 +68,11 @@ class ElectionNode:
     def channel_str(self) -> str:
         return self.publisher.channel_str()
 
+    # TODO update to return just the HistoryEntry?
     def state(self) -> Optional[Tuple[UTxO, ChannelState]]:
         try:
-            return self.subscriber.states[self.channel_id()]
+            st = self.subscriber.channel_state(self.channel_id())
+            return (pycardano_utxo_from_kupo(st.utxo_dict), st.state)
         except KeyError:
             # no state yet
             # TODO should this be a warning?
@@ -78,7 +80,7 @@ class ElectionNode:
 
     def election_phase(self) -> Optional[ElectionPhase]:
         try:
-            (_, state) = self.subscriber.states[ADMIN_CHANNEL_ID]
+            state = self.subscriber.channel_state(ADMIN_CHANNEL_ID).state
             return state.state.phase
         except KeyError:
             # no init_election tx published yet
