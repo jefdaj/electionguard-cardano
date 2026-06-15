@@ -38,12 +38,15 @@ sub_cfg = SubscriberConfig(
 )
 LOG.debug(f'sub_cfg: {sub_cfg}')
 
-# TODO does handle_endelection need to be separate? maybe combine after all
-sub = ElectionSubscriber(sub_cfg, handle_match, handle_endelection)
+sub = ElectionSubscriber(sub_cfg)
 sub.start()
 time.sleep(1)
 sub.stop()
 LOG.debug(f'final history:\n{pformat(sub.history)}')
 
-records = sub.subscribed_records(ADMIN_CHANNEL_ID)
-LOG.debug(f'final records: {pformat(records)}')
+admin_records = sub.channel_history(ADMIN_CHANNEL_ID)
+LOG.debug(f'final admin_records: {pformat(admin_records)}')
+
+# TODO what should marking a channel done look like?
+channel_ids = sub.channel_ids()
+LOG.debug(f'final channel_ids: {channel_ids}')

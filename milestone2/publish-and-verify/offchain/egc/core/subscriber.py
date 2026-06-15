@@ -94,7 +94,8 @@ def channel_id_from_output(output: UTxO) -> Optional[ChannelId]:
     LOG.error(f'Output does not match any channel:\n{output}')
     return None
 
-# TODO merge into Subscriber class?
+# TODO merge most of this into the subscriber and START from (id, state) or similar useful type
+# TODO maybe the simplest useful type would be (old_state, new_state)?
 def handle_match(utxo: Dict[str, Any], session: requests.Session) -> (ChannelId, ChannelState):
     LOG.debug(f'Full match UTxO:\n{json.dumps(utxo, indent=2)}')
 
@@ -187,23 +188,31 @@ class ElectionSubscriber:
     def __init__(
             self,
             config: SubscriberConfig,
+
+            # TODO wait you probably do still want these, but they're additional!
+            #      they're for showing things in an interface, fetching ipfs files, calling the verifier, ...
+            # TODO start by just having subscribe.py print important events using them instead of logging
+            # TODO should they take a custom event type?
+            # TODO think about what they should return if anything
+            # TODO should they take ElectionActions as args? they certainly shouldn't return them
             # on_match: SubscriberCallback,
             # on_close: SubscriberCallback,
+
         ):
 
         LOG.debug('ElectionSubscriber.__init__')
 
         self.config = config
 
-        # TODO does having these be separate functions help anymore?
+        # TODO build in the important parts but allow extra ones here too
         self.on_match: SubscriberCallback = handle_match
         self.on_close: SubscriberCallback = handle_endelection
 
-        # used to reconstruct subscribed_records() on demand
+        # used to reconstruct channel_history() on demand
         self.history: Mapping[ChannelId, Mapping[int, ChannelState]] = {}
 
         # used to query the current state
-        # TODO can these both be put in the same map without making it annoying/fragile?
+        # TODO remove channels from this when they're burned; use history to access after
         self.states: Mapping[ChannelId, (UTxO, ChannelState)] = {}
 
         # used to query raw utxos
@@ -216,15 +225,14 @@ class ElectionSubscriber:
         self._kupo_stop = threading.Event()
 
         # to prevent duplicate processing of the same transactions
-        self._seen_tx_ids: set[str] = set()
+        self._seen_tx_ids: set[str] = set() # TODO remove once sure they're not needed
 
         # for http requests to the kupo process
         self.session = requests.Session()
         self.session.headers.update({'Accept': 'application/json'})
 
-        # we check whether this was spent without any new match to confirm a EndElection
-        # TODO remove once state map works
-        self._last_tx_key = None # TODO type?
+        # TODO remove
+        self._last_tx_key = None
 
 
     ## kupo process managment ##
@@ -507,8 +515,14 @@ class ElectionSubscriber:
                     return
         LOG.debug(f'Channel not yet closed {resp}')
 
-    def subscribed_records(self, channel_id: ChannelId):
-        LOG.debug('ElectionSubscriber.subscribed_records')
+
+    ## query functions ##
+
+    def channel_ids(self) -> list[ChannelId]:
+        return sorted(self.history.keys())
+
+    def channel_history(self, channel_id: ChannelId):
+        LOG.debug('ElectionSubscriber.channel_history')
         LOG.debug(f'history: {self.history}')
         records = []
         # TODO fix so even if one is missing, iteration doesn't get messed up
