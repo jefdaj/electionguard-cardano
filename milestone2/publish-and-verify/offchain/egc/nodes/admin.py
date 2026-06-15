@@ -316,7 +316,7 @@ class AdminNode(ElectionNode):
             sub_str = channel_id_to_string(sub_id)
             sub_st = self.subscriber.channel_state(sub_id)
             sub_state = sub_st.state
-            sub_utxo  = pycardano_utxo_from_kupo(sub_st.utxo_dict)
+            sub_utxo  = kupo_match_to_pycardano_utxo(sub_st.utxo_dict)
             LOG.debug(f'{sub_str} sub_utxo: {pformat(sub_utxo)}')
             sub_assets = mint_channel_stt_assets(self.election.script.policy_id, -1, [sub_id])
             LOG.debug(f'{sub_str} sub_assets: {pformat(sub_assets)}')

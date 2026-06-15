@@ -9,6 +9,7 @@ from .action import (
   EndElection,
   BurnTestTokens,
   ElectionAction,
+  decode_plutusdata_union, # TODO where should this live?
 )
 
 from .channel import (

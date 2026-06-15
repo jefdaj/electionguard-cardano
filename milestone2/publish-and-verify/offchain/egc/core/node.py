@@ -72,7 +72,7 @@ class ElectionNode:
     def state(self) -> Optional[Tuple[UTxO, ChannelState]]:
         try:
             st = self.subscriber.channel_state(self.channel_id())
-            return (pycardano_utxo_from_kupo(st.utxo_dict), st.state)
+            return (kupo_match_to_pycardano_utxo(st.utxo_dict), st.state)
         except KeyError:
             # no state yet
             # TODO should this be a warning?

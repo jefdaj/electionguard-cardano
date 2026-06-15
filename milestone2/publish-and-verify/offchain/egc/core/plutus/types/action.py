@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from typing import List, Union
 from pycardano import PlutusData
 from .channel_id import ChannelIdMixin
+import cbor2
+from typing import get_args, Union, Type
 
 
 ### Admin actions spending admin channel ###
@@ -64,3 +66,27 @@ ElectionAction = Union[
   PostPublicRecords,
   BurnTestTokens,
 ]
+
+
+### decode union types ###
+
+# TODO where should this live for now?
+# TODO and longer term, should you try to contribute it to pycardano? seems too simple...
+
+# TODO test on other union types too
+def decode_plutusdata_union(union_type, cbor_hex: str) -> PlutusData:
+    dispatch = {cls.CONSTR_ID: cls for cls in get_args(union_type)}
+    raw = bytes.fromhex(cbor_hex)
+    tag = cbor2.loads(raw)  # cbor2.CBORTag
+
+    if 121 <= tag.tag <= 127:
+        constr_id = tag.tag - 121
+    elif tag.tag == 102:
+        constr_id = tag.value[0]  # [index, fields]
+    else:
+        raise ValueError(f"Not a Plutus constr tag: {tag.tag}")
+
+    cls = dispatch.get(constr_id)
+    if cls is None:
+        raise ValueError(f"Unknown CONSTR_ID {constr_id} for ElectionAction")
+    return cls.from_cbor(raw)

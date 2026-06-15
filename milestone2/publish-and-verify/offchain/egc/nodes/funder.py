@@ -272,7 +272,7 @@ class FunderNode(ElectionNode):
 
         for channel_id in channel_ids:
             hist = self.subscriber.channel_state(channel_id)
-            utxo = pycardano_utxo_from_kupo(hist.utxo_dict)
+            utxo = kupo_match_to_pycardano_utxo(hist.utxo_dict)
             LOG.debug(f'script controlled utxo to spend: {utxo}')
             spend_redeemer = Redeemer(data=BurnTestTokens())
             burn_txb = burn_txb.add_script_input(

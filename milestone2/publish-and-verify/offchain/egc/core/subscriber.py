@@ -1,8 +1,3 @@
-"""Handles the shared details of subscribing to election events.
-"""
-
-# TODO use https://pypi.org/project/kupo-py/ ?
-
 import socket
 import argparse
 import json
@@ -15,6 +10,7 @@ import threading
 import time
 import logging
 
+from urllib.parse import urlencode
 from dataclasses import dataclass
 from os import environ
 from pprint import pformat
@@ -31,29 +27,13 @@ LOG = logging.getLogger(__name__)
 
 from pycardano import *
 
+# TODO use https://pypi.org/project/kupo-py/ ?
+
 
 # TODO need a different port per instance when running more than one on the same machine?
 KUPO_HOST        = environ.get('KUPO_HOST', '127.0.0.1')
 KUPO_PORT        = int(environ.get('KUPO_PORT', '1442'))
-KUPO_MATCHES_URL = f'http://{KUPO_HOST}:{KUPO_PORT}/v1/matches'
 
-
-# TODO also use this in subscriberconfig?
-@dataclass
-class Point:
-    slot_no: int
-    header_hash: str
-
-    def as_param(self) -> str:
-        return f"{self.slot_no}.{self.header_hash}"
-
-
-@dataclass
-class HistoryEntry:
-    state: ChannelState
-    utxo_dict: dict[str, Any] # TODO fn to convert to pycardano utxo as before
-    created_slot: int
-    removed_slot: int | None = None # set on final entry when channel is removed
 
 
 @dataclass
@@ -73,6 +53,43 @@ class SubscriberConfig:
             str(election.script.policy_id), # TODO use the pycardano object?
             None,
         )
+
+
+# TODO also use this in subscriberconfig?
+@dataclass
+class Point:
+    slot_no: int
+    header_hash: str
+
+    def as_param(self) -> str:
+        return f"{self.slot_no}.{self.header_hash}"
+
+    @classmethod
+    def from_config(cls, data: SubscriberConfig) -> Self:
+        return cls(data.since_slot, data.since_block_hash)
+
+
+@dataclass
+class SubscriberEvent:
+
+    # Should always exist, and whenever there's both a spent and unspent match
+    # the two should be equal. Used to remove history during rollbacks.
+    slot_no: int
+
+    # Not used yet, but may be useful for display in an interface.
+    # The first of these per channel should be from the unspent matches,
+    # and then the rest should be from spent matches. We could update the
+    # unspent one -> spent after it's spent, but I don't see a need so far.
+    # TODO would it be easy to pop and re-add the initial one on spend?
+    kupo_match: dict[str, Any]
+
+    # The last of these per channel should be None,
+    # signifying the channel was closed (burned).
+    state: Optional[ChannelState]
+
+    # Should always exist.
+    action: ElectionAction
+
 
 # TODO move to channel_id.py
 # def channel_id_from_asset_name(encoded: str) -> ChannelId:
@@ -98,11 +115,11 @@ def is_port_in_use(port: int) -> bool:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         return s.connect_ex((KUPO_HOST, port)) == 0
 
-def pycardano_utxo_from_kupo(kupo_dict: dict) -> UTxO:
+def kupo_match_to_pycardano_utxo(kupo_dict: dict) -> UTxO:
     """Convert a Kupo UTXO response dict to a PyCardano UTxO.
     WARNING: Does not handle a lot of edge cases! Mainly for BurnTestTokens.
     """
-    LOG.debug('ElectionSubscriber.pycardano_utxo_from_kupo')
+    LOG.debug('ElectionSubscriber.kupo_match_to_pycardano_utxo')
     tx_input = TransactionInput.from_primitive(
         [kupo_dict["transaction_id"], kupo_dict["output_index"]]
     )
@@ -148,7 +165,7 @@ def pycardano_utxo_from_kupo(kupo_dict: dict) -> UTxO:
 
 
 def mk_example_callback(callback_name: str):
-    def fn(hist: HistoryEntry) -> None:
+    def fn(hist: SubscriberEvent) -> None:
         LOG.info(f'{callback_name} called with: {hist}')
     return fn
 
@@ -163,59 +180,66 @@ class ElectionSubscriber:
     def __init__(
             self,
             config: SubscriberConfig,
-            on_initelection  = mk_example_callback('on_initelection'),
-            on_addsubchannel = mk_example_callback('on_addsubchannel'),
-            on_rmsubchannel  = mk_example_callback('on_rmsubchannel'),
-            on_endelection   = mk_example_callback('on_endelection'),
-            on_rollback      = mk_example_callback('on_rollback'),
+            on_initelection      = mk_example_callback('on_initelection'),
+            on_postpublicrecords = mk_example_callback('on_postpublicrecords'),
+            on_advancephase      = mk_example_callback('on_advancephase'),
+            on_addsubchannel     = mk_example_callback('on_addsubchannel'),
+            on_rmsubchannel      = mk_example_callback('on_rmsubchannel'),
+            on_endelection       = mk_example_callback('on_endelection'),
+            on_rollback          = mk_example_callback('on_rollback'),
         ):
 
         LOG.debug('ElectionSubscriber.__init__')
 
         self.config = config
 
-        self.on_initelection  = on_initelection
-        self.on_addsubchannel = on_addsubchannel
-        self.on_rmsubchannel  = on_rmsubchannel
-        self.on_endelection   = on_endelection
-        self.on_rollback      = on_rollback
+        # High-level callbacks
+        self.on_initelection      = on_initelection
+        self.on_postpublicrecords = on_postpublicrecords
+        self.on_advancephase      = on_advancephase
+        self.on_addsubchannel     = on_addsubchannel
+        self.on_rmsubchannel      = on_rmsubchannel
+        self.on_endelection       = on_endelection
+        self.on_rollback          = on_rollback
 
         # used to construct channel_ids(), channel_history(), current_state()
         # self.history: Mapping[ChannelId, Mapping[int, ChannelState]] = {}
-        self.history: Mapping[ChannelId, list[HistoryEntry]] = {}
+        self.history: Mapping[ChannelId, list[SubscriberEvent]] = {}
 
         # used to query the current state
         # TODO remove channels from this when they're burned; use history to access after
         # self.states: Mapping[ChannelId, (UTxO, ChannelState)] = {}
         # TODO replace with just getting the latest from the history list or none if burned
-        # self.states: Mapping[ChannelId, HistoryEntry] = {}
+        # self.states: Mapping[ChannelId, SubscriberEvent] = {}
 
         # for managing the kupo process
-        self._kupo_proc:   Optional[subprocess.Popen] = None
-        self._kupo_thread: Optional[threading.Thread] = None
-        self._kupo_stop = threading.Event()
+        self.kupo_proc:   Optional[subprocess.Popen] = None
+        self.kupo_thread: Optional[threading.Thread] = None
+        self.kupo_stop = threading.Event()
 
         # this will be updated when starting kupo to avoid conflicts with existing processes
-        self._kupo_port = 1442
+        self.kupo_port = KUPO_PORT
 
         # to prevent duplicate processing of the same transactions
-        self._seen_tx_ids: set[str] = set() # TODO remove once sure they're not needed
+        # self._seen_tx_ids: set[str] = set() # TODO remove once sure they're not needed
 
         # for http requests to the kupo process
-        self._session = requests.Session()
-        self._session.headers.update({'Accept': 'application/json'})
+        self.session = requests.Session()
+        self.session.headers.update({'Accept': 'application/json'})
 
         # TODO remove
-        self._last_tx_key = None
+        # self._last_tx_key = None
 
-        # The latest created_at.slot_no seen in a result so far.
-        # Kupo guarantees ordering by slot when you pass created_after, so
-        # dedup-by-id is unnecessary once you only fetch slots strictly after
-        # your cursor.
-        # TODO hook this up
-        # self._created_cursor_slot: int = 0   # advance to max(created_at.slot_no) seen
-        self.created_cursor = Optional[Point] # TODO add underscore?
-        self.spent_cursor   = Optional[Point] # TODO add underscore?
+        # For reducing duplicate matches and handling rollbacks
+        # TODO only need one?
+        # self.created_cursor: Optional[Point] = None
+        # self.spent_cursor:   Optional[Point] = None
+        # self.cursor = Point.from_config(self.config)
+        self.cursor = None
+
+        # Track unspent UTxOs we care about so we can detect spends
+        # TODO remove?
+        # self.tracked: dict[str, dict] = {}  # key: f"{tx_id}#{output_index}"
 
 
     ## query interface ##
@@ -227,7 +251,7 @@ class ElectionSubscriber:
         LOG.debug('ElectionSubscriber.channel_ids')
         return sorted(self.history.keys())
 
-    def channel_history(self, channel_id: ChannelId) -> list[HistoryEntry]:
+    def channel_history(self, channel_id: ChannelId) -> list[SubscriberEvent]:
         LOG.debug('ElectionSubscriber.channel_history')
         return self.history[channel_id] # TODO return None rather than raise KeyError?
 
@@ -241,7 +265,7 @@ class ElectionSubscriber:
         #     records += list(self.history[channel_id][seq].state.new_records)
         # return records
 
-    def channel_state(self, channel_id: ChannelId) -> HistoryEntry:
+    def channel_state(self, channel_id: ChannelId) -> SubscriberEvent:
         LOG.debug('ElectionSubscriber.channel_state')
         return self.channel_history(channel_id)[-1] # TODO return None rather than raise KeyError?
 
@@ -250,7 +274,7 @@ class ElectionSubscriber:
 
     def start(self) -> None:
         LOG.debug('ElectionSubscriber.start')
-        self._kupo_stop.clear()
+        self.kupo_stop.clear()
 
         def _start_and_watch() -> None:
             try:
@@ -266,11 +290,11 @@ class ElectionSubscriber:
         signal.signal(signal.SIGINT , handle_sigint)
         signal.signal(signal.SIGTERM, handle_sigint)
 
-        self._kupo_thread = threading.Thread(
+        self.kupo_thread = threading.Thread(
             target=_start_and_watch,
             daemon=False,
         )
-        self._kupo_thread.start()
+        self.kupo_thread.start()
 
     def join(self):
         LOG.debug('ElectionSubscriber.join')
@@ -281,20 +305,20 @@ class ElectionSubscriber:
     def stop(self) -> None:
         LOG.debug('ElectionSubscriber.stop')
         self._stop_kupo()
-        self._kupo_stop.set()
-        if self._kupo_thread and self._kupo_thread.is_alive():
+        self.kupo_stop.set()
+        if self.kupo_thread and self.kupo_thread.is_alive():
             LOG.debug('Waiting for watcher thread to exit...')
             try:
-                self._kupo_thread.join(timeout=5)
+                self.kupo_thread.join(timeout=5)
             except Exception as e:
                 if not 'cannot join current thread' in str(e):
                     raise
-        self._kupo_thread = None
+        self.kupo_thread = None
 
     def is_done(self):
         LOG.debug('ElectionSubscriber.is_done')
-        return self._kupo_stop.is_set() \
-           and self._kupo_thread is None
+        return self.kupo_stop.is_set() \
+           and self.kupo_thread is None
 
 
     ## process management ##
@@ -314,12 +338,13 @@ class ElectionSubscriber:
             except Exception:
                 pass
 
+    # TODO remove in favor of explicit config later (maybe election.json?)
     def _ensure_unused_port(self):
         LOG.debug('ElectionSubscriber._ensure_unused_port')
-        while is_port_in_use(self._kupo_port):
-            LOG.debug(f'port {self._kupo_port} is in use')
-            self._kupo_port += 1
-        LOG.debug(f'will start kupo on port {self._kupo_port}')
+        while is_port_in_use(self.kupo_port):
+            LOG.debug(f'port {self.kupo_port} is in use')
+            self.kupo_port += 1
+        LOG.debug(f'will start kupo on port {self.kupo_port}')
 
     def _start_kupo(self) -> None:
         '''
@@ -328,8 +353,8 @@ class ElectionSubscriber:
         '''
         LOG.debug('ElectionSubscriber._start_kupo')
 
-        if self._kupo_proc is not None and self._kupo_proc.poll() is None:
-            LOG.warning(f'Kupo already running (pid={self._kupo_proc.pid})')
+        if self.kupo_proc is not None and self.kupo_proc.poll() is None:
+            LOG.warning(f'Kupo already running (pid={self.kupo_proc.pid})')
             return
 
         # os.makedirs(KUPO_WORKDIR, exist_ok=True)
@@ -360,7 +385,7 @@ class ElectionSubscriber:
             '--match', f'{self.config.policy_id}/*',
 
             '--host', KUPO_HOST,
-            '--port', str(self._kupo_port),
+            '--port', str(self.kupo_port),
 
             '--log-level', 'Warning'
 
@@ -372,7 +397,7 @@ class ElectionSubscriber:
         ]
 
         LOG.debug(f'Starting Kupo: {' '.join(cmd)}')
-        self._kupo_proc = subprocess.Popen(
+        self.kupo_proc = subprocess.Popen(
             cmd,
             preexec_fn=os.setsid, # makes handling signals more reliable
             stdout=subprocess.PIPE,
@@ -393,7 +418,7 @@ class ElectionSubscriber:
 
     def _log_kupo_output(self) -> None:
         LOG.debug('ElectionSubscriber._log_kupo_output')
-        proc = self._kupo_proc
+        proc = self.kupo_proc
         if proc.stdout is None:
             return
         for line in proc.stdout:
@@ -409,7 +434,7 @@ class ElectionSubscriber:
     def _stop_kupo(self) -> None:
         LOG.debug('ElectionSubscriber._stop_kupo')
 
-        proc = self._kupo_proc
+        proc = self.kupo_proc
         if proc is None:
             return
         if proc.poll() is None:
@@ -430,72 +455,45 @@ class ElectionSubscriber:
                 LOG.warning('Kupo log reader did not exit')
             self._log_thread = None
 
-        self._kupo_proc = None
+        self.kupo_proc = None
 
     def _watch_kupo(self) -> None:
         LOG.debug('ElectionSubscriber._watch_kupo')
         LOG.debug(f'Watcher thread started for policy_id={self.config.policy_id}')
-
-        while not self._kupo_stop.is_set():
+        while not self.kupo_stop.is_set():
             try:
-
-#                 resp = self._session.get(
-#                     KUPO_MATCHES_URL,
-#                     timeout=10,
-#                     params={
-#                         'with_spent': 'false',
-#                         'order': 'oldest_first',
-#                     }
-#                 )
-#                 resp.raise_for_status()
-#                 utxo_dicts = resp.json()
-#                 # LOG.debug(f'resp.json:\n{json.dumps(utxo_dicts, indent=2)}')
-# 
-#                 if not isinstance(utxo_dicts, list):
-#                     raise Exception(f'Unexpected Kupo response type: {type(utxo_dicts)}')
-# 
-#                 for utxo_dict in utxo_dicts:
-#                     if not isinstance(utxo_dict, dict):
-#                         raise Exception(f'Unexpected utxo format {type(utxo_dict)}:\n{utxo_dict}')
-# 
-#                     self._on_utxo(utxo_dict)
-
-                self._poll_created()
-                self._poll_spent()
-
+                self._poll()
             except requests.RequestException as e:
-                LOG.debug(f'Kupo polling error: {e}') # TODO back to warning?
-                time.sleep(5)
+                LOG.warning(f'Kupo polling error: {e}') # TODO error?
             except Exception as e:
                 LOG.error(f'Unexpected error in watcher: {e} {type(e)}')
-                time.sleep(5)
-
-            time.sleep(OGMIOS_POLL_SEC)
-
+                raise
+            finally:
+                time.sleep(OGMIOS_POLL_SEC)
         LOG.debug('Watcher thread exiting')
 
 
     ## election state management ##
 
-    def _on_utxo(self, utxo_dict: dict[str, Any]):
+    def _on_utxo(self, kupo_match: dict[str, Any]):
         LOG.debug('ElectionSubscriber._on_utxo')
-        LOG.debug(f'utxo_dict: {pformat(utxo_dict)}')
+        LOG.debug(f'kupo_match: {pformat(kupo_match)}')
         # skip already-processed transactions
         # TODO is this ever actually needed?
         # TODO is this wrong in case of a roll-back?
-        tx_id = utxo_dict.get('transaction_id')
-        out_ix = utxo_dict.get('output_index')
+        tx_id = kupo_match.get('transaction_id')
+        out_ix = kupo_match.get('output_index')
         key = (tx_id, out_ix)
-        if tx_id and key in self._seen_tx_ids:
-            return
-        if tx_id:
-            # LOG.debug(f'last_tx_key: {key}')
-            self._seen_tx_ids.add(key)
-            self._last_tx_key = key
-            # any_new_utxo = True
+        # if tx_id and key in self._seen_tx_ids:
+        #     return
+        # if tx_id:
+        #     # LOG.debug(f'last_tx_key: {key}')
+        #     self._seen_tx_ids.add(key)
+        #     self._last_tx_key = key
+        #     # any_new_utxo = True
 
         try:
-            (channel_id, hist) = self._parse_hist(utxo_dict)
+            (channel_id, hist) = self._parse_hist(kupo_match)
             LOG.debug(f'channel_id: {channel_id} ({type(channel_id)})')
             LOG.debug(f'hist: {hist} ({type(hist)})')
             channel_added = bool(not channel_id in self.history)
@@ -514,20 +512,20 @@ class ElectionSubscriber:
         LOG.debug('ElectionSubscriber._fetch_datum')
         url = f'http://{KUPO_HOST}:{KUPO_PORT}/v1/datums/{datum_hash}' # TODO global var?
         LOG.debug(f'fetching datum {datum_hash}')
-        resp = self._session.get(url, timeout=10)
+        resp = self.session.get(url, timeout=10)
         resp.raise_for_status()
         return resp.json()
 
-    def _parse_hist(self, utxo_dict: Dict[str, Any]) -> (ChannelId, HistoryEntry):
+    def _parse_hist(self, kupo_match: Dict[str, Any]) -> (ChannelId, SubscriberEvent):
         LOG.debug('ElectionSubscriber._parse_hist')
-        LOG.debug(f'utxo_dict:\n{json.dumps(utxo_dict, indent=2)}')
+        LOG.debug(f'kupo_match:\n{json.dumps(kupo_match, indent=2)}')
 
-        tx_id       = utxo_dict.get('transaction_id')
-        out_ix      = utxo_dict.get('output_index')
-        datum_hash  = utxo_dict.get('datum_hash')
-        datum_type  = utxo_dict.get('datum_type')
-        created     = utxo_dict.get('created_at') # TODO is it ever not there? or {}
-        created_slot = int(created.get('slot_no'))
+        tx_id       = kupo_match.get('transaction_id')
+        out_ix      = kupo_match.get('output_index')
+        datum_hash  = kupo_match.get('datum_hash')
+        datum_type  = kupo_match.get('datum_type')
+        created     = kupo_match.get('created_at') # TODO is it ever not there? or {}
+        slot_no = int(created.get('slot_no'))
         header_hash = created.get('header_hash')
 
         assert datum_hash # TODO will this not exist in the final EndElection tx?
@@ -548,12 +546,25 @@ class ElectionSubscriber:
 
             ch_str = channel_id_to_string(channel_id)
             LOG.debug(f'decoded {ch_str} state {state.state.seq}: {state}')
+            
+            try:
+                # TODO is this the redeemer for the NEXT transaction?
+                created = kupo_match.get('spent_at')
+                LOG.debug(f'created: {created}')
+                redeemer_cbor = created['redeemer']
+                LOG.debug(f'redeemer_cbor: {redeemer_cbor}')
+                # TODO skip if None or whatever on the last one?
+                action = decode_plutusdata_union(ElectionAction, redeemer_cbor)
+                LOG.debug(f'decoded {ch_str} action: {action}')
+            except:
+                LOG.debug(f'Failed ot decode {ch_str} action')
+                action = None
 
-            hist = HistoryEntry(
+            hist = SubscriberEvent(
+                slot_no       = slot_no,
+                kupo_match    = kupo_match,
                 state         = state,
-                utxo_dict     = utxo_dict,
-                created_slot  = created_slot,
-                removed_slot  = None, # will be filled in by _on_spend later
+                action        = action,
             )
             LOG.debug(f'hist: {hist}')
 
@@ -568,34 +579,42 @@ class ElectionSubscriber:
         LOG.debug('handle_endelection: admin channel closed')
         return EndElection()
 
-    def _check_if_admin_channel_closed(self):
-        LOG.debug('ElectionSubscriber.check_if_admin_channel_closed')
-        if self._last_tx_key is None:
-            LOG.debug('no transactions have been published yet?')
-            return
-        (tx_id, output_ix) = self._last_tx_key
-        resp = self._session.get(KUPO_MATCHES_URL + f'/{output_ix}@{tx_id}') # TODO params? timeout?
-        if resp.status_code == 200:
-            utxos = resp.json() # TODO store a map of channel id -> latest utxo in the subscriber
-            LOG.debug(f'utxos: {pformat(utxos)}')
-            assert isinstance(utxos, list), "expected a list of UTXOs"
-            for utxo in utxos:
-                # There should only be one
-                # TODO update to handle subchannels
-                # TODO later, update to handle reference script utxo
-                if 'spent_at' in utxo and utxo['spent_at'] is not None:
-                    LOG.debug(f'Confirmed: STT UTXO spent without creating a new one.')
-                    self._on_close(utxo)
-                    self.stop()
-                    return
-        LOG.debug(f'Channel not yet closed {resp}')
+#     def _check_if_admin_channel_closed(self):
+#         LOG.debug('ElectionSubscriber.check_if_admin_channel_closed')
+#         if self._last_tx_key is None:
+#             LOG.debug('no transactions have been published yet?')
+#             return
+#         (tx_id, output_ix) = self._last_tx_key
+#         resp = self.session.get(KUPO_MATCHES_URL + f'/{output_ix}@{tx_id}') # TODO params? timeout?
+#         if resp.status_code == 200:
+#             utxos = resp.json() # TODO store a map of channel id -> latest utxo in the subscriber
+#             LOG.debug(f'utxos: {pformat(utxos)}')
+#             assert isinstance(utxos, list), "expected a list of UTXOs"
+#             for utxo in utxos:
+#                 # There should only be one
+#                 # TODO update to handle subchannels
+#                 # TODO later, update to handle reference script utxo
+#                 if 'spent_at' in utxo and utxo['spent_at'] is not None:
+#                     LOG.debug(f'Confirmed: STT UTXO spent without creating a new one.')
+#                     self._on_close(utxo)
+#                     self.stop()
+#                     return
+#         LOG.debug(f'Channel not yet closed {resp}')
 
-    def _poll_created(self):
+
+    def _matches_url(self) -> str:
+        LOG.debug('ElectionSubscriber._matches_url')
+        return f'http://{KUPO_HOST}:{self.kupo_port}/v1/matches'
+
+    def _poll(self):
+        LOG.debug('ElectionSubscriber._poll')
         params = {"order": "oldest_first"}
-        if self.created_cursor:
-            params["created_after"] = self.created_cursor.as_param()
+        if self.cursor:
+            params["created_after"] = self.cursor.as_param()
 
         r = self.session.get(self._matches_url(), params=params)
+        LOG.debug(f'r.json: {json.dumps(r.json(), indent=2)}')
+
         if r.status_code == 400:
             # Cursor point no longer on chain — rollback past our cursor
             self._handle_rollback()
@@ -603,20 +622,30 @@ class ElectionSubscriber:
         r.raise_for_status()
 
         for utxo in r.json():
-            self._on_created(utxo)
+            # self._on_created(utxo)
+            self._on_utxo(utxo)
             self.created_cursor = Point(
                 utxo["created_at"]["slot_no"],
                 utxo["created_at"]["header_hash"],
             )
 
+    # TODO remove
     def _poll_spent(self):
+        LOG.debug('ElectionSubscriber._poll_spent')
         # Same idea, but with spent_after to detect new spends of tracked UTxOs
-        params = {"order": "oldest_first", "spent": "true"}
-        if self.spent_cursor:
+        params = {"order": "oldest_first"}
+        if self.spent_cursor is not None:
             params["spent_after"] = self.spent_cursor.as_param()
 
-        r = self.session.get(self._matches_url(), params=params)
+		# kupo expects spent to be a flag rather than a param,
+        # so we have to work around the requests param machinery a bit
+        url = self._matches_url() + "?" + urlencode(params) + "&spent"
+        r = self.session.get(url)
+
+        LOG.debug(f'r.json: {json.dumps(r.json(), indent=2)}')
+
         if r.status_code == 400:
+            # if len(self.history) > 0: # 400 also happens if no spent matches yet
             self._handle_rollback()
             return
         r.raise_for_status()
@@ -639,9 +668,12 @@ class ElectionSubscriber:
         self.tracked.pop(key, None)
         # ... your business logic
 
+    def _handle_rollback(self):
+        raise NotImplementedError
+
     def _rollback_to(self, safe_slot: int):
         for channel_id, entries in list(self.history.items()):
-            kept = [e for e in entries if e.created_slot <= safe_slot]
+            kept = [e for e in entries if e.slot_no <= safe_slot]
 
             if not kept:
                 self.history.pop(channel_id)
