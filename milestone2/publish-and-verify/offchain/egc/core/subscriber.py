@@ -37,8 +37,9 @@ KUPO_PORT        = int(environ.get('KUPO_PORT', '1442'))
 KUPO_MATCHES_URL = f'http://{KUPO_HOST}:{KUPO_PORT}/v1/matches'
 
 # TODO pull this from ogmios module, and rename
-NODE_SOCKET = environ.get('CARDANO_NODE_SOCKET_PATH', '../../cardano-node-ogmios/data/node-ipc/node.socket')
-NODE_CONFIG = environ.get('NODE_CONFIG', '../../cardano-node-ogmios/config/network/preview/cardano-node/config.json')
+# NODE_SOCKET = environ.get('CARDANO_NODE_SOCKET_PATH', '../../cardano-node-ogmios/data/node-ipc/node.socket')
+# NODE_CONFIG = environ.get('NODE_CONFIG', '../../cardano-node-ogmios/config/network/preview/cardano-node/config.json')
+
 
 @dataclass
 class SubscriberConfig:
@@ -61,7 +62,7 @@ class SubscriberConfig:
 # TODO remove?
 # Handles a single kupo match response json obj.
 # TODO can the response type be more specific than dict?
-SubscriberCallback = Callable[[dict, requests.Session], ElectionAction]
+# SubscriberCallback = Callable[[dict, requests.Session], ElectionAction]
 
 # TODO move to channel_id.py
 # def channel_id_from_asset_name(encoded: str) -> ChannelId:
@@ -81,6 +82,54 @@ SubscriberCallback = Callable[[dict, requests.Session], ElectionAction]
 #             continue
 #     LOG.error(f'Output does not match any channel:\n{output}')
 #     return None
+
+def _kupo_to_utxo(kupo_dict: dict) -> UTxO:
+    """Convert a Kupo UTXO response dict to a PyCardano UTxO.
+    WARNING: Does not handle a lot of edge cases! Mainly for BurnTestTokens.
+    """
+    LOG.debug('ElectionSubscriber._kupo_to_utxo')
+    tx_input = TransactionInput.from_primitive(
+        [kupo_dict["transaction_id"], kupo_dict["output_index"]]
+    )
+
+    coins = kupo_dict["value"]["coins"]
+    assets = kupo_dict["value"].get("assets", {})
+
+    if assets:
+        multi_asset = MultiAsset()
+        for asset_id, amount in assets.items():
+            if "." in asset_id:
+                policy_hex, asset_name_hex = asset_id.split(".", 1)
+            else:
+                policy_hex = asset_id
+                asset_name_hex = ""
+
+            policy_id = ScriptHash.from_primitive(policy_hex)
+            asset_name = AssetName(bytes.fromhex(asset_name_hex))
+
+            if policy_id not in multi_asset:
+                multi_asset[policy_id] = Asset()  # <-- Asset(), not {}
+
+            multi_asset[policy_id][asset_name] = amount
+
+        value = Value(coin=coins, multi_asset=multi_asset)
+    else:
+        value = Value(coin=coins)
+
+    address = Address.from_primitive(kupo_dict["address"])
+
+    datum_hash = None
+    if kupo_dict.get("datum_hash"):
+        from pycardano import DatumHash
+        datum_hash = DatumHash.from_primitive(kupo_dict["datum_hash"])
+
+    tx_output = TransactionOutput(
+        address=address,
+        amount=value,
+        datum_hash=datum_hash,
+    )
+
+    return UTxO(tx_input, tx_output)
 
 
 class ElectionSubscriber:
@@ -338,54 +387,6 @@ class ElectionSubscriber:
             self._log_thread = None
 
         self._kupo_proc = None
-
-    def _kupo_to_utxo(self, kupo_dict: dict) -> UTxO:
-        """Convert a Kupo UTXO response dict to a PyCardano UTxO.
-        WARNING: Does not handle a lot of edge cases! Mainly for BurnTestTokens.
-        """
-        LOG.debug('ElectionSubscriber._kupo_to_utxo')
-        tx_input = TransactionInput.from_primitive(
-            [kupo_dict["transaction_id"], kupo_dict["output_index"]]
-        )
-
-        coins = kupo_dict["value"]["coins"]
-        assets = kupo_dict["value"].get("assets", {})
-
-        if assets:
-            multi_asset = MultiAsset()
-            for asset_id, amount in assets.items():
-                if "." in asset_id:
-                    policy_hex, asset_name_hex = asset_id.split(".", 1)
-                else:
-                    policy_hex = asset_id
-                    asset_name_hex = ""
-
-                policy_id = ScriptHash.from_primitive(policy_hex)
-                asset_name = AssetName(bytes.fromhex(asset_name_hex))
-
-                if policy_id not in multi_asset:
-                    multi_asset[policy_id] = Asset()  # <-- Asset(), not {}
-
-                multi_asset[policy_id][asset_name] = amount
-
-            value = Value(coin=coins, multi_asset=multi_asset)
-        else:
-            value = Value(coin=coins)
-
-        address = Address.from_primitive(kupo_dict["address"])
-
-        datum_hash = None
-        if kupo_dict.get("datum_hash"):
-            from pycardano import DatumHash
-            datum_hash = DatumHash.from_primitive(kupo_dict["datum_hash"])
-
-        tx_output = TransactionOutput(
-            address=address,
-            amount=value,
-            datum_hash=datum_hash,
-        )
-
-        return UTxO(tx_input, tx_output)
 
     def _watch_kupo(self) -> None:
         LOG.debug('ElectionSubscriber._watch_kupo')
