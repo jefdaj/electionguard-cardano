@@ -245,6 +245,17 @@ class FunderNode(ElectionNode):
         channel_ids = sorted(self.subscriber.states.keys())
         LOG.debug(f'channel_ids: {channel_ids}')
 
+        # TODO aha! the subscribers aren't noticing when they're done?
+        # temporary workaround before rewriting subscriber, to confirm the issue:
+        bad_ids = []
+        for channel_id in channel_ids:
+            (utxo, state) = self.subscriber.states[channel_id]
+            still_good = is_utxo_unspent(utxo)
+            if not still_good:
+                LOG.error(f'Spent UTXO should have been removed from subscriber: {utxo}')
+                bad_ids.append(channel_id)
+        channel_ids = [i for i in channel_ids if not i in bad_ids]
+
         burn_assets = mint_channel_stt_assets(
             self.election.script.policy_id,
             -1,
@@ -259,7 +270,8 @@ class FunderNode(ElectionNode):
 
         burn_txb.collaterals.append(funder_collateral)
 
-        for (utxo, state) in self.subscriber.states.values():
+        for channel_id in channel_ids:
+            (utxo, state) = self.subscriber.states[channel_id]
             LOG.debug(f'script controlled utxo to spend: {utxo}')
             spend_redeemer = Redeemer(data=BurnTestTokens())
             burn_txb = burn_txb.add_script_input(

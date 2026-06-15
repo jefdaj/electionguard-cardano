@@ -79,8 +79,8 @@ def init_tx(
     yield init_tx
 
     try:
-        # TODO is there a more reliable way?
-        wait_for_confirmation_generic()
+        # TODO remove?
+        # wait_for_confirmation_generic()
 
         burn_tx = funder.burn_test_tokens()
         funder.wait_for_confirmation(burn_tx)

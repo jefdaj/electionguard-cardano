@@ -189,8 +189,8 @@ class ElectionSubscriber:
         self.config = config
 
         # TODO does having these be separate functions help anymore?
-        self.on_match = handle_match
-        self.on_close = handle_endelection
+        self.on_match: SubscriberCallback = handle_match
+        self.on_close: SubscriberCallback = handle_endelection
 
         # used to reconstruct subscribed_records() on demand
         self.history: Mapping[ChannelId, Mapping[int, ChannelState]] = {}

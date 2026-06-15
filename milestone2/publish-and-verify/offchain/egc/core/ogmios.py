@@ -278,3 +278,10 @@ def wait_for_confirmation_generic() -> int:
             LOG.debug(f'waited {count} blocks')
             prev = tip
     return
+
+
+def is_utxo_unspent(utxo: UTxO) -> bool:
+    """Return True if the given UTxO is still present on-chain (unspent)."""
+    address = str(utxo.output.address)
+    current = OGMIOS_CTX.utxos(address)
+    return any(u.input == utxo.input for u in current)
