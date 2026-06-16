@@ -68,16 +68,13 @@ class ElectionNode:
     def channel_str(self) -> str:
         return self.publisher.channel_str()
 
-    # TODO update to return just the HistoryEntry?
-    def state(self) -> Optional[Tuple[UTxO, ChannelState]]:
-        try:
-            st = self.subscriber.channel_state(self.channel_id())
-            return (kupo_match_to_pycardano_utxo(st.utxo_dict), st.state)
-        except KeyError:
-            # no state yet
-            # TODO should this be a warning?
-            return None
+    def current_utxo(self) -> Optional[UTxO]:
+        return self.subscriber.current_utxo(self.channel_id())
 
+    def current_state(self) -> Optional[UTxO]:
+        return self.subscriber.current_state(self.channel_id())
+
+    # TODO rename current_phase, and rewrite with new subscriber code
     def election_phase(self) -> Optional[ElectionPhase]:
         try:
             state = self.subscriber.channel_state(ADMIN_CHANNEL_ID).state
@@ -155,7 +152,9 @@ class ElectionNode:
         pub_col_utxo = self.publisher.wait_for_collateral()
         LOG.debug('pub_col_utxo: %s' % pformat(pub_col_utxo))
 
-        (in_utxo, in_datum) = self.state()
+        # (in_utxo, in_datum) = self.state()
+        in_utxo  = self.current_utxo()
+        in_datum = self.current_state()
 
         # in_datum should be one of the ChannelState wrapper types:
         # AdminChannel or SubChannel. Whichever type it is will be re-used

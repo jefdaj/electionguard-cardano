@@ -35,7 +35,9 @@ def assert_node_state(
     assert isinstance(node, ElectionNode)
     assert isinstance(expected_state, ChannelState)
     node_str = node.channel_str()
-    (state_utxo, actual_state) = node.state()
+    # (state_utxo, actual_state) = node.state()
+    state_utxo   = node.current_utxo()
+    actual_state = node.current_state()
     LOG.debug(f'{node_str} latest state utxo: {state_utxo}')
     assert actual_state == expected_state, f'{node_str} unexpected state: {actual_state}'
     LOG.debug(f'{node_str} state as expected: {actual_state}')

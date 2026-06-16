@@ -47,7 +47,9 @@ class AdminNode(ElectionNode):
         admin_collateral = self.publisher.wait_for_collateral()
         LOG.debug('admin_collateral: %s' % pformat(admin_collateral))
 
-        (in_utxo, in_datum) = self.state()
+        # (in_utxo, in_datum) = self.state()
+        in_utxo  = self.current_utxo()
+        in_datum = self.current_state()
         LOG.debug('in_datum: %s' % pformat(in_datum))
 
         in_state: AdminChannelState = in_datum.state
@@ -122,7 +124,9 @@ class AdminNode(ElectionNode):
         admin_collateral = self.publisher.wait_for_collateral()
         LOG.debug('admin_collateral: %s' % pformat(admin_collateral))
 
-        (in_utxo, in_datum) = self.state()
+        # (in_utxo, in_datum) = self.state()
+        in_utxo  = self.current_utxo()
+        in_datum = self.current_state()
         LOG.debug('admin in_utxo: %s' % pformat(in_utxo))
         LOG.debug('in_datum: %s' % pformat(in_datum))
 
@@ -268,7 +272,9 @@ class AdminNode(ElectionNode):
         LOG.debug('admin_collateral: %s' % pformat(admin_collateral))
 
         # TODO start state transition edit section
-        (in_utxo, in_datum) = self.state()
+        # (in_utxo, in_datum) = self.state()
+        in_utxo  = self.current_utxo()
+        in_datum = self.current_state()
         LOG.debug('in_utxo: %s' % pformat(in_utxo))
         LOG.debug('in_datum: %s' % pformat(in_datum))
 

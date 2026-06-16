@@ -281,13 +281,8 @@ class ElectionSubscriber:
     def __init__(
             self,
             config: SubscriberConfig,
-            on_initelection      = mk_example_callback('on_initelection'),
-            on_postpublicrecords = mk_example_callback('on_postpublicrecords'),
-            on_advancephase      = mk_example_callback('on_advancephase'),
-            on_addsubchannel     = mk_example_callback('on_addsubchannel'),
-            on_rmsubchannel      = mk_example_callback('on_rmsubchannel'),
-            on_endelection       = mk_example_callback('on_endelection'),
-            on_rollback          = mk_example_callback('on_rollback'),
+            on_action   = mk_example_callback('on_action'),
+            on_rollback = mk_example_callback('on_rollback'),
         ):
 
         LOG.debug('ElectionSubscriber.__init__')
@@ -295,27 +290,15 @@ class ElectionSubscriber:
         self.config = config
 
         # High-level callbacks
-        self.on_initelection      = on_initelection
-        self.on_postpublicrecords = on_postpublicrecords
-        self.on_advancephase      = on_advancephase
-        self.on_addsubchannel     = on_addsubchannel
-        self.on_rmsubchannel      = on_rmsubchannel
-        self.on_endelection       = on_endelection
-        self.on_rollback          = on_rollback
+        self.on_action   = on_action
+        self.on_rollback = on_rollback
 
         # State is split into current and historical, because that makes it
         # simpler to work with Kupo's spent and unspent UTXO filters. When a
         # UTXO is spent we remove it from current and append its new spent
         # equivalent to history.
-        # TODO helpful, or no? history isn't immutible so it would be fine to mix them
-        self.current: Mapping[ChannelId, ChannelEvent] = {}
+        # TODO write lock on self.history while mutating?
         self.history: Mapping[ChannelId, list[ChannelEvent]] = {}
-
-        # used to query the current state
-        # TODO remove channels from this when they're burned; use history to access after
-        # self.states: Mapping[ChannelId, (UTxO, ChannelState)] = {}
-        # TODO replace with just getting the latest from the history list or none if burned
-        # self.states: Mapping[ChannelId, ChannelEvent] = {}
 
         # for managing the kupo process
         self.kupo_proc:   Optional[subprocess.Popen] = None
@@ -325,58 +308,50 @@ class ElectionSubscriber:
         # this will be updated when starting kupo to avoid conflicts with existing processes
         self.kupo_port = KUPO_PORT
 
-        # to prevent duplicate processing of the same transactions
-        # self._seen_tx_ids: set[str] = set() # TODO remove once sure they're not needed
-
         # for http requests to the kupo process
         self.session = requests.Session()
         self.session.headers.update({'Accept': 'application/json'})
-
-        # TODO remove
-        # self._last_tx_key = None
-
-        # For reducing duplicate matches and handling rollbacks
-        # TODO only need one?
-        # self.created_cursor: Optional[Point] = None
-        # self.spent_cursor:   Optional[Point] = None
 
         # Starting at the point from the config seems logical,
         # but for some reason Kupo rejects it. None works fine.
         # self.cursor = Point.from_config(self.config)
         self.cursor = None
 
-        # Track unspent UTxOs we care about so we can detect spends
-        # TODO remove?
-        # self.tracked: dict[str, dict] = {}  # key: f"{tx_id}#{output_index}"
-
 
     ## query interface ##
 
-    # self.history and self.states can also be accessed directly
-    # TODO write lock just in case that's an issue?
-
     def channel_ids(self) -> list[ChannelId]:
+        # Includes historical channels that have already been closed.
         LOG.debug('ElectionSubscriber.channel_ids')
         return sorted(self.history.keys())
 
     def channel_history(self, channel_id: ChannelId) -> list[ChannelEvent]:
+        # Works fine on already-closed channels. Raises KeyError on not-yet-opened ones.
         LOG.debug('ElectionSubscriber.channel_history')
         return self.history[channel_id] # TODO return None rather than raise KeyError?
 
-        # LOG.debug(f'history: {self.history}')
-        # records = []
-        # TODO fix so even if one is missing, iteration doesn't get messed up
-        # if not channel_id in self.history:
-        #     return []
-        # for seq in range(0, len(self.history[channel_id])):
-        #     assert seq in self.history[channel_id], f'Missing records with channel_id={channel_id} seq={seq}.'
-        #     records += list(self.history[channel_id][seq].state.new_records)
-        # return records
+    def current_utxo(self, channel_id: ChannelId) -> Optional[UTxO]:
+        # Returns None if the channel hasn't been opened yet or was already closed
+        LOG.debug('ElectionSubscriber.current_utxo')
+        try:
+            event = self.channel_history(channel_id)[-1]
+        except KeyError:
+            return None
+        match = event.output_match
+        if match is None:
+            return None
+        else:
+            return kupo_match_to_pycardano_utxo(match)
 
-    def channel_state(self, channel_id: ChannelId) -> ChannelEvent:
-        LOG.debug('ElectionSubscriber.channel_state')
-        return self.channel_history(channel_id)[-1] # TODO return None rather than raise KeyError?
-
+    def current_state(self, channel_id: ChannelId) -> Optional[ChannelState]:
+        # Returns None if the channel hasn't been opened yet or was already closed
+        LOG.debug('ElectionSubscriber.current_state')
+        try:
+            event = self.channel_history(channel_id)[-1]
+        except KeyError:
+            return None
+        return event.output_state # may be None
+ 
 
     ## process managment interface ##
 
@@ -570,7 +545,7 @@ class ElectionSubscriber:
         LOG.debug(f'Watcher thread started for policy_id={self.config.policy_id}')
         while not self.kupo_stop.is_set():
             try:
-                self._poll_attempt2()
+                self._poll()
             except requests.RequestException as e:
                 LOG.warning(f'Kupo polling error: {e}') # TODO error?
             except Exception as e:
@@ -581,27 +556,7 @@ class ElectionSubscriber:
         LOG.debug('Watcher thread exiting')
 
 
-    ## election state management ##
-
-    def _on_match(self, kupo_match: dict[str, Any]):
-        LOG.debug('ElectionSubscriber._on_match')
-        LOG.debug(f'kupo_match: {pformat(kupo_match)}')
-
-        try:
-            (channel_id, event) = self._parse_event(kupo_match)
-            LOG.debug(f'channel_id: {channel_id} ({type(channel_id)})')
-            LOG.debug(f'event: {event} ({type(event)})')
-            channel_added = bool(not channel_id in self.history)
-            if channel_added:
-                self.history[channel_id] = []
-            self.history[channel_id].append(hist)
-            if channel_added:
-                if channel_id == ADMIN_CHANNEL_ID:
-                    self.on_initelection(event)
-                else:
-                    self.on_addsubchannel(event)
-        except Exception as e:
-            LOG.error(f'Error in self._parse_event: {e}')
+    ## polling and http queries ##
 
     def _fetch_datum(self, datum_hash: str) -> Any:
         LOG.debug('ElectionSubscriber._fetch_datum')
@@ -612,115 +567,16 @@ class ElectionSubscriber:
         resp.raise_for_status()
         return resp.json()
 
-    def _parse_event(self, kupo_match: Dict[str, Any]) -> (ChannelId, ChannelEvent):
-        LOG.debug('ElectionSubscriber._parse_event')
-        LOG.debug(f'kupo_match:\n{json.dumps(kupo_match, indent=2)}')
-
-        tx_id       = kupo_match.get('transaction_id')
-        out_ix      = kupo_match.get('output_index')
-        datum_hash  = kupo_match.get('datum_hash')
-        datum_type  = kupo_match.get('datum_type')
-        created     = kupo_match.get('created_at') # TODO is it ever not there? or {}
-        slot_no = int(created.get('slot_no'))
-        header_hash = created.get('header_hash')
-
-        assert datum_hash # TODO will this not exist in the final EndElection tx?
-
-        try:
-            datum = self._fetch_datum(datum_hash)
-
-            # try subchannel first because that should be more common long term
-            try:
-                state = SubChannel.from_cbor(datum['datum'])
-                channel_id = state.state.channel_id
-            except:
-
-                # TODO would a minimal, messy fix be to check for channels removed here?
-
-                state = AdminChannel.from_cbor(datum['datum'])
-                channel_id = ADMIN_CHANNEL_ID
-
-            ch_str = channel_id_to_string(channel_id)
-            LOG.debug(f'decoded {ch_str} state {state.state.seq}: {state}')
-            
-            try:
-                # TODO is this the redeemer for the NEXT transaction?
-                created = kupo_match.get('spent_at')
-                LOG.debug(f'created: {created}')
-                redeemer_cbor = created['redeemer']
-                LOG.debug(f'redeemer_cbor: {redeemer_cbor}')
-                # TODO skip if None or whatever on the last one?
-                action = decode_plutusdata_union(ElectionAction, redeemer_cbor)
-                LOG.debug(f'decoded {ch_str} action: {action}')
-            except:
-                LOG.debug(f'Failed ot decode {ch_str} action')
-                action = None
-
-            event = ChannelEvent(
-                slot_no       = slot_no,
-                kupo_match    = kupo_match,
-                state         = state,
-                action        = action,
-            )
-            LOG.debug(f'event: {event}')
-
-            return (channel_id, event)
-
-        except Exception as e:
-            LOG.error(f'handle_match: failed to fetch datum {datum_hash}: {e}')
-            raise
-
     def _kupo_api_url(self) -> str:
         LOG.debug('ElectionSubscriber._kupo_api_url')
         return f'http://{KUPO_HOST}:{self.kupo_port}/v1'
 
-#     def _poll(self):
-# 
-#         LOG.debug('ElectionSubscriber._poll')
-#         params = {"order": "oldest_first"}
-#         if self.cursor:
-#             # TODO test this with in-progress elections
-#             params["created_after"] = self.cursor.as_param()
-# 
-#         r = self.session.get(self._kupo_api_url(), params=params)
-#         LOG.debug(f'r.json: {json.dumps(r.json(), indent=2)}')
-# 
-#         if r.status_code == 400:
-#             # Cursor point no longer on chain — rollback past our cursor
-#             self._handle_rollback()
-#             return
-#         r.raise_for_status()
-# 
-#         # experimental new stuff
-#         matches = r.json()
-#         LOG.debug(f'matches: {json.dumps(matches, indent=2)}')
-#         with_redeemers: Tuple[ElectionAction, dict] = []
-#         for match in matches:
-#             redeemer = find_redeemer(match, matches)
-#             if redeemer is None:
-#                 # Should only happen with the first TX, because the oneshot
-#                 # UTXO doesn't carry an STT and so doesn't match the Kupo
-#                 # pattern.
-#                 assert len(self.history) == 0
-#                 assert match == matches[0]
-#                 redeemer = InitElection()
-#             with_redeemers.append((redeemer, match))
-#         LOG.debug(f'with_redeemers {len(with_redeemers)}: {pformat(with_redeemers)}')
-#         assert len(with_redeemers) == len(matches)
-# 
-#         for utxo in r.json():
-#             self._on_match(utxo)
-#             self.created_cursor = Point(
-#                 utxo["created_at"]["slot_no"],
-#                 utxo["created_at"]["header_hash"],
-#             )
-
-    def _poll_attempt2(self):
+    def _poll(self):
         # Spent UTXOs are better in general because they have more info:
         # - spent_at of course, which isn't really used so far
         # - also the spending redeemer (to detect burns, to add to next event)
 
-        LOG.debug('ElectionSubscriber._poll_attempt2')
+        LOG.debug('ElectionSubscriber._poll')
         params = {"order": "oldest_first"}
 
         # TODO are there any edge cases where order matters here?
@@ -734,23 +590,79 @@ class ElectionSubscriber:
             return
 
         (spent, unspent) = self._update_cursor_and_truncate(spent, unspent)
+        pairs_by_key = input_output_pairs(spent, unspent) # TODO make a method?
+        events = self._channel_events(pairs_by_key, spent)
 
-        # TODO which step is best to look up redeemers?
-        #      I guess the almost-final version, but look up redeemers from spent only?
+        self._apply_events_by_slot(events)
 
-        pairs_by_key = input_output_pairs(spent, unspent)
+    def _fetch_spent(self):
+        LOG.debug('ElectionSubscriber._fetch_spent')
+        params = {"order": "oldest_first"}
+        if self.cursor is not None:
+            params["spent_after"] = self.cursor.as_param()
+        url = self._kupo_api_url() + "/matches?" + urlencode(params) + "&spent"
+        r = self.session.get(url)
+        if r.status_code == 400:
+            # Cursor point no longer on chain — rollback past our cursor
+            self._handle_rollback()
+            return
+        r.raise_for_status()
+        matches = r.json()
+        if self.cursor is not None:
+            # kupo returns matches inclusive? we don't want the duplicates
+            matches = [m for m in matches if m['spent_at']['slot_no'] > self.cursor.slot_no]
+        LOG.debug(f'spent matches: {json.dumps(matches, indent=2)}')
+        return matches
 
-        events = self.channel_events(pairs_by_key, spent)
+    def _fetch_unspent(self):
+        LOG.debug('ElectionSubscriber._fetch_unspent')
+        params = {"order": "oldest_first"}
+        if self.cursor is not None:
+            params["created_after"] = self.cursor.as_param()
+        url = self._kupo_api_url() + "/matches?" + urlencode(params) + "&unspent"
+        r = self.session.get(url)
+        if r.status_code == 400:
+            # Cursor point no longer on chain — rollback past our cursor
+            self._handle_rollback()
+            return
+        r.raise_for_status()
+        matches = r.json()
+        if self.cursor is not None:
+            # kupo returns matches inclusive? we don't want the duplicates
+            matches = [m for m in matches if m['created_at']['slot_no'] > self.cursor.slot_no]
+        LOG.debug(f'unspent matches: {json.dumps(matches, indent=2)}')
+        return matches
 
-        # TODO case analysis on pairs:
-        #      - created only -> mint -> current state new, confirm no channel history
-        #                                also check for InitElection special case
-        #      - both -> continuation -> current state new, append spent to history
-        #                                get redeemer just to have the info
-        #      - spent only -> burn -> current state None, append spent to history
-        #                              get redeemer and confirm it's a burn
+    def _update_cursor_and_truncate(self, spent, unspent):
+        LOG.debug('ElectionSubscriber._update_cursor_and_truncate')
 
-    def channel_events(self, pairs_by_key, spent) -> list[ChannelEvent]:
+        # get the latest point from each list
+        last_spent   = None if not spent   else Point.from_kupo_resp(spent[-1]['spent_at'])
+        last_unspent = None if not unspent else Point.from_kupo_resp(unspent[-1]['created_at'])
+        LOG.debug(f'last_spent: {last_spent}')
+        LOG.debug(f'last_unspent: {last_unspent}')
+
+        # if they both have a last one, use the earlier
+        # TODO is this necessary? not sure if they're guaranteed to be the same
+        points = [p for p in (last_spent, last_unspent) if p is not None]
+        earlier = min(points, key=lambda p: p.slot_no)
+        LOG.debug(f'earlier: {earlier}')
+
+        # cut off utxos after that from both lists (only one will have any),
+        # so they can be processed next poll loop without duplicate events
+        LOG.debug(f'lengths before truncation: spent={len(spent)}, unspent={len(unspent)}')
+        spent   = [m for m in spent   if m['spent_at'  ]['slot_no'] <= earlier.slot_no]
+        unspent = [m for m in unspent if m['created_at']['slot_no'] <= earlier.slot_no]
+        LOG.debug(f'lengths after truncation: spent={len(spent)}, unspent={len(unspent)}')
+
+        # update cursor to the earlier so that the cut-off values will be
+        # fetched again next poll
+        self.cursor = earlier
+        LOG.debug(f'updated cursor to {earlier}')
+
+        return (spent, unspent)
+
+    def _channel_events(self, pairs_by_key, spent) -> list[ChannelEvent]:
         LOG.debug('channel_events')
         events = []
         keys = sorted(pairs_by_key.keys())
@@ -766,20 +678,17 @@ class ElectionSubscriber:
             LOG.debug(f'input_match: {input_match}')
             LOG.debug(f'output_match: {output_match}')
 
+            assert input_match is not None or output_match is not None, 'input and output matches cannot both be None'
+
             # Get states (AKA datums)
-            # TODO warn that these can be None due to fetch errors, or fix that
-            # try:
             if input_match is not None:
-                input_datum = self._fetch_datum( input_match['datum_hash'])['datum']
+                input_datum = self._fetch_datum(input_match['datum_hash'])['datum']
                 input_state = decode_plutusdata_union(ChannelState, input_datum)
-            # except:
             else:
                 input_state = None
-            # try:
             if output_match is not None:
                 output_datum = self._fetch_datum(output_match['datum_hash'])['datum']
                 output_state = decode_plutusdata_union(ChannelState, output_datum)
-            # except:
             else:
                 output_state = None
 
@@ -820,72 +729,21 @@ class ElectionSubscriber:
             events.append(event)
         return events
 
-    def _update_cursor_and_truncate(self, spent, unspent):
-        LOG.debug('ElectionSubscriber._update_cursor_and_truncate')
-
-        # get the latest point from each list
-        last_spent   = None if not spent   else Point.from_kupo_resp(spent[-1]['spent_at'])
-        last_unspent = None if not unspent else Point.from_kupo_resp(unspent[-1]['created_at'])
-        LOG.debug(f'last_spent: {last_spent}')
-        LOG.debug(f'last_unspent: {last_unspent}')
-
-        # if they both have a last one, use the earlier
-        # TODO is this necessary? not sure if they're guaranteed to be the same
-        points = [p for p in (last_spent, last_unspent) if p is not None]
-        earlier = min(points, key=lambda p: p.slot_no)
-        LOG.debug(f'earlier: {earlier}')
-
-        # cut off utxos after that from both lists (only one will have any),
-        # so they can be processed next poll loop without duplicate events
-        LOG.debug(f'lengths before truncation: spent={len(spent)}, unspent={len(unspent)}')
-        spent   = [m for m in spent   if m['spent_at'  ]['slot_no'] <= earlier.slot_no]
-        unspent = [m for m in unspent if m['created_at']['slot_no'] <= earlier.slot_no]
-        LOG.debug(f'lengths after truncation: spent={len(spent)}, unspent={len(unspent)}')
-
-        # update cursor to the earlier so that the cut-off values will be
-        # fetched again next poll
-        self.cursor = earlier
-        LOG.debug(f'updated cursor to {earlier}')
-
-        return (spent, unspent)
-
-    def _fetch_spent(self):
-        LOG.debug('ElectionSubscriber._fetch_spent')
-        params = {"order": "oldest_first"}
-        if self.cursor is not None:
-            params["spent_after"] = self.cursor.as_param()
-        url = self._kupo_api_url() + "/matches?" + urlencode(params) + "&spent"
-        r = self.session.get(url)
-        if r.status_code == 400:
-            # Cursor point no longer on chain — rollback past our cursor
-            self._handle_rollback()
+    def _apply_events_by_slot(self, events: list[ChannelEvent]):
+        if len(events) == 0:
             return
-        r.raise_for_status()
-        matches = r.json()
-        if self.cursor is not None:
-            # kupo returns matches inclusive? we don't want the duplicates
-            matches = [m for m in matches if m['spent_at']['slot_no'] > self.cursor.slot_no]
-        LOG.debug(f'spent matches: {json.dumps(matches, indent=2)}')
-        return matches
-
-    def _fetch_unspent(self):
-        LOG.debug('ElectionSubscriber._fetch_unspent')
-        params = {"order": "oldest_first"}
-        if self.cursor is not None:
-            params["created_after"] = self.cursor.as_param()
-        url = self._kupo_api_url() + "/matches?" + urlencode(params) + "&unspent"
-        r = self.session.get(url)
-        if r.status_code == 400:
-            # Cursor point no longer on chain — rollback past our cursor
-            self._handle_rollback()
-            return
-        r.raise_for_status()
-        matches = r.json()
-        if self.cursor is not None:
-            # kupo returns matches inclusive? we don't want the duplicates
-            matches = [m for m in matches if m['created_at']['slot_no'] > self.cursor.slot_no]
-        LOG.debug(f'unspent matches: {json.dumps(matches, indent=2)}')
-        return matches
+        slot_no = events[0].slot_no
+        queue = []
+        for event in events:
+            if event.slot_no == slot_no:
+                queue.append(event)
+            else:
+                # TODO less confusing names?
+                # TODO any reason to apply + emit one at a time rather than in groups?
+                [self._on_action(e) for e in queue] # internal state updates
+                [self.on_action(e)  for e in queue] # external callbacks
+                queue = [event]
+                slot_no = event.slot_no
 
     def _handle_rollback(self):
         raise NotImplementedError
@@ -911,3 +769,53 @@ class ElectionSubscriber:
             #     self.current_state[channel_id] = (last.utxo, last.state)
             # else:
             #     self.current_state.pop(channel_id, None)
+
+    def _on_action(self, event: ChannelEvent):
+        # TODO case analysis on pairs:
+        #      - created only -> mint -> current state new, confirm no channel history
+        #                                also check for InitElection special case
+        #      - both -> continuation -> current state new, append spent to history
+        #                                get redeemer just to have the info
+        #      - spent only -> burn -> current state None, append spent to history
+        #                              get redeemer and confirm it's a burn
+        match event.action:
+            case InitElection():             self._on_initelection(event)
+            case AddSubChannels(channels):   self._on_addsubchannels(event)
+            case AdvancePhase():             self._on_advancephase(event)
+            case EndElection():              self._on_endelection(event)
+            case RmSubChannels(channels=_):  self._on_rmsubchannels(event)
+            case RebalanceFunds(channels=_): self._on_rebalancefunds(event)
+            case PostPublicRecords():        self._on_postpublicrecords(event)
+            case BurnTestTokens():           self._on_burntesttokens(event)
+            case _:                          raise NotImplementedError
+
+    def _on_initelection(self, event: ChannelEvent):
+        LOG.debug('ElectionSubscriber._on_initelection')
+        # assert self.history == {}, 'InitElection with non-empty history'
+        # assert event.channel_id == ADMIN_CHANNEL_ID
+        # assert event.input_state is None
+        self.history[ADMIN_CHANNEL_ID] = [event.output_state]
+
+    # remember this will be called once per channel touched
+    def _on_addsubchannels(self, event: ChannelEvent):
+        LOG.debug('ElectionSubscriber._on_addsubchannels')
+
+    def _on_advancephase(self, event: ChannelEvent):
+        LOG.debug('ElectionSubscriber._on_advancephase')
+
+    def _on_endelection(self, event: ChannelEvent):
+        LOG.debug('ElectionSubscriber._on_endelection')
+
+    # remember this will be called once per channel touched
+    def _on_rmsubchannels(self, event: ChannelEvent):
+        LOG.debug('ElectionSubscriber._on_rmsubchannels')
+
+    # remember this will be called once per channel touched
+    def _on_rebalancefunds(self, event: ChannelEvent):
+        LOG.debug('ElectionSubscriber._on_rebalancefunds')
+
+    def _on_postpublicrecords(self, event: ChannelEvent):
+        LOG.debug('ElectionSubscriber._on_postpublicrecords')
+
+    def _on_burntesttokens(self, event: ChannelEvent):
+        LOG.debug('ElectionSubscriber._on_burntesttokens')
