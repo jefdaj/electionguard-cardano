@@ -88,6 +88,10 @@ class ChannelEvent:
     # the two should be equal. Used to remove history during rollbacks.
     slot_no: int
 
+    # Should always exist. When one action/transaction touches multiple
+    # channels, one event will be emitted per channel.
+    channel_id: ChannelId
+
     # AKA redeemer. Should always exist. Can be used to infer which of the
     # input/output fields should have values below.
     action: ElectionAction
@@ -233,32 +237,33 @@ def input_output_pairs(spent, unspent):
     LOG.debug(f'lists:\n{pformat(lists)}')
 
     # make sure there was only 0 or 1 of each, and simplify to pairs
-    pairs = {}
+    pairs_by_key = {}
     for (key, (inputs, outputs)) in lists.items():
         assert len(inputs) < 2
         assert len(outputs) < 2
         input_ = inputs[0]  if inputs  else None
         output = outputs[0] if outputs else None
-        pairs[key] = (input_, output)
-    LOG.debug(f'pairs:\n{pformat(pairs)}')
+        pairs_by_key[key] = (input_, output)
+    LOG.debug(f'pairs_by_key:\n{pformat(pairs_by_key)}')
 
-    return pairs
+    return pairs_by_key
 
-def find_redeemers(matches: list[dict]) -> list[Tuple[ElectionAction, dict]]:
-    with_redeemers: Tuple[ElectionAction, dict] = []
-    for match in matches:
-        redeemer = find_redeemer(match, matches)
-        if redeemer is None:
-            # Should only happen with the first TX, because the oneshot
-            # UTXO doesn't carry an STT and so doesn't match the Kupo
-            # pattern.
-            # assert len(self.history) == 0
-            assert match == matches[0]
-            redeemer = InitElection()
-        with_redeemers.append((redeemer, match))
-    LOG.debug(f'with_redeemers {len(with_redeemers)}: {pformat(with_redeemers)}')
-    assert len(with_redeemers) == len(matches)
-    return with_redeemers
+
+# def find_redeemers(matches: list[dict]) -> list[Tuple[ElectionAction, dict]]:
+#     with_redeemers: Tuple[ElectionAction, dict] = []
+#     for match in matches:
+#         redeemer = find_redeemer(match, matches)
+#         if redeemer is None:
+#             # Should only happen with the first TX, because the oneshot
+#             # UTXO doesn't carry an STT and so doesn't match the Kupo
+#             # pattern.
+#             # assert len(self.history) == 0
+#             assert match == matches[0]
+#             redeemer = InitElection()
+#         with_redeemers.append((redeemer, match))
+#     LOG.debug(f'with_redeemers {len(with_redeemers)}: {pformat(with_redeemers)}')
+#     assert len(with_redeemers) == len(matches)
+#     return with_redeemers
 
 
 def kupo_utxo_str(match: dict) -> str:
@@ -600,7 +605,8 @@ class ElectionSubscriber:
 
     def _fetch_datum(self, datum_hash: str) -> Any:
         LOG.debug('ElectionSubscriber._fetch_datum')
-        url = f'http://{KUPO_HOST}:{KUPO_PORT}/v1/datums/{datum_hash}' # TODO global var?
+        # TODO adjust to port changes
+        url = self._kupo_api_url() + f'/datums/{datum_hash}'
         LOG.debug(f'fetching datum {datum_hash}')
         resp = self.session.get(url, timeout=10)
         resp.raise_for_status()
@@ -664,9 +670,9 @@ class ElectionSubscriber:
             LOG.error(f'handle_match: failed to fetch datum {datum_hash}: {e}')
             raise
 
-    def _matches_url(self) -> str:
-        LOG.debug('ElectionSubscriber._matches_url')
-        return f'http://{KUPO_HOST}:{self.kupo_port}/v1/matches'
+    def _kupo_api_url(self) -> str:
+        LOG.debug('ElectionSubscriber._kupo_api_url')
+        return f'http://{KUPO_HOST}:{self.kupo_port}/v1'
 
 #     def _poll(self):
 # 
@@ -676,7 +682,7 @@ class ElectionSubscriber:
 #             # TODO test this with in-progress elections
 #             params["created_after"] = self.cursor.as_param()
 # 
-#         r = self.session.get(self._matches_url(), params=params)
+#         r = self.session.get(self._kupo_api_url(), params=params)
 #         LOG.debug(f'r.json: {json.dumps(r.json(), indent=2)}')
 # 
 #         if r.status_code == 400:
@@ -731,7 +737,9 @@ class ElectionSubscriber:
         # TODO which step is best to look up redeemers?
         #      I guess the almost-final version, but look up redeemers from spent only?
 
-        tx_pairs = input_output_pairs(spent, unspent)
+        pairs_by_key = input_output_pairs(spent, unspent)
+
+        events = self.channel_events(pairs_by_key, spent)
 
         # TODO case analysis on pairs:
         #      - created only -> mint -> current state new, confirm no channel history
@@ -740,6 +748,56 @@ class ElectionSubscriber:
         #                                get redeemer just to have the info
         #      - spent only -> burn -> current state None, append spent to history
         #                              get redeemer and confirm it's a burn
+
+    def channel_events(self, pairs_by_key, spent) -> list[ChannelEvent]:
+        events = []
+        first_event = True
+        for ((slot_no, channel_str), (input_match, output_match)) in pairs_by_key.items():
+
+            # Get action (AKA redeemer)
+            if output_match:
+                action = find_redeemer(output_match, spent)
+                if action is None:
+                    # Should only happen in the very first event, because the input
+                    # (the one-shot UTXO) doesn't have an STT and so doesn't match the
+                    # Kupo filter.
+                    assert first_event
+                    assert channel_str == 'admin'
+                    action = InitElection()
+                first_event = False
+                assert action is not None
+            else:
+                action = None
+
+            # Get states (AKA datums)
+            try:
+                input_datum = self._fetch_datum( input_match['datum_hash'])['datum']
+                input_state = decode_plutusdata_union(ChannelState, input_datum)
+            except:
+                input_state = None
+            try:
+                output_datum = self._fetch_datum(output_match['datum_hash'])['datum']
+                output_state = decode_plutusdata_union(ChannelState, output_datum)
+            except:
+                output_state = None
+
+            if input_state is not None and output_state is not None:
+                in_seq  = input_state.state.seq
+                out_seq = output_state.state.seq
+                assert in_seq + 1 == out_seq, f'state seq error: {in_seq} -> {out_seq}'
+
+            event = ChannelEvent(
+                slot_no      = slot_no,
+                channel_id   = coerce_channel_id(channel_str),
+                action       = action,
+                input_match  = input_match,
+                output_match = output_match,
+                input_state  = input_state,
+                output_state = output_state,
+            )
+            LOG.debug(f'event:\n{pformat(event)}')
+            events.append(event)
+        return events
 
     def _update_cursor_and_truncate(self, spent, unspent):
         LOG.debug('ElectionSubscriber._update_cursor_and_truncate')
@@ -775,7 +833,7 @@ class ElectionSubscriber:
         params = {"order": "oldest_first"}
         if self.cursor:
             params["spent_after"] = self.cursor.as_param()
-        url = self._matches_url() + "?" + urlencode(params) + "&spent"
+        url = self._kupo_api_url() + "/matches?" + urlencode(params) + "&spent"
         r = self.session.get(url)
         if r.status_code == 400:
             # Cursor point no longer on chain — rollback past our cursor
@@ -791,7 +849,7 @@ class ElectionSubscriber:
         params = {"order": "oldest_first"}
         if self.cursor:
             params["created_after"] = self.cursor.as_param()
-        url = self._matches_url() + "?" + urlencode(params) + "&unspent"
+        url = self._kupo_api_url() + "/matches?" + urlencode(params) + "&unspent"
         r = self.session.get(url)
         if r.status_code == 400:
             # Cursor point no longer on chain — rollback past our cursor
