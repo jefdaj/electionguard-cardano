@@ -40,7 +40,8 @@ LOG.info(f'sub_cfg: {sub_cfg}')
 
 sub = ElectionSubscriber(sub_cfg)
 sub.start()
-time.sleep(1)
+# time.sleep(300)
+sub.join()
 sub.stop()
 LOG.info(f'final history:\n{pformat(sub.history)}')
 

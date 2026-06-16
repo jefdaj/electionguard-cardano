@@ -726,6 +726,7 @@ class ElectionSubscriber:
         # TODO are there any edge cases where order matters here?
         # First instinct: spent is safer to start with, because then we
         # probably can't get one that was spent but not created yet?
+        LOG.debug(f'fetching with cursor {self.cursor}')
         spent   = self._fetch_spent()
         unspent = self._fetch_unspent()
 
@@ -750,41 +751,60 @@ class ElectionSubscriber:
         #                              get redeemer and confirm it's a burn
 
     def channel_events(self, pairs_by_key, spent) -> list[ChannelEvent]:
+        LOG.debug('channel_events')
         events = []
+        keys = sorted(pairs_by_key.keys())
         first_event = True
-        for ((slot_no, channel_str), (input_match, output_match)) in pairs_by_key.items():
+        for key in keys:
+            LOG.debug(f'key: {key}')
 
-            # Get action (AKA redeemer)
-            if output_match:
-                action = find_redeemer(output_match, spent)
-                if action is None:
-                    # Should only happen in the very first event, because the input
-                    # (the one-shot UTXO) doesn't have an STT and so doesn't match the
-                    # Kupo filter.
-                    assert first_event
-                    assert channel_str == 'admin'
-                    action = InitElection()
-                first_event = False
-                assert action is not None
-            else:
-                action = None
+            (slot_no, channel_str) = key
+            LOG.debug(f'slot_no: {slot_no}')
+            LOG.debug(f'channel_str: {channel_str}')
+
+            (input_match, output_match) = pairs_by_key[key]
+            LOG.debug(f'input_match: {input_match}')
+            LOG.debug(f'output_match: {output_match}')
 
             # Get states (AKA datums)
-            try:
+            # TODO warn that these can be None due to fetch errors, or fix that
+            # try:
+            if input_match is not None:
                 input_datum = self._fetch_datum( input_match['datum_hash'])['datum']
                 input_state = decode_plutusdata_union(ChannelState, input_datum)
-            except:
+            # except:
+            else:
                 input_state = None
-            try:
+            # try:
+            if output_match is not None:
                 output_datum = self._fetch_datum(output_match['datum_hash'])['datum']
                 output_state = decode_plutusdata_union(ChannelState, output_datum)
-            except:
+            # except:
+            else:
                 output_state = None
 
+            # TODO move to the case analysis section
             if input_state is not None and output_state is not None:
                 in_seq  = input_state.state.seq
                 out_seq = output_state.state.seq
                 assert in_seq + 1 == out_seq, f'state seq error: {in_seq} -> {out_seq}'
+
+            # Get action (AKA redeemer)
+            if output_match is not None:
+                action = find_redeemer(output_match, spent)
+                LOG.debug(f'action: {action}')
+                if action is None:
+                    # Should only happen in the very first event, because the input
+                    # (the one-shot UTXO) doesn't have an STT and so doesn't match the
+                    # Kupo filter.
+                    assert channel_str == 'admin'
+                    assert input_state is None
+                    assert isinstance(output_state.state, AdminChannelState)
+                    assert output_state.state.seq == 0
+                    action = InitElection()
+                assert action is not None
+            else:
+                action = None
 
             event = ChannelEvent(
                 slot_no      = slot_no,
@@ -796,6 +816,7 @@ class ElectionSubscriber:
                 output_state = output_state,
             )
             LOG.debug(f'event:\n{pformat(event)}')
+
             events.append(event)
         return events
 
@@ -831,7 +852,7 @@ class ElectionSubscriber:
     def _fetch_spent(self):
         LOG.debug('ElectionSubscriber._fetch_spent')
         params = {"order": "oldest_first"}
-        if self.cursor:
+        if self.cursor is not None:
             params["spent_after"] = self.cursor.as_param()
         url = self._kupo_api_url() + "/matches?" + urlencode(params) + "&spent"
         r = self.session.get(url)
@@ -841,13 +862,16 @@ class ElectionSubscriber:
             return
         r.raise_for_status()
         matches = r.json()
+        if self.cursor is not None:
+            # kupo returns matches inclusive? we don't want the duplicates
+            matches = [m for m in matches if m['spent_at']['slot_no'] > self.cursor.slot_no]
         LOG.debug(f'spent matches: {json.dumps(matches, indent=2)}')
         return matches
 
     def _fetch_unspent(self):
         LOG.debug('ElectionSubscriber._fetch_unspent')
         params = {"order": "oldest_first"}
-        if self.cursor:
+        if self.cursor is not None:
             params["created_after"] = self.cursor.as_param()
         url = self._kupo_api_url() + "/matches?" + urlencode(params) + "&unspent"
         r = self.session.get(url)
@@ -857,6 +881,9 @@ class ElectionSubscriber:
             return
         r.raise_for_status()
         matches = r.json()
+        if self.cursor is not None:
+            # kupo returns matches inclusive? we don't want the duplicates
+            matches = [m for m in matches if m['created_at']['slot_no'] > self.cursor.slot_no]
         LOG.debug(f'unspent matches: {json.dumps(matches, indent=2)}')
         return matches
 
