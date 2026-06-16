@@ -68,6 +68,10 @@ class Point:
     def from_config(cls, data: SubscriberConfig) -> Self:
         return cls(data.since_slot, data.since_block_hash)
 
+    @classmethod
+    def from_kupo_resp(cls, data: dict):
+        return cls(data['slot_no'], data['header_hash'])
+
 
 # These don't quite correspond to UTXOs because we store the state from the
 # latest UTXO but the redeemer used to spend the previous UTXO on that channel.
@@ -193,6 +197,29 @@ def mk_example_callback(callback_name: str):
         LOG.info(f'{callback_name} called with: {event}')
     return fn
 
+def spent_unspent_pairs(spent, unspent):
+    # 1. make set of keys: slot + tx id + index? (fn for this)
+    # 2. use that to make (unspent, spent) pairs where one or the other may be None
+    # TODO itertools.groupby first, then make pairs explicit
+    raise NotImplementedError
+
+def find_redeemers(matches: list[dict]) -> list[Tuple[ElectionAction, dict]]:
+    with_redeemers: Tuple[ElectionAction, dict] = []
+    for match in matches:
+        redeemer = find_redeemer(match, matches)
+        if redeemer is None:
+            # Should only happen with the first TX, because the oneshot
+            # UTXO doesn't carry an STT and so doesn't match the Kupo
+            # pattern.
+            # assert len(self.history) == 0
+            assert match == matches[0]
+            redeemer = InitElection()
+        with_redeemers.append((redeemer, match))
+    LOG.debug(f'with_redeemers {len(with_redeemers)}: {pformat(with_redeemers)}')
+    assert len(with_redeemers) == len(matches)
+    return with_redeemers
+
+
 
 class ElectionSubscriber:
     '''Runs kupo and feeds matches to a callback.
@@ -230,6 +257,7 @@ class ElectionSubscriber:
         # simpler to work with Kupo's spent and unspent UTXO filters. When a
         # UTXO is spent we remove it from current and append its new spent
         # equivalent to history.
+        # TODO helpful, or no? history isn't immutible so it would be fine to mix them
         self.current: Mapping[ChannelId, ChannelEvent] = {}
         self.history: Mapping[ChannelId, list[ChannelEvent]] = {}
 
@@ -262,7 +290,7 @@ class ElectionSubscriber:
         # self.created_cursor: Optional[Point] = None
         # self.spent_cursor:   Optional[Point] = None
 
-        # Theoretically starting at the point from the config makes sense,
+        # Starting at the point from the config seems logical,
         # but for some reason Kupo rejects it. None works fine.
         # self.cursor = Point.from_config(self.config)
         self.cursor = None
@@ -492,7 +520,7 @@ class ElectionSubscriber:
         LOG.debug(f'Watcher thread started for policy_id={self.config.policy_id}')
         while not self.kupo_stop.is_set():
             try:
-                self._poll()
+                self._poll_attempt2()
             except requests.RequestException as e:
                 LOG.warning(f'Kupo polling error: {e}') # TODO error?
             except Exception as e:
@@ -595,46 +623,46 @@ class ElectionSubscriber:
         LOG.debug('ElectionSubscriber._matches_url')
         return f'http://{KUPO_HOST}:{self.kupo_port}/v1/matches'
 
-    def _poll(self):
-
-        LOG.debug('ElectionSubscriber._poll')
-        params = {"order": "oldest_first"}
-        if self.cursor:
-            # TODO test this with in-progress elections
-            params["created_after"] = self.cursor.as_param()
-
-        r = self.session.get(self._matches_url(), params=params)
-        LOG.debug(f'r.json: {json.dumps(r.json(), indent=2)}')
-
-        if r.status_code == 400:
-            # Cursor point no longer on chain — rollback past our cursor
-            self._handle_rollback()
-            return
-        r.raise_for_status()
-
-        # experimental new stuff
-        matches = r.json()
-        LOG.debug(f'matches: {json.dumps(matches, indent=2)}')
-        with_redeemers: Tuple[ElectionAction, dict] = []
-        for match in matches:
-            redeemer = find_redeemer(match, matches)
-            if redeemer is None:
-                # Should only happen with the first TX, because the oneshot
-                # UTXO doesn't carry an STT and so doesn't match the Kupo
-                # pattern.
-                assert len(self.history) == 0
-                assert match == matches[0]
-                redeemer = InitElection()
-            with_redeemers.append((redeemer, match))
-        LOG.debug(f'with_redeemers {len(with_redeemers)}: {pformat(with_redeemers)}')
-        assert len(with_redeemers) == len(matches)
-
-        for utxo in r.json():
-            self._on_match(utxo)
-            self.created_cursor = Point(
-                utxo["created_at"]["slot_no"],
-                utxo["created_at"]["header_hash"],
-            )
+#     def _poll(self):
+# 
+#         LOG.debug('ElectionSubscriber._poll')
+#         params = {"order": "oldest_first"}
+#         if self.cursor:
+#             # TODO test this with in-progress elections
+#             params["created_after"] = self.cursor.as_param()
+# 
+#         r = self.session.get(self._matches_url(), params=params)
+#         LOG.debug(f'r.json: {json.dumps(r.json(), indent=2)}')
+# 
+#         if r.status_code == 400:
+#             # Cursor point no longer on chain — rollback past our cursor
+#             self._handle_rollback()
+#             return
+#         r.raise_for_status()
+# 
+#         # experimental new stuff
+#         matches = r.json()
+#         LOG.debug(f'matches: {json.dumps(matches, indent=2)}')
+#         with_redeemers: Tuple[ElectionAction, dict] = []
+#         for match in matches:
+#             redeemer = find_redeemer(match, matches)
+#             if redeemer is None:
+#                 # Should only happen with the first TX, because the oneshot
+#                 # UTXO doesn't carry an STT and so doesn't match the Kupo
+#                 # pattern.
+#                 assert len(self.history) == 0
+#                 assert match == matches[0]
+#                 redeemer = InitElection()
+#             with_redeemers.append((redeemer, match))
+#         LOG.debug(f'with_redeemers {len(with_redeemers)}: {pformat(with_redeemers)}')
+#         assert len(with_redeemers) == len(matches)
+# 
+#         for utxo in r.json():
+#             self._on_match(utxo)
+#             self.created_cursor = Point(
+#                 utxo["created_at"]["slot_no"],
+#                 utxo["created_at"]["header_hash"],
+#             )
 
     def _poll_attempt2(self):
         # Spent UTXOs are better in general because they have more info:
@@ -647,18 +675,18 @@ class ElectionSubscriber:
         # TODO are there any edge cases where order matters here?
         # First instinct: spent is safer to start with, because then we
         # probably can't get one that was spent but not created yet?
-        created = self._fetch_created()
         spent   = self._fetch_spent()
+        unspent = self._fetch_unspent()
 
-        if not created and not spent:
+        if not spent and not unspent:
             return
 
-        (created, spent) = self._update_cursor_and_truncate(created, spent)
+        (spent, unspent) = self._update_cursor_and_truncate(spent, unspent)
 
         # TODO which step is best to look up redeemers?
         #      I guess the almost-final version, but look up redeemers from spent only?
 
-        pairs = self._spent_unspent_pairs(spent, unspent)
+        pairs = spent_unspent_pairs(spent, unspent)
 
         # TODO case analysis on pairs:
         #      - created only -> mint -> current state new, confirm no channel history
@@ -668,59 +696,64 @@ class ElectionSubscriber:
         #      - spent only -> burn -> current state None, append spent to history
         #                              get redeemer and confirm it's a burn
 
-    def _update_cursor_and_truncate(self, created, spent):
-        # 1. get the latest utxo in each list (last one)
-        # 2. if they both have a last one, use the *earlier*
-        # 3. cut off utxos after that from both lists (only one will have any),
-        #    so they can be processed next poll loop without duplicate events
-        raise NotImplemented
+    def _update_cursor_and_truncate(self, spent, unspent):
+        LOG.debug('ElectionSubscriber._update_cursor_and_truncate')
 
-    def _spent_unspent_pairs(self, spent, unspent):
-        # 1. make set of keys: slot + tx id + index? (fn for this)
-        # 2. use that to make (unspent, spent) pairs where one or the other may be None
-        # TODO itertools.groupby first, then make pairs explicit
-        raise NotImplemented
+        # get the latest point from each list
+        last_spent   = None if not spent   else Point.from_kupo_resp(spent[-1]['spent_at'])
+        last_unspent = None if not unspent else Point.from_kupo_resp(unspent[-1]['created_at'])
+        LOG.debug(f'last_spent: {last_spent}')
+        LOG.debug(f'last_unspent: {last_unspent}')
 
-    def _fetch_created(self):
+        # if they both have a last one, use the earlier
+        # TODO is this necessary? not sure if they're guaranteed to be the same
+        points = [p for p in (last_spent, last_unspent) if p is not None]
+        earlier = min(points, key=lambda p: p.slot_no)
+        LOG.debug(f'earlier: {earlier}')
+
+        # cut off utxos after that from both lists (only one will have any),
+        # so they can be processed next poll loop without duplicate events
+        LOG.debug(f'lengths before truncation: spent={len(spent)}, unspent={len(unspent)}')
+        spent   = [m for m in spent   if m['spent_at'  ]['slot_no'] <= earlier.slot_no]
+        unspent = [m for m in unspent if m['created_at']['slot_no'] <= earlier.slot_no]
+        LOG.debug(f'lengths after truncation: spent={len(spent)}, unspent={len(unspent)}')
+
+        # update cursor to the earlier so that the cut-off values will be
+        # fetched again next poll
+        self.cursor = earlier
+        LOG.debug(f'updated cursor to {earlier}')
+
+    def _fetch_spent(self):
         LOG.debug('ElectionSubscriber._fetch_spent')
         params = {"order": "oldest_first"}
-        if self.created_cursor:
-            # TODO test this with in-progress elections
-            params["created_after"] = self.cursor.as_param()
-
-        r = self.session.get(self._matches_url(), params=params)
-        LOG.debug(f'r.json: {json.dumps(r.json(), indent=2)}')
-
+        if self.cursor:
+            params["spent_after"] = self.cursor.as_param()
+        url = self._matches_url() + "?" + urlencode(params) + "&spent"
+        r = self.session.get(url)
         if r.status_code == 400:
             # Cursor point no longer on chain — rollback past our cursor
             self._handle_rollback()
             return
         r.raise_for_status()
-
-        # experimental new stuff
         matches = r.json()
-        LOG.debug(f'matches: {json.dumps(matches, indent=2)}')
-        with_redeemers: Tuple[ElectionAction, dict] = []
-        for match in matches:
-            redeemer = find_redeemer(match, matches)
-            if redeemer is None:
-                # Should only happen with the first TX, because the oneshot
-                # UTXO doesn't carry an STT and so doesn't match the Kupo
-                # pattern.
-                assert len(self.history) == 0
-                assert match == matches[0]
-                redeemer = InitElection()
-            with_redeemers.append((redeemer, match))
-        LOG.debug(f'with_redeemers {len(with_redeemers)}: {pformat(with_redeemers)}')
-        assert len(with_redeemers) == len(matches)
+        LOG.debug(f'spent matches: {json.dumps(matches, indent=2)}')
+        return matches
 
-        for utxo in r.json():
-            self._on_match(utxo)
-            self.created_cursor = Point(
-                utxo["created_at"]["slot_no"],
-                utxo["created_at"]["header_hash"],
-            )
-
+    def _fetch_unspent(self):
+        LOG.debug('ElectionSubscriber._fetch_unspent')
+        params = {"order": "oldest_first"}
+        if self.cursor:
+            params["created_after"] = self.cursor.as_param()
+        url = self._matches_url() + "?" + urlencode(params) + "&unspent"
+        r = self.session.get(url)
+        if r.status_code == 400:
+            # Cursor point no longer on chain — rollback past our cursor
+            self._handle_rollback()
+            return
+        r.raise_for_status()
+        matches = r.json()
+        LOG.debug(f'unspent matches: {json.dumps(matches, indent=2)}')
+        return matches
 
     def _handle_rollback(self):
         raise NotImplementedError
