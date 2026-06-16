@@ -103,11 +103,11 @@ class ChannelEvent:
 
 
 # TODO move to channel_id.py
-# def channel_id_from_asset_name(encoded: str) -> ChannelId:
-#     channel_id = bytes.fromhex(encoded)
-#     assert ChannelIdHelper.validate_bytes(channel_id)
-#     LOG.debug(f'decoded {asset_name} -> {channel_id}')
-#     return channel_id
+def channel_id_from_asset_name(encoded: str) -> ChannelId:
+    channel_id = bytes.fromhex(encoded)
+    # assert ChannelIdHelper.validate_bytes(channel_id)
+    LOG.debug(f'decoded {asset_name} -> {channel_id}')
+    return channel_id
 
 # TODO remove in favor of getting channel_ids from states?
 # TODO where should this live?
@@ -125,6 +125,13 @@ def is_port_in_use(port: int) -> bool:
     # based on https://stackoverflow.com/a/52872579
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         return s.connect_ex((KUPO_HOST, port)) == 0
+
+# TODO where should this live?
+def kupo_match_to_channel_str(kupo_match: dict) -> str:
+    asset_hex = list(kupo_match['value']['assets'].keys())[0].split('.')[-1]
+    asset_str = bytes.fromhex(asset_hex).decode()
+    channel_str = asset_str.split('-')[2]
+    return channel_str
 
 def kupo_match_to_pycardano_utxo(kupo_dict: dict) -> UTxO:
     """Convert a Kupo UTXO response dict to a PyCardano UTxO.
@@ -212,17 +219,13 @@ def spent_unspent_pairs(spent, unspent):
 #         LOG.debug(f'n matches: {len(matches)}')
 #         LOG.debug(f'matches: {pformat(matches)}')
 
-    # tag each list with tx id
-    spent_key = lambda m: \
-        str(m['spent_at']['slot_no']) + '.' + \
-        m['spent_at']['transaction_id'] # + '#' + \
-        # str(m['spent_at']['output_index'])
+    # tag each list with slot (for time ordering) + stt name
+    # spent_key = lambda m: str(m['spent_at']['slot_no']) + '.' + m['spent_at']['transaction_id']
+    spent_key = lambda m: (m['spent_at']['slot_no'], kupo_match_to_channel_str(m))
     spent_tagged = [(spent_key(m), m) for m in spent]
 
-    unspent_key = lambda m: \
-        str(m['created_at']['slot_no']) + '.' + \
-        m['transaction_id'] # + '#' + \
-        # str(m['output_index'])
+    # unspent_key = lambda m: str(m['created_at']['slot_no']) + '.' + m['transaction_id']
+    unspent_key = lambda m: (m['created_at']['slot_no'], kupo_match_to_channel_str(m))
     unspent_tagged = [(unspent_key(m), m) for m in unspent]
 
     tagged = spent_tagged + unspent_tagged
