@@ -15,6 +15,7 @@ from urllib.parse import urlencode
 from dataclasses import dataclass
 from os import environ
 from pprint import pformat
+from collections import defaultdict
 
 from typing import Any, Callable, Dict, List, Tuple, Optional, Self
 
@@ -87,19 +88,17 @@ class ChannelEvent:
     # the two should be equal. Used to remove history during rollbacks.
     slot_no: int
 
-    # Not used yet, but may be useful for display in an interface.
-    # The first of these per channel should be from the unspent matches,
-    # and then the rest should be from spent matches. We could update the
-    # unspent one -> spent after it's spent, but I don't see a need so far.
-    # TODO would it be easy to pop and re-add the initial one on spend?
-    kupo_match: dict[str, Any]
-
-    # The last of these per channel should be None,
-    # signifying the channel was closed (burned).
-    state: Optional[ChannelState]
-
-    # Should always exist.
+    # AKA redeemer. Should always exist. Can be used to infer which of the
+    # input/output fields should have values below.
     action: ElectionAction
+
+    # Mints have only outputs, burns have only inputs, and continutations have both.
+    input_match:  Optional[dict[str, Any]]
+    output_match: Optional[dict[str, Any]]
+
+    # Mints have only outputs, burns have only inputs, and continutations have both.
+    input_state:  Optional[ChannelState]
+    output_state: Optional[ChannelState]
 
 
 # TODO move to channel_id.py
@@ -205,39 +204,45 @@ def mk_example_callback(callback_name: str):
         LOG.info(f'{callback_name} called with: {event}')
     return fn
 
-def spent_unspent_pairs(spent, unspent):
-    # 1. make set of keys: slot + tx id + index? (fn for this)
-    # 2. use that to make (unspent, spent) pairs where one or the other may be None
-    # TODO itertools.groupby first, then make pairs explicit
-#     key_fn = lambda m: m['transaction_id'] + '#' + str(m['output_index'])
-#     keys = [key_fn(m) for m in spent + unspent]
-#     LOG.debug(f'keys: {keys}')
-#     groups = itertools.groupby(spent + unspent, key=key_fn)
-#     for (key, matches) in groups:
-#         matches = list(matches)
-#         LOG.debug(f'key: {key}')
-#         LOG.debug(f'n matches: {len(matches)}')
-#         LOG.debug(f'matches: {pformat(matches)}')
+def input_output_pairs(spent, unspent):
 
-    # tag each list with slot (for time ordering) + stt name
-    # spent_key = lambda m: str(m['spent_at']['slot_no']) + '.' + m['spent_at']['transaction_id']
-    spent_key = lambda m: (m['spent_at']['slot_no'], kupo_match_to_channel_str(m))
-    spent_tagged = [(spent_key(m), m) for m in spent]
+    def input_key(m):
+        ch_str  = kupo_match_to_channel_str(m)
+        slot_no = m['spent_at']['slot_no']
+        # tx_id   = m['spent_at']['transaction_id']
+        # return (slot_no, tx_id, ch_str)
+        return (slot_no, ch_str)
+        key_set.add(key)
 
-    # unspent_key = lambda m: str(m['created_at']['slot_no']) + '.' + m['transaction_id']
-    unspent_key = lambda m: (m['created_at']['slot_no'], kupo_match_to_channel_str(m))
-    unspent_tagged = [(unspent_key(m), m) for m in unspent]
+    def output_key(m):
+        ch_str  = kupo_match_to_channel_str(m)
+        slot_no = m['created_at']['slot_no']
+        # tx_id   = m['transaction_id']
+        # return (slot_no, tx_id, ch_str)
+        return (slot_no, ch_str)
+        key_set.add(key)
 
-    tagged = spent_tagged + unspent_tagged
-    tagged.sort(key=lambda x: x[0])
-    LOG.debug(f'tagged: {pformat(tagged)}')
+    # find inputs + outputs for each key
+    lists = defaultdict(lambda: ([], [])) # (inputs, outputs)
+    for m in spent:
+        k = input_key(m)
+        lists[k][0].append(m)
+    for m in spent + unspent:
+        k = output_key(m)
+        lists[k][1].append(m)
+    LOG.debug(f'lists:\n{pformat(lists)}')
 
-    # convert to a dict keyed by tag, with keys still in order
-    # TODO list instead of dict?
-    groups = {k: [t[1] for t in g] for k, g in itertools.groupby(tagged, key=lambda x: x[0])}
-    LOG.debug(f'groups:\n{pformat(groups)}')
+    # make sure there was only 0 or 1 of each, and simplify to pairs
+    pairs = {}
+    for (key, (inputs, outputs)) in lists.items():
+        assert len(inputs) < 2
+        assert len(outputs) < 2
+        input_ = inputs[0]  if inputs  else None
+        output = outputs[0] if outputs else None
+        pairs[key] = (input_, output)
+    LOG.debug(f'pairs:\n{pformat(pairs)}')
 
-    raise NotImplementedError
+    return pairs
 
 def find_redeemers(matches: list[dict]) -> list[Tuple[ElectionAction, dict]]:
     with_redeemers: Tuple[ElectionAction, dict] = []
@@ -726,7 +731,7 @@ class ElectionSubscriber:
         # TODO which step is best to look up redeemers?
         #      I guess the almost-final version, but look up redeemers from spent only?
 
-        pairs = spent_unspent_pairs(spent, unspent)
+        tx_pairs = input_output_pairs(spent, unspent)
 
         # TODO case analysis on pairs:
         #      - created only -> mint -> current state new, confirm no channel history
