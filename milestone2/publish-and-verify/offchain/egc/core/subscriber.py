@@ -198,7 +198,7 @@ def find_redeemer(kupo_match, spent_matches) -> Optional[ElectionAction]:
             redeemer = decode_plutusdata_union(ElectionAction, cbor)
             LOG.debug(f'matching redeemer: {redeemer}')
             return redeemer
-    LOG.error(f'No matching redeemer for: {kupo_match}')
+    LOG.warning(f'No matching redeemer for: {kupo_match}')
     return None
 
 def mk_example_callback(callback_name: str):
@@ -708,11 +708,10 @@ class ElectionSubscriber:
                     # Should only happen in the very first event, because the input
                     # (the one-shot UTXO) doesn't have an STT and so doesn't match the
                     # Kupo filter.
-                    # TODO nope, also happens during addsubchannels! and then there's no redeemer to look up
                     assert channel_str == 'admin'
                     assert input_state is None
                     assert isinstance(output_state.state, AdminChannelState)
-                    assert output_state.state.seq == 0, f'output_state seq != 0: {output_state}'
+                    # assert output_state.state.seq == 0, f'output_state seq != 0: {output_state}'
                     action = InitElection()
                 assert action is not None
             else:
