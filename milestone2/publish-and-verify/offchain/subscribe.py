@@ -40,14 +40,32 @@ LOG.info(f'sub_cfg: {sub_cfg}')
 
 sub = ElectionSubscriber(sub_cfg)
 sub.start()
-# time.sleep(300)
-sub.join()
+
+def log_current():
+    channel_ids = sub.channel_ids()
+    LOG.info(f'current channel_ids: {channel_ids}')
+    for ch_id in channel_ids:
+        ch_str = channel_id_to_string(ch_id)
+        ch_state = sub.current_state(ch_id)
+        LOG.info(f'current {ch_str} state: {ch_state}')
+
+while True:
+    log_current()
+    try:
+        time.sleep(10)
+        if sub.is_done():
+            break
+    except:
+        break # probably keyboardinturrupt
+
 sub.stop()
-LOG.info(f'final history:\n{pformat(sub.history)}')
+sub.join()
+
+# LOG.info(f'final history:\n{pformat(sub.history)}')
 
 # admin_records = sub.channel_history(ADMIN_CHANNEL_ID)
 # LOG.info(f'final admin_records: {pformat(admin_records)}')
 
 # TODO what should marking a channel done look like?
-channel_ids = sub.channel_ids()
-LOG.info(f'final channel_ids: {channel_ids}')
+# channel_ids = sub.channel_ids()
+# LOG.info(f'final channel_ids: {channel_ids}')

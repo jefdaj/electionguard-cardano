@@ -329,6 +329,14 @@ class ElectionSubscriber:
         except KeyError:
             return None
         return event.output_state # may be None
+
+    def current_phase(self) -> Optional[ElectionPhase]:
+        # Returns None if the election hasn't started yet
+        try:
+            event = self.channel_history(ADMIN_CHANNEL_ID)[-1]
+            return event.output_state.state.phase
+        except KeyError:
+            return None
  
 
     ## process managment interface ##
@@ -747,34 +755,72 @@ class ElectionSubscriber:
 
     def _on_initelection(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_initelection')
-        # assert self.history == {}, 'InitElection with non-empty history'
-        # assert event.channel_id == ADMIN_CHANNEL_ID
-        # assert event.input_state is None
-        self.history[ADMIN_CHANNEL_ID] = [event.output_state]
+        assert self.history == {}, 'InitElection with non-empty history'
+        assert event.channel_id == ADMIN_CHANNEL_ID # note this tx was published by the funder
+        self._on_mint(event)
 
     # remember this will be called once per channel touched
     def _on_addsubchannels(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_addsubchannels')
+        if event.channel_id == ADMIN_CHANNEL_ID:
+            self._on_cont(event)
+        else:
+            self._on_mint(event)
 
     def _on_advancephase(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_advancephase')
+        assert event.channel_id == ADMIN_CHANNEL_ID, 'only admin can advance phase'
+        # TODO anything needed here?
+        self._on_cont(event)
 
     def _on_endelection(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_endelection')
+        assert event.channel_id == ADMIN_CHANNEL_ID, 'only admin can end election'
+        self._on_burn(event)
 
     # remember this will be called once per channel touched
     def _on_rmsubchannels(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_rmsubchannels')
+        assert event.channel_id in self.history, f'tried to remove non-existent channel {ch_str}'
+        if event.channel_id == ADMIN_CHANNEL_ID:
+            self._on_cont(event)
+        else:
+            self._on_burn(event)
 
     # remember this will be called once per channel touched
     def _on_rebalancefunds(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_rebalancefunds')
+        self._on_cont(event)
 
     def _on_postpublicrecords(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_postpublicrecords')
+        # TODO fetch from IPFS here
+        self._on_cont(event)
 
     def _on_burntesttokens(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_burntesttokens')
+        # TODO anything else here?
+        self._on_burn(event)
+
+    def _on_mint(self, event: ChannelEvent):
+        LOG.debug('ElectionSubscriber._on_mint')
+        # TODO document this or change it
+        assert not event.channel_id in self.history, "can't re-add a removed channel"
+        self.history[event.channel_id] = [event]
+
+    def _on_burn(self, event: ChannelEvent):
+        LOG.debug('ElectionSubscriber._on_burn')
+        ch_str = channel_id_to_string(event.channel_id)
+        assert event.output_state is None, f'{ch_str} being removed, but has an output'
+        self.history[event.channel_id].append(event)
+
+    def _on_cont(self, event: ChannelEvent):
+        LOG.debug('ElectionSubscriber._on_cont')
+        assert event.input_match  is not None, 'continuation without input_match'
+        assert event.input_state  is not None, 'continuation without input_state'
+        assert event.output_match is not None, 'continuation without output_match'
+        assert event.output_state is not None, 'continuation without output_state'
+        self.history[event.channel_id].append(event)
 
 
     ## handle rollbacks ##
