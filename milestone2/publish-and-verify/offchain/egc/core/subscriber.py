@@ -249,28 +249,6 @@ def input_output_pairs(spent, unspent):
     return pairs_by_key
 
 
-# def find_redeemers(matches: list[dict]) -> list[Tuple[ElectionAction, dict]]:
-#     with_redeemers: Tuple[ElectionAction, dict] = []
-#     for match in matches:
-#         redeemer = find_redeemer(match, matches)
-#         if redeemer is None:
-#             # Should only happen with the first TX, because the oneshot
-#             # UTXO doesn't carry an STT and so doesn't match the Kupo
-#             # pattern.
-#             # assert len(self.history) == 0
-#             assert match == matches[0]
-#             redeemer = InitElection()
-#         with_redeemers.append((redeemer, match))
-#     LOG.debug(f'with_redeemers {len(with_redeemers)}: {pformat(with_redeemers)}')
-#     assert len(with_redeemers) == len(matches)
-#     return with_redeemers
-
-
-def kupo_utxo_str(match: dict) -> str:
-    # TODO is there a built-in fn for this?
-    return match['transaction_id'] + '#' + str(match['output_index'])
-
-
 class ElectionSubscriber:
     '''Runs kupo and feeds matches to a callback.
     Note that since_slot and since_block_hash should be figured out *before* deploying the contract,
@@ -558,19 +536,6 @@ class ElectionSubscriber:
 
     ## polling and http queries ##
 
-    def _fetch_datum(self, datum_hash: str) -> Any:
-        LOG.debug('ElectionSubscriber._fetch_datum')
-        # TODO adjust to port changes
-        url = self._kupo_api_url() + f'/datums/{datum_hash}'
-        LOG.debug(f'fetching datum {datum_hash}')
-        resp = self.session.get(url, timeout=10)
-        resp.raise_for_status()
-        return resp.json()
-
-    def _kupo_api_url(self) -> str:
-        LOG.debug('ElectionSubscriber._kupo_api_url')
-        return f'http://{KUPO_HOST}:{self.kupo_port}/v1'
-
     def _poll(self):
         # Spent UTXOs are better in general because they have more info:
         # - spent_at of course, which isn't really used so far
@@ -594,6 +559,10 @@ class ElectionSubscriber:
         events = self._channel_events(pairs_by_key, spent)
 
         self._apply_events_by_slot(events)
+
+    def _kupo_api_url(self) -> str:
+        LOG.debug('ElectionSubscriber._kupo_api_url')
+        return f'http://{KUPO_HOST}:{self.kupo_port}/v1'
 
     def _fetch_spent(self):
         LOG.debug('ElectionSubscriber._fetch_spent')
@@ -661,6 +630,15 @@ class ElectionSubscriber:
         LOG.debug(f'updated cursor to {earlier}')
 
         return (spent, unspent)
+
+    def _fetch_datum(self, datum_hash: str) -> Any:
+        LOG.debug('ElectionSubscriber._fetch_datum')
+        # TODO adjust to port changes
+        url = self._kupo_api_url() + f'/datums/{datum_hash}'
+        LOG.debug(f'fetching datum {datum_hash}')
+        resp = self.session.get(url, timeout=10)
+        resp.raise_for_status()
+        return resp.json()
 
     def _channel_events(self, pairs_by_key, spent) -> list[ChannelEvent]:
         LOG.debug('channel_events')
@@ -745,30 +723,8 @@ class ElectionSubscriber:
                 queue = [event]
                 slot_no = event.slot_no
 
-    def _handle_rollback(self):
-        raise NotImplementedError
 
-    def _rollback_to(self, safe_slot: int):
-        for channel_id, entries in list(self.history.items()):
-            kept = [e for e in entries if e.slot_no <= safe_slot]
-
-            if not kept:
-                self.history.pop(channel_id)
-                # self.current_state.pop(channel_id, None)
-                continue
-
-            self.history[channel_id] = kept
-            last = kept[-1]
-
-            # Un-burn if the burn was rolled back
-            if last.removed_slot is not None and last.removed_slot > safe_slot:
-                last.removed_slot = None
-
-            # If channel is live (not burned), make sure it's in current_state
-            # if last.removed_slot is None:
-            #     self.current_state[channel_id] = (last.utxo, last.state)
-            # else:
-            #     self.current_state.pop(channel_id, None)
+    ## handle election actions ##
 
     def _on_action(self, event: ChannelEvent):
         # TODO case analysis on pairs:
@@ -819,3 +775,31 @@ class ElectionSubscriber:
 
     def _on_burntesttokens(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_burntesttokens')
+
+
+    ## handle rollbacks ##
+
+    def _handle_rollback(self):
+        raise NotImplementedError
+
+    def _rollback_to(self, safe_slot: int):
+        for channel_id, entries in list(self.history.items()):
+            kept = [e for e in entries if e.slot_no <= safe_slot]
+
+            if not kept:
+                self.history.pop(channel_id)
+                # self.current_state.pop(channel_id, None)
+                continue
+
+            self.history[channel_id] = kept
+            last = kept[-1]
+
+            # Un-burn if the burn was rolled back
+            if last.removed_slot is not None and last.removed_slot > safe_slot:
+                last.removed_slot = None
+
+            # If channel is live (not burned), make sure it's in current_state
+            # if last.removed_slot is None:
+            #     self.current_state[channel_id] = (last.utxo, last.state)
+            # else:
+            #     self.current_state.pop(channel_id, None)
