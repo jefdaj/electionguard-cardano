@@ -185,22 +185,20 @@ def kupo_match_to_pycardano_utxo(kupo_dict: dict) -> UTxO:
     return UTxO(tx_input, tx_output)
 
 
-def find_redeemer(kupo_match, kupo_matches) -> Optional[ElectionAction]:
-    "Search kupo_matches for a `spent_at` matching the current match."
+def find_redeemer(kupo_match, spent_matches) -> Optional[ElectionAction]:
+    "Search spent_matches for a `spent_at` matching the current match."
     tx_id = kupo_match.get('transaction_id')
     # TODO in this contract, is tx_id all we need? aka one action per tx?
     # tx_ix = kupo_match.get('output_index') # TODO is this right?
-    for m in kupo_matches:
-        try:
-            spent = m.get('spent_at')
-        except:
-            continue
-        # TODO check if tx matches first, then get redeemer if so
+    for m in spent_matches:
+        spent = m.get('spent_at')
         if spent['transaction_id'] == tx_id: # and spent['input_index'] == tx_ix:
+            LOG.debug(f'matching spent json: {spent}')
             cbor = spent['redeemer']
             redeemer = decode_plutusdata_union(ElectionAction, cbor)
             LOG.debug(f'matching redeemer: {redeemer}')
             return redeemer
+    LOG.error(f'No matching redeemer for: {kupo_match}')
     return None
 
 def mk_example_callback(callback_name: str):
@@ -350,7 +348,7 @@ class ElectionSubscriber:
                 self._start_kupo()
                 self._watch_kupo()
             except Exception as e:
-                LOG.error(f'Error in watcher: {e}')
+                LOG.error(f'Error in watcher: {e}', exc_info=True)
 
         def handle_sigint(sig, frame):
             LOG.debug(f'Signal {sig} recieved, shutting down...')
@@ -535,7 +533,7 @@ class ElectionSubscriber:
             except requests.RequestException as e:
                 LOG.warning(f'Kupo polling error: {e}') # TODO error?
             except Exception as e:
-                LOG.error(f'Unexpected error in watcher: {e} {type(e)}')
+                LOG.error(f'Unexpected error in watcher: {e} {type(e)}', exc_info=True)
                 raise
             finally:
                 time.sleep(OGMIOS_POLL_SEC)
@@ -563,10 +561,24 @@ class ElectionSubscriber:
             return
 
         (spent, unspent) = self._update_cursor_and_truncate(spent, unspent)
-        pairs_by_key = input_output_pairs(spent, unspent) # TODO make a method?
-        events = self._channel_events(pairs_by_key, spent)
+
+        all_spent = self._add_old_spent(spent)
+        pairs_by_key = input_output_pairs(all_spent, unspent) # TODO make a method?
+
+        events = self._channel_events(pairs_by_key, all_spent)
 
         self._apply_events_by_slot(events)
+
+    def _add_old_spent(self, new_spent):
+        LOG.debug('ElectionSubscriber._add_old_spent')
+        # have to bring back prev spent matches here too,
+        # because the relevant ones may be in a prev batch
+        # TODO is that also important for the input_output_pairs?
+        old_event = [x for sub in self.history.values() for x in sub]
+        # events = [c[-1] for c in self.history.values()]
+        old_spent = [e.input_match for e in old_event if e.input_match is not None]
+        LOG.debug(f'old_spent: {old_spent}')
+        return old_spent + new_spent
 
     def _kupo_api_url(self) -> str:
         LOG.debug('ElectionSubscriber._kupo_api_url')
@@ -686,16 +698,21 @@ class ElectionSubscriber:
 
             # Get action (AKA redeemer)
             if output_match is not None:
-                action = find_redeemer(output_match, spent)
+                if input_match is None:
+                    all_spent = spent
+                else:
+                    all_spent = spent + [input_match]
+                action = find_redeemer(output_match, all_spent)
                 LOG.debug(f'action: {action}')
                 if action is None:
                     # Should only happen in the very first event, because the input
                     # (the one-shot UTXO) doesn't have an STT and so doesn't match the
                     # Kupo filter.
+                    # TODO nope, also happens during addsubchannels! and then there's no redeemer to look up
                     assert channel_str == 'admin'
                     assert input_state is None
                     assert isinstance(output_state.state, AdminChannelState)
-                    assert output_state.state.seq == 0
+                    assert output_state.state.seq == 0, f'output_state seq != 0: {output_state}'
                     action = InitElection()
                 assert action is not None
             else:
@@ -755,7 +772,9 @@ class ElectionSubscriber:
 
     def _on_initelection(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_initelection')
-        assert self.history == {}, 'InitElection with non-empty history'
+        # assert self.history == {}, 'InitElection with non-empty history'
+        # there might be history already if the subscriber processed a different channel event first?
+        LOG.debug(f'history during _on_initelection:\n{pformat(self.history)}')
         assert event.channel_id == ADMIN_CHANNEL_ID # note this tx was published by the funder
         self._on_mint(event)
 
