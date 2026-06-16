@@ -636,6 +636,92 @@ class ElectionSubscriber:
                 utxo["created_at"]["header_hash"],
             )
 
+    def _poll_attempt2(self):
+        # Spent UTXOs are better in general because they have more info:
+        # - spent_at of course, which isn't really used so far
+        # - also the spending redeemer (to detect burns, to add to next event)
+
+        LOG.debug('ElectionSubscriber._poll_attempt2')
+        params = {"order": "oldest_first"}
+
+        # TODO are there any edge cases where order matters here?
+        # First instinct: spent is safer to start with, because then we
+        # probably can't get one that was spent but not created yet?
+        created = self._fetch_created()
+        spent   = self._fetch_spent()
+
+        if not created and not spent:
+            return
+
+        (created, spent) = self._update_cursor_and_truncate(created, spent)
+
+        # TODO which step is best to look up redeemers?
+        #      I guess the almost-final version, but look up redeemers from spent only?
+
+        pairs = self._spent_unspent_pairs(spent, unspent)
+
+        # TODO case analysis on pairs:
+        #      - created only -> mint -> current state new, confirm no channel history
+        #                                also check for InitElection special case
+        #      - both -> continuation -> current state new, append spent to history
+        #                                get redeemer just to have the info
+        #      - spent only -> burn -> current state None, append spent to history
+        #                              get redeemer and confirm it's a burn
+
+    def _update_cursor_and_truncate(self, created, spent):
+        # 1. get the latest utxo in each list (last one)
+        # 2. if they both have a last one, use the *earlier*
+        # 3. cut off utxos after that from both lists (only one will have any),
+        #    so they can be processed next poll loop without duplicate events
+        raise NotImplemented
+
+    def _spent_unspent_pairs(self, spent, unspent):
+        # 1. make set of keys: slot + tx id + index? (fn for this)
+        # 2. use that to make (unspent, spent) pairs where one or the other may be None
+        # TODO itertools.groupby first, then make pairs explicit
+        raise NotImplemented
+
+    def _fetch_created(self):
+        LOG.debug('ElectionSubscriber._fetch_spent')
+        params = {"order": "oldest_first"}
+        if self.created_cursor:
+            # TODO test this with in-progress elections
+            params["created_after"] = self.cursor.as_param()
+
+        r = self.session.get(self._matches_url(), params=params)
+        LOG.debug(f'r.json: {json.dumps(r.json(), indent=2)}')
+
+        if r.status_code == 400:
+            # Cursor point no longer on chain — rollback past our cursor
+            self._handle_rollback()
+            return
+        r.raise_for_status()
+
+        # experimental new stuff
+        matches = r.json()
+        LOG.debug(f'matches: {json.dumps(matches, indent=2)}')
+        with_redeemers: Tuple[ElectionAction, dict] = []
+        for match in matches:
+            redeemer = find_redeemer(match, matches)
+            if redeemer is None:
+                # Should only happen with the first TX, because the oneshot
+                # UTXO doesn't carry an STT and so doesn't match the Kupo
+                # pattern.
+                assert len(self.history) == 0
+                assert match == matches[0]
+                redeemer = InitElection()
+            with_redeemers.append((redeemer, match))
+        LOG.debug(f'with_redeemers {len(with_redeemers)}: {pformat(with_redeemers)}')
+        assert len(with_redeemers) == len(matches)
+
+        for utxo in r.json():
+            self._on_match(utxo)
+            self.created_cursor = Point(
+                utxo["created_at"]["slot_no"],
+                utxo["created_at"]["header_hash"],
+            )
+
+
     def _handle_rollback(self):
         raise NotImplementedError
 
