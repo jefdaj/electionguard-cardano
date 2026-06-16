@@ -9,6 +9,7 @@ import sys
 import threading
 import time
 import logging
+import itertools
 
 from urllib.parse import urlencode
 from dataclasses import dataclass
@@ -201,6 +202,38 @@ def spent_unspent_pairs(spent, unspent):
     # 1. make set of keys: slot + tx id + index? (fn for this)
     # 2. use that to make (unspent, spent) pairs where one or the other may be None
     # TODO itertools.groupby first, then make pairs explicit
+#     key_fn = lambda m: m['transaction_id'] + '#' + str(m['output_index'])
+#     keys = [key_fn(m) for m in spent + unspent]
+#     LOG.debug(f'keys: {keys}')
+#     groups = itertools.groupby(spent + unspent, key=key_fn)
+#     for (key, matches) in groups:
+#         matches = list(matches)
+#         LOG.debug(f'key: {key}')
+#         LOG.debug(f'n matches: {len(matches)}')
+#         LOG.debug(f'matches: {pformat(matches)}')
+
+    # tag each list with tx id
+    spent_key = lambda m: \
+        str(m['spent_at']['slot_no']) + '.' + \
+        m['spent_at']['transaction_id'] # + '#' + \
+        # str(m['spent_at']['output_index'])
+    spent_tagged = [(spent_key(m), m) for m in spent]
+
+    unspent_key = lambda m: \
+        str(m['created_at']['slot_no']) + '.' + \
+        m['transaction_id'] # + '#' + \
+        # str(m['output_index'])
+    unspent_tagged = [(unspent_key(m), m) for m in unspent]
+
+    tagged = spent_tagged + unspent_tagged
+    tagged.sort(key=lambda x: x[0])
+    LOG.debug(f'tagged: {pformat(tagged)}')
+
+    # convert to a dict keyed by tag, with keys still in order
+    # TODO list instead of dict?
+    groups = {k: [t[1] for t in g] for k, g in itertools.groupby(tagged, key=lambda x: x[0])}
+    LOG.debug(f'groups:\n{pformat(groups)}')
+
     raise NotImplementedError
 
 def find_redeemers(matches: list[dict]) -> list[Tuple[ElectionAction, dict]]:
@@ -219,6 +252,10 @@ def find_redeemers(matches: list[dict]) -> list[Tuple[ElectionAction, dict]]:
     assert len(with_redeemers) == len(matches)
     return with_redeemers
 
+
+def kupo_utxo_str(match: dict) -> str:
+    # TODO is there a built-in fn for this?
+    return match['transaction_id'] + '#' + str(match['output_index'])
 
 
 class ElectionSubscriber:
@@ -722,6 +759,8 @@ class ElectionSubscriber:
         # fetched again next poll
         self.cursor = earlier
         LOG.debug(f'updated cursor to {earlier}')
+
+        return (spent, unspent)
 
     def _fetch_spent(self):
         LOG.debug('ElectionSubscriber._fetch_spent')
