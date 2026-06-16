@@ -69,6 +69,10 @@ class Point:
         return cls(data.since_slot, data.since_block_hash)
 
 
+# These don't quite correspond to UTXOs because we store the state from the
+# latest UTXO but the redeemer used to spend the previous UTXO on that channel.
+# TODO is that overcomplicating it? maybe just store the redeemers as expected, or not at all?
+# TODO rename? ChannelTransition etc. maybe later
 # When a TX changes more than one channel, a ChannelEvent will be created for
 # each one. For example: add or rm 3 channels -> 4 events.
 @dataclass
@@ -169,14 +173,15 @@ def kupo_match_to_pycardano_utxo(kupo_dict: dict) -> UTxO:
 def find_redeemer(kupo_match, kupo_matches) -> Optional[ElectionAction]:
     "Search kupo_matches for a `spent_at` matching the current match."
     tx_id = kupo_match.get('transaction_id')
-    tx_ix = kupo_match.get('output_index') # TODO is this right?
+    # TODO in this contract, is tx_id all we need? aka one action per tx?
+    # tx_ix = kupo_match.get('output_index') # TODO is this right?
     for m in kupo_matches:
         try:
             spent = m.get('spent_at')
         except:
             continue
         # TODO check if tx matches first, then get redeemer if so
-        if spent['transaction_id'] == tx_id and spent['input_index'] == tx_ix:
+        if spent['transaction_id'] == tx_id: # and spent['input_index'] == tx_ix:
             cbor = spent['redeemer']
             redeemer = decode_plutusdata_union(ElectionAction, cbor)
             LOG.debug(f'matching redeemer: {redeemer}')
@@ -221,9 +226,11 @@ class ElectionSubscriber:
         self.on_endelection       = on_endelection
         self.on_rollback          = on_rollback
 
-        # used to construct channel_ids(), channel_history(), current_state()
-        # self.history: Mapping[ChannelId, Mapping[int, ChannelState]] = {}
-        # TODO rename -> self.events?
+        # State is split into current and historical, because that makes it
+        # simpler to work with Kupo's spent and unspent UTXO filters. When a
+        # UTXO is spent we remove it from current and append its new spent
+        # equivalent to history.
+        self.current: Mapping[ChannelId, ChannelEvent] = {}
         self.history: Mapping[ChannelId, list[ChannelEvent]] = {}
 
         # used to query the current state
@@ -611,17 +618,19 @@ class ElectionSubscriber:
         # creates = [m for m in r.json() if not m in spends]
         # LOG.debug(f'spends: {json.dumps(spends, indent=2)}')
         # LOG.debug(f'creates: {json.dumps(creates, indent=2)}')
-        paired: Tuple[ElectionAction, dict] = []
-        unpaired: list[dict] = []
-        for m in matches:
-            # TODO optimization: only search before m in the list?
-            r = find_redeemer(m, matches)
-            if r is None:
-                unpaired.append(m)
-            else:
-                paired.append((r, m))
-        LOG.debug(f'paired: {pformat(paired)}')
-        LOG.debug(f'unpaired: {pformat(unpaired)}')
+        with_redeemers: Tuple[ElectionAction, dict] = []
+        for match in matches:
+            redeemer = find_redeemer(match, matches)
+            if redeemer is None:
+                # Should only happen with the first TX, because the oneshot
+                # UTXO doesn't carry an STT and so doesn't match the Kupo
+                # pattern.
+                assert len(self.history) == 0
+                assert match == matches[0]
+                redeemer = InitElection()
+            with_redeemers.append((redeemer, match))
+        LOG.debug(f'with_redeemers {len(with_redeemers)}: {pformat(with_redeemers)}')
+        assert len(with_redeemers) == len(matches)
 
         for utxo in r.json():
             self._on_match(utxo)
