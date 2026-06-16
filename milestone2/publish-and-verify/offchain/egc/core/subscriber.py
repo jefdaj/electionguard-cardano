@@ -596,6 +596,7 @@ class ElectionSubscriber:
         return f'http://{KUPO_HOST}:{self.kupo_port}/v1/matches'
 
     def _poll(self):
+
         LOG.debug('ElectionSubscriber._poll')
         params = {"order": "oldest_first"}
         if self.cursor:
@@ -614,10 +615,6 @@ class ElectionSubscriber:
         # experimental new stuff
         matches = r.json()
         LOG.debug(f'matches: {json.dumps(matches, indent=2)}')
-        # spends  = [m for m in r.json() if 'spent_at' in m]
-        # creates = [m for m in r.json() if not m in spends]
-        # LOG.debug(f'spends: {json.dumps(spends, indent=2)}')
-        # LOG.debug(f'creates: {json.dumps(creates, indent=2)}')
         with_redeemers: Tuple[ElectionAction, dict] = []
         for match in matches:
             redeemer = find_redeemer(match, matches)
