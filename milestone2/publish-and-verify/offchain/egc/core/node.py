@@ -85,7 +85,9 @@ class ElectionNode:
         self.publisher.wait_for_confirmation(tx)
         ch_str = self.channel_str()
         LOG.debug(f'{ch_str} confirmed tx {tx.id}')
-        # TODO put back when using multiple nodes? time.sleep(OGMIOS_DELAY_SEC)
+
+        # TODO instead of this, wait until a subscriber event mentions the tx!
+        time.sleep(OGMIOS_DELAY_SEC)
 
     def balance_and_sign_state_transition_tx(
             self,

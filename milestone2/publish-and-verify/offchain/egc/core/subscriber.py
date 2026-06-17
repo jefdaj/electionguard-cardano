@@ -194,8 +194,6 @@ def kupo_match_to_pycardano_utxo(kupo_dict: dict) -> UTxO:
 def find_redeemer(kupo_match, spent_matches) -> Optional[ElectionAction]:
     "Search spent_matches for a `spent_at` matching the current match."
     tx_id = kupo_match.get('transaction_id')
-    # TODO in this contract, is tx_id all we need? aka one action per tx?
-    # tx_ix = kupo_match.get('output_index') # TODO is this right?
     for m in spent_matches:
         spent = m.get('spent_at')
         if spent['transaction_id'] == tx_id: # and spent['input_index'] == tx_ix:

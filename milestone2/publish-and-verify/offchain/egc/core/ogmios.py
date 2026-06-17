@@ -37,7 +37,8 @@ OGMIOS_TIMEOUT_SEC = 300.0
 
 # Estimate of how long it might take a new TX to show up in the node.
 # TODO how much longer should this be for production use?
-OGMIOS_DELAY_SEC = 3.0
+# TODO rename network delay?
+OGMIOS_DELAY_SEC = 10.0
 
 
 ### inital health check before running any testnet tests ###
