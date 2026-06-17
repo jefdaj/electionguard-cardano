@@ -153,16 +153,16 @@ class ElectionPublisher:
             waited_seconds += OGMIOS_POLL_SEC
             utxo = OGMIOS_CTX.utxo_by_tx_id(tx_id, 0)
             if utxo is None:
-                msg = f'tx {tx_id} not confirmed after {waited_seconds} seconds.'
+                msg = f'tx {tx_id} not confirmed after {round(waited_seconds)} seconds.'
                 remaining_seconds = OGMIOS_TIMEOUT_SEC - waited_seconds
                 if remaining_seconds <= 0:
                     LOG.error(msg)
                     raise Exception(msg)
                 else:
-                    msg += f' Will wait {remaining_seconds} more.'
+                    msg += f' Will wait {round(remaining_seconds)} more.'
                     LOG.debug(msg)
             else:
-                LOG.debug(f'tx {tx_id} confirmed after {waited_seconds} seconds')
+                LOG.debug(f'tx {tx_id} confirmed after {round(waited_seconds)} seconds')
                 return
 
     def total_fees_ada(self) -> float:
