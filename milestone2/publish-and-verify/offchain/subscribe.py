@@ -42,7 +42,7 @@ sub = ElectionSubscriber(sub_cfg)
 sub.start()
 
 def log_current():
-    channel_ids = sub.channel_ids()
+    channel_ids = sub.current_channel_ids()
     LOG.info(f'current channel_ids: {channel_ids}')
     for ch_id in channel_ids:
         ch_str = channel_id_to_string(ch_id)

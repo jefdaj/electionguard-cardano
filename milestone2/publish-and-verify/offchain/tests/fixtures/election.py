@@ -86,7 +86,7 @@ def init_tx(
         funder.wait_for_confirmation(burn_tx)
 
     except Exception as e:
-        LOG.error(e)
+        LOG.error(e, exc_info=True)
         # raise
 
     finally:

@@ -21,9 +21,9 @@ def assert_nodes_in_sync(nodes: List[ElectionNode]):
     # one node to compare the others against
     ref = nodes[0]; nodes = nodes[1:]
     for node in nodes:
-        assert node.election_phase()   == ref.election_phase()  , "phase mismatch"
+        assert node.current_phase() == ref.current_phase(), "phase mismatch"
         # TODO use interface here rather than raw history dict?
-        assert node.subscriber.history == ref.subscriber.history, "history mismatch"
+        assert node.subscriber.history == ref.subscriber.history, f"history mismatch: {node.channel_str()} vs {ref.channel_str()}"
     LOG.info(f'All {len(nodes)+1} nodes in sync: ' + ', '.join(s for s in ch_strs))
     # LOG.debug(f'Current state:\n\n{pformat(ref.subscriber.states)}\n')
 

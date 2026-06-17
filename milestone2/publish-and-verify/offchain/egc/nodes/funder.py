@@ -155,7 +155,11 @@ class FunderNode(ElectionNode):
             since_block_hash = self.election.deployment.index_from_block_hash,
             policy_id        = self.election.script.policy_id,
         )
-        self.subscriber = ElectionSubscriber(sub_cfg)
+        self.subscriber = ElectionSubscriber(
+            config      = sub_cfg,
+            on_action   = lambda x: None,
+            on_rollback = lambda x: None,
+        )
         self.subscriber.start()
         LOG.info(f'Subscribe to this election with:\n\n{pformat(sub_cfg)}\n')
 
@@ -242,8 +246,15 @@ class FunderNode(ElectionNode):
         mint_redeemer = Redeemer(data=BurnTestTokens())
         LOG.debug(f'mint_redeemer: {mint_redeemer}')
 
-        channel_ids = self.subscriber.channel_ids()
+        channel_ids = self.subscriber.current_channel_ids()
         LOG.debug(f'channel_ids: {channel_ids}')
+
+        if len(channel_ids) == 0:
+            # shouldn't normally happen
+            LOG.debug(f'subscriber history:\n{pformat(self.subscriber.history)}')
+            msg = 'skip burn tx because no channels to burn'
+            LOG.error(msg)
+            raise RuntimeError(msg)
 
         # TODO aha! the subscribers aren't noticing when they're done?
         # temporary workaround before rewriting subscriber, to confirm the issue:
@@ -271,8 +282,9 @@ class FunderNode(ElectionNode):
         burn_txb.collaterals.append(funder_collateral)
 
         for channel_id in channel_ids:
-            hist = self.subscriber.channel_state(channel_id)
-            utxo = kupo_match_to_pycardano_utxo(hist.utxo_dict)
+            # utxo = kupo_match_to_pycardano_utxo(hist.utxo_dict)
+            # state = self.subscriber.current_state(channel_id)
+            utxo = self.subscriber.current_utxo(channel_id)
             LOG.debug(f'script controlled utxo to spend: {utxo}')
             spend_redeemer = Redeemer(data=BurnTestTokens())
             burn_txb = burn_txb.add_script_input(
@@ -319,7 +331,7 @@ class FunderNode(ElectionNode):
         errors = []
         last_tx = None # only have to wait once
         for channel_id in self.subscriber.channel_ids():
-            state = self.subscriber.channel_state(channel_id).state
+            state = self.subscriber.current_state(channel_id).state
             try:
                 LOG.debug(f'state: {state}')
                 pub_addr   = publisher_address(state)

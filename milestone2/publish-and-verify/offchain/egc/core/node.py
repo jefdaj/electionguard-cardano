@@ -56,7 +56,11 @@ class ElectionNode:
             self.subscriber = None
         else:
             sub_cfg = SubscriberConfig.from_election(self.election)
-            self.subscriber = ElectionSubscriber(config=sub_cfg)
+            self.subscriber = ElectionSubscriber(
+                config      = sub_cfg,
+                on_action   = lambda x: None,
+                on_rollback = lambda x: None,
+            )
             self.subscriber.start()
             time.sleep(OGMIOS_POLL_SEC + 1) # TODO how long is actually needed?
 
@@ -74,15 +78,8 @@ class ElectionNode:
     def current_state(self) -> Optional[UTxO]:
         return self.subscriber.current_state(self.channel_id())
 
-    # TODO rename current_phase, and rewrite with new subscriber code
-    def election_phase(self) -> Optional[ElectionPhase]:
-        try:
-            state = self.subscriber.channel_state(ADMIN_CHANNEL_ID).state
-            return state.state.phase
-        except KeyError:
-            # no init_election tx published yet
-            # TODO should this be an error? warning?
-            return None
+    def current_phase(self) -> Optional[ElectionPhase]:
+        return self.subscriber.current_phase()
 
     def wait_for_confirmation(self, tx: Transaction):
         self.publisher.wait_for_confirmation(tx)

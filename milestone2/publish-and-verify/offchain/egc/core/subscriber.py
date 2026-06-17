@@ -203,7 +203,7 @@ def find_redeemer(kupo_match, spent_matches) -> Optional[ElectionAction]:
 
 def mk_example_callback(callback_name: str):
     def fn(event: ChannelEvent) -> None:
-        LOG.info(f'{callback_name} called with: {event}')
+        print(f'{callback_name} called with:\n{pformat(event)}')
     return fn
 
 def input_output_pairs(spent, unspent):
@@ -296,10 +296,17 @@ class ElectionSubscriber:
 
     ## query interface ##
 
-    def channel_ids(self) -> list[ChannelId]:
+    def all_channel_ids(self) -> list[ChannelId]:
         # Includes historical channels that have already been closed.
-        LOG.debug('ElectionSubscriber.channel_ids')
-        return sorted(self.history.keys())
+        LOG.debug('ElectionSubscriber.all_channel_ids')
+        return sorted(list(self.history.keys()))
+
+    def current_channel_ids(self) -> list[ChannelId]:
+        LOG.debug('ElectionSubscriber.current_channel_ids')
+        return [
+            i for i in self.all_channel_ids()
+            if self.current_state(i) is not None
+        ]
 
     def channel_history(self, channel_id: ChannelId) -> list[ChannelEvent]:
         # Works fine on already-closed channels. Raises KeyError on not-yet-opened ones.
@@ -326,7 +333,7 @@ class ElectionSubscriber:
             event = self.channel_history(channel_id)[-1]
         except KeyError:
             return None
-        return event.output_state # may be None
+        return event.output_state # may also be None
 
     def current_phase(self) -> Optional[ElectionPhase]:
         # Returns None if the election hasn't started yet
@@ -565,9 +572,13 @@ class ElectionSubscriber:
         all_spent = self._add_old_spent(spent)
         pairs_by_key = input_output_pairs(all_spent, unspent) # TODO make a method?
 
-        events = self._channel_events(pairs_by_key, all_spent)
+        # events = self._channel_events(pairs_by_key, all_spent)
+        # self._apply_events_by_slot(events)
 
-        self._apply_events_by_slot(events)
+        for event in self._channel_events(pairs_by_key, all_spent):
+            # TODO less similar names?
+            self._on_action(event) # internal callback
+            self.on_action(event)  # external callback
 
     def _add_old_spent(self, new_spent):
         LOG.debug('ElectionSubscriber._add_old_spent')
@@ -731,21 +742,21 @@ class ElectionSubscriber:
             events.append(event)
         return events
 
-    def _apply_events_by_slot(self, events: list[ChannelEvent]):
-        if len(events) == 0:
-            return
-        slot_no = events[0].slot_no
-        queue = []
-        for event in events:
-            if event.slot_no == slot_no:
-                queue.append(event)
-            else:
-                # TODO less confusing names?
-                # TODO any reason to apply + emit one at a time rather than in groups?
-                [self._on_action(e) for e in queue] # internal state updates
-                [self.on_action(e)  for e in queue] # external callbacks
-                queue = [event]
-                slot_no = event.slot_no
+#     def _apply_events_by_slot(self, events: list[ChannelEvent]):
+#         if len(events) == 0:
+#             return
+#         slot_no = events[0].slot_no
+#         queue = []
+#         for event in events:
+#             if event.slot_no == slot_no:
+#                 queue.append(event)
+#             else:
+#                 # TODO less confusing names?
+#                 # TODO any reason to apply + emit one at a time rather than in groups?
+#                 [self._on_action(e) for e in queue] # internal state updates
+#                 [self.on_action(e)  for e in queue] # external callbacks
+#                 queue = [event]
+#                 slot_no = event.slot_no
 
 
     ## handle election actions ##
@@ -823,7 +834,7 @@ class ElectionSubscriber:
     def _on_mint(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_mint')
         # TODO document this or change it
-        assert not event.channel_id in self.history, "can't re-add a removed channel"
+        assert not event.channel_id in self.history, f"tried to mint existing channel!\n{event}\n{self.history}"
         self.history[event.channel_id] = [event]
 
     def _on_burn(self, event: ChannelEvent):
