@@ -323,8 +323,12 @@ class ElectionSubscriber:
         # but for some reason Kupo rejects it. None works fine.
         # self.cursor = Point.from_config(self.config)
         self.cursor = None
+        
+        self.cursor3 = None
+        self.etag = None
 
         # For debugging.
+        # TODO remove
         self.prev_events = set()
         self.seen_matches = set()
 
@@ -531,7 +535,25 @@ class ElectionSubscriber:
         self._log_thread.start()
 
 		# TODO if this becomes a problem, wait for /health -> 200 OK instead
-        time.sleep(0.1) # prevents polling error during startup
+        time.sleep(1) # prevents polling error during startup
+        # self._wait_for_kupo_ready()
+
+    def _wait_for_kupo_ready(self, timeout: float = 60.0, interval: float = 0.5) -> str:
+        """Block until Kupo has indexed past slot 0. Returns the initial cursor point."""
+        # TODO the right way probably involves /health instead
+        time.sleep(1) # give it a little time before even trying TODO less, like 0.1?
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            try:
+                r = self.session.get(f"{self._kupo_api_url()}/matches", params={}, timeout=5)
+                checkpoint = r.headers.get("X-Most-Recent-Checkpoint", "0")
+                etag = r.headers.get("ETag", "").strip('"')
+                if r.status_code == 200 and int(checkpoint) > 0 and etag:
+                    return f"{checkpoint}.{etag}"
+            except (KeyError, requests.RequestException):
+                pass  # kupo not up yet
+            time.sleep(interval)
+        raise TimeoutError(f"Kupo not ready after {timeout}s")
 
     def _log_kupo_output(self) -> None:
         LOG.debug('ElectionSubscriber._log_kupo_output')
@@ -580,6 +602,7 @@ class ElectionSubscriber:
         while not self.kupo_stop.is_set():
             try:
                 self._poll()
+                # self._poll3()
             except requests.RequestException as e:
                 LOG.warning(f'Kupo polling error: {e}') # TODO error?
             except Exception as e:
@@ -816,6 +839,95 @@ class ElectionSubscriber:
                 # events.append(event)
         # return events
 
+
+    ## experimental attempt3 stuff ##
+    
+    def _poll3(self) -> list[tuple]:
+        base_params = {"order": "oldest_first"} #, "resolve_hashes": ""} TODO fix this to avoid 400
+        headers = {"If-None-Match": f'"{self.etag}"'} if self.etag else {}
+
+        q1_params = {} if self.cursor3 is None else {"created_after": self.cursor3}
+        q2_params = {} if self.cursor3 is None else {"spent_after":   self.cursor3}
+        
+        # Q1: new outputs since cursor
+        # r1 = requests.get(
+        r1 = self.session.get(
+            f"{self._kupo_api_url()}/matches",
+            params={**base_params, **q1_params},
+            headers=headers,
+        )
+
+        if r1.status_code == 304:
+            return []  # chain hasn't advanced
+
+        if r1.status_code == 400:
+            raise NotImplementedError("Rollback detected (created_after)")
+
+        r1.raise_for_status()
+        # LOG.debug(f'poll3 r1 headers {r1.headers}')
+
+        # Q2: old inputs now spent since cursor
+        # r2 = requests.get(
+        r2 = self.session.get(
+            f"{self._kupo_api_url()}/matches",
+            params={**base_params, **q2_params},
+        )
+
+        if r2.status_code == 400:
+            raise NotImplementedError("Rollback detected (spent_after)")
+
+        r2.raise_for_status()
+        # LOG.debug(f'poll3 r2 headers {r2.headers}')
+
+        # Verify both queries see the same chain tip
+        cp1 = r1.headers["X-Most-Recent-Checkpoint"]
+        cp2 = r2.headers["X-Most-Recent-Checkpoint"]
+        if cp1 != cp2:
+            return []  # retry next tick
+
+        # Advance cursor
+        block_hash = r1.headers["ETag"].strip('"')
+        new_cursor = f"{cp1}.{block_hash}"
+        new_etag = r1.headers["ETag"].strip('"')
+
+        # Merge by (txid, output_index), Q1 and Q2 may overlap
+        matches = {}
+        for m in r1.json() + r2.json():
+            key = (m["transaction_id"], m["output_index"])
+            matches[key] = m
+      
+        if new_cursor == self.cursor3 and new_etag == self.etag:
+            LOG.debug(f"poll3 chain hasn't advanced, but no 304? Got {len(matches)} matches.")
+            return []
+        else:
+            self.cursor3 = new_cursor
+            self.etag = new_etag
+            LOG.debug(f'poll3 advance cursor, etag to {self.cursor3}, {self.etag}. Got {len(matches)} matches.')
+
+        return self._pair(matches)
+
+    def _pair(self, matches: dict) -> list[tuple]:
+        # Index outputs by the tx that created them
+        by_creating_tx = {}
+        for m in matches.values():
+            by_creating_tx[m["transaction_id"]] = m
+
+        events = []
+        for m in matches.values():
+            if m["spent_at"] is None:
+                continue  # live unspent head, not an event yet
+            spending_txid = m["spent_at"]["transaction_id"]
+            output = by_creating_tx.get(spending_txid)  # None if burned
+            redeemer = m["spent_at"]["redeemer"]
+            events.append((m, output, redeemer))
+
+        # Sort by spending slot so events are oldest-first
+        events.sort(key=lambda e: e[0]["spent_at"]["slot_no"])
+        
+        for event in events:
+            LOG.debug(f'poll3 event: {event}')
+        
+        return events
 
     ## handle election actions ##
 
