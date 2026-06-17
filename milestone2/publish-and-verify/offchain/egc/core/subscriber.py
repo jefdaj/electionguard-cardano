@@ -940,31 +940,41 @@ class ElectionSubscriber:
             LOG.debug(f'poll3 event:\n{pformat(event)}')
 
     def _poll3_pair(self, matches: dict) -> list[tuple]:
-        # Index outputs by the tx that created them
-        # TODO try claude's next idea involving a modified history search if trouble finding live mints
-        # TODO figure out where the special InitElection case should be handled, if anywhere
+        def stt_asset(m):
+            # return the single STT asset name from value, assuming exactly one
+            # TODO is this the best way to do it?
+            return next(iter(m["value"]["assets"]))
+
         by_creating_tx = {}
         for m in matches.values():
-            by_creating_tx[m["transaction_id"]] = m
+            key = (m["transaction_id"], stt_asset(m))
+            by_creating_tx[key] = m
 
-        pairs = []
+        spending_txids = {
+            m["spent_at"]["transaction_id"]
+            for m in matches.values()
+            if m["spent_at"]
+        }
+
+        events = []
         for m in matches.values():
             if m["spent_at"] is None:
-                continue  # live unspent head, not an event yet
-            spending_txid = m["spent_at"]["transaction_id"]
-            output = by_creating_tx.get(spending_txid)  # None if burned
-            redeemer = m["spent_at"]["redeemer"]
-            pairs.append((m, output, redeemer))
+                if m["transaction_id"] not in spending_txids:
+                    # orphan output = mint
+                    events.append((None, m, None))
+                continue
 
-        # Sort by spending slot so events are oldest-first
-        # TODO no need since they're about to be keyed by slot anyway?
-        # TODO and this won't work for the InitElection event anyway, unless None sorts first?
-        # pairs.sort(key=lambda e: e[0]["spent_at"]["slot_no"])
-        
-        for pair in pairs:
-            LOG.debug(f'poll3 pair: {pair}')
-        
-        return pairs
+            spending_txid = m["spent_at"]["transaction_id"]
+            asset = stt_asset(m)
+            output = by_creating_tx.get((spending_txid, asset))
+            redeemer = m["spent_at"]["redeemer"]
+            events.append((m, output, redeemer))
+
+        events.sort(key=lambda e: (
+            e[0]["spent_at"]["slot_no"] if e[0] and e[0]["spent_at"]
+            else e[1]["created_at"]["slot_no"]
+        ))
+        return events
 
     def _poll3_channel_events(self, pairs_by_key) -> Iterable[ChannelEvent]:
         # WARNING: these "pairs" are actually 3-tuples; will rename if works
@@ -979,7 +989,8 @@ class ElectionSubscriber:
             LOG.debug(f'poll3 slot_no: {slot_no}')
             LOG.debug(f'poll3 channel_str: {channel_str}')
 
-            (input_match, output_match, redeemer_hex) = pairs_by_key[key]
+            pair = pairs_by_key[key]
+            (input_match, output_match, redeemer_hex) = pair
             LOG.debug(f'poll3 input_match: {input_match}')
             LOG.debug(f'poll3 output_match: {output_match}')
             
