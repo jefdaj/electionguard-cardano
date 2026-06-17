@@ -602,7 +602,10 @@ class ElectionSubscriber:
         while not self.kupo_stop.is_set():
             try:
                 self._poll()
-                # self._poll3()
+                try:
+                    self._poll3()
+                except Exception as e:
+                    LOG.error(f'poll3 error: {e}', exc_info=True)
             except requests.RequestException as e:
                 LOG.warning(f'Kupo polling error: {e}') # TODO error?
             except Exception as e:
@@ -844,18 +847,23 @@ class ElectionSubscriber:
     
     def _poll3(self) -> list[tuple]:
         base_params = {"order": "oldest_first"} #, "resolve_hashes": ""} TODO fix this to avoid 400
+        
+        # TODO merge cursor + etag into the same thing to be sure they change together
         headers = {"If-None-Match": f'"{self.etag}"'} if self.etag else {}
 
-        q1_params = {} if self.cursor3 is None else {"created_after": self.cursor3}
-        q2_params = {} if self.cursor3 is None else {"spent_after":   self.cursor3}
+        r1_params = {} if self.cursor3 is None else {"created_after": self.cursor3}
+        r2_params = {} if self.cursor3 is None else {"spent_after":   self.cursor3}
+        
+        LOG.debug(f"poll3 sending etag={self.etag!r}, cursor={self.cursor!r}")
         
         # Q1: new outputs since cursor
-        # r1 = requests.get(
         r1 = self.session.get(
             f"{self._kupo_api_url()}/matches",
-            params={**base_params, **q1_params},
+            params={**base_params, **r1_params},
             headers=headers,
         )
+        
+        LOG.debug(f"poll3 r1 status={r1.status_code}, cp={r1.headers.get('X-Most-Recent-Checkpoint')}, etag={r1.headers.get('ETag')!r}")
 
         if r1.status_code == 304:
             return []  # chain hasn't advanced
@@ -867,10 +875,10 @@ class ElectionSubscriber:
         # LOG.debug(f'poll3 r1 headers {r1.headers}')
 
         # Q2: old inputs now spent since cursor
-        # r2 = requests.get(
         r2 = self.session.get(
             f"{self._kupo_api_url()}/matches",
-            params={**base_params, **q2_params},
+            params={**base_params, **r2_params},
+            headers=headers, # TODO did claude forget this? or should it not be there?
         )
 
         if r2.status_code == 400:
@@ -897,12 +905,12 @@ class ElectionSubscriber:
             matches[key] = m
       
         if new_cursor == self.cursor3 and new_etag == self.etag:
-            LOG.debug(f"poll3 chain hasn't advanced, but no 304? Got {len(matches)} matches.")
+            LOG.debug(f"poll3 chain hasn't advanced, but no 304? Throwing away {len(matches)} matches.")
             return []
         else:
             self.cursor3 = new_cursor
             self.etag = new_etag
-            LOG.debug(f'poll3 advance cursor, etag to {self.cursor3}, {self.etag}. Got {len(matches)} matches.')
+            LOG.debug(f'poll3 advance cursor, etag to {self.cursor3}, {self.etag}. Processing {len(matches)} matches.')
 
         return self._pair(matches)
 
@@ -915,7 +923,7 @@ class ElectionSubscriber:
         events = []
         for m in matches.values():
             if m["spent_at"] is None:
-                continue  # live unspent head, not an event yet
+                continue  # live unspent head, not an event yet TODO we do want events for these though, right?
             spending_txid = m["spent_at"]["transaction_id"]
             output = by_creating_tx.get(spending_txid)  # None if burned
             redeemer = m["spent_at"]["redeemer"]
