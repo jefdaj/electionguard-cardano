@@ -793,7 +793,8 @@ class ElectionSubscriber:
                 assert action is not None
             else:
                 # TODO should this ever happen
-                LOG.warning(f'no output_match, so no action can be found: {event}')
+                # TODO and why is the string interpolation working weirdly
+                LOG.warning('no output_match, so no action can be found')
                 action = None
 
             event = ChannelEvent(
