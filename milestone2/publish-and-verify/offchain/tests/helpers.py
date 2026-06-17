@@ -3,6 +3,7 @@ from typing import List
 from pprint import pformat
 from egc import *
 import logging
+import time
 
 LOG = logging.getLogger(__name__)
 
@@ -14,6 +15,7 @@ global_fixture       = pytest.fixture(scope='session')
 per_election_fixture = pytest.fixture(scope='module')
 
 def assert_nodes_in_sync(nodes: List[ElectionNode]):
+    time.sleep(10) # TODO remove
     if len(nodes) < 2:
         LOG.warning('assert_nodes_in_sync called with < 2 nodes')
         return
@@ -39,6 +41,7 @@ def assert_node_state(
         node: ElectionNode,
         expected_state: ChannelState,
     ):
+    time.sleep(10) # TODO remove
     assert isinstance(node, ElectionNode)
     assert isinstance(expected_state, ChannelState)
     node_str = node.channel_str()

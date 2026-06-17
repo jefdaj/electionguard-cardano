@@ -18,7 +18,7 @@ from os import environ
 from pprint import pformat
 from collections import defaultdict
 
-from typing import Any, Callable, Dict, List, Tuple, Optional, Self
+from typing import Any, Callable, Dict, List, Tuple, Optional, Self, Iterable
 
 from .ogmios import *
 from .plutus.types.channel import *
@@ -102,11 +102,11 @@ class ChannelEvent:
     # input/output fields should have values below.
     action: ElectionAction
 
-    # Mints have only outputs, burns have only inputs, and continutations have both.
+    # Mints have only outputs, burns have only inputs, and continuations have both.
     input_match:  Optional[dict[str, Any]]
     output_match: Optional[dict[str, Any]]
 
-    # Mints have only outputs, burns have only inputs, and continutations have both.
+    # Mints have only outputs, burns have only inputs, and continuations have both.
     input_state:  Optional[ChannelState]
     output_state: Optional[ChannelState]
 
@@ -326,6 +326,7 @@ class ElectionSubscriber:
 
         # For debugging.
         self.prev_events = set()
+        self.seen_matches = set()
 
 
     ## query interface ##
@@ -591,6 +592,16 @@ class ElectionSubscriber:
 
     ## polling and http queries ##
 
+    def _remove_duplicate_matches(self, matches):
+        deduped = []
+        for match in matches:
+            if str(match) in self.seen_matches:
+                LOG.debug(f'remove duplicate match: {match}')
+            else:
+                self.seen_matches.add(str(match))
+                deduped.append(match)
+        return deduped
+
     def _poll(self):
         # Spent UTXOs are better in general because they have more info:
         # - spent_at of course, which isn't really used so far
@@ -606,12 +617,16 @@ class ElectionSubscriber:
         spent   = self._fetch_spent()
         unspent = self._fetch_unspent()
 
-        if not spent and not unspent:
+        if len(spent) == 0 and len(unspent) == 0:
             return
 
         (spent, unspent) = self._update_cursor_and_truncate(spent, unspent)
 
-        all_spent = self._add_old_spent(spent)
+        # TODO if this helps, debug the fetching
+        spent   = self._remove_duplicate_matches(spent)
+        unspent = self._remove_duplicate_matches(unspent)
+
+        all_spent = self._add_prev_spent(spent)
         pairs_by_key = input_output_pairs(all_spent, unspent) # TODO make a method?
 
         for event in self._channel_events(pairs_by_key, all_spent):
@@ -630,16 +645,20 @@ class ElectionSubscriber:
             self._on_action(event) # internal callback
             self.on_action(event)  # external callback
 
-    def _add_old_spent(self, new_spent):
-        LOG.debug('ElectionSubscriber._add_old_spent')
+    def _add_prev_spent(self, new_spent):
+        LOG.debug('ElectionSubscriber._add_prev_spent')
         # have to bring back prev spent matches here too,
         # because the relevant ones may be in a prev batch
         # TODO is that also important for the input_output_pairs?
-        old_event = [x for sub in self.history.values() for x in sub]
+        # TODO should only the latest (current) state's old inputs be needed?
+        prev_events = [x for sub in self.history.values() for x in sub]
+        # prev_events = [self.history[i][-1] for i in self.current_channel_ids()]
         # events = [c[-1] for c in self.history.values()]
-        old_spent = [e.input_match for e in old_event if e.input_match is not None]
-        LOG.debug(f'old_spent: {old_spent}')
-        return old_spent + new_spent
+        # old_spent = [e.input_match for e in old_events if e.input_match is not None]
+        prev_spent = [e.input_match for e in prev_events if e.input_match is not None]
+        prev_spent = [m for m in prev_spent if not m in new_spent] # TODO are these guaranteed to be disjoint already?
+        LOG.debug(f'prev_spent: {prev_spent}')
+        return sorted(prev_spent + new_spent, key=lambda m: m['created_at']['slot_no']) # TODO no need to sort, right?
 
     def _kupo_api_url(self) -> str:
         LOG.debug('ElectionSubscriber._kupo_api_url')
@@ -648,9 +667,10 @@ class ElectionSubscriber:
     def _fetch_spent(self):
         LOG.debug('ElectionSubscriber._fetch_spent')
         params = {"order": "oldest_first"}
-        if self.cursor is not None:
-            params["spent_after"] = self.cursor.as_param()
+        # if self.cursor is not None:
+        #     params["spent_after"] = self.cursor.as_param()
         url = self._kupo_api_url() + "/matches?" + urlencode(params) + "&spent"
+        LOG.debug(f'fetch spent url: {url}')
         r = self.session.get(url)
         if r.status_code == 400:
             # Cursor point no longer on chain — rollback past our cursor
@@ -659,18 +679,19 @@ class ElectionSubscriber:
             return
         r.raise_for_status()
         matches = r.json()
-        if self.cursor is not None:
+        # if self.cursor is not None:
             # kupo returns matches inclusive? we don't want the duplicates
-            matches = [m for m in matches if m['spent_at']['slot_no'] > self.cursor.slot_no]
+        #     matches = [m for m in matches if m['spent_at']['slot_no'] > self.cursor.slot_no]
         LOG.debug(f'spent matches: {json.dumps(matches, indent=2)}')
         return matches
 
     def _fetch_unspent(self):
         LOG.debug('ElectionSubscriber._fetch_unspent')
         params = {"order": "oldest_first"}
-        if self.cursor is not None:
-            params["created_after"] = self.cursor.as_param()
+        # if self.cursor is not None:
+        #     params["created_after"] = self.cursor.as_param()
         url = self._kupo_api_url() + "/matches?" + urlencode(params) + "&unspent"
+        LOG.debug(f'fetch unspent url: {url}')
         r = self.session.get(url)
         if r.status_code == 400:
             # Cursor point no longer on chain — rollback past our cursor
@@ -678,9 +699,9 @@ class ElectionSubscriber:
             return
         r.raise_for_status()
         matches = r.json()
-        if self.cursor is not None:
+        # if self.cursor is not None:
             # kupo returns matches inclusive? we don't want the duplicates
-            matches = [m for m in matches if m['created_at']['slot_no'] > self.cursor.slot_no]
+        #     matches = [m for m in matches if m['created_at']['slot_no'] > self.cursor.slot_no]
         LOG.debug(f'unspent matches: {json.dumps(matches, indent=2)}')
         return matches
 
@@ -722,9 +743,9 @@ class ElectionSubscriber:
         resp.raise_for_status()
         return resp.json()
 
-    def _channel_events(self, pairs_by_key, spent) -> list[ChannelEvent]:
+    def _channel_events(self, pairs_by_key, spent) -> Iterable[ChannelEvent]:
         LOG.debug('channel_events')
-        events = []
+        # events = []
         keys = sorted(pairs_by_key.keys())
         first_event = True
         for key in keys:
@@ -771,6 +792,8 @@ class ElectionSubscriber:
                     action = InitElection()
                 assert action is not None
             else:
+                # TODO should this ever happen
+                LOG.warning(f'no output_match, so no action can be found: {event}')
                 action = None
 
             event = ChannelEvent(
@@ -785,12 +808,12 @@ class ElectionSubscriber:
             LOG.debug(f'event:\n{pformat(event)}')
 
             if str(event) in self.prev_events:
-                LOG.error(f'duplicate event: {event}') # TODO debug
-                continue
-            self.prev_events.add(str(event))
-
-            events.append(event)
-        return events
+                LOG.warning(f'duplicate event: {event}') # TODO debug
+            else:
+                self.prev_events.add(str(event))
+                yield event
+                # events.append(event)
+        # return events
 
 
     ## handle election actions ##
