@@ -777,7 +777,7 @@ class ElectionSubscriber:
             case RebalanceFunds(channels=_): self._on_rebalancefunds(event)
             case PostPublicRecords():        self._on_postpublicrecords(event)
             case BurnTestTokens():           self._on_burntesttokens(event)
-            case None:                       LOG.error(f'event with no action: {event}')
+            case None:                       LOG.warning(f'event with no action: {event}') # TODO debug
             case _:                          raise NotImplementedError
 
     def _on_initelection(self, event: ChannelEvent):
