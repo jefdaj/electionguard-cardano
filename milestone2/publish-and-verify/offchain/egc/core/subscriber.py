@@ -209,7 +209,7 @@ def find_redeemer(kupo_match, spent_matches) -> Optional[ElectionAction]:
 
 def mk_example_callback(callback_name: str):
     def fn(event: ChannelEvent) -> None:
-        print(f'{callback_name} called with:\n{pformat(event)}')
+        print(f'\n{callback_name} called with:\n{pformat(event)}')
     return fn
 
 def input_output_pairs(spent, unspent):
