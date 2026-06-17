@@ -373,8 +373,11 @@ class ElectionSubscriber:
     def join(self):
         LOG.debug('ElectionSubscriber.join')
         # TODO how is this actually supposed to be done?
+        n = 0
         while not self.is_done():
             time.sleep(1)
+            n += 1
+        LOG.debug(f'ElectionSubscriber stopped after {n} seconds')
 
     def stop(self) -> None:
         LOG.debug('ElectionSubscriber.stop')
@@ -827,13 +830,12 @@ class ElectionSubscriber:
         self._on_cont(event)
 
     def _on_burntesttokens(self, event: ChannelEvent):
+        # TODO remove for production use, or make a CLI flag for it
         LOG.debug('ElectionSubscriber._on_burntesttokens')
-        # TODO anything else here?
         self._on_burn(event)
 
     def _on_mint(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_mint')
-        # TODO document this or change it
         assert not event.channel_id in self.history, f"tried to mint existing channel!\n{event}\n{self.history}"
         self.history[event.channel_id] = [event]
 

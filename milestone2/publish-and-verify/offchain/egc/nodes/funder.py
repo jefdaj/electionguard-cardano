@@ -330,7 +330,7 @@ class FunderNode(ElectionNode):
         ch_str = self.channel_str()
         errors = []
         last_tx = None # only have to wait once
-        for channel_id in self.subscriber.channel_ids():
+        for channel_id in self.subscriber.current_channel_ids():
             state = self.subscriber.current_state(channel_id).state
             try:
                 LOG.debug(f'state: {state}')

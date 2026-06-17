@@ -43,7 +43,7 @@ sub.start()
 
 def log_current():
     channel_ids = sub.current_channel_ids()
-    LOG.info(f'current channel_ids: {channel_ids}')
+    LOG.info(f'current_channel_ids: {channel_ids}')
     for ch_id in channel_ids:
         ch_str = channel_id_to_string(ch_id)
         ch_state = sub.current_state(ch_id)
@@ -55,17 +55,8 @@ while True:
         time.sleep(10)
         if sub.is_done():
             break
-    except:
-        break # probably keyboardinturrupt
+    except KeyboardInterrupt:
+        break
 
 sub.stop()
 sub.join()
-
-# LOG.info(f'final history:\n{pformat(sub.history)}')
-
-# admin_records = sub.channel_history(ADMIN_CHANNEL_ID)
-# LOG.info(f'final admin_records: {pformat(admin_records)}')
-
-# TODO what should marking a channel done look like?
-# channel_ids = sub.channel_ids()
-# LOG.info(f'final channel_ids: {channel_ids}')
