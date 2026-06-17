@@ -704,12 +704,6 @@ class ElectionSubscriber:
             else:
                 output_state = None
 
-            # TODO move to the case analysis section
-            if input_state is not None and output_state is not None:
-                in_seq  = input_state.state.seq
-                out_seq = output_state.state.seq
-                assert in_seq + 1 == out_seq, f'state seq error: {in_seq} -> {out_seq}'
-
             # Get action (AKA redeemer)
             if output_match is not None:
                 if input_match is None:
@@ -851,6 +845,11 @@ class ElectionSubscriber:
         assert event.input_state  is not None, 'continuation without input_state'
         assert event.output_match is not None, 'continuation without output_match'
         assert event.output_state is not None, 'continuation without output_state'
+
+        in_seq  = input_state.state.seq
+        out_seq = output_state.state.seq
+        assert in_seq + 1 == out_seq, f'state seq error: {in_seq} -> {out_seq} in {event}'
+
         self.history[event.channel_id].append(event)
 
 

@@ -331,7 +331,7 @@ class FunderNode(ElectionNode):
         errors = []
         last_tx = None # only have to wait once
         for channel_id in self.subscriber.current_channel_ids():
-            state = self.subscriber.current_state(channel_id).state
+            state = self.subscriber.current_state(channel_id)
             try:
                 LOG.debug(f'state: {state}')
                 pub_addr   = publisher_address(state)
