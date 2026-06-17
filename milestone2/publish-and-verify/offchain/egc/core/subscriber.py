@@ -854,7 +854,7 @@ class ElectionSubscriber:
         r1_params = {} if self.cursor3 is None else {"created_after": self.cursor3}
         r2_params = {} if self.cursor3 is None else {"spent_after":   self.cursor3}
         
-        LOG.debug(f"poll3 sending etag={self.etag!r}, cursor={self.cursor!r}")
+        # LOG.debug(f"poll3 sending etag={self.etag!r}, cursor={self.cursor!r}")
         
         # Q1: new outputs since cursor
         r1 = self.session.get(
@@ -863,7 +863,7 @@ class ElectionSubscriber:
             headers=headers,
         )
         
-        LOG.debug(f"poll3 r1 status={r1.status_code}, cp={r1.headers.get('X-Most-Recent-Checkpoint')}, etag={r1.headers.get('ETag')!r}")
+        # LOG.debug(f"poll3 r1 status={r1.status_code}, cp={r1.headers.get('X-Most-Recent-Checkpoint')}, etag={r1.headers.get('ETag')!r}")
 
         if r1.status_code == 304:
             return []  # chain hasn't advanced
@@ -916,6 +916,7 @@ class ElectionSubscriber:
 
     def _pair(self, matches: dict) -> list[tuple]:
         # Index outputs by the tx that created them
+        # TODO try claude's next idea involving a modified history search if trouble finding live mints
         by_creating_tx = {}
         for m in matches.values():
             by_creating_tx[m["transaction_id"]] = m
