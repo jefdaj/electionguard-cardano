@@ -10,9 +10,10 @@ import threading
 import time
 import logging
 import itertools
+from copy import copy
 
 from urllib.parse import urlencode
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from os import environ
 from pprint import pformat
 from collections import defaultdict
@@ -246,6 +247,14 @@ def input_output_pairs(spent, unspent):
 
     return pairs_by_key
 
+def _same_but_now_spent(old_event, new_event) -> bool:
+    if new_event.output_match is None or new_event.output_match['spent_at'] is None:
+        return False
+    old_output_match_spent = copy(old_event.output_match)
+    old_output_match_spent['spent_at'] = copy(new_event.output_match['spent_at'])
+    old_event_spent = replace(old_event, output_match=old_output_match_spent)
+    return old_event_spent == new_event
+
 
 class ElectionSubscriber:
     '''Runs kupo and feeds matches to a callback.
@@ -292,6 +301,9 @@ class ElectionSubscriber:
         # but for some reason Kupo rejects it. None works fine.
         # self.cursor = Point.from_config(self.config)
         self.cursor = None
+
+        # For debugging.
+        self.prev_events = set()
 
 
     ## query interface ##
@@ -575,10 +587,18 @@ class ElectionSubscriber:
         all_spent = self._add_old_spent(spent)
         pairs_by_key = input_output_pairs(all_spent, unspent) # TODO make a method?
 
-        # events = self._channel_events(pairs_by_key, all_spent)
-        # self._apply_events_by_slot(events)
-
         for event in self._channel_events(pairs_by_key, all_spent):
+
+            # TODO is there a cleaner way to do this?
+            i = event.channel_id
+            if i in self.history and len(self.history[i]) > 0:
+                prev_event = self.history[i][-1]
+                if _same_but_now_spent(prev_event, event):
+                    s = channel_id_to_string(i)
+                    self.history[i][-1] = event
+                    LOG.debug(f'Replaced last {s} event with a new spent version.')
+                    continue
+
             # TODO less similar names?
             self._on_action(event) # internal callback
             self.on_action(event)  # external callback
@@ -607,6 +627,7 @@ class ElectionSubscriber:
         r = self.session.get(url)
         if r.status_code == 400:
             # Cursor point no longer on chain — rollback past our cursor
+            # TODO retry first? seems to happen transiently sometimes?
             self._handle_rollback()
             return
         r.raise_for_status()
@@ -736,36 +757,17 @@ class ElectionSubscriber:
             )
             LOG.debug(f'event:\n{pformat(event)}')
 
+            if str(event) in self.prev_events:
+                LOG.error(f'duplicate event: {event}')
+            self.prev_events.add(str(event))
+
             events.append(event)
         return events
-
-#     def _apply_events_by_slot(self, events: list[ChannelEvent]):
-#         if len(events) == 0:
-#             return
-#         slot_no = events[0].slot_no
-#         queue = []
-#         for event in events:
-#             if event.slot_no == slot_no:
-#                 queue.append(event)
-#             else:
-#                 # TODO less confusing names?
-#                 # TODO any reason to apply + emit one at a time rather than in groups?
-#                 [self._on_action(e) for e in queue] # internal state updates
-#                 [self.on_action(e)  for e in queue] # external callbacks
-#                 queue = [event]
-#                 slot_no = event.slot_no
 
 
     ## handle election actions ##
 
     def _on_action(self, event: ChannelEvent):
-        # TODO case analysis on pairs:
-        #      - created only -> mint -> current state new, confirm no channel history
-        #                                also check for InitElection special case
-        #      - both -> continuation -> current state new, append spent to history
-        #                                get redeemer just to have the info
-        #      - spent only -> burn -> current state None, append spent to history
-        #                              get redeemer and confirm it's a burn
         match event.action:
             case InitElection():             self._on_initelection(event)
             case AddSubChannels(channels):   self._on_addsubchannels(event)
@@ -775,6 +777,7 @@ class ElectionSubscriber:
             case RebalanceFunds(channels=_): self._on_rebalancefunds(event)
             case PostPublicRecords():        self._on_postpublicrecords(event)
             case BurnTestTokens():           self._on_burntesttokens(event)
+            case None:                       LOG.error(f'event with no action: {event}')
             case _:                          raise NotImplementedError
 
     def _on_initelection(self, event: ChannelEvent):
