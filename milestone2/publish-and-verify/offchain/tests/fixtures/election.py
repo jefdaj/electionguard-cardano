@@ -96,4 +96,8 @@ def init_tx(
         ada_after = get_balance_ada(funder.publisher.wallet.addr)
         LOG.debug(f'funder balance after {name} is {ada_after} ADA.')
         ada_diff = round(ada_before - ada_after, ndigits=2)
-        LOG.info(f'funder paid {ada_diff} ADA total to run {name}')
+        if ada_diff > 50:
+            fn = LOG.error
+        else:
+            fn = LOG.info
+        fn(f'funder paid {ada_diff} ADA total to run {name}')

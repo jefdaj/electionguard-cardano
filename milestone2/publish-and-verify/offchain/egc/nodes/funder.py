@@ -246,6 +246,7 @@ class FunderNode(ElectionNode):
         mint_redeemer = Redeemer(data=BurnTestTokens())
         LOG.debug(f'mint_redeemer: {mint_redeemer}')
 
+        # TODO why is this failing? seems to not get the message that STTs have been burned?
         channel_ids = self.subscriber.current_channel_ids()
         LOG.debug(f'channel_ids: {channel_ids}')
 
@@ -282,18 +283,16 @@ class FunderNode(ElectionNode):
         burn_txb.collaterals.append(funder_collateral)
 
         for channel_id in channel_ids:
-            # utxo = kupo_match_to_pycardano_utxo(hist.utxo_dict)
-            # state = self.subscriber.current_state(channel_id)
+            ch_str = channel_id_to_string(channel_id)
             utxo = self.subscriber.current_utxo(channel_id)
-            LOG.debug(f'script controlled utxo to spend: {utxo}')
+            LOG.debug(f'{ch_str} STT UTXO to spend: {utxo}')
             spend_redeemer = Redeemer(data=BurnTestTokens())
             burn_txb = burn_txb.add_script_input(
                 utxo,
                 script=self.election.script.spend_script,
                 redeemer=spend_redeemer
             )
-            # channel_id = channel_id_to_string(channel_id_from_state(state))
-            tx_msgs.append(f'{ch_str} burned {channel_id} channel STT and recovered fee pool ADA.')
+            tx_msgs.append(f'{ch_str} burned {ch_str} channel STT and recovered fee pool ADA.')
 
         LOG.debug('burn_txb:\n%s\n' % pformat(burn_txb))
 

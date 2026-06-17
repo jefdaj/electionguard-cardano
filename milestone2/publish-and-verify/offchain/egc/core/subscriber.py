@@ -2,7 +2,6 @@ import socket
 import argparse
 import json
 import os
-import requests
 import signal
 import subprocess
 import sys
@@ -11,6 +10,7 @@ import time
 import logging
 import itertools
 from copy import copy
+import random
 
 from urllib.parse import urlencode
 from dataclasses import dataclass, replace
@@ -26,6 +26,11 @@ from .plutus.types.action import *
 from .plutus.types.channel import *
 from .election import ElectionContext
 
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+
 LOG = logging.getLogger(__name__)
 
 from pycardano import *
@@ -33,10 +38,10 @@ from pycardano import *
 # TODO use https://pypi.org/project/kupo-py/ ?
 
 
-# TODO need a different port per instance when running more than one on the same machine?
-KUPO_HOST        = environ.get('KUPO_HOST', '127.0.0.1')
-KUPO_PORT        = int(environ.get('KUPO_PORT', '1442'))
-
+# The port will be incremented if in use.
+# TODO explicit config would be better
+KUPO_HOST = environ.get('KUPO_HOST', '127.0.0.1')
+KUPO_PORT = int(environ.get('KUPO_PORT', '1442'))
 
 
 @dataclass
@@ -199,7 +204,7 @@ def find_redeemer(kupo_match, spent_matches) -> Optional[ElectionAction]:
             redeemer = decode_plutusdata_union(ElectionAction, cbor)
             LOG.debug(f'matching redeemer: {redeemer}')
             return redeemer
-    LOG.warning(f'No matching redeemer for: {kupo_match}')
+    LOG.debug(f'No matching redeemer for: {kupo_match}')
     return None
 
 def mk_example_callback(callback_name: str):
@@ -256,6 +261,23 @@ def _same_but_now_spent(old_event, new_event) -> bool:
     return old_event_spent == new_event
 
 
+def make_session():
+    s = requests.Session()
+    retry = Retry(
+        total=5,
+        backoff_factor=0.3, # 0.3, 0.6, 1.2, ...
+        status_forcelist=(500, 502, 503, 504),
+        allowed_methods=frozenset(["GET"]),
+    )
+    adapter = HTTPAdapter(
+        pool_connections=10,
+        pool_maxsize=20,
+        max_retries=retry,
+    )
+    s.mount("http://", adapter)
+    return s
+
+
 class ElectionSubscriber:
     '''Runs kupo and feeds matches to a callback.
     Note that since_slot and since_block_hash should be figured out *before* deploying the contract,
@@ -294,7 +316,7 @@ class ElectionSubscriber:
         self.kupo_port = KUPO_PORT
 
         # for http requests to the kupo process
-        self.session = requests.Session()
+        self.session = make_session()
         self.session.headers.update({'Accept': 'application/json'})
 
         # Starting at the point from the config seems logical,
@@ -345,7 +367,9 @@ class ElectionSubscriber:
             event = self.channel_history(channel_id)[-1]
         except KeyError:
             return None
-        return event.output_state # may also be None
+        s = event.output_state # may also be None
+        LOG.debug(f'Current state of {channel_id}: {s}')
+        return s
 
     def current_phase(self) -> Optional[ElectionPhase]:
         # Returns None if the election hasn't started yet
@@ -430,6 +454,8 @@ class ElectionSubscriber:
     # TODO remove in favor of explicit config later (maybe election.json?)
     def _ensure_unused_port(self):
         LOG.debug('ElectionSubscriber._ensure_unused_port')
+        # prevent a list of nodes starting at exactly the same time
+        time.sleep(random.randint(1, 1000) / 100)
         while is_port_in_use(self.kupo_port):
             LOG.debug(f'port {self.kupo_port} is in use')
             self.kupo_port += 1
@@ -503,6 +529,7 @@ class ElectionSubscriber:
         )
         self._log_thread.start()
 
+		# TODO if this becomes a problem, wait for /health -> 200 OK instead
         time.sleep(0.1) # prevents polling error during startup
 
     def _log_kupo_output(self) -> None:
@@ -740,7 +767,7 @@ class ElectionSubscriber:
                     assert channel_str == 'admin'
                     assert input_state is None
                     assert isinstance(output_state.state, AdminChannelState)
-                    # assert output_state.state.seq == 0, f'output_state seq != 0: {output_state}'
+                    assert output_state.state.seq == 0, f'output_state seq != 0: {output_state}'
                     action = InitElection()
                 assert action is not None
             else:
@@ -758,7 +785,8 @@ class ElectionSubscriber:
             LOG.debug(f'event:\n{pformat(event)}')
 
             if str(event) in self.prev_events:
-                LOG.error(f'duplicate event: {event}')
+                LOG.error(f'duplicate event: {event}') # TODO debug
+                continue
             self.prev_events.add(str(event))
 
             events.append(event)
@@ -849,8 +877,8 @@ class ElectionSubscriber:
         assert event.output_match is not None, 'continuation without output_match'
         assert event.output_state is not None, 'continuation without output_state'
 
-        in_seq  = input_state.state.seq
-        out_seq = output_state.state.seq
+        in_seq  = event.input_state.state.seq
+        out_seq = event.output_state.state.seq
         assert in_seq + 1 == out_seq, f'state seq error: {in_seq} -> {out_seq} in {event}'
 
         self.history[event.channel_id].append(event)

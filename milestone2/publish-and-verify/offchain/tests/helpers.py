@@ -21,9 +21,16 @@ def assert_nodes_in_sync(nodes: List[ElectionNode]):
     # one node to compare the others against
     ref = nodes[0]; nodes = nodes[1:]
     for node in nodes:
-        assert node.current_phase() == ref.current_phase(), "phase mismatch"
+
+        np = node.current_phase()
+        rp = ref.current_phase()
+        assert np == rp, f'phase mismatch: {np} vs {rp}'
+
         # TODO use interface here rather than raw history dict?
-        assert node.subscriber.history == ref.subscriber.history, f"history mismatch: {node.channel_str()} vs {ref.channel_str()}"
+        nh = node.subscriber.history
+        rh = ref.subscriber.history
+        assert nh == rh, f'history mismatch:\n{pformat(nh)}\n{pformat(rh)}'
+
     LOG.info(f'All {len(nodes)+1} nodes in sync: ' + ', '.join(s for s in ch_strs))
     # LOG.debug(f'Current state:\n\n{pformat(ref.subscriber.states)}\n')
 
@@ -39,7 +46,7 @@ def assert_node_state(
     state_utxo   = node.current_utxo()
     actual_state = node.current_state()
     LOG.debug(f'{node_str} latest state utxo: {state_utxo}')
-    assert actual_state == expected_state, f'{node_str} unexpected state: {actual_state}'
+    assert actual_state == expected_state, f'{node_str} expected state:\n{expected_state}\nBut actual state was:\n{actual_state}'
     LOG.debug(f'{node_str} state as expected: {actual_state}')
 
 def sub_s0(sub_id: ChannelId, sub_vkh: VerificationKeyHash) -> ChannelState:

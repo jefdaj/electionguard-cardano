@@ -32,7 +32,7 @@ OGMIOS_CTX = OgmiosV6ChainContext(
     network=Network.TESTNET
 )
 
-OGMIOS_POLL_SEC    =   3.0
+OGMIOS_POLL_SEC    =   1.0 # TODO does this matter? what's reasonable?
 OGMIOS_TIMEOUT_SEC = 300.0
 
 # Estimate of how long it might take a new TX to show up in the node.
