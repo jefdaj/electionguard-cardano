@@ -260,6 +260,24 @@ def _same_but_now_spent(old_event, new_event) -> bool:
     old_event_spent = replace(old_event, output_match=old_output_match_spent)
     return old_event_spent == new_event
 
+def _poll3_pairs_by_key(pairs: list[tuple]) -> dict:
+    """Transform _poll3_pair() output to (slot_no, channel_str) keyed dict."""
+    pairs_by_key = {}
+    for (input_match, output_match, redeemer) in pairs:
+        if input_match is not None:
+            ch_str = kupo_match_to_channel_str(input_match)
+            slot_no = input_match["spent_at"]["slot_no"]
+        else:
+            # mint: no input, key by output's created_at
+            ch_str = kupo_match_to_channel_str(output_match)
+            slot_no = output_match["created_at"]["slot_no"]
+        key = (slot_no, ch_str)
+        pair = (input_match, output_match)
+        LOG.debug(f'poll3 pair by key: {key}: {pair}')
+        pairs_by_key[key] = pair
+    LOG.debug(f'poll3 pairs_by_key:\n{pformat(pairs_by_key)}')
+    return pairs_by_key
+
 
 def make_session():
     s = requests.Session()
@@ -912,31 +930,35 @@ class ElectionSubscriber:
             self.etag = new_etag
             LOG.debug(f'poll3 advance cursor, etag to {self.cursor3}, {self.etag}. Processing {len(matches)} matches.')
 
-        return self._pair(matches)
+        pairs = self._poll3_pair(matches)
+        pairs_by_key = _poll3_pairs_by_key(pairs)
+        
+        return pairs_by_key
 
-    def _pair(self, matches: dict) -> list[tuple]:
+    def _poll3_pair(self, matches: dict) -> list[tuple]:
         # Index outputs by the tx that created them
         # TODO try claude's next idea involving a modified history search if trouble finding live mints
         by_creating_tx = {}
         for m in matches.values():
             by_creating_tx[m["transaction_id"]] = m
 
-        events = []
+        pairs = []
         for m in matches.values():
             if m["spent_at"] is None:
                 continue  # live unspent head, not an event yet TODO we do want events for these though, right?
             spending_txid = m["spent_at"]["transaction_id"]
             output = by_creating_tx.get(spending_txid)  # None if burned
             redeemer = m["spent_at"]["redeemer"]
-            events.append((m, output, redeemer))
+            pairs.append((m, output, redeemer))
 
         # Sort by spending slot so events are oldest-first
-        events.sort(key=lambda e: e[0]["spent_at"]["slot_no"])
+        pairs.sort(key=lambda e: e[0]["spent_at"]["slot_no"])
         
-        for event in events:
-            LOG.debug(f'poll3 event: {event}')
+        for pair in pairs:
+            LOG.debug(f'poll3 pair: {pair}')
         
-        return events
+        return pairs
+
 
     ## handle election actions ##
 
