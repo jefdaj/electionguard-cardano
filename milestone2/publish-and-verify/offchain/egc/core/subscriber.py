@@ -262,6 +262,7 @@ def _same_but_now_spent(old_event, new_event) -> bool:
 
 def _poll3_pairs_by_key(pairs: list[tuple]) -> dict:
     """Transform _poll3_pair() output to (slot_no, channel_str) keyed dict."""
+    # TODO not really pairs; rename if using
     pairs_by_key = {}
     for (input_match, output_match, redeemer) in pairs:
         if input_match is not None:
@@ -272,7 +273,7 @@ def _poll3_pairs_by_key(pairs: list[tuple]) -> dict:
             ch_str = kupo_match_to_channel_str(output_match)
             slot_no = output_match["created_at"]["slot_no"]
         key = (slot_no, ch_str)
-        pair = (input_match, output_match)
+        pair = (input_match, output_match, redeemer)
         LOG.debug(f'poll3 pair by key: {key}: {pair}')
         pairs_by_key[key] = pair
     LOG.debug(f'poll3 pairs_by_key:\n{pformat(pairs_by_key)}')
@@ -349,6 +350,8 @@ class ElectionSubscriber:
         # TODO remove
         self.prev_events = set()
         self.seen_matches = set()
+        
+        self.poll3_prev_events = set()
 
 
     ## query interface ##
@@ -933,11 +936,13 @@ class ElectionSubscriber:
         pairs = self._poll3_pair(matches)
         pairs_by_key = _poll3_pairs_by_key(pairs)
         
-        return pairs_by_key
+        for event in self._poll3_channel_events(pairs_by_key):
+            LOG.debug(f'poll3 event:\n{pformat(event)}')
 
     def _poll3_pair(self, matches: dict) -> list[tuple]:
         # Index outputs by the tx that created them
         # TODO try claude's next idea involving a modified history search if trouble finding live mints
+        # TODO figure out where the special InitElection case should be handled, if anywhere
         by_creating_tx = {}
         for m in matches.values():
             by_creating_tx[m["transaction_id"]] = m
@@ -945,19 +950,88 @@ class ElectionSubscriber:
         pairs = []
         for m in matches.values():
             if m["spent_at"] is None:
-                continue  # live unspent head, not an event yet TODO we do want events for these though, right?
+                continue  # live unspent head, not an event yet
             spending_txid = m["spent_at"]["transaction_id"]
             output = by_creating_tx.get(spending_txid)  # None if burned
             redeemer = m["spent_at"]["redeemer"]
             pairs.append((m, output, redeemer))
 
         # Sort by spending slot so events are oldest-first
-        pairs.sort(key=lambda e: e[0]["spent_at"]["slot_no"])
+        # TODO no need since they're about to be keyed by slot anyway?
+        # TODO and this won't work for the InitElection event anyway, unless None sorts first?
+        # pairs.sort(key=lambda e: e[0]["spent_at"]["slot_no"])
         
         for pair in pairs:
             LOG.debug(f'poll3 pair: {pair}')
         
         return pairs
+
+    def _poll3_channel_events(self, pairs_by_key) -> Iterable[ChannelEvent]:
+        # WARNING: these "pairs" are actually 3-tuples; will rename if works
+        LOG.debug('_poll3_channel_events')
+        # events = []
+        keys = sorted(pairs_by_key.keys())
+        
+        for key in keys:
+            LOG.debug(f'poll3 key: {key}')
+
+            (slot_no, channel_str) = key
+            LOG.debug(f'poll3 slot_no: {slot_no}')
+            LOG.debug(f'poll3 channel_str: {channel_str}')
+
+            (input_match, output_match, redeemer_hex) = pairs_by_key[key]
+            LOG.debug(f'poll3 input_match: {input_match}')
+            LOG.debug(f'poll3 output_match: {output_match}')
+            
+            LOG.debug(f'poll3 redeemer_hex: {redeemer_hex}')
+            if redeemer_hex is None:
+                if input_match is None:
+                    # Probably InitElection! Double check...
+                    assert channel_str == channel_id_to_string(ADMIN_CHANNEL_ID)
+                    # TODO assert output seq is 0
+                    # TODO assert history is empty
+                    action = InitElection()
+                    LOG.debug(f'poll3 Special InitElection case: {pair}')
+                else:
+                    # TODO what would this be?
+                    action = None
+                    LOG.warning(f'poll3 Failed to find action: {pair}')
+            else:
+                action = decode_plutusdata_union(ElectionAction, redeemer_hex)
+                LOG.debug(f'poll3 action: {action}')
+
+            assert input_match is not None or output_match is not None, 'input and output matches cannot both be None'
+
+            # Get states (AKA datums)
+            # TODO this can be made inline later, right? but save until 304 works
+            if input_match is not None:
+                input_datum = self._fetch_datum(input_match['datum_hash'])['datum']
+                input_state = decode_plutusdata_union(ChannelState, input_datum)
+            else:
+                input_state = None
+            if output_match is not None:
+                output_datum = self._fetch_datum(output_match['datum_hash'])['datum']
+                output_state = decode_plutusdata_union(ChannelState, output_datum)
+            else:
+                output_state = None
+
+            event = ChannelEvent(
+                slot_no      = slot_no,
+                channel_id   = coerce_channel_id(channel_str),
+                action       = action,
+                input_match  = input_match,
+                output_match = output_match,
+                input_state  = input_state,
+                output_state = output_state,
+            )
+
+            if str(event) in self.poll3_prev_events:
+                LOG.warning(f'poll3 throwing away duplicate event: {event}') # TODO debug
+            else:
+                self.poll3_prev_events.add(str(event))
+                yield event
+                # events.append(event)
+        # return events
 
 
     ## handle election actions ##
