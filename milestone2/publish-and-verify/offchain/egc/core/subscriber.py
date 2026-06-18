@@ -1199,12 +1199,47 @@ class ElectionSubscriber:
         # TODO test whether this is just bad with BurnTestTokens, or if something needs fixing
         ioa_triples_by_sc = self._poll4_add_actions(io_pairs_by_sc)
 
+        events = self._poll4_assemble_events(ioa_triples_by_sc)
+
         # 4. dispatch and check all the details per action
         # TODO dispatch from general -> specific instead of how it is now: mint, burn, cont -> all of them
 
         # TODO remove when ready
         if len(matches_by_sc) > 0:
             raise SystemExit
+
+    def _fetch_state(self, kupo_match: dict) -> ChannelState:
+        LOG.debug('ElectionSubscriber._fetch_state')
+        LOG.debug(f'kupo_match: {kupo_match}')
+        datum_hash = kupo_match['datum_hash']
+        url = self._kupo_api_url() + f'/datums/{datum_hash}'
+        LOG.debug(f'fetching datum {datum_hash}')
+        resp = self.session.get(url, timeout=10)
+        resp.raise_for_status()
+        datum = resp.json()
+        LOG.debug(f'fetched {datum_hash} -> {datum}')
+        state = decode_plutusdata_union(ChannelState, datum['datum'])
+        LOG.debug(f'decoded {datum} -> {state}')
+        return state
+
+    def _poll4_assemble_events(self, ioa_triples_by_sc: dict) -> list[ChannelEvent]:
+        # TODO yield these rather than returning a list?
+        events = []
+        for ((slot_no, ch_str), (input_match, output_match, action)) in ioa_triples_by_sc.items():
+            input_state  = self._fetch_state( input_match) if  input_match else None
+            output_state = self._fetch_state(output_match) if output_match else None
+            event = ChannelEvent(
+                slot_no      = slot_no,
+                channel_id   = coerce_channel_id(ch_str),
+                action       = action,
+                input_match  = input_match,
+                output_match = output_match,
+                input_state  = input_state,
+                output_state = output_state,
+            )
+            events.append(event)
+        LOG.debug(f'events:\n{pformat(events)}')
+        return events
 
     def _poll4_input_output_pairs(self, matches_by_sc: dict) -> list[Tuple[Optional[dict], Optional[dict]]]:
 
