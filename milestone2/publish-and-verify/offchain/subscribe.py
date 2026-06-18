@@ -23,7 +23,7 @@ import logging
 logging.basicConfig(
   # filename='subscribe.log',
   encoding='utf-8',
-  level=logging.INFO,
+  level=logging.DEBUG,
   format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
 
@@ -58,7 +58,7 @@ def log_current():
 while True:
     log_current()
     try:
-        time.sleep(10)
+        time.sleep(30)
         if sub.is_done():
             break
     except KeyboardInterrupt:

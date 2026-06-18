@@ -961,6 +961,17 @@ class ElectionSubscriber:
         pairs_by_key = dict(sorted(pairs_by_key.items()))
         
         for event in self._poll3_channel_events(pairs_by_key):
+
+            # TODO is there a cleaner way to do this?
+            i = event.channel_id
+            if i in self.history and len(self.history[i]) > 0:
+                prev_event = self.history[i][-1]
+                if _same_but_now_spent(prev_event, event):
+                    s = channel_id_to_string(i)
+                    self.history[i][-1] = event
+                    LOG.debug(f'Replaced last {s} event with a new spent version.')
+                    continue
+
             LOG.debug(f'poll3 event:\n{pformat(event)}')
 
             # TODO less similar names?
@@ -1001,6 +1012,7 @@ class ElectionSubscriber:
 
         for m in matches.values():
             action = find_spend_redeemer(m['transaction_id'], matches)
+
             if m["transaction_id"] not in has_known_input:
                 # this match has no known input = mint
                 if m["spent_at"] is None:
@@ -1018,6 +1030,21 @@ class ElectionSubscriber:
                 asset = stt_asset(m)
                 output = by_creating_tx.get((spending_txid, asset))
                 events.append((m, output, action))
+
+
+# TODO totally wrong, right?
+#                 # emit as mint
+#                 events.append((None, m, action))
+#                 # fall through — if it's also spent, emit the continuation too
+# 
+#             if m["spent_at"] is None:
+#                 continue  # unspent head, no continuation yet
+# 
+#             spending_txid = m["spent_at"]["transaction_id"]
+#             asset = stt_asset(m)
+#             output = by_creating_tx.get((spending_txid, asset))
+#             # action = find_spend_redeemer(spending_txid, matches)
+#             events.append((m, output, action))
 
         # missing_inputs = [
         #     m for m in matches.values()
