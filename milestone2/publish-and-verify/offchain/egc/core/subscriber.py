@@ -1216,6 +1216,36 @@ class ElectionSubscriber:
             LOG.debug(f'events:\n{pformat(events)}')
         return events
 
+    def _poll4_find_output_for_input(self, in_sc_key, matches_by_sc) -> Optional[dict]:
+        (in_s, in_c) = in_sc_key
+        in_match = matches_by_sc[in_sc_key]
+        outputs = [
+            m for ((s, c), m) in matches_by_sc.items()
+            if s > in_s
+            and c == in_c
+            and m['transaction_id'] == in_match['spent_at']['transaction_id']
+        ]
+        assert len(outputs) < 2, f'More than 2 possible outputs found for {in_sc_key}'
+        if len(outputs) == 1:
+            return outputs[0]
+        else:
+            return None
+
+    def _poll4_find_input_for_output(self, out_sc_key: dict, matches_by_sc: dict) -> Optional[dict]:
+        (out_s, out_c) = out_sc_key
+        out_match = matches_by_sc[out_sc_key]
+        inputs = [
+            m for ((s, c), m) in matches_by_sc.items()
+            if s < out_s
+            and c == out_c
+            and m['spent_at']['transaction_id'] == out_match['transaction_id']
+        ]
+        assert len(inputs) < 2, f'More than 2 possible inputs found for {in_sc_key}'
+        if len(inputs) == 1:
+            return inputs[0]
+        else:
+            return None
+
     def _poll4_input_output_pairs(self, matches_by_sc: dict) -> list[Tuple[Optional[dict], Optional[dict]]]:
 
         # This should be exactly one per event already.
@@ -1250,83 +1280,28 @@ class ElectionSubscriber:
             LOG.debug(f'classifying match {key}')
             is_output = match['created_at']['slot_no'] == slot_no
             if is_output:
+                output = match
                 LOG.debug(f'match {key} is an output')
                 is_mint = created_tc_pair in mint_tc_pairs
                 if is_mint:
                     LOG.debug(f'match {key} is a mint')
+                    input_ = None
                 else:
                     LOG.debug(f'match {key} is not a mint; looking for input')
+                    input_ = self._poll4_find_input_for_output(key, matches_by_sc)
             else:
+                input_ = match
                 LOG.debug(f'match {key} is an input')
                 spent_tc_pair = (match['spent_at']['transaction_id'], ch_str)
                 is_burn = spent_tc_pair in burn_tc_pairs
                 if is_burn:
                     LOG.debug(f'match {key} is a burn')
+                    output = None
                 else:
                     LOG.debug(f'match {key} is not a burn; looking for output')
-
-        # cases v1:
-        # 1. InitElection = first match in first batch, admin channel, output match only, no way to find redeemer
-        # 2. subchannel mint = output match only (no input), but can find redeemer (prev admin utxo)
-        # 3. subchannel burn = input match only, but spent, and spending redeemer is a burn
-        # 4. endelection = basically the same as a subchannel burn?
-        # 5. continuation = input and output, get redeemer from input
-
-        # cases v2:
-        # 1. output with no input = initelection or subchannel mint
-        #    a. redeemer amongst other matches = subchannel mint
-        #    b. can't find redeemer = initelection
-        # 2. input with no output = endelection or subchannel burn
-        #       these will both be spent, so just check the redeemer
-        # 3. find input, output, redeemer in input = continuation
-
-        # cases v3:
-        # has input = can find redeemer and match on that: continuation, sub burn, endelection
-        # no input but can find redeemer in other matches = match on that to confirm: sub mint
-        # no input, can't find redeemer, very first match, admin channel = initelection
-
-        # cases v3 refined:
-        # 1. pair up inputs, outputs (keyed by slot, tx, channel_str?)
-        # 2. try to get redeemers: from input, from other matches, default to initelection
-        # 3. fetch datums, assemble events, dispatch
-
-#         io_pairs_by_sc = {}
-#         for key in io_pair_keys:
-#             (slot_no, ch_str) = key
-#             match = matches_by_sc[key]
-#             created_tc_pair = (match['transaction_id'], ch_str)
-#             if match['spent_at'] is None:
-#                 # This match is unspent so far.
-#                 pair = (match, None)
-#                 LOG.debug(f'Input-only because not spent: {pair}')
-#             elif created_tc_pair in mint_tc_pairs:
-#                 pair = (None, match)
-#                 LOG.debug(f'Output-only because created_tc_pair in mint_tc_pairs: {pair}')
-#             else:
-#                 spent_tc_pair = (match['spent_at']['transaction_id'], ch_str)
-#                 if spent_tc_pair in burn_tc_pairs:
-#                     # This match is spent, but the output has no STT (a burn).
-#                     pair = (match, None)
-#                     LOG.debug(f'Input-only because spent_tc_pair in burn_tc_pairs: {pair}')
-#                 else:
-#                     # there should be exactly one pair with this key as output
-#                     output = match
-#                     inputs = [
-#                         m for ((s, c), m) in matches_by_sc.items()
-#                         if c == ch_str
-#                         and s < slot_no
-#                         and m['spent_at']
-#                         and m['spent_at']['slot_no'] == slot_no
-#                         and m['spent_at']['transaction_id'] == output['transaction_id']
-#                     ]
-#                     if len(inputs) == 0:
-#                         input_ = None
-#                     elif len(inputs) == 1:
-#                         input_ = inputs[0]
-#                     else:
-#                         raise Exception(f'unexpected inputs key={key} output={output} len(inputs)={len(inputs)}')
-#                     pair = (input_, output)
-#             io_pairs_by_sc[key] = pair
+                    output = self._poll4_find_output_for_input(key, matches_by_sc)
+            pair = (input_, output)
+            io_pairs_by_sc[key] = pair
 
         if io_pairs_by_sc:
             LOG.debug(f'io_pairs_by_sc:\n{pformat(io_pairs_by_sc)}')
