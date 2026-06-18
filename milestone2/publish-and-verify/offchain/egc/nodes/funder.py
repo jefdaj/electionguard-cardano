@@ -162,6 +162,10 @@ class FunderNode(ElectionNode):
         )
         self.subscriber.start()
         LOG.info(f'Subscribe to this election with:\n\n{pformat(sub_cfg)}\n')
+        LOG.debug(
+            f'Or for dev debugging:\n\n'
+            f'./subscribe.py {sub_cfg.policy_id} {sub_cfg.since_slot} {sub_cfg.since_block_hash}\n'
+        )
 
     def deploy_election(
             self,
