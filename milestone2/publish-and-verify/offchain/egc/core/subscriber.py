@@ -954,6 +954,7 @@ class ElectionSubscriber:
             self.etag = new_etag
             LOG.debug(f'poll3 advance cursor, etag to {self.cursor3}, {self.etag}. Processing {len(matches)} matches.')
 
+        # TODO replace _poll3_pair, _poll3_pairs_by_key, _poll3_channel_events with one fn?
         pairs = self._poll3_pair(matches)
         pairs_by_key = _poll3_pairs_by_key(pairs)
 
@@ -985,15 +986,29 @@ class ElectionSubscriber:
             self.on_action(event_clean)
 
     def _poll3_pair(self, matches: dict) -> list[tuple]:
-        def stt_asset(m):
-            # return the single STT asset name from value, assuming exactly one
-            # TODO is this the best way to do it?
-            return next(iter(m["value"]["assets"]))
+
+        # TODO can you just do the entire dispatch thing in one function here??
+
+        # cases v1:
+        # 1. InitElection = first match in first batch, admin channel, output match only, no way to find redeemer
+        # 2. subchannel mint = output match only (no input), but can find redeemer (prev admin utxo)
+        # 3. subchannel burn = input match only, but spent, and spending redeemer is a burn
+        # 4. endelection = basically the same as a subchannel burn?
+        # 5. continuation = input and output, get redeemer from input
+
+        # cases v2:
+        # 1. output with no input = initelection or subchannel mint
+        #    a. redeemer amongst other matches = subchannel mint
+        #    b. can't find redeemer = initelection
+        # 2. input with no output = endelection or subchannel burn
+        #       these will both be spent, so just check the redeemer
+        # 3. find input, output, redeemer in input = continuation
 
         by_creating_tx = {}
         for m in matches.values():
-            key = (m["transaction_id"], stt_asset(m))
+            key = (m["transaction_id"], kupo_match_to_channel_str(m))
             by_creating_tx[key] = m
+        LOG.debug(f'by_creating_tx:\n{pformat(by_creating_tx)}')
 
         # spending_txids = {
             # m["spent_at"]["transaction_id"]
@@ -1007,6 +1022,7 @@ class ElectionSubscriber:
             for m in matches.values()
             if m["spent_at"]
         }
+        LOG.debug(f'has_known_input:\n{pformat(has_known_input)}')
 
         events = []
 
@@ -1020,15 +1036,15 @@ class ElectionSubscriber:
                 else:
                     # spent mint — still emit as mint, paired with its output
                     spending_txid = m["spent_at"]["transaction_id"]
-                    asset = stt_asset(m)
-                    output = by_creating_tx.get((spending_txid, asset))
+                    channel_str = kupo_match_to_channel_str(m)
+                    output = by_creating_tx.get((spending_txid, channel_str))
                     events.append((None, m, action))  # mint, no redeemer (TODO it should tho?)
             else:
                 if m["spent_at"] is None:
                     continue  # unspent continuation, not an event yet
                 spending_txid = m["spent_at"]["transaction_id"]
-                asset = stt_asset(m)
-                output = by_creating_tx.get((spending_txid, asset))
+                channel_str = kupo_match_to_channel_str(m)
+                output = by_creating_tx.get((spending_txid, channel_str))
                 events.append((m, output, action))
 
 
