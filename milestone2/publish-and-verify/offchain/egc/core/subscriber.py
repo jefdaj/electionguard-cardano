@@ -1248,29 +1248,57 @@ class ElectionSubscriber:
         if io_pair_keys:
             LOG.debug(f'io_pair_keys:\n{pformat(io_pair_keys)}')
 
+        created_tc_pairs = set(
+            (m["transaction_id"], c)
+            for ((_, c), m) in matches_by_sc.items()
+        )
+        spent_tc_pairs = set(
+            (m["spent_at"]["transaction_id"], c)
+            for ((_, c), m) in matches_by_sc.items()
+            if m["spent_at"]
+        )
+        mint_tc_pairs = created_tc_pairs - spent_tc_pairs # TODO useful for InitElection?
+        burn_tc_pairs = spent_tc_pairs - created_tc_pairs
+        if mint_tc_pairs:
+            LOG.debug(f'mint_tc_pairs: {mint_tc_pairs}')
+        if burn_tc_pairs:
+            LOG.debug(f'burn_tc_pairs: {burn_tc_pairs}')
+
         io_pairs_by_sc = {}
         for key in io_pair_keys:
             (slot_no, ch_str) = key
             match = matches_by_sc[key]
-            if match['spent_at'] is None:
+            created_tc_pair = (match['transaction_id'], ch_str)
+            if created_tc_pair in mint_tc_pairs:
+                pair = (None, match)
+                LOG.debug(f'Output-only because created_tc_pair in mint_tc_pairs: {pair}')
+            elif match['spent_at'] is None:
+                # This match is unspent so far.
                 pair = (match, None)
+                LOG.debug(f'Input-only because not spent: {pair}')
             else:
-                # there should be exactly one pair with this key as output
-                output = match
-                inputs = [
-                    m for ((s, c), m) in matches_by_sc.items()
-                    if c == ch_str
-                    and s < slot_no
-                    and m['spent_at'] is not None
-                    and m['spent_at']['transaction_id'] == output['transaction_id']
-                ]
-                if len(inputs) == 0:
-                    input_ = None
-                elif len(inputs) == 1:
-                    input_ = inputs[0]
+                spent_tc_pair = (match['spent_at']['transaction_id'], ch_str)
+                if spent_tc_pair in burn_tc_pairs:
+                    # This match is spent, but the output has no STT (a burn).
+                    pair = (match, None)
+                    LOG.debug(f'Input-only because spent_tc_pair in burn_tc_pairs: {pair}')
                 else:
-                    raise Exception(f'unexpected inputs key={key} output={output} len(inputs)={len(inputs)}')
-                pair = (input_, output)
+                    # there should be exactly one pair with this key as output
+                    output = match
+                    inputs = [
+                        m for ((s, c), m) in matches_by_sc.items()
+                        if c == ch_str
+                        and s < slot_no
+                        and m['spent_at'] is not None
+                        and m['spent_at']['transaction_id'] == output['transaction_id']
+                    ]
+                    if len(inputs) == 0:
+                        input_ = None
+                    elif len(inputs) == 1:
+                        input_ = inputs[0]
+                    else:
+                        raise Exception(f'unexpected inputs key={key} output={output} len(inputs)={len(inputs)}')
+                    pair = (input_, output)
             io_pairs_by_sc[key] = pair
 
         if io_pairs_by_sc:
