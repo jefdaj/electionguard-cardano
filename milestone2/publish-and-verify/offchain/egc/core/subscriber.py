@@ -389,7 +389,6 @@ class ElectionSubscriber:
 
     def current_phase(self) -> Optional[ElectionPhase]:
         # Returns None if the election hasn't started yet
-        # TODO assert that this should be None to default to the InitElection redeemer
         try:
             event = self.channel_history(ADMIN_CHANNEL_ID)[-1]
             return event.output_state.state.phase
@@ -1189,24 +1188,24 @@ class ElectionSubscriber:
         # 2. try to get redeemers: from input, from other matches, default to initelection
         # 3. fetch datums, assemble events, dispatch
 
-        # 1. fetch matches, keyed by (slot_no, channel_str)
+        # Fetch matches, keyed by (slot_no, channel_str).
         matches_by_sc = self._poll4_fetch_matches()
 
-        # 2. TODO assemble them into (input, output) pairs
+        # Assemble matches them into (input, output) pairs, still by (slot_no, channel_str).
         io_pairs_by_sc = self._poll4_input_output_pairs(matches_by_sc)
 
-        # 3. find actions (aka redeemers)
+        # Add actions (AKA redeemers), still keyed by (slot_no, channel_str).
         # TODO test whether this is just bad with BurnTestTokens, or if something needs fixing
         ioa_triples_by_sc = self._poll4_add_actions(io_pairs_by_sc)
 
+        # Assemble event objects, now with no need for keys.
+        # These aren't quite ready to emit yet because they haven't been double checked.
         events = self._poll4_assemble_events(ioa_triples_by_sc)
 
-        # 4. dispatch and check all the details per action
-        # TODO dispatch from general -> specific instead of how it is now: mint, burn, cont -> all of them
-
-        # TODO remove when ready
-        if len(matches_by_sc) > 0:
-            raise SystemExit
+        # Update internal state (branching on action type) and emit finished events.
+        for event in events:
+            finished_event = self._on_action(event) # internal callback
+            self.on_action(finished_event)          # external callback
 
     def _fetch_state(self, kupo_match: dict) -> ChannelState:
         LOG.debug('ElectionSubscriber._fetch_state')
@@ -1406,9 +1405,9 @@ class ElectionSubscriber:
 
     def _on_initelection(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_initelection')
-        # assert self.history == {}, 'InitElection with non-empty history'
-        # there might be history already if the subscriber processed a different channel event first?
         LOG.debug(f'history during _on_initelection:\n{pformat(self.history)}')
+        # assert self.history == {}, 'InitElection with non-empty history'
+        assert self.current_phase() == None, 'InitElection should always happen first'
         assert event.channel_id == ADMIN_CHANNEL_ID # note this tx was published by the funder
         self._on_mint(event)
         return event
@@ -1465,6 +1464,7 @@ class ElectionSubscriber:
 
     def _on_mint(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_mint')
+        LOG.debug(f'history during _on_mint:\n{pformat(self.history)}')
         assert not event.channel_id in self.history, f"tried to mint existing channel!\n{event}\n{self.history}"
         self.history[event.channel_id] = [event]
 
