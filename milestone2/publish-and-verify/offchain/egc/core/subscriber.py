@@ -1196,8 +1196,8 @@ class ElectionSubscriber:
         io_pairs_by_sc = self._poll4_input_output_pairs(matches_by_sc)
 
         # 3. find actions (aka redeemers)
-        # TODO test this once you have pairs
-        ioa_triples_by_sc = self._poll4_find_actions(io_pairs_by_sc)
+        # TODO test whether this is just bad with BurnTestTokens, or if something needs fixing
+        ioa_triples_by_sc = self._poll4_add_actions(io_pairs_by_sc)
 
         # 4. dispatch and check all the details per action
         # TODO dispatch from general -> specific instead of how it is now: mint, burn, cont -> all of them
@@ -1240,7 +1240,7 @@ class ElectionSubscriber:
         LOG.debug(f'io_pairs_by_sc:\n{pformat(io_pairs_by_sc)}')
         return io_pairs_by_sc
 
-    def _poll4_find_actions(self, io_pairs_by_sc):
+    def _poll4_add_actions(self, io_pairs_by_sc):
         ioa_triples_by_sc = {}
         prev_inputs = []
         for (key, (in_match, out_match)) in io_pairs_by_sc.items():
@@ -1316,14 +1316,28 @@ class ElectionSubscriber:
             return [] # Retry next poll to avoid timing edge cases
 
         # Merge by (txid, output_index), Q1 and Q2 may overlap
-        # TODO key by slot here too/instead? or maybe by slot + channel_str?
         matches = {}
+        n = 0
         for m in r1.json() + r2.json():
             # key = (m["transaction_id"], m["output_index"])
             key = (m['created_at']['slot_no'], kupo_match_to_channel_str(m))
+            # looks so far like they are always duplicates
+            # if key in matches and matches[key] == m:
+            #     LOG.debug('deduped one match')
             matches[key] = m
+            n += 1
         LOG.debug(f'matches:\n{pformat(matches)}')
-      
+        LOG.debug(f'merged {n} matches down to {len(matches)}')
+
+        # matches2 = {}
+        # for m in r1.json() + r2.json():
+        #     # key = (m["transaction_id"], m["output_index"])
+        #     key = (m['created_at']['slot_no'], kupo_match_to_channel_str(m))
+        #     if not key in matches2:
+        #         matches2[key] = []
+        #     matches2[key].append(m)
+        # LOG.debug(f'matches2:\n{pformat(matches2)}')
+
         # Advance cursor
         block_hash = r1.headers["ETag"].strip('"')
         new_cursor = f"{cp1}.{block_hash}"
