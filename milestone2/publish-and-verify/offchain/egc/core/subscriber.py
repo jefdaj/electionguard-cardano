@@ -1004,6 +1004,13 @@ class ElectionSubscriber:
         #       these will both be spent, so just check the redeemer
         # 3. find input, output, redeemer in input = continuation
 
+        # cases v3:
+        # has input = can find redeemer and match on that: continuation, sub burn, endelection
+        # no input but can find redeemer in other matches = match on that to confirm: sub mint
+        # no input, can't find redeemer, very first match, admin channel = initelection
+
+        # TODO actually then, this fn is still helpful! choose based on (input, output, redeemer)
+
         by_creating_tx = {}
         for m in matches.values():
             key = (m["transaction_id"], kupo_match_to_channel_str(m))
