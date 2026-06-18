@@ -23,7 +23,7 @@ import logging
 logging.basicConfig(
   # filename='subscribe.log',
   encoding='utf-8',
-  level=logging.DEBUG,
+  level=logging.INFO,
   format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
 
@@ -39,7 +39,7 @@ sub_cfg = SubscriberConfig(
 LOG.info(f'sub_cfg: {sub_cfg}')
 
 def log_event(event: ChannelEvent):
-    LOG.info(pformat(event))
+    LOG.info('\n' + pformat(event) + '\n')
 
 sub = ElectionSubscriber(
     sub_cfg,
