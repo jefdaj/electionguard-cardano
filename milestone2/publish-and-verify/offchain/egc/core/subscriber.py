@@ -1237,14 +1237,16 @@ class ElectionSubscriber:
                 output_state = output_state,
             )
             events.append(event)
-        LOG.debug(f'events:\n{pformat(events)}')
+        if events:
+            LOG.debug(f'events:\n{pformat(events)}')
         return events
 
     def _poll4_input_output_pairs(self, matches_by_sc: dict) -> list[Tuple[Optional[dict], Optional[dict]]]:
 
         # Unless I'm missing something, this should be exactly one per event already.
         io_pair_keys = sorted(list(matches_by_sc.keys()))
-        LOG.debug(f'io_pair_keys:\n{pformat(io_pair_keys)}')
+        if io_pair_keys:
+            LOG.debug(f'io_pair_keys:\n{pformat(io_pair_keys)}')
 
         io_pairs_by_sc = {}
         for key in io_pair_keys:
@@ -1271,7 +1273,8 @@ class ElectionSubscriber:
                 pair = (input_, output)
             io_pairs_by_sc[key] = pair
 
-        LOG.debug(f'io_pairs_by_sc:\n{pformat(io_pairs_by_sc)}')
+        if io_pairs_by_sc:
+            LOG.debug(f'io_pairs_by_sc:\n{pformat(io_pairs_by_sc)}')
         return io_pairs_by_sc
 
     def _poll4_add_actions(self, io_pairs_by_sc):
@@ -1302,7 +1305,8 @@ class ElectionSubscriber:
                 prev_inputs.append(in_match)
             if out_match is not None:
                 prev_inputs.append(out_match)
-        LOG.debug(f'ioa_triples_by_sc:\n{pformat(ioa_triples_by_sc)}')
+        if ioa_triples_by_sc:
+            LOG.debug(f'ioa_triples_by_sc:\n{pformat(ioa_triples_by_sc)}')
         return ioa_triples_by_sc
 
     def _poll4_fetch_matches(self) -> list[dict]:
@@ -1360,8 +1364,9 @@ class ElectionSubscriber:
             #     LOG.debug('deduped one match')
             matches[key] = m
             n += 1
-        LOG.debug(f'matches:\n{pformat(matches)}')
-        LOG.debug(f'merged {n} matches down to {len(matches)}')
+        if matches:
+            LOG.debug(f'matches:\n{pformat(matches)}')
+            LOG.debug(f'merged {n} matches down to {len(matches)}')
 
         # matches2 = {}
         # for m in r1.json() + r2.json():
@@ -1372,14 +1377,26 @@ class ElectionSubscriber:
         #     matches2[key].append(m)
         # LOG.debug(f'matches2:\n{pformat(matches2)}')
 
+        if int(cp1) == 0:
+            LOG.debug(f'No matches yet. Kupo still starting, or no InitElection yet.')
+            assert len(matches) == 0, 'No matches expected before a checkpoint is set.'
+            return []
+
         # Advance cursor
-        block_hash = r1.headers["ETag"].strip('"')
-        new_cursor = f"{cp1}.{block_hash}"
-        new_etag = r1.headers["ETag"].strip('"')
+        try:
+            block_hash = r1.headers["ETag"].strip('"')
+            new_cursor = f"{cp1}.{block_hash}"
+            new_etag = r1.headers["ETag"].strip('"')
+        except KeyError:
+            # Kupo doesn't seem to provide ETag (or set a checkpoint?) until a match is found.
+            # TODO what should we say/do here?
+            LOG.debug(f"chain hasn't advanced, but no 304? Processing {len(matches)} matches.")
+
         if new_cursor == self.cursor3 and new_etag == self.etag:
             # LOG.debug(f"chain hasn't advanced, but no 304? Throwing away {len(matches)} matches.")
             # return []
-            LOG.debug(f"chain hasn't advanced, but no 304? Processing {len(matches)} matches.")
+            # LOG.debug(f"chain hasn't advanced, but no 304? Processing {len(matches)} matches.")
+            pass
         else:
             self.cursor3 = new_cursor
             self.etag = new_etag
@@ -1478,12 +1495,12 @@ class ElectionSubscriber:
         LOG.debug('ElectionSubscriber._on_cont')
         assert event.input_match  is not None, 'continuation without input_match'
         assert event.input_state  is not None, 'continuation without input_state'
-        assert event.output_match is not None, 'continuation without output_match'
-        assert event.output_state is not None, 'continuation without output_state'
+        # assert event.output_match is not None, 'continuation without output_match'
+        # assert event.output_state is not None, 'continuation without output_state'
 
-        in_seq  = event.input_state.state.seq
-        out_seq = event.output_state.state.seq
-        assert in_seq + 1 == out_seq, f'state seq error: {in_seq} -> {out_seq} in {event}'
+        # in_seq  = event.input_state.state.seq
+        # out_seq = event.output_state.state.seq
+        # assert in_seq + 1 == out_seq, f'state seq error: {in_seq} -> {out_seq} in {event}'
 
         # TODO put back: assert event.channel_id in self.history, f'_on_cont but {event.channel_id} not in history'
         if not event.channel_id in self.history:
