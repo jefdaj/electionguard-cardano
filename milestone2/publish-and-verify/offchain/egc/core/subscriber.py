@@ -946,9 +946,9 @@ class ElectionSubscriber:
         LOG.debug(f'matches:\n{pformat(matches)}')
       
         if new_cursor == self.cursor3 and new_etag == self.etag:
-            # LOG.debug(f"poll3 chain hasn't advanced, but no 304? Throwing away {len(matches)} matches.")
-            # return []
-            LOG.debug(f"poll3 chain hasn't advanced, but no 304? Processing {len(matches)} matches anyway.")
+            LOG.debug(f"poll3 chain hasn't advanced, but no 304? Throwing away {len(matches)} matches.")
+            return []
+            # LOG.debug(f"poll3 chain hasn't advanced, but no 304? Processing {len(matches)} matches anyway.")
         else:
             self.cursor3 = new_cursor
             self.etag = new_etag
@@ -1119,15 +1119,15 @@ class ElectionSubscriber:
 
     def _on_action(self, event: ChannelEvent):
         match event.action:
-            case InitElection():             self._on_initelection(event)
-            case AddSubChannels(channels):   self._on_addsubchannels(event)
-            case AdvancePhase():             self._on_advancephase(event)
-            case EndElection():              self._on_endelection(event)
-            case RmSubChannels(channels=_):  self._on_rmsubchannels(event)
-            case RebalanceFunds(channels=_): self._on_rebalancefunds(event)
-            case PostPublicRecords():        self._on_postpublicrecords(event)
-            case BurnTestTokens():           self._on_burntesttokens(event)
-            case None:                       LOG.warning(f'event with no action: {event}') # TODO debug
+            case InitElection():             return self._on_initelection(event)
+            case AddSubChannels(channels):   return self._on_addsubchannels(event)
+            case AdvancePhase():             return self._on_advancephase(event)
+            case EndElection():              return self._on_endelection(event)
+            case RmSubChannels(channels=_):  return self._on_rmsubchannels(event)
+            case RebalanceFunds(channels=_): return self._on_rebalancefunds(event)
+            case PostPublicRecords():        return self._on_postpublicrecords(event)
+            case BurnTestTokens():           return self._on_burntesttokens(event)
+            # case None:                       LOG.warning(f'event with no action: {event}') # TODO debug
             case _:                          raise NotImplementedError
 
     def _on_initelection(self, event: ChannelEvent):
@@ -1137,6 +1137,7 @@ class ElectionSubscriber:
         LOG.debug(f'history during _on_initelection:\n{pformat(self.history)}')
         assert event.channel_id == ADMIN_CHANNEL_ID # note this tx was published by the funder
         self._on_mint(event)
+        return event
 
     # remember this will be called once per channel touched
     def _on_addsubchannels(self, event: ChannelEvent):
@@ -1145,17 +1146,20 @@ class ElectionSubscriber:
             self._on_cont(event)
         else:
             self._on_mint(event)
+        return event
 
     def _on_advancephase(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_advancephase')
         assert event.channel_id == ADMIN_CHANNEL_ID, 'only admin can advance phase'
         # TODO anything needed here?
         self._on_cont(event)
+        return event
 
     def _on_endelection(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_endelection')
         assert event.channel_id == ADMIN_CHANNEL_ID, 'only admin can end election'
         self._on_burn(event)
+        return event
 
     # remember this will be called once per channel touched
     def _on_rmsubchannels(self, event: ChannelEvent):
@@ -1165,21 +1169,25 @@ class ElectionSubscriber:
             self._on_cont(event)
         else:
             self._on_burn(event)
+        return event
 
     # remember this will be called once per channel touched
     def _on_rebalancefunds(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_rebalancefunds')
         self._on_cont(event)
+        return event
 
     def _on_postpublicrecords(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_postpublicrecords')
         # TODO fetch from IPFS here
         self._on_cont(event)
+        return event
 
     def _on_burntesttokens(self, event: ChannelEvent):
         # TODO remove for production use, or make a CLI flag for it
         LOG.debug('ElectionSubscriber._on_burntesttokens')
         self._on_burn(event)
+        return event
 
     def _on_mint(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_mint')
