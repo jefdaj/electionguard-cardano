@@ -1243,7 +1243,7 @@ class ElectionSubscriber:
 
     def _poll4_input_output_pairs(self, matches_by_sc: dict) -> list[Tuple[Optional[dict], Optional[dict]]]:
 
-        # Unless I'm missing something, this should be exactly one per event already.
+        # This should be exactly one per event already.
         io_pair_keys = sorted(list(matches_by_sc.keys()))
         if io_pair_keys:
             LOG.debug(f'io_pair_keys:\n{pformat(io_pair_keys)}')
@@ -1355,27 +1355,18 @@ class ElectionSubscriber:
 
         # Merge by (txid, output_index), Q1 and Q2 may overlap
         matches = {}
-        n = 0
         for m in r1.json() + r2.json():
-            # key = (m["transaction_id"], m["output_index"])
-            key = (m['created_at']['slot_no'], kupo_match_to_channel_str(m))
-            # looks so far like they are always duplicates
-            # if key in matches and matches[key] == m:
-            #     LOG.debug('deduped one match')
-            matches[key] = m
-            n += 1
-        if matches:
-            LOG.debug(f'matches:\n{pformat(matches)}')
-            LOG.debug(f'merged {n} matches down to {len(matches)}')
+            ch_str = kupo_match_to_channel_str(m) 
 
-        # matches2 = {}
-        # for m in r1.json() + r2.json():
-        #     # key = (m["transaction_id"], m["output_index"])
-        #     key = (m['created_at']['slot_no'], kupo_match_to_channel_str(m))
-        #     if not key in matches2:
-        #         matches2[key] = []
-        #     matches2[key].append(m)
-        # LOG.debug(f'matches2:\n{pformat(matches2)}')
+            created_key = (m['created_at']['slot_no'], ch_str)
+            matches[created_key] = m
+
+            if m['spent_at'] is not None:
+                spent_key = (m['spent_at']['slot_no'], ch_str)
+                matches[spent_key] = m
+
+        if matches:
+            LOG.debug(f'Processing {len(matches)} merged matches:\n{pformat(matches)}')
 
         if int(cp1) == 0:
             LOG.debug(f'No matches yet. Kupo still starting, or no InitElection yet.')
