@@ -17,6 +17,7 @@ from dataclasses import dataclass, replace
 from os import environ
 from pprint import pformat
 from collections import defaultdict
+from deepdiff import DeepDiff
 
 from typing import Any, Callable, Dict, List, Tuple, Optional, Self, Iterable
 
@@ -205,6 +206,21 @@ def find_redeemer(kupo_match, spent_matches) -> Optional[ElectionAction]:
     LOG.debug(f'No matching redeemer for: {kupo_match}')
     return None
 
+
+def find_spend_redeemer(spending_txid: str, matches: dict) -> ElectionAction:
+    """Find the validator spend redeemer for a tx, ignoring mint redeemers."""
+    for m in matches.values():
+        spent = m.get("spent_at")
+        if spent and spent["transaction_id"] == spending_txid:
+            redeemer = spent["redeemer"]
+            if not redeemer.startswith("d90500"):  # skip minting purpose tag
+                decoded = decode_plutusdata_union(ElectionAction, redeemer)
+                return decoded
+    # TODO does this work?
+    # return None
+    return InitElection()
+
+
 def mk_example_callback(callback_name: str):
     def fn(event: ChannelEvent) -> None:
         print(f'\n{callback_name} called with:\n{pformat(event)}')
@@ -268,12 +284,14 @@ def _poll3_pairs_by_key(pairs: list[tuple]) -> dict:
             slot_no = input_match["spent_at"]["slot_no"]
         else:
             # mint: no input, key by output's created_at
+            # TODO anything special needed for burns here?
             ch_str = kupo_match_to_channel_str(output_match)
             slot_no = output_match["created_at"]["slot_no"]
         key = (slot_no, ch_str)
         pair = (input_match, output_match, redeemer)
         LOG.debug(f'poll3 pair by key: {key}: {pair}')
         pairs_by_key[key] = pair
+
     LOG.debug(f'poll3 pairs_by_key:\n{pformat(pairs_by_key)}')
     return pairs_by_key
 
@@ -553,7 +571,7 @@ class ElectionSubscriber:
         )
         self._log_thread.start()
 
-		# TODO if this becomes a problem, wait for /health -> 200 OK instead
+        # TODO if this becomes a problem, wait for /health -> 200 OK instead
         time.sleep(1) # prevents polling error during startup
         # self._wait_for_kupo_ready()
 
@@ -620,11 +638,13 @@ class ElectionSubscriber:
         LOG.debug(f'Watcher thread started for policy_id={self.config.policy_id}')
         while not self.kupo_stop.is_set():
             try:
-                self._poll()
-                try:
-                    self._poll3()
-                except Exception as e:
-                    LOG.error(f'poll3 error: {e}', exc_info=True)
+                # working_events = self._poll()
+                # try:
+                poll3_events = self._poll3()
+                    # events_diff = DeepDiff(working_events, poll3_events)
+                    # LOG.debug(f'events_diff:\n\n{events_diff}\n')
+                # except Exception as e:
+                    # LOG.error(f'poll3 error: {e}', exc_info=True)
             except requests.RequestException as e:
                 LOG.warning(f'Kupo polling error: {e}') # TODO error?
             except Exception as e:
@@ -922,10 +942,13 @@ class ElectionSubscriber:
         for m in r1.json() + r2.json():
             key = (m["transaction_id"], m["output_index"])
             matches[key] = m
+
+        LOG.debug(f'matches:\n{pformat(matches)}')
       
         if new_cursor == self.cursor3 and new_etag == self.etag:
-            LOG.debug(f"poll3 chain hasn't advanced, but no 304? Throwing away {len(matches)} matches.")
-            return []
+            # LOG.debug(f"poll3 chain hasn't advanced, but no 304? Throwing away {len(matches)} matches.")
+            # return []
+            LOG.debug(f"poll3 chain hasn't advanced, but no 304? Processing {len(matches)} matches anyway.")
         else:
             self.cursor3 = new_cursor
             self.etag = new_etag
@@ -933,9 +956,22 @@ class ElectionSubscriber:
 
         pairs = self._poll3_pair(matches)
         pairs_by_key = _poll3_pairs_by_key(pairs)
+
+        # TODO is this the best point to sort?
+        pairs_by_key = dict(sorted(pairs_by_key.items()))
         
         for event in self._poll3_channel_events(pairs_by_key):
             LOG.debug(f'poll3 event:\n{pformat(event)}')
+
+            # TODO less similar names?
+
+            # Internal callback does some per-action checks, updates history,
+            # and cleans up the event.
+            event_clean = self._on_action(event)
+
+            # Then the last step is to hand the cleaned up event to the
+            # external callback.
+            self.on_action(event_clean)
 
     def _poll3_pair(self, matches: dict) -> list[tuple]:
         def stt_asset(m):
@@ -948,39 +984,75 @@ class ElectionSubscriber:
             key = (m["transaction_id"], stt_asset(m))
             by_creating_tx[key] = m
 
-        spending_txids = {
+        # spending_txids = {
+            # m["spent_at"]["transaction_id"]
+            # for m in matches.values()
+            # if m["spent_at"]
+        # }
+
+        # build set of txids that are outputs OF a spend we know about
+        has_known_input = {
             m["spent_at"]["transaction_id"]
             for m in matches.values()
             if m["spent_at"]
         }
 
         events = []
+
         for m in matches.values():
-            if m["spent_at"] is None:
-                if m["transaction_id"] not in spending_txids:
-                    # orphan output = mint
-                    events.append((None, m, None))
-                continue
+            action = find_spend_redeemer(m['transaction_id'], matches)
+            if m["transaction_id"] not in has_known_input:
+                # this match has no known input = mint
+                if m["spent_at"] is None:
+                    events.append((None, m, action))  # unspent mint head (TODO it should tho?)
+                else:
+                    # spent mint — still emit as mint, paired with its output
+                    spending_txid = m["spent_at"]["transaction_id"]
+                    asset = stt_asset(m)
+                    output = by_creating_tx.get((spending_txid, asset))
+                    events.append((None, m, action))  # mint, no redeemer (TODO it should tho?)
+            else:
+                if m["spent_at"] is None:
+                    continue  # unspent continuation, not an event yet
+                spending_txid = m["spent_at"]["transaction_id"]
+                asset = stt_asset(m)
+                output = by_creating_tx.get((spending_txid, asset))
+                events.append((m, output, action))
 
-            spending_txid = m["spent_at"]["transaction_id"]
-            asset = stt_asset(m)
-            output = by_creating_tx.get((spending_txid, asset))
-            redeemer = m["spent_at"]["redeemer"]
-            events.append((m, output, redeemer))
+        # missing_inputs = [
+        #     m for m in matches.values()
+        #     if m['spent_at'] is not None
+        #     and not m in [e[1] for e in events]
+        # ]
+        # if missing_inputs:
+        #     LOG.error(f'missing_inputs:\n{pformat(missing_inputs)}')
 
-        events.sort(key=lambda e: (
-            e[0]["spent_at"]["slot_no"] if e[0] and e[0]["spent_at"]
-            else e[1]["created_at"]["slot_no"]
-        ))
+        # missing_outputs = [
+        #     m for m in matches.values()
+        #     if m['spent_at'] is None
+        #     and not m in [e[1] for e in events]
+        # ]
+        # if missing_outputs:
+        #     LOG.error(f'missing_outputs:\n{pformat(missing_outputs)}')
+
+        
+
+        # events.sort(key=lambda e: (
+        #     e[0]["spent_at"]["slot_no"] if e[0] and e[0]["spent_at"]
+        #     else e[1]["created_at"]["slot_no"]
+        # ))
         return events
 
     def _poll3_channel_events(self, pairs_by_key) -> Iterable[ChannelEvent]:
         # WARNING: these "pairs" are actually 3-tuples; will rename if works
         LOG.debug('_poll3_channel_events')
         # events = []
-        keys = sorted(pairs_by_key.keys())
-        
-        for key in keys:
+        # keys = sorted(pairs_by_key.keys())
+        # for key in keys:
+
+        # TODO no need to sort here right?
+        for key in sorted(pairs_by_key.keys()):
+
             LOG.debug(f'poll3 key: {key}')
 
             (slot_no, channel_str) = key
@@ -988,26 +1060,26 @@ class ElectionSubscriber:
             LOG.debug(f'poll3 channel_str: {channel_str}')
 
             pair = pairs_by_key[key]
-            (input_match, output_match, redeemer_hex) = pair
+            (input_match, output_match, action) = pair
             LOG.debug(f'poll3 input_match: {input_match}')
             LOG.debug(f'poll3 output_match: {output_match}')
-            
-            LOG.debug(f'poll3 redeemer_hex: {redeemer_hex}')
-            if redeemer_hex is None:
-                if input_match is None:
-                    # Probably InitElection! Double check...
-                    assert channel_str == channel_id_to_string(ADMIN_CHANNEL_ID)
-                    # TODO assert output seq is 0
-                    # TODO assert history is empty
-                    action = InitElection()
-                    LOG.debug(f'poll3 Special InitElection case: {pair}')
-                else:
-                    # TODO what would this be?
-                    action = None
-                    LOG.warning(f'poll3 Failed to find action: {pair}')
-            else:
-                action = decode_plutusdata_union(ElectionAction, redeemer_hex)
-                LOG.debug(f'poll3 action: {action}')
+            LOG.debug(f'poll3 action: {action}')
+
+#             if redeemer_hex is None:
+#                 if input_match is None:
+#                     # Probably InitElection! Double check...
+#                     assert channel_str == channel_id_to_string(ADMIN_CHANNEL_ID)
+#                     # TODO assert output seq is 0
+#                     # TODO assert history is empty
+#                     action = InitElection()
+#                     LOG.debug(f'poll3 Special InitElection case: {pair}')
+#                 else:
+#                     # TODO what would this be?
+#                     action = None
+#                     LOG.warning(f'poll3 Failed to find action: {pair}')
+#             else:
+#                 action = decode_plutusdata_union(ElectionAction, redeemer_hex)
+#                 LOG.debug(f'poll3 action: {action}')
 
             assert input_match is not None or output_match is not None, 'input and output matches cannot both be None'
 
@@ -1088,7 +1160,7 @@ class ElectionSubscriber:
     # remember this will be called once per channel touched
     def _on_rmsubchannels(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_rmsubchannels')
-        assert event.channel_id in self.history, f'tried to remove non-existent channel {ch_str}'
+        assert event.channel_id in self.history, f'tried to remove non-existent channel {event.channel_id}'
         if event.channel_id == ADMIN_CHANNEL_ID:
             self._on_cont(event)
         else:
@@ -1130,6 +1202,10 @@ class ElectionSubscriber:
         in_seq  = event.input_state.state.seq
         out_seq = event.output_state.state.seq
         assert in_seq + 1 == out_seq, f'state seq error: {in_seq} -> {out_seq} in {event}'
+
+        # TODO put back: assert event.channel_id in self.history, f'_on_cont but {event.channel_id} not in history'
+        if not event.channel_id in self.history:
+            self.history[event.channel_id] = []
 
         self.history[event.channel_id].append(event)
 
