@@ -1181,8 +1181,30 @@ class ElectionSubscriber:
 
         # Update internal state (branching on action type) and emit finished events.
         for event in events:
-            finished_event = self._on_action(event) # internal callback
-            self.on_action(finished_event)          # external callback
+            if not self._poll4_handle_same_but_now_spent(event):
+                finished_event = self._on_action(event) # internal callback
+                self.on_action(finished_event)          # external callback
+
+    def _poll4_handle_same_but_now_spent(self, event) -> bool:
+        i = event.channel_id
+        if i in self.history and len(self.history[i]) > 0:
+            prev_event = self.history[i][-1]
+            is_same_but_spent = _same_but_now_spent(prev_event, event)
+            if is_same_but_spent:
+                s = channel_id_to_string(i)
+                self.history[i][-1] = event
+                LOG.debug(f'Replaced last {s} event with a new spent version.')
+            return is_same_but_spent
+        else:
+            return False
+
+        is_same = _same_but_now_spent(old_event, new_event)
+        if new_event.output_match is None or new_event.output_match['spent_at'] is None:
+            return False
+        old_output_match_spent = copy(old_event.output_match)
+        old_output_match_spent['spent_at'] = copy(new_event.output_match['spent_at'])
+        old_event_spent = replace(old_event, output_match=old_output_match_spent)
+        return old_event_spent == new_event
 
     def _fetch_state(self, kupo_match: dict) -> ChannelState:
         LOG.debug('ElectionSubscriber._fetch_state')
