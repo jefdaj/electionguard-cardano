@@ -119,6 +119,7 @@ def channel_id_from_asset_name(encoded: str) -> ChannelId:
     LOG.debug(f'decoded {asset_name} -> {channel_id}')
     return channel_id
 
+
 # TODO remove in favor of getting channel_ids from states?
 # TODO where should this live?
 # def channel_id_from_output(output: UTxO) -> Optional[ChannelId]:
@@ -136,12 +137,14 @@ def is_port_in_use(port: int) -> bool:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         return s.connect_ex((KUPO_HOST, port)) == 0
 
+
 # TODO where should this live?
 def kupo_match_to_channel_str(kupo_match: dict) -> str:
     asset_hex = list(kupo_match['value']['assets'].keys())[0].split('.')[-1]
     asset_str = bytes.fromhex(asset_hex).decode()
     channel_str = asset_str.split('-')[2]
     return channel_str
+
 
 def kupo_match_to_pycardano_utxo(kupo_dict: dict) -> UTxO:
     """Convert a Kupo UTXO response dict to a PyCardano UTxO.
@@ -192,39 +195,25 @@ def kupo_match_to_pycardano_utxo(kupo_dict: dict) -> UTxO:
     return UTxO(tx_input, tx_output)
 
 
-def find_redeemer(kupo_match, spent_matches) -> Optional[ElectionAction]:
-    "Search spent_matches for a `spent_at` matching the current match."
-    tx_id = kupo_match.get('transaction_id')
-    for m in spent_matches:
-        spent = m.get('spent_at')
-        if spent['transaction_id'] == tx_id: # and spent['input_index'] == tx_ix:
-            LOG.debug(f'matching spent json: {spent}')
-            cbor = spent['redeemer']
-            redeemer = decode_plutusdata_union(ElectionAction, cbor)
-            LOG.debug(f'matching redeemer: {redeemer}')
-            return redeemer
-    LOG.debug(f'No matching redeemer for: {kupo_match}')
-    return None
-
-
-def find_spend_redeemer(spending_txid: str, matches: dict) -> ElectionAction:
+def find_spend_action(out_match: dict, in_matches: list[dict]) -> Optional[ElectionAction]:
     """Find the validator spend redeemer for a tx, ignoring mint redeemers."""
-    for m in matches.values():
+    # LOG.debug(f'out_match: {out_match}')
+    txid = out_match['transaction_id']
+    for m in in_matches:
         spent = m.get("spent_at")
-        if spent and spent["transaction_id"] == spending_txid:
+        if spent and spent["transaction_id"] == txid:
             redeemer = spent["redeemer"]
             if not redeemer.startswith("d90500"):  # skip minting purpose tag
-                decoded = decode_plutusdata_union(ElectionAction, redeemer)
+                decoded = decode_action(redeemer)
                 return decoded
-    # TODO does this work?
-    # return None
-    return InitElection()
+    return None
 
 
 def mk_example_callback(callback_name: str):
     def fn(event: ChannelEvent) -> None:
         print(f'\n{callback_name} called with:\n{pformat(event)}')
     return fn
+
 
 def input_output_pairs(spent, unspent):
 
@@ -266,6 +255,7 @@ def input_output_pairs(spent, unspent):
 
     return pairs_by_key
 
+
 def _same_but_now_spent(old_event, new_event) -> bool:
     if new_event.output_match is None or new_event.output_match['spent_at'] is None:
         return False
@@ -274,26 +264,10 @@ def _same_but_now_spent(old_event, new_event) -> bool:
     old_event_spent = replace(old_event, output_match=old_output_match_spent)
     return old_event_spent == new_event
 
-def _poll3_pairs_by_key(pairs: list[tuple]) -> dict:
-    """Transform _poll3_pair() output to (slot_no, channel_str) keyed dict."""
-    # TODO not really pairs; rename if using
-    pairs_by_key = {}
-    for (input_match, output_match, redeemer) in pairs:
-        if input_match is not None:
-            ch_str = kupo_match_to_channel_str(input_match)
-            slot_no = input_match["spent_at"]["slot_no"]
-        else:
-            # mint: no input, key by output's created_at
-            # TODO anything special needed for burns here?
-            ch_str = kupo_match_to_channel_str(output_match)
-            slot_no = output_match["created_at"]["slot_no"]
-        key = (slot_no, ch_str)
-        pair = (input_match, output_match, redeemer)
-        LOG.debug(f'poll3 pair by key: {key}: {pair}')
-        pairs_by_key[key] = pair
 
-    LOG.debug(f'poll3 pairs_by_key:\n{pformat(pairs_by_key)}')
-    return pairs_by_key
+# TODO where should this live?
+def decode_action(redeemer_str):
+    return decode_plutusdata_union(ElectionAction, redeemer_str)
 
 
 def make_session():
@@ -415,6 +389,7 @@ class ElectionSubscriber:
 
     def current_phase(self) -> Optional[ElectionPhase]:
         # Returns None if the election hasn't started yet
+        # TODO assert that this should be None to default to the InitElection redeemer
         try:
             event = self.channel_history(ADMIN_CHANNEL_ID)[-1]
             return event.output_state.state.phase
@@ -638,13 +613,17 @@ class ElectionSubscriber:
         LOG.debug(f'Watcher thread started for policy_id={self.config.policy_id}')
         while not self.kupo_stop.is_set():
             try:
+
                 # working_events = self._poll()
                 # try:
-                poll3_events = self._poll3()
+                # poll3_events = self._poll3()
                     # events_diff = DeepDiff(working_events, poll3_events)
                     # LOG.debug(f'events_diff:\n\n{events_diff}\n')
                 # except Exception as e:
                     # LOG.error(f'poll3 error: {e}', exc_info=True)
+
+                self._poll4()
+
             except requests.RequestException as e:
                 LOG.warning(f'Kupo polling error: {e}') # TODO error?
             except Exception as e:
@@ -657,337 +636,533 @@ class ElectionSubscriber:
 
     ## polling and http queries ##
 
-    def _remove_duplicate_matches(self, matches):
-        deduped = []
-        for match in matches:
-            if str(match) in self.seen_matches:
-                LOG.debug(f'remove duplicate match: {match}')
-            else:
-                self.seen_matches.add(str(match))
-                deduped.append(match)
-        return deduped
-
-    def _poll(self):
-        # Spent UTXOs are better in general because they have more info:
-        # - spent_at of course, which isn't really used so far
-        # - also the spending redeemer (to detect burns, to add to next event)
-
-        LOG.debug('ElectionSubscriber._poll')
-        params = {"order": "oldest_first"}
-
-        # TODO are there any edge cases where order matters here?
-        # First instinct: spent is safer to start with, because then we
-        # probably can't get one that was spent but not created yet?
-        LOG.debug(f'fetching with cursor {self.cursor}')
-        spent   = self._fetch_spent()
-        unspent = self._fetch_unspent()
-
-        if len(spent) == 0 and len(unspent) == 0:
-            return
-
-        (spent, unspent) = self._update_cursor_and_truncate(spent, unspent)
-
-        # TODO if this helps, debug the fetching
-        spent   = self._remove_duplicate_matches(spent)
-        unspent = self._remove_duplicate_matches(unspent)
-
-        all_spent = self._add_prev_spent(spent)
-        pairs_by_key = input_output_pairs(all_spent, unspent) # TODO make a method?
-
-        for event in self._channel_events(pairs_by_key, all_spent):
-
-            # TODO is there a cleaner way to do this?
-            i = event.channel_id
-            if i in self.history and len(self.history[i]) > 0:
-                prev_event = self.history[i][-1]
-                if _same_but_now_spent(prev_event, event):
-                    s = channel_id_to_string(i)
-                    self.history[i][-1] = event
-                    LOG.debug(f'Replaced last {s} event with a new spent version.')
-                    continue
-
-            # TODO less similar names?
-            self._on_action(event) # internal callback
-            self.on_action(event)  # external callback
-
-    def _add_prev_spent(self, new_spent):
-        LOG.debug('ElectionSubscriber._add_prev_spent')
-        # have to bring back prev spent matches here too,
-        # because the relevant ones may be in a prev batch
-        # TODO is that also important for the input_output_pairs?
-        # TODO should only the latest (current) state's old inputs be needed?
-        prev_events = [x for sub in self.history.values() for x in sub]
-        # prev_events = [self.history[i][-1] for i in self.current_channel_ids()]
-        # events = [c[-1] for c in self.history.values()]
-        # old_spent = [e.input_match for e in old_events if e.input_match is not None]
-        prev_spent = [e.input_match for e in prev_events if e.input_match is not None]
-        prev_spent = [m for m in prev_spent if not m in new_spent] # TODO are these guaranteed to be disjoint already?
-        LOG.debug(f'prev_spent: {prev_spent}')
-        return sorted(prev_spent + new_spent, key=lambda m: m['created_at']['slot_no']) # TODO no need to sort, right?
-
     def _kupo_api_url(self) -> str:
         LOG.debug('ElectionSubscriber._kupo_api_url')
         return f'http://{KUPO_HOST}:{self.kupo_port}/v1'
 
-    def _fetch_spent(self):
-        LOG.debug('ElectionSubscriber._fetch_spent')
-        params = {"order": "oldest_first"}
-        # if self.cursor is not None:
-        #     params["spent_after"] = self.cursor.as_param()
-        url = self._kupo_api_url() + "/matches?" + urlencode(params) + "&spent"
-        LOG.debug(f'fetch spent url: {url}')
-        r = self.session.get(url)
-        if r.status_code == 400:
-            # Cursor point no longer on chain — rollback past our cursor
-            # TODO retry first? seems to happen transiently sometimes?
-            self._handle_rollback()
-            return
-        r.raise_for_status()
-        matches = r.json()
-        # if self.cursor is not None:
-            # kupo returns matches inclusive? we don't want the duplicates
-        #     matches = [m for m in matches if m['spent_at']['slot_no'] > self.cursor.slot_no]
-        LOG.debug(f'spent matches: {json.dumps(matches, indent=2)}')
-        return matches
 
-    def _fetch_unspent(self):
-        LOG.debug('ElectionSubscriber._fetch_unspent')
-        params = {"order": "oldest_first"}
-        # if self.cursor is not None:
-        #     params["created_after"] = self.cursor.as_param()
-        url = self._kupo_api_url() + "/matches?" + urlencode(params) + "&unspent"
-        LOG.debug(f'fetch unspent url: {url}')
-        r = self.session.get(url)
-        if r.status_code == 400:
-            # Cursor point no longer on chain — rollback past our cursor
-            self._handle_rollback()
-            return
-        r.raise_for_status()
-        matches = r.json()
-        # if self.cursor is not None:
-            # kupo returns matches inclusive? we don't want the duplicates
-        #     matches = [m for m in matches if m['created_at']['slot_no'] > self.cursor.slot_no]
-        LOG.debug(f'unspent matches: {json.dumps(matches, indent=2)}')
-        return matches
+    ## polling attempt 1 + 2 ##
 
-    def _update_cursor_and_truncate(self, spent, unspent):
-        LOG.debug('ElectionSubscriber._update_cursor_and_truncate')
+#     def _remove_duplicate_matches(self, matches):
+#         deduped = []
+#         for match in matches:
+#             if str(match) in self.seen_matches:
+#                 LOG.debug(f'remove duplicate match: {match}')
+#             else:
+#                 self.seen_matches.add(str(match))
+#                 deduped.append(match)
+#         return deduped
+# 
+#     def _poll(self):
+#         # Spent UTXOs are better in general because they have more info:
+#         # - spent_at of course, which isn't really used so far
+#         # - also the spending redeemer (to detect burns, to add to next event)
+# 
+#         LOG.debug('ElectionSubscriber._poll')
+#         params = {"order": "oldest_first"}
+# 
+#         # TODO are there any edge cases where order matters here?
+#         # First instinct: spent is safer to start with, because then we
+#         # probably can't get one that was spent but not created yet?
+#         LOG.debug(f'fetching with cursor {self.cursor}')
+#         spent   = self._fetch_spent()
+#         unspent = self._fetch_unspent()
+# 
+#         if len(spent) == 0 and len(unspent) == 0:
+#             return
+# 
+#         (spent, unspent) = self._update_cursor_and_truncate(spent, unspent)
+# 
+#         # TODO if this helps, debug the fetching
+#         spent   = self._remove_duplicate_matches(spent)
+#         unspent = self._remove_duplicate_matches(unspent)
+# 
+#         all_spent = self._add_prev_spent(spent)
+#         pairs_by_key = input_output_pairs(all_spent, unspent) # TODO make a method?
+# 
+#         for event in self._channel_events(pairs_by_key, all_spent):
+# 
+#             # TODO is there a cleaner way to do this?
+#             i = event.channel_id
+#             if i in self.history and len(self.history[i]) > 0:
+#                 prev_event = self.history[i][-1]
+#                 if _same_but_now_spent(prev_event, event):
+#                     s = channel_id_to_string(i)
+#                     self.history[i][-1] = event
+#                     LOG.debug(f'Replaced last {s} event with a new spent version.')
+#                     continue
+# 
+#             # TODO less similar names?
+#             self._on_action(event) # internal callback
+#             self.on_action(event)  # external callback
+# 
+#     def _add_prev_spent(self, new_spent):
+#         LOG.debug('ElectionSubscriber._add_prev_spent')
+#         # have to bring back prev spent matches here too,
+#         # because the relevant ones may be in a prev batch
+#         # TODO is that also important for the input_output_pairs?
+#         # TODO should only the latest (current) state's old inputs be needed?
+#         prev_events = [x for sub in self.history.values() for x in sub]
+#         # prev_events = [self.history[i][-1] for i in self.current_channel_ids()]
+#         # events = [c[-1] for c in self.history.values()]
+#         # old_spent = [e.input_match for e in old_events if e.input_match is not None]
+#         prev_spent = [e.input_match for e in prev_events if e.input_match is not None]
+#         prev_spent = [m for m in prev_spent if not m in new_spent] # TODO are these guaranteed to be disjoint already?
+#         LOG.debug(f'prev_spent: {prev_spent}')
+#         return sorted(prev_spent + new_spent, key=lambda m: m['created_at']['slot_no']) # TODO no need to sort, right?
+#
+#     def _fetch_spent(self):
+#         LOG.debug('ElectionSubscriber._fetch_spent')
+#         params = {"order": "oldest_first"}
+#         # if self.cursor is not None:
+#         #     params["spent_after"] = self.cursor.as_param()
+#         url = self._kupo_api_url() + "/matches?" + urlencode(params) + "&spent"
+#         LOG.debug(f'fetch spent url: {url}')
+#         r = self.session.get(url)
+#         if r.status_code == 400:
+#             # Cursor point no longer on chain — rollback past our cursor
+#             # TODO retry first? seems to happen transiently sometimes?
+#             self._handle_rollback()
+#             return
+#         r.raise_for_status()
+#         matches = r.json()
+#         # if self.cursor is not None:
+#             # kupo returns matches inclusive? we don't want the duplicates
+#         #     matches = [m for m in matches if m['spent_at']['slot_no'] > self.cursor.slot_no]
+#         LOG.debug(f'spent matches: {json.dumps(matches, indent=2)}')
+#         return matches
+# 
+#     def _fetch_unspent(self):
+#         LOG.debug('ElectionSubscriber._fetch_unspent')
+#         params = {"order": "oldest_first"}
+#         # if self.cursor is not None:
+#         #     params["created_after"] = self.cursor.as_param()
+#         url = self._kupo_api_url() + "/matches?" + urlencode(params) + "&unspent"
+#         LOG.debug(f'fetch unspent url: {url}')
+#         r = self.session.get(url)
+#         if r.status_code == 400:
+#             # Cursor point no longer on chain — rollback past our cursor
+#             self._handle_rollback()
+#             return
+#         r.raise_for_status()
+#         matches = r.json()
+#         # if self.cursor is not None:
+#             # kupo returns matches inclusive? we don't want the duplicates
+#         #     matches = [m for m in matches if m['created_at']['slot_no'] > self.cursor.slot_no]
+#         LOG.debug(f'unspent matches: {json.dumps(matches, indent=2)}')
+#         return matches
+# 
+#     def _update_cursor_and_truncate(self, spent, unspent):
+#         LOG.debug('ElectionSubscriber._update_cursor_and_truncate')
+# 
+#         # get the latest point from each list
+#         last_spent   = None if not spent   else Point.from_kupo_resp(spent[-1]['spent_at'])
+#         last_unspent = None if not unspent else Point.from_kupo_resp(unspent[-1]['created_at'])
+#         LOG.debug(f'last_spent: {last_spent}')
+#         LOG.debug(f'last_unspent: {last_unspent}')
+# 
+#         # if they both have a last one, use the earlier
+#         # TODO is this necessary? not sure if they're guaranteed to be the same
+#         points = [p for p in (last_spent, last_unspent) if p is not None]
+#         earlier = min(points, key=lambda p: p.slot_no)
+#         LOG.debug(f'earlier: {earlier}')
+# 
+#         # cut off utxos after that from both lists (only one will have any),
+#         # so they can be processed next poll loop without duplicate events
+#         LOG.debug(f'lengths before truncation: spent={len(spent)}, unspent={len(unspent)}')
+#         spent   = [m for m in spent   if m['spent_at'  ]['slot_no'] <= earlier.slot_no]
+#         unspent = [m for m in unspent if m['created_at']['slot_no'] <= earlier.slot_no]
+#         LOG.debug(f'lengths after truncation: spent={len(spent)}, unspent={len(unspent)}')
+# 
+#         # update cursor to the earlier so that the cut-off values will be
+#         # fetched again next poll
+#         self.cursor = earlier
+#         LOG.debug(f'updated cursor to {earlier}')
+# 
+#         return (spent, unspent)
+# 
+#     def _fetch_datum(self, datum_hash: str) -> Any:
+#         LOG.debug('ElectionSubscriber._fetch_datum')
+#         # TODO adjust to port changes
+#         url = self._kupo_api_url() + f'/datums/{datum_hash}'
+#         LOG.debug(f'fetching datum {datum_hash}')
+#         resp = self.session.get(url, timeout=10)
+#         resp.raise_for_status()
+#         return resp.json()
+#
+# def find_redeemer(kupo_match, spent_matches) -> Optional[ElectionAction]:
+#     "Search spent_matches for a `spent_at` matching the current match."
+#     tx_id = kupo_match.get('transaction_id')
+#     for m in spent_matches:
+#         spent = m.get('spent_at')
+#         if spent['transaction_id'] == tx_id: # and spent['input_index'] == tx_ix:
+#             LOG.debug(f'matching spent json: {spent}')
+#             cbor = spent['redeemer']
+#             redeemer = decode_plutusdata_union(ElectionAction, cbor)
+#             LOG.debug(f'matching redeemer: {redeemer}')
+#             return redeemer
+#     LOG.debug(f'No matching redeemer for: {kupo_match}')
+#     return None
+#
+#     def _channel_events(self, pairs_by_key, spent) -> Iterable[ChannelEvent]:
+#         LOG.debug('channel_events')
+#         # events = []
+#         keys = sorted(pairs_by_key.keys())
+#         first_event = True
+#         for key in keys:
+#             LOG.debug(f'key: {key}')
+# 
+#             (slot_no, channel_str) = key
+#             LOG.debug(f'slot_no: {slot_no}')
+#             LOG.debug(f'channel_str: {channel_str}')
+# 
+#             (input_match, output_match) = pairs_by_key[key]
+#             LOG.debug(f'input_match: {input_match}')
+#             LOG.debug(f'output_match: {output_match}')
+# 
+#             assert input_match is not None or output_match is not None, 'input and output matches cannot both be None'
+# 
+#             # Get states (AKA datums)
+#             if input_match is not None:
+#                 input_datum = self._fetch_datum(input_match['datum_hash'])['datum']
+#                 input_state = decode_plutusdata_union(ChannelState, input_datum)
+#             else:
+#                 input_state = None
+#             if output_match is not None:
+#                 output_datum = self._fetch_datum(output_match['datum_hash'])['datum']
+#                 output_state = decode_plutusdata_union(ChannelState, output_datum)
+#             else:
+#                 output_state = None
+# 
+#             # Get action (AKA redeemer)
+#             if output_match is not None:
+#                 if input_match is None:
+#                     all_spent = spent
+#                 else:
+#                     all_spent = spent + [input_match]
+#                 action = find_redeemer(output_match, all_spent)
+#                 LOG.debug(f'action: {action}')
+#                 if action is None:
+#                     # Should only happen in the very first event, because the input
+#                     # (the one-shot UTXO) doesn't have an STT and so doesn't match the
+#                     # Kupo filter.
+#                     assert channel_str == 'admin'
+#                     assert input_state is None
+#                     assert isinstance(output_state.state, AdminChannelState)
+#                     assert output_state.state.seq == 0, f'output_state seq != 0: {output_state}'
+#                     action = InitElection()
+#                 assert action is not None
+#             else:
+#                 # TODO should this ever happen
+#                 # TODO and why is the string interpolation working weirdly
+#                 LOG.warning('no output_match, so no action can be found')
+#                 action = None
+# 
+#             event = ChannelEvent(
+#                 slot_no      = slot_no,
+#                 channel_id   = coerce_channel_id(channel_str),
+#                 action       = action,
+#                 input_match  = input_match,
+#                 output_match = output_match,
+#                 input_state  = input_state,
+#                 output_state = output_state,
+#             )
+#             LOG.debug(f'event:\n{pformat(event)}')
+# 
+#             if str(event) in self.prev_events:
+#                 LOG.warning(f'duplicate event: {event}') # TODO debug
+#             else:
+#                 self.prev_events.add(str(event))
+#                 yield event
+#                 # events.append(event)
+#         # return events
 
-        # get the latest point from each list
-        last_spent   = None if not spent   else Point.from_kupo_resp(spent[-1]['spent_at'])
-        last_unspent = None if not unspent else Point.from_kupo_resp(unspent[-1]['created_at'])
-        LOG.debug(f'last_spent: {last_spent}')
-        LOG.debug(f'last_unspent: {last_unspent}')
 
-        # if they both have a last one, use the earlier
-        # TODO is this necessary? not sure if they're guaranteed to be the same
-        points = [p for p in (last_spent, last_unspent) if p is not None]
-        earlier = min(points, key=lambda p: p.slot_no)
-        LOG.debug(f'earlier: {earlier}')
+    ## polling attempt 3 ##
 
-        # cut off utxos after that from both lists (only one will have any),
-        # so they can be processed next poll loop without duplicate events
-        LOG.debug(f'lengths before truncation: spent={len(spent)}, unspent={len(unspent)}')
-        spent   = [m for m in spent   if m['spent_at'  ]['slot_no'] <= earlier.slot_no]
-        unspent = [m for m in unspent if m['created_at']['slot_no'] <= earlier.slot_no]
-        LOG.debug(f'lengths after truncation: spent={len(spent)}, unspent={len(unspent)}')
+#    def _poll3_pairs_by_key(pairs: list[tuple]) -> dict:
+#     """Transform _poll3_pair() output to (slot_no, channel_str) keyed dict."""
+#     # TODO not really pairs; rename if using
+#     pairs_by_key = {}
+#     for (input_match, output_match, redeemer) in pairs:
+#         if input_match is not None:
+#             ch_str = kupo_match_to_channel_str(input_match)
+#             slot_no = input_match["spent_at"]["slot_no"]
+#         else:
+#             # mint: no input, key by output's created_at
+#             # TODO anything special needed for burns here?
+#             ch_str = kupo_match_to_channel_str(output_match)
+#             slot_no = output_match["created_at"]["slot_no"]
+#         key = (slot_no, ch_str)
+#         pair = (input_match, output_match, redeemer)
+#         LOG.debug(f'poll3 pair by key: {key}: {pair}')
+#         pairs_by_key[key] = pair
+# 
+#     LOG.debug(f'poll3 pairs_by_key:\n{pformat(pairs_by_key)}')
+#     return pairs_by_key
+#
+#     def _poll3(self) -> list[tuple]:
+#         base_params = {"order": "oldest_first"} #, "resolve_hashes": ""} TODO fix this to avoid 400
+#         
+#         # TODO merge cursor + etag into the same thing to be sure they change together
+#         headers = {"If-None-Match": f'"{self.etag}"'} if self.etag else {}
+# 
+#         r1_params = {} if self.cursor3 is None else {"created_after": self.cursor3}
+#         r2_params = {} if self.cursor3 is None else {"spent_after":   self.cursor3}
+#         
+#         # LOG.debug(f"poll3 sending etag={self.etag!r}, cursor={self.cursor!r}")
+#         
+#         # Q1: new outputs since cursor
+#         r1 = self.session.get(
+#             f"{self._kupo_api_url()}/matches",
+#             params={**base_params, **r1_params},
+#             headers=headers,
+#         )
+#         
+#         # LOG.debug(f"poll3 r1 status={r1.status_code}, cp={r1.headers.get('X-Most-Recent-Checkpoint')}, etag={r1.headers.get('ETag')!r}")
+# 
+#         if r1.status_code == 304:
+#             return []  # chain hasn't advanced
+# 
+#         if r1.status_code == 400:
+#             raise NotImplementedError("Rollback detected (created_after)")
+# 
+#         r1.raise_for_status()
+#         # LOG.debug(f'poll3 r1 headers {r1.headers}')
+# 
+#         # Q2: old inputs now spent since cursor
+#         r2 = self.session.get(
+#             f"{self._kupo_api_url()}/matches",
+#             params={**base_params, **r2_params},
+#             headers=headers, # TODO did claude forget this? or should it not be there?
+#         )
+# 
+#         if r2.status_code == 400:
+#             raise NotImplementedError("Rollback detected (spent_after)")
+# 
+#         r2.raise_for_status()
+#         # LOG.debug(f'poll3 r2 headers {r2.headers}')
+# 
+#         # Verify both queries see the same chain tip
+#         cp1 = r1.headers["X-Most-Recent-Checkpoint"]
+#         cp2 = r2.headers["X-Most-Recent-Checkpoint"]
+#         if cp1 != cp2:
+#             return []  # retry next tick
+# 
+#         # Advance cursor
+#         block_hash = r1.headers["ETag"].strip('"')
+#         new_cursor = f"{cp1}.{block_hash}"
+#         new_etag = r1.headers["ETag"].strip('"')
+# 
+#         # Merge by (txid, output_index), Q1 and Q2 may overlap
+#         matches = {}
+#         for m in r1.json() + r2.json():
+#             key = (m["transaction_id"], m["output_index"])
+#             matches[key] = m
+# 
+#         LOG.debug(f'matches:\n{pformat(matches)}')
+#       
+#         if new_cursor == self.cursor3 and new_etag == self.etag:
+#             LOG.debug(f"poll3 chain hasn't advanced, but no 304? Throwing away {len(matches)} matches.")
+#             return []
+#             # LOG.debug(f"poll3 chain hasn't advanced, but no 304? Processing {len(matches)} matches anyway.")
+#         else:
+#             self.cursor3 = new_cursor
+#             self.etag = new_etag
+#             LOG.debug(f'poll3 advance cursor, etag to {self.cursor3}, {self.etag}. Processing {len(matches)} matches.')
+# 
+#         # TODO replace _poll3_pair, _poll3_pairs_by_key, _poll3_channel_events with one fn?
+#         pairs = self._poll3_pair(matches)
+#         pairs_by_key = _poll3_pairs_by_key(pairs)
+# 
+#         # TODO is this the best point to sort?
+#         pairs_by_key = dict(sorted(pairs_by_key.items()))
+#         
+#         for event in self._poll3_channel_events(pairs_by_key):
+# 
+#             # TODO is there a cleaner way to do this?
+#             i = event.channel_id
+#             if i in self.history and len(self.history[i]) > 0:
+#                 prev_event = self.history[i][-1]
+#                 if _same_but_now_spent(prev_event, event):
+#                     s = channel_id_to_string(i)
+#                     self.history[i][-1] = event
+#                     LOG.debug(f'Replaced last {s} event with a new spent version.')
+#                     continue
+# 
+#             LOG.debug(f'poll3 event:\n{pformat(event)}')
+# 
+#             # TODO less similar names?
+# 
+#             # Internal callback does some per-action checks, updates history,
+#             # and cleans up the event.
+#             event_clean = self._on_action(event)
+# 
+#             # Then the last step is to hand the cleaned up event to the
+#             # external callback.
+#             self.on_action(event_clean)
+# 
+#     def _poll3_pair(self, matches: dict) -> list[tuple]:
+# 
+#         # TODO can you just do the entire dispatch thing in one function here??
+# 
+ 
+#         by_creating_tx = {}
+#         for m in matches.values():
+#             key = (m["transaction_id"], kupo_match_to_channel_str(m))
+#             by_creating_tx[key] = m
+#         LOG.debug(f'by_creating_tx:\n{pformat(by_creating_tx)}')
+# 
+#         # spending_txids = {
+#             # m["spent_at"]["transaction_id"]
+#             # for m in matches.values()
+#             # if m["spent_at"]
+#         # }
+# 
+#         # build set of txids that are outputs OF a spend we know about
+#         has_known_input = {
+#             m["spent_at"]["transaction_id"]
+#             for m in matches.values()
+#             if m["spent_at"]
+#         }
+#         LOG.debug(f'has_known_input:\n{pformat(has_known_input)}')
+# 
+#         events = []
+# 
+#         for m in matches.values():
+#             action = find_spend_action(m['transaction_id'], matches)
+# 
+#             if m["transaction_id"] not in has_known_input:
+#                 # this match has no known input = mint
+#                 if m["spent_at"] is None:
+#                     events.append((None, m, action))  # unspent mint head (TODO it should tho?)
+#                 else:
+#                     # spent mint — still emit as mint, paired with its output
+#                     spending_txid = m["spent_at"]["transaction_id"]
+#                     channel_str = kupo_match_to_channel_str(m)
+#                     output = by_creating_tx.get((spending_txid, channel_str))
+#                     events.append((None, m, action))  # mint, no redeemer (TODO it should tho?)
+#             else:
+#                 if m["spent_at"] is None:
+#                     continue  # unspent continuation, not an event yet
+#                 spending_txid = m["spent_at"]["transaction_id"]
+#                 channel_str = kupo_match_to_channel_str(m)
+#                 output = by_creating_tx.get((spending_txid, channel_str))
+#                 events.append((m, output, action))
+# 
+# 
+# # TODO totally wrong, right?
+# #                 # emit as mint
+# #                 events.append((None, m, action))
+# #                 # fall through — if it's also spent, emit the continuation too
+# # 
+# #             if m["spent_at"] is None:
+# #                 continue  # unspent head, no continuation yet
+# # 
+# #             spending_txid = m["spent_at"]["transaction_id"]
+# #             asset = stt_asset(m)
+# #             output = by_creating_tx.get((spending_txid, asset))
+# #             # action = find_spend_action(spending_txid, matches)
+# #             events.append((m, output, action))
+# 
+#         # missing_inputs = [
+#         #     m for m in matches.values()
+#         #     if m['spent_at'] is not None
+#         #     and not m in [e[1] for e in events]
+#         # ]
+#         # if missing_inputs:
+#         #     LOG.error(f'missing_inputs:\n{pformat(missing_inputs)}')
+# 
+#         # missing_outputs = [
+#         #     m for m in matches.values()
+#         #     if m['spent_at'] is None
+#         #     and not m in [e[1] for e in events]
+#         # ]
+#         # if missing_outputs:
+#         #     LOG.error(f'missing_outputs:\n{pformat(missing_outputs)}')
+# 
+#         
+# 
+#         # events.sort(key=lambda e: (
+#         #     e[0]["spent_at"]["slot_no"] if e[0] and e[0]["spent_at"]
+#         #     else e[1]["created_at"]["slot_no"]
+#         # ))
+#         return events
+# 
+#     def _poll3_channel_events(self, pairs_by_key) -> Iterable[ChannelEvent]:
+#         # WARNING: these "pairs" are actually 3-tuples; will rename if works
+#         LOG.debug('_poll3_channel_events')
+#         # events = []
+#         # keys = sorted(pairs_by_key.keys())
+#         # for key in keys:
+# 
+#         # TODO no need to sort here right?
+#         for key in sorted(pairs_by_key.keys()):
+# 
+#             LOG.debug(f'poll3 key: {key}')
+# 
+#             (slot_no, channel_str) = key
+#             LOG.debug(f'poll3 slot_no: {slot_no}')
+#             LOG.debug(f'poll3 channel_str: {channel_str}')
+# 
+#             pair = pairs_by_key[key]
+#             (input_match, output_match, action) = pair
+#             LOG.debug(f'poll3 input_match: {input_match}')
+#             LOG.debug(f'poll3 output_match: {output_match}')
+#             LOG.debug(f'poll3 action: {action}')
+# 
+# #             if redeemer_hex is None:
+# #                 if input_match is None:
+# #                     # Probably InitElection! Double check...
+# #                     assert channel_str == channel_id_to_string(ADMIN_CHANNEL_ID)
+# #                     # TODO assert output seq is 0
+# #                     # TODO assert history is empty
+# #                     action = InitElection()
+# #                     LOG.debug(f'poll3 Special InitElection case: {pair}')
+# #                 else:
+# #                     # TODO what would this be?
+# #                     action = None
+# #                     LOG.warning(f'poll3 Failed to find action: {pair}')
+# #             else:
+# #                 action = decode_plutusdata_union(ElectionAction, redeemer_hex)
+# #                 LOG.debug(f'poll3 action: {action}')
+# 
+#             assert input_match is not None or output_match is not None, 'input and output matches cannot both be None'
+# 
+#             # Get states (AKA datums)
+#             # TODO this can be made inline later, right? but save until 304 works
+#             if input_match is not None:
+#                 input_datum = self._fetch_datum(input_match['datum_hash'])['datum']
+#                 input_state = decode_plutusdata_union(ChannelState, input_datum)
+#             else:
+#                 input_state = None
+#             if output_match is not None:
+#                 output_datum = self._fetch_datum(output_match['datum_hash'])['datum']
+#                 output_state = decode_plutusdata_union(ChannelState, output_datum)
+#             else:
+#                 output_state = None
+# 
+#             event = ChannelEvent(
+#                 slot_no      = slot_no,
+#                 channel_id   = coerce_channel_id(channel_str),
+#                 action       = action,
+#                 input_match  = input_match,
+#                 output_match = output_match,
+#                 input_state  = input_state,
+#                 output_state = output_state,
+#             )
+# 
+#             if str(event) in self.poll3_prev_events:
+#                 LOG.warning(f'poll3 throwing away duplicate event: {event}') # TODO debug
+#             else:
+#                 self.poll3_prev_events.add(str(event))
+#                 yield event
+#                 # events.append(event)
+#         # return events
 
-        # update cursor to the earlier so that the cut-off values will be
-        # fetched again next poll
-        self.cursor = earlier
-        LOG.debug(f'updated cursor to {earlier}')
+    ## polling attempt 4 ##
 
-        return (spent, unspent)
-
-    def _fetch_datum(self, datum_hash: str) -> Any:
-        LOG.debug('ElectionSubscriber._fetch_datum')
-        # TODO adjust to port changes
-        url = self._kupo_api_url() + f'/datums/{datum_hash}'
-        LOG.debug(f'fetching datum {datum_hash}')
-        resp = self.session.get(url, timeout=10)
-        resp.raise_for_status()
-        return resp.json()
-
-    def _channel_events(self, pairs_by_key, spent) -> Iterable[ChannelEvent]:
-        LOG.debug('channel_events')
-        # events = []
-        keys = sorted(pairs_by_key.keys())
-        first_event = True
-        for key in keys:
-            LOG.debug(f'key: {key}')
-
-            (slot_no, channel_str) = key
-            LOG.debug(f'slot_no: {slot_no}')
-            LOG.debug(f'channel_str: {channel_str}')
-
-            (input_match, output_match) = pairs_by_key[key]
-            LOG.debug(f'input_match: {input_match}')
-            LOG.debug(f'output_match: {output_match}')
-
-            assert input_match is not None or output_match is not None, 'input and output matches cannot both be None'
-
-            # Get states (AKA datums)
-            if input_match is not None:
-                input_datum = self._fetch_datum(input_match['datum_hash'])['datum']
-                input_state = decode_plutusdata_union(ChannelState, input_datum)
-            else:
-                input_state = None
-            if output_match is not None:
-                output_datum = self._fetch_datum(output_match['datum_hash'])['datum']
-                output_state = decode_plutusdata_union(ChannelState, output_datum)
-            else:
-                output_state = None
-
-            # Get action (AKA redeemer)
-            if output_match is not None:
-                if input_match is None:
-                    all_spent = spent
-                else:
-                    all_spent = spent + [input_match]
-                action = find_redeemer(output_match, all_spent)
-                LOG.debug(f'action: {action}')
-                if action is None:
-                    # Should only happen in the very first event, because the input
-                    # (the one-shot UTXO) doesn't have an STT and so doesn't match the
-                    # Kupo filter.
-                    assert channel_str == 'admin'
-                    assert input_state is None
-                    assert isinstance(output_state.state, AdminChannelState)
-                    assert output_state.state.seq == 0, f'output_state seq != 0: {output_state}'
-                    action = InitElection()
-                assert action is not None
-            else:
-                # TODO should this ever happen
-                # TODO and why is the string interpolation working weirdly
-                LOG.warning('no output_match, so no action can be found')
-                action = None
-
-            event = ChannelEvent(
-                slot_no      = slot_no,
-                channel_id   = coerce_channel_id(channel_str),
-                action       = action,
-                input_match  = input_match,
-                output_match = output_match,
-                input_state  = input_state,
-                output_state = output_state,
-            )
-            LOG.debug(f'event:\n{pformat(event)}')
-
-            if str(event) in self.prev_events:
-                LOG.warning(f'duplicate event: {event}') # TODO debug
-            else:
-                self.prev_events.add(str(event))
-                yield event
-                # events.append(event)
-        # return events
-
-
-    ## experimental attempt3 stuff ##
-    
-    def _poll3(self) -> list[tuple]:
-        base_params = {"order": "oldest_first"} #, "resolve_hashes": ""} TODO fix this to avoid 400
-        
-        # TODO merge cursor + etag into the same thing to be sure they change together
-        headers = {"If-None-Match": f'"{self.etag}"'} if self.etag else {}
-
-        r1_params = {} if self.cursor3 is None else {"created_after": self.cursor3}
-        r2_params = {} if self.cursor3 is None else {"spent_after":   self.cursor3}
-        
-        # LOG.debug(f"poll3 sending etag={self.etag!r}, cursor={self.cursor!r}")
-        
-        # Q1: new outputs since cursor
-        r1 = self.session.get(
-            f"{self._kupo_api_url()}/matches",
-            params={**base_params, **r1_params},
-            headers=headers,
-        )
-        
-        # LOG.debug(f"poll3 r1 status={r1.status_code}, cp={r1.headers.get('X-Most-Recent-Checkpoint')}, etag={r1.headers.get('ETag')!r}")
-
-        if r1.status_code == 304:
-            return []  # chain hasn't advanced
-
-        if r1.status_code == 400:
-            raise NotImplementedError("Rollback detected (created_after)")
-
-        r1.raise_for_status()
-        # LOG.debug(f'poll3 r1 headers {r1.headers}')
-
-        # Q2: old inputs now spent since cursor
-        r2 = self.session.get(
-            f"{self._kupo_api_url()}/matches",
-            params={**base_params, **r2_params},
-            headers=headers, # TODO did claude forget this? or should it not be there?
-        )
-
-        if r2.status_code == 400:
-            raise NotImplementedError("Rollback detected (spent_after)")
-
-        r2.raise_for_status()
-        # LOG.debug(f'poll3 r2 headers {r2.headers}')
-
-        # Verify both queries see the same chain tip
-        cp1 = r1.headers["X-Most-Recent-Checkpoint"]
-        cp2 = r2.headers["X-Most-Recent-Checkpoint"]
-        if cp1 != cp2:
-            return []  # retry next tick
-
-        # Advance cursor
-        block_hash = r1.headers["ETag"].strip('"')
-        new_cursor = f"{cp1}.{block_hash}"
-        new_etag = r1.headers["ETag"].strip('"')
-
-        # Merge by (txid, output_index), Q1 and Q2 may overlap
-        matches = {}
-        for m in r1.json() + r2.json():
-            key = (m["transaction_id"], m["output_index"])
-            matches[key] = m
-
-        LOG.debug(f'matches:\n{pformat(matches)}')
-      
-        if new_cursor == self.cursor3 and new_etag == self.etag:
-            LOG.debug(f"poll3 chain hasn't advanced, but no 304? Throwing away {len(matches)} matches.")
-            return []
-            # LOG.debug(f"poll3 chain hasn't advanced, but no 304? Processing {len(matches)} matches anyway.")
-        else:
-            self.cursor3 = new_cursor
-            self.etag = new_etag
-            LOG.debug(f'poll3 advance cursor, etag to {self.cursor3}, {self.etag}. Processing {len(matches)} matches.')
-
-        # TODO replace _poll3_pair, _poll3_pairs_by_key, _poll3_channel_events with one fn?
-        pairs = self._poll3_pair(matches)
-        pairs_by_key = _poll3_pairs_by_key(pairs)
-
-        # TODO is this the best point to sort?
-        pairs_by_key = dict(sorted(pairs_by_key.items()))
-        
-        for event in self._poll3_channel_events(pairs_by_key):
-
-            # TODO is there a cleaner way to do this?
-            i = event.channel_id
-            if i in self.history and len(self.history[i]) > 0:
-                prev_event = self.history[i][-1]
-                if _same_but_now_spent(prev_event, event):
-                    s = channel_id_to_string(i)
-                    self.history[i][-1] = event
-                    LOG.debug(f'Replaced last {s} event with a new spent version.')
-                    continue
-
-            LOG.debug(f'poll3 event:\n{pformat(event)}')
-
-            # TODO less similar names?
-
-            # Internal callback does some per-action checks, updates history,
-            # and cleans up the event.
-            event_clean = self._on_action(event)
-
-            # Then the last step is to hand the cleaned up event to the
-            # external callback.
-            self.on_action(event_clean)
-
-    def _poll3_pair(self, matches: dict) -> list[tuple]:
-
-        # TODO can you just do the entire dispatch thing in one function here??
+    def _poll4(self):
 
         # cases v1:
         # 1. InitElection = first match in first batch, admin channel, output match only, no way to find redeemer
@@ -1014,161 +1189,155 @@ class ElectionSubscriber:
         # 2. try to get redeemers: from input, from other matches, default to initelection
         # 3. fetch datums, assemble events, dispatch
 
-        # TODO actually then, this fn is still helpful! choose based on (input, output, redeemer)
+        # 1. fetch matches, keyed by (slot_no, channel_str)
+        matches_by_sc = self._poll4_fetch_matches()
+
+        # 2. TODO assemble them into (input, output) pairs
+        io_pairs_by_sc = self._poll4_input_output_pairs(matches_by_sc)
+
+        # 3. find actions (aka redeemers)
+        # TODO test this once you have pairs
+        ioa_triples_by_sc = self._poll4_find_actions(io_pairs_by_sc)
+
+        # 4. dispatch and check all the details per action
         # TODO dispatch from general -> specific instead of how it is now: mint, burn, cont -> all of them
 
-        by_creating_tx = {}
-        for m in matches.values():
-            key = (m["transaction_id"], kupo_match_to_channel_str(m))
-            by_creating_tx[key] = m
-        LOG.debug(f'by_creating_tx:\n{pformat(by_creating_tx)}')
+        # TODO remove when ready
+        if len(matches_by_sc) > 0:
+            raise SystemExit
 
-        # spending_txids = {
-            # m["spent_at"]["transaction_id"]
-            # for m in matches.values()
-            # if m["spent_at"]
-        # }
+    def _poll4_input_output_pairs(self, matches_by_sc: dict) -> list[Tuple[Optional[dict], Optional[dict]]]:
 
-        # build set of txids that are outputs OF a spend we know about
-        has_known_input = {
-            m["spent_at"]["transaction_id"]
-            for m in matches.values()
-            if m["spent_at"]
-        }
-        LOG.debug(f'has_known_input:\n{pformat(has_known_input)}')
+        # Unless I'm missing something, this should be exactly one per event already.
+        io_pair_keys = sorted(list(matches_by_sc.keys()))
+        LOG.debug(f'io_pair_keys:\n{pformat(io_pair_keys)}')
 
-        events = []
-
-        for m in matches.values():
-            action = find_spend_redeemer(m['transaction_id'], matches)
-
-            if m["transaction_id"] not in has_known_input:
-                # this match has no known input = mint
-                if m["spent_at"] is None:
-                    events.append((None, m, action))  # unspent mint head (TODO it should tho?)
+        io_pairs_by_sc = {}
+        for key in io_pair_keys:
+            (slot_no, ch_str) = key
+            match = matches_by_sc[key]
+            if match['spent_at'] is None:
+                pair = (match, None)
+            else:
+                # there should be exactly one pair with this key as output
+                output = match
+                inputs = [
+                    m for ((s, c), m) in matches_by_sc.items()
+                    if c == ch_str
+                    and s < slot_no
+                    and m['spent_at'] is not None
+                    and m['spent_at']['transaction_id'] == output['transaction_id']
+                ]
+                if len(inputs) == 0:
+                    input_ = None
+                elif len(inputs) == 1:
+                    input_ = inputs[0]
                 else:
-                    # spent mint — still emit as mint, paired with its output
-                    spending_txid = m["spent_at"]["transaction_id"]
-                    channel_str = kupo_match_to_channel_str(m)
-                    output = by_creating_tx.get((spending_txid, channel_str))
-                    events.append((None, m, action))  # mint, no redeemer (TODO it should tho?)
+                    raise Exception(f'unexpected inputs key={key} output={output} len(inputs)={len(inputs)}')
+                pair = (input_, output)
+            io_pairs_by_sc[key] = pair
+
+        LOG.debug(f'io_pairs_by_sc:\n{pformat(io_pairs_by_sc)}')
+        return io_pairs_by_sc
+
+    def _poll4_find_actions(self, io_pairs_by_sc):
+        ioa_triples_by_sc = {}
+        prev_inputs = []
+        for (key, (in_match, out_match)) in io_pairs_by_sc.items():
+            if in_match is not None:
+                # has input = can find redeemer and match on that: continuation, sub burn, endelection
+                if in_match['spent_at'] is None:
+                    # TODO what to call this case?
+                    action = find_spend_action(in_match, prev_inputs)
+                else:
+                    # TODO is there a danger of mint redeemers when looking up directly too?
+                    action = decode_action(in_match['spent_at']['redeemer'])
             else:
-                if m["spent_at"] is None:
-                    continue  # unspent continuation, not an event yet
-                spending_txid = m["spent_at"]["transaction_id"]
-                channel_str = kupo_match_to_channel_str(m)
-                output = by_creating_tx.get((spending_txid, channel_str))
-                events.append((m, output, action))
+                assert out_match is not None, 'both in_match and out_match should not be None'
+                from_prev = find_spend_action(out_match, prev_inputs)
+                if from_prev is not None:
+                    # no input but can find redeemer in other matches = match on that to confirm: sub mint
+                    action = from_prev
+                else:
+                    # no input, can't find redeemer, very first match, admin channel = initelection
+                    action = InitElection() # TODO assertions here?
+            ioa_triple = (in_match, out_match, action)
+            ioa_triples_by_sc[key] = ioa_triple
+            # for looking up redeemers of later matches
+            if in_match is not None:
+                prev_inputs.append(in_match)
+            if out_match is not None:
+                prev_inputs.append(out_match)
+        LOG.debug(f'ioa_triples_by_sc:\n{pformat(ioa_triples_by_sc)}')
+        return ioa_triples_by_sc
 
-
-# TODO totally wrong, right?
-#                 # emit as mint
-#                 events.append((None, m, action))
-#                 # fall through — if it's also spent, emit the continuation too
-# 
-#             if m["spent_at"] is None:
-#                 continue  # unspent head, no continuation yet
-# 
-#             spending_txid = m["spent_at"]["transaction_id"]
-#             asset = stt_asset(m)
-#             output = by_creating_tx.get((spending_txid, asset))
-#             # action = find_spend_redeemer(spending_txid, matches)
-#             events.append((m, output, action))
-
-        # missing_inputs = [
-        #     m for m in matches.values()
-        #     if m['spent_at'] is not None
-        #     and not m in [e[1] for e in events]
-        # ]
-        # if missing_inputs:
-        #     LOG.error(f'missing_inputs:\n{pformat(missing_inputs)}')
-
-        # missing_outputs = [
-        #     m for m in matches.values()
-        #     if m['spent_at'] is None
-        #     and not m in [e[1] for e in events]
-        # ]
-        # if missing_outputs:
-        #     LOG.error(f'missing_outputs:\n{pformat(missing_outputs)}')
-
+    def _poll4_fetch_matches(self) -> list[dict]:
+        base_params = {"order": "oldest_first"} #, "resolve_hashes": ""} TODO fix this to avoid 400
         
+        # TODO merge cursor + etag into the same thing to be sure they change together
+        headers = {"If-None-Match": f'"{self.etag}"'} if self.etag else {}
 
-        # events.sort(key=lambda e: (
-        #     e[0]["spent_at"]["slot_no"] if e[0] and e[0]["spent_at"]
-        #     else e[1]["created_at"]["slot_no"]
-        # ))
-        return events
+        r1_params = {} if self.cursor3 is None else {"created_after": self.cursor3}
+        r2_params = {} if self.cursor3 is None else {"spent_after":   self.cursor3}
+        
+        # Q1: new outputs since cursor
+        r1 = self.session.get(
+            f"{self._kupo_api_url()}/matches",
+            params={**base_params, **r1_params},
+            headers=headers,
+        )
+        
+        if r1.status_code == 304:
+            return []  # chain hasn't advanced
 
-    def _poll3_channel_events(self, pairs_by_key) -> Iterable[ChannelEvent]:
-        # WARNING: these "pairs" are actually 3-tuples; will rename if works
-        LOG.debug('_poll3_channel_events')
-        # events = []
-        # keys = sorted(pairs_by_key.keys())
-        # for key in keys:
+        if r1.status_code == 400:
+            raise NotImplementedError("Rollback detected (created_after)")
 
-        # TODO no need to sort here right?
-        for key in sorted(pairs_by_key.keys()):
+        r1.raise_for_status()
+        LOG.debug(f'r1 headers {r1.headers}')
 
-            LOG.debug(f'poll3 key: {key}')
+        # Q2: old inputs now spent since cursor
+        r2 = self.session.get(
+            f"{self._kupo_api_url()}/matches",
+            params={**base_params, **r2_params},
+            headers=headers, # TODO did claude forget this? or should it not be there?
+        )
 
-            (slot_no, channel_str) = key
-            LOG.debug(f'poll3 slot_no: {slot_no}')
-            LOG.debug(f'poll3 channel_str: {channel_str}')
+        if r2.status_code == 400:
+            raise NotImplementedError("Rollback detected (spent_after)")
 
-            pair = pairs_by_key[key]
-            (input_match, output_match, action) = pair
-            LOG.debug(f'poll3 input_match: {input_match}')
-            LOG.debug(f'poll3 output_match: {output_match}')
-            LOG.debug(f'poll3 action: {action}')
+        r2.raise_for_status()
+        LOG.debug(f'r2 headers {r2.headers}')
 
-#             if redeemer_hex is None:
-#                 if input_match is None:
-#                     # Probably InitElection! Double check...
-#                     assert channel_str == channel_id_to_string(ADMIN_CHANNEL_ID)
-#                     # TODO assert output seq is 0
-#                     # TODO assert history is empty
-#                     action = InitElection()
-#                     LOG.debug(f'poll3 Special InitElection case: {pair}')
-#                 else:
-#                     # TODO what would this be?
-#                     action = None
-#                     LOG.warning(f'poll3 Failed to find action: {pair}')
-#             else:
-#                 action = decode_plutusdata_union(ElectionAction, redeemer_hex)
-#                 LOG.debug(f'poll3 action: {action}')
+        # Verify both queries see the same chain tip
+        cp1 = r1.headers["X-Most-Recent-Checkpoint"]
+        cp2 = r2.headers["X-Most-Recent-Checkpoint"]
+        if cp1 != cp2:
+            return [] # Retry next poll to avoid timing edge cases
 
-            assert input_match is not None or output_match is not None, 'input and output matches cannot both be None'
+        # Merge by (txid, output_index), Q1 and Q2 may overlap
+        # TODO key by slot here too/instead? or maybe by slot + channel_str?
+        matches = {}
+        for m in r1.json() + r2.json():
+            # key = (m["transaction_id"], m["output_index"])
+            key = (m['created_at']['slot_no'], kupo_match_to_channel_str(m))
+            matches[key] = m
+        LOG.debug(f'matches:\n{pformat(matches)}')
+      
+        # Advance cursor
+        block_hash = r1.headers["ETag"].strip('"')
+        new_cursor = f"{cp1}.{block_hash}"
+        new_etag = r1.headers["ETag"].strip('"')
+        if new_cursor == self.cursor3 and new_etag == self.etag:
+            # LOG.debug(f"chain hasn't advanced, but no 304? Throwing away {len(matches)} matches.")
+            # return []
+            LOG.debug(f"chain hasn't advanced, but no 304? Processing {len(matches)} matches.")
+        else:
+            self.cursor3 = new_cursor
+            self.etag = new_etag
+            LOG.debug(f'advance cursor, etag to {self.cursor3}, {self.etag}. Processing {len(matches)} matches.')
 
-            # Get states (AKA datums)
-            # TODO this can be made inline later, right? but save until 304 works
-            if input_match is not None:
-                input_datum = self._fetch_datum(input_match['datum_hash'])['datum']
-                input_state = decode_plutusdata_union(ChannelState, input_datum)
-            else:
-                input_state = None
-            if output_match is not None:
-                output_datum = self._fetch_datum(output_match['datum_hash'])['datum']
-                output_state = decode_plutusdata_union(ChannelState, output_datum)
-            else:
-                output_state = None
-
-            event = ChannelEvent(
-                slot_no      = slot_no,
-                channel_id   = coerce_channel_id(channel_str),
-                action       = action,
-                input_match  = input_match,
-                output_match = output_match,
-                input_state  = input_state,
-                output_state = output_state,
-            )
-
-            if str(event) in self.poll3_prev_events:
-                LOG.warning(f'poll3 throwing away duplicate event: {event}') # TODO debug
-            else:
-                self.poll3_prev_events.add(str(event))
-                yield event
-                # events.append(event)
-        # return events
+        return matches
 
 
     ## handle election actions ##
