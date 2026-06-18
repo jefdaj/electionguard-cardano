@@ -1163,31 +1163,6 @@ class ElectionSubscriber:
 
     def _poll4(self):
 
-        # cases v1:
-        # 1. InitElection = first match in first batch, admin channel, output match only, no way to find redeemer
-        # 2. subchannel mint = output match only (no input), but can find redeemer (prev admin utxo)
-        # 3. subchannel burn = input match only, but spent, and spending redeemer is a burn
-        # 4. endelection = basically the same as a subchannel burn?
-        # 5. continuation = input and output, get redeemer from input
-
-        # cases v2:
-        # 1. output with no input = initelection or subchannel mint
-        #    a. redeemer amongst other matches = subchannel mint
-        #    b. can't find redeemer = initelection
-        # 2. input with no output = endelection or subchannel burn
-        #       these will both be spent, so just check the redeemer
-        # 3. find input, output, redeemer in input = continuation
-
-        # cases v3:
-        # has input = can find redeemer and match on that: continuation, sub burn, endelection
-        # no input but can find redeemer in other matches = match on that to confirm: sub mint
-        # no input, can't find redeemer, very first match, admin channel = initelection
-
-        # cases v3 refined:
-        # 1. pair up inputs, outputs (keyed by slot, tx, channel_str?)
-        # 2. try to get redeemers: from input, from other matches, default to initelection
-        # 3. fetch datums, assemble events, dispatch
-
         # Fetch matches, keyed by (slot_no, channel_str).
         matches_by_sc = self._poll4_fetch_matches()
 
@@ -1250,12 +1225,15 @@ class ElectionSubscriber:
 
         created_tc_pairs = set(
             (m["transaction_id"], c)
-            for ((_, c), m) in matches_by_sc.items()
+            for ((s, c), m) in matches_by_sc.items()
+            if m['created_at']['slot_no'] == s
         )
         spent_tc_pairs = set(
             (m["spent_at"]["transaction_id"], c)
-            for ((_, c), m) in matches_by_sc.items()
+            for ((s, c), m) in matches_by_sc.items()
             if m["spent_at"]
+            and m['created_at']['slot_no'] == s
+            # and m['spent_at']['slot_no'] == s
         )
         mint_tc_pairs = created_tc_pairs - spent_tc_pairs # TODO useful for InitElection?
         burn_tc_pairs = spent_tc_pairs - created_tc_pairs
@@ -1269,37 +1247,86 @@ class ElectionSubscriber:
             (slot_no, ch_str) = key
             match = matches_by_sc[key]
             created_tc_pair = (match['transaction_id'], ch_str)
-            if created_tc_pair in mint_tc_pairs:
-                pair = (None, match)
-                LOG.debug(f'Output-only because created_tc_pair in mint_tc_pairs: {pair}')
-            elif match['spent_at'] is None:
-                # This match is unspent so far.
-                pair = (match, None)
-                LOG.debug(f'Input-only because not spent: {pair}')
-            else:
-                spent_tc_pair = (match['spent_at']['transaction_id'], ch_str)
-                if spent_tc_pair in burn_tc_pairs:
-                    # This match is spent, but the output has no STT (a burn).
-                    pair = (match, None)
-                    LOG.debug(f'Input-only because spent_tc_pair in burn_tc_pairs: {pair}')
+            LOG.debug(f'classifying match {key}')
+            is_output = match['created_at']['slot_no'] == slot_no
+            if is_output:
+                LOG.debug(f'match {key} is an output')
+                is_mint = created_tc_pair in mint_tc_pairs
+                if is_mint:
+                    LOG.debug(f'match {key} is a mint')
                 else:
-                    # there should be exactly one pair with this key as output
-                    output = match
-                    inputs = [
-                        m for ((s, c), m) in matches_by_sc.items()
-                        if c == ch_str
-                        and s < slot_no
-                        and m['spent_at'] is not None
-                        and m['spent_at']['transaction_id'] == output['transaction_id']
-                    ]
-                    if len(inputs) == 0:
-                        input_ = None
-                    elif len(inputs) == 1:
-                        input_ = inputs[0]
-                    else:
-                        raise Exception(f'unexpected inputs key={key} output={output} len(inputs)={len(inputs)}')
-                    pair = (input_, output)
-            io_pairs_by_sc[key] = pair
+                    LOG.debug(f'match {key} is not a mint; looking for input')
+            else:
+                LOG.debug(f'match {key} is an input')
+                spent_tc_pair = (match['spent_at']['transaction_id'], ch_str)
+                is_burn = spent_tc_pair in burn_tc_pairs
+                if is_burn:
+                    LOG.debug(f'match {key} is a burn')
+                else:
+                    LOG.debug(f'match {key} is not a burn; looking for output')
+
+        # cases v1:
+        # 1. InitElection = first match in first batch, admin channel, output match only, no way to find redeemer
+        # 2. subchannel mint = output match only (no input), but can find redeemer (prev admin utxo)
+        # 3. subchannel burn = input match only, but spent, and spending redeemer is a burn
+        # 4. endelection = basically the same as a subchannel burn?
+        # 5. continuation = input and output, get redeemer from input
+
+        # cases v2:
+        # 1. output with no input = initelection or subchannel mint
+        #    a. redeemer amongst other matches = subchannel mint
+        #    b. can't find redeemer = initelection
+        # 2. input with no output = endelection or subchannel burn
+        #       these will both be spent, so just check the redeemer
+        # 3. find input, output, redeemer in input = continuation
+
+        # cases v3:
+        # has input = can find redeemer and match on that: continuation, sub burn, endelection
+        # no input but can find redeemer in other matches = match on that to confirm: sub mint
+        # no input, can't find redeemer, very first match, admin channel = initelection
+
+        # cases v3 refined:
+        # 1. pair up inputs, outputs (keyed by slot, tx, channel_str?)
+        # 2. try to get redeemers: from input, from other matches, default to initelection
+        # 3. fetch datums, assemble events, dispatch
+
+#         io_pairs_by_sc = {}
+#         for key in io_pair_keys:
+#             (slot_no, ch_str) = key
+#             match = matches_by_sc[key]
+#             created_tc_pair = (match['transaction_id'], ch_str)
+#             if match['spent_at'] is None:
+#                 # This match is unspent so far.
+#                 pair = (match, None)
+#                 LOG.debug(f'Input-only because not spent: {pair}')
+#             elif created_tc_pair in mint_tc_pairs:
+#                 pair = (None, match)
+#                 LOG.debug(f'Output-only because created_tc_pair in mint_tc_pairs: {pair}')
+#             else:
+#                 spent_tc_pair = (match['spent_at']['transaction_id'], ch_str)
+#                 if spent_tc_pair in burn_tc_pairs:
+#                     # This match is spent, but the output has no STT (a burn).
+#                     pair = (match, None)
+#                     LOG.debug(f'Input-only because spent_tc_pair in burn_tc_pairs: {pair}')
+#                 else:
+#                     # there should be exactly one pair with this key as output
+#                     output = match
+#                     inputs = [
+#                         m for ((s, c), m) in matches_by_sc.items()
+#                         if c == ch_str
+#                         and s < slot_no
+#                         and m['spent_at']
+#                         and m['spent_at']['slot_no'] == slot_no
+#                         and m['spent_at']['transaction_id'] == output['transaction_id']
+#                     ]
+#                     if len(inputs) == 0:
+#                         input_ = None
+#                     elif len(inputs) == 1:
+#                         input_ = inputs[0]
+#                     else:
+#                         raise Exception(f'unexpected inputs key={key} output={output} len(inputs)={len(inputs)}')
+#                     pair = (input_, output)
+#             io_pairs_by_sc[key] = pair
 
         if io_pairs_by_sc:
             LOG.debug(f'io_pairs_by_sc:\n{pformat(io_pairs_by_sc)}')
