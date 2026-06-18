@@ -1181,10 +1181,11 @@ class ElectionSubscriber:
 
         # Assemble event objects, now with no need for keys.
         # These aren't quite ready to emit yet because they haven't been double checked.
-        events = self._poll4_assemble_events(ioa_triples_by_sc)
+        # events = self._poll4_assemble_events(ioa_triples_by_sc)
 
         # Update internal state (branching on action type) and emit finished events.
-        for event in events:
+        # for event in events:
+        for event in self._poll4_assemble_events(ioa_triples_by_sc):
             if self._poll4_handle_same_but_spent(event):
                 continue
             if self._poll4_discard_duplicate(event):
@@ -1227,9 +1228,8 @@ class ElectionSubscriber:
         LOG.debug(f'decoded {datum} -> {state}')
         return state
 
-    def _poll4_assemble_events(self, ioa_triples_by_sc: dict) -> list[ChannelEvent]:
-        # TODO yield these rather than returning a list?
-        events = []
+    def _poll4_assemble_events(self, ioa_triples_by_sc: dict) -> Iterable[ChannelEvent]:
+        # events = []
         for ((slot_no, ch_str), (input_match, output_match, action)) in ioa_triples_by_sc.items():
             input_state  = self._fetch_state( input_match) if  input_match else None
             output_state = self._fetch_state(output_match) if output_match else None
@@ -1242,10 +1242,12 @@ class ElectionSubscriber:
                 input_state  = input_state,
                 output_state = output_state,
             )
-            events.append(event)
-        if events:
-            LOG.debug(f'events:\n{pformat(events)}')
-        return events
+            LOG.debug(f'event:\n{pformat(event)}')
+            yield event
+            # events.append(event)
+        # if events:
+        #     LOG.debug(f'events:\n{pformat(events)}')
+        # return events
 
     def _poll4_find_output_for_input(self, in_sc_key, matches_by_sc) -> Optional[dict]:
         (in_s, in_c) = in_sc_key
@@ -1279,60 +1281,102 @@ class ElectionSubscriber:
 
     def _poll4_input_output_pairs(self, matches_by_sc: dict) -> list[Tuple[Optional[dict], Optional[dict]]]:
 
-        # This should be exactly one per event already.
         io_pair_keys = sorted(list(matches_by_sc.keys()))
         if io_pair_keys:
             LOG.debug(f'io_pair_keys:\n{pformat(io_pair_keys)}')
 
-        created_tc_pairs = set(
-            (m["transaction_id"], c)
-            for ((s, c), m) in matches_by_sc.items()
-            if m['created_at']['slot_no'] == s
-        )
-        spent_tc_pairs = set(
-            (m["spent_at"]["transaction_id"], c)
-            for ((s, c), m) in matches_by_sc.items()
-            if m["spent_at"]
-            and m['created_at']['slot_no'] == s
-            # and m['spent_at']['slot_no'] == s
-        )
-        mint_tc_pairs = created_tc_pairs - spent_tc_pairs # TODO useful for InitElection?
-        burn_tc_pairs = spent_tc_pairs - created_tc_pairs
-        if mint_tc_pairs:
-            LOG.debug(f'mint_tc_pairs: {mint_tc_pairs}')
-        if burn_tc_pairs:
-            LOG.debug(f'burn_tc_pairs: {burn_tc_pairs}')
-
-        io_pairs_by_sc = {}
+        # Remove the input key for continuations to prevent duplicates and false mints.
+        inputs_by_sc = {}
+        outputs_by_sc = {}
         for key in io_pair_keys:
             (slot_no, ch_str) = key
             match = matches_by_sc[key]
             created_tc_pair = (match['transaction_id'], ch_str)
             LOG.debug(f'classifying match {key}')
-            is_output = match['created_at']['slot_no'] == slot_no
-            if is_output:
-                output = match
-                LOG.debug(f'match {key} is an output')
-                is_mint = created_tc_pair in mint_tc_pairs
-                if is_mint:
-                    LOG.debug(f'match {key} is a mint')
-                    input_ = None
-                else:
-                    LOG.debug(f'match {key} is not a mint; looking for input')
-                    input_ = self._poll4_find_input_for_output(key, matches_by_sc)
+            # is_output = match['created_at']['slot_no'] == slot_no
+            is_input = match['spent_at'] and match['spent_at']['slot_no'] == slot_no
+            if is_input:
+                inputs_by_sc[key] = match
             else:
-                input_ = match
-                LOG.debug(f'match {key} is an input')
-                spent_tc_pair = (match['spent_at']['transaction_id'], ch_str)
-                is_burn = spent_tc_pair in burn_tc_pairs
-                if is_burn:
-                    LOG.debug(f'match {key} is a burn')
-                    output = None
-                else:
-                    LOG.debug(f'match {key} is not a burn; looking for output')
-                    output = self._poll4_find_output_for_input(key, matches_by_sc)
-            pair = (input_, output)
+                outputs_by_sc[key] = match
+
+        LOG.debug(f'inputs_by_sc:\n{pformat(inputs_by_sc)}')
+        LOG.debug(f'outputs_by_sc:\n{pformat(outputs_by_sc)}')
+
+        inputs_by_sc_deduped = {
+            (s,c) : m
+            for ((s,c), m) in inputs_by_sc.items()
+            if not (m['spent_at']['slot_no'], c) in outputs_by_sc.keys()
+        }
+        LOG.debug(f'inputs_by_sc_deduped:\n{pformat(inputs_by_sc_deduped)}')
+
+        io_pairs_by_sc = {}
+
+        for (key, in_match) in inputs_by_sc_deduped.items():
+            out_match = self._poll4_find_output_for_input(key, matches_by_sc)
+            pair = (in_match, out_match)
             io_pairs_by_sc[key] = pair
+
+        for (key, out_match) in outputs_by_sc.items():
+            in_match = self._poll4_find_input_for_output(key, matches_by_sc)
+            pair = (in_match, out_match)
+            io_pairs_by_sc[key] = pair
+
+        # Re sort to make sure events are processed in chain order.
+        io_pairs_by_sc = {
+            k : io_pairs_by_sc[k]
+            for k in sorted(io_pairs_by_sc.keys())
+        }
+
+#         created_tc_pairs = set(
+#             (m["transaction_id"], c)
+#             for ((s, c), m) in matches_by_sc.items()
+#             if m['created_at']['slot_no'] == s
+#         )
+#         spent_tc_pairs = set(
+#             (m["spent_at"]["transaction_id"], c)
+#             for ((s, c), m) in matches_by_sc.items()
+#             if m["spent_at"]
+#             and m['created_at']['slot_no'] == s
+#             # and m['spent_at']['slot_no'] == s
+#         )
+#         mint_tc_pairs = created_tc_pairs - spent_tc_pairs # TODO useful for InitElection?
+#         burn_tc_pairs = spent_tc_pairs - created_tc_pairs
+#         if mint_tc_pairs:
+#             LOG.debug(f'mint_tc_pairs: {mint_tc_pairs}')
+#         if burn_tc_pairs:
+#             LOG.debug(f'burn_tc_pairs: {burn_tc_pairs}')
+# 
+#         io_pairs_by_sc = {}
+#         for key in io_pair_keys:
+#             (slot_no, ch_str) = key
+#             match = matches_by_sc[key]
+#             created_tc_pair = (match['transaction_id'], ch_str)
+#             LOG.debug(f'classifying match {key}')
+#             is_output = match['created_at']['slot_no'] == slot_no
+#             if is_output:
+#                 output = match
+#                 LOG.debug(f'match {key} is an output')
+#                 is_mint = created_tc_pair in mint_tc_pairs
+#                 # if is_mint:
+#                 #     LOG.debug(f'match {key} is a mint')
+#                 #     input_ = None
+#                 # else:
+#                 LOG.debug(f'match {key} is not a mint; looking for input')
+#                 input_ = self._poll4_find_input_for_output(key, matches_by_sc)
+#             else:
+#                 input_ = match
+#                 LOG.debug(f'match {key} is an input')
+#                 spent_tc_pair = (match['spent_at']['transaction_id'], ch_str)
+#                 is_burn = spent_tc_pair in burn_tc_pairs
+#                 # if is_burn:
+#                 #     LOG.debug(f'match {key} is a burn')
+#                 #     output = None
+#                 # else:
+#                 LOG.debug(f'match {key} is not a burn; looking for output')
+#                 output = self._poll4_find_output_for_input(key, matches_by_sc)
+#             pair = (input_, output)
+#             io_pairs_by_sc[key] = pair
 
         if io_pairs_by_sc:
             LOG.debug(f'io_pairs_by_sc:\n{pformat(io_pairs_by_sc)}')
@@ -1462,6 +1506,8 @@ class ElectionSubscriber:
     ## handle election actions ##
 
     def _on_action(self, event: ChannelEvent):
+        LOG.debug('ElectionSubscriber._on_action')
+        LOG.debug(f'dispatching event:\n{pformat(event)}')
         match event.action:
             case InitElection():             return self._on_initelection(event)
             case AddSubChannels(channels):   return self._on_addsubchannels(event)
@@ -1508,7 +1554,7 @@ class ElectionSubscriber:
     # remember this will be called once per channel touched
     def _on_rmsubchannels(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_rmsubchannels')
-        assert event.channel_id in self.history, f'tried to remove non-existent channel {event.channel_id}'
+        # assert event.channel_id in self.history, f'tried to remove non-existent channel {event.channel_id}'
         if event.channel_id == ADMIN_CHANNEL_ID:
             self._on_cont(event)
         else:
@@ -1549,16 +1595,16 @@ class ElectionSubscriber:
         LOG.debug('ElectionSubscriber._on_cont')
         assert event.input_match  is not None, 'continuation without input_match'
         assert event.input_state  is not None, 'continuation without input_state'
-        # assert event.output_match is not None, 'continuation without output_match'
-        # assert event.output_state is not None, 'continuation without output_state'
+        assert event.output_match is not None, 'continuation without output_match'
+        assert event.output_state is not None, 'continuation without output_state'
 
-        # in_seq  = event.input_state.state.seq
-        # out_seq = event.output_state.state.seq
-        # assert in_seq + 1 == out_seq, f'state seq error: {in_seq} -> {out_seq} in {event}'
+        in_seq  = event.input_state.state.seq
+        out_seq = event.output_state.state.seq
+        assert in_seq + 1 == out_seq, f'state seq error: {in_seq} -> {out_seq} in {event}'
 
         # TODO put back: assert event.channel_id in self.history, f'_on_cont but {event.channel_id} not in history'
-        if not event.channel_id in self.history:
-            self.history[event.channel_id] = []
+        # if not event.channel_id in self.history:
+        #     self.history[event.channel_id] = []
 
         self.history[event.channel_id].append(event)
 
