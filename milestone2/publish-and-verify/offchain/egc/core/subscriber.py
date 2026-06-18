@@ -1009,7 +1009,13 @@ class ElectionSubscriber:
         # no input but can find redeemer in other matches = match on that to confirm: sub mint
         # no input, can't find redeemer, very first match, admin channel = initelection
 
+        # cases v3 refined:
+        # 1. pair up inputs, outputs (keyed by slot, tx, channel_str?)
+        # 2. try to get redeemers: from input, from other matches, default to initelection
+        # 3. fetch datums, assemble events, dispatch
+
         # TODO actually then, this fn is still helpful! choose based on (input, output, redeemer)
+        # TODO dispatch from general -> specific instead of how it is now: mint, burn, cont -> all of them
 
         by_creating_tx = {}
         for m in matches.values():
