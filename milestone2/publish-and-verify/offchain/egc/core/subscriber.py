@@ -558,7 +558,7 @@ class ElectionSubscriber:
             try:
                 r = self.session.get(f"{self._kupo_api_url()}/matches", params={}, timeout=5)
                 checkpoint = r.headers.get("X-Most-Recent-Checkpoint", "0")
-                etag = r.headers.get("ETag", "").strip('"')
+                etag = r.headers.get("ETag", "")# .strip('"')
                 if r.status_code == 200 and int(checkpoint) > 0 and etag:
                     return f"{checkpoint}.{etag}"
             except (KeyError, requests.RequestException):
@@ -1165,6 +1165,8 @@ class ElectionSubscriber:
 
         # Fetch matches, keyed by (slot_no, channel_str).
         matches_by_sc = self._poll4_fetch_matches()
+        if not matches_by_sc:
+            return
 
         # Assemble matches them into (input, output) pairs, still by (slot_no, channel_str).
         io_pairs_by_sc = self._poll4_input_output_pairs(matches_by_sc)
@@ -1343,7 +1345,7 @@ class ElectionSubscriber:
         base_params = {"order": "oldest_first"} #, "resolve_hashes": ""} TODO fix this to avoid 400
         
         # TODO merge cursor + etag into the same thing to be sure they change together
-        headers = {"If-None-Match": f'"{self.etag}"'} if self.etag else {}
+        headers = {"If-None-Match": f'{self.etag}'} if self.etag else {}
 
         r1_params = {} if self.cursor3 is None else {"created_after": self.cursor3}
         r2_params = {} if self.cursor3 is None else {"spent_after":   self.cursor3}
@@ -1356,7 +1358,8 @@ class ElectionSubscriber:
         )
         
         if r1.status_code == 304:
-            return []  # chain hasn't advanced
+            LOG.debug(f'Got 304 not modified, implying no new matches.')
+            return {}
 
         if r1.status_code == 400:
             raise NotImplementedError("Rollback detected (created_after)")
@@ -1381,7 +1384,8 @@ class ElectionSubscriber:
         cp1 = r1.headers["X-Most-Recent-Checkpoint"]
         cp2 = r2.headers["X-Most-Recent-Checkpoint"]
         if cp1 != cp2:
-            return [] # Retry next poll to avoid timing edge cases
+            LOG.debug(f'Got 2 different checkpoints: {cp1} vs {cp2}. Retry next poll to avoid edge cases.')
+            return {}
 
         # Merge by (txid, output_index), Q1 and Q2 may overlap
         matches = {}
@@ -1395,35 +1399,35 @@ class ElectionSubscriber:
                 spent_key = (m['spent_at']['slot_no'], ch_str)
                 matches[spent_key] = m
 
-        if matches:
-            LOG.debug(f'Processing {len(matches)} merged matches:\n{pformat(matches)}')
-
         if int(cp1) == 0:
             LOG.debug(f'No matches yet. Kupo still starting, or no InitElection yet.')
             assert len(matches) == 0, 'No matches expected before a checkpoint is set.'
-            return []
+            return {}
 
         # Advance cursor
         try:
-            block_hash = r1.headers["ETag"].strip('"')
+            block_hash = r1.headers["ETag"]# .strip('"')
             new_cursor = f"{cp1}.{block_hash}"
-            new_etag = r1.headers["ETag"].strip('"')
+            new_etag = r1.headers["ETag"]# .strip('"')
         except KeyError:
             # Kupo doesn't seem to provide ETag (or set a checkpoint?) until a match is found.
             # TODO what should we say/do here?
-            LOG.debug(f"chain hasn't advanced, but no 304? Processing {len(matches)} matches.")
+            LOG.debug(f"chain hasn't advanced, but no 304? Throwing away {len(matches)} matches.")
+            return {}
 
         if new_cursor == self.cursor3 and new_etag == self.etag:
-            # LOG.debug(f"chain hasn't advanced, but no 304? Throwing away {len(matches)} matches.")
-            # return []
+            LOG.debug(f"chain hasn't advanced, but no 304? Throwing away {len(matches)} matches.")
+            return {}
             # LOG.debug(f"chain hasn't advanced, but no 304? Processing {len(matches)} matches.")
-            pass
         else:
             self.cursor3 = new_cursor
             self.etag = new_etag
             LOG.debug(f'advance cursor, etag to {self.cursor3}, {self.etag}. Processing {len(matches)} matches.')
-
-        return matches
+            if matches:
+                LOG.debug(f'Processing {len(matches)} merged matches:\n{pformat(matches)}')
+            # TODO confirm here that no matches have slots < the old cursor
+            # TODO or better that they're all within the window
+            return matches
 
 
     ## handle election actions ##
