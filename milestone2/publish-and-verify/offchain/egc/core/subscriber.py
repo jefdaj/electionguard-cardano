@@ -257,11 +257,15 @@ def input_output_pairs(spent, unspent):
 
 
 def _same_but_now_spent(old_event, new_event) -> bool:
+    # TODO rewrite this using DeepDiff?
+    if old_event.output_match is not None:
+        return False
     if new_event.output_match is None or new_event.output_match['spent_at'] is None:
         return False
-    old_output_match_spent = copy(old_event.output_match)
-    old_output_match_spent['spent_at'] = copy(new_event.output_match['spent_at'])
-    old_event_spent = replace(old_event, output_match=old_output_match_spent)
+    old_event_spent = replace(
+        old_event,
+        output_match=copy(new_event.output_match['spent_at'])
+    )
     return old_event_spent == new_event
 
 
@@ -1181,11 +1185,14 @@ class ElectionSubscriber:
 
         # Update internal state (branching on action type) and emit finished events.
         for event in events:
-            if not self._poll4_handle_same_but_now_spent(event):
-                finished_event = self._on_action(event) # internal callback
-                self.on_action(finished_event)          # external callback
+            if self._poll4_handle_same_but_spent(event):
+                continue
+            if self._poll4_discard_duplicate(event):
+                continue
+            finished_event = self._on_action(event) # internal callback
+            self.on_action(finished_event)          # external callback
 
-    def _poll4_handle_same_but_now_spent(self, event) -> bool:
+    def _poll4_handle_same_but_spent(self, event) -> bool:
         i = event.channel_id
         if i in self.history and len(self.history[i]) > 0:
             prev_event = self.history[i][-1]
@@ -1198,13 +1205,13 @@ class ElectionSubscriber:
         else:
             return False
 
-        is_same = _same_but_now_spent(old_event, new_event)
-        if new_event.output_match is None or new_event.output_match['spent_at'] is None:
-            return False
-        old_output_match_spent = copy(old_event.output_match)
-        old_output_match_spent['spent_at'] = copy(new_event.output_match['spent_at'])
-        old_event_spent = replace(old_event, output_match=old_output_match_spent)
-        return old_event_spent == new_event
+    def _poll4_discard_duplicate(self, event) -> bool:
+        i = event.channel_id
+        if i in self.history:
+            if event in self.history[i]:
+                LOG.debug(f'Discard duplicate event: {event}')
+                return True
+        return False
 
     def _fetch_state(self, kupo_match: dict) -> ChannelState:
         LOG.debug('ElectionSubscriber._fetch_state')
