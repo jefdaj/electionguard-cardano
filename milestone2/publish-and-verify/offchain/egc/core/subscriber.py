@@ -610,12 +610,12 @@ class ElectionSubscriber:
     def _poll4(self):
 
         # Fetch matches, keyed by (slot_no, channel_str).
-        matches_by_sc = self._poll4_fetch_matches()
+        matches_by_sc = self._fetch_matches()
         if not matches_by_sc:
             return
 
         # Assemble matches them into (input, output) pairs, still by (slot_no, channel_str).
-        io_pairs_by_sc = self._poll4_input_output_pairs(matches_by_sc)
+        io_pairs_by_sc = self._pair_inputs_with_outputs(matches_by_sc)
 
         # Add actions (AKA redeemers), still keyed by (slot_no, channel_str).
         # TODO test whether this is just bad with BurnTestTokens, or if something needs fixing
@@ -759,7 +759,7 @@ class ElectionSubscriber:
             return None
 
 
-    def _poll4_input_output_pairs(self, matches_by_sc: dict) -> list[Tuple[Optional[dict], Optional[dict]]]:
+    def _pair_inputs_with_outputs(self, matches_by_sc: dict) -> list[Tuple[Optional[dict], Optional[dict]]]:
 
         io_pair_keys = sorted(list(matches_by_sc.keys()))
         if io_pair_keys:
@@ -770,8 +770,7 @@ class ElectionSubscriber:
         inputs_by_sc  = defaultdict(lambda: None)
         outputs_by_sc = defaultdict(lambda: None)
 
-        # The iteration here is optimized for ease of reading the logs...
-        # although it's still not that easy with all the gunk in a match!
+        # The iteration here is optimized for reading the logs, not efficiency.
         for key in io_pair_keys:
             LOG.debug(f'finding inputs and outputs of {key}')
             (slot_no, ch_str) = key
@@ -800,13 +799,6 @@ class ElectionSubscriber:
         io_pairs_by_sc = {
             k: (inputs_by_sc[k], outputs_by_sc[k])
             for k in io_pair_keys
-        }
-
-        # Re sort to make sure events are processed in chain order.
-        # TODO is this needed?
-        io_pairs_by_sc = {
-            k : io_pairs_by_sc[k]
-            for k in sorted(io_pairs_by_sc.keys())
         }
 
         if io_pairs_by_sc:
@@ -879,7 +871,7 @@ class ElectionSubscriber:
         return ioa_triples_by_sc
 
 
-    def _poll4_fetch_matches(self) -> list[dict]:
+    def _fetch_matches(self) -> list[dict]:
         base_params = {"order": "oldest_first"} # TODO resolve_hashes?
 
         start = self._get_checkpoint()
@@ -920,16 +912,16 @@ class ElectionSubscriber:
         LOG.debug(f'r2 headers {r2.headers}')
 
         # Verify both queries see the same chain tip
-        cp1 = int(r1.headers["X-Most-Recent-Checkpoint"])
-        cp2 = int(r2.headers["X-Most-Recent-Checkpoint"])
-        if cp1 != cp2:
-            LOG.debug(f'Got 2 different checkpoints: {cp1} vs {cp2}. Retry next poll to avoid edge cases.')
+        slot1 = int(r1.headers["X-Most-Recent-Checkpoint"])
+        slot2 = int(r2.headers["X-Most-Recent-Checkpoint"])
+        if slot1 != slot2:
+            LOG.debug(f'Got 2 different slots: {slot1} vs {slot2}. Retry next poll to avoid edge cases.')
             return {}
 
         n_matches = len(r1.json() + r2.json())
 
-        if cp1 == 0:
-            LOG.debug(f'No matches yet. Kupo still starting, or no InitElection yet.')
+        if slot1 == 0:
+            LOG.debug(f"No matches yet. Has the election started?")
             assert n_matches == 0, f'No matches expected before a checkpoint is set, but got {n_matches}'
             return {}
 
