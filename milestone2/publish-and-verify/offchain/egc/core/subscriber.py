@@ -356,7 +356,7 @@ class ElectionSubscriber:
         # but for some reason Kupo rejects it. None works fine.
         # self.cursor = Point.from_config(self.config)
         self.cursor = None
-        
+
         self.cursor3 = None
         self.etag = None
 
@@ -369,6 +369,13 @@ class ElectionSubscriber:
 
         # TODO does this help?
         self.poll4_unpaired_matches = []
+
+        # TODO and this?
+        # A list of slots + block hashes reported as indexed by Kupo. Used to
+        # limit our queries to the not-quite-tip of the chain in the hope
+        # that'll be more stable. Presumably helpful for handling rollbacks in
+        # the future too.
+        self.poll4_checkpoints: list[Point] = []
 
 
     ## query interface ##
@@ -1570,14 +1577,18 @@ class ElectionSubscriber:
 
     def _poll4_fetch_matches(self) -> list[dict]:
         base_params = {"order": "oldest_first"} #, "resolve_hashes": ""} TODO fix this to avoid 400
-        
-        # TODO merge cursor + etag into the same thing to be sure they change together
-        headers = {"If-None-Match": f'{self.etag}'} if self.etag else {}
 
-        r1_params = {} if self.cursor3 is None else {"created_after": self.cursor3}
-        r2_params = {} if self.cursor3 is None else {"spent_after":   self.cursor3}
+        # TODO tune this better
+        points = self.poll4_checkpoints
+        LOG.debug(f'points:\n{pformat(points)}')
+        back3 = points[-3] if len(points) > 3 else None
+
+        headers = {"If-None-Match": back3.header_hash} if back3 else {}
+
+        r1_params = {} if back3 is None else {"created_after": back3.as_param()}
+        r2_params = {} if back3 is None else {"spent_after":   back3.as_param()}
         
-        # Q1: new outputs since cursor
+        # Q1: new outputs since back3 checkpoint (or start point)
         r1 = self.session.get(
             f"{self._kupo_api_url()}/matches",
             params={**base_params, **r1_params},
@@ -1594,7 +1605,7 @@ class ElectionSubscriber:
         r1.raise_for_status()
         LOG.debug(f'r1 headers {r1.headers}')
 
-        # Q2: old inputs now spent since cursor
+        # Q2: old inputs now spent since 
         r2 = self.session.get(
             f"{self._kupo_api_url()}/matches",
             params={**base_params, **r2_params},
@@ -1608,31 +1619,29 @@ class ElectionSubscriber:
         LOG.debug(f'r2 headers {r2.headers}')
 
         # Verify both queries see the same chain tip
-        cp1 = r1.headers["X-Most-Recent-Checkpoint"]
-        cp2 = r2.headers["X-Most-Recent-Checkpoint"]
+        cp1 = int(r1.headers["X-Most-Recent-Checkpoint"])
+        cp2 = int(r2.headers["X-Most-Recent-Checkpoint"])
         if cp1 != cp2:
             LOG.debug(f'Got 2 different checkpoints: {cp1} vs {cp2}. Retry next poll to avoid edge cases.')
             return {}
 
         n_matches = len(r1.json() + r2.json())
 
-        if int(cp1) == 0:
+        if cp1 == 0:
             LOG.debug(f'No matches yet. Kupo still starting, or no InitElection yet.')
             assert n_matches == 0, f'No matches expected before a checkpoint is set, but got {n_matches}'
             return {}
 
-        # Advance cursor
         try:
-            block_hash = r1.headers["ETag"]# .strip('"')
-            new_cursor = f"{cp1}.{block_hash}"
-            new_etag = r1.headers["ETag"]# .strip('"')
+            tip = Point(cp1, r1.headers["ETag"])
         except KeyError:
             # Kupo doesn't seem to provide ETag (or set a checkpoint?) until a match is found.
             # TODO what should we say/do here?
             LOG.debug(f"chain hasn't advanced, but no 304? Throwing away {n_matches} matches.")
             return {}
 
-        if new_cursor == self.cursor3 and new_etag == self.etag:
+        # if new_cursor == self.cursor3 and new_etag == self.etag:
+        if len(points) > 0 and tip == points[-1]:
             LOG.debug(f"chain hasn't advanced, but no 304? Throwing away {n_matches} matches.")
             return {}
             # LOG.debug(f"chain hasn't advanced, but no 304? Processing {len(matches)} matches.")
@@ -1659,9 +1668,11 @@ class ElectionSubscriber:
 
         # TODO try without these to see if it fixes consistency problems...
         # TODO and if so, you really have a query protocol problem instead!
-        self.cursor3 = new_cursor
-        self.etag = new_etag
-        LOG.debug(f'advance cursor, etag to {self.cursor3}, {self.etag}. Processing {n_matches} matches.')
+        # self.cursor3 = new_cursor
+        # self.etag = new_etag
+        self.poll4_checkpoints.append(tip)
+        LOG.debug(f'Saved new tip {tip}')
+        # LOG.debug(f'advance cursor, etag to {self.cursor3}, {self.etag}. Processing {n_matches} matches.')
         if matches:
             LOG.debug(f'Processing {len(matches)} merged matches:\n{pformat(matches)}')
         # TODO confirm here that no matches have slots < the old cursor
