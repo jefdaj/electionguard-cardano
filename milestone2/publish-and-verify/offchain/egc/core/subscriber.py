@@ -1687,8 +1687,15 @@ class ElectionSubscriber:
             LOG.debug(f"Wait for Kupo to send slot + block hash.")
             return False
         if len(self.checkpoints) > 0 and tip == self.checkpoints[-1]:
+
+            # TODO which way is better?
+            # Processing these matches leads to many duplicate events but
+            # faster consistency.
             LOG.debug(f"Same checkpoint, no 304. Wait for new checkpoint.")
             return False
+            # LOG.debug(f"Same checkpoint, no 304. Process matches anyway.")
+            # return True
+
         self.checkpoints.append(tip)
         LOG.debug(f'Saved checkpoint {tip}')
         self.checkpoints = self.checkpoints[-KUPO_MAX_CHECKPOINTS:]
