@@ -370,11 +370,11 @@ class ElectionSubscriber:
         # TODO return copies from all public methods
         log_call()
         try:
-            event = self.channel_history(channel_id)[-1]
+            with self._history_lock:
+                event = self.channel_history(channel_id)[-1]
+                return deepcopy(event.output_state) # may also be None
         except KeyError:
             return None
-        s = event.output_state # may also be None
-        return s
 
 
     def current_phase(self) -> Optional[ElectionPhase]:
@@ -850,7 +850,7 @@ class ElectionSubscriber:
             matches_to_search += [input_match, output_match]
         for ch_id in self.current_channel_ids():
             with self._history_lock:
-                prev_events = self._history[ch_id]
+                prev_events = deepcopy(self._history[ch_id])
             for event in prev_events:
                 matches_to_search += [event.input_match, event.output_match]
         matches_to_search = [m for m in matches_to_search if m is not None]
@@ -1068,13 +1068,14 @@ class ElectionSubscriber:
         # LOG.debug(f'history during _on_initelection:\n{pformat(self._history)}')
         with self._history_lock:
             assert self._history == {}, 'InitElection with non-empty history'
-            if self.current_phase() is not None:
-                i = event.channel_id
+        if self.current_phase() is not None:
+            i = event.channel_id
+            with self._hsitory_lock:
                 prev = self._history[i][-1]
-                diff = DeepDiff(prev, event)
-                LOG.debug(f'diff:\n{pformat(diff)}')
-            assert self.current_phase() == None, 'InitElection should always happen first'
-            assert event.channel_id == ADMIN_CHANNEL_ID # note this tx was published by the funder
+            diff = DeepDiff(prev, event)
+            LOG.debug(f'diff:\n{pformat(diff)}')
+        assert self.current_phase() == None, 'InitElection should always happen first'
+        assert event.channel_id == ADMIN_CHANNEL_ID # note this tx was published by the funder
         self._on_mint(event)
         return event
 
@@ -1092,7 +1093,6 @@ class ElectionSubscriber:
     def _on_advancephase(self, event: ChannelEvent):
         log_call()
         assert event.channel_id == ADMIN_CHANNEL_ID, 'only admin can advance phase'
-        # TODO anything needed here?
         self._on_cont(event)
         return event
 
@@ -1107,7 +1107,7 @@ class ElectionSubscriber:
     def _on_rmsubchannels(self, event: ChannelEvent):
         log_call()
         # remember this will be called once per channel touched
-        # assert event.channel_id in self._history, f'tried to remove non-existent channel {event.channel_id}'
+        assert event.channel_id in self._history, f'tried to remove non-existent channel {event.channel_id}'
         if event.channel_id == ADMIN_CHANNEL_ID:
             self._on_cont(event)
         else:
