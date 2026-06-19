@@ -656,11 +656,14 @@ class ElectionSubscriber:
 
 
     def _is_duplicate_event(self, event) -> bool:
+        # TODO is kupo re-sending all matches every time we update the checkpoint??
         i = event.channel_id
         if i in self._history:
-            if event in self._history[i]:
-                LOG.debug(f'Discard duplicate event: {event}')
-                return True
+            ch_str = channel_id_to_string(i)
+            for (n, e) in enumerate(self._history[i]):
+                if e == event:
+                    LOG.debug(f'Ignore duplicate of {ch_str} event {n}.')
+                    return True
         return False
 
 
@@ -874,6 +877,7 @@ class ElectionSubscriber:
     def _fetch_matches(self) -> list[dict]:
         base_params = {"order": "oldest_first"} # TODO resolve_hashes?
 
+        # TODO is kupo re-sending all matches every time we update the checkpoint??
         start = self._get_checkpoint()
 
         headers = {"If-None-Match": start.header_hash} if start else {}
