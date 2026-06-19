@@ -501,7 +501,7 @@ class ElectionSubscriber:
 
         # Log Kupo output in a helper thread
         self._log_thread = threading.Thread(
-            target=self._log_kupo,
+            target=self._kupo_log,
             args=(),
             daemon=True,
         )
@@ -512,8 +512,8 @@ class ElectionSubscriber:
         time.sleep(1)
 
 
-    def _log_kupo(self) -> None:
-        LOG.debug('ElectionSubscriber._log_kupo')
+    def _kupo_log(self) -> None:
+        LOG.debug('ElectionSubscriber._kupo_log')
         proc = self._kupo_proc
         if proc.stdout is None:
             return
@@ -996,7 +996,7 @@ class ElectionSubscriber:
             #     self.current_state.pop(channel_id, None)
 
 
-    ## internal event/action handlers ##
+    ## handle events ##
 
 
     def _on_action(self, event: ChannelEvent):
