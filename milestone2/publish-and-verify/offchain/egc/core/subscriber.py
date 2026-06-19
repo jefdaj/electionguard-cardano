@@ -1296,11 +1296,11 @@ class ElectionSubscriber:
             LOG.debug(f'io_pair_keys:\n{pformat(io_pair_keys)}')
 
         # These are the TXIDs we're currently determining input or output relative to.
-        spending_st_set = set(
-            (s, m["spent_at"]["transaction_id"])
+        spending_txids_by_slot = {
+            s : m["spent_at"]["transaction_id"]
             for ((s, _), m) in matches_by_sc.items()
             if m["spent_at"]
-        )
+        }
 
         inputs_by_sct = {}
         outputs_by_sct = {}
@@ -1321,7 +1321,7 @@ class ElectionSubscriber:
 #                 sct = (tx_slot_no, ch_str, txid)
 #                 outputs_by_sct[sct] = m
 
-            for (spending_slot_no, spending_txid) in spending_st_set:
+            for (spending_slot_no, spending_txid) in spending_txids_by_slot.items():
                 if tx_slot_no != spending_slot_no:
                     continue
                 match_is_input = m['spent_at'] and \
