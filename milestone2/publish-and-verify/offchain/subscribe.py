@@ -55,16 +55,14 @@ def log_current():
         ch_state = sub.current_state(ch_id)
         LOG.info(f'current {ch_str} state: {ch_state}')
 
-while True:
+while not sub.is_done():
     log_current()
     try:
-        time.sleep(30)
-        if sub.is_done():
-            break
-    except:
+        time.sleep(1)
+    except KeyboardInterrupt:
+        sub.stop()
         break
 
-sub.stop()
 sub.join()
 
 LOG.info(f'final history:\n\n{pformat(sub.history)}\n')

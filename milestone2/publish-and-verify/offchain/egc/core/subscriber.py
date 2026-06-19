@@ -1268,14 +1268,14 @@ class ElectionSubscriber:
             # TODO does a special case for this help?
             if input_match is None and not is_being_minted(ch_str, action):
                 # LOG.debug(f'Dropping triple with missing input_match: {key} : {val}')
-                LOG.debug(f'Saving partial output_match for later: {output_match}')
+                LOG.debug(f'Saving unpaired output_match for later: {output_match}')
                 self.poll4_unpaired_matches.append(output_match)
                 continue
 
             # TODO does a special case for this help?
             if output_match is None and not is_being_burned(ch_str, action):
                 # LOG.debug(f'Dropping triple with missing output_match: {key} : {val}')
-                LOG.debug(f'Saving partial input_match for later: {input_match}')
+                LOG.debug(f'Saving unpaired input_match for later: {input_match}')
                 self.poll4_unpaired_matches.append(input_match)
                 continue
 
