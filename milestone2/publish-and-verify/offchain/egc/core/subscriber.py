@@ -587,7 +587,7 @@ class ElectionSubscriber:
                 # except Exception as e:
                     # LOG.error(f'poll3 error: {e}', exc_info=True)
 
-                self._poll4()
+                self._poll()
 
             except requests.RequestException as e:
                 LOG.warning(f'Kupo polling error: {e}') # TODO error?
@@ -602,12 +602,7 @@ class ElectionSubscriber:
     ## polling and http queries ##
 
 
-    def _kupo_api_url(self) -> str:
-        LOG.debug('ElectionSubscriber._kupo_api_url')
-        return f'http://{KUPO_HOST}:{self.kupo_port}/v1'
-
-
-    def _poll4(self):
+    def _poll(self):
 
         # Fetch matches, keyed by (slot_no, channel_str).
         matches_by_sc = self._fetch_matches()
@@ -618,22 +613,23 @@ class ElectionSubscriber:
         io_pairs_by_sc = self._pair_inputs_with_outputs(matches_by_sc)
 
         # Add actions (AKA redeemers), still keyed by (slot_no, channel_str).
-        # TODO test whether this is just bad with BurnTestTokens, or if something needs fixing
         ioa_triples_by_sc = self._fill_in_actions(io_pairs_by_sc)
 
         # Assemble event objects, now with no need for keys.
-        # These aren't quite ready to emit yet because they haven't been double checked.
-        # events = self._assemble_events(ioa_triples_by_sc)
-
-        # Update internal state (branching on action type) and emit finished events.
-        # for event in events:
         for event in self._assemble_events(ioa_triples_by_sc):
+
             if self._handle_same_but_spent(event):
                 continue
+
             if self._is_duplicate_event(event):
                 continue
-            finished_event = self._on_action(event) # internal callback
-            self.on_action(finished_event)          # external callback
+
+            # Update internal state and do some double checking + cleanup for
+            # particular action types.
+            event = self._on_action(event)
+
+            # Emit final events to clients
+            self.on_action(event)
 
 
     def _handle_same_but_spent(self, event) -> bool:
@@ -665,6 +661,11 @@ class ElectionSubscriber:
                     LOG.debug(f'Ignore duplicate of {ch_str} event {n}.')
                     return True
         return False
+
+
+    def _kupo_api_url(self) -> str:
+        LOG.debug('ElectionSubscriber._kupo_api_url')
+        return f'http://{KUPO_HOST}:{self.kupo_port}/v1'
 
 
     def _fetch_state(self, kupo_match: dict) -> ChannelState:
@@ -730,7 +731,7 @@ class ElectionSubscriber:
             yield event
 
 
-    def _poll4_find_output_for_input(self, in_sc_key, matches_by_sc) -> Optional[dict]:
+    def _find_output_for_input(self, in_sc_key, matches_by_sc) -> Optional[dict]:
         (in_s, in_c) = in_sc_key
         in_match = matches_by_sc[in_sc_key]
         outputs = [
@@ -746,7 +747,7 @@ class ElectionSubscriber:
             return None
 
 
-    def _poll4_find_input_for_output(self, out_sc_key: dict, matches_by_sc: dict) -> Optional[dict]:
+    def _find_input_for_output(self, out_sc_key: dict, matches_by_sc: dict) -> Optional[dict]:
         (out_s, out_c) = out_sc_key
         out_match = matches_by_sc[out_sc_key]
         inputs = [
