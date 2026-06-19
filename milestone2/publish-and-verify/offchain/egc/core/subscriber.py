@@ -640,8 +640,8 @@ class ElectionSubscriber:
 
     def _get_checkpoint(self) -> Optional[Point]:
         log_call()
-		# I used to have logic here for following 3 blocks back from the tip to
-		# reduce rollbacks, but it seems to break Kupo's caching. So for now we
+        # I used to have logic here for following 3 blocks back from the tip to
+        # reduce rollbacks, but it seems to break Kupo's caching. So for now we
         # just keep the default/latest available.
         n_points = len(self._checkpoints)
         LOG.debug(f'There are {n_points} saved checkpoints.')
@@ -686,6 +686,9 @@ class ElectionSubscriber:
 
         r1_params = {} if start is None else {"created_after": start.as_param()}
         r2_params = {} if start is None else {"spent_after":   start.as_param()}
+
+        if self._unpaired_matches:
+            LOG.debug(f'Have {len(self._unpaired_matches)} unpaired matches to re-inject with the next batch.')
 
         # Q1: new outputs since start checkpoint (or start point)
         r1 = self._session.get(
