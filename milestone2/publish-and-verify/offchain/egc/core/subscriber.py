@@ -197,7 +197,7 @@ def kupo_match_to_pycardano_utxo(kupo_dict: dict) -> UTxO:
 
 def find_spend_action(out_match: dict, matches: Iterable[dict]) -> Optional[ElectionAction]:
     """Find the validator spend redeemer for a tx, ignoring mint redeemers."""
-	# TODO make this more detailed so it's valid in general, not just when using identical redeemers
+    # TODO make this more detailed so it's valid in general, not just when using identical redeemers
     # LOG.debug(f'out_match: {out_match}')
     txid = out_match['transaction_id']
     for m in matches:
@@ -1196,15 +1196,23 @@ class ElectionSubscriber:
             self.on_action(finished_event)          # external callback
 
     def _poll4_handle_same_but_spent(self, event) -> bool:
+        # TODO is there a simpler way?
         i = event.channel_id
+        s = channel_id_to_string(i)
         if i in self.history and len(self.history[i]) > 0:
             prev_event = self.history[i][-1]
-            is_same_but_spent = _same_but_now_spent(prev_event, event)
-            if is_same_but_spent:
-                s = channel_id_to_string(i)
+
+            # The 1st type of "same but spent" is that we get them in order and should update.
+            if _same_but_now_spent(prev_event, event):
                 self.history[i][-1] = event
                 LOG.debug(f'Replaced last {s} event with a new spent version.')
-            return is_same_but_spent
+                return True
+
+             # The 2nd type is we get the spent one first, and should ignore.   
+            if _same_but_now_spent(event, prev_event):
+                LOG.debug(f'Ignored spent version of already-unspent {s} channel head.')
+                return True
+
         else:
             return False
 
@@ -1287,46 +1295,78 @@ class ElectionSubscriber:
         if io_pair_keys:
             LOG.debug(f'io_pair_keys:\n{pformat(io_pair_keys)}')
 
-        # Remove the input key for continuations to prevent duplicates and false mints.
-        inputs_by_sc = {}
-        outputs_by_sc = {}
+        # These are the TXIDs we're currently determining input or output relative to.
+        spending_st_set = set(
+            (s, m["spent_at"]["transaction_id"])
+            for ((s, _), m) in matches_by_sc.items()
+            if m["spent_at"]
+        )
+
+        inputs_by_sct = {}
+        outputs_by_sct = {}
         for key in io_pair_keys:
             (tx_slot_no, ch_str) = key
-            match = matches_by_sc[key]
-            created_tc_pair = (match['transaction_id'], ch_str)
+            m = matches_by_sc[key]
+            # created_tc_pair = (m['transaction_id'], ch_str)
             LOG.debug(f'classifying match {key}')
-            is_output = match['created_at']['slot_no'] == tx_slot_no
-            # is_input = match['spent_at'] and match['spent_at']['slot_no'] == tx_slot_no
-            if is_output:
-                outputs_by_sc[key] = match
-            else:
-                inputs_by_sc[key] = match
+            # is_output = m['created_at']['slot_no'] == tx_slot_no
 
-        LOG.debug(f'inputs_by_sc:\n{pformat(inputs_by_sc)}')
-        LOG.debug(f'outputs_by_sc:\n{pformat(outputs_by_sc)}')
+#             is_input = m['spent_at'] and m['spent_at']['slot_no'] == tx_slot_no
+#             if is_input:
+#                 txid = m['spent_at']['transaction_id']
+#                 sct = (tx_slot_no, ch_str, txid)
+#                 inputs_by_sct[sct] = m
+#             else:
+#                 txid = m['transaction_id']
+#                 sct = (tx_slot_no, ch_str, txid)
+#                 outputs_by_sct[sct] = m
+
+            for (spending_slot_no, spending_txid) in spending_st_set:
+                if tx_slot_no != spending_slot_no:
+                    continue
+                match_is_input = m['spent_at'] and \
+                                 m['spent_at']['slot_no'] == spending_slot_no and \
+                                 m['spent_at']['transaction_id'] == spending_txid
+                if match_is_input:
+                    LOG.debug(f'match {key} is an input to {spending_txid}')
+                    sct = (spending_slot_no, ch_str, spending_txid)
+                    inputs_by_sct[sct] = m
+                    continue
+
+                match_is_output = m['created_at']['slot_no'] == spending_slot_no and \
+                                  m['transaction_id'] == spending_txid
+                if match_is_output:
+                    LOG.debug(f'match {key} is an output of {spending_txid}')
+                    sct = (spending_slot_no, ch_str, spending_txid)
+                    outputs_by_sct[sct] = m
+
+        LOG.debug(f'inputs_by_sct:\n{pformat(inputs_by_sct)}')
+        LOG.debug(f'outputs_by_sct:\n{pformat(outputs_by_sct)}')
 
         # We only want to deal with inputs whose corresponding output isn't also in the match set.
         # These should be burns.
-        out_keys = outputs_by_sc.keys()
-        inputs_by_sc_deduped = {
-            (s,c) : m
-            for ((s,c), m) in inputs_by_sc.items()
-            if  not (m['spent_at'  ]['slot_no'], c) in out_keys
-            and not (m['created_at']['slot_no'], c) in out_keys
+        out_keys = outputs_by_sct.keys()
+        inputs_by_sct_deduped = {
+            (s,c,t) : m
+            for ((s,c,t), m) in inputs_by_sct.items()
+            if  not (m['spent_at'  ]['slot_no'], c, t) in out_keys
+            and not (m['created_at']['slot_no'], c, t) in out_keys
         }
-        LOG.debug(f'inputs_by_sc_deduped:\n{pformat(inputs_by_sc_deduped)}')
+        LOG.debug(f'inputs_by_sct_deduped:\n{pformat(inputs_by_sct_deduped)}')
 
         io_pairs_by_sc = {}
 
-        for (key, in_match) in inputs_by_sc_deduped.items():
-            out_match = self._poll4_find_output_for_input(key, matches_by_sc)
+        for ((s,c,t), in_match) in inputs_by_sct_deduped.items():
+            sc = (s,c)
+            out_match = self._poll4_find_output_for_input(sc, matches_by_sc)
             pair = (in_match, out_match)
-            io_pairs_by_sc[key] = pair
+            io_pairs_by_sc[sc] = pair
 
-        for (key, out_match) in outputs_by_sc.items():
-            in_match = self._poll4_find_input_for_output(key, matches_by_sc)
+        for ((s,c,t), out_match) in outputs_by_sct.items():
+            sc = (s,c)
+            in_match = self._poll4_find_input_for_output(sc, matches_by_sc)
             pair = (in_match, out_match)
-            io_pairs_by_sc[key] = pair
+            io_pairs_by_sc[sc] = pair
 
         # Re sort to make sure events are processed in chain order.
         io_pairs_by_sc = {
