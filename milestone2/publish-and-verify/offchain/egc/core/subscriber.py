@@ -317,6 +317,14 @@ def make_session():
     return s
 
 
+# TODO where should this live?
+def _random_delay():
+    # Wait a random amount of time 0-1 seconds.
+    # Quick and dirty hack to prevent all the nodes doing something at
+    # exactly the same time if you configure them in a conflicting way.
+    time.sleep(random.randint(1, 1000) / 1000)
+
+
 class ElectionSubscriber:
     '''Runs kupo and feeds matches to a callback.
     Note that since_slot and since_block_hash should be figured out *before* deploying the contract,
@@ -490,6 +498,7 @@ class ElectionSubscriber:
 
     ## process management ##
 
+
     def __del__(self):
         LOG.debug('ElectionSubscriber.__del__')
         # Just a proactive warning in case of future thread stopping related issues:
@@ -505,15 +514,15 @@ class ElectionSubscriber:
             except Exception:
                 pass
 
-    # TODO remove in favor of explicit config later (maybe election.json?)
+
     def _ensure_unused_port(self):
         LOG.debug('ElectionSubscriber._ensure_unused_port')
-        # prevent a list of nodes starting at exactly the same time
-        time.sleep(random.randint(1, 1000) / 100)
+        _random_delay()
         while is_port_in_use(self.kupo_port):
             LOG.debug(f'port {self.kupo_port} is in use')
             self.kupo_port += 1
         LOG.debug(f'will start kupo on port {self.kupo_port}')
+
 
     def _start_kupo(self) -> None:
         '''
@@ -526,39 +535,25 @@ class ElectionSubscriber:
             LOG.warning(f'Kupo already running (pid={self.kupo_proc.pid})')
             return
 
-        # os.makedirs(KUPO_WORKDIR, exist_ok=True)
         since_arg = f'{self.config.since_slot}.{self.config.since_block_hash}'
 
         cmd = [
-
             'kupo',
-
             '--ogmios-host', OGMIOS_HOST,
             '--ogmios-port', str(OGMIOS_PORT),
-
-            # at least for development, in memory should be fine
-            # '--workdir', KUPO_WORKDIR,
             '--in-memory',
-
             '--since', since_arg,
         ]
 
+        # Start at the default 1442 and increment until one isn't in use.
+        # TODO explicit port config and only use this as a fallback
         self._ensure_unused_port()
 
         cmd += [
-
             '--match', f'{self.config.policy_id}/*',
-
             '--host', KUPO_HOST,
             '--port', str(self.kupo_port),
-
             '--log-level', 'Warning'
-
-            # '--prune-utxo',
-
-            # TODO is any margin needed in this case?
-            # '--safety-margin', '100',
-
         ]
 
         LOG.debug(f'Starting Kupo: {' '.join(cmd)}')
@@ -579,26 +574,10 @@ class ElectionSubscriber:
         )
         self._log_thread.start()
 
+        # prevents polling error during startup
         # TODO if this becomes a problem, wait for /health -> 200 OK instead
-        time.sleep(1) # prevents polling error during startup
-        # self._wait_for_kupo_ready()
+        time.sleep(1)
 
-    def _wait_for_kupo_ready(self, timeout: float = 60.0, interval: float = 0.5) -> str:
-        """Block until Kupo has indexed past slot 0. Returns the initial cursor point."""
-        # TODO the right way probably involves /health instead
-        time.sleep(1) # give it a little time before even trying TODO less, like 0.1?
-        deadline = time.monotonic() + timeout
-        while time.monotonic() < deadline:
-            try:
-                r = self.session.get(f"{self._kupo_api_url()}/matches", params={}, timeout=5)
-                checkpoint = r.headers.get("X-Most-Recent-Checkpoint", "0")
-                etag = r.headers.get("ETag", "")# .strip('"')
-                if r.status_code == 200 and int(checkpoint) > 0 and etag:
-                    return f"{checkpoint}.{etag}"
-            except (KeyError, requests.RequestException):
-                pass  # kupo not up yet
-            time.sleep(interval)
-        raise TimeoutError(f"Kupo not ready after {timeout}s")
 
     def _log_kupo_output(self) -> None:
         LOG.debug('ElectionSubscriber._log_kupo_output')
@@ -612,12 +591,11 @@ class ElectionSubscriber:
             LOG.debug(f'Kupo output: {line}')
             if proc.poll() is not None:
                 break
-        # TODO why does this seem to happen immediately?
         LOG.debug('Kupo subprocess output thread terminating')
+
 
     def _stop_kupo(self) -> None:
         LOG.debug('ElectionSubscriber._stop_kupo')
-
         proc = self.kupo_proc
         if proc is None:
             return
