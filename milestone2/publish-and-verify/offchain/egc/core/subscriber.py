@@ -199,22 +199,6 @@ def kupo_match_to_pycardano_utxo(kupo_dict: dict) -> UTxO:
     return UTxO(tx_input, tx_output)
 
 
-# TODO where should this live?
-# TODO rewrite/refactor?
-def find_spend_action(out_match: dict, matches: Iterable[dict]) -> Optional[ElectionAction]:
-    """Find the validator spend redeemer for a tx, ignoring mint redeemers."""
-    # TODO make this more detailed so it's valid in general, not just when using identical redeemers
-    # LOG.debug(f'out_match: {out_match}')
-    txid = out_match['transaction_id']
-    for m in matches:
-        spent = m.get("spent_at")
-        if spent and spent["transaction_id"] == txid:
-            redeemer = spent["redeemer"]
-            if not redeemer.startswith("d90500"):  # skip minting purpose tag
-                decoded = decode_action(redeemer)
-                return decoded
-    return None
-
 
 # TODO where should this live?
 def is_being_minted(channel_str: str, action: ElectionAction) -> bool:
@@ -635,7 +619,7 @@ class ElectionSubscriber:
 
         # Add actions (AKA redeemers), still keyed by (slot_no, channel_str).
         # TODO test whether this is just bad with BurnTestTokens, or if something needs fixing
-        ioa_triples_by_sc = self._poll4_add_actions(io_pairs_by_sc)
+        ioa_triples_by_sc = self._fill_in_actions(io_pairs_by_sc)
 
         # Assemble event objects, now with no need for keys.
         # These aren't quite ready to emit yet because they haven't been double checked.
@@ -830,26 +814,36 @@ class ElectionSubscriber:
         return io_pairs_by_sc
 
 
-    def _poll4_matches_to_search(self, current_matches: list[dict]) -> list[dict]:
-        # TODO which of these are really necessary?
+    def _matches_to_search_for_actions(self, io_pairs_by_sc) -> list[dict]:
         # TODO search by txid + index, not just txid?
-        matches_to_search = current_matches
+        # TODO make this more detailed so it's valid in general, not just when using identical redeemers
+        matches_to_search = []
+        for (input_match, output_match) in io_pairs_by_sc.values():
+            matches_to_search += [input_match, output_match]
         for ch_id in self.current_channel_ids():
-            prev_events = self._history[ch_id]
+            prev_events = self._history[ch_id] # TODO only the head of each channel?
             for event in prev_events:
                 matches_to_search += [event.input_match, event.output_match]
         matches_to_search = [m for m in matches_to_search if m is not None]
         return matches_to_search
 
 
-    def _poll4_add_actions(self, io_pairs_by_sc):
+    def _find_action(self, out_match: dict, matches_to_search: list[dict]) -> Optional[ElectionAction]:
+        """Find the validator spend redeemer for a tx, ignoring mint redeemers."""
+        txid = out_match['transaction_id']
+        for m in matches_to_search:
+            spent = m.get("spent_at")
+            if spent and spent["transaction_id"] == txid:
+                redeemer = spent["redeemer"]
+                # TODO should this be part of decode_action?
+                if not redeemer.startswith("d90500"):  # skip minting purpose tag
+                    decoded = decode_action(redeemer)
+                    return decoded
+        return None
 
-        # TODO factor out
-        current_matches = []
-        for (i, o) in io_pairs_by_sc.values():
-            current_matches += [i, o]
-        matches_to_search = self._poll4_matches_to_search(current_matches)
 
+    def _fill_in_actions(self, io_pairs_by_sc):
+        matches_to_search = self._matches_to_search_for_actions(io_pairs_by_sc)
         ioa_triples_by_sc = {}
         for (key, (in_match, out_match)) in io_pairs_by_sc.items():
             if in_match is not None:
@@ -863,7 +857,7 @@ class ElectionSubscriber:
 
             else:
                 assert out_match is not None, 'both in_match and out_match should not be None'
-                from_prev = find_spend_action(out_match, matches_to_search) # TODO expand search? # TODO expand search?
+                from_prev = self._find_action(out_match, matches_to_search)
                 if from_prev is not None:
                     # no input but can find redeemer in other matches = match on that to confirm: sub mint
                     action = from_prev
