@@ -64,7 +64,6 @@ class SubscriberConfig:
             election.deployment.index_from_slot,
             election.deployment.index_from_block_hash,
             str(election.script.policy_id), # TODO use the pycardano object?
-            None,
         )
 
 
@@ -83,7 +82,7 @@ class Point:
 
     @classmethod
     def from_kupo_headers(cls, headers: dict):
-        slot = headers["X-Most-Recent-Checkpoint"]
+        slot = int(headers["X-Most-Recent-Checkpoint"])
         hhash = headers["ETag"]
         return cls(slot, hhash)
 
@@ -341,6 +340,12 @@ class ElectionSubscriber:
         ]
 
 
+    def complete_history(self):
+        log_call()
+        with self._history_lock:
+            return deepcopy(self._history)
+
+
     def channel_history(self, channel_id: ChannelId) -> list[ChannelEvent]:
         # Works fine on already-closed channels. Raises KeyError on not-yet-opened ones.
         # TODO return copies from all public methods
@@ -372,7 +377,7 @@ class ElectionSubscriber:
             with self._history_lock:
                 event = self.channel_history(channel_id)[-1]
                 return deepcopy(event.output_state) # may also be None
-        except KeyError:
+        except (KeyError, IndexError):
             return None
 
 
@@ -587,7 +592,13 @@ class ElectionSubscriber:
         LOG.debug(f'Watcher thread started for policy_id={self.config.policy_id}')
         while not self._kupo_stop.is_set():
             try:
-                self._poll()
+
+                # This is split into fetch and handle matches to make it easier to test rollbacks.
+                # (See test_subscriber.py for an example of that)
+                # TODO if not helpful, put back in one large _poll() call
+                matches_by_sc = self._fetch_matches_by_sc()
+                self._handle_matches(matches_by_sc)
+
                 self.sleep(KUPO_POLL_SEC)
             except requests.RequestException as e:
                 LOG.warning(f'Kupo polling error: {e}') # TODO error?
@@ -602,21 +613,19 @@ class ElectionSubscriber:
     ## main event polling algorithm ##
 
 
-    def _poll(self):
+    def _handle_matches(self, matches_by_sc):
         log_call()
 
-        # 1. Fetch matches, keyed by (slot_no, channel_str).
-        matches_by_sc = self._fetch_matches()
         if not matches_by_sc:
             return
 
-        # 2. Assemble matches them into (input, output) pairs, still by (slot_no, channel_str).
+        # 1. Assemble matches them into (input, output) pairs, still by (slot_no, channel_str).
         io_pairs_by_sc = self._pair_inputs_with_outputs(matches_by_sc)
 
-        # 3. Add actions (AKA redeemers), still keyed by (slot_no, channel_str).
+        # 2. Add actions (AKA redeemers), still keyed by (slot_no, channel_str).
         ioa_triples_by_sc = self._fill_in_actions(io_pairs_by_sc)
 
-        # 4. Assemble event objects, now with no need for keys.
+        # 3. Assemble event objects, now with no need for keys.
         for event in self._assemble_events(ioa_triples_by_sc):
 
             if self._handle_same_but_spent(event):
@@ -625,11 +634,11 @@ class ElectionSubscriber:
             if self._is_duplicate_event(event):
                 continue
 
-            # 5. Update internal state and do some double checking + cleanup for
+            # 4. Update internal state and do some double checking + cleanup for
             #    particular action types.
             event = self._on_action(event)
 
-            # Emit final events to clients
+            # 5. Emit final events to clients
             self._client_on_action(event)
 
 
@@ -675,7 +684,7 @@ class ElectionSubscriber:
         return True
 
 
-    def _fetch_matches(self) -> list[dict]:
+    def _fetch_matches_by_sc(self) -> list[dict]:
         log_call()
         base_params = {"order": "oldest_first"} # TODO resolve_hashes?
 
@@ -1024,25 +1033,36 @@ class ElectionSubscriber:
 
         # This is just the simplest probably-workable method for now.
         # For production use it should be cleaner and report a state diff to clients.
-        # There should probably be a custom exception class for this too.
+        # There should probably be a custom exception class too.
         # TODO write a test to call this manually and verify it works
 
         with self._history_lock:
 
-            # 1. pop the latest checkpoint
             lost = self._checkpoints.pop()
             prev = self._get_checkpoint()
             LOG.error(f'Rolling back {lost} -> {prev}')
 
-            # 2. pop channel events until before that slot
-            for (ch_id, ch_events) in self._history.items():
-                ch_str = channel_id_to_string(ch_id)
-                while ch_events and ch_events[-1].slot_no >= prev.slot_no:
-                    dropped = ch_events.pop()
-                    LOG.debug(f'Rolling back {ch_str} event: {dropped}')
+            if prev is None:
+                LOG.debug('No checkpoint to roll back to; dropping entire history.')
+                self._history = {}
 
-        # 3. retry fetch, which may call this function again if needed
-        return self._fetch_matches()
+            else:
+                LOG.debug(f'Dropping all events before slot {prev.slot_no}')
+                ch_ids = sorted(list(self._history.keys()))
+                for ch_id in keys:
+                    ch_str = channel_id_to_string(ch_id)
+                    ch_events = self._history[ch_id]
+                    while ch_events and ch_events[-1].slot_no >= prev.slot_no:
+                        dropped = ch_events.pop()
+                        LOG.debug(f'Rolling back {ch_str} event: {dropped}')
+                    if len(ch_events) == 0:
+                        del self._history[ch_id]
+
+            LOG.debug('Clearing unpaired matches')
+            self._unpaired_matches = []
+
+        # 4. retry fetch, which may call this function again if needed
+        return self._fetch_matches_by_sc()
 
 
     ## handle events ##

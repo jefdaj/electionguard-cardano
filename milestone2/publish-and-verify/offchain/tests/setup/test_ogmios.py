@@ -10,7 +10,7 @@ def test_ogmios_ready(ogmios: OgmiosV6ChainContext):
         raise RuntimeError(f"Ogmios not connected to node: {health}")
     if not isinstance(sync, (int, float)) or sync < 0.999:
         raise RuntimeError(f"Ogmios not synced (networkSynchronization={sync}): {health}")
-    assert health["network"] == "preview", "Cardano node running wrong network!" # TODO testnet?
+    assert health["network"] == "preview"
 
 @pytest.mark.testnet
 def test_query_network_tip(ogmios: OgmiosV6ChainContext):
