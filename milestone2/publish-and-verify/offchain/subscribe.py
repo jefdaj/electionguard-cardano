@@ -45,6 +45,7 @@ sub = ElectionSubscriber(
     sub_cfg,
     on_action=log_event,
 )
+
 sub.start()
 
 def log_current():
@@ -55,14 +56,14 @@ def log_current():
         states[ch_str] = ch_state
     LOG.info(f'current state:\n\n{pformat(states)}\n')
 
+# TODO this doesn't quite behave right: Ctrl-C quits without printing
 while not sub.is_done():
     try:
         log_current()
-        time.sleep(10)
+        sub.sleep(10)
     except KeyboardInterrupt:
         LOG.warning('Got keyboard interrupt')
         break
-
 LOG.info('Stopping...')
 sub.stop()
 sub.join()

@@ -378,6 +378,7 @@ class ElectionSubscriber:
 
     ## process managment interface ##
 
+
     def start(self) -> None:
         LOG.debug('ElectionSubscriber.start')
         self._kupo_stop.clear()
@@ -402,6 +403,7 @@ class ElectionSubscriber:
         )
         self._kupo_thread.start()
 
+
     def join(self):
         LOG.debug('ElectionSubscriber.join')
         # TODO how is this actually supposed to be done?
@@ -411,23 +413,27 @@ class ElectionSubscriber:
             n += 1
         LOG.debug(f'ElectionSubscriber stopped after {n} seconds')
 
-    def stop(self) -> None:
-        LOG.debug('ElectionSubscriber.stop')
-        self._kupo_stop()
+
+    def stop(self):
         self._kupo_stop.set()
-        if self._kupo_thread and self._kupo_thread.is_alive():
+        if self._kupo_proc:
+            self._kupo_proc.terminate()
+            self._kupo_proc.wait(timeout=5)  # confirm it's dead
+        if self._kupo_thread:
             LOG.debug('Waiting for watcher thread to exit...')
-            try:
-                self._kupo_thread.join(timeout=5)
-            except Exception as e:
-                if not 'cannot join current thread' in str(e):
-                    raise
+            self._kupo_thread.join(timeout=5)
         self._kupo_thread = None
+
 
     def is_done(self):
         LOG.debug('ElectionSubscriber.is_done')
         return self._kupo_stop.is_set() \
            and self._kupo_thread is None
+
+
+    def sleep(self, seconds):
+        # This is kind of like time.sleep, except it short circuits properly during shutdown.
+        self._kupo_stop.wait(timeout=seconds)
 
 
     ## process management ##
@@ -510,7 +516,7 @@ class ElectionSubscriber:
 
         # prevents polling error during startup
         # TODO if this becomes a problem, wait for /health -> 200 OK instead
-        time.sleep(1)
+        self.sleep(1)
 
 
     def _kupo_log(self) -> None:
@@ -560,13 +566,14 @@ class ElectionSubscriber:
         while not self._kupo_stop.is_set():
             try:
                 self._poll()
+                self.sleep(KUPO_POLL_SEC)
             except requests.RequestException as e:
                 LOG.warning(f'Kupo polling error: {e}') # TODO error?
+            except KeyboardInterrupt:
+                raise
             except Exception as e:
                 LOG.error(f'Unexpected error in watcher: {e} {type(e)}', exc_info=True)
                 raise
-            finally:
-                time.sleep(KUPO_POLL_SEC)
         LOG.debug('Watcher thread exiting')
 
 
