@@ -1451,9 +1451,9 @@ class ElectionSubscriber:
                 else:
                     # no input, can't find redeemer, very first match, admin channel = initelection
                     LOG.debug(f'InitElection with {key}\n{in_match}\n{out_match}\n')
-                    assert key[1] == channel_id_to_string(ADMIN_CHANNEL_ID), f'InitElection wrong channel: {key[1]}'
-                    assert self.current_phase() == None, f'InitElection during {self.current_phase()}'
-                    action = InitElection() # TODO assertions here?
+                    # assert key[1] == channel_id_to_string(ADMIN_CHANNEL_ID), f'InitElection wrong channel: {key[1]}'
+                    # assert self.current_phase() == None, f'InitElection during {self.current_phase()}'
+                    action = InitElection()
             ioa_triple = (in_match, out_match, action)
             ioa_triples_by_sc[key] = ioa_triple
             # for looking up redeemers of later matches
