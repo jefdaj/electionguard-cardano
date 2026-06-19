@@ -211,6 +211,15 @@ def find_spend_action(out_match: dict, matches: Iterable[dict]) -> Optional[Elec
     return None
 
 
+def is_being_burned(channel_str: str, action: ElectionAction) -> bool:
+    ch_id = coerce_channel_id(channel_str)
+    match action:
+        case BurnTestTokens():           return True
+        case RmSubChannels(channels=cs): return ch_id in cs
+        case EndElection():              return ch_id == ADMIN_CHANNEL_ID
+        case _:                          return False
+
+
 def mk_example_callback(callback_name: str):
     def fn(event: ChannelEvent) -> None:
         print(f'\n{callback_name} called with:\n{pformat(event)}')
@@ -1241,9 +1250,18 @@ class ElectionSubscriber:
 
     def _poll4_assemble_events(self, ioa_triples_by_sc: dict) -> Iterable[ChannelEvent]:
         # events = []
-        for ((slot_no, ch_str), (input_match, output_match, action)) in ioa_triples_by_sc.items():
+        for (key, val) in ioa_triples_by_sc.items():
+            (slot_no, ch_str) = key
+            (input_match, output_match, action) = val
+
+            # TODO does a special case for this help?
+            if output_match is None and not is_being_burned(ch_str, action):
+                LOG.debug(f'Dropping triple with missing output_match: {key} : {val}')
+                continue
+
             input_state  = self._fetch_state( input_match) if  input_match else None
             output_state = self._fetch_state(output_match) if output_match else None
+
             event = ChannelEvent(
                 slot_no      = slot_no,
                 channel_id   = coerce_channel_id(ch_str),

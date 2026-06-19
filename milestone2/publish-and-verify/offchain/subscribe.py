@@ -61,8 +61,10 @@ while True:
         time.sleep(30)
         if sub.is_done():
             break
-    except KeyboardInterrupt:
+    except:
         break
 
 sub.stop()
 sub.join()
+
+LOG.info(f'final history:\n\n{pformat(sub.history)}\n')
