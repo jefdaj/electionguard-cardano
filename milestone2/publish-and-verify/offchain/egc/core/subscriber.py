@@ -1142,6 +1142,8 @@ class ElectionSubscriber:
         with self._history_lock:
             assert not event.channel_id in self._history, f"tried to mint existing channel!\n{event}\n{self._history}"
             self._history[event.channel_id] = [event]
+        out_seq = event.output_state.state.seq
+        assert out_seq == 0, f'mint with non-0 seq {event}'
 
 
     def _on_burn(self, event: ChannelEvent):
