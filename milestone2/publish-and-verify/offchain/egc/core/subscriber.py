@@ -56,9 +56,6 @@ class SubscriberConfig:
     since_block_hash: str # For kupo --since
     policy_id:        str # For kupo --match
 
-    # TODO remove?
-    until_slot: Optional[int] = None # For kupo --until, to prevent open-ended scans during tests
-
     @classmethod
     def from_election(cls, election: ElectionContext) -> Self:
         return cls(
@@ -324,7 +321,6 @@ class ElectionSubscriber:
     '''Runs kupo and feeds matches to a callback.
     Note that since_slot and since_block_hash should be figured out *before* deploying the contract,
     to be sure the indexed range will include the first transaction.
-    until_slot prevents open-ended scanning during tests.
     '''
 
     def __init__(
@@ -546,10 +542,6 @@ class ElectionSubscriber:
 
             '--since', since_arg,
         ]
-
-        # TODO is kupo ignoring this?
-        if self.config.until_slot is not None:
-            cmd += ['--until', str(self.config.until_slot)]
 
         self._ensure_unused_port()
 
