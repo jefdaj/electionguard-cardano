@@ -23,7 +23,7 @@ import logging
 logging.basicConfig(
   # filename='subscribe.log',
   encoding='utf-8',
-  level=logging.DEBUG,
+  level=logging.INFO,
   format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
 
@@ -48,21 +48,19 @@ sub = ElectionSubscriber(
 sub.start()
 
 def log_current():
-    channel_ids = sub.current_channel_ids()
-    LOG.info(f'current_channel_ids: {channel_ids}')
-    for ch_id in channel_ids:
+    states = {}
+    for ch_id in sub.current_channel_ids():
         ch_str = channel_id_to_string(ch_id)
         ch_state = sub.current_state(ch_id)
-        LOG.info(f'current {ch_str} state: {ch_state}')
+        states[ch_str] = ch_state
+    LOG.info(f'current state:\n\n{pformat(states)}\n')
 
 while not sub.is_done():
-    log_current()
     try:
-        time.sleep(1)
+        log_current()
+        time.sleep(10)
     except KeyboardInterrupt:
-        sub.stop()
         break
 
+sub.stop()
 sub.join()
-
-LOG.info(f'final history:\n\n{pformat(sub.history)}\n')

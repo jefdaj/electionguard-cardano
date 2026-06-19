@@ -1579,8 +1579,9 @@ class ElectionSubscriber:
         base_params = {"order": "oldest_first"} #, "resolve_hashes": ""} TODO fix this to avoid 400
 
         # TODO tune this better
+        # TODO does using somethng besides the actual tip break the caching?
         points = self.poll4_checkpoints
-        LOG.debug(f'points:\n{pformat(points)}')
+        LOG.debug(f'checkpoints:\n{pformat(points)}')
         back3 = points[-3] if len(points) > 3 else None
 
         headers = {"If-None-Match": back3.header_hash} if back3 else {}
@@ -1672,6 +1673,10 @@ class ElectionSubscriber:
         # self.etag = new_etag
         self.poll4_checkpoints.append(tip)
         LOG.debug(f'Saved new tip {tip}')
+
+        # TODO how many should we save? Probably whatever's a safe rollback distance...
+        self.poll4_checkpoints = self.poll4_checkpoints[-50:]
+
         # LOG.debug(f'advance cursor, etag to {self.cursor3}, {self.etag}. Processing {n_matches} matches.')
         if matches:
             LOG.debug(f'Processing {len(matches)} merged matches:\n{pformat(matches)}')
