@@ -1296,89 +1296,129 @@ class ElectionSubscriber:
         if io_pair_keys:
             LOG.debug(f'io_pair_keys:\n{pformat(io_pair_keys)}')
 
-        # These are the TXIDs we're currently determining input or output relative to.
-        # current_txids_by_slot = {
-        #     # s : m["spent_at"]["transaction_id"]
-        #     # for ((s, _), m) in matches_by_sc.items()
-        #     # if m["spent_at"]
-        #     s : m["transaction_id"]
-        #     for ((s, _), m) in matches_by_sc.items()
-        # }
-        # current_txids = set()
-        # TODO any need to sort this?
-        slots_by_txid = {}
-        for m in matches_by_sc.values():
-            slots_by_txid[ m['transaction_id'] ] = m['created_at']['slot_no']
-            if m['spent_at']:
-                slots_by_txid[ m['spent_at']['transaction_id'] ] = m['spent_at']['transaction_id']
-        LOG.debug(f'slots_by_txid:\n{pformat(slots_by_txid)}')
+#         # These are the TXIDs we're currently determining input or output relative to.
+#         # current_txids_by_slot = {
+#         #     # s : m["spent_at"]["transaction_id"]
+#         #     # for ((s, _), m) in matches_by_sc.items()
+#         #     # if m["spent_at"]
+#         #     s : m["transaction_id"]
+#         #     for ((s, _), m) in matches_by_sc.items()
+#         # }
+#         # current_txids = set()
+#         # TODO any need to sort this?
+#         slots_by_txid = {}
+#         for m in matches_by_sc.values():
+#             slots_by_txid[ m['transaction_id'] ] = m['created_at']['slot_no']
+#             if m['spent_at']:
+#                 slots_by_txid[ m['spent_at']['transaction_id'] ] = m['spent_at']['transaction_id']
+#         LOG.debug(f'slots_by_txid:\n{pformat(slots_by_txid)}')
+# 
+#         inputs_by_sct = {}
+#         outputs_by_sct = {}
+#         for key in io_pair_keys:
+#             (tx_slot_no, ch_str) = key
+#             m = matches_by_sc[key]
+#             # created_tc_pair = (m['transaction_id'], ch_str)
+#             LOG.debug(f'classifying match {key}')
+#             # is_output = m['created_at']['slot_no'] == tx_slot_no
+# 
+# #             is_input = m['spent_at'] and m['spent_at']['slot_no'] == tx_slot_no
+# #             if is_input:
+# #                 txid = m['spent_at']['transaction_id']
+# #                 sct = (tx_slot_no, ch_str, txid)
+# #                 inputs_by_sct[sct] = m
+# #             else:
+# #                 txid = m['transaction_id']
+# #                 sct = (tx_slot_no, ch_str, txid)
+# #                 outputs_by_sct[sct] = m
+# 
+#             # for (spending_slot_no, spending_txid) in current_txids_by_slot.items():
+#             for (current_txid, current_slot) in slots_by_txid.items():
+#                 # if tx_slot_no != spending_slot_no:
+#                 #     continue
+# 
+#                 match_is_input = m['spent_at'] and \
+#                                  m['spent_at']['transaction_id'] == current_txid
+#                                  # m['spent_at']['slot_no'] == spending_slot_no and \
+#                 if match_is_input:
+#                     LOG.debug(f'match {key} is an input to {current_txid}')
+#                     sct = (m['spent_at']['slot_no'], ch_str, current_txid)
+#                     inputs_by_sct[sct] = m
+# 
+#                 match_is_output = m['created_at']['slot_no'] == current_slot and \
+#                                   m['transaction_id'] == current_txid
+#                 if match_is_output:
+#                     LOG.debug(f'match {key} is an output of {current_txid}')
+#                     sct = (m['created_at']['slot_no'], ch_str, current_txid)
+#                     outputs_by_sct[sct] = m
+# 
+#         LOG.debug(f'inputs_by_sct:\n{pformat(inputs_by_sct)}')
+#         LOG.debug(f'outputs_by_sct:\n{pformat(outputs_by_sct)}')
+# 
+#         # We only want to deal with inputs whose corresponding output isn't also in the match set.
+#         # These should be burns.
+#         out_keys = outputs_by_sct.keys()
+#         inputs_by_sct_deduped = {
+#             (s,c,t) : m
+#             for ((s,c,t), m) in inputs_by_sct.items()
+#             if  not (m['spent_at'  ]['slot_no'], c, t) in out_keys
+#             and not (m['created_at']['slot_no'], c, t) in out_keys
+#         }
+#         LOG.debug(f'inputs_by_sct_deduped:\n{pformat(inputs_by_sct_deduped)}')
 
-        inputs_by_sct = {}
-        outputs_by_sct = {}
+        # TODO try input, output like above but per slot, channel rather than including tx
+        #      think more about how you do it by eye and mimic that!
+
+        # TODO remove if not useful for anything
+        matches_flat = list(matches_by_sc.values())
+
+        inputs_by_sc  = defaultdict(lambda: None)
+        outputs_by_sc = defaultdict(lambda: None)
+
+        # The iteration here is optimized for ease of reading the logs...
+        # although it's still not that easy with all the gunk in a match!
         for key in io_pair_keys:
-            (tx_slot_no, ch_str) = key
-            m = matches_by_sc[key]
-            # created_tc_pair = (m['transaction_id'], ch_str)
-            LOG.debug(f'classifying match {key}')
-            # is_output = m['created_at']['slot_no'] == tx_slot_no
+            LOG.debug(f'finding inputs and outputs of {key}')
+            (slot_no, ch_str) = key
 
-#             is_input = m['spent_at'] and m['spent_at']['slot_no'] == tx_slot_no
-#             if is_input:
-#                 txid = m['spent_at']['transaction_id']
-#                 sct = (tx_slot_no, ch_str, txid)
-#                 inputs_by_sct[sct] = m
-#             else:
-#                 txid = m['transaction_id']
-#                 sct = (tx_slot_no, ch_str, txid)
-#                 outputs_by_sct[sct] = m
+            for m in matches_flat:
+                if kupo_match_to_channel_str(m) != ch_str:
+                    continue
+                is_input = m['spent_at'] and m['spent_at']['slot_no'] == slot_no
+                if is_input:
+                    LOG.debug(f'found input to {key}: {m}')
+                    inputs_by_sc[key] = m
+                    break
 
-            # for (spending_slot_no, spending_txid) in current_txids_by_slot.items():
-            for (current_txid, current_slot) in slots_by_txid.items():
-                # if tx_slot_no != spending_slot_no:
-                #     continue
+            for m in matches_flat:
+                if kupo_match_to_channel_str(m) != ch_str:
+                    continue
+                is_output = m['created_at']['slot_no'] == slot_no
+                if is_output:
+                    LOG.debug(f'found output to {key}: {m}')
+                    outputs_by_sc[key] = m
+                    break
 
-                match_is_input = m['spent_at'] and \
-                                 m['spent_at']['transaction_id'] == current_txid
-                                 # m['spent_at']['slot_no'] == spending_slot_no and \
-                if match_is_input:
-                    LOG.debug(f'match {key} is an input to {current_txid}')
-                    sct = (m['spent_at']['slot_no'], ch_str, current_txid)
-                    inputs_by_sct[sct] = m
+        LOG.debug(f'inputs_by_sc:\n{pformat(dict(inputs_by_sc))}')
+        LOG.debug(f'outputs_by_sc:\n{pformat(dict(outputs_by_sc))}')
 
-                match_is_output = m['created_at']['slot_no'] == current_slot and \
-                                  m['transaction_id'] == current_txid
-                if match_is_output:
-                    LOG.debug(f'match {key} is an output of {current_txid}')
-                    sct = (m['created_at']['slot_no'], ch_str, current_txid)
-                    outputs_by_sct[sct] = m
-
-        LOG.debug(f'inputs_by_sct:\n{pformat(inputs_by_sct)}')
-        LOG.debug(f'outputs_by_sct:\n{pformat(outputs_by_sct)}')
-
-        # We only want to deal with inputs whose corresponding output isn't also in the match set.
-        # These should be burns.
-        out_keys = outputs_by_sct.keys()
-        inputs_by_sct_deduped = {
-            (s,c,t) : m
-            for ((s,c,t), m) in inputs_by_sct.items()
-            if  not (m['spent_at'  ]['slot_no'], c, t) in out_keys
-            and not (m['created_at']['slot_no'], c, t) in out_keys
+        io_pairs_by_sc = {
+            k: (inputs_by_sc[k], outputs_by_sc[k])
+            for k in io_pair_keys
         }
-        LOG.debug(f'inputs_by_sct_deduped:\n{pformat(inputs_by_sct_deduped)}')
 
-        io_pairs_by_sc = {}
-
-        for ((s,c,t), in_match) in inputs_by_sct_deduped.items():
-            sc = (s,c)
-            out_match = self._poll4_find_output_for_input(sc, matches_by_sc)
-            pair = (in_match, out_match)
-            io_pairs_by_sc[sc] = pair
-
-        for ((s,c,t), out_match) in outputs_by_sct.items():
-            sc = (s,c)
-            in_match = self._poll4_find_input_for_output(sc, matches_by_sc)
-            pair = (in_match, out_match)
-            io_pairs_by_sc[sc] = pair
+#         io_pairs_by_sc = {}
+#         for ((s,c,t), in_match) in inputs_by_sct_deduped.items():
+#             sc = (s,c)
+#             out_match = self._poll4_find_output_for_input(sc, matches_by_sc)
+#             pair = (in_match, out_match)
+#             io_pairs_by_sc[sc] = pair
+# 
+#         for ((s,c,t), out_match) in outputs_by_sct.items():
+#             sc = (s,c)
+#             in_match = self._poll4_find_input_for_output(sc, matches_by_sc)
+#             pair = (in_match, out_match)
+#             io_pairs_by_sc[sc] = pair
 
         # Re sort to make sure events are processed in chain order.
         io_pairs_by_sc = {
