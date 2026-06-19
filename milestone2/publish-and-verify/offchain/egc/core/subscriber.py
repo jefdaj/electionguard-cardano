@@ -199,7 +199,6 @@ def kupo_match_to_pycardano_utxo(kupo_dict: dict) -> UTxO:
     return UTxO(tx_input, tx_output)
 
 
-
 # TODO where should this live?
 def is_being_minted(channel_str: str, action: ElectionAction) -> bool:
     ch_id = coerce_channel_id(channel_str)
@@ -279,6 +278,7 @@ class ElectionSubscriber:
     to be sure the indexed range will include the first transaction.
     '''
 
+
     def __init__(
             self,
             config: SubscriberConfig,
@@ -321,11 +321,13 @@ class ElectionSubscriber:
 
     ## query interface ##
 
+
     def all_channel_ids(self) -> list[ChannelId]:
         # Includes historical channels that have already been closed.
         # TODO return copies from all public methods
         LOG.debug('ElectionSubscriber.all_channel_ids')
         return sorted(list(self._history.keys()))
+
 
     def current_channel_ids(self) -> list[ChannelId]:
         # TODO return copies from all public methods
@@ -335,11 +337,13 @@ class ElectionSubscriber:
             if self.current_state(i) is not None
         ]
 
+
     def channel_history(self, channel_id: ChannelId) -> list[ChannelEvent]:
         # Works fine on already-closed channels. Raises KeyError on not-yet-opened ones.
         # TODO return copies from all public methods
         LOG.debug('ElectionSubscriber.channel_history')
         return self._history[channel_id] # TODO return None rather than raise KeyError?
+
 
     def current_utxo(self, channel_id: ChannelId) -> Optional[UTxO]:
         # Returns None if the channel hasn't been opened yet or was already closed
@@ -355,6 +359,7 @@ class ElectionSubscriber:
         else:
             return kupo_match_to_pycardano_utxo(match)
 
+
     def current_state(self, channel_id: ChannelId) -> Optional[ChannelState]:
         # Returns None if the channel hasn't been opened yet or was already closed
         # TODO return copies from all public methods
@@ -365,6 +370,7 @@ class ElectionSubscriber:
             return None
         s = event.output_state # may also be None
         return s
+
 
     def current_phase(self) -> Optional[ElectionPhase]:
         # Returns None if the election hasn't started yet
@@ -973,6 +979,7 @@ class ElectionSubscriber:
     def _handle_rollback(self):
         raise NotImplementedError
 
+
     def _rollback_to(self, safe_slot: int):
         for channel_id, entries in list(self._history.items()):
             kept = [e for e in entries if e.slot_no <= safe_slot]
@@ -1013,6 +1020,7 @@ class ElectionSubscriber:
             case BurnTestTokens():           return self._on_burntesttokens(event)
             case _:                          raise NotImplementedError
 
+
     def _on_initelection(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_initelection')
         LOG.debug(f'history during _on_initelection:\n{pformat(self._history)}')
@@ -1027,6 +1035,7 @@ class ElectionSubscriber:
         self._on_mint(event)
         return event
 
+
     def _on_addsubchannels(self, event: ChannelEvent):
         # remember this will be called once per channel touched
         LOG.debug('ElectionSubscriber._on_addsubchannels')
@@ -1036,6 +1045,7 @@ class ElectionSubscriber:
             self._on_mint(event)
         return event
 
+
     def _on_advancephase(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_advancephase')
         assert event.channel_id == ADMIN_CHANNEL_ID, 'only admin can advance phase'
@@ -1043,11 +1053,13 @@ class ElectionSubscriber:
         self._on_cont(event)
         return event
 
+
     def _on_endelection(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_endelection')
         assert event.channel_id == ADMIN_CHANNEL_ID, 'only admin can end election'
         self._on_burn(event)
         return event
+
 
     def _on_rmsubchannels(self, event: ChannelEvent):
         # remember this will be called once per channel touched
@@ -1059,11 +1071,13 @@ class ElectionSubscriber:
             self._on_burn(event)
         return event
 
+
     def _on_rebalancefunds(self, event: ChannelEvent):
         # remember this will be called once per channel touched
         LOG.debug('ElectionSubscriber._on_rebalancefunds')
         self._on_cont(event)
         return event
+
 
     def _on_postpublicrecords(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_postpublicrecords')
@@ -1071,11 +1085,13 @@ class ElectionSubscriber:
         self._on_cont(event)
         return event
 
+
     def _on_burntesttokens(self, event: ChannelEvent):
         # TODO remove for production use, or make a CLI flag for it
         LOG.debug('ElectionSubscriber._on_burntesttokens')
         self._on_burn(event)
         return event
+
 
     def _on_mint(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_mint')
@@ -1083,11 +1099,13 @@ class ElectionSubscriber:
         assert not event.channel_id in self._history, f"tried to mint existing channel!\n{event}\n{self._history}"
         self._history[event.channel_id] = [event]
 
+
     def _on_burn(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_burn')
         ch_str = channel_id_to_string(event.channel_id)
         assert event.output_state is None, f'{ch_str} being removed, but has an output'
         self._history[event.channel_id].append(event)
+
 
     def _on_cont(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_cont')
