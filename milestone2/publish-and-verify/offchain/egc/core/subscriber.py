@@ -40,7 +40,7 @@ from pycardano import *
 
 
 # The port will be incremented if in use.
-# TODO explicit config would be better
+# TODO explicit config... pull from election.json or cli?
 KUPO_HOST = environ.get('KUPO_HOST', '127.0.0.1')
 KUPO_PORT = int(environ.get('KUPO_PORT', '1442'))
 
@@ -78,8 +78,10 @@ class Point:
         return cls(data.since_slot, data.since_block_hash)
 
     @classmethod
-    def from_kupo_resp(cls, data: dict):
-        return cls(data['slot_no'], data['header_hash'])
+    def from_kupo_headers(cls, headers: dict):
+        slot = headers["X-Most-Recent-Checkpoint"]
+        hhash = headers["ETag"]
+        return cls(slot, hhash)
 
 
 # These don't quite correspond to UTXOs because we store the state from the
@@ -290,6 +292,8 @@ def _same_but_now_spent(old_event, new_event) -> bool:
         return False
 
 # TODO where should this live?
+# TODO put the handling of "not a plutus constructor tag" here
+# TODO use it instead of raw decode everywhere
 def decode_action(redeemer_str):
     return decode_plutusdata_union(ElectionAction, redeemer_str)
 
@@ -1634,7 +1638,7 @@ class ElectionSubscriber:
             return {}
 
         try:
-            tip = Point(cp1, r1.headers["ETag"])
+            tip = Point.from_kupo_headers(r1.headers)
         except KeyError:
             # Kupo doesn't seem to provide ETag (or set a checkpoint?) until a match is found.
             # TODO what should we say/do here?
