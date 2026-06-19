@@ -357,10 +357,12 @@ class ElectionSubscriber:
 
     def all_channel_ids(self) -> list[ChannelId]:
         # Includes historical channels that have already been closed.
+        # TODO return copies from all public methods
         LOG.debug('ElectionSubscriber.all_channel_ids')
         return sorted(list(self.history.keys()))
 
     def current_channel_ids(self) -> list[ChannelId]:
+        # TODO return copies from all public methods
         LOG.debug('ElectionSubscriber.current_channel_ids')
         return [
             i for i in self.all_channel_ids()
@@ -369,11 +371,13 @@ class ElectionSubscriber:
 
     def channel_history(self, channel_id: ChannelId) -> list[ChannelEvent]:
         # Works fine on already-closed channels. Raises KeyError on not-yet-opened ones.
+        # TODO return copies from all public methods
         LOG.debug('ElectionSubscriber.channel_history')
         return self.history[channel_id] # TODO return None rather than raise KeyError?
 
     def current_utxo(self, channel_id: ChannelId) -> Optional[UTxO]:
         # Returns None if the channel hasn't been opened yet or was already closed
+        # TODO return copies from all public methods
         LOG.debug('ElectionSubscriber.current_utxo')
         try:
             event = self.channel_history(channel_id)[-1]
@@ -387,6 +391,7 @@ class ElectionSubscriber:
 
     def current_state(self, channel_id: ChannelId) -> Optional[ChannelState]:
         # Returns None if the channel hasn't been opened yet or was already closed
+        # TODO return copies from all public methods
         LOG.debug('ElectionSubscriber.current_state')
         try:
             event = self.channel_history(channel_id)[-1]
@@ -1088,9 +1093,7 @@ class ElectionSubscriber:
         out_seq = event.output_state.state.seq
         assert in_seq + 1 == out_seq, f'state seq error: {in_seq} -> {out_seq} in {event}'
 
-        # TODO put back: assert event.channel_id in self.history, f'_on_cont but {event.channel_id} not in history'
-        # if not event.channel_id in self.history:
-        #     self.history[event.channel_id] = []
+        assert event.channel_id in self.history, f'_on_cont but {event.channel_id} not in history'
 
         self.history[event.channel_id].append(event)
 
