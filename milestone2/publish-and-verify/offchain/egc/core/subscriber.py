@@ -1297,13 +1297,20 @@ class ElectionSubscriber:
             LOG.debug(f'io_pair_keys:\n{pformat(io_pair_keys)}')
 
         # These are the TXIDs we're currently determining input or output relative to.
-        current_txids_by_slot = {
-            # s : m["spent_at"]["transaction_id"]
-            # for ((s, _), m) in matches_by_sc.items()
-            # if m["spent_at"]
-            s : m["transaction_id"]
-            for ((s, _), m) in matches_by_sc.items()
-        }
+        # current_txids_by_slot = {
+        #     # s : m["spent_at"]["transaction_id"]
+        #     # for ((s, _), m) in matches_by_sc.items()
+        #     # if m["spent_at"]
+        #     s : m["transaction_id"]
+        #     for ((s, _), m) in matches_by_sc.items()
+        # }
+        # current_txids = set()
+        # TODO any need to sort this?
+        slots_by_txid = {}
+        for m in matches_by_sc.values():
+            slots_by_txid[ m['transaction_id'] ] = m['created_at']['slot_no']
+            if m['spent_at']:
+                slots_by_txid[ m['spent_at']['transaction_id'] ] = m['spent_at']['transaction_id']
 
         inputs_by_sct = {}
         outputs_by_sct = {}
@@ -1324,23 +1331,24 @@ class ElectionSubscriber:
 #                 sct = (tx_slot_no, ch_str, txid)
 #                 outputs_by_sct[sct] = m
 
-            for (spending_slot_no, spending_txid) in current_txids_by_slot.items():
+            # for (spending_slot_no, spending_txid) in current_txids_by_slot.items():
+            for (current_txid, current_slot) in slots_by_txid.items():
                 # if tx_slot_no != spending_slot_no:
                 #     continue
 
                 match_is_input = m['spent_at'] and \
-                                 m['spent_at']['transaction_id'] == spending_txid
+                                 m['spent_at']['transaction_id'] == current_txid
                                  # m['spent_at']['slot_no'] == spending_slot_no and \
                 if match_is_input:
-                    LOG.debug(f'match {key} is an input to {spending_txid}')
-                    sct = (spending_slot_no, ch_str, spending_txid)
+                    LOG.debug(f'match {key} is an input to {current_txid}')
+                    sct = (m['spent_at']['slot_no'], ch_str, current_txid)
                     inputs_by_sct[sct] = m
 
-                match_is_output = m['created_at']['slot_no'] == spending_slot_no and \
-                                  m['transaction_id'] == spending_txid
+                match_is_output = m['created_at']['slot_no'] == current_slot and \
+                                  m['transaction_id'] == current_txid
                 if match_is_output:
-                    LOG.debug(f'match {key} is an output of {spending_txid}')
-                    sct = (spending_slot_no, ch_str, spending_txid)
+                    LOG.debug(f'match {key} is an output of {current_txid}')
+                    sct = (m['created_at']['slot_no'], ch_str, current_txid)
                     outputs_by_sct[sct] = m
 
         LOG.debug(f'inputs_by_sct:\n{pformat(inputs_by_sct)}')
