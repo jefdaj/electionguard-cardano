@@ -48,9 +48,8 @@ KUPO_HOST = environ.get('KUPO_HOST', '127.0.0.1')
 KUPO_PORT = int(environ.get('KUPO_PORT', '1442'))
 
 
-KUPO_POLL_SEC = 5
+KUPO_POLL_SEC = 1
 KUPO_MAX_CHECKPOINTS = 50
-KUPO_N_BACK_FROM_TIP = 3
 
 
 @dataclass
@@ -639,15 +638,17 @@ class ElectionSubscriber:
         return f'http://{KUPO_HOST}:{self._kupo_port}/v1'
 
 
-    def _get_checkpoint(self, n_back_from_tip=KUPO_N_BACK_FROM_TIP) -> Optional[Point]:
+    def _get_checkpoint(self) -> Optional[Point]:
         log_call()
-        # TODO does using somethng besides the actual tip break the caching?
+		# I used to have logic here for following 3 blocks back from the tip to
+		# reduce rollbacks, but it seems to break Kupo's caching. So for now we
+        # just keep the default/latest available.
         n_points = len(self._checkpoints)
         LOG.debug(f'There are {n_points} saved checkpoints.')
-        if len(self._checkpoints) < n_back_from_tip:
+        if len(self._checkpoints) == 0:
             return None
         else:
-            return self._checkpoints[-n_back_from_tip]
+            return self._checkpoints[-1]
 
 
     def _set_checkpoint(self, headers: dict) -> bool:
@@ -726,7 +727,7 @@ class ElectionSubscriber:
         n_matches = len(r1.json() + r2.json())
 
         if slot1 == 0:
-            LOG.debug(f"No matches yet. Has the election started?")
+            LOG.debug(f"No checkpoint yet. Has the election started?")
             assert n_matches == 0, f'No matches expected before a checkpoint is set, but got {n_matches}'
             return {}
 
