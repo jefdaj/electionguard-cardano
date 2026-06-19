@@ -343,8 +343,10 @@ class ElectionSubscriber:
         
         self.poll3_prev_events = set()
 
-        # TODO does this help?
-        self.poll4_unpaired_matches = []
+        # A list of matches we couldn't fit clealy into an input/output pair to
+        # make an event from. They'll be re-injected into the list of new
+        # matches next poll.
+        self.unpaired_matches = []
 
         # A list of slots + block hashes Kupo reports that it indexed. Used to
         # limit our queries to the not-quite-tip of the chain in the hope
@@ -693,22 +695,36 @@ class ElectionSubscriber:
         return state
 
 
+    def _handle_unpaired_match(self, ch_str, ioa_triple) -> bool:
+        # Sometimes we get a match back from Kupo that doesn't seem to fit into
+        # an input/output pair. Not sure whether that's a Kupo thing or a bug
+        # in our matching algorithm. For now the cleanest fix seems to be to
+        # stash those matches and re-inject them next poll.
+
+        (input_match, output_match, action) = ioa_triple
+
+        if input_match is None and not is_being_minted(ch_str, action):
+            # LOG.debug(f'Dropping triple with missing input_match: {key} : {val}')
+            LOG.debug(f'Saving unpaired output_match for later: {output_match}')
+            self.unpaired_matches.append(output_match)
+            return True
+
+        if output_match is None and not is_being_burned(ch_str, action):
+            # LOG.debug(f'Dropping triple with missing output_match: {key} : {val}')
+            LOG.debug(f'Saving unpaired input_match for later: {input_match}')
+            self.unpaired_matches.append(input_match)
+            return True
+
+        return False
+
+
     def _assemble_events(self, ioa_triples_by_sc: dict) -> Iterable[ChannelEvent]:
 
         for (key, val) in ioa_triples_by_sc.items():
             (slot_no, ch_str) = key
             (input_match, output_match, action) = val
 
-            if input_match is None and not is_being_minted(ch_str, action):
-                # LOG.debug(f'Dropping triple with missing input_match: {key} : {val}')
-                LOG.debug(f'Saving unpaired output_match for later: {output_match}')
-                self.poll4_unpaired_matches.append(output_match)
-                continue
-
-            if output_match is None and not is_being_burned(ch_str, action):
-                # LOG.debug(f'Dropping triple with missing output_match: {key} : {val}')
-                LOG.debug(f'Saving unpaired input_match for later: {input_match}')
-                self.poll4_unpaired_matches.append(input_match)
+            if self._handle_unpaired_match(ch_str, val):
                 continue
 
             input_state  = self._fetch_state( input_match) if  input_match else None
@@ -928,9 +944,11 @@ class ElectionSubscriber:
             return {}
 
         # Start from previous partial matches if any.
-        # TODO clear them after they've been retried once or a couple times?
-        prev_matches = self.poll4_unpaired_matches
-        self.poll4_unpaired_matches = []
+        # TODO clear them after they've been retried once or a couple times, if that comes up
+        prev_matches = self.unpaired_matches
+        self.unpaired_matches = []
+        if prev_matches:
+            LOG.debug(f'Re-injecting {len(prev_matches)} previous unpaired matches:\n{pformat(prev_matches)}')
 
         # Merge by (txid, output_index), Q1 and Q2 may overlap
         matches = {}
