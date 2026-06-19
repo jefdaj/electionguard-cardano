@@ -88,8 +88,6 @@ class Point:
 
 # These don't quite correspond to UTXOs because we store the state from the
 # latest UTXO but the redeemer used to spend the previous UTXO on that channel.
-# TODO is that overcomplicating it? maybe just store the redeemers as expected, or not at all?
-# TODO rename? ChannelTransition etc. maybe later
 # When a TX changes more than one channel, a ChannelEvent will be created for
 # each one. For example: add or rm 3 channels -> 4 events.
 @dataclass
@@ -124,7 +122,6 @@ def channel_id_from_asset_name(encoded: str) -> ChannelId:
     return channel_id
 
 
-# TODO remove in favor of getting channel_ids from states?
 # TODO where should this live?
 # def channel_id_from_output(output: UTxO) -> Optional[ChannelId]:
 #     for asset_key in output.value.assets.keys():
@@ -136,6 +133,8 @@ def channel_id_from_asset_name(encoded: str) -> ChannelId:
 #     LOG.error(f'Output does not match any channel:\n{output}')
 #     return None
 
+
+# TODO where should this live?
 def is_port_in_use(port: int) -> bool:
     # based on https://stackoverflow.com/a/52872579
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -150,6 +149,7 @@ def kupo_match_to_channel_str(kupo_match: dict) -> str:
     return channel_str
 
 
+# TODO where should this live?
 def kupo_match_to_pycardano_utxo(kupo_dict: dict) -> UTxO:
     """Convert a Kupo UTXO response dict to a PyCardano UTxO.
     WARNING: Does not handle a lot of edge cases! Mainly for BurnTestTokens.
@@ -199,7 +199,8 @@ def kupo_match_to_pycardano_utxo(kupo_dict: dict) -> UTxO:
     return UTxO(tx_input, tx_output)
 
 
-# TODO put in class
+# TODO where should this live?
+# TODO rewrite/refactor?
 def find_spend_action(out_match: dict, matches: Iterable[dict]) -> Optional[ElectionAction]:
     """Find the validator spend redeemer for a tx, ignoring mint redeemers."""
     # TODO make this more detailed so it's valid in general, not just when using identical redeemers
@@ -215,6 +216,7 @@ def find_spend_action(out_match: dict, matches: Iterable[dict]) -> Optional[Elec
     return None
 
 
+# TODO where should this live?
 def is_being_minted(channel_str: str, action: ElectionAction) -> bool:
     ch_id = coerce_channel_id(channel_str)
     match action:
@@ -223,6 +225,7 @@ def is_being_minted(channel_str: str, action: ElectionAction) -> bool:
         case _:                           return False
 
 
+# TODO where should this live?
 def is_being_burned(channel_str: str, action: ElectionAction) -> bool:
     ch_id = coerce_channel_id(channel_str)
     match action:
@@ -232,54 +235,13 @@ def is_being_burned(channel_str: str, action: ElectionAction) -> bool:
         case _:                          return False
 
 
-def mk_example_callback(callback_name: str):
+def _make_example_callback(callback_name: str):
     def fn(event: ChannelEvent) -> None:
         print(f'\n{callback_name} called with:\n{pformat(event)}')
     return fn
 
 
-def input_output_pairs(spent, unspent):
-
-    def input_key(m):
-        ch_str  = kupo_match_to_channel_str(m)
-        slot_no = m['spent_at']['slot_no']
-        # tx_id   = m['spent_at']['transaction_id']
-        # return (slot_no, tx_id, ch_str)
-        return (slot_no, ch_str)
-        key_set.add(key)
-
-    def output_key(m):
-        ch_str  = kupo_match_to_channel_str(m)
-        slot_no = m['created_at']['slot_no']
-        # tx_id   = m['transaction_id']
-        # return (slot_no, tx_id, ch_str)
-        return (slot_no, ch_str)
-        key_set.add(key)
-
-    # find inputs + outputs for each key
-    lists = defaultdict(lambda: ([], [])) # (inputs, outputs)
-    for m in spent:
-        k = input_key(m)
-        lists[k][0].append(m)
-    for m in spent + unspent:
-        k = output_key(m)
-        lists[k][1].append(m)
-    LOG.debug(f'lists:\n{pformat(lists)}')
-
-    # make sure there was only 0 or 1 of each, and simplify to pairs
-    pairs_by_key = {}
-    for (key, (inputs, outputs)) in lists.items():
-        assert len(inputs) < 2
-        assert len(outputs) < 2
-        input_ = inputs[0]  if inputs  else None
-        output = outputs[0] if outputs else None
-        pairs_by_key[key] = (input_, output)
-    LOG.debug(f'pairs_by_key:\n{pformat(pairs_by_key)}')
-
-    return pairs_by_key
-
-
-def _same_but_now_spent(old_event, new_event) -> bool:
+def _same_but_spent(old_event, new_event) -> bool:
     diff = DeepDiff(old_event, new_event)
     changes = diff.get("type_changes", {})
     try:
@@ -293,6 +255,7 @@ def _same_but_now_spent(old_event, new_event) -> bool:
     except:
         return False
 
+
 # TODO where should this live?
 # TODO put the handling of "not a plutus constructor tag" here
 # TODO use it instead of raw decode everywhere
@@ -300,7 +263,7 @@ def decode_action(redeemer_str):
     return decode_plutusdata_union(ElectionAction, redeemer_str)
 
 
-def make_session():
+def _make_session():
     s = requests.Session()
     retry = Retry(
         total=5,
@@ -334,8 +297,8 @@ class ElectionSubscriber:
     def __init__(
             self,
             config: SubscriberConfig,
-            on_action   = mk_example_callback('on_action'),
-            on_rollback = mk_example_callback('on_rollback'),
+            on_action   = _make_example_callback('on_action'),
+            on_rollback = _make_example_callback('on_rollback'),
         ):
 
         LOG.debug('ElectionSubscriber.__init__')
@@ -362,7 +325,7 @@ class ElectionSubscriber:
         self.kupo_port = KUPO_PORT
 
         # for http requests to the kupo process
-        self.session = make_session()
+        self.session = _make_session()
         self.session.headers.update({'Accept': 'application/json'})
 
         # Starting at the point from the config seems logical,
@@ -697,7 +660,7 @@ class ElectionSubscriber:
 #             i = event.channel_id
 #             if i in self.history and len(self.history[i]) > 0:
 #                 prev_event = self.history[i][-1]
-#                 if _same_but_now_spent(prev_event, event):
+#                 if _same_but_spent(prev_event, event):
 #                     s = channel_id_to_string(i)
 #                     self.history[i][-1] = event
 #                     LOG.debug(f'Replaced last {s} event with a new spent version.')
@@ -995,7 +958,7 @@ class ElectionSubscriber:
 #             i = event.channel_id
 #             if i in self.history and len(self.history[i]) > 0:
 #                 prev_event = self.history[i][-1]
-#                 if _same_but_now_spent(prev_event, event):
+#                 if _same_but_spent(prev_event, event):
 #                     s = channel_id_to_string(i)
 #                     self.history[i][-1] = event
 #                     LOG.debug(f'Replaced last {s} event with a new spent version.')
@@ -1209,13 +1172,13 @@ class ElectionSubscriber:
             prev_event = self.history[i][-1]
 
             # The 1st type of "same but spent" is that we get them in order and should update.
-            if _same_but_now_spent(prev_event, event):
+            if _same_but_spent(prev_event, event):
                 self.history[i][-1] = event
                 LOG.debug(f'Replaced last {s} event with a new spent version.')
                 return True
 
              # The 2nd type is we get the spent one first, and should ignore.   
-            if _same_but_now_spent(event, prev_event):
+            if _same_but_spent(event, prev_event):
                 LOG.debug(f'Ignored spent version of already-unspent {s} channel head.')
                 return True
 
