@@ -45,6 +45,11 @@ KUPO_HOST = environ.get('KUPO_HOST', '127.0.0.1')
 KUPO_PORT = int(environ.get('KUPO_PORT', '1442'))
 
 
+KUPO_POLL_SEC = 5
+KUPO_MAX_CHECKPOINTS = 50
+KUPO_N_BACK_FROM_TIP = 3
+
+
 @dataclass
 class SubscriberConfig:
     since_slot:       int # For kupo --since
@@ -374,12 +379,11 @@ class ElectionSubscriber:
         # TODO does this help?
         self.poll4_unpaired_matches = []
 
-        # TODO and this?
-        # A list of slots + block hashes reported as indexed by Kupo. Used to
+        # A list of slots + block hashes Kupo reports that it indexed. Used to
         # limit our queries to the not-quite-tip of the chain in the hope
         # that'll be more stable. Presumably helpful for handling rollbacks in
-        # the future too.
-        self.poll4_checkpoints: list[Point] = []
+        # the future too!
+        self.checkpoints: list[Point] = []
 
 
     ## query interface ##
@@ -667,7 +671,7 @@ class ElectionSubscriber:
                 LOG.error(f'Unexpected error in watcher: {e} {type(e)}', exc_info=True)
                 raise
             finally:
-                time.sleep(OGMIOS_POLL_SEC)
+                time.sleep(KUPO_POLL_SEC)
         LOG.debug('Watcher thread exiting')
 
 
@@ -1583,20 +1587,16 @@ class ElectionSubscriber:
         return ioa_triples_by_sc
 
     def _poll4_fetch_matches(self) -> list[dict]:
-        base_params = {"order": "oldest_first"} #, "resolve_hashes": ""} TODO fix this to avoid 400
+        base_params = {"order": "oldest_first"} # TODO resolve_hashes?
 
-        # TODO tune this better
-        # TODO does using somethng besides the actual tip break the caching?
-        points = self.poll4_checkpoints
-        LOG.debug(f'checkpoints:\n{pformat(points)}')
-        back3 = points[-3] if len(points) > 3 else None
+        start = self._get_checkpoint()
 
-        headers = {"If-None-Match": back3.header_hash} if back3 else {}
+        headers = {"If-None-Match": start.header_hash} if start else {}
 
-        r1_params = {} if back3 is None else {"created_after": back3.as_param()}
-        r2_params = {} if back3 is None else {"spent_after":   back3.as_param()}
+        r1_params = {} if start is None else {"created_after": start.as_param()}
+        r2_params = {} if start is None else {"spent_after":   start.as_param()}
         
-        # Q1: new outputs since back3 checkpoint (or start point)
+        # Q1: new outputs since start checkpoint (or start point)
         r1 = self.session.get(
             f"{self._kupo_api_url()}/matches",
             params={**base_params, **r1_params},
@@ -1640,27 +1640,14 @@ class ElectionSubscriber:
             assert n_matches == 0, f'No matches expected before a checkpoint is set, but got {n_matches}'
             return {}
 
-        try:
-            tip = Point.from_kupo_headers(r1.headers)
-        except KeyError:
-            # Kupo doesn't seem to provide ETag (or set a checkpoint?) until a match is found.
-            # TODO what should we say/do here?
-            LOG.debug(f"chain hasn't advanced, but no 304? Throwing away {n_matches} matches.")
+        new_checkpoint = self._set_checkpoint(r1.headers)
+        if not new_checkpoint:
             return {}
-
-        # if new_cursor == self.cursor3 and new_etag == self.etag:
-        if len(points) > 0 and tip == points[-1]:
-            LOG.debug(f"chain hasn't advanced, but no 304? Throwing away {n_matches} matches.")
-            return {}
-            # LOG.debug(f"chain hasn't advanced, but no 304? Processing {len(matches)} matches.")
 
         # Start from previous partial matches if any.
-        # TODO clear them after they've been retried once? see what helps first
+        # TODO clear them after they've been retried once or a couple times?
         prev_matches = self.poll4_unpaired_matches
         self.poll4_unpaired_matches = []
-            # self.poll4_unpaired_matches.pop()
-            # for _ in range(len(self.poll4_unpaired_matches))
-            # ]
 
         # Merge by (txid, output_index), Q1 and Q2 may overlap
         matches = {}
@@ -1674,22 +1661,38 @@ class ElectionSubscriber:
                 spent_key = (m['spent_at']['slot_no'], ch_str)
                 matches[spent_key] = m
 
-        # TODO try without these to see if it fixes consistency problems...
-        # TODO and if so, you really have a query protocol problem instead!
-        # self.cursor3 = new_cursor
-        # self.etag = new_etag
-        self.poll4_checkpoints.append(tip)
-        LOG.debug(f'Saved new tip {tip}')
-
-        # TODO how many should we save? Probably whatever's a safe rollback distance...
-        self.poll4_checkpoints = self.poll4_checkpoints[-50:]
-
-        # LOG.debug(f'advance cursor, etag to {self.cursor3}, {self.etag}. Processing {n_matches} matches.')
         if matches:
             LOG.debug(f'Processing {len(matches)} merged matches:\n{pformat(matches)}')
-        # TODO confirm here that no matches have slots < the old cursor
-        # TODO or better that they're all within the window
+
         return matches
+
+
+    def _get_checkpoint(self, n_back_from_tip=KUPO_N_BACK_FROM_TIP) -> Optional[Point]:
+        LOG.debug('ElectionSubscriber._get_checkpoint')
+        # TODO does using somethng besides the actual tip break the caching?
+        n_points = len(self.checkpoints)
+        LOG.debug(f'There are {n_points} saved checkpoints.')
+        if len(self.checkpoints) < n_back_from_tip:
+            return None
+        else:
+            return self.checkpoints[-n_back_from_tip]
+
+
+    def _set_checkpoint(self, headers: dict) -> bool:
+        LOG.debug('ElectionSubscriber._set_checkpoint')
+        try:
+            tip = Point.from_kupo_headers(headers)
+        except KeyError:
+            # Kupo doesn't seem to send these until the first match is found.
+            LOG.debug(f"Wait for Kupo to send slot + block hash.")
+            return False
+        if len(self.checkpoints) > 0 and tip == self.checkpoints[-1]:
+            LOG.debug(f"Same checkpoint, no 304. Wait for new checkpoint.")
+            return False
+        self.checkpoints.append(tip)
+        LOG.debug(f'Saved checkpoint {tip}')
+        self.checkpoints = self.checkpoints[-KUPO_MAX_CHECKPOINTS:]
+        return True
 
 
     ## handle election actions ##
