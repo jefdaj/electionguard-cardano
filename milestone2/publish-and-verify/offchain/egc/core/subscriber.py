@@ -1311,6 +1311,7 @@ class ElectionSubscriber:
             slots_by_txid[ m['transaction_id'] ] = m['created_at']['slot_no']
             if m['spent_at']:
                 slots_by_txid[ m['spent_at']['transaction_id'] ] = m['spent_at']['transaction_id']
+        LOG.debug(f'slots_by_txid:\n{pformat(slots_by_txid)}')
 
         inputs_by_sct = {}
         outputs_by_sct = {}
