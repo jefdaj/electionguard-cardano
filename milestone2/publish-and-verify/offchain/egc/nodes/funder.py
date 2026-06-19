@@ -256,7 +256,7 @@ class FunderNode(ElectionNode):
 
         if len(channel_ids) == 0:
             # shouldn't normally happen
-            LOG.debug(f'subscriber history:\n{pformat(self.subscriber.history)}')
+            LOG.debug(f'subscriber history:\n{pformat(self.subscriber._history)}')
             msg = 'skip burn tx because no channels to burn'
             LOG.error(msg)
             raise RuntimeError(msg)

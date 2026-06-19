@@ -29,8 +29,8 @@ def assert_nodes_in_sync(nodes: List[ElectionNode]):
         assert np == rp, f'phase mismatch: {np} vs {rp}'
 
         # TODO use interface here rather than raw history dict?
-        nh = node.subscriber.history
-        rh = ref.subscriber.history
+        nh = node.subscriber._history
+        rh = ref.subscriber._history
         assert nh == rh, f'history mismatch:\n{pformat(nh)}\n{pformat(rh)}'
 
     LOG.info(f'All {len(nodes)+1} nodes in sync: ' + ', '.join(s for s in ch_strs))

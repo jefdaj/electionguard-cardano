@@ -313,8 +313,8 @@ class ElectionSubscriber:
         # simpler to work with Kupo's spent and unspent UTXO filters. When a
         # UTXO is spent we remove it from current and append its new spent
         # equivalent to history.
-        # TODO write lock on self.history while mutating?
-        self.history: Mapping[ChannelId, list[ChannelEvent]] = {}
+        # TODO write lock on self._history while mutating?
+        self._history: Mapping[ChannelId, list[ChannelEvent]] = {}
 
         # for managing the kupo process
         self.kupo_proc:   Optional[subprocess.Popen] = None
@@ -359,7 +359,7 @@ class ElectionSubscriber:
         # Includes historical channels that have already been closed.
         # TODO return copies from all public methods
         LOG.debug('ElectionSubscriber.all_channel_ids')
-        return sorted(list(self.history.keys()))
+        return sorted(list(self._history.keys()))
 
     def current_channel_ids(self) -> list[ChannelId]:
         # TODO return copies from all public methods
@@ -373,7 +373,7 @@ class ElectionSubscriber:
         # Works fine on already-closed channels. Raises KeyError on not-yet-opened ones.
         # TODO return copies from all public methods
         LOG.debug('ElectionSubscriber.channel_history')
-        return self.history[channel_id] # TODO return None rather than raise KeyError?
+        return self._history[channel_id] # TODO return None rather than raise KeyError?
 
     def current_utxo(self, channel_id: ChannelId) -> Optional[UTxO]:
         # Returns None if the channel hasn't been opened yet or was already closed
@@ -653,12 +653,12 @@ class ElectionSubscriber:
         # TODO is there a simpler way?
         i = event.channel_id
         s = channel_id_to_string(i)
-        if i in self.history and len(self.history[i]) > 0:
-            prev_event = self.history[i][-1]
+        if i in self._history and len(self._history[i]) > 0:
+            prev_event = self._history[i][-1]
 
             # The 1st type of "same but spent" is that we get them in order and should update.
             if _same_but_spent(prev_event, event):
-                self.history[i][-1] = event
+                self._history[i][-1] = event
                 LOG.debug(f'Replaced last {s} event with a new spent version.')
                 return True
 
@@ -673,8 +673,8 @@ class ElectionSubscriber:
 
     def _poll4_discard_duplicate(self, event) -> bool:
         i = event.channel_id
-        if i in self.history:
-            if event in self.history[i]:
+        if i in self._history:
+            if event in self._history[i]:
                 LOG.debug(f'Discard duplicate event: {event}')
                 return True
         return False
@@ -823,7 +823,7 @@ class ElectionSubscriber:
         # TODO search by txid + index, not just txid?
         matches_to_search = current_matches
         for ch_id in self.current_channel_ids():
-            prev_events = self.history[ch_id]
+            prev_events = self._history[ch_id]
             for event in prev_events:
                 matches_to_search += [event.input_match, event.output_match]
         matches_to_search = [m for m in matches_to_search if m is not None]
@@ -1008,11 +1008,11 @@ class ElectionSubscriber:
 
     def _on_initelection(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_initelection')
-        LOG.debug(f'history during _on_initelection:\n{pformat(self.history)}')
-        # assert self.history == {}, 'InitElection with non-empty history'
+        LOG.debug(f'history during _on_initelection:\n{pformat(self._history)}')
+        # assert self._history == {}, 'InitElection with non-empty history'
         if self.current_phase() is not None:
             i = event.channel_id
-            prev = self.history[i][-1]
+            prev = self._history[i][-1]
             diff = DeepDiff(prev, event)
             LOG.debug(f'diff:\n{pformat(diff)}')
         assert self.current_phase() == None, 'InitElection should always happen first'
@@ -1045,7 +1045,7 @@ class ElectionSubscriber:
     # remember this will be called once per channel touched
     def _on_rmsubchannels(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_rmsubchannels')
-        # assert event.channel_id in self.history, f'tried to remove non-existent channel {event.channel_id}'
+        # assert event.channel_id in self._history, f'tried to remove non-existent channel {event.channel_id}'
         if event.channel_id == ADMIN_CHANNEL_ID:
             self._on_cont(event)
         else:
@@ -1072,15 +1072,15 @@ class ElectionSubscriber:
 
     def _on_mint(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_mint')
-        LOG.debug(f'history during _on_mint:\n{pformat(self.history)}')
-        assert not event.channel_id in self.history, f"tried to mint existing channel!\n{event}\n{self.history}"
-        self.history[event.channel_id] = [event]
+        LOG.debug(f'history during _on_mint:\n{pformat(self._history)}')
+        assert not event.channel_id in self._history, f"tried to mint existing channel!\n{event}\n{self._history}"
+        self._history[event.channel_id] = [event]
 
     def _on_burn(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_burn')
         ch_str = channel_id_to_string(event.channel_id)
         assert event.output_state is None, f'{ch_str} being removed, but has an output'
-        self.history[event.channel_id].append(event)
+        self._history[event.channel_id].append(event)
 
     def _on_cont(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_cont')
@@ -1093,9 +1093,9 @@ class ElectionSubscriber:
         out_seq = event.output_state.state.seq
         assert in_seq + 1 == out_seq, f'state seq error: {in_seq} -> {out_seq} in {event}'
 
-        assert event.channel_id in self.history, f'_on_cont but {event.channel_id} not in history'
+        assert event.channel_id in self._history, f'_on_cont but {event.channel_id} not in history'
 
-        self.history[event.channel_id].append(event)
+        self._history[event.channel_id].append(event)
 
 
     ## handle rollbacks ##
@@ -1104,15 +1104,15 @@ class ElectionSubscriber:
         raise NotImplementedError
 
     def _rollback_to(self, safe_slot: int):
-        for channel_id, entries in list(self.history.items()):
+        for channel_id, entries in list(self._history.items()):
             kept = [e for e in entries if e.slot_no <= safe_slot]
 
             if not kept:
-                self.history.pop(channel_id)
+                self._history.pop(channel_id)
                 # self.current_state.pop(channel_id, None)
                 continue
 
-            self.history[channel_id] = kept
+            self._history[channel_id] = kept
             last = kept[-1]
 
             # Un-burn if the burn was rolled back
