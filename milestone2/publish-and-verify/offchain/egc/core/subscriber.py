@@ -1297,9 +1297,11 @@ class ElectionSubscriber:
 
         # These are the TXIDs we're currently determining input or output relative to.
         spending_txids_by_slot = {
-            s : m["spent_at"]["transaction_id"]
+            # s : m["spent_at"]["transaction_id"]
+            # for ((s, _), m) in matches_by_sc.items()
+            # if m["spent_at"]
+            s : m["transaction_id"]
             for ((s, _), m) in matches_by_sc.items()
-            if m["spent_at"]
         }
 
         inputs_by_sct = {}
