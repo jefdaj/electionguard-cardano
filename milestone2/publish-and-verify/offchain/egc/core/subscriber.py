@@ -1541,21 +1541,24 @@ class ElectionSubscriber:
         return matches_to_search
 
     def _poll4_add_actions(self, io_pairs_by_sc):
-        ioa_triples_by_sc = {}
-        prev_inputs = []
+
+        # TODO factor out
         current_matches = []
         for (i, o) in io_pairs_by_sc.values():
             current_matches += [i, o]
         matches_to_search = self._poll4_matches_to_search(current_matches)
+
+        ioa_triples_by_sc = {}
         for (key, (in_match, out_match)) in io_pairs_by_sc.items():
             if in_match is not None:
-                # has input = can find redeemer and match on that: continuation, sub burn, endelection
-                # if in_match['spent_at'] is None:
-                #     # TODO what to call this case?
-                #     action = find_spend_action(in_match, io_pairs_by_sc.values())
-                # else:
+
+                # TODO what does it mean when this is not a plutus constructor?
                 # TODO is there a danger of mint redeemers when looking up directly too?
-                action = decode_action(in_match['spent_at']['redeemer'])
+                try:
+                    action = decode_action(in_match['spent_at']['redeemer'])
+                except ValueError:
+                    action = None
+
             else:
                 assert out_match is not None, 'both in_match and out_match should not be None'
                 from_prev = find_spend_action(out_match, matches_to_search) # TODO expand search? # TODO expand search?
@@ -1563,18 +1566,18 @@ class ElectionSubscriber:
                     # no input but can find redeemer in other matches = match on that to confirm: sub mint
                     action = from_prev
                 else:
-                    # no input, can't find redeemer, very first match, admin channel = initelection
+
+                    # This is (was) a common way for bugs to manifest. But the
+                    # assertions to double check that InitElection is correct
+                    # here turned out to cause more trouble than they
+                    # prevented; checking further downstream in the algorithm
+                    # is easier.
                     LOG.debug(f'InitElection with {key}\n{in_match}\n{out_match}\n')
-                    # assert key[1] == channel_id_to_string(ADMIN_CHANNEL_ID), f'InitElection wrong channel: {key[1]}'
-                    # assert self.current_phase() == None, f'InitElection during {self.current_phase()}'
                     action = InitElection()
+
             ioa_triple = (in_match, out_match, action)
             ioa_triples_by_sc[key] = ioa_triple
-            # for looking up redeemers of later matches
-            if in_match is not None:
-                prev_inputs.append(in_match)
-            if out_match is not None:
-                prev_inputs.append(out_match)
+
         if ioa_triples_by_sc:
             LOG.debug(f'ioa_triples_by_sc:\n{pformat(ioa_triples_by_sc)}')
         return ioa_triples_by_sc
