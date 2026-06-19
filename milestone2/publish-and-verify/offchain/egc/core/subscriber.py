@@ -1325,8 +1325,8 @@ class ElectionSubscriber:
 #                 outputs_by_sct[sct] = m
 
             for (spending_slot_no, spending_txid) in current_txids_by_slot.items():
-                if tx_slot_no != spending_slot_no:
-                    continue
+                # if tx_slot_no != spending_slot_no:
+                #     continue
 
                 match_is_input = m['spent_at'] and \
                                  m['spent_at']['transaction_id'] == spending_txid
