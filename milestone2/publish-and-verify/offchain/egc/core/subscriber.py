@@ -324,7 +324,7 @@ class ElectionSubscriber:
         # TODO remove
         self.prev_events = set()
         self.seen_matches = set()
-        
+
         self.poll3_prev_events = set()
 
         # A list of matches we couldn't fit clealy into an input/output pair to
@@ -393,7 +393,7 @@ class ElectionSubscriber:
             return event.output_state.state.phase
         except KeyError:
             return None
- 
+
 
     ## process managment interface ##
 
@@ -599,23 +599,23 @@ class ElectionSubscriber:
         LOG.debug('Watcher thread exiting')
 
 
-    ## polling and http queries ##
+    ## main event polling algorithm ##
 
 
     def _poll(self):
 
-        # Fetch matches, keyed by (slot_no, channel_str).
+        # 1. Fetch matches, keyed by (slot_no, channel_str).
         matches_by_sc = self._fetch_matches()
         if not matches_by_sc:
             return
 
-        # Assemble matches them into (input, output) pairs, still by (slot_no, channel_str).
+        # 2. Assemble matches them into (input, output) pairs, still by (slot_no, channel_str).
         io_pairs_by_sc = self._pair_inputs_with_outputs(matches_by_sc)
 
-        # Add actions (AKA redeemers), still keyed by (slot_no, channel_str).
+        # 3. Add actions (AKA redeemers), still keyed by (slot_no, channel_str).
         ioa_triples_by_sc = self._fill_in_actions(io_pairs_by_sc)
 
-        # Assemble event objects, now with no need for keys.
+        # 4. Assemble event objects, now with no need for keys.
         for event in self._assemble_events(ioa_triples_by_sc):
 
             if self._handle_same_but_spent(event):
@@ -624,43 +624,12 @@ class ElectionSubscriber:
             if self._is_duplicate_event(event):
                 continue
 
-            # Update internal state and do some double checking + cleanup for
-            # particular action types.
+            # 5. Update internal state and do some double checking + cleanup for
+            #    particular action types.
             event = self._on_action(event)
 
             # Emit final events to clients
             self.on_action(event)
-
-
-    def _handle_same_but_spent(self, event) -> bool:
-        i = event.channel_id
-        s = channel_id_to_string(i)
-        if i in self._history and len(self._history[i]) > 0:
-            prev_event = self._history[i][-1]
-            # The 1st type of "same but spent" is that we get them in order and should update.
-            # No point announcing the update externally though; that would be annoying.
-            if _same_but_spent(prev_event, event):
-                self._history[i][-1] = event
-                LOG.debug(f'Replaced last {s} event with a new spent version.')
-                return True
-             # The 2nd type is we get the spent one first, and should ignore the unspent.
-            if _same_but_spent(event, prev_event):
-                LOG.debug(f'Ignored spent version of already-unspent {s} channel head.')
-                return True
-        else:
-            return False
-
-
-    def _is_duplicate_event(self, event) -> bool:
-        # TODO is kupo re-sending all matches every time we update the checkpoint??
-        i = event.channel_id
-        if i in self._history:
-            ch_str = channel_id_to_string(i)
-            for (n, e) in enumerate(self._history[i]):
-                if e == event:
-                    LOG.debug(f'Ignore duplicate of {ch_str} event {n}.')
-                    return True
-        return False
 
 
     def _kupo_api_url(self) -> str:
@@ -668,99 +637,123 @@ class ElectionSubscriber:
         return f'http://{KUPO_HOST}:{self.kupo_port}/v1'
 
 
-    def _fetch_state(self, kupo_match: dict) -> ChannelState:
-        LOG.debug('ElectionSubscriber._fetch_state')
-        LOG.debug(f'kupo_match: {kupo_match}')
-        datum_hash = kupo_match['datum_hash']
-        url = self._kupo_api_url() + f'/datums/{datum_hash}'
-        LOG.debug(f'fetching datum {datum_hash}')
-        resp = self.session.get(url, timeout=10)
-        resp.raise_for_status()
-        datum = resp.json()
-        LOG.debug(f'fetched {datum_hash} -> {datum}')
-        state = decode_plutusdata_union(ChannelState, datum['datum'])
-        LOG.debug(f'decoded {datum} -> {state}')
-        return state
-
-
-    def _handle_unpaired_match(self, ch_str, ioa_triple) -> bool:
-        # Sometimes we get a match back from Kupo that doesn't seem to fit into
-        # an input/output pair. Not sure whether that's a Kupo thing or a bug
-        # in our matching algorithm. For now the cleanest fix seems to be to
-        # stash those matches and re-inject them next poll.
-
-        (input_match, output_match, action) = ioa_triple
-
-        if input_match is None and not is_being_minted(ch_str, action):
-            # LOG.debug(f'Dropping triple with missing input_match: {key} : {val}')
-            LOG.debug(f'Saving unpaired output_match for later: {output_match}')
-            self.unpaired_matches.append(output_match)
-            return True
-
-        if output_match is None and not is_being_burned(ch_str, action):
-            # LOG.debug(f'Dropping triple with missing output_match: {key} : {val}')
-            LOG.debug(f'Saving unpaired input_match for later: {input_match}')
-            self.unpaired_matches.append(input_match)
-            return True
-
-        return False
-
-
-    def _assemble_events(self, ioa_triples_by_sc: dict) -> Iterable[ChannelEvent]:
-
-        for (key, val) in ioa_triples_by_sc.items():
-            (slot_no, ch_str) = key
-            (input_match, output_match, action) = val
-
-            if self._handle_unpaired_match(ch_str, val):
-                continue
-
-            input_state  = self._fetch_state( input_match) if  input_match else None
-            output_state = self._fetch_state(output_match) if output_match else None
-
-            event = ChannelEvent(
-                slot_no      = slot_no,
-                channel_id   = coerce_channel_id(ch_str),
-                action       = action,
-                input_match  = input_match,
-                output_match = output_match,
-                input_state  = input_state,
-                output_state = output_state,
-            )
-            LOG.debug(f'event:\n{pformat(event)}')
-            yield event
-
-
-    def _find_output_for_input(self, in_sc_key, matches_by_sc) -> Optional[dict]:
-        (in_s, in_c) = in_sc_key
-        in_match = matches_by_sc[in_sc_key]
-        outputs = [
-            m for ((s, c), m) in matches_by_sc.items()
-            if s > in_s
-            and c == in_c
-            and m['transaction_id'] == in_match['spent_at']['transaction_id']
-        ]
-        assert len(outputs) < 2, f'More than 2 possible outputs found for {in_sc_key}'
-        if len(outputs) == 1:
-            return outputs[0]
-        else:
+    def _get_checkpoint(self, n_back_from_tip=KUPO_N_BACK_FROM_TIP) -> Optional[Point]:
+        LOG.debug('ElectionSubscriber._get_checkpoint')
+        # TODO does using somethng besides the actual tip break the caching?
+        n_points = len(self.checkpoints)
+        LOG.debug(f'There are {n_points} saved checkpoints.')
+        if len(self.checkpoints) < n_back_from_tip:
             return None
-
-
-    def _find_input_for_output(self, out_sc_key: dict, matches_by_sc: dict) -> Optional[dict]:
-        (out_s, out_c) = out_sc_key
-        out_match = matches_by_sc[out_sc_key]
-        inputs = [
-            m for ((s, c), m) in matches_by_sc.items()
-            if s < out_s
-            and c == out_c
-            and m['spent_at']['transaction_id'] == out_match['transaction_id']
-        ]
-        assert len(inputs) < 2, f'More than 2 possible inputs found for {in_sc_key}'
-        if len(inputs) == 1:
-            return inputs[0]
         else:
-            return None
+            return self.checkpoints[-n_back_from_tip]
+
+
+    def _set_checkpoint(self, headers: dict) -> bool:
+        LOG.debug('ElectionSubscriber._set_checkpoint')
+        try:
+            tip = Point.from_kupo_headers(headers)
+        except KeyError:
+            # Kupo doesn't seem to send these until the first match is found.
+            LOG.debug(f"Wait for Kupo to send slot + block hash.")
+            return False
+        if len(self.checkpoints) > 0 and tip == self.checkpoints[-1]:
+
+            # TODO which way is better?
+            # Processing these matches leads to many duplicate events but
+            # faster consistency.
+            LOG.debug(f"Same checkpoint, no 304. Wait for new checkpoint.")
+            return False
+            # LOG.debug(f"Same checkpoint, no 304. Process matches anyway.")
+            # return True
+
+        self.checkpoints.append(tip)
+        LOG.debug(f'Saved checkpoint {tip}')
+        self.checkpoints = self.checkpoints[-KUPO_MAX_CHECKPOINTS:]
+        return True
+
+
+    def _fetch_matches(self) -> list[dict]:
+        base_params = {"order": "oldest_first"} # TODO resolve_hashes?
+
+        # TODO is kupo re-sending all matches every time we update the checkpoint??
+        start = self._get_checkpoint()
+
+        headers = {"If-None-Match": start.header_hash} if start else {}
+
+        r1_params = {} if start is None else {"created_after": start.as_param()}
+        r2_params = {} if start is None else {"spent_after":   start.as_param()}
+
+        # Q1: new outputs since start checkpoint (or start point)
+        r1 = self.session.get(
+            f"{self._kupo_api_url()}/matches",
+            params={**base_params, **r1_params},
+            headers=headers,
+        )
+
+        if r1.status_code == 304:
+            LOG.debug(f'Got 304 not modified, implying no new matches.')
+            return {}
+
+        if r1.status_code == 400:
+            raise NotImplementedError("Rollback detected (created_after)")
+
+        r1.raise_for_status()
+        LOG.debug(f'r1 headers {r1.headers}')
+
+        # Q2: old inputs now spent since
+        r2 = self.session.get(
+            f"{self._kupo_api_url()}/matches",
+            params={**base_params, **r2_params},
+            headers=headers, # TODO did claude forget this? or should it not be there?
+        )
+
+        if r2.status_code == 400:
+            raise NotImplementedError("Rollback detected (spent_after)")
+
+        r2.raise_for_status()
+        LOG.debug(f'r2 headers {r2.headers}')
+
+        # Verify both queries see the same chain tip
+        slot1 = int(r1.headers["X-Most-Recent-Checkpoint"])
+        slot2 = int(r2.headers["X-Most-Recent-Checkpoint"])
+        if slot1 != slot2:
+            LOG.debug(f'Got 2 different slots: {slot1} vs {slot2}. Retry next poll to avoid edge cases.')
+            return {}
+
+        n_matches = len(r1.json() + r2.json())
+
+        if slot1 == 0:
+            LOG.debug(f"No matches yet. Has the election started?")
+            assert n_matches == 0, f'No matches expected before a checkpoint is set, but got {n_matches}'
+            return {}
+
+        new_checkpoint = self._set_checkpoint(r1.headers)
+        if not new_checkpoint:
+            return {}
+
+        # Start from previous partial matches if any.
+        # TODO clear them after they've been retried once or a couple times, if that comes up
+        prev_matches = self.unpaired_matches
+        self.unpaired_matches = []
+        if prev_matches:
+            LOG.debug(f'Re-injecting {len(prev_matches)} previous unpaired matches:\n{pformat(prev_matches)}')
+
+        # Merge by (txid, output_index), Q1 and Q2 may overlap
+        matches = {}
+        for m in prev_matches + r1.json() + r2.json():
+            ch_str = kupo_match_to_channel_str(m)
+
+            created_key = (m['created_at']['slot_no'], ch_str)
+            matches[created_key] = m
+
+            if m['spent_at'] is not None:
+                spent_key = (m['spent_at']['slot_no'], ch_str)
+                matches[spent_key] = m
+
+        if matches:
+            LOG.debug(f'Processing {len(matches)} merged matches:\n{pformat(matches)}')
+
+        return matches
 
 
     def _pair_inputs_with_outputs(self, matches_by_sc: dict) -> list[Tuple[Optional[dict], Optional[dict]]]:
@@ -808,6 +801,38 @@ class ElectionSubscriber:
         if io_pairs_by_sc:
             LOG.debug(f'io_pairs_by_sc:\n{pformat(io_pairs_by_sc)}')
         return io_pairs_by_sc
+
+
+    def _find_output_for_input(self, in_sc_key, matches_by_sc) -> Optional[dict]:
+        (in_s, in_c) = in_sc_key
+        in_match = matches_by_sc[in_sc_key]
+        outputs = [
+            m for ((s, c), m) in matches_by_sc.items()
+            if s > in_s
+            and c == in_c
+            and m['transaction_id'] == in_match['spent_at']['transaction_id']
+        ]
+        assert len(outputs) < 2, f'More than 2 possible outputs found for {in_sc_key}'
+        if len(outputs) == 1:
+            return outputs[0]
+        else:
+            return None
+
+
+    def _find_input_for_output(self, out_sc_key: dict, matches_by_sc: dict) -> Optional[dict]:
+        (out_s, out_c) = out_sc_key
+        out_match = matches_by_sc[out_sc_key]
+        inputs = [
+            m for ((s, c), m) in matches_by_sc.items()
+            if s < out_s
+            and c == out_c
+            and m['spent_at']['transaction_id'] == out_match['transaction_id']
+        ]
+        assert len(inputs) < 2, f'More than 2 possible inputs found for {in_sc_key}'
+        if len(inputs) == 1:
+            return inputs[0]
+        else:
+            return None
 
 
     def _matches_to_search_for_actions(self, io_pairs_by_sc) -> list[dict]:
@@ -875,126 +900,134 @@ class ElectionSubscriber:
         return ioa_triples_by_sc
 
 
-    def _fetch_matches(self) -> list[dict]:
-        base_params = {"order": "oldest_first"} # TODO resolve_hashes?
+    def _assemble_events(self, ioa_triples_by_sc: dict) -> Iterable[ChannelEvent]:
 
-        # TODO is kupo re-sending all matches every time we update the checkpoint??
-        start = self._get_checkpoint()
+        for (key, val) in ioa_triples_by_sc.items():
+            (slot_no, ch_str) = key
+            (input_match, output_match, action) = val
 
-        headers = {"If-None-Match": start.header_hash} if start else {}
+            if self._handle_unpaired_match(ch_str, val):
+                continue
 
-        r1_params = {} if start is None else {"created_after": start.as_param()}
-        r2_params = {} if start is None else {"spent_after":   start.as_param()}
-        
-        # Q1: new outputs since start checkpoint (or start point)
-        r1 = self.session.get(
-            f"{self._kupo_api_url()}/matches",
-            params={**base_params, **r1_params},
-            headers=headers,
-        )
-        
-        if r1.status_code == 304:
-            LOG.debug(f'Got 304 not modified, implying no new matches.')
-            return {}
+            input_state  = self._fetch_state( input_match) if  input_match else None
+            output_state = self._fetch_state(output_match) if output_match else None
 
-        if r1.status_code == 400:
-            raise NotImplementedError("Rollback detected (created_after)")
-
-        r1.raise_for_status()
-        LOG.debug(f'r1 headers {r1.headers}')
-
-        # Q2: old inputs now spent since 
-        r2 = self.session.get(
-            f"{self._kupo_api_url()}/matches",
-            params={**base_params, **r2_params},
-            headers=headers, # TODO did claude forget this? or should it not be there?
-        )
-
-        if r2.status_code == 400:
-            raise NotImplementedError("Rollback detected (spent_after)")
-
-        r2.raise_for_status()
-        LOG.debug(f'r2 headers {r2.headers}')
-
-        # Verify both queries see the same chain tip
-        slot1 = int(r1.headers["X-Most-Recent-Checkpoint"])
-        slot2 = int(r2.headers["X-Most-Recent-Checkpoint"])
-        if slot1 != slot2:
-            LOG.debug(f'Got 2 different slots: {slot1} vs {slot2}. Retry next poll to avoid edge cases.')
-            return {}
-
-        n_matches = len(r1.json() + r2.json())
-
-        if slot1 == 0:
-            LOG.debug(f"No matches yet. Has the election started?")
-            assert n_matches == 0, f'No matches expected before a checkpoint is set, but got {n_matches}'
-            return {}
-
-        new_checkpoint = self._set_checkpoint(r1.headers)
-        if not new_checkpoint:
-            return {}
-
-        # Start from previous partial matches if any.
-        # TODO clear them after they've been retried once or a couple times, if that comes up
-        prev_matches = self.unpaired_matches
-        self.unpaired_matches = []
-        if prev_matches:
-            LOG.debug(f'Re-injecting {len(prev_matches)} previous unpaired matches:\n{pformat(prev_matches)}')
-
-        # Merge by (txid, output_index), Q1 and Q2 may overlap
-        matches = {}
-        for m in prev_matches + r1.json() + r2.json():
-            ch_str = kupo_match_to_channel_str(m) 
-
-            created_key = (m['created_at']['slot_no'], ch_str)
-            matches[created_key] = m
-
-            if m['spent_at'] is not None:
-                spent_key = (m['spent_at']['slot_no'], ch_str)
-                matches[spent_key] = m
-
-        if matches:
-            LOG.debug(f'Processing {len(matches)} merged matches:\n{pformat(matches)}')
-
-        return matches
+            event = ChannelEvent(
+                slot_no      = slot_no,
+                channel_id   = coerce_channel_id(ch_str),
+                action       = action,
+                input_match  = input_match,
+                output_match = output_match,
+                input_state  = input_state,
+                output_state = output_state,
+            )
+            LOG.debug(f'event:\n{pformat(event)}')
+            yield event
 
 
-    def _get_checkpoint(self, n_back_from_tip=KUPO_N_BACK_FROM_TIP) -> Optional[Point]:
-        LOG.debug('ElectionSubscriber._get_checkpoint')
-        # TODO does using somethng besides the actual tip break the caching?
-        n_points = len(self.checkpoints)
-        LOG.debug(f'There are {n_points} saved checkpoints.')
-        if len(self.checkpoints) < n_back_from_tip:
-            return None
+    def _fetch_state(self, kupo_match: dict) -> ChannelState:
+        LOG.debug('ElectionSubscriber._fetch_state')
+        LOG.debug(f'kupo_match: {kupo_match}')
+        datum_hash = kupo_match['datum_hash']
+        url = self._kupo_api_url() + f'/datums/{datum_hash}'
+        LOG.debug(f'fetching datum {datum_hash}')
+        resp = self.session.get(url, timeout=10)
+        resp.raise_for_status()
+        datum = resp.json()
+        LOG.debug(f'fetched {datum_hash} -> {datum}')
+        state = decode_plutusdata_union(ChannelState, datum['datum'])
+        LOG.debug(f'decoded {datum} -> {state}')
+        return state
+
+
+    ## handle polling issues ##
+
+
+    def _handle_same_but_spent(self, event) -> bool:
+        i = event.channel_id
+        s = channel_id_to_string(i)
+        if i in self._history and len(self._history[i]) > 0:
+            prev_event = self._history[i][-1]
+            # The 1st type of "same but spent" is that we get them in order and should update.
+            # No point announcing the update externally though; that would be annoying.
+            if _same_but_spent(prev_event, event):
+                self._history[i][-1] = event
+                LOG.debug(f'Replaced last {s} event with a new spent version.')
+                return True
+             # The 2nd type is we get the spent one first, and should ignore the unspent.
+            if _same_but_spent(event, prev_event):
+                LOG.debug(f'Ignored spent version of already-unspent {s} channel head.')
+                return True
         else:
-            return self.checkpoints[-n_back_from_tip]
-
-
-    def _set_checkpoint(self, headers: dict) -> bool:
-        LOG.debug('ElectionSubscriber._set_checkpoint')
-        try:
-            tip = Point.from_kupo_headers(headers)
-        except KeyError:
-            # Kupo doesn't seem to send these until the first match is found.
-            LOG.debug(f"Wait for Kupo to send slot + block hash.")
             return False
-        if len(self.checkpoints) > 0 and tip == self.checkpoints[-1]:
-
-            # TODO which way is better?
-            # Processing these matches leads to many duplicate events but
-            # faster consistency.
-            LOG.debug(f"Same checkpoint, no 304. Wait for new checkpoint.")
-            return False
-            # LOG.debug(f"Same checkpoint, no 304. Process matches anyway.")
-            # return True
-
-        self.checkpoints.append(tip)
-        LOG.debug(f'Saved checkpoint {tip}')
-        self.checkpoints = self.checkpoints[-KUPO_MAX_CHECKPOINTS:]
-        return True
 
 
-    ## handle election actions ##
+    def _is_duplicate_event(self, event) -> bool:
+        # TODO why are there sometimes duplicates of all events at once?
+        i = event.channel_id
+        if i in self._history:
+            ch_str = channel_id_to_string(i)
+            for (n, e) in enumerate(self._history[i]):
+                if e == event:
+                    LOG.debug(f'Ignore duplicate of {ch_str} event {n}.')
+                    return True
+        return False
+
+
+    def _handle_unpaired_match(self, ch_str, ioa_triple) -> bool:
+        # Sometimes we get a match back from Kupo that doesn't seem to fit into
+        # an input/output pair. Not sure whether that's a Kupo thing or a bug
+        # in our matching algorithm. For now the cleanest fix seems to be to
+        # stash those matches and re-inject them next poll.
+
+        (input_match, output_match, action) = ioa_triple
+
+        if input_match is None and not is_being_minted(ch_str, action):
+            # LOG.debug(f'Dropping triple with missing input_match: {key} : {val}')
+            LOG.debug(f'Saving unpaired output_match for later: {output_match}')
+            self.unpaired_matches.append(output_match)
+            return True
+
+        if output_match is None and not is_being_burned(ch_str, action):
+            # LOG.debug(f'Dropping triple with missing output_match: {key} : {val}')
+            LOG.debug(f'Saving unpaired input_match for later: {input_match}')
+            self.unpaired_matches.append(input_match)
+            return True
+
+        return False
+
+
+    ## handle rollbacks ##
+
+
+    def _handle_rollback(self):
+        raise NotImplementedError
+
+    def _rollback_to(self, safe_slot: int):
+        for channel_id, entries in list(self._history.items()):
+            kept = [e for e in entries if e.slot_no <= safe_slot]
+
+            if not kept:
+                self._history.pop(channel_id)
+                # self.current_state.pop(channel_id, None)
+                continue
+
+            self._history[channel_id] = kept
+            last = kept[-1]
+
+            # Un-burn if the burn was rolled back
+            if last.removed_slot is not None and last.removed_slot > safe_slot:
+                last.removed_slot = None
+
+            # If channel is live (not burned), make sure it's in current_state
+            # if last.removed_slot is None:
+            #     self.current_state[channel_id] = (last.utxo, last.state)
+            # else:
+            #     self.current_state.pop(channel_id, None)
+
+
+    ## internal event/action handlers ##
+
 
     def _on_action(self, event: ChannelEvent):
         LOG.debug('ElectionSubscriber._on_action')
@@ -1008,7 +1041,6 @@ class ElectionSubscriber:
             case RebalanceFunds(channels=_): return self._on_rebalancefunds(event)
             case PostPublicRecords():        return self._on_postpublicrecords(event)
             case BurnTestTokens():           return self._on_burntesttokens(event)
-            # case None:                       LOG.warning(f'event with no action: {event}') # TODO debug
             case _:                          raise NotImplementedError
 
     def _on_initelection(self, event: ChannelEvent):
@@ -1025,8 +1057,8 @@ class ElectionSubscriber:
         self._on_mint(event)
         return event
 
-    # remember this will be called once per channel touched
     def _on_addsubchannels(self, event: ChannelEvent):
+        # remember this will be called once per channel touched
         LOG.debug('ElectionSubscriber._on_addsubchannels')
         if event.channel_id == ADMIN_CHANNEL_ID:
             self._on_cont(event)
@@ -1047,8 +1079,8 @@ class ElectionSubscriber:
         self._on_burn(event)
         return event
 
-    # remember this will be called once per channel touched
     def _on_rmsubchannels(self, event: ChannelEvent):
+        # remember this will be called once per channel touched
         LOG.debug('ElectionSubscriber._on_rmsubchannels')
         # assert event.channel_id in self._history, f'tried to remove non-existent channel {event.channel_id}'
         if event.channel_id == ADMIN_CHANNEL_ID:
@@ -1057,8 +1089,8 @@ class ElectionSubscriber:
             self._on_burn(event)
         return event
 
-    # remember this will be called once per channel touched
     def _on_rebalancefunds(self, event: ChannelEvent):
+        # remember this will be called once per channel touched
         LOG.debug('ElectionSubscriber._on_rebalancefunds')
         self._on_cont(event)
         return event
@@ -1093,39 +1125,8 @@ class ElectionSubscriber:
         assert event.input_state  is not None, 'continuation without input_state'
         assert event.output_match is not None, 'continuation without output_match'
         assert event.output_state is not None, 'continuation without output_state'
-
         in_seq  = event.input_state.state.seq
         out_seq = event.output_state.state.seq
         assert in_seq + 1 == out_seq, f'state seq error: {in_seq} -> {out_seq} in {event}'
-
         assert event.channel_id in self._history, f'_on_cont but {event.channel_id} not in history'
-
         self._history[event.channel_id].append(event)
-
-
-    ## handle rollbacks ##
-
-    def _handle_rollback(self):
-        raise NotImplementedError
-
-    def _rollback_to(self, safe_slot: int):
-        for channel_id, entries in list(self._history.items()):
-            kept = [e for e in entries if e.slot_no <= safe_slot]
-
-            if not kept:
-                self._history.pop(channel_id)
-                # self.current_state.pop(channel_id, None)
-                continue
-
-            self._history[channel_id] = kept
-            last = kept[-1]
-
-            # Un-burn if the burn was rolled back
-            if last.removed_slot is not None and last.removed_slot > safe_slot:
-                last.removed_slot = None
-
-            # If channel is live (not burned), make sure it's in current_state
-            # if last.removed_slot is None:
-            #     self.current_state[channel_id] = (last.utxo, last.state)
-            # else:
-            #     self.current_state.pop(channel_id, None)
