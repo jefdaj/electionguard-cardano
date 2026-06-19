@@ -310,14 +310,14 @@ class ElectionSubscriber:
         # for http requests to the kupo process
         self._session = _make_session()
 
-        # A list of matches we couldn't fit clealy into an input/output pair to
+        # A list of matches we couldn't fit cleanly into an input/output pair to
         # make an event from. They'll be re-injected into the list of new
         # matches next poll.
         self._unpaired_matches = []
 
-        # A list of slots + block hashes Kupo reports that it indexed. Used to
-        # limit our queries to the not-quite-tip of the chain in the hope
-        # that'll be more stable. Presumably helpful for handling rollbacks in
+        # A list of slots + block hashes Kupo reports that it indexed so far.
+        # Used to limit our queries to the not-quite-tip of the chain in the hope
+        # that it will be more stable. Presumably helpful for handling rollbacks in
         # the future too!
         self._checkpoints: list[Point] = []
 
