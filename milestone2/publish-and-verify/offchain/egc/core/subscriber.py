@@ -154,7 +154,7 @@ def kupo_match_to_pycardano_utxo(kupo_dict: dict) -> UTxO:
     """Convert a Kupo UTXO response dict to a PyCardano UTxO.
     WARNING: Does not handle a lot of edge cases! Mainly for BurnTestTokens.
     """
-    LOG.debug('ElectionSubscriber.kupo_match_to_pycardano_utxo')
+    LOG.debug('kupo_match_to_pycardano_utxo')
     tx_input = TransactionInput.from_primitive(
         [kupo_dict["transaction_id"], kupo_dict["output_index"]]
     )
@@ -261,6 +261,7 @@ def _make_session():
         max_retries=retry,
     )
     s.mount("http://", adapter)
+    s.headers.update({'Accept': 'application/json'})
     return s
 
 
@@ -289,54 +290,33 @@ class ElectionSubscriber:
 
         self.config = config
 
-        # High-level callbacks
-        self.on_action   = on_action
-        self.on_rollback = on_rollback
+        # Client callbacks, which default to printing events.
+        self._client_on_action   = on_action
+        self._client_on_rollback = on_rollback
 
-        # State is split into current and historical, because that makes it
-        # simpler to work with Kupo's spent and unspent UTXO filters. When a
-        # UTXO is spent we remove it from current and append its new spent
-        # equivalent to history.
-        # TODO write lock on self._history while mutating?
+        # TODO write lock while mutating
         self._history: Mapping[ChannelId, list[ChannelEvent]] = {}
 
         # for managing the kupo process
-        self.kupo_proc:   Optional[subprocess.Popen] = None
-        self.kupo_thread: Optional[threading.Thread] = None
-        self.kupo_stop = threading.Event()
+        self._kupo_proc:   Optional[subprocess.Popen] = None
+        self._kupo_thread: Optional[threading.Thread] = None
+        self._kupo_stop = threading.Event()
 
-        # this will be updated when starting kupo to avoid conflicts with existing processes
-        self.kupo_port = KUPO_PORT
+        self._kupo_port = KUPO_PORT
 
         # for http requests to the kupo process
-        self.session = _make_session()
-        self.session.headers.update({'Accept': 'application/json'})
-
-        # Starting at the point from the config seems logical,
-        # but for some reason Kupo rejects it. None works fine.
-        # self.cursor = Point.from_config(self.config)
-        self.cursor = None
-
-        self.cursor3 = None
-        self.etag = None
-
-        # For debugging.
-        # TODO remove
-        self.prev_events = set()
-        self.seen_matches = set()
-
-        self.poll3_prev_events = set()
+        self._session = _make_session()
 
         # A list of matches we couldn't fit clealy into an input/output pair to
         # make an event from. They'll be re-injected into the list of new
         # matches next poll.
-        self.unpaired_matches = []
+        self._unpaired_matches = []
 
         # A list of slots + block hashes Kupo reports that it indexed. Used to
         # limit our queries to the not-quite-tip of the chain in the hope
         # that'll be more stable. Presumably helpful for handling rollbacks in
         # the future too!
-        self.checkpoints: list[Point] = []
+        self._checkpoints: list[Point] = []
 
 
     ## query interface ##
@@ -399,7 +379,7 @@ class ElectionSubscriber:
 
     def start(self) -> None:
         LOG.debug('ElectionSubscriber.start')
-        self.kupo_stop.clear()
+        self._kupo_stop.clear()
 
         def _start_and_watch() -> None:
             try:
@@ -415,11 +395,11 @@ class ElectionSubscriber:
         signal.signal(signal.SIGINT , handle_sigint)
         signal.signal(signal.SIGTERM, handle_sigint)
 
-        self.kupo_thread = threading.Thread(
+        self._kupo_thread = threading.Thread(
             target=_start_and_watch,
             daemon=False,
         )
-        self.kupo_thread.start()
+        self._kupo_thread.start()
 
     def join(self):
         LOG.debug('ElectionSubscriber.join')
@@ -433,20 +413,20 @@ class ElectionSubscriber:
     def stop(self) -> None:
         LOG.debug('ElectionSubscriber.stop')
         self._kupo_stop()
-        self.kupo_stop.set()
-        if self.kupo_thread and self.kupo_thread.is_alive():
+        self._kupo_stop.set()
+        if self._kupo_thread and self._kupo_thread.is_alive():
             LOG.debug('Waiting for watcher thread to exit...')
             try:
-                self.kupo_thread.join(timeout=5)
+                self._kupo_thread.join(timeout=5)
             except Exception as e:
                 if not 'cannot join current thread' in str(e):
                     raise
-        self.kupo_thread = None
+        self._kupo_thread = None
 
     def is_done(self):
         LOG.debug('ElectionSubscriber.is_done')
-        return self.kupo_stop.is_set() \
-           and self.kupo_thread is None
+        return self._kupo_stop.is_set() \
+           and self._kupo_thread is None
 
 
     ## process management ##
@@ -471,10 +451,10 @@ class ElectionSubscriber:
     def _kupo_find_port(self):
         LOG.debug('ElectionSubscriber._kupo_find_port')
         _random_delay()
-        while is_port_in_use(self.kupo_port):
-            LOG.debug(f'port {self.kupo_port} is in use')
-            self.kupo_port += 1
-        LOG.debug(f'will start kupo on port {self.kupo_port}')
+        while is_port_in_use(self._kupo_port):
+            LOG.debug(f'port {self._kupo_port} is in use')
+            self._kupo_port += 1
+        LOG.debug(f'will start kupo on port {self._kupo_port}')
 
 
     def _kupo_start(self) -> None:
@@ -484,8 +464,8 @@ class ElectionSubscriber:
         '''
         LOG.debug('ElectionSubscriber._kupo_start')
 
-        if self.kupo_proc is not None and self.kupo_proc.poll() is None:
-            LOG.warning(f'Kupo already running (pid={self.kupo_proc.pid})')
+        if self._kupo_proc is not None and self._kupo_proc.poll() is None:
+            LOG.warning(f'Kupo already running (pid={self._kupo_proc.pid})')
             return
 
         since_arg = f'{self.config.since_slot}.{self.config.since_block_hash}'
@@ -505,12 +485,12 @@ class ElectionSubscriber:
         cmd += [
             '--match', f'{self.config.policy_id}/*',
             '--host', KUPO_HOST,
-            '--port', str(self.kupo_port),
+            '--port', str(self._kupo_port),
             '--log-level', 'Warning'
         ]
 
         LOG.debug(f'Starting Kupo: {' '.join(cmd)}')
-        self.kupo_proc = subprocess.Popen(
+        self._kupo_proc = subprocess.Popen(
             cmd,
             preexec_fn=os.setsid, # makes handling signals more reliable
             stdout=subprocess.PIPE,
@@ -534,7 +514,7 @@ class ElectionSubscriber:
 
     def _log_kupo(self) -> None:
         LOG.debug('ElectionSubscriber._log_kupo')
-        proc = self.kupo_proc
+        proc = self._kupo_proc
         if proc.stdout is None:
             return
         for line in proc.stdout:
@@ -549,7 +529,7 @@ class ElectionSubscriber:
 
     def _kupo_stop(self) -> None:
         LOG.debug('ElectionSubscriber._kupo_stop')
-        proc = self.kupo_proc
+        proc = self._kupo_proc
         if proc is None:
             return
         if proc.poll() is None:
@@ -570,25 +550,15 @@ class ElectionSubscriber:
                 LOG.warning('Kupo log reader did not exit')
             self._log_thread = None
 
-        self.kupo_proc = None
+        self._kupo_proc = None
 
 
     def _kupo_watch(self) -> None:
         LOG.debug('ElectionSubscriber._kupo_watch')
         LOG.debug(f'Watcher thread started for policy_id={self.config.policy_id}')
-        while not self.kupo_stop.is_set():
+        while not self._kupo_stop.is_set():
             try:
-
-                # working_events = self._poll()
-                # try:
-                # poll3_events = self._poll3()
-                    # events_diff = DeepDiff(working_events, poll3_events)
-                    # LOG.debug(f'events_diff:\n\n{events_diff}\n')
-                # except Exception as e:
-                    # LOG.error(f'poll3 error: {e}', exc_info=True)
-
                 self._poll()
-
             except requests.RequestException as e:
                 LOG.warning(f'Kupo polling error: {e}') # TODO error?
             except Exception as e:
@@ -629,23 +599,23 @@ class ElectionSubscriber:
             event = self._on_action(event)
 
             # Emit final events to clients
-            self.on_action(event)
+            self._client_on_action(event)
 
 
     def _kupo_api_url(self) -> str:
         LOG.debug('ElectionSubscriber._kupo_api_url')
-        return f'http://{KUPO_HOST}:{self.kupo_port}/v1'
+        return f'http://{KUPO_HOST}:{self._kupo_port}/v1'
 
 
     def _get_checkpoint(self, n_back_from_tip=KUPO_N_BACK_FROM_TIP) -> Optional[Point]:
         LOG.debug('ElectionSubscriber._get_checkpoint')
         # TODO does using somethng besides the actual tip break the caching?
-        n_points = len(self.checkpoints)
+        n_points = len(self._checkpoints)
         LOG.debug(f'There are {n_points} saved checkpoints.')
-        if len(self.checkpoints) < n_back_from_tip:
+        if len(self._checkpoints) < n_back_from_tip:
             return None
         else:
-            return self.checkpoints[-n_back_from_tip]
+            return self._checkpoints[-n_back_from_tip]
 
 
     def _set_checkpoint(self, headers: dict) -> bool:
@@ -656,7 +626,7 @@ class ElectionSubscriber:
             # Kupo doesn't seem to send these until the first match is found.
             LOG.debug(f"Wait for Kupo to send slot + block hash.")
             return False
-        if len(self.checkpoints) > 0 and tip == self.checkpoints[-1]:
+        if len(self._checkpoints) > 0 and tip == self._checkpoints[-1]:
 
             # TODO which way is better?
             # Processing these matches leads to many duplicate events but
@@ -666,9 +636,9 @@ class ElectionSubscriber:
             # LOG.debug(f"Same checkpoint, no 304. Process matches anyway.")
             # return True
 
-        self.checkpoints.append(tip)
+        self._checkpoints.append(tip)
         LOG.debug(f'Saved checkpoint {tip}')
-        self.checkpoints = self.checkpoints[-KUPO_MAX_CHECKPOINTS:]
+        self._checkpoints = self._checkpoints[-KUPO_MAX_CHECKPOINTS:]
         return True
 
 
@@ -684,7 +654,7 @@ class ElectionSubscriber:
         r2_params = {} if start is None else {"spent_after":   start.as_param()}
 
         # Q1: new outputs since start checkpoint (or start point)
-        r1 = self.session.get(
+        r1 = self._session.get(
             f"{self._kupo_api_url()}/matches",
             params={**base_params, **r1_params},
             headers=headers,
@@ -701,7 +671,7 @@ class ElectionSubscriber:
         LOG.debug(f'r1 headers {r1.headers}')
 
         # Q2: old inputs now spent since
-        r2 = self.session.get(
+        r2 = self._session.get(
             f"{self._kupo_api_url()}/matches",
             params={**base_params, **r2_params},
             headers=headers, # TODO did claude forget this? or should it not be there?
@@ -733,8 +703,8 @@ class ElectionSubscriber:
 
         # Start from previous partial matches if any.
         # TODO clear them after they've been retried once or a couple times, if that comes up
-        prev_matches = self.unpaired_matches
-        self.unpaired_matches = []
+        prev_matches = self._unpaired_matches
+        self._unpaired_matches = []
         if prev_matches:
             LOG.debug(f'Re-injecting {len(prev_matches)} previous unpaired matches:\n{pformat(prev_matches)}')
 
@@ -931,7 +901,7 @@ class ElectionSubscriber:
         datum_hash = kupo_match['datum_hash']
         url = self._kupo_api_url() + f'/datums/{datum_hash}'
         LOG.debug(f'fetching datum {datum_hash}')
-        resp = self.session.get(url, timeout=10)
+        resp = self._session.get(url, timeout=10)
         resp.raise_for_status()
         datum = resp.json()
         LOG.debug(f'fetched {datum_hash} -> {datum}')
@@ -985,13 +955,13 @@ class ElectionSubscriber:
         if input_match is None and not is_being_minted(ch_str, action):
             # LOG.debug(f'Dropping triple with missing input_match: {key} : {val}')
             LOG.debug(f'Saving unpaired output_match for later: {output_match}')
-            self.unpaired_matches.append(output_match)
+            self._unpaired_matches.append(output_match)
             return True
 
         if output_match is None and not is_being_burned(ch_str, action):
             # LOG.debug(f'Dropping triple with missing output_match: {key} : {val}')
             LOG.debug(f'Saving unpaired input_match for later: {input_match}')
-            self.unpaired_matches.append(input_match)
+            self._unpaired_matches.append(input_match)
             return True
 
         return False
