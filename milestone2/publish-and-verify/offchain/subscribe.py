@@ -60,7 +60,9 @@ while not sub.is_done():
         log_current()
         time.sleep(10)
     except KeyboardInterrupt:
+        LOG.warning('Got keyboard interrupt')
         break
 
+LOG.info('Stopping...')
 sub.stop()
 sub.join()

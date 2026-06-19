@@ -1,25 +1,24 @@
-import socket
 import argparse
+import itertools
 import json
 import os
+import random
+import requests
 import signal
+import socket
 import subprocess
 import sys
 import threading
 import time
-import logging
-import itertools
-from copy import copy
-import random
 
-from urllib.parse import urlencode
-from dataclasses import dataclass, replace
+from collections import defaultdict
+from dataclasses import dataclass
+from deepdiff import DeepDiff
 from os import environ
 from pprint import pformat
-from collections import defaultdict
-from deepdiff import DeepDiff
-
-from typing import Any, Callable, Dict, List, Tuple, Optional, Self, Iterable
+from requests.adapters import HTTPAdapter
+from typing import Any, Tuple, Optional, Self, Iterable
+from urllib3.util.retry import Retry
 
 from .ogmios import *
 from .plutus.types.channel import *
@@ -27,14 +26,10 @@ from .plutus.types.action import *
 from .plutus.types.channel import *
 from .election import ElectionContext
 
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
-
-
+import logging
 LOG = logging.getLogger(__name__)
-
 from pycardano import *
+
 
 # TODO use https://pypi.org/project/kupo-py/ ?
 
@@ -498,7 +493,7 @@ class ElectionSubscriber:
         LOG.debug(f'Starting Kupo: {' '.join(cmd)}')
         self._kupo_proc = subprocess.Popen(
             cmd,
-            preexec_fn=os.setsid, # makes handling signals more reliable
+            start_new_session=True, # Isolate child in its own process group so it doesn't get Ctrl-C directly
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
