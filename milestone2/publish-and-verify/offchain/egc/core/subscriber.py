@@ -211,6 +211,14 @@ def find_spend_action(out_match: dict, matches: Iterable[dict]) -> Optional[Elec
     return None
 
 
+def is_being_minted(channel_str: str, action: ElectionAction) -> bool:
+    ch_id = coerce_channel_id(channel_str)
+    match action:
+        case AddSubChannels(channels=cs): return ch_id in cs
+        case InitElection():              return ch_id == ADMIN_CHANNEL_ID
+        case _:                           return False
+
+
 def is_being_burned(channel_str: str, action: ElectionAction) -> bool:
     ch_id = coerce_channel_id(channel_str)
     match action:
@@ -358,6 +366,9 @@ class ElectionSubscriber:
         self.seen_matches = set()
         
         self.poll3_prev_events = set()
+
+        # TODO does this help?
+        self.poll4_unpaired_matches = []
 
 
     ## query interface ##
@@ -1255,8 +1266,17 @@ class ElectionSubscriber:
             (input_match, output_match, action) = val
 
             # TODO does a special case for this help?
+            if input_match is None and not is_being_minted(ch_str, action):
+                # LOG.debug(f'Dropping triple with missing input_match: {key} : {val}')
+                LOG.debug(f'Saving partial output_match for later: {output_match}')
+                self.poll4_unpaired_matches.append(output_match)
+                continue
+
+            # TODO does a special case for this help?
             if output_match is None and not is_being_burned(ch_str, action):
-                LOG.debug(f'Dropping triple with missing output_match: {key} : {val}')
+                # LOG.debug(f'Dropping triple with missing output_match: {key} : {val}')
+                LOG.debug(f'Saving partial input_match for later: {input_match}')
+                self.poll4_unpaired_matches.append(input_match)
                 continue
 
             input_state  = self._fetch_state( input_match) if  input_match else None
@@ -1594,21 +1614,11 @@ class ElectionSubscriber:
             LOG.debug(f'Got 2 different checkpoints: {cp1} vs {cp2}. Retry next poll to avoid edge cases.')
             return {}
 
-        # Merge by (txid, output_index), Q1 and Q2 may overlap
-        matches = {}
-        for m in r1.json() + r2.json():
-            ch_str = kupo_match_to_channel_str(m) 
-
-            created_key = (m['created_at']['slot_no'], ch_str)
-            matches[created_key] = m
-
-            if m['spent_at'] is not None:
-                spent_key = (m['spent_at']['slot_no'], ch_str)
-                matches[spent_key] = m
+        n_matches = len(r1.json() + r2.json())
 
         if int(cp1) == 0:
             LOG.debug(f'No matches yet. Kupo still starting, or no InitElection yet.')
-            assert len(matches) == 0, 'No matches expected before a checkpoint is set.'
+            assert n_matches == 0, f'No matches expected before a checkpoint is set, but got {n_matches}'
             return {}
 
         # Advance cursor
@@ -1619,22 +1629,44 @@ class ElectionSubscriber:
         except KeyError:
             # Kupo doesn't seem to provide ETag (or set a checkpoint?) until a match is found.
             # TODO what should we say/do here?
-            LOG.debug(f"chain hasn't advanced, but no 304? Throwing away {len(matches)} matches.")
+            LOG.debug(f"chain hasn't advanced, but no 304? Throwing away {n_matches} matches.")
             return {}
 
         if new_cursor == self.cursor3 and new_etag == self.etag:
-            LOG.debug(f"chain hasn't advanced, but no 304? Throwing away {len(matches)} matches.")
+            LOG.debug(f"chain hasn't advanced, but no 304? Throwing away {n_matches} matches.")
             return {}
             # LOG.debug(f"chain hasn't advanced, but no 304? Processing {len(matches)} matches.")
-        else:
-            self.cursor3 = new_cursor
-            self.etag = new_etag
-            LOG.debug(f'advance cursor, etag to {self.cursor3}, {self.etag}. Processing {len(matches)} matches.')
-            if matches:
-                LOG.debug(f'Processing {len(matches)} merged matches:\n{pformat(matches)}')
-            # TODO confirm here that no matches have slots < the old cursor
-            # TODO or better that they're all within the window
-            return matches
+
+        # Start from previous partial matches if any.
+        # TODO clear them after they've been retried once? see what helps first
+        prev_matches = self.poll4_unpaired_matches
+        self.poll4_unpaired_matches = []
+            # self.poll4_unpaired_matches.pop()
+            # for _ in range(len(self.poll4_unpaired_matches))
+            # ]
+
+        # Merge by (txid, output_index), Q1 and Q2 may overlap
+        matches = {}
+        for m in prev_matches + r1.json() + r2.json():
+            ch_str = kupo_match_to_channel_str(m) 
+
+            created_key = (m['created_at']['slot_no'], ch_str)
+            matches[created_key] = m
+
+            if m['spent_at'] is not None:
+                spent_key = (m['spent_at']['slot_no'], ch_str)
+                matches[spent_key] = m
+
+        # TODO try without these to see if it fixes consistency problems...
+        # TODO and if so, you really have a query protocol problem instead!
+        self.cursor3 = new_cursor
+        self.etag = new_etag
+        LOG.debug(f'advance cursor, etag to {self.cursor3}, {self.etag}. Processing {n_matches} matches.')
+        if matches:
+            LOG.debug(f'Processing {len(matches)} merged matches:\n{pformat(matches)}')
+        # TODO confirm here that no matches have slots < the old cursor
+        # TODO or better that they're all within the window
+        return matches
 
 
     ## handle election actions ##
