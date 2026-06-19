@@ -289,7 +289,7 @@ class ElectionSubscriber:
 
         # Client callbacks, which default to printing events.
         self._client_on_action   = on_action
-        self._client_on_rollback = on_rollback
+        self._client_on_rollback = on_rollback # TODO implement this
 
         # This is the main subscriber state; all the public methods read it,
         # and the internal callbacks mutate it.
@@ -644,7 +644,7 @@ class ElectionSubscriber:
         # reduce rollbacks, but it seems to break Kupo's caching. So for now we
         # just keep the default/latest available.
         n_points = len(self._checkpoints)
-        LOG.debug(f'There are {n_points} saved checkpoints.')
+        LOG.debug(f'Have {n_points} saved checkpoints.')
         if len(self._checkpoints) == 0:
             return None
         else:
@@ -702,7 +702,9 @@ class ElectionSubscriber:
             return {}
 
         if r1.status_code == 400:
-            raise NotImplementedError("Rollback detected (created_after)")
+            # Kupo can't find the block header from the latest checkpoint anymore,
+            # implying a rollback.
+            return self._handle_rollback()
 
         r1.raise_for_status()
         LOG.debug(f'r1 headers {r1.headers}')
@@ -1017,36 +1019,30 @@ class ElectionSubscriber:
         return False
 
 
-    ## handle rollbacks ##
-
-
     def _handle_rollback(self):
         log_call()
-        raise NotImplementedError
 
+        # This is just the simplest probably-workable method for now.
+        # For production use it should be cleaner and report a state diff to clients.
+        # There should probably be a custom exception class for this too.
+        # TODO write a test to call this manually and verify it works
 
-    def _rollback_to(self, safe_slot: int):
-        log_call()
-        for channel_id, entries in list(self._history.items()):
-            kept = [e for e in entries if e.slot_no <= safe_slot]
+        with self._history_lock:
 
-            if not kept:
-                self._history.pop(channel_id)
-                # self.current_state.pop(channel_id, None)
-                continue
+            # 1. pop the latest checkpoint
+            lost = self._checkpoints.pop()
+            prev = self._get_checkpoint()
+            LOG.error(f'Rolling back {lost} -> {prev}')
 
-            self._history[channel_id] = kept
-            last = kept[-1]
+            # 2. pop channel events until before that slot
+            for (ch_id, ch_events) in self._history.items():
+                ch_str = channel_id_to_string(ch_id)
+                while ch_events and ch_events[-1].slot_no >= prev.slot_no:
+                    dropped = ch_events.pop()
+                    LOG.debug(f'Rolling back {ch_str} event: {dropped}')
 
-            # Un-burn if the burn was rolled back
-            if last.removed_slot is not None and last.removed_slot > safe_slot:
-                last.removed_slot = None
-
-            # If channel is live (not burned), make sure it's in current_state
-            # if last.removed_slot is None:
-            #     self.current_state[channel_id] = (last.utxo, last.state)
-            # else:
-            #     self.current_state.pop(channel_id, None)
+        # 3. retry fetch, which may call this function again if needed
+        return self._fetch_matches()
 
 
     ## handle events ##
