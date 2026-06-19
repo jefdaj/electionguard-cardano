@@ -13,6 +13,7 @@ import threading
 import time
 
 from collections import defaultdict
+from copy import deepcopy
 from dataclasses import dataclass
 from deepdiff import DeepDiff
 from os import environ
@@ -291,8 +292,13 @@ class ElectionSubscriber:
         self._client_on_action   = on_action
         self._client_on_rollback = on_rollback
 
-        # TODO write lock while mutating
+        # This is the main subscriber state; all the public methods read it,
+        # and the internal callbacks mutate it.
         self._history: Mapping[ChannelId, list[ChannelEvent]] = {}
+
+        # Lock when mutating history to prevent any potential weirdness.
+        # RLock (as opposed to Lock) allows overlapping calls within the same thread.
+        self._history_lock = threading.RLock()
 
         # for managing the kupo process
         self._kupo_proc:   Optional[subprocess.Popen] = None
@@ -323,7 +329,8 @@ class ElectionSubscriber:
         # Includes historical channels that have already been closed.
         # TODO return copies from all public methods
         log_call()
-        return sorted(list(self._history.keys()))
+        with self._history_lock:
+            return sorted(list(self._history.keys()))
 
 
     def current_channel_ids(self) -> list[ChannelId]:
@@ -339,7 +346,8 @@ class ElectionSubscriber:
         # Works fine on already-closed channels. Raises KeyError on not-yet-opened ones.
         # TODO return copies from all public methods
         log_call()
-        return self._history[channel_id] # TODO return None rather than raise KeyError?
+        with self._history_lock:
+            return deepcopy(self._history[channel_id]) # TODO return None rather than raise KeyError?
 
 
     def current_utxo(self, channel_id: ChannelId) -> Optional[UTxO]:
@@ -841,7 +849,8 @@ class ElectionSubscriber:
         for (input_match, output_match) in io_pairs_by_sc.values():
             matches_to_search += [input_match, output_match]
         for ch_id in self.current_channel_ids():
-            prev_events = self._history[ch_id] # TODO only the head of each channel?
+            with self._history_lock:
+                prev_events = self._history[ch_id]
             for event in prev_events:
                 matches_to_search += [event.input_match, event.output_match]
         matches_to_search = [m for m in matches_to_search if m is not None]
@@ -949,32 +958,34 @@ class ElectionSubscriber:
         log_call()
         i = event.channel_id
         s = channel_id_to_string(i)
-        if i in self._history and len(self._history[i]) > 0:
-            prev_event = self._history[i][-1]
-            # The 1st type of "same but spent" is that we get them in order and should update.
-            # No point announcing the update externally though; that would be annoying.
-            if _same_but_spent(prev_event, event):
-                self._history[i][-1] = event
-                LOG.debug(f'Replaced last {s} event with a new spent version.')
-                return True
-             # The 2nd type is we get the spent one first, and should ignore the unspent.
-            if _same_but_spent(event, prev_event):
-                LOG.debug(f'Ignored spent version of already-unspent {s} channel head.')
-                return True
-        else:
-            return False
+        with self._history_lock:
+            if i in self._history and len(self._history[i]) > 0:
+                prev_event = self._history[i][-1]
+                # The 1st type of "same but spent" is that we get them in order and should update.
+                # No point announcing the update externally though; that would be annoying.
+                if _same_but_spent(prev_event, event):
+                    self._history[i][-1] = event
+                    LOG.debug(f'Replaced last {s} event with a new spent version.')
+                    return True
+                 # The 2nd type is we get the spent one first, and should ignore the unspent.
+                if _same_but_spent(event, prev_event):
+                    LOG.debug(f'Ignored spent version of already-unspent {s} channel head.')
+                    return True
+            else:
+                return False
 
 
     def _is_duplicate_event(self, event) -> bool:
         log_call()
         # TODO why are there sometimes duplicates of all events at once?
         i = event.channel_id
-        if i in self._history:
-            ch_str = channel_id_to_string(i)
-            for (n, e) in enumerate(self._history[i]):
-                if e == event:
-                    LOG.debug(f'Ignore duplicate of {ch_str} event {n}.')
-                    return True
+        with self._history_lock:
+            if i in self._history:
+                ch_str = channel_id_to_string(i)
+                for (n, e) in enumerate(self._history[i]):
+                    if e == event:
+                        LOG.debug(f'Ignore duplicate of {ch_str} event {n}.')
+                        return True
         return False
 
 
@@ -1054,15 +1065,16 @@ class ElectionSubscriber:
 
     def _on_initelection(self, event: ChannelEvent):
         log_call()
-        LOG.debug(f'history during _on_initelection:\n{pformat(self._history)}')
-        # assert self._history == {}, 'InitElection with non-empty history'
-        if self.current_phase() is not None:
-            i = event.channel_id
-            prev = self._history[i][-1]
-            diff = DeepDiff(prev, event)
-            LOG.debug(f'diff:\n{pformat(diff)}')
-        assert self.current_phase() == None, 'InitElection should always happen first'
-        assert event.channel_id == ADMIN_CHANNEL_ID # note this tx was published by the funder
+        # LOG.debug(f'history during _on_initelection:\n{pformat(self._history)}')
+        with self._history_lock:
+            assert self._history == {}, 'InitElection with non-empty history'
+            if self.current_phase() is not None:
+                i = event.channel_id
+                prev = self._history[i][-1]
+                diff = DeepDiff(prev, event)
+                LOG.debug(f'diff:\n{pformat(diff)}')
+            assert self.current_phase() == None, 'InitElection should always happen first'
+            assert event.channel_id == ADMIN_CHANNEL_ID # note this tx was published by the funder
         self._on_mint(event)
         return event
 
@@ -1126,16 +1138,18 @@ class ElectionSubscriber:
 
     def _on_mint(self, event: ChannelEvent):
         log_call()
-        LOG.debug(f'history during _on_mint:\n{pformat(self._history)}')
-        assert not event.channel_id in self._history, f"tried to mint existing channel!\n{event}\n{self._history}"
-        self._history[event.channel_id] = [event]
+        # LOG.debug(f'history during _on_mint:\n{pformat(self._history)}')
+        with self._history_lock:
+            assert not event.channel_id in self._history, f"tried to mint existing channel!\n{event}\n{self._history}"
+            self._history[event.channel_id] = [event]
 
 
     def _on_burn(self, event: ChannelEvent):
         log_call()
         ch_str = channel_id_to_string(event.channel_id)
         assert event.output_state is None, f'{ch_str} being removed, but has an output'
-        self._history[event.channel_id].append(event)
+        with self._history_lock:
+            self._history[event.channel_id].append(event)
 
 
     def _on_cont(self, event: ChannelEvent):
@@ -1147,5 +1161,6 @@ class ElectionSubscriber:
         in_seq  = event.input_state.state.seq
         out_seq = event.output_state.state.seq
         assert in_seq + 1 == out_seq, f'state seq error: {in_seq} -> {out_seq} in {event}'
-        assert event.channel_id in self._history, f'_on_cont but {event.channel_id} not in history'
-        self._history[event.channel_id].append(event)
+        with self._history_lock:
+            assert event.channel_id in self._history, f'_on_cont but {event.channel_id} not in history'
+            self._history[event.channel_id].append(event)
