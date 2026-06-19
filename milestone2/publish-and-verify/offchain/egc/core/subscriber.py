@@ -259,14 +259,6 @@ def _make_session():
     return s
 
 
-# TODO where should this live?
-def _random_delay():
-    # Wait a random amount of time 0-1 seconds.
-    # Quick and dirty hack to prevent all the nodes doing something at
-    # exactly the same time if you configure them in a conflicting way.
-    time.sleep(random.randint(1, 1000) / 1000)
-
-
 class ElectionSubscriber:
     '''Runs kupo and feeds matches to a callback.
     Note that since_slot and since_block_hash should be figured out *before* deploying the contract,
@@ -455,9 +447,16 @@ class ElectionSubscriber:
                 pass
 
 
+    def _random_delay(self):
+        # Wait a random amount of time 0-1 seconds.
+        # Quick and dirty hack to prevent all the nodes doing something at
+        # exactly the same time if you configure them in a conflicting way.
+        self.sleep(random.randint(1, 1000) / 1000)
+
+
     def _kupo_find_port(self):
         LOG.debug('ElectionSubscriber._kupo_find_port')
-        _random_delay()
+        self._random_delay()
         while is_port_in_use(self._kupo_port):
             LOG.debug(f'port {self._kupo_port} is in use')
             self._kupo_port += 1
