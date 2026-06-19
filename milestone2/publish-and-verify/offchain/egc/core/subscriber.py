@@ -417,8 +417,8 @@ class ElectionSubscriber:
 
         def _start_and_watch() -> None:
             try:
-                self._start_kupo()
-                self._watch_kupo()
+                self._kupo_start()
+                self._kupo_watch()
             except Exception as e:
                 LOG.error(f'Error in watcher: {e}', exc_info=True)
 
@@ -446,7 +446,7 @@ class ElectionSubscriber:
 
     def stop(self) -> None:
         LOG.debug('ElectionSubscriber.stop')
-        self._stop_kupo()
+        self._kupo_stop()
         self.kupo_stop.set()
         if self.kupo_thread and self.kupo_thread.is_alive():
             LOG.debug('Waiting for watcher thread to exit...')
@@ -482,8 +482,8 @@ class ElectionSubscriber:
                 pass
 
 
-    def _ensure_unused_port(self):
-        LOG.debug('ElectionSubscriber._ensure_unused_port')
+    def _kupo_find_port(self):
+        LOG.debug('ElectionSubscriber._kupo_find_port')
         _random_delay()
         while is_port_in_use(self.kupo_port):
             LOG.debug(f'port {self.kupo_port} is in use')
@@ -491,12 +491,12 @@ class ElectionSubscriber:
         LOG.debug(f'will start kupo on port {self.kupo_port}')
 
 
-    def _start_kupo(self) -> None:
+    def _kupo_start(self) -> None:
         '''
         Start Kupo as a subprocess.
         Uses `--since {slot}.{hash}` and `--match '{policy_id}/*'`.
         '''
-        LOG.debug('ElectionSubscriber._start_kupo')
+        LOG.debug('ElectionSubscriber._kupo_start')
 
         if self.kupo_proc is not None and self.kupo_proc.poll() is None:
             LOG.warning(f'Kupo already running (pid={self.kupo_proc.pid})')
@@ -514,7 +514,7 @@ class ElectionSubscriber:
 
         # Start at the default 1442 and increment until one isn't in use.
         # TODO explicit port config and only use this as a fallback
-        self._ensure_unused_port()
+        self._kupo_find_port()
 
         cmd += [
             '--match', f'{self.config.policy_id}/*',
@@ -535,7 +535,7 @@ class ElectionSubscriber:
 
         # Log Kupo output in a helper thread
         self._log_thread = threading.Thread(
-            target=self._log_kupo_output,
+            target=self._log_kupo,
             args=(),
             daemon=True,
         )
@@ -546,8 +546,8 @@ class ElectionSubscriber:
         time.sleep(1)
 
 
-    def _log_kupo_output(self) -> None:
-        LOG.debug('ElectionSubscriber._log_kupo_output')
+    def _log_kupo(self) -> None:
+        LOG.debug('ElectionSubscriber._log_kupo')
         proc = self.kupo_proc
         if proc.stdout is None:
             return
@@ -561,8 +561,8 @@ class ElectionSubscriber:
         LOG.debug('Kupo subprocess output thread terminating')
 
 
-    def _stop_kupo(self) -> None:
-        LOG.debug('ElectionSubscriber._stop_kupo')
+    def _kupo_stop(self) -> None:
+        LOG.debug('ElectionSubscriber._kupo_stop')
         proc = self.kupo_proc
         if proc is None:
             return
@@ -586,8 +586,9 @@ class ElectionSubscriber:
 
         self.kupo_proc = None
 
-    def _watch_kupo(self) -> None:
-        LOG.debug('ElectionSubscriber._watch_kupo')
+
+    def _kupo_watch(self) -> None:
+        LOG.debug('ElectionSubscriber._kupo_watch')
         LOG.debug(f'Watcher thread started for policy_id={self.config.policy_id}')
         while not self.kupo_stop.is_set():
             try:
@@ -636,42 +637,39 @@ class ElectionSubscriber:
 
         # Assemble event objects, now with no need for keys.
         # These aren't quite ready to emit yet because they haven't been double checked.
-        # events = self._poll4_assemble_events(ioa_triples_by_sc)
+        # events = self._assemble_events(ioa_triples_by_sc)
 
         # Update internal state (branching on action type) and emit finished events.
         # for event in events:
-        for event in self._poll4_assemble_events(ioa_triples_by_sc):
-            if self._poll4_handle_same_but_spent(event):
+        for event in self._assemble_events(ioa_triples_by_sc):
+            if self._handle_same_but_spent(event):
                 continue
-            if self._poll4_discard_duplicate(event):
+            if self._is_duplicate_event(event):
                 continue
             finished_event = self._on_action(event) # internal callback
             self.on_action(finished_event)          # external callback
 
 
-    def _poll4_handle_same_but_spent(self, event) -> bool:
-        # TODO is there a simpler way?
+    def _handle_same_but_spent(self, event) -> bool:
         i = event.channel_id
         s = channel_id_to_string(i)
         if i in self._history and len(self._history[i]) > 0:
             prev_event = self._history[i][-1]
-
             # The 1st type of "same but spent" is that we get them in order and should update.
+            # No point announcing the update externally though; that would be annoying.
             if _same_but_spent(prev_event, event):
                 self._history[i][-1] = event
                 LOG.debug(f'Replaced last {s} event with a new spent version.')
                 return True
-
-             # The 2nd type is we get the spent one first, and should ignore.   
+             # The 2nd type is we get the spent one first, and should ignore the unspent.
             if _same_but_spent(event, prev_event):
                 LOG.debug(f'Ignored spent version of already-unspent {s} channel head.')
                 return True
-
         else:
             return False
 
 
-    def _poll4_discard_duplicate(self, event) -> bool:
+    def _is_duplicate_event(self, event) -> bool:
         i = event.channel_id
         if i in self._history:
             if event in self._history[i]:
@@ -695,20 +693,18 @@ class ElectionSubscriber:
         return state
 
 
-    def _poll4_assemble_events(self, ioa_triples_by_sc: dict) -> Iterable[ChannelEvent]:
+    def _assemble_events(self, ioa_triples_by_sc: dict) -> Iterable[ChannelEvent]:
 
         for (key, val) in ioa_triples_by_sc.items():
             (slot_no, ch_str) = key
             (input_match, output_match, action) = val
 
-            # TODO does a special case for this help?
             if input_match is None and not is_being_minted(ch_str, action):
                 # LOG.debug(f'Dropping triple with missing input_match: {key} : {val}')
                 LOG.debug(f'Saving unpaired output_match for later: {output_match}')
                 self.poll4_unpaired_matches.append(output_match)
                 continue
 
-            # TODO does a special case for this help?
             if output_match is None and not is_being_burned(ch_str, action):
                 # LOG.debug(f'Dropping triple with missing output_match: {key} : {val}')
                 LOG.debug(f'Saving unpaired input_match for later: {input_match}')
