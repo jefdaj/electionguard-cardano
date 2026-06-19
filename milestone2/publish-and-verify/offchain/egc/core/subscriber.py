@@ -1049,7 +1049,7 @@ class ElectionSubscriber:
             else:
                 LOG.debug(f'Dropping all events before slot {prev.slot_no}')
                 ch_ids = sorted(list(self._history.keys()))
-                for ch_id in keys:
+                for ch_id in ch_ids:
                     ch_str = channel_id_to_string(ch_id)
                     ch_events = self._history[ch_id]
                     while ch_events and ch_events[-1].slot_no >= prev.slot_no:

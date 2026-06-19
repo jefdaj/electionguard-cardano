@@ -39,17 +39,22 @@ def test_rollback(
         election: ElectionContext,
         subscriber: ElectionSubscriber,
     ):
-    # This just simulates a rollback in a low effort way;
+
+    # This just simulates a single block rollback in a low effort way;
     # for production testing we probably need a local testnet?
-    # TODO subscriber.sleep instead?
-    time.sleep(30) # TODO how long is actually required?
+    # TODO do a couple slightly better versions with multiple events?
+
+    # Wait until there are at least 2 blocks to test the more complicated rollback path.
+    while len(subscriber._checkpoints) < 2:
+        time.sleep(5)
+
     before = subscriber.complete_history()
 
     # This triggers a rollback, which includes re-fetching matches,
     # and then sends the new matches through the normal process.
     subscriber._handle_matches( subscriber._handle_rollback() )
 
-    time.sleep(30) # TODO how long is actually required?
+    time.sleep(5) # TODO how long is actually required?
     after = subscriber.complete_history()
 
     # There presumably wasn't a real rollback during this period,
