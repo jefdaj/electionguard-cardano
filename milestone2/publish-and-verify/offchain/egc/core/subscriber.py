@@ -195,11 +195,12 @@ def kupo_match_to_pycardano_utxo(kupo_dict: dict) -> UTxO:
     return UTxO(tx_input, tx_output)
 
 
-def find_spend_action(out_match: dict, in_matches: list[dict]) -> Optional[ElectionAction]:
+def find_spend_action(out_match: dict, matches: Iterable[dict]) -> Optional[ElectionAction]:
     """Find the validator spend redeemer for a tx, ignoring mint redeemers."""
+	# TODO make this more detailed so it's valid in general, not just when using identical redeemers
     # LOG.debug(f'out_match: {out_match}')
     txid = out_match['transaction_id']
-    for m in in_matches:
+    for m in matches:
         spent = m.get("spent_at")
         if spent and spent["transaction_id"] == txid:
             redeemer = spent["redeemer"]
@@ -257,17 +258,18 @@ def input_output_pairs(spent, unspent):
 
 
 def _same_but_now_spent(old_event, new_event) -> bool:
-    # TODO rewrite this using DeepDiff?
-    if old_event.output_match is not None:
+    diff = DeepDiff(old_event, new_event)
+    changes = diff.get("type_changes", {})
+    try:
+        assert set(diff.keys()) == {"type_changes"}, f"Unexpected diff keys: {diff.keys()}"
+        assert len(changes) == 1, f"Expected 1 change, got: {changes}"
+        change = changes.get("root.output_match['spent_at']")
+        assert change is not None, "Expected spent_at to change"
+        assert change["old_value"] is None
+        assert isinstance(change["new_value"], dict)
+        return True
+    except:
         return False
-    if new_event.output_match is None or new_event.output_match['spent_at'] is None:
-        return False
-    old_event_spent = replace(
-        old_event,
-        output_match=copy(new_event.output_match['spent_at'])
-    )
-    return old_event_spent == new_event
-
 
 # TODO where should this live?
 def decode_action(redeemer_str):
@@ -1289,24 +1291,28 @@ class ElectionSubscriber:
         inputs_by_sc = {}
         outputs_by_sc = {}
         for key in io_pair_keys:
-            (slot_no, ch_str) = key
+            (tx_slot_no, ch_str) = key
             match = matches_by_sc[key]
             created_tc_pair = (match['transaction_id'], ch_str)
             LOG.debug(f'classifying match {key}')
-            # is_output = match['created_at']['slot_no'] == slot_no
-            is_input = match['spent_at'] and match['spent_at']['slot_no'] == slot_no
-            if is_input:
-                inputs_by_sc[key] = match
-            else:
+            is_output = match['created_at']['slot_no'] == tx_slot_no
+            # is_input = match['spent_at'] and match['spent_at']['slot_no'] == tx_slot_no
+            if is_output:
                 outputs_by_sc[key] = match
+            else:
+                inputs_by_sc[key] = match
 
         LOG.debug(f'inputs_by_sc:\n{pformat(inputs_by_sc)}')
         LOG.debug(f'outputs_by_sc:\n{pformat(outputs_by_sc)}')
 
+        # We only want to deal with inputs whose corresponding output isn't also in the match set.
+        # These should be burns.
+        out_keys = outputs_by_sc.keys()
         inputs_by_sc_deduped = {
             (s,c) : m
             for ((s,c), m) in inputs_by_sc.items()
-            if not (m['spent_at']['slot_no'], c) in outputs_by_sc.keys()
+            if  not (m['spent_at'  ]['slot_no'], c) in out_keys
+            and not (m['created_at']['slot_no'], c) in out_keys
         }
         LOG.debug(f'inputs_by_sc_deduped:\n{pformat(inputs_by_sc_deduped)}')
 
@@ -1388,20 +1394,23 @@ class ElectionSubscriber:
         for (key, (in_match, out_match)) in io_pairs_by_sc.items():
             if in_match is not None:
                 # has input = can find redeemer and match on that: continuation, sub burn, endelection
-                if in_match['spent_at'] is None:
-                    # TODO what to call this case?
-                    action = find_spend_action(in_match, prev_inputs)
-                else:
-                    # TODO is there a danger of mint redeemers when looking up directly too?
-                    action = decode_action(in_match['spent_at']['redeemer'])
+                # if in_match['spent_at'] is None:
+                #     # TODO what to call this case?
+                #     action = find_spend_action(in_match, io_pairs_by_sc.values())
+                # else:
+                # TODO is there a danger of mint redeemers when looking up directly too?
+                action = decode_action(in_match['spent_at']['redeemer'])
             else:
                 assert out_match is not None, 'both in_match and out_match should not be None'
-                from_prev = find_spend_action(out_match, prev_inputs)
+                from_prev = find_spend_action(out_match, prev_inputs) # TODO expand search? # TODO expand search?
                 if from_prev is not None:
                     # no input but can find redeemer in other matches = match on that to confirm: sub mint
                     action = from_prev
                 else:
                     # no input, can't find redeemer, very first match, admin channel = initelection
+                    LOG.debug(f'InitElection with {key}\n{in_match}\n{out_match}\n')
+                    assert key[1] == channel_id_to_string(ADMIN_CHANNEL_ID), f'InitElection wrong channel: {key[1]}'
+                    assert self.current_phase() == None, f'InitElection during {self.current_phase()}'
                     action = InitElection() # TODO assertions here?
             ioa_triple = (in_match, out_match, action)
             ioa_triples_by_sc[key] = ioa_triple
@@ -1524,6 +1533,11 @@ class ElectionSubscriber:
         LOG.debug('ElectionSubscriber._on_initelection')
         LOG.debug(f'history during _on_initelection:\n{pformat(self.history)}')
         # assert self.history == {}, 'InitElection with non-empty history'
+        if self.current_phase() is not None:
+            i = event.channel_id
+            prev = self.history[i][-1]
+            diff = DeepDiff(prev, event)
+            LOG.debug(f'diff:\n{pformat(diff)}')
         assert self.current_phase() == None, 'InitElection should always happen first'
         assert event.channel_id == ADMIN_CHANNEL_ID # note this tx was published by the funder
         self._on_mint(event)
