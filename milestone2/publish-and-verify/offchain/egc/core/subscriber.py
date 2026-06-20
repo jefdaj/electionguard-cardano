@@ -1040,7 +1040,7 @@ class ElectionSubscriber:
 
             lost = self._checkpoints.pop()
             prev = self._get_checkpoint()
-            LOG.error(f'Rolling back {lost} -> {prev}')
+            LOG.warning(f'Rolling back {lost} -> {prev}')
 
             if prev is None:
                 LOG.debug('No checkpoint to roll back to; dropping entire history.')
