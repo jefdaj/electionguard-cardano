@@ -653,6 +653,7 @@ class ElectionSubscriber:
     def _get_checkpoint(self, slot_no=None) -> Optional[Point]:
         # If not given a particular slot_no, uses the latest one.
         # TODO should it return a point if none exactly match slot_no?
+        # TODO remove the slot_no option if not using it anymore?
         log_call()
         n_points = len(self._checkpoints)
         LOG.debug(f'Have {n_points} saved checkpoints.')
@@ -688,15 +689,27 @@ class ElectionSubscriber:
 
     def _set_matches_cursor(self, matches: list[dict]):
         log_call()
-        latest_slot = 0
-        for m in matches:
-            created = m['created_at']['slot_no']
-            spent = m['spent_at']['slot_no'] if m['spent_at'] else 0
-            latest_slot = max([latest_slot, created, spent])
-        latest_point = self._get_checkpoint(slot_no=latest_slot)
-        if latest_point != self._matches_cursor:
-            LOG.debug(f'Advance matches cursor to {latest_point}')
-            self._matches_cursor = latest_point
+
+        latest_created = max(matches, key=lambda m: m['created_at']['slot_no'])
+        created_point = Point(
+            slot_no=latest_created['created_at']['slot_no'],
+            header_hash=latest_created['created_at']['header_hash'],
+        )
+
+        spent_matches = [m for m in matches if m['spent_at']]
+        if spent_matches:
+            latest_spent = max(spent_matches, key=lambda m: m['spent_at']['slot_no'])
+            spent_point = Point(
+                slot_no=latest_spent['spent_at']['slot_no'],
+                header_hash=latest_spent['spent_at']['header_hash'],
+            )
+            new_cursor = min(created_point, spent_point, key=lambda p: p.slot_no)
+        else:
+            new_cursor = created_point
+
+        if new_cursor != self._matches_cursor:
+            LOG.debug(f'Advance matches cursor to {new_cursor}')
+            self._matches_cursor = new_cursor
 
 
     def _fetch_matches_by_sc(self) -> list[dict]:
@@ -726,33 +739,32 @@ class ElectionSubscriber:
             headers=headers,
         )
 
-        self._add_checkpoint(r1.headers)
+        LOG.debug(f'r1 headers {r1.headers}')
 
-        if r1.status_code == 304:
-            LOG.debug(f'Got 304 not modified, implying no new matches.')
-            return {}
+        self._add_checkpoint(r1.headers)
 
         if r1.status_code == 400:
             # Kupo can't find the block header from the latest checkpoint anymore,
             # implying a rollback.
             return self._handle_rollback()
 
-        r1.raise_for_status()
-        LOG.debug(f'r1 headers {r1.headers}')
+        if r1.status_code == 304:
+            matches1 = []
+        else:
+            r1.raise_for_status()
+            matches1 = r1.json()
 
         # query 2: utxos newly marked spent
         r2 = self._session.get(
             f"{self._kupo_api_url()}/matches",
             params={**base_params, **r2_params},
-            headers=headers, # TODO did claude forget this? or should it not be there?
+            headers=headers,
         )
+        LOG.debug(f'r2 headers {r2.headers}')
 
         if r2.status_code == 400:
             # same as for r1 above
             return self._handle_rollback()
-
-        r2.raise_for_status()
-        LOG.debug(f'r2 headers {r2.headers}')
 
         # Verify both queries see the same chain tip
         slot1 = int(r1.headers["X-Most-Recent-Checkpoint"])
@@ -761,7 +773,13 @@ class ElectionSubscriber:
             LOG.debug(f'Got 2 different slots: {slot1} vs {slot2}. Retry next poll to avoid edge cases.')
             return {}
 
-        matches = r1.json() + r2.json()
+        if r2.status_code == 304:
+            matches2 = []
+        else:
+            r2.raise_for_status()
+            matches2 = r2.json()
+
+        matches = matches1 + matches2
 
         if len(matches) == 0:
             return {}
