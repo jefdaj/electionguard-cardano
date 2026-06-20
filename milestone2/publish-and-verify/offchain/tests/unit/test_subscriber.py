@@ -11,6 +11,8 @@ LOG = logging.getLogger(__name__)
 # testing a 3rd. Most of the more detailed tests do have to be interleaved with
 # their election steps in other test modules though.
 
+# TODO test that multiple subscribers (with multiple elections?) don't interfere with each other
+
 @per_election_fixture
 def sub_cfg(election: ElectionContext):
     return SubscriberConfig.from_election(election)
@@ -19,7 +21,6 @@ def sub_cfg(election: ElectionContext):
 def subscriber(sub_cfg: SubscriberConfig):
     sub = ElectionSubscriber(sub_cfg)
     sub.start()
-    time.sleep(1) # TODO remove?
     yield sub
     sub.stop()
 

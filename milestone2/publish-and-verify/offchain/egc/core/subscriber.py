@@ -372,6 +372,8 @@ class ElectionSubscriber:
             return kupo_match_to_pycardano_utxo(match)
 
 
+    # TODO version that gets multiple channel current states, like you would want
+
     def current_state(self, channel_id: ChannelId) -> Optional[ChannelState]:
         # Returns None if the channel hasn't been opened yet or was already closed
         # TODO return copies from all public methods
