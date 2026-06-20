@@ -727,9 +727,10 @@ class ElectionSubscriber:
         # The _matches_cursor is also a Point but it should advance with the latest match,
         # which might be a ways behind the chain tip. It only updates when there are matches.
         # TODO would separate created and spent cursors be an improvement?
+        # TODO sync bug! removing created_after + spent_after params fixes it
         prev = self._matches_cursor
-        r1_params = {} if not prev else {"created_after": prev.as_param()}
-        r2_params = {} if not prev else {"spent_after":   prev.as_param()}
+        r1_params = {} # if not prev else {"created_after": prev.as_param()}
+        r2_params = {} # if not prev else {"spent_after":   prev.as_param()}
 
         if self._unpaired_matches:
             LOG.debug(f'Have {len(self._unpaired_matches)} unpaired matches to re-inject with the next batch.')
