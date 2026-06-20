@@ -313,11 +313,14 @@ class ElectionSubscriber:
         # matches next poll.
         self._unpaired_matches = []
 
-        # A list of slots + block hashes Kupo reports that it indexed so far.
-        # Used to limit our queries to the not-quite-tip of the chain in the hope
-        # that it will be more stable. Presumably helpful for handling rollbacks in
-        # the future too!
+        # A list of slots + block header hashes Kupo reports that it indexed so far.
+        # Used in case of rollbacks, for the If-None-Match ETag/304 mechanism.
         self._checkpoints: list[Point] = []
+
+        # The point of the latest match so far.
+        # Used to query for only new matches.
+        # Gotcha: *not* the same as the latest checkpoint above. We need both.
+        self._matches_cursor: Optional[Point] = None
 
 
     ## query interface ##
@@ -647,21 +650,26 @@ class ElectionSubscriber:
         return f'http://{KUPO_HOST}:{self._kupo_port}/v1'
 
 
-    def _get_checkpoint(self) -> Optional[Point]:
+    def _get_checkpoint(self, slot_no=None) -> Optional[Point]:
+        # If not given a particular slot_no, uses the latest one.
+        # TODO should it return a point if none exactly match slot_no?
         log_call()
-        # I used to have logic here for following 3 blocks back from the tip to
-        # reduce rollbacks, but it seems to break Kupo's caching. So for now we
-        # just keep the default/latest available.
         n_points = len(self._checkpoints)
         LOG.debug(f'Have {n_points} saved checkpoints.')
         if len(self._checkpoints) == 0:
             return None
-        else:
+        elif slot_no is None:
             return self._checkpoints[-1]
+        else:
+            return next(
+                (p for p in reversed(self._checkpoints) if p.slot_no == slot_no),
+                None
+            )
 
 
-    def _set_checkpoint(self, headers: dict) -> bool:
-        # This returns whether the checkpoint was updated, but it currently isn't used.
+    def _add_checkpoint(self, headers: dict) -> bool:
+        # This returns whether a checkpoint was added, but that info isn't
+        # currently used to decide anything.
         log_call()
         try:
             tip = Point.from_kupo_headers(headers)
@@ -678,29 +686,47 @@ class ElectionSubscriber:
             return True
 
 
+    def _set_matches_cursor(self, matches: list[dict]):
+        log_call()
+        latest_slot = 0
+        for m in matches:
+            created = m['created_at']['slot_no']
+            spent = m['spent_at']['slot_no'] if m['spent_at'] else 0
+            latest_slot = max([latest_slot, created, spent])
+        latest_point = self._get_checkpoint(slot_no=latest_slot)
+        if latest_point != self._matches_cursor:
+            LOG.debug(f'Advance matches cursor to {latest_point}')
+            self._matches_cursor = latest_point
+
+
     def _fetch_matches_by_sc(self) -> list[dict]:
         log_call()
         base_params = {"order": "oldest_first"} # TODO resolve_hashes?
 
-        # TODO is kupo re-sending all matches every time we update the checkpoint??
-        start = self._get_checkpoint()
 
-        headers = {"If-None-Match": start.header_hash} if start else {}
+        # The tip Point should advance with the chain tip as reported by Kupo
+        # in the previous fetch. That way we get 304 when nothing has changed.
+        tip = self._get_checkpoint()
+        headers = {"If-None-Match": tip.header_hash} if tip else {}
 
-        r1_params = {} if start is None else {"created_after": start.as_param()}
-        r2_params = {} if start is None else {"spent_after":   start.as_param()}
+        # The _matches_cursor is also a Point but it should advance with the latest match,
+        # which might be a ways behind the chain tip. It only updates when there are matches.
+        # TODO would separate created and spent cursors be an improvement?
+        prev = self._matches_cursor
+        r1_params = {} if not prev else {"created_after": prev.as_param()}
+        r2_params = {} if not prev else {"spent_after":   prev.as_param()}
 
         if self._unpaired_matches:
             LOG.debug(f'Have {len(self._unpaired_matches)} unpaired matches to re-inject with the next batch.')
 
-        # Q1: new outputs since start checkpoint (or start point)
+        # query 1: newly created utxos
         r1 = self._session.get(
             f"{self._kupo_api_url()}/matches",
             params={**base_params, **r1_params},
             headers=headers,
         )
 
-        self._set_checkpoint(r1.headers)
+        self._add_checkpoint(r1.headers)
 
         if r1.status_code == 304:
             LOG.debug(f'Got 304 not modified, implying no new matches.')
@@ -714,7 +740,7 @@ class ElectionSubscriber:
         r1.raise_for_status()
         LOG.debug(f'r1 headers {r1.headers}')
 
-        # Q2: old inputs now spent since
+        # query 2: utxos newly marked spent
         r2 = self._session.get(
             f"{self._kupo_api_url()}/matches",
             params={**base_params, **r2_params},
@@ -735,15 +761,12 @@ class ElectionSubscriber:
             LOG.debug(f'Got 2 different slots: {slot1} vs {slot2}. Retry next poll to avoid edge cases.')
             return {}
 
-        n_matches = len(r1.json() + r2.json())
+        matches = r1.json() + r2.json()
 
-        if slot1 == 0:
-            LOG.debug(f"No checkpoint yet. Has the election started?")
-            assert n_matches == 0, f'No matches expected before a checkpoint is set, but got {n_matches}'
+        if len(matches) == 0:
             return {}
-
-        if n_matches == 0:
-            return {}
+        else:
+            self._set_matches_cursor(matches)
 
         # Start from previous partial matches if any.
         # TODO clear them after they've been retried once or a couple times, if that comes up
@@ -753,21 +776,21 @@ class ElectionSubscriber:
             LOG.debug(f'Re-injecting {len(prev_matches)} previous unpaired matches:\n{pformat(prev_matches)}')
 
         # Merge by (txid, output_index), Q1 and Q2 may overlap
-        matches = {}
-        for m in prev_matches + r1.json() + r2.json():
+        matches_by_sc = {}
+        for m in prev_matches + matches:
             ch_str = kupo_match_to_channel_str(m)
 
             created_key = (m['created_at']['slot_no'], ch_str)
-            matches[created_key] = m
+            matches_by_sc[created_key] = m
 
             if m['spent_at'] is not None:
                 spent_key = (m['spent_at']['slot_no'], ch_str)
-                matches[spent_key] = m
+                matches_by_sc[spent_key] = m
 
-        if matches:
-            LOG.debug(f'Processing {len(matches)} merged matches:\n{pformat(matches)}')
+        if matches_by_sc:
+            LOG.debug(f'Processing {len(matches_by_sc)} merged matches:\n{pformat(matches_by_sc)}')
 
-        return matches
+        return matches_by_sc
 
 
     def _pair_inputs_with_outputs(self, matches_by_sc: dict) -> list[Tuple[Optional[dict], Optional[dict]]]:
