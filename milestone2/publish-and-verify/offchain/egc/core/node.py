@@ -83,6 +83,7 @@ class ElectionNode:
 
     def wait_for_confirmation(self, tx: Transaction):
         self.publisher.wait_for_confirmation(tx)
+        # TODO self.subscriber.wait_for_confirmation(tx.id)
         ch_str = self.channel_str()
         LOG.debug(f'{ch_str} confirmed tx {tx.id}')
 
