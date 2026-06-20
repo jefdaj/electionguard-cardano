@@ -751,16 +751,17 @@ class ElectionSubscriber:
             return self._handle_rollback()
 
         if r1.status_code == 304:
-            matches1 = []
-        else:
-            r1.raise_for_status()
-            matches1 = r1.json()
+            LOG.debug(f'Got 304 not modified.')
+            return {}
+
+        r1.raise_for_status()
+        matches1 = r1.json()
 
         # query 2: utxos newly marked spent
         r2 = self._session.get(
             f"{self._kupo_api_url()}/matches",
             params={**base_params, **r2_params},
-            headers=headers,
+            # No If-None-Match here, since we should have already hit 304 above
         )
         LOG.debug(f'r2 headers {r2.headers}')
 
@@ -775,18 +776,15 @@ class ElectionSubscriber:
             LOG.debug(f'Got 2 different slots: {slot1} vs {slot2}. Retry next poll to avoid edge cases.')
             return {}
 
-        if r2.status_code == 304:
-            matches2 = []
-        else:
-            r2.raise_for_status()
-            matches2 = r2.json()
+        r2.raise_for_status()
+        matches2 = r2.json()
 
         matches = matches1 + matches2
 
         if len(matches) == 0:
             return {}
-        else:
-            self._set_matches_cursor(matches)
+
+        self._set_matches_cursor(matches)
 
         # Start from previous partial matches if any.
         # TODO clear them after they've been retried once or a couple times, if that comes up

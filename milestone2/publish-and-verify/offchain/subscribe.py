@@ -23,9 +23,11 @@ import logging
 logging.basicConfig(
   # filename='subscribe.log',
   encoding='utf-8',
-  level=logging.INFO,
+  level=logging.DEBUG,
   format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
+
+logging.getLogger('urllib3').setLevel(logging.DEBUG)
 
 LOG = logging.getLogger(os.path.basename(__file__))
 
