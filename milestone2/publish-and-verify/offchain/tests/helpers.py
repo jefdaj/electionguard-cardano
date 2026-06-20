@@ -21,7 +21,7 @@ def assert_nodes_in_sync(nodes: List[ElectionNode]):
     ch_strs = [n.channel_str() for n in nodes]
     # one node to compare the others against
     ref = nodes[0]; nodes = nodes[1:]
-    ref.subscriber.sleep(10) # TODO remove
+    time.sleep(10) # TODO remove
     for node in nodes:
 
         np = node.current_phase()
@@ -43,14 +43,14 @@ def assert_node_state(
     ):
     assert isinstance(node, ElectionNode)
     assert isinstance(expected_state, ChannelState)
-    node.subscriber.sleep(10) # TODO remove
+    time.sleep(10) # TODO remove
     node_str = node.channel_str()
-    # (state_utxo, actual_state) = node.state()
     state_utxo   = node.current_utxo()
     actual_state = node.current_state()
-    LOG.debug(f'{node_str} latest state utxo: {state_utxo}')
+    LOG.debug(f'{node_str} actual utxo:\n{pformat(state_utxo)}')
+    LOG.debug(f'{node_str} actual state:\n{pformat(actual_state)}')
+    LOG.debug(f'{node_str} expected state:\n{pformat(expected_state)}')
     assert actual_state == expected_state
-    LOG.debug(f'{node_str} state as expected: {actual_state}')
 
 def sub_s0(sub_id: ChannelId, sub_vkh: VerificationKeyHash) -> ChannelState:
     return SubChannel(state=SubChannelState(
