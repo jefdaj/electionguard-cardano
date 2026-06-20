@@ -14,19 +14,19 @@ LOG = logging.getLogger(__name__)
 global_fixture       = pytest.fixture(scope='session')
 per_election_fixture = pytest.fixture(scope='module')
 
-def assert_nodes_sync_in_5min(nodes: List[ElectionNode]):
+def assert_nodes_converge(nodes: List[ElectionNode]):
     n = len(nodes)
     if n < 2:
-        LOG.warning('assert_nodes_sync_in_5min called with < 2 nodes')
+        LOG.warning('assert_nodes_converge called with < 2 nodes')
         return
     ch_strs = [node.channel_str() for node in nodes]
+    names = ', '.join(s for s in ch_strs)
     # one node to compare the others against
     ref = nodes[0]; nodes = nodes[1:]
     # Wait to make sure they're not all in sync at the prev state.
-    # TODO speed this back up after figuring out the sync bug
-    time.sleep(60)
-    w = 60 # "waited"
+    w = 0 # "waited"
     while True:
+        time.sleep(10); w += 10
         try:
             for node in nodes:
 
@@ -39,16 +39,12 @@ def assert_nodes_sync_in_5min(nodes: List[ElectionNode]):
                 rh = ref.subscriber._history
                 assert nh == rh
 
-            LOG.info(
-                f'All {n} nodes are in sync after {w} seconds: ' + ', '.join(s for s in ch_strs)
-            )
-            return
+            LOG.debug(f'All {n} nodes agree after {w} seconds: {names}')
+            break
         except AssertionError:
-            LOG.debug(f'All {len(nodes)+1} nodes not in sync after {w} seconds.')
-            if w > 300:
+            if w >= 300:
+                LOG.error(f'All {n} nodes do not agree after {w} seconds.')
                 raise
-            time.sleep(10)
-            w += 10
 
 
 # TODO rename _sub tests -> checkpoints and add cross-channel dependencies

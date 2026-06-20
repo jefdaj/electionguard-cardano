@@ -4,7 +4,7 @@ import pytest
 from dataclasses import replace
 from pycardano import *
 from egc import *
-from helpers import per_election_fixture, assert_nodes_sync_in_5min, assert_node_state, sub_s0
+from helpers import per_election_fixture, assert_nodes_converge, assert_node_state, sub_s0
 import logging
 import time
 
@@ -56,7 +56,7 @@ def test_admin_tx0(
     ):
     assert isinstance(admin_tx0, Transaction)
     nodes = [funder, admin]
-    assert_nodes_sync_in_5min(nodes)
+    assert_nodes_converge(nodes)
     assert_node_state(admin, admin_s0)
 
 
@@ -98,7 +98,7 @@ def test_admin_tx1(
     ):
     assert isinstance(admin_tx1, Transaction)
     nodes = [funder, admin]
-    assert_nodes_sync_in_5min(nodes)
+    assert_nodes_converge(nodes)
     assert_node_state(admin, admin_s1)
 
 
@@ -121,7 +121,7 @@ def test_phase0_announce(
         funder,
         admin, admin_s1, admin_tx1,
     ):
-    assert_nodes_sync_in_5min([funder, admin])
+    assert_nodes_converge([funder, admin])
     assert_node_state(admin, admin_s1)
 
 
@@ -178,7 +178,7 @@ def test_admin_tx2(
         all_nodes: list[ElectionNode],
     ):
     assert isinstance(admin_tx2, Transaction)
-    assert_nodes_sync_in_5min(all_nodes)
+    assert_nodes_converge(all_nodes)
     assert_node_state(admin, admin_s2)
     for sub_node in subchannel_nodes:
         expected_state = sub_s0(sub_node.channel_id(), sub_node.publisher.wallet.vkh)
@@ -194,7 +194,7 @@ def test_phase1_onboarding(
         verifier1, verifier1_s0,
         all_nodes: list[ElectionNode],
     ):
-    assert_nodes_sync_in_5min(all_nodes)
+    assert_nodes_converge(all_nodes)
     assert_node_state(admin, admin_s2)
     assert_node_state(guardian1, guardian1_s0)
     assert_node_state(guardian2, guardian2_s0)
@@ -253,7 +253,7 @@ def test_admin_tx3(
         all_nodes: list[ElectionNode],
     ):
     assert isinstance(admin_tx3, Transaction)
-    assert_nodes_sync_in_5min(all_nodes)
+    assert_nodes_converge(all_nodes)
     assert_node_state(admin, admin_s3)
 
 # TODO should guardian1_tx1 go here? maybe just do them all linearly and group by phase
@@ -268,7 +268,7 @@ def test_phase2_ceremony(
         verifier1, verifier1_s0,
         all_nodes: list[ElectionNode],
     ):
-    assert_nodes_sync_in_5min(all_nodes)
+    assert_nodes_converge(all_nodes)
     assert_node_state(admin, admin_s3)
     assert_node_state(guardian1, guardian1_s1)
     assert_node_state(guardian2, guardian2_s0)
@@ -318,7 +318,7 @@ def test_admin_tx4(
         all_nodes: list[ElectionNode],
     ):
     assert isinstance(admin_tx4, Transaction)
-    assert_nodes_sync_in_5min(all_nodes)
+    assert_nodes_converge(all_nodes)
     assert_node_state(admin, admin_s4)
 
 
@@ -361,7 +361,7 @@ def test_admin_tx5(
         all_nodes: list[ElectionNode],
     ):
     assert isinstance(admin_tx5, Transaction)
-    assert_nodes_sync_in_5min(all_nodes)
+    assert_nodes_converge(all_nodes)
     assert_node_state(admin, admin_s5)
 
 
@@ -404,7 +404,7 @@ def test_admin_tx6(
         all_nodes: list[ElectionNode],
     ):
     assert isinstance(admin_tx6, Transaction)
-    assert_nodes_sync_in_5min(all_nodes)
+    assert_nodes_converge(all_nodes)
     assert_node_state(admin, admin_s6)
 
 
@@ -447,7 +447,7 @@ def test_admin_tx7(
         all_nodes: list[ElectionNode],
     ):
     assert isinstance(admin_tx7, Transaction)
-    assert_nodes_sync_in_5min(all_nodes)
+    assert_nodes_converge(all_nodes)
     assert_node_state(admin, admin_s7)
 
 
@@ -496,7 +496,7 @@ def test_guardian1_tx1(
     ):
     assert isinstance(guardian1_tx1, Transaction)
     assert_node_state(guardian1, guardian1_s1)
-    assert_nodes_sync_in_5min(all_nodes)
+    assert_nodes_converge(all_nodes)
 
 
 ## =================================
@@ -543,4 +543,4 @@ def test_admin_tx8(
         all_nodes: list[ElectionNode],
     ):
     assert_node_state(admin, admin_s8)
-    assert_nodes_sync_in_5min(all_nodes)
+    assert_nodes_converge(all_nodes)

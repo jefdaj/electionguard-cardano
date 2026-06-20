@@ -1,6 +1,6 @@
 import pytest
 from egc import *
-from helpers import assert_nodes_sync_in_5min
+from helpers import assert_nodes_converge
 import logging
 
 LOG = logging.getLogger(__name__)
@@ -22,4 +22,4 @@ def test_init_subchannel_nodes(
         assert isinstance(n.election, ElectionContext), f'{s}.election not an ElectionContext'
         assert isinstance(n.publisher, ElectionPublisher), f'{s}.publisher not an ElectionPublisher'
         assert isinstance(n.subscriber, ElectionSubscriber), f'{s}.subscriber not an ElectionSubscriber'
-    assert_nodes_sync_in_5min(subchannel_nodes)
+    assert_nodes_converge(subchannel_nodes)
