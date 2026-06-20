@@ -92,7 +92,8 @@ class ElectionNode:
         LOG.debug(f'{ch_str} confirmed tx {tx.id}')
 
         # TODO instead of this, wait until a subscriber event mentions the tx!
-        time.sleep(OGMIOS_DELAY_SEC)
+        # TODO also, remove now that assert_nodes_converge retries?
+        # time.sleep(OGMIOS_DELAY_SEC)
 
     def balance_and_sign_state_transition_tx(
             self,

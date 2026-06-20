@@ -49,8 +49,8 @@ def assert_nodes_have_same_history(nodes: list[ElectionNode]):
 
 def assert_nodes_converge(
         expected: list[ Tuple[ElectionNode, Optional[ChannelState]] ],
-        interval = 3,
-        timeout = 30,
+        interval = 1,
+        timeout = 60,
     ):
     """The inputs here are a state per node, but that's just a convenient format
     for passing the args. What it actually does is:
@@ -73,6 +73,7 @@ def assert_nodes_converge(
 
     waited = 0
     while True:
+        n_nodes_correct_prev = 0
         n_nodes_correct = 0
 
         for (node_to_test, _) in expected:
@@ -92,22 +93,32 @@ def assert_nodes_converge(
                     assert expected_state == actual_state
                     n_states_correct += 1
                 except AssertionError as e:
-                    diff = DeepDiff(expected_state, actual_state)
-                    LOG.debug(
-                        f'{node_str} node has wrong {state_str} state'
-                        f'after {waited} seconds:\n{pformat(diff)}'
-                    )
                     if waited >= timeout:
-                        LOG.error(f'Nodes did not converge on expected states within {timeout} seconds.')
+                        diff = DeepDiff(expected_state, actual_state)
+                        LOG.debug(
+                            f'{node_str} node has wrong {state_str} state'
+                            f' after {waited} seconds:\n{pformat(diff)}'
+                        )
+                        LOG.error(
+                            'Nodes did not converge on expected states'
+                            f' within {timeout} seconds.'
+                        )
                         raise
-                    continue # next node
-            LOG.debug(f'{node_str} node has {n_states_correct}/{n} states correct after {waited} seconds.')
+                    else:
+                        continue # next node
 
             # How many nodes have them all correct?
             if n_states_correct == n:
                 n_nodes_correct += 1
 
-        LOG.debug(f'After {waited} seconds, {n_nodes_correct}/{n} nodes converged on expected states.')
+        # just to clean up the logs
+        if n_nodes_correct != n_nodes_correct_prev:
+            LOG.debug(
+                f'After {waited} seconds, {n_nodes_correct}/{n}'
+                ' nodes converged on expected states.'
+            )
+            n_nodes_correct_prev = n_nodes_correct
+
         if n_nodes_correct == n:
             break
         time.sleep(interval)

@@ -135,14 +135,6 @@ def channel_id_from_asset_name(encoded: str) -> ChannelId:
 #     LOG.error(f'Output does not match any channel:\n{output}')
 #     return None
 
-# TODO replace with port 0 binding from OS
-# TODO where should this live?
-def is_port_in_use(port: int) -> bool:
-    log_call()
-    # based on https://stackoverflow.com/a/52872579
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        return s.connect_ex((KUPO_HOST, port)) == 0
-
 
 # TODO where should this live?
 def kupo_match_to_channel_str(kupo_match: dict) -> str:
@@ -241,6 +233,16 @@ def _same_but_spent(old_event, new_event) -> bool:
         return True
     except:
         return False
+
+
+# TODO where should this live?
+def find_unused_port():
+    # Returns a random(?) unused port number picked by the OS.
+    s = socket.socket()
+    s.bind(('', 0))
+    port = s.getsockname()[1]
+    s.close()
+    return port
 
 
 # TODO where should this live?
@@ -474,20 +476,9 @@ class ElectionSubscriber:
                 pass
 
 
-    def _random_delay(self):
-        log_call()
-        # Wait a random amount of time 0-3 seconds.
-        # Quick and dirty hack to prevent all the nodes doing something at
-        # exactly the same time if you configure them in a conflicting way.
-        self.sleep(random.randint(0, 3000) / 1000)
-
-
     def _kupo_find_port(self):
         log_call()
-        self._random_delay()
-        while is_port_in_use(self._kupo_port):
-            LOG.debug(f'port {self._kupo_port} is in use')
-            self._kupo_port += 1
+        self._kupo_port = find_unused_port()
         LOG.debug(f'will start kupo on port {self._kupo_port}')
 
 
