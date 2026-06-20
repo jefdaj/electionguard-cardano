@@ -14,27 +14,42 @@ LOG = logging.getLogger(__name__)
 global_fixture       = pytest.fixture(scope='session')
 per_election_fixture = pytest.fixture(scope='module')
 
-def assert_nodes_in_sync(nodes: List[ElectionNode]):
-    if len(nodes) < 2:
-        LOG.warning('assert_nodes_in_sync called with < 2 nodes')
+def assert_nodes_sync_in_5min(nodes: List[ElectionNode]):
+    n = len(nodes)
+    if n < 2:
+        LOG.warning('assert_nodes_sync_in_5min called with < 2 nodes')
         return
-    ch_strs = [n.channel_str() for n in nodes]
+    ch_strs = [node.channel_str() for node in nodes]
     # one node to compare the others against
     ref = nodes[0]; nodes = nodes[1:]
-    time.sleep(30) # TODO remove
-    for node in nodes:
+    # Wait to make sure they're not all in sync at the prev state.
+    # TODO speed this back up after figuring out the sync bug
+    time.sleep(60)
+    w = 60 # "waited"
+    while True:
+        try:
+            for node in nodes:
 
-        np = node.current_phase()
-        rp = ref.current_phase()
-        assert np == rp
+                np = node.current_phase()
+                rp = ref.current_phase()
+                assert np == rp
 
-        # TODO use interface here rather than raw history dict
-        nh = node.subscriber._history
-        rh = ref.subscriber._history
-        assert nh == rh
+                # TODO use interface here rather than raw history dict
+                nh = node.subscriber._history
+                rh = ref.subscriber._history
+                assert nh == rh
 
-    LOG.info(f'All {len(nodes)+1} nodes in sync: ' + ', '.join(s for s in ch_strs))
-    # LOG.debug(f'Current state:\n\n{pformat(ref.subscriber.states)}\n')
+            LOG.info(
+                f'All {n} nodes are in sync after {w} seconds: ' + ', '.join(s for s in ch_strs)
+            )
+            return
+        except AssertionError:
+            LOG.debug(f'All {len(nodes)+1} nodes not in sync after {w} seconds.')
+            if w > 300:
+                raise
+            time.sleep(10)
+            w += 10
+
 
 # TODO rename _sub tests -> checkpoints and add cross-channel dependencies
 def assert_node_state(
@@ -43,13 +58,10 @@ def assert_node_state(
     ):
     assert isinstance(node, ElectionNode)
     assert isinstance(expected_state, ChannelState)
-    time.sleep(30) # TODO remove
     node_str = node.channel_str()
-    state_utxo   = node.current_utxo()
     actual_state = node.current_state()
-    LOG.debug(f'{node_str} actual utxo:\n{pformat(state_utxo)}')
-    LOG.debug(f'{node_str} actual state:\n{pformat(actual_state)}')
-    LOG.debug(f'{node_str} expected state:\n{pformat(expected_state)}')
+    LOG.debug(f'{node_str} actual state:   {pformat(actual_state)  }')
+    LOG.debug(f'{node_str} expected state: {pformat(expected_state)}')
     assert actual_state == expected_state
 
 def sub_s0(sub_id: ChannelId, sub_vkh: VerificationKeyHash) -> ChannelState:

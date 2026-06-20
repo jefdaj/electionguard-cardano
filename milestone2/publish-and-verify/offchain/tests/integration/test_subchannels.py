@@ -4,7 +4,7 @@ import pytest
 from dataclasses import replace
 from pycardano import *
 from egc import *
-from helpers import per_election_fixture, assert_nodes_in_sync, assert_node_state
+from helpers import per_election_fixture, assert_nodes_sync_in_5min, assert_node_state
 import logging
 import time
 
@@ -38,7 +38,7 @@ def test_tx0(
     ):
     assert isinstance(tx0, Transaction)
     nodes = [funder, admin]
-    assert_nodes_in_sync(nodes)
+    assert_nodes_sync_in_5min(nodes)
     assert_node_state(admin, s0)
 
 @per_election_fixture
@@ -79,9 +79,9 @@ def test_tx1(
         tx1: Transaction,
     ):
     assert isinstance(tx1, Transaction)
-    assert_node_state(admin, s1)
     nodes = [funder, admin]
-    assert_nodes_in_sync(nodes)
+    assert_nodes_sync_in_5min(nodes)
+    assert_node_state(admin, s1)
 
 
 ## -------- tx2: add single subchannel --------
@@ -143,8 +143,8 @@ def test_add_subchannel(
         s2: ChannelState,
     ):
     assert isinstance(tx2, Transaction)
+    assert_nodes_sync_in_5min(all_nodes)
     assert_node_state(admin, s2)
-    assert_nodes_in_sync(all_nodes)
 
 
 ## ----------- tx3: rm single subchannel -----------
@@ -182,5 +182,5 @@ def test_rm_subchannel(
         tx3: Transaction,
     ):
     assert isinstance(tx3, Transaction)
+    assert_nodes_sync_in_5min(all_nodes)
     assert_node_state(admin, s3)
-    assert_nodes_in_sync(all_nodes)
