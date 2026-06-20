@@ -661,6 +661,7 @@ class ElectionSubscriber:
 
 
     def _set_checkpoint(self, headers: dict) -> bool:
+        # This returns whether the checkpoint was updated, but it currently isn't used.
         log_call()
         try:
             tip = Point.from_kupo_headers(headers)
@@ -669,19 +670,12 @@ class ElectionSubscriber:
             LOG.debug(f"Wait for Kupo to send slot + block hash.")
             return False
         if len(self._checkpoints) > 0 and tip == self._checkpoints[-1]:
-
-            # TODO which way is better?
-            # Processing these matches leads to many duplicate events but
-            # faster consistency.
-            LOG.debug(f"Same checkpoint, no 304. Wait for new checkpoint.")
             return False
-            # LOG.debug(f"Same checkpoint, no 304. Process matches anyway.")
-            # return True
-
-        self._checkpoints.append(tip)
-        LOG.debug(f'Saved checkpoint {tip}')
-        self._checkpoints = self._checkpoints[-KUPO_MAX_CHECKPOINTS:]
-        return True
+        else:
+            self._checkpoints.append(tip)
+            LOG.debug(f'Saved checkpoint {tip}')
+            self._checkpoints = self._checkpoints[-KUPO_MAX_CHECKPOINTS:]
+            return True
 
 
     def _fetch_matches_by_sc(self) -> list[dict]:
@@ -706,6 +700,8 @@ class ElectionSubscriber:
             headers=headers,
         )
 
+        self._set_checkpoint(r1.headers)
+
         if r1.status_code == 304:
             LOG.debug(f'Got 304 not modified, implying no new matches.')
             return {}
@@ -726,7 +722,8 @@ class ElectionSubscriber:
         )
 
         if r2.status_code == 400:
-            raise NotImplementedError("Rollback detected (spent_after)")
+            # same as for r1 above
+            return self._handle_rollback()
 
         r2.raise_for_status()
         LOG.debug(f'r2 headers {r2.headers}')
@@ -745,8 +742,7 @@ class ElectionSubscriber:
             assert n_matches == 0, f'No matches expected before a checkpoint is set, but got {n_matches}'
             return {}
 
-        new_checkpoint = self._set_checkpoint(r1.headers)
-        if not new_checkpoint:
+        if n_matches == 0:
             return {}
 
         # Start from previous partial matches if any.
