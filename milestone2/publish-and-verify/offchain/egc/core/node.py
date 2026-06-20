@@ -72,11 +72,15 @@ class ElectionNode:
     def channel_str(self) -> str:
         return self.publisher.channel_str()
 
-    def current_utxo(self) -> Optional[UTxO]:
-        return self.subscriber.current_utxo(self.channel_id())
+    def current_utxo(self, channel_id=None) -> Optional[UTxO]:
+        if channel_id is None:
+            channel_id = self.channel_id()
+        return self.subscriber.current_utxo(channel_id)
 
-    def current_state(self) -> Optional[UTxO]:
-        return self.subscriber.current_state(self.channel_id())
+    def current_state(self, channel_id=None) -> Optional[UTxO]:
+        if channel_id is None:
+            channel_id = self.channel_id()
+        return self.subscriber.current_state(channel_id)
 
     def current_phase(self) -> Optional[ElectionPhase]:
         return self.subscriber.current_phase()

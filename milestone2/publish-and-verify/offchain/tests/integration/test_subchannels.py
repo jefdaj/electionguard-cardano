@@ -4,7 +4,7 @@ import pytest
 from dataclasses import replace
 from pycardano import *
 from egc import *
-from helpers import per_election_fixture, assert_nodes_converge, assert_node_state
+from helpers import per_election_fixture, assert_nodes_converge
 import logging
 import time
 
@@ -37,9 +37,10 @@ def test_tx0(
         tx0: Transaction,
     ):
     assert isinstance(tx0, Transaction)
-    nodes = [funder, admin]
-    assert_nodes_converge(nodes)
-    assert_node_state(admin, s0)
+    assert_nodes_converge([
+        (funder, None),
+        (admin, s0),
+    ])
 
 @per_election_fixture
 def s1(
@@ -79,9 +80,10 @@ def test_tx1(
         tx1: Transaction,
     ):
     assert isinstance(tx1, Transaction)
-    nodes = [funder, admin]
-    assert_nodes_converge(nodes)
-    assert_node_state(admin, s1)
+    assert_nodes_converge([
+        (funder, None),
+        (admin, s1),
+    ])
 
 
 ## -------- tx2: add single subchannel --------
@@ -143,8 +145,10 @@ def test_add_subchannel(
         s2: ChannelState,
     ):
     assert isinstance(tx2, Transaction)
-    assert_nodes_converge(all_nodes)
-    assert_node_state(admin, s2)
+    assert_nodes_converge([
+        (n, s2 if n == admin else None)
+        for n in all_nodes
+    ])
 
 
 ## ----------- tx3: rm single subchannel -----------
@@ -182,5 +186,7 @@ def test_rm_subchannel(
         tx3: Transaction,
     ):
     assert isinstance(tx3, Transaction)
-    assert_nodes_converge(all_nodes)
-    assert_node_state(admin, s3)
+    assert_nodes_converge([
+        (n, s3 if n == admin else None)
+        for n in all_nodes
+    ])

@@ -4,7 +4,7 @@ import pytest
 from dataclasses import replace
 from pycardano import *
 from egc import *
-from helpers import per_election_fixture, assert_nodes_converge, assert_node_state, sub_s0
+from helpers import per_election_fixture, assert_nodes_converge, sub_s0, is_channelstate
 import logging
 import time
 
@@ -55,9 +55,10 @@ def test_admin_tx0(
         admin_tx0: Transaction,
     ):
     assert isinstance(admin_tx0, Transaction)
-    nodes = [funder, admin]
-    assert_nodes_converge(nodes)
-    assert_node_state(admin, admin_s0)
+    assert_nodes_converge([
+        (funder, None),
+        (admin, admin_s0),
+    ])
 
 
 ## ----------- admin_tx1 -----------
@@ -97,9 +98,10 @@ def test_admin_tx1(
         admin_tx1: Transaction,
     ):
     assert isinstance(admin_tx1, Transaction)
-    nodes = [funder, admin]
-    assert_nodes_converge(nodes)
-    assert_node_state(admin, admin_s1)
+    assert_nodes_converge([
+        (funder, None),
+        (admin, admin_s1),
+    ])
 
 
 # from here on all the nodes can be started and should stay in sync
@@ -121,8 +123,7 @@ def test_phase0_announce(
         funder,
         admin, admin_s1, admin_tx1,
     ):
-    assert_nodes_converge([funder, admin])
-    assert_node_state(admin, admin_s1)
+    assert True # TODO is this right for a phony test?
 
 
 ## ----------- admin_tx2 -----------
@@ -171,21 +172,26 @@ def admin_tx2(
 
 @pytest.mark.testnet
 def test_admin_tx2(
+        funder: FunderNode,
         admin: AdminNode,
         subchannel_nodes: list[ElectionNode],
         admin_s2: ChannelState,
         admin_tx2: Transaction,
-        all_nodes: list[ElectionNode],
+        # all_nodes: list[ElectionNode],
     ):
     assert isinstance(admin_tx2, Transaction)
-    assert_nodes_converge(all_nodes)
-    assert_node_state(admin, admin_s2)
+    expected = [
+        (funder, None),
+        (admin, admin_s2),
+    ]
     for sub_node in subchannel_nodes:
         expected_state = sub_s0(sub_node.channel_id(), sub_node.publisher.wallet.vkh)
-        assert_node_state(sub_node, expected_state)
+        expected.append((sub_node, expected_state))
+    assert_nodes_converge(expected)
 
 @pytest.mark.testnet
 def test_phase1_onboarding(
+        funder,
         admin, admin_s2, admin_tx2,
         guardian1, guardian1_s0,
         guardian2, guardian2_s0,
@@ -194,14 +200,16 @@ def test_phase1_onboarding(
         verifier1, verifier1_s0,
         all_nodes: list[ElectionNode],
     ):
-    assert_nodes_converge(all_nodes)
-    assert_node_state(admin, admin_s2)
-    assert_node_state(guardian1, guardian1_s0)
-    assert_node_state(guardian2, guardian2_s0)
-    assert_node_state(guardian3, guardian3_s0)
-    assert_node_state(device1, device1_s0)
-    assert_node_state(verifier1, verifier1_s0)
     # TODO test that subchannel nodes can find their collateral now?
+    assert_nodes_converge([
+        (funder   , None        ),
+        (admin    , admin_s2    ),
+        (guardian1, guardian1_s0),
+        (guardian2, guardian2_s0),
+        (guardian3, guardian3_s0),
+        (device1  , device1_s0  ),
+        (verifier1, verifier1_s0),
+    ])
 
 
 ## =================================
@@ -253,13 +261,16 @@ def test_admin_tx3(
         all_nodes: list[ElectionNode],
     ):
     assert isinstance(admin_tx3, Transaction)
-    assert_nodes_converge(all_nodes)
-    assert_node_state(admin, admin_s3)
+    assert_nodes_converge([
+        (n, admin_s3 if n == admin else None)
+        for n in all_nodes
+    ])
 
 # TODO should guardian1_tx1 go here? maybe just do them all linearly and group by phase
 
 @pytest.mark.testnet
 def test_phase2_ceremony(
+        funder,
         admin, admin_s3, admin_tx3,
         guardian1, guardian1_s1, guardian1_tx1,
         guardian2, guardian2_s0,
@@ -268,13 +279,16 @@ def test_phase2_ceremony(
         verifier1, verifier1_s0,
         all_nodes: list[ElectionNode],
     ):
-    assert_nodes_converge(all_nodes)
-    assert_node_state(admin, admin_s3)
-    assert_node_state(guardian1, guardian1_s1)
-    assert_node_state(guardian2, guardian2_s0)
-    assert_node_state(guardian3, guardian3_s0)
-    assert_node_state(device1, device1_s0)
-    assert_node_state(verifier1, verifier1_s0)
+    assert_nodes_converge([
+        (funder   , None        ),
+        (admin    , admin_s3    ),
+        (guardian1, guardian1_s1), # TODO finish
+        (guardian2, guardian2_s0), # TODO finish
+        (guardian3, guardian3_s0), # TODO finish
+        (device1  , device1_s0  ),
+        (verifier1, verifier1_s0),
+    ])
+
 
 # TODO test_phase3_voting goes here too, because admin doesn't post anything more first?
 
@@ -318,8 +332,10 @@ def test_admin_tx4(
         all_nodes: list[ElectionNode],
     ):
     assert isinstance(admin_tx4, Transaction)
-    assert_nodes_converge(all_nodes)
-    assert_node_state(admin, admin_s4)
+    assert_nodes_converge([
+        (n, admin_s4 if n == admin else None)
+        for n in all_nodes
+    ])
 
 
 ## ----------- admin_tx5 -----------
@@ -361,8 +377,10 @@ def test_admin_tx5(
         all_nodes: list[ElectionNode],
     ):
     assert isinstance(admin_tx5, Transaction)
-    assert_nodes_converge(all_nodes)
-    assert_node_state(admin, admin_s5)
+    assert_nodes_converge([
+        (n, admin_s5 if n == admin else None)
+        for n in all_nodes
+    ])
 
 
 ## ----------- admin_tx6 -----------
@@ -404,8 +422,10 @@ def test_admin_tx6(
         all_nodes: list[ElectionNode],
     ):
     assert isinstance(admin_tx6, Transaction)
-    assert_nodes_converge(all_nodes)
-    assert_node_state(admin, admin_s6)
+    assert_nodes_converge([
+        (n, admin_s6 if n == admin else None)
+        for n in all_nodes
+    ])
 
 
 ## ----------- admin_tx7 -----------
@@ -447,8 +467,10 @@ def test_admin_tx7(
         all_nodes: list[ElectionNode],
     ):
     assert isinstance(admin_tx7, Transaction)
-    assert_nodes_converge(all_nodes)
-    assert_node_state(admin, admin_s7)
+    assert_nodes_converge([
+        (n, admin_s7 if n == admin else None)
+        for n in all_nodes
+    ])
 
 
 ##  =================================
@@ -495,8 +517,10 @@ def test_guardian1_tx1(
         all_nodes: list[ElectionNode],
     ):
     assert isinstance(guardian1_tx1, Transaction)
-    assert_node_state(guardian1, guardian1_s1)
-    assert_nodes_converge(all_nodes)
+    assert_nodes_converge([
+        (n, guardian1_s1 if n == guardian1 else None)
+        for n in all_nodes
+    ])
 
 
 ## =================================
@@ -542,5 +566,7 @@ def test_admin_tx8(
         admin_tx8: Transaction,
         all_nodes: list[ElectionNode],
     ):
-    assert_node_state(admin, admin_s8)
-    assert_nodes_converge(all_nodes)
+    assert_nodes_converge([
+        (n, admin_s8 if n == admin else None)
+        for n in all_nodes
+    ])

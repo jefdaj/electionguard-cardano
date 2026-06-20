@@ -1,9 +1,11 @@
 import pytest
 from typing import List
 from pprint import pformat
+from deepdiff import DeepDiff
 from egc import *
 import logging
 import time
+import typing
 
 LOG = logging.getLogger(__name__)
 
@@ -14,52 +16,16 @@ LOG = logging.getLogger(__name__)
 global_fixture       = pytest.fixture(scope='session')
 per_election_fixture = pytest.fixture(scope='module')
 
-# TODO merge with assert_node_state, since we really want them to converge on the *correct* state
-def assert_nodes_converge(nodes: List[ElectionNode]):
-    n = len(nodes)
-    if n < 2:
-        LOG.warning('assert_nodes_converge called with < 2 nodes')
-        return
-    ch_strs = [node.channel_str() for node in nodes]
-    names = ', '.join(s for s in ch_strs)
-    # one node to compare the others against
-    ref = nodes[0]; nodes = nodes[1:]
-    # Wait to make sure they're not all in sync at the prev state.
-    w = 0 # "waited"
-    while True:
-        time.sleep(10); w += 10
-        try:
-            for node in nodes:
 
-                np = node.current_phase()
-                rp = ref.current_phase()
-                assert np == rp
-
-                # TODO use interface here rather than raw history dict
-                nh = node.subscriber._history
-                rh = ref.subscriber._history
-                assert nh == rh
-
-            LOG.debug(f'All {n} nodes agree after {w} seconds: {names}')
-            break
-        except AssertionError:
-            if w >= 300:
-                LOG.error(f'All {n} nodes do not agree after {w} seconds.')
-                raise
+# TODO where should this live?
+def isinstance_of_union(obj, union_type) -> bool:
+    return isinstance(obj, typing.get_args(union_type))
 
 
-# TODO rename _sub tests -> checkpoints and add cross-channel dependencies
-def assert_node_state(
-        node: ElectionNode,
-        expected_state: ChannelState,
-    ):
-    assert isinstance(node, ElectionNode)
-    assert isinstance(expected_state, ChannelState)
-    node_str = node.channel_str()
-    actual_state = node.current_state()
-    LOG.debug(f'{node_str} actual state:   {pformat(actual_state)  }')
-    LOG.debug(f'{node_str} expected state: {pformat(expected_state)}')
-    assert actual_state == expected_state
+# TODO move to channel.py
+def is_channelstate(obj) -> bool:
+	return isinstance_of_union(obj, ChannelState)
+
 
 def sub_s0(sub_id: ChannelId, sub_vkh: VerificationKeyHash) -> ChannelState:
     return SubChannel(state=SubChannelState(
@@ -68,3 +34,83 @@ def sub_s0(sub_id: ChannelId, sub_vkh: VerificationKeyHash) -> ChannelState:
         new_records = [],
         seq         = 0,
     ))
+
+
+def assert_nodes_have_same_history(nodes: list[ElectionNode]):
+    # You probably want assert_nodes_converge below, unless you don't know what the stages should be
+    assert len(nodes) > 1
+    ref_node = nodes[0]
+    with ref_node.subscriber._history_lock:
+        ref_hist = ref_node.subscriber._history
+        for node in nodes[1:]:
+            with node.subscriber._history_lock:
+                assert node.subscriber._history == ref_hist
+
+
+def assert_nodes_converge(
+        expected: list[ Tuple[ElectionNode, Optional[ChannelState]] ],
+        interval = 3,
+        timeout = 30,
+    ):
+    """The inputs here are a state per node, but that's just a convenient format
+    for passing the args. What it actually does is:
+
+    1. logs how many nodes have reached the expected channel states every 5 sec
+    2. once all of them reach those states, assert that their histories are also equal
+
+    The two are combined because we always want both, and to avoid a fixed
+    delay before the equal history check.
+
+    When you want to check that a node is OK but have no corresponding expected state,
+    pass None. For example you would normally do that with the funder."""
+
+    n = len(expected) # both the number of nodes and number of states being checked
+
+    for (node, state) in expected:
+        assert isinstance(node, ElectionNode)
+        if state is not None:
+            assert is_channelstate(state)
+
+    waited = 0
+    while True:
+        n_nodes_correct = 0
+
+        for (node_to_test, _) in expected:
+            node_str = node_to_test.channel_str()
+            n_states_correct = 0
+
+            # How many states does this node have correct so far?
+            for (node_for_id, expected_state) in expected:
+                state_str = node_for_id.channel_str()
+                # skip states not given
+                if expected_state is None:
+                    n_states_correct += 1
+                    continue
+                actual_state = node_to_test.current_state(node_for_id.channel_id())
+                try:
+                    # TODO why isn't pytest creating nice diffs here?
+                    assert expected_state == actual_state
+                    n_states_correct += 1
+                except AssertionError as e:
+                    diff = DeepDiff(expected_state, actual_state)
+                    LOG.debug(
+                        f'{node_str} node has wrong {state_str} state'
+                        f'after {waited} seconds:\n{pformat(diff)}'
+                    )
+                    if waited >= timeout:
+                        LOG.error(f'Nodes did not converge on expected states within {timeout} seconds.')
+                        raise
+                    continue # next node
+            LOG.debug(f'{node_str} node has {n_states_correct}/{n} states correct after {waited} seconds.')
+
+            # How many nodes have them all correct?
+            if n_states_correct == n:
+                n_nodes_correct += 1
+
+        LOG.debug(f'After {waited} seconds, {n_nodes_correct}/{n} nodes converged on expected states.')
+        if n_nodes_correct == n:
+            break
+        time.sleep(interval)
+        waited += interval
+
+    assert_nodes_have_same_history([n for (n, _) in expected])

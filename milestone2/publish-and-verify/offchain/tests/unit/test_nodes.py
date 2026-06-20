@@ -16,10 +16,13 @@ def test_init_admin(admin: AdminNode):
 def test_init_subchannel_nodes(
         subchannel_nodes: list[ElectionNode],
     ):
+    expected = []
     for n in subchannel_nodes:
         s = n.channel_str()
         assert issubclass(type(n), ElectionNode), f'{s} not a type of ElectionNode'
         assert isinstance(n.election, ElectionContext), f'{s}.election not an ElectionContext'
         assert isinstance(n.publisher, ElectionPublisher), f'{s}.publisher not an ElectionPublisher'
         assert isinstance(n.subscriber, ElectionSubscriber), f'{s}.subscriber not an ElectionSubscriber'
-    assert_nodes_converge(subchannel_nodes)
+        s0 = sub_s0(n.channel_id(), n.subscriber.wallet.vkh)
+        expected.append((n, s0))
+    assert_nodes_converge(expected)
