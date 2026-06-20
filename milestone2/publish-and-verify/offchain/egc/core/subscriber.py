@@ -55,7 +55,7 @@ KUPO_MAX_CHECKPOINTS = 50
 @dataclass
 class SubscriberConfig:
     since_slot:       int # For kupo --since
-    since_block_hash: str # For kupo --since (TODO is this part actually helpful for qrcodes etc?)
+    since_block_hash: str # For kupo --since
     policy_id:        str # For kupo --match
 
     @classmethod
@@ -63,7 +63,7 @@ class SubscriberConfig:
         return cls(
             election.deployment.index_from_slot,
             election.deployment.index_from_block_hash,
-            str(election.script.policy_id), # TODO use the pycardano object?
+            str(election.script.policy_id),
         )
 
 
@@ -313,6 +313,7 @@ class ElectionSubscriber:
         # A list of matches we couldn't fit cleanly into an input/output pair to
         # make an event from. They'll be re-injected into the list of new
         # matches next poll.
+        # TODO remove? not sure they're needed or helpful after all
         self._unpaired_matches = []
 
         # A list of slots + block header hashes Kupo reports that it indexed so far.
@@ -369,8 +370,6 @@ class ElectionSubscriber:
             return kupo_match_to_pycardano_utxo(match)
 
 
-    # TODO version that gets multiple channel current states, like you would want
-
     def current_state(self, channel_id: ChannelId) -> Optional[ChannelState]:
         # Returns None if the channel hasn't been opened yet or was already closed
         # TODO return copies from all public methods
@@ -381,6 +380,15 @@ class ElectionSubscriber:
                 return deepcopy(event.output_state) # may also be None
         except (KeyError, IndexError):
             return None
+
+
+    def current_states(self) -> dict[str, Optional[ChannelState]]:
+        # Closed channels are None.
+        with self._history_lock:
+            states = {}
+            for ch_id in self.all_channel_ids():
+                states[ch_id] = self.current_state(ch_id)
+            return states
 
 
     def current_phase(self) -> Optional[ElectionPhase]:

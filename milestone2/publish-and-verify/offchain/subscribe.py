@@ -23,11 +23,11 @@ import logging
 logging.basicConfig(
   # filename='subscribe.log',
   encoding='utf-8',
-  level=logging.DEBUG,
+  level=logging.INFO,
   format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
 
-logging.getLogger('urllib3').setLevel(logging.DEBUG)
+# logging.getLogger('urllib3').setLevel(logging.DEBUG)
 
 LOG = logging.getLogger(os.path.basename(__file__))
 
@@ -38,7 +38,7 @@ sub_cfg = SubscriberConfig(
     since_block_hash = args['<block_hash>'],
     policy_id = ScriptHash(bytes.fromhex(args['<policy_id>'])),
 )
-LOG.info(f'sub_cfg: {sub_cfg}')
+LOG.info(f'sub_cfg:\n\n{pformat(sub_cfg)}\n')
 
 def log_event(event: ChannelEvent):
     LOG.info('\n' + pformat(event) + '\n')
@@ -50,18 +50,11 @@ sub = ElectionSubscriber(
 
 sub.start()
 
-def log_current():
-    states = {}
-    for ch_id in sub.current_channel_ids():
-        ch_str = channel_id_to_string(ch_id)
-        ch_state = sub.current_state(ch_id)
-        states[ch_str] = ch_state
-    LOG.info(f'current state:\n\n{pformat(states)}\n')
-
 # TODO this doesn't quite behave right: Ctrl-C quits without printing
 while not sub.is_done():
     try:
-        log_current()
+        states = sub.current_states()
+        LOG.info(f'current states:\n\n{pformat(states)}\n')
         sub.sleep(10)
     except KeyboardInterrupt:
         LOG.warning('Got keyboard interrupt')
