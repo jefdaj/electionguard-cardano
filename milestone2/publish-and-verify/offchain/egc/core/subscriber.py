@@ -55,7 +55,7 @@ KUPO_MAX_CHECKPOINTS = 50
 @dataclass
 class SubscriberConfig:
     since_slot:       int # For kupo --since
-    since_block_hash: str # For kupo --since
+    since_block_hash: str # For kupo --since (TODO is this part actually helpful for qrcodes etc?)
     policy_id:        str # For kupo --match
 
     @classmethod
@@ -135,7 +135,7 @@ def channel_id_from_asset_name(encoded: str) -> ChannelId:
 #     LOG.error(f'Output does not match any channel:\n{output}')
 #     return None
 
-
+# TODO replace with port 0 binding from OS
 # TODO where should this live?
 def is_port_in_use(port: int) -> bool:
     log_call()
@@ -317,11 +317,6 @@ class ElectionSubscriber:
         # Used in case of rollbacks, for the If-None-Match ETag/304 mechanism.
         self._checkpoints: list[Point] = []
 
-        # The point of the latest match so far.
-        # Used to query for only new matches.
-        # Gotcha: *not* the same as the latest checkpoint above. We need both.
-        self._matches_cursor: Optional[Point] = None
-
 
     ## query interface ##
 
@@ -481,10 +476,10 @@ class ElectionSubscriber:
 
     def _random_delay(self):
         log_call()
-        # Wait a random amount of time 0-1 seconds.
+        # Wait a random amount of time 0-3 seconds.
         # Quick and dirty hack to prevent all the nodes doing something at
         # exactly the same time if you configure them in a conflicting way.
-        self.sleep(random.randint(1, 1000) / 1000)
+        self.sleep(random.randint(0, 3000) / 1000)
 
 
     def _kupo_find_port(self):
@@ -689,53 +684,19 @@ class ElectionSubscriber:
             return True
 
 
-    def _set_matches_cursor(self, matches: list[dict]):
-        log_call()
-
-        latest_created = max(matches, key=lambda m: m['created_at']['slot_no'])
-        created_point = Point(
-            slot_no=latest_created['created_at']['slot_no'],
-            header_hash=latest_created['created_at']['header_hash'],
-        )
-
-        spent_matches = [m for m in matches if m['spent_at']]
-        if spent_matches:
-            latest_spent = max(spent_matches, key=lambda m: m['spent_at']['slot_no'])
-            spent_point = Point(
-                slot_no=latest_spent['spent_at']['slot_no'],
-                header_hash=latest_spent['spent_at']['header_hash'],
-            )
-            new_cursor = min(created_point, spent_point, key=lambda p: p.slot_no)
-        else:
-            new_cursor = created_point
-
-        if new_cursor != self._matches_cursor:
-            LOG.debug(f'Advance matches cursor to {new_cursor}')
-            self._matches_cursor = new_cursor
-
-
     def _fetch_matches_by_sc(self) -> list[dict]:
         log_call()
-        base_params = {"order": "oldest_first"} # TODO resolve_hashes?
-
+        base_params = {"order": "oldest_first"}
 
         # The tip Point should advance with the chain tip as reported by Kupo
         # in the previous fetch. That way we get 304 when nothing has changed.
         tip = self._get_checkpoint()
         headers = {"If-None-Match": tip.header_hash} if tip else {}
 
-        # The _matches_cursor is also a Point but it should advance with the latest match,
-        # which might be a ways behind the chain tip. It only updates when there are matches.
-        # TODO would separate created and spent cursors be an improvement?
-        # TODO sync bug! removing created_after + spent_after params fixes it
-        prev = self._matches_cursor
-        r1_params = {} # if not prev else {"created_after": prev.as_param()}
-        r2_params = {} # if not prev else {"spent_after":   prev.as_param()}
-
         if self._unpaired_matches:
             LOG.debug(f'Have {len(self._unpaired_matches)} unpaired matches to re-inject with the next batch.')
 
-        # query 1: newly created utxos
+        r1_params = {}
         r1 = self._session.get(
             f"{self._kupo_api_url()}/matches",
             params={**base_params, **r1_params},
@@ -758,34 +719,19 @@ class ElectionSubscriber:
         r1.raise_for_status()
         matches1 = r1.json()
 
-        # query 2: utxos newly marked spent
-        r2 = self._session.get(
-            f"{self._kupo_api_url()}/matches",
-            params={**base_params, **r2_params},
-            # No If-None-Match here, since we should have already hit 304 above
-        )
-        LOG.debug(f'r2 headers {r2.headers}')
+        # There used to be a 2nd query r2 here. One was for created_after and
+        # one for spent_after, and they both advanced with a shared
+        # _matches_cursor Point. It sounds better in theory to avoid duplicate
+        # events but there were always mysterious errors and issing matches.
+        # Not sure if the algorithm was wrong or if Kupo doesn't actually
+        # support alternating queries? Anyway one works, and it should NOT use
+        # the created_after or spent_after params. Current algorithm expects
+        # duplicate events and drops them instead.
 
-        if r2.status_code == 400:
-            # same as for r1 above
-            return self._handle_rollback()
-
-        # Verify both queries see the same chain tip
-        slot1 = int(r1.headers["X-Most-Recent-Checkpoint"])
-        slot2 = int(r2.headers["X-Most-Recent-Checkpoint"])
-        if slot1 != slot2:
-            LOG.debug(f'Got 2 different slots: {slot1} vs {slot2}. Retry next poll to avoid edge cases.')
-            return {}
-
-        r2.raise_for_status()
-        matches2 = r2.json()
-
-        matches = matches1 + matches2
-
+        matches = matches1
+        LOG.debug(f'n matches: {len(matches)}')
         if len(matches) == 0:
             return {}
-
-        self._set_matches_cursor(matches)
 
         # Start from previous partial matches if any.
         # TODO clear them after they've been retried once or a couple times, if that comes up
@@ -794,7 +740,8 @@ class ElectionSubscriber:
         if prev_matches:
             LOG.debug(f'Re-injecting {len(prev_matches)} previous unpaired matches:\n{pformat(prev_matches)}')
 
-        # Merge by (txid, output_index), Q1 and Q2 may overlap
+        # Merge by (txid, output_index)
+        # TODO no longer needed with just one query, or still a good structure?
         matches_by_sc = {}
         for m in prev_matches + matches:
             ch_str = kupo_match_to_channel_str(m)

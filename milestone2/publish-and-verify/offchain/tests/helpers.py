@@ -14,6 +14,7 @@ LOG = logging.getLogger(__name__)
 global_fixture       = pytest.fixture(scope='session')
 per_election_fixture = pytest.fixture(scope='module')
 
+# TODO merge with assert_node_state, since we really want them to converge on the *correct* state
 def assert_nodes_converge(nodes: List[ElectionNode]):
     n = len(nodes)
     if n < 2:
