@@ -105,8 +105,8 @@ def onboarding_info(
         subchannel_nodes: list[ElectionNode],
     ) -> dict[ChannelId, VerificationKeyHash]:
     info = {
-        node.channel_id() : node.publisher.wallet.vkh
-        for node in subchannel_nodes
+        n.channel_id() : n.publisher.wallet.vkh
+        for n in subchannel_nodes
     }
     return info
 
@@ -114,7 +114,6 @@ def onboarding_info(
 def admin_s2(
         admin_s1: ChannelState,
         subchannel_ids,
-        # static_phases,
     ) -> ChannelState:
     prev = admin_s1.state
     return AdminChannel(state=replace(
@@ -179,50 +178,56 @@ def test_phase1_onboarding(
 
 ## ----------- Round 1 -----------
 
-def guardian_s1(s0: ChannelState, name: str, static_transactions) -> ChannelState:
-    prev = s0.state
+def guardian_state(
+        static_transactions,
+        prev_state: ChannelState,
+        role_index: int,
+        tx_index: int, # seq and also index in static_transactions
+        ) -> ChannelState:
+    ch_str = 'guardian' + str(role_index)
+    records = static_transactions[ch_str][tx_index][1]
     return SubChannel(state=replace(
-        prev,
-        new_records = static_transactions[name][1][1],
-        seq = 1,
+        prev_state.state,
+        new_records = records,
+        seq = tx_index,
     ))
 
 @per_election_fixture
 def guardian1_s1(guardian1_s0, static_transactions) -> ChannelState:
-    return guardian_s1(guardian1_s0, 'guardian1', static_transactions)
+    return guardian_state(static_transactions, guardian1_s0, 1, 1)
 
 @per_election_fixture
 def guardian2_s1(guardian2_s0, static_transactions) -> ChannelState:
-    return guardian_s1(guardian2_s0, 'guardian2', static_transactions)
+    return guardian_state(static_transactions, guardian2_s0, 2, 1)
 
 @per_election_fixture
 def guardian3_s1(guardian3_s0, static_transactions) -> ChannelState:
-    return guardian_s1(guardian3_s0, 'guardian3', static_transactions)
+    return guardian_state(static_transactions, guardian3_s0, 3, 1)
 
-def guardian_tx1(
-        admin_tx2: Transaction,
-        guardian: GuardianNode,
-        name: str,
+def guardian_tx(
         static_transactions,
+        guardian: GuardianNode,
+        tx_index: int, # index in static_transactions
     ) -> Transaction:
-    tx = guardian.post_public_records(
-        new_records = static_transactions[name][1][1],
-    )
-    LOG.debug(f'{name}_tx1: {tx}')
+    ch_str = guardian.channel_str()
+    records = static_transactions[ch_str][tx_index][1],
+    LOG.debug(f'{ch_str}_tx{tx_index} records: {records}')
+    tx = guardian.post_public_records(new_records=records)
+    LOG.debug(f'{ch_str}_tx{tx_index}: {tx}')
     guardian.wait_for_confirmation(tx)
     return tx
 
 @per_election_fixture
 def guardian1_tx1(admin_tx2, guardian1, static_transactions):
-    return guardian_tx1(admin_tx2, guardian1, 'guardian1', static_transactions)
+    return guardian_tx(static_transactions, guardian1, 1)
 
 @per_election_fixture
 def guardian2_tx1(admin_tx2, guardian2, static_transactions):
-    return guardian_tx1(admin_tx2, guardian2, 'guardian2', static_transactions)
+    return guardian_tx(static_transactions, guardian2, 1)
 
 @per_election_fixture
 def guardian3_tx1(admin_tx2, guardian3, static_transactions):
-    return guardian_tx1(admin_tx2, guardian3, 'guardian3', static_transactions)
+    return guardian_tx(static_transactions, guardian3, 1)
 
 @pytest.mark.testnet
 def test_guardian1_tx1(guardian1, guardian1_s1, guardian1_tx1):
@@ -257,42 +262,114 @@ def test_phase2_ceremony_round1(
 
 ## ----------- Round 2 -----------
 
-# @pytest.mark.testnet
-# def test_phase2_ceremony_round2(
-#         admin,
-#         guardian1, guardian1_s2, guardian1_tx2,
-#         guardian2, guardian2_s2, guardian2_tx2,
-#         guardian3, guardian3_s2, guardian3_tx2,
-#         device1, verifier1
-#     ):
-#     assert_nodes_converge([
-#         (admin    , None        ),
-#         (guardian1, guardian1_s2),
-#         (guardian2, guardian2_s2),
-#         (guardian3, guardian3_s2),
-#         (device1  , None        ),
-#         (verifier1, None        ),
-#     ])
+@per_election_fixture
+def guardian1_s2(guardian1_s0, static_transactions) -> ChannelState:
+    return guardian_state(static_transactions, guardian1_s0, 1, 2)
+
+@per_election_fixture
+def guardian2_s2(guardian2_s0, static_transactions) -> ChannelState:
+    return guardian_state(static_transactions, guardian2_s0, 2, 2)
+
+@per_election_fixture
+def guardian3_s2(guardian3_s0, static_transactions) -> ChannelState:
+    return guardian_state(static_transactions, guardian3_s0, 3, 2)
+
+@per_election_fixture
+def guardian1_tx2(admin_tx2, guardian1, static_transactions):
+    return guardian_tx(static_transactions, guardian1, 2)
+
+@per_election_fixture
+def guardian2_tx2(admin_tx2, guardian2, static_transactions):
+    return guardian_tx(static_transactions, guardian2, 2)
+
+@per_election_fixture
+def guardian3_tx2(admin_tx2, guardian3, static_transactions):
+    return guardian_tx(static_transactions, guardian3, 2)
+
+@pytest.mark.testnet
+def test_guardian1_tx2(guardian1, guardian1_s2, guardian1_tx2):
+    test_tx(guardian1, guardian1_s2, guardian1_tx2)
+
+@pytest.mark.testnet
+def test_guardian2_tx2(guardian2, guardian2_s2, guardian2_tx2):
+    test_tx(guardian2, guardian2_s2, guardian2_tx2)
+
+@pytest.mark.testnet
+def test_guardian3_tx2(guardian3, guardian3_s2, guardian3_tx2):
+    test_tx(guardian3, guardian3_s2, guardian3_tx2)
+
+@pytest.mark.testnet
+def test_phase2_ceremony_round2(
+        admin, admin_s2,
+        guardian1, guardian1_s2, guardian1_tx2,
+        guardian2, guardian2_s2, guardian2_tx2,
+        guardian3, guardian3_s2, guardian3_tx2,
+        device1, verifier1
+    ):
+    assert_nodes_converge([
+        (admin    , admin_s2    ),
+        (guardian1, guardian1_s2),
+        (guardian2, guardian2_s2),
+        (guardian3, guardian3_s2),
+        (device1  , device1_s0  ),
+        (verifier1, verifier1_s0),
+    ])
 
 
 ## ----------- Round 3 -----------
 
-# @pytest.mark.testnet
-# def test_phase2_ceremony_round3(
-#         admin,
-#         guardian1, guardian1_s3, guardian1_tx3,
-#         guardian2, guardian2_s3, guardian2_tx3,
-#         guardian3, guardian3_s3, guardian3_tx3,
-#         device1, verifier1
-#     ):
-#     assert_nodes_converge([
-#         (admin    , None        ),
-#         (guardian1, guardian1_s3),
-#         (guardian2, guardian2_s3),
-#         (guardian3, guardian3_s3),
-#         (device1  , None        ),
-#         (verifier1, None        ),
-#     ])
+@per_election_fixture
+def guardian1_s3(guardian1_s0, static_transactions) -> ChannelState:
+    return guardian_state(static_transactions, guardian1_s0, 1, 3)
+
+@per_election_fixture
+def guardian2_s3(guardian2_s0, static_transactions) -> ChannelState:
+    return guardian_state(static_transactions, guardian2_s0, 2, 3)
+
+@per_election_fixture
+def guardian3_s3(guardian3_s0, static_transactions) -> ChannelState:
+    return guardian_state(static_transactions, guardian3_s0, 3, 3)
+
+@per_election_fixture
+def guardian1_tx3(admin_tx3, guardian1, static_transactions):
+    return guardian_tx(static_transactions, guardian1, 3)
+
+@per_election_fixture
+def guardian2_tx3(admin_tx3, guardian2, static_transactions):
+    return guardian_tx(static_transactions, guardian2, 3)
+
+@per_election_fixture
+def guardian3_tx3(admin_tx3, guardian3, static_transactions):
+    return guardian_tx(static_transactions, guardian3, 3)
+
+@pytest.mark.testnet
+def test_guardian1_tx3(guardian1, guardian1_s3, guardian1_tx3):
+    test_tx(guardian1, guardian1_s3, guardian1_tx3)
+
+@pytest.mark.testnet
+def test_guardian2_tx3(guardian2, guardian2_s3, guardian2_tx3):
+    test_tx(guardian2, guardian2_s3, guardian2_tx3)
+
+@pytest.mark.testnet
+def test_guardian3_tx3(guardian3, guardian3_s3, guardian3_tx3):
+    test_tx(guardian3, guardian3_s3, guardian3_tx3)
+
+@pytest.mark.testnet
+def test_phase2_ceremony_round3(
+        admin, admin_s2,
+        guardian1, guardian1_s3, guardian1_tx3,
+        guardian2, guardian2_s3, guardian2_tx3,
+        guardian3, guardian3_s3, guardian3_tx3,
+        device1, verifier1
+    ):
+    assert_nodes_converge([
+        (admin    , admin_s2    ),
+        (guardian1, guardian1_s3),
+        (guardian2, guardian2_s3),
+        (guardian3, guardian3_s3),
+        (device1  , device1_s0  ),
+        (verifier1, verifier1_s0),
+    ])
 
 
 ## =================================
@@ -332,23 +409,22 @@ def admin_tx3(
 def test_admin_tx3(admin, admin_s3, admin_tx3):
     test_tx(admin, admin_s3, admin_tx3)
 
-
-# TODO test_phase3_voting goes here too, because admin doesn't post anything more first?
+# TODO device voting transactions here
 
 @pytest.mark.testnet
 def test_phase3_voting(
         admin, admin_s3, admin_tx3,
-        guardian1, guardian1_s1, # TODO update
-        guardian2, guardian2_s1, # TODO update
-        guardian3, guardian3_s1, # TODO update
+        guardian1, guardian1_s3,
+        guardian2, guardian2_s3,
+        guardian3, guardian3_s3,
         device1, device1_s0,
         verifier1, verifier1_s0,
     ):
     assert_nodes_converge([
         (admin    , admin_s3    ),
-        (guardian1, guardian1_s1),
-        (guardian2, guardian2_s1),
-        (guardian3, guardian3_s1),
+        (guardian1, guardian1_s3),
+        (guardian2, guardian2_s3),
+        (guardian3, guardian3_s3),
         (device1  , device1_s0  ),
         (verifier1, verifier1_s0),
     ])
@@ -394,17 +470,17 @@ def test_admin_tx4(admin, admin_s4, admin_tx4):
 @pytest.mark.testnet
 def test_phase4_tally(
         admin, admin_s4, admin_tx4,
-        guardian1, guardian1_s1,
-        guardian2, guardian2_s1,
-        guardian3, guardian3_s1,
+        guardian1, guardian1_s3,
+        guardian2, guardian2_s3,
+        guardian3, guardian3_s3,
         device1, device1_s0,
         verifier1, verifier1_s0,
     ):
     assert_nodes_converge([
         (admin    , admin_s4    ),
-        (guardian1, guardian1_s1),
-        (guardian2, guardian2_s1),
-        (guardian3, guardian3_s1),
+        (guardian1, guardian1_s3),
+        (guardian2, guardian2_s3),
+        (guardian3, guardian3_s3),
         (device1  , device1_s0  ),
         (verifier1, verifier1_s0),
     ])
@@ -450,17 +526,17 @@ def test_admin_tx5(admin, admin_s5, admin_tx5):
 @pytest.mark.testnet
 def test_phase5_decrypt(
         admin, admin_s5, admin_tx5,
-        guardian1, guardian1_s1,
-        guardian2, guardian2_s1,
-        guardian3, guardian3_s1,
+        guardian1, guardian1_s3,
+        guardian2, guardian2_s3,
+        guardian3, guardian3_s3,
         device1, device1_s0,
         verifier1, verifier1_s0,
     ):
     assert_nodes_converge([
         (admin    , admin_s5    ),
-        (guardian1, guardian1_s1),
-        (guardian2, guardian2_s1),
-        (guardian3, guardian3_s1),
+        (guardian1, guardian1_s3),
+        (guardian2, guardian2_s3),
+        (guardian3, guardian3_s3),
         (device1  , device1_s0  ),
         (verifier1, verifier1_s0),
     ])
@@ -539,17 +615,17 @@ def test_admin_tx7(admin, admin_s7, admin_tx7):
 @pytest.mark.testnet
 def test_phase6_verify(
         admin, admin_s7, admin_tx7,
-        guardian1, guardian1_s1,
-        guardian2, guardian2_s1,
-        guardian3, guardian3_s1,
+        guardian1, guardian1_s3,
+        guardian2, guardian2_s3,
+        guardian3, guardian3_s3,
         device1, device1_s0,
         verifier1, verifier1_s0,
     ):
     assert_nodes_converge([
         (admin    , admin_s7    ),
-        (guardian1, guardian1_s1),
-        (guardian2, guardian2_s1),
-        (guardian3, guardian3_s1),
+        (guardian1, guardian1_s3),
+        (guardian2, guardian2_s3),
+        (guardian3, guardian3_s3),
         (device1  , device1_s0  ),
         (verifier1, verifier1_s0),
     ])
