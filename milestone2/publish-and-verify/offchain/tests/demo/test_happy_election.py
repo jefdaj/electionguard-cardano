@@ -1,5 +1,3 @@
-# Test order roughly matches onchain/tests/integration/happy_election.ak
-
 import pytest
 from dataclasses import replace
 from pycardano import *
@@ -8,9 +6,13 @@ from helpers import per_election_fixture, assert_nodes_converge, sub_s0, is_chan
 import logging
 import time
 
-LOG = logging.getLogger(__name__)
-
-
+# Tests roughly match the ones here:
+#
+# onchain/tests/integration/happy_election.ak
+#
+# But now timing matters, so these offchain tests are ordered by phase rather
+# than channel.
+#
 # STATIC_PHASES = \
 # {0: ElectionConfigPhase(phase=ConfigAnnouncePhase()),
 #  1: ElectionConfigPhase(phase=ConfigOnboardingPhase()),
@@ -22,15 +24,12 @@ LOG = logging.getLogger(__name__)
 #  7: ElectionFinalizePhase()}
 
 
-## =================================
-## initial solo admin transactions:
-## 0. init election
-## 1. announce config
-## 2. onboarding (add subchannels)
-## =================================
+LOG = logging.getLogger(__name__)
 
 
-## ----------- admin_tx0 -----------
+## =================================
+## 0. ConfigAnnouncePhase
+## =================================
 
 @per_election_fixture
 def admin_s0(admin_vkh: VerificationKeyHash) -> ChannelState:
@@ -61,7 +60,9 @@ def test_admin_tx0(
     ])
 
 
-## ----------- admin_tx1 -----------
+## =================================
+## 1. ConfigOnboardingPhase
+## =================================
 
 @per_election_fixture
 def admin_s1(
@@ -126,7 +127,12 @@ def test_phase0_announce(
     assert True # TODO is this right for a phony test?
 
 
-## ----------- admin_tx2 -----------
+## =================================
+## 2. ConfigCeremonyPhase:
+##    Round 1 (announce public keys)
+##    Round 2 (secret share private keys)
+##    Round 3 (confirm secret shares)
+## =================================
 
 @per_election_fixture
 def onboarding_info(
@@ -142,7 +148,7 @@ def onboarding_info(
 def admin_s2(
         admin_s1: ChannelState,
         subchannel_ids,
-        static_phases,
+        # static_phases,
     ) -> ChannelState:
     prev = admin_s1.state
     return AdminChannel(state=replace(
@@ -213,28 +219,20 @@ def test_phase1_onboarding(
 
 
 ## =================================
-## parallel admin section:
-## 3. finalize config
-## 4. advance voting -> tally
-## 5. results tally
-## 6. results decrypt
-## 7. verify
+## 3. ElectionVotingPhase
 ## =================================
-
-
-## ----------- admin_tx3 -----------
 
 @per_election_fixture
 def admin_s3(
         admin_s2: ChannelState,
         static_transactions,
-        static_phases,
+        # static_phases,
     ) -> ChannelState:
     prev = admin_s2.state
     return AdminChannel(state=replace(
         prev,
         new_records = static_transactions['admin'][3][1],
-        phase       = static_phases[3],
+        phase       = ElectionVotingPhase(),
         seq         = 3,
     ))
 
@@ -243,11 +241,11 @@ def admin_tx3(
         admin: AdminNode,
         admin_tx2: Transaction,
         static_transactions,
-        static_phases,
+        # static_phases,
     ) -> Transaction:
     tx = admin.post_public_records(
         new_records = static_transactions['admin'][3][1],
-        new_phase   = static_phases[3],
+        new_phase   = ElectionVotingPhase(),
     )
     LOG.debug(f'admin_tx3: {tx}')
     admin.wait_for_confirmation(tx)
@@ -266,7 +264,43 @@ def test_admin_tx3(
         for n in all_nodes
     ])
 
-# TODO should guardian1_tx1 go here? maybe just do them all linearly and group by phase
+@per_election_fixture
+def guardian1_s1(
+        guardian1_s0: ChannelState,
+        static_transactions,
+    ) -> ChannelState:
+    prev = guardian1_s0.state
+    return SubChannel(state=replace(
+        prev,
+        new_records = static_transactions['guardian1'][1][1],
+        seq = 1,
+    ))
+
+@per_election_fixture
+def guardian1_tx1(
+        admin_tx2: Transaction,
+        guardian1: GuardianNode,
+        static_transactions,
+    ) -> Transaction:
+    tx = guardian1.post_public_records(
+        new_records = static_transactions['guardian1'][1][1],
+    )
+    LOG.debug(f'guardian1_tx1: {tx}')
+    guardian1.wait_for_confirmation(tx)
+    return tx
+
+@pytest.mark.testnet
+def test_guardian1_tx1(
+        guardian1: GuardianNode,
+        guardian1_s1: ChannelState,
+        guardian1_tx1: Transaction,
+        all_nodes: list[ElectionNode],
+    ):
+    assert isinstance(guardian1_tx1, Transaction)
+    assert_nodes_converge([
+        (n, guardian1_s1 if n == guardian1 else None)
+        for n in all_nodes
+    ])
 
 @pytest.mark.testnet
 def test_phase2_ceremony(
@@ -293,7 +327,9 @@ def test_phase2_ceremony(
 # TODO test_phase3_voting goes here too, because admin doesn't post anything more first?
 
 
-## ----------- admin_tx4 -----------
+## =================================
+## 4. ResultsTallyPhase
+## =================================
 
 # This could be combined with posting the tally, but in later versions I think
 # it would make more sense to have this be a definite stopping point where
@@ -303,13 +339,13 @@ def test_phase2_ceremony(
 @per_election_fixture
 def admin_s4(
         admin_s3: ChannelState,
-        static_phases,
+        # static_phases,
     ) -> ChannelState:
     prev = admin_s3.state
     return AdminChannel(state=replace(
         prev,
         new_records = [],
-        phase       = static_phases[4],
+        phase       = ElectionResultsPhase(ResultsTallyPhase()),
         seq         = 4,
     ))
 
@@ -338,7 +374,9 @@ def test_admin_tx4(
     ])
 
 
-## ----------- admin_tx5 -----------
+## =================================
+## 5. ResultsDecryptPhase
+## =================================
 
 @per_election_fixture
 def admin_s5(
@@ -383,7 +421,9 @@ def test_admin_tx5(
     ])
 
 
-## ----------- admin_tx6 -----------
+## =================================
+## 6. ElectionVerifyPhase
+## =================================
 
 @per_election_fixture
 def admin_s6(
@@ -428,7 +468,9 @@ def test_admin_tx6(
     ])
 
 
-## ----------- admin_tx7 -----------
+## =================================
+## 7. ElectionFinalizePhase
+## =================================
 
 @per_election_fixture
 def admin_s7(
@@ -472,70 +514,11 @@ def test_admin_tx7(
         for n in all_nodes
     ])
 
-
-##  =================================
-##  guardian1 transactions:
-##  1. key ceremony round 1
-##  2. key ceremony round 2
-##  3. key ceremony round 3
-##  4. decrypt results
-##  5. summary (verification)
-##  =================================
-
-## ----------- guardian1_tx1 -----------
-
-@per_election_fixture
-def guardian1_s1(
-        guardian1_s0: ChannelState,
-        static_transactions,
-    ) -> ChannelState:
-    prev = guardian1_s0.state
-    return SubChannel(state=replace(
-        prev,
-        new_records = static_transactions['guardian1'][1][1],
-        seq = 1,
-    ))
-
-@per_election_fixture
-def guardian1_tx1(
-        admin_tx2: Transaction,
-        guardian1: GuardianNode,
-        static_transactions,
-    ) -> Transaction:
-    tx = guardian1.post_public_records(
-        new_records = static_transactions['guardian1'][1][1],
-    )
-    LOG.debug(f'guardian1_tx1: {tx}')
-    guardian1.wait_for_confirmation(tx)
-    return tx
-
-@pytest.mark.testnet
-def test_guardian1_tx1(
-        guardian1: GuardianNode,
-        guardian1_s1: ChannelState,
-        guardian1_tx1: Transaction,
-        all_nodes: list[ElectionNode],
-    ):
-    assert isinstance(guardian1_tx1, Transaction)
-    assert_nodes_converge([
-        (n, guardian1_s1 if n == guardian1 else None)
-        for n in all_nodes
-    ])
-
-
-## =================================
-## final admin section:
-## 8. rm subchannels
-## 9. end election
-## =================================
-
-## ----------- admin_tx8 -----------
-
 @per_election_fixture
 def admin_s8(
         admin_s7: ChannelState,
         subchannel_ids,
-        static_phases,
+        # static_phases,
     ) -> ChannelState:
     prev = admin_s7.state
     remaining_ids = [i for i in prev.subchannels if not i in subchannel_ids]
