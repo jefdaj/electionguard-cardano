@@ -11,7 +11,7 @@ def test_admin_stt(script: ElectionScript, admin_assets: MultiAsset):
     assert script.policy_id in admin_assets.keys()
     for policy_id in admin_assets:
         assert len(admin_assets[policy_id]) == 1
-        assert AssetName(b'egc-election-admin-stt') in admin_assets[policy_id]
+        assert AssetName(b'election-admin') in admin_assets[policy_id]
 
 @pytest.mark.testnet
 def test_subchannel_stts(script: ElectionScript, subchannel_assets: MultiAsset):

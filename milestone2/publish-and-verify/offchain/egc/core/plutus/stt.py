@@ -8,11 +8,11 @@ from pycardano import *
 
 # This should match the one defined in aiken.toml
 # TODO custom prefix set by funder
-STT_PREFIX: str = "egc-election"
+STT_PREFIX: str = "election"
 
 def full_stt_name(channel_id: ChannelId) -> bytes:
     id_str = channel_id_to_string(channel_id)
-    full_str = STT_PREFIX + '-' + id_str + '-stt'
+    full_str = STT_PREFIX + '-' + id_str
     # return coerce_channel_id(full_str)
     return full_str.encode('utf-8')
 

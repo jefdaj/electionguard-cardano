@@ -140,7 +140,7 @@ def channel_id_from_asset_name(encoded: str) -> ChannelId:
 def kupo_match_to_channel_str(kupo_match: dict) -> str:
     asset_hex = list(kupo_match['value']['assets'].keys())[0].split('.')[-1]
     asset_str = bytes.fromhex(asset_hex).decode()
-    channel_str = asset_str.split('-')[2]
+    channel_str = asset_str.split('-')[-1] # TODO central to/from channel id fn would be less brittle
     return channel_str
 
 
