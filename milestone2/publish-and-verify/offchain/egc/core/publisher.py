@@ -157,7 +157,7 @@ class ElectionPublisher:
                 remaining_seconds = OGMIOS_TIMEOUT_SEC - waited_seconds
                 if remaining_seconds <= 0:
                     LOG.error(msg)
-                    raise Exception(msg)
+                    raise Exception(msg) # TODO custom error?
                 else:
                     msg += f' Will wait {round(remaining_seconds)} more.'
                     LOG.debug(msg)
@@ -218,7 +218,7 @@ class ElectionPublisher:
             return utxo
         return None
 
-    # TODO use this
+    # TODO use or remove
     def get_my_collateral(self) -> UTxO:
         """Like find_collateral_utxo but raises if missing. Publishers call
         this when building any contract tx and pass the result as the
@@ -242,7 +242,6 @@ class ElectionPublisher:
         while True:
             utxo = self.find_collateral_utxo()
             if utxo is not None:
-                time.sleep(OGMIOS_POLL_SEC) # TODO remove?
                 return utxo
             if time.monotonic() >= deadline:
                 raise TimeoutError(

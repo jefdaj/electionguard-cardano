@@ -47,6 +47,23 @@ def assert_nodes_have_same_history(nodes: list[ElectionNode]):
                 assert node.subscriber._history == ref_hist
 
 
+def assert_collateral(nodes: list[ElectionNode]):
+    for node in nodes:
+        try:
+            name = node.channel_str()
+            utxo = node.publisher.wait_for_collateral()
+            LOG.info(f'{name} has the expected collateral utxo.')
+        except TimeoutError:
+            LOG.error(f'{name} is missing the expected collateral utxo.')
+
+
+def assert_no_collateral(nodes: list[ElectionNode]):
+    for node in nodes:
+        utxo = node.publisher.find_collateral_utxo()
+        assert utxo is None
+        LOG.info(f'{name} has no collateral utxo, as expected.')
+
+
 def assert_nodes_converge(
         expected: list[ Tuple[ElectionNode, Optional[ChannelState]] ],
         interval = 1,

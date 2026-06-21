@@ -2,7 +2,7 @@ import pytest
 from dataclasses import replace
 from pycardano import *
 from egc import *
-from helpers import per_election_fixture, assert_nodes_converge, sub_s0, is_channelstate
+from helpers import *
 import logging
 import time
 
@@ -11,17 +11,8 @@ import time
 # onchain/tests/integration/happy_election.ak
 #
 # But now timing matters, so these offchain tests are ordered by phase rather
-# than channel.
-#
-# STATIC_PHASES = \
-# {0: ElectionConfigPhase(phase=ConfigAnnouncePhase()),
-#  1: ElectionConfigPhase(phase=ConfigOnboardingPhase()),
-#  2: ElectionConfigPhase(phase=ConfigCeremonyPhase()),
-#  3: ElectionVotingPhase(),
-#  4: ElectionResultsPhase(phase=ResultsTallyPhase()),
-#  5: ElectionResultsPhase(phase=ResultsDecryptPhase()),
-#  6: ElectionVerifyPhase(),
-#  7: ElectionFinalizePhase()}
+# than channel. Each phase has a "checkpoint" test at the end that ensures all
+# nodes are in sync and that the pytest DAG runs the phases in order.
 
 
 LOG = logging.getLogger(__name__)
@@ -43,7 +34,8 @@ def admin_s0(admin_vkh: VerificationKeyHash) -> ChannelState:
 
 @per_election_fixture
 def admin_tx0(init_tx: Transaction) -> Transaction:
-    # admin_tx0 is just the init_tx renamed for clarity.
+    # admin_tx0 is just the init_tx.
+    # It's published by the funder and creates the admin STT.
     return init_tx
 
 @pytest.mark.testnet
@@ -54,6 +46,12 @@ def test_admin_tx0(
         admin_tx0: Transaction,
     ):
     assert isinstance(admin_tx0, Transaction)
+
+@pytest.mark.testnet
+def test_phase0_announce(
+        funder,
+        admin, admin_s0, admin_tx0,
+    ):
     assert_nodes_converge([
         (funder, None),
         (admin, admin_s0),
@@ -104,8 +102,9 @@ def test_admin_tx1(
         (admin, admin_s1),
     ])
 
-
-# from here on all the nodes can be started and should stay in sync
+# TODO remove? not sure if we always want to depend on them individually
+# From here on all 7 nodes can be started and should stay in sync.
+# We'll confirm that at the end of each phase.
 @per_election_fixture
 def all_nodes(
         funder: FunderNode,
@@ -114,17 +113,31 @@ def all_nodes(
     ) -> list[ElectionNode]:
     return [funder, admin] + subchannel_nodes
 
-# test_phase* make sure the TXs are submitted in a realistic order,
-# and that all the states line up as expected at each checkpoint. It's a
-# little confusing because each one is tested right after the phase variable
-# has advanced to the next phase. For example this one (phase 0) should be
-# tested right after having updated to phase 1.
 @pytest.mark.testnet
-def test_phase0_announce(
+def test_phase1_onboarding(
         funder,
-        admin, admin_s1, admin_tx1,
+        admin, admin_s2, admin_tx2,
+        guardian1, guardian1_s0,
+        guardian2, guardian2_s0,
+        guardian3, guardian3_s0,
+        device1, device1_s0,
+        verifier1, verifier1_s0,
+        # all_nodes: list[ElectionNode],
     ):
-    assert True # TODO is this right for a phony test?
+    assert_nodes_converge([
+        (funder   , None        ),
+        (admin    , admin_s2    ),
+        (guardian1, guardian1_s0),
+        (guardian2, guardian2_s0),
+        (guardian3, guardian3_s0),
+        (device1  , device1_s0  ),
+        (verifier1, verifier1_s0),
+    ])
+    assert_collateral([
+        funder, admin,
+        guardian1, guardian2, guardian3,
+        device1, verifier1
+    ])
 
 
 ## =================================
@@ -194,28 +207,6 @@ def test_admin_tx2(
         expected_state = sub_s0(sub_node.channel_id(), sub_node.publisher.wallet.vkh)
         expected.append((sub_node, expected_state))
     assert_nodes_converge(expected)
-
-@pytest.mark.testnet
-def test_phase1_onboarding(
-        funder,
-        admin, admin_s2, admin_tx2,
-        guardian1, guardian1_s0,
-        guardian2, guardian2_s0,
-        guardian3, guardian3_s0,
-        device1, device1_s0,
-        verifier1, verifier1_s0,
-        all_nodes: list[ElectionNode],
-    ):
-    # TODO test that subchannel nodes can find their collateral now?
-    assert_nodes_converge([
-        (funder   , None        ),
-        (admin    , admin_s2    ),
-        (guardian1, guardian1_s0),
-        (guardian2, guardian2_s0),
-        (guardian3, guardian3_s0),
-        (device1  , device1_s0  ),
-        (verifier1, verifier1_s0),
-    ])
 
 
 ## =================================
