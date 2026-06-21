@@ -38,7 +38,8 @@ def sub_s0(sub_id: ChannelId, sub_vkh: VerificationKeyHash) -> ChannelState:
 
 def assert_nodes_have_same_history(nodes: list[ElectionNode]):
     # You probably want assert_nodes_converge below, unless you don't know what the stages should be
-    assert len(nodes) > 1
+    if len(nodes) < 2:
+        return
     ref_node = nodes[0]
     with ref_node.subscriber._history_lock:
         ref_hist = ref_node.subscriber._history
@@ -76,10 +77,7 @@ def assert_nodes_converge(
     2. once all of them reach those states, assert that their histories are also equal
 
     The two are combined because we always want both, and to avoid a fixed
-    delay before the equal history check.
-
-    When you want to check that a node is OK but have no corresponding expected state,
-    pass None. For example you would normally do that with the funder."""
+    delay before the equal history check. A state of None means the channel is closed."""
 
     n = len(expected) # both the number of nodes and number of states being checked
 
@@ -100,10 +98,6 @@ def assert_nodes_converge(
             # How many states does this node have correct so far?
             for (node_for_id, expected_state) in expected:
                 state_str = node_for_id.channel_str()
-                # skip states not given
-                if expected_state is None:
-                    n_states_correct += 1
-                    continue
                 actual_state = node_to_test.current_state(node_for_id.channel_id())
                 try:
                     # TODO why isn't pytest creating nice diffs here?

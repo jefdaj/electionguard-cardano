@@ -45,7 +45,6 @@ def test_tx(node: ElectionNode, state: ChannelState, tx: Transaction):
 
 @pytest.mark.testnet
 def test_admin_tx0(
-        funder: FunderNode,
         admin: AdminNode,
         admin_s0: ChannelState,
         admin_tx0: Transaction,
@@ -54,11 +53,9 @@ def test_admin_tx0(
 
 @pytest.mark.testnet
 def test_phase0_announce(
-        funder,
         admin, admin_s0, admin_tx0,
     ):
     assert_nodes_converge([
-        (funder, None),
         (admin, admin_s0),
     ])
 
@@ -103,11 +100,10 @@ def test_admin_tx1(admin, admin_s1, admin_tx1):
 # We'll confirm that at the end of each phase.
 @per_election_fixture
 def all_nodes(
-        funder: FunderNode,
         admin: AdminNode,
         subchannel_nodes: list[ElectionNode],
     ) -> list[ElectionNode]:
-    return [funder, admin] + subchannel_nodes
+    return [admin] + subchannel_nodes
 
 @per_election_fixture
 def onboarding_info(
@@ -157,7 +153,6 @@ def test_admin_tx2(admin, admin_s2, admin_tx2):
 
 @pytest.mark.testnet
 def test_phase1_onboarding(
-        funder,
         admin, admin_s2, admin_tx2,
         guardian1, guardian1_s0,
         guardian2, guardian2_s0,
@@ -166,7 +161,6 @@ def test_phase1_onboarding(
         verifier1, verifier1_s0,
     ):
     assert_nodes_converge([
-        (funder   , None        ),
         (admin    , admin_s2    ),
         (guardian1, guardian1_s0),
         (guardian2, guardian2_s0),
@@ -175,17 +169,17 @@ def test_phase1_onboarding(
         (verifier1, verifier1_s0),
     ])
     assert_collateral([
-        funder, admin,
+        admin,
         guardian1, guardian2, guardian3,
         device1, verifier1
     ])
 
 
 ## =================================
-## 2. ConfigCeremonyPhase
-##    Round 1 (announce public keys)
-##    Round 2 (secret share private keys)
-##    Round 3 (confirm secret shares)
+## 2. ConfigCeremonyPhase:
+##    - Round 1 (announce public keys)
+##    - Round 2 (secret share private keys)
+##    - Round 3 (confirm secret shares)
 ## =================================
 
 ## ----------- Round 1 -----------
@@ -237,20 +231,19 @@ def guardian3_tx1(admin_tx2, guardian3, static_transactions):
 
 @pytest.mark.testnet
 def test_guardian1_tx1(guardian1, guardian1_s1, guardian1_tx1):
-    return test_tx(guardian1, guardian1_s1, guardian1_tx1)
+    test_tx(guardian1, guardian1_s1, guardian1_tx1)
 
 @pytest.mark.testnet
 def test_guardian2_tx1(guardian2, guardian2_s1, guardian2_tx1):
-    return test_tx(guardian2, guardian2_s1, guardian2_tx1)
+    test_tx(guardian2, guardian2_s1, guardian2_tx1)
 
 @pytest.mark.testnet
 def test_guardian3_tx1(guardian3, guardian3_s1, guardian3_tx1):
-    return test_tx(guardian3, guardian3_s1, guardian3_tx1)
+    test_tx(guardian3, guardian3_s1, guardian3_tx1)
 
 @pytest.mark.testnet
 def test_phase2_ceremony_round1(
-        funder,
-        admin, admin_s3, admin_tx3,
+        admin, admin_s2,
         guardian1, guardian1_s1, guardian1_tx1,
         guardian2, guardian2_s1, guardian2_tx1,
         guardian3, guardian3_s1, guardian3_tx1,
@@ -258,8 +251,7 @@ def test_phase2_ceremony_round1(
         verifier1, verifier1_s0,
     ):
     assert_nodes_converge([
-        (funder   , None        ),
-        (admin    , admin_s3    ),
+        (admin    , admin_s2    ),
         (guardian1, guardian1_s1),
         (guardian2, guardian2_s1),
         (guardian3, guardian3_s1),
@@ -267,9 +259,45 @@ def test_phase2_ceremony_round1(
         (verifier1, verifier1_s0),
     ])
 
+
 ## ----------- Round 2 -----------
 
+# @pytest.mark.testnet
+# def test_phase2_ceremony_round2(
+#         admin,
+#         guardian1, guardian1_s2, guardian1_tx2,
+#         guardian2, guardian2_s2, guardian2_tx2,
+#         guardian3, guardian3_s2, guardian3_tx2,
+#         device1, verifier1
+#     ):
+#     assert_nodes_converge([
+#         (admin    , None        ),
+#         (guardian1, guardian1_s2),
+#         (guardian2, guardian2_s2),
+#         (guardian3, guardian3_s2),
+#         (device1  , None        ),
+#         (verifier1, None        ),
+#     ])
+
+
 ## ----------- Round 3 -----------
+
+# @pytest.mark.testnet
+# def test_phase2_ceremony_round3(
+#         admin,
+#         guardian1, guardian1_s3, guardian1_tx3,
+#         guardian2, guardian2_s3, guardian2_tx3,
+#         guardian3, guardian3_s3, guardian3_tx3,
+#         device1, verifier1
+#     ):
+#     assert_nodes_converge([
+#         (admin    , None        ),
+#         (guardian1, guardian1_s3),
+#         (guardian2, guardian2_s3),
+#         (guardian3, guardian3_s3),
+#         (device1  , None        ),
+#         (verifier1, None        ),
+#     ])
 
 
 ## =================================
@@ -312,6 +340,24 @@ def test_admin_tx3(admin, admin_s3, admin_tx3):
 
 # TODO test_phase3_voting goes here too, because admin doesn't post anything more first?
 
+@pytest.mark.testnet
+def test_phase3_voting(
+        admin, admin_s3, admin_tx3,
+        guardian1, guardian1_s1, # TODO update
+        guardian2, guardian2_s1, # TODO update
+        guardian3, guardian3_s1, # TODO update
+        device1, device1_s0,
+        verifier1, verifier1_s0,
+    ):
+    assert_nodes_converge([
+        (admin    , admin_s3    ),
+        (guardian1, guardian1_s1),
+        (guardian2, guardian2_s1),
+        (guardian3, guardian3_s1),
+        (device1  , device1_s0  ),
+        (verifier1, verifier1_s0),
+    ])
+
 
 ## =================================
 ## 4. ResultsTallyPhase
@@ -349,6 +395,24 @@ def admin_tx4(
 @pytest.mark.testnet
 def test_admin_tx4(admin, admin_s4, admin_tx4):
     test_tx(admin, admin_s4, admin_tx4)
+
+@pytest.mark.testnet
+def test_phase4_tally(
+        admin, admin_s4, admin_tx4,
+        guardian1, guardian1_s1,
+        guardian2, guardian2_s1,
+        guardian3, guardian3_s1,
+        device1, device1_s0,
+        verifier1, verifier1_s0,
+    ):
+    assert_nodes_converge([
+        (admin    , admin_s4    ),
+        (guardian1, guardian1_s1),
+        (guardian2, guardian2_s1),
+        (guardian3, guardian3_s1),
+        (device1  , device1_s0  ),
+        (verifier1, verifier1_s0),
+    ])
 
 
 ## =================================
@@ -388,6 +452,24 @@ def admin_tx5(
 def test_admin_tx5(admin, admin_s5, admin_tx5):
     test_tx(admin, admin_s5, admin_tx5)
 
+@pytest.mark.testnet
+def test_phase5_decrypt(
+        admin, admin_s5, admin_tx5,
+        guardian1, guardian1_s1,
+        guardian2, guardian2_s1,
+        guardian3, guardian3_s1,
+        device1, device1_s0,
+        verifier1, verifier1_s0,
+    ):
+    assert_nodes_converge([
+        (admin    , admin_s5    ),
+        (guardian1, guardian1_s1),
+        (guardian2, guardian2_s1),
+        (guardian3, guardian3_s1),
+        (device1  , device1_s0  ),
+        (verifier1, verifier1_s0),
+    ])
+
 
 ## =================================
 ## 6. ElectionVerifyPhase
@@ -426,11 +508,6 @@ def admin_tx6(
 def test_admin_tx6(admin, admin_s6, admin_tx6):
     test_tx(admin, admin_s6, admin_tx6)
 
-
-## =================================
-## 7. ElectionFinalizePhase
-## =================================
-
 @per_election_fixture
 def admin_s7(
         admin_s6: ChannelState,
@@ -464,6 +541,31 @@ def admin_tx7(
 def test_admin_tx7(admin, admin_s7, admin_tx7):
     test_tx(admin, admin_s7, admin_tx7)
 
+@pytest.mark.testnet
+def test_phase6_verify(
+        admin, admin_s7, admin_tx7,
+        guardian1, guardian1_s1,
+        guardian2, guardian2_s1,
+        guardian3, guardian3_s1,
+        device1, device1_s0,
+        verifier1, verifier1_s0,
+    ):
+    assert_nodes_converge([
+        (admin    , admin_s7    ),
+        (guardian1, guardian1_s1),
+        (guardian2, guardian2_s1),
+        (guardian3, guardian3_s1),
+        (device1  , device1_s0  ),
+        (verifier1, verifier1_s0),
+    ])
+
+
+## =================================
+## 7. ElectionFinalizePhase:
+##    - RmSubChannels
+##    - EndElection
+## =================================
+
 @per_election_fixture
 def admin_s8(
         admin_s7: ChannelState,
@@ -479,11 +581,16 @@ def admin_s8(
         seq         = 8,
     ))
 
+# TODO update guardian txs as you write the later ones
+# TODO and add device1 + verifier1
 @per_election_fixture
 def admin_tx8(
-        admin_tx7: Transaction,
         admin: AdminNode,
         onboarding_info: dict[ChannelId, VerificationKeyHash],
+        admin_tx7: Transaction,
+        guardian1_tx1: Transaction,
+        guardian2_tx1: Transaction,
+        guardian3_tx1: Transaction,
     ) -> Transaction:
     sub_ids = list(onboarding_info.keys())
     ch_strs = [channel_id_to_string(k) for k in sub_ids]
@@ -495,3 +602,18 @@ def admin_tx8(
 @pytest.mark.testnet
 def test_admin_tx8(admin, admin_s8, admin_tx8):
     test_tx(admin, admin_s8, admin_tx8)
+
+@pytest.mark.testnet
+def test_phase7_finalize(
+        admin, admin_s8, admin_tx8,
+        guardian1, guardian2, guardian3, device1, verifier1,
+    ):
+    # TODO move this to test_admin_tx8 above and test that admin also None here?
+    assert_nodes_converge([
+        (admin    , admin_s8),
+        (guardian1, None    ),
+        (guardian2, None    ),
+        (guardian3, None    ),
+        (device1  , None    ),
+        (verifier1, None    ),
+    ])

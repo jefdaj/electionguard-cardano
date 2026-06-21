@@ -242,6 +242,7 @@ class ElectionPublisher:
         while True:
             utxo = self.find_collateral_utxo()
             if utxo is not None:
+                time.sleep(OGMIOS_POLL_SEC) # TODO remove?
                 return utxo
             if time.monotonic() >= deadline:
                 raise TimeoutError(
