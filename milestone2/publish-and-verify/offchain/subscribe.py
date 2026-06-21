@@ -51,11 +51,14 @@ sub = ElectionSubscriber(
 sub.start()
 
 # TODO this doesn't quite behave right: Ctrl-C quits without printing
+prev = None
 while not sub.is_done():
     try:
         states = sub.current_states()
-        LOG.info(f'current states:\n\n{pformat(states)}\n')
-        sub.sleep(10)
+        if states != prev:
+            LOG.info(f'current states:\n\n{pformat(states)}\n')
+            prev = states
+        sub.sleep(3)
     except KeyboardInterrupt:
         LOG.warning('Got keyboard interrupt')
         break
