@@ -36,6 +36,12 @@ def sub_s0(sub_id: ChannelId, sub_vkh: VerificationKeyHash) -> ChannelState:
     ))
 
 
+def test_tx(node: ElectionNode, state: ChannelState, tx: Transaction):
+    # This seems trivial, but would be a good place to
+    # also assert nodes converge after every tx if needed.
+    assert isinstance(tx, Transaction)
+
+
 def assert_nodes_have_same_history(nodes: list[ElectionNode]):
     # You probably want assert_nodes_converge below, unless you don't know what the stages should be
     if len(nodes) < 2:

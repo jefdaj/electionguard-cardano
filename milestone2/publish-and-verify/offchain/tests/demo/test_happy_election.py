@@ -38,11 +38,6 @@ def admin_tx0(init_tx: Transaction) -> Transaction:
     # It's published by the funder and creates the admin STT.
     return init_tx
 
-def test_tx(node: ElectionNode, state: ChannelState, tx: Transaction):
-    # This seems trivial, but would be a good place to
-    # also assert nodes converge after every tx if needed.
-    assert isinstance(tx, Transaction)
-
 @pytest.mark.testnet
 def test_admin_tx0(
         admin: AdminNode,

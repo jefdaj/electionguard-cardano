@@ -242,7 +242,10 @@ class ElectionPublisher:
         while True:
             utxo = self.find_collateral_utxo()
             if utxo is not None:
-                time.sleep(OGMIOS_POLL_SEC) # TODO remove?
+
+                # TODO is this masking a bug? Not sure why it's required.
+                time.sleep(OGMIOS_POLL_SEC)
+
                 return utxo
             if time.monotonic() >= deadline:
                 raise TimeoutError(

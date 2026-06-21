@@ -4,7 +4,7 @@ import pytest
 from dataclasses import replace
 from pycardano import *
 from egc import *
-from helpers import per_election_fixture, assert_nodes_converge
+from helpers import *
 import logging
 import time
 
@@ -28,19 +28,9 @@ def tx0(init_tx: Transaction) -> Transaction:
     # tx0 is just the init_tx renamed for clarity.
     return init_tx
 
-# TODO remove?
 @pytest.mark.testnet
-def test_tx0(
-        funder: FunderNode,
-        admin: AdminNode,
-        s0: ChannelState,
-        tx0: Transaction,
-    ):
-    assert isinstance(tx0, Transaction)
-    assert_nodes_converge([
-        (funder, None),
-        (admin, s0),
-    ])
+def test_tx0(admin, s0, tx0):
+    test_tx(admin, s0, tx0)
 
 @per_election_fixture
 def s1(
@@ -71,19 +61,9 @@ def tx1(
     admin.wait_for_confirmation(tx)
     return tx
 
-# TODO remove?
 @pytest.mark.testnet
-def test_tx1(
-        funder: FunderNode,
-        admin: AdminNode,
-        s1: ChannelState,
-        tx1: Transaction,
-    ):
-    assert isinstance(tx1, Transaction)
-    assert_nodes_converge([
-        (funder, None),
-        (admin, s1),
-    ])
+def test_tx1(admin, s1, tx1):
+    test_tx(admin, s1, tx1)
 
 
 ## -------- tx2: add single subchannel --------
@@ -96,14 +76,6 @@ def onboarding_info(
         guardian1.channel_id() : guardian1.publisher.wallet.vkh
     }
     return info
-
-@per_election_fixture
-def all_nodes(
-        funder: FunderNode,
-        admin: AdminNode,
-        guardian1: GuardianNode,
-    ) -> list[ElectionNode]:
-        return [funder, admin, guardian1]
 
 @per_election_fixture
 def s2(
@@ -139,15 +111,13 @@ def tx2(
 
 @pytest.mark.testnet
 def test_add_subchannel(
-        tx2: Transaction,
-        admin: AdminNode,
-        all_nodes: list[ElectionNode],
-        s2: ChannelState,
+        admin, s2, tx2,
+        guardian1, guardian1_s0,
     ):
-    assert isinstance(tx2, Transaction)
+    test_tx(admin, s2, tx2)
     assert_nodes_converge([
-        (n, s2 if n == admin else None)
-        for n in all_nodes
+        (admin, s2),
+        (guardian1, guardian1_s0),
     ])
 
 
@@ -180,13 +150,11 @@ def tx3(
 
 @pytest.mark.testnet
 def test_rm_subchannel(
-        admin: AdminNode,
-        all_nodes: list[ElectionNode],
-        s3: ChannelState,
-        tx3: Transaction,
+        admin, s3, tx3,
+        guardian1, guardian1_s0,
     ):
-    assert isinstance(tx3, Transaction)
+    test_tx(admin, s3, tx3)
     assert_nodes_converge([
-        (n, s3 if n == admin else None)
-        for n in all_nodes
+        (admin, s3),
+        (guardian1, None)
     ])
