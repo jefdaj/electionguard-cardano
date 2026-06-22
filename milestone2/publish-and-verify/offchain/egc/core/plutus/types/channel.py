@@ -20,13 +20,13 @@ class AdminChannelState(PlutusData):
 
     def __repr__(self):
         # TODO are these missing their list brackets?
-        subchannels_str = [ch.hex() for ch in self.subchannels]
-        records_str = [str(r) for r in self.new_records] # TODO is this right?
+        sub_strs = self.subchannels
+        records_str = ', '.join([str(r) for r in self.new_records])
         return (
             'AdminChannelState('
-            f'admin={self.admin.hex()}, '      # TODO clean up to avoid bytes.fromhex
-            f'subchannels={subchannels_str}, ' # TODO clean up to avoid bytes.fromhex
-            f'new_records={records_str}, '
+            f"admin='{self.admin.hex()}', "     # TODO clean up to avoid bytes.fromhex
+            f'subchannels={self.subchannels}, ' # TODO clean up to avoid bytes.fromhex
+            f'new_records=[' + records_str + '], '
             f'phase={str(self.phase)}, '
             f'seq={self.seq})'
         )
@@ -40,12 +40,13 @@ class SubChannelState(PlutusData):
     seq: int
 
     def __repr__(self):
-        records_str = [str(r) for r in self.new_records] # TODO is this right?
+        ch_str = channel_id_to_string(self.channel_id)
+        records_str = ', '.join([str(r) for r in self.new_records])
         return (
             'SubChannelState('
-            f'channel_id={self.channel_id.hex()}, ' # TODO clean up to avoid bytes.fromhex
+            f'channel_id={ch_str}, '
             f'publisher={self.publisher.hex()}, '   # TODO clean up to avoid bytes.fromhex
-            f'new_records={records_str}, '
+            f'new_records=[' + records_str + '], '
             f'seq={self.seq})'
         )
 
