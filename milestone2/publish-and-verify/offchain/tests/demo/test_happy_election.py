@@ -176,8 +176,6 @@ def test_phase1_onboarding(
 ##    - Round 3 (confirm secret shares)
 ## =================================
 
-## ----------- Round 1 -----------
-
 def guardian_state(
         static_transactions,
         prev_state: ChannelState,
@@ -194,18 +192,6 @@ def guardian_state(
         seq = tx_index,
     ))
 
-@per_election_fixture
-def guardian1_s1(guardian1_s0, static_transactions) -> ChannelState:
-    return guardian_state(static_transactions, guardian1_s0, 1, 1)
-
-@per_election_fixture
-def guardian2_s1(guardian2_s0, static_transactions) -> ChannelState:
-    return guardian_state(static_transactions, guardian2_s0, 2, 1)
-
-@per_election_fixture
-def guardian3_s1(guardian3_s0, static_transactions) -> ChannelState:
-    return guardian_state(static_transactions, guardian3_s0, 3, 1)
-
 def guardian_tx(
         static_transactions,
         guardian: GuardianNode,
@@ -217,6 +203,20 @@ def guardian_tx(
     LOG.debug(f'{ch_str}_tx{tx_index}: {tx}')
     guardian.wait_for_confirmation(tx)
     return tx
+
+## ----------- Round 1 -----------
+
+@per_election_fixture
+def guardian1_s1(guardian1_s0, static_transactions) -> ChannelState:
+    return guardian_state(static_transactions, guardian1_s0, 1, 1)
+
+@per_election_fixture
+def guardian2_s1(guardian2_s0, static_transactions) -> ChannelState:
+    return guardian_state(static_transactions, guardian2_s0, 2, 1)
+
+@per_election_fixture
+def guardian3_s1(guardian3_s0, static_transactions) -> ChannelState:
+    return guardian_state(static_transactions, guardian3_s0, 3, 1)
 
 @per_election_fixture
 def guardian1_tx1(admin_tx2, guardian1, static_transactions):
@@ -244,7 +244,7 @@ def test_guardian3_tx1(guardian3, guardian3_s1, guardian3_tx1):
 
 @pytest.mark.testnet
 def test_phase2_ceremony_round1(
-        admin    , admin_s2    ,
+        admin    , admin_s2    , admin_tx2    ,
         guardian1, guardian1_s1, guardian1_tx1,
         guardian2, guardian2_s1, guardian2_tx1,
         guardian3, guardian3_s1, guardian3_tx1,
@@ -276,15 +276,15 @@ def guardian3_s2(guardian3_s0, static_transactions) -> ChannelState:
     return guardian_state(static_transactions, guardian3_s0, 3, 2)
 
 @per_election_fixture
-def guardian1_tx2(admin_tx2, guardian1, static_transactions):
+def guardian1_tx2(guardian1_tx1, guardian1, static_transactions):
     return guardian_tx(static_transactions, guardian1, 2)
 
 @per_election_fixture
-def guardian2_tx2(admin_tx2, guardian2, static_transactions):
+def guardian2_tx2(guardian2_tx1, guardian2, static_transactions):
     return guardian_tx(static_transactions, guardian2, 2)
 
 @per_election_fixture
-def guardian3_tx2(admin_tx2, guardian3, static_transactions):
+def guardian3_tx2(guardian3_tx1, guardian3, static_transactions):
     return guardian_tx(static_transactions, guardian3, 2)
 
 @pytest.mark.testnet
@@ -333,15 +333,15 @@ def guardian3_s3(guardian3_s0, static_transactions) -> ChannelState:
     return guardian_state(static_transactions, guardian3_s0, 3, 3)
 
 @per_election_fixture
-def guardian1_tx3(admin_tx3, guardian1, static_transactions):
+def guardian1_tx3(guardian1_tx2, guardian1, static_transactions):
     return guardian_tx(static_transactions, guardian1, 3)
 
 @per_election_fixture
-def guardian2_tx3(admin_tx3, guardian2, static_transactions):
+def guardian2_tx3(guardian2_tx2, guardian2, static_transactions):
     return guardian_tx(static_transactions, guardian2, 3)
 
 @per_election_fixture
-def guardian3_tx3(admin_tx3, guardian3, static_transactions):
+def guardian3_tx3(guardian3_tx2, guardian3, static_transactions):
     return guardian_tx(static_transactions, guardian3, 3)
 
 @pytest.mark.testnet
