@@ -147,11 +147,11 @@ def test_admin_tx2(admin, admin_s2, admin_tx2):
 
 @pytest.mark.testnet
 def test_phase1_onboarding(
-        admin, admin_s2, admin_tx2,
+        admin    , admin_s2    , admin_tx2,
         guardian1, guardian1_s0,
         guardian2, guardian2_s0,
         guardian3, guardian3_s0,
-        device1, device1_s0,
+        device1  , device1_s0  ,
         verifier1, verifier1_s0,
     ):
     assert_nodes_converge([
@@ -186,6 +186,8 @@ def guardian_state(
         ) -> ChannelState:
     ch_str = 'guardian' + str(role_index)
     records = static_transactions[ch_str][tx_index][1]
+    LOG.debug(f'{ch_str}_s{tx_index} records: {records}')
+    assert isinstance(records, list)
     return SubChannel(state=replace(
         prev_state.state,
         new_records = records,
@@ -210,9 +212,8 @@ def guardian_tx(
         tx_index: int, # index in static_transactions
     ) -> Transaction:
     ch_str = guardian.channel_str()
-    records = static_transactions[ch_str][tx_index][1],
-    LOG.debug(f'{ch_str}_tx{tx_index} records: {records}')
-    tx = guardian.post_public_records(new_records=records)
+    (_, recs) = static_transactions[ch_str][tx_index]
+    tx = guardian.post_public_records(new_records=recs)
     LOG.debug(f'{ch_str}_tx{tx_index}: {tx}')
     guardian.wait_for_confirmation(tx)
     return tx
@@ -243,11 +244,11 @@ def test_guardian3_tx1(guardian3, guardian3_s1, guardian3_tx1):
 
 @pytest.mark.testnet
 def test_phase2_ceremony_round1(
-        admin, admin_s2,
+        admin    , admin_s2    ,
         guardian1, guardian1_s1, guardian1_tx1,
         guardian2, guardian2_s1, guardian2_tx1,
         guardian3, guardian3_s1, guardian3_tx1,
-        device1, device1_s0,
+        device1  , device1_s0  ,
         verifier1, verifier1_s0,
     ):
     assert_nodes_converge([
@@ -300,11 +301,12 @@ def test_guardian3_tx2(guardian3, guardian3_s2, guardian3_tx2):
 
 @pytest.mark.testnet
 def test_phase2_ceremony_round2(
-        admin, admin_s2,
+        admin    , admin_s2    ,
         guardian1, guardian1_s2, guardian1_tx2,
         guardian2, guardian2_s2, guardian2_tx2,
         guardian3, guardian3_s2, guardian3_tx2,
-        device1, verifier1
+        device1  , device1_s0  ,
+        verifier1, verifier1_s0,
     ):
     assert_nodes_converge([
         (admin    , admin_s2    ),
@@ -356,11 +358,12 @@ def test_guardian3_tx3(guardian3, guardian3_s3, guardian3_tx3):
 
 @pytest.mark.testnet
 def test_phase2_ceremony_round3(
-        admin, admin_s2,
+        admin    , admin_s2    ,
         guardian1, guardian1_s3, guardian1_tx3,
         guardian2, guardian2_s3, guardian2_tx3,
         guardian3, guardian3_s3, guardian3_tx3,
-        device1, verifier1
+        device1  , device1_s0  ,
+        verifier1, verifier1_s0,
     ):
     assert_nodes_converge([
         (admin    , admin_s2    ),
@@ -413,11 +416,11 @@ def test_admin_tx3(admin, admin_s3, admin_tx3):
 
 @pytest.mark.testnet
 def test_phase3_voting(
-        admin, admin_s3, admin_tx3,
+        admin    , admin_s3    , admin_tx3,
         guardian1, guardian1_s3,
         guardian2, guardian2_s3,
         guardian3, guardian3_s3,
-        device1, device1_s0,
+        device1  , device1_s0  ,
         verifier1, verifier1_s0,
     ):
     assert_nodes_converge([
@@ -469,11 +472,11 @@ def test_admin_tx4(admin, admin_s4, admin_tx4):
 
 @pytest.mark.testnet
 def test_phase4_tally(
-        admin, admin_s4, admin_tx4,
+        admin    , admin_s4    , admin_tx4,
         guardian1, guardian1_s3,
         guardian2, guardian2_s3,
         guardian3, guardian3_s3,
-        device1, device1_s0,
+        device1  , device1_s0  ,
         verifier1, verifier1_s0,
     ):
     assert_nodes_converge([
@@ -525,11 +528,11 @@ def test_admin_tx5(admin, admin_s5, admin_tx5):
 
 @pytest.mark.testnet
 def test_phase5_decrypt(
-        admin, admin_s5, admin_tx5,
+        admin    , admin_s5    , admin_tx5,
         guardian1, guardian1_s3,
         guardian2, guardian2_s3,
         guardian3, guardian3_s3,
-        device1, device1_s0,
+        device1  , device1_s0  ,
         verifier1, verifier1_s0,
     ):
     assert_nodes_converge([
@@ -614,11 +617,11 @@ def test_admin_tx7(admin, admin_s7, admin_tx7):
 
 @pytest.mark.testnet
 def test_phase6_verify(
-        admin, admin_s7, admin_tx7,
+        admin    , admin_s7    , admin_tx7,
         guardian1, guardian1_s3,
         guardian2, guardian2_s3,
         guardian3, guardian3_s3,
-        device1, device1_s0,
+        device1  , device1_s0  ,
         verifier1, verifier1_s0,
     ):
     assert_nodes_converge([

@@ -28,6 +28,7 @@ def test_load_static_transactions(
         for (seq, (act, recs)) in tx_dict.items():
             assert isinstance(seq, int)
             assert isinstance(act, ElectionAction)
+            assert isinstance(recs, list)
             for rec in recs:
                 assert isinstance(rec, PublicRecord)
 

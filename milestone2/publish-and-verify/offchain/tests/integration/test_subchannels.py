@@ -149,10 +149,7 @@ def tx3(
     return tx
 
 @pytest.mark.testnet
-def test_rm_subchannel(
-        admin, s3, tx3,
-        guardian1, guardian1_s0,
-    ):
+def test_rm_subchannel(admin, s3, tx3, guardian1):
     test_tx(admin, s3, tx3)
     assert_nodes_converge([
         (admin, s3),
