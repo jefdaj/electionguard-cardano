@@ -63,12 +63,13 @@ def test_phase0_announce(
 def admin_s1(
         admin_s0: ChannelState,
         static_transactions,
+        static_phases,
     ) -> ChannelState:
     prev = admin_s0.state
     return AdminChannel(state=replace(
         prev,
         new_records = static_transactions['admin'][1][1],
-        phase       = ElectionConfigPhase(ConfigOnboardingPhase()),
+        phase       = static_phases[1],
         seq         = 1,
     ))
 
@@ -80,7 +81,7 @@ def admin_tx1(
     ) -> Transaction:
     tx = admin.post_public_records(
         new_records = static_transactions['admin'][1][1],
-        new_phase   = ElectionConfigPhase(ConfigOnboardingPhase()),
+        new_phase = ElectionConfigPhase(ConfigOnboardingPhase()),
     )
     LOG.debug(f'admin_tx1: {tx}')
     admin.wait_for_confirmation(tx)
@@ -114,13 +115,14 @@ def onboarding_info(
 def admin_s2(
         admin_s1: ChannelState,
         subchannel_ids,
+        static_phases,
     ) -> ChannelState:
     prev = admin_s1.state
     return AdminChannel(state=replace(
         prev,
         subchannels = subchannel_ids,
         new_records = [],
-        phase       = ElectionConfigPhase(ConfigCeremonyPhase()),
+        phase       = static_phases[2],
         seq         = 2,
     ))
 
@@ -135,7 +137,7 @@ def admin_tx2(
     tx = admin.add_subchannels(
         subchannels = onboarding_info,
         subchannel_ada = 10,
-        done_onboarding = True,
+        done_onboarding = True, # advance to ConfigCeremonyPhase
     )
     LOG.debug(f'admin_tx2: {tx}')
     admin.wait_for_confirmation(tx)
@@ -356,40 +358,17 @@ def test_guardian2_tx3(guardian2, guardian2_s3, guardian2_tx3):
 def test_guardian3_tx3(guardian3, guardian3_s3, guardian3_tx3):
     test_tx(guardian3, guardian3_s3, guardian3_tx3)
 
-@pytest.mark.testnet
-def test_phase2_ceremony_round3(
-        admin    , admin_s2    ,
-        guardian1, guardian1_s3, guardian1_tx3,
-        guardian2, guardian2_s3, guardian2_tx3,
-        guardian3, guardian3_s3, guardian3_tx3,
-        device1  , device1_s0  ,
-        verifier1, verifier1_s0,
-    ):
-    assert_nodes_converge([
-        (admin    , admin_s2    ),
-        (guardian1, guardian1_s3),
-        (guardian2, guardian2_s3),
-        (guardian3, guardian3_s3),
-        (device1  , device1_s0  ),
-        (verifier1, verifier1_s0),
-    ])
-
-
-## =================================
-## 3. ElectionVotingPhase
-## =================================
-
 @per_election_fixture
 def admin_s3(
         admin_s2: ChannelState,
         static_transactions,
-        # static_phases,
+        static_phases,
     ) -> ChannelState:
     prev = admin_s2.state
     return AdminChannel(state=replace(
         prev,
         new_records = static_transactions['admin'][3][1],
-        phase       = ElectionVotingPhase(),
+        phase       = static_phases[3],
         seq         = 3,
     ))
 
@@ -398,11 +377,10 @@ def admin_tx3(
         admin: AdminNode,
         admin_tx2: Transaction,
         static_transactions,
-        # static_phases,
     ) -> Transaction:
     tx = admin.post_public_records(
         new_records = static_transactions['admin'][3][1],
-        new_phase   = ElectionVotingPhase(),
+        new_phase = ElectionVotingPhase(),
     )
     LOG.debug(f'admin_tx3: {tx}')
     admin.wait_for_confirmation(tx)
@@ -411,6 +389,28 @@ def admin_tx3(
 @pytest.mark.testnet
 def test_admin_tx3(admin, admin_s3, admin_tx3):
     test_tx(admin, admin_s3, admin_tx3)
+
+@pytest.mark.testnet
+def test_phase2_ceremony_round3(
+        admin    , admin_s3    , admin_tx3,
+        guardian1, guardian1_s3, guardian1_tx3,
+        guardian2, guardian2_s3, guardian2_tx3,
+        guardian3, guardian3_s3, guardian3_tx3,
+        device1  , device1_s0  ,
+        verifier1, verifier1_s0,
+    ):
+    assert_nodes_converge([
+        (admin    , admin_s3    ),
+        (guardian1, guardian1_s3),
+        (guardian2, guardian2_s3),
+        (guardian3, guardian3_s3),
+        (device1  , device1_s0  ),
+        (verifier1, verifier1_s0),
+    ])
+
+## =================================
+## 3. ElectionVotingPhase
+## =================================
 
 # TODO device voting transactions here
 
@@ -445,13 +445,13 @@ def test_phase3_voting(
 @per_election_fixture
 def admin_s4(
         admin_s3: ChannelState,
-        # static_phases,
+        static_phases,
     ) -> ChannelState:
     prev = admin_s3.state
     return AdminChannel(state=replace(
         prev,
         new_records = [],
-        phase       = ElectionResultsPhase(ResultsTallyPhase()),
+        phase       = static_phases[4],
         seq         = 4,
     ))
 
@@ -459,9 +459,10 @@ def admin_s4(
 def admin_tx4(
         admin: AdminNode,
         admin_tx3: Transaction,
-        static_phases,
     ) -> Transaction:
-    tx = admin.advance_phase(static_phases[4])
+    tx = admin.advance_phase(
+        ElectionResultsPhase(ResultsTallyPhase())
+    )
     LOG.debug(f'admin_tx4: {tx}')
     admin.wait_for_confirmation(tx)
     return tx
@@ -512,11 +513,10 @@ def admin_tx5(
         admin: AdminNode,
         admin_tx4: Transaction,
         static_transactions,
-        static_phases,
     ) -> Transaction:
     tx = admin.post_public_records(
         new_records = static_transactions['admin'][5][1],
-        new_phase   = static_phases[5],
+        new_phase = ElectionResultsPhase(ResultsDecryptPhase()),
     )
     LOG.debug(f'admin_tx5: {tx}')
     admin.wait_for_confirmation(tx)
@@ -568,11 +568,10 @@ def admin_tx6(
         admin: AdminNode,
         admin_tx5: Transaction,
         static_transactions,
-        static_phases,
     ) -> Transaction:
     tx = admin.post_public_records(
         new_records = static_transactions['admin'][6][1],
-        new_phase   = static_phases[6],
+        new_phase = ElectionVerifyPhase(),
     )
     LOG.debug(f'admin_tx6: {tx}')
     admin.wait_for_confirmation(tx)
@@ -601,11 +600,10 @@ def admin_tx7(
         admin: AdminNode,
         admin_tx6: Transaction,
         static_transactions,
-        static_phases,
     ) -> Transaction:
     tx = admin.post_public_records(
         new_records = static_transactions['admin'][7][1],
-        new_phase   = static_phases[7],
+        new_phase = ElectionFinalizePhase(),
     )
     LOG.debug(f'admin_tx7: {tx}')
     admin.wait_for_confirmation(tx)
@@ -644,7 +642,6 @@ def test_phase6_verify(
 def admin_s8(
         admin_s7: ChannelState,
         subchannel_ids,
-        # static_phases,
     ) -> ChannelState:
     prev = admin_s7.state
     remaining_ids = [i for i in prev.subchannels if not i in subchannel_ids]
@@ -691,3 +688,5 @@ def test_phase7_finalize(
         (device1  , None    ),
         (verifier1, None    ),
     ])
+
+# TODO or, separate test for tx9 here?
