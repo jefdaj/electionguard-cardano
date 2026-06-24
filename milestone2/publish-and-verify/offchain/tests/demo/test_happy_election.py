@@ -11,7 +11,7 @@ import time
 # onchain/tests/integration/happy_election.ak
 #
 # But now timing matters, so these offchain tests are ordered by phase rather
-# than channel. Each phase has a "checkpoint" test at the end that ensures all
+# than channel. Each phase has a "phaseN" test at the end that ensures all
 # nodes are in sync and that the pytest DAG runs the phases in order.
 
 
@@ -372,10 +372,16 @@ def admin_s3(
         seq         = 3,
     ))
 
+# After the guardian backups are all confirmed, admin can publish the final
+# voting config and advance to voting phase.
+# TODO should there be a separate little phase for this step?
 @per_election_fixture
 def admin_tx3(
         admin: AdminNode,
         admin_tx2: Transaction,
+        guardian1_tx3: Transaction,
+        guardian2_tx3: Transaction,
+        guardian3_tx3: Transaction,
         static_transactions,
     ) -> Transaction:
     tx = admin.post_public_records(
@@ -477,7 +483,7 @@ def test_phase4_tally(
         guardian1, guardian1_s3,
         guardian2, guardian2_s3,
         guardian3, guardian3_s3,
-        device1  , device1_s0  ,
+        device1  , device1_s0  , # TODO finish
         verifier1, verifier1_s0,
     ):
     assert_nodes_converge([
@@ -595,6 +601,9 @@ def admin_s7(
         seq         = 7,
     ))
 
+# Admin post summary (verification) of election and advance to finalize phase.
+# TODO should this come before, after, or same time as others post theirs?
+# TODO extra commit reveal step for verifications?
 @per_election_fixture
 def admin_tx7(
         admin: AdminNode,
