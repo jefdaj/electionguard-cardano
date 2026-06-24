@@ -178,13 +178,18 @@ def test_phase1_onboarding(
 ##    - Round 3 (confirm secret shares)
 ## =================================
 
-def guardian_state(
+# These two functions turn out to be reasonably generic;
+# they'll be used in all the simple post_public_records
+# continuations from now on.
+
+def post_state(
         static_transactions,
         prev_state: ChannelState,
+        role_name: str,
         role_index: int,
         tx_index: int, # seq and also index in static_transactions
         ) -> ChannelState:
-    ch_str = 'guardian' + str(role_index)
+    ch_str = role_name + str(role_index)
     records = static_transactions[ch_str][tx_index][1]
     LOG.debug(f'{ch_str}_s{tx_index} records: {records}')
     assert isinstance(records, list)
@@ -194,43 +199,43 @@ def guardian_state(
         seq = tx_index,
     ))
 
-def guardian_tx(
+def post_tx(
         static_transactions,
-        guardian: GuardianNode,
+        node_: ElectionNode,
         tx_index: int, # index in static_transactions
     ) -> Transaction:
-    ch_str = guardian.channel_str()
+    ch_str = node_.channel_str()
     (_, recs) = static_transactions[ch_str][tx_index]
-    tx = guardian.post_public_records(new_records=recs)
+    tx = node_.post_public_records(new_records=recs)
     LOG.debug(f'{ch_str}_tx{tx_index}: {tx}')
-    guardian.wait_for_confirmation(tx)
+    node_.wait_for_confirmation(tx)
     return tx
 
 ## ----------- Round 1 -----------
 
 @per_election_fixture
 def guardian1_s1(guardian1_s0, static_transactions) -> ChannelState:
-    return guardian_state(static_transactions, guardian1_s0, 1, 1)
+    return post_state(static_transactions, guardian1_s0, 'guardian', 1, 1)
 
 @per_election_fixture
 def guardian2_s1(guardian2_s0, static_transactions) -> ChannelState:
-    return guardian_state(static_transactions, guardian2_s0, 2, 1)
+    return post_state(static_transactions, guardian2_s0, 'guardian', 2, 1)
 
 @per_election_fixture
 def guardian3_s1(guardian3_s0, static_transactions) -> ChannelState:
-    return guardian_state(static_transactions, guardian3_s0, 3, 1)
+    return post_state(static_transactions, guardian3_s0, 'guardian', 3, 1)
 
 @per_election_fixture
 def guardian1_tx1(admin_tx2, guardian1, static_transactions):
-    return guardian_tx(static_transactions, guardian1, 1)
+    return post_tx(static_transactions, guardian1, 1)
 
 @per_election_fixture
 def guardian2_tx1(admin_tx2, guardian2, static_transactions):
-    return guardian_tx(static_transactions, guardian2, 1)
+    return post_tx(static_transactions, guardian2, 1)
 
 @per_election_fixture
 def guardian3_tx1(admin_tx2, guardian3, static_transactions):
-    return guardian_tx(static_transactions, guardian3, 1)
+    return post_tx(static_transactions, guardian3, 1)
 
 @pytest.mark.testnet
 def test_guardian1_tx1(guardian1, guardian1_s1, guardian1_tx1):
@@ -267,27 +272,27 @@ def test_phase2_ceremony_round1(
 
 @per_election_fixture
 def guardian1_s2(guardian1_s0, static_transactions) -> ChannelState:
-    return guardian_state(static_transactions, guardian1_s0, 1, 2)
+    return post_state(static_transactions, guardian1_s0, 'guardian', 1, 2)
 
 @per_election_fixture
 def guardian2_s2(guardian2_s0, static_transactions) -> ChannelState:
-    return guardian_state(static_transactions, guardian2_s0, 2, 2)
+    return post_state(static_transactions, guardian2_s0, 'guardian', 2, 2)
 
 @per_election_fixture
 def guardian3_s2(guardian3_s0, static_transactions) -> ChannelState:
-    return guardian_state(static_transactions, guardian3_s0, 3, 2)
+    return post_state(static_transactions, guardian3_s0, 'guardian', 3, 2)
 
 @per_election_fixture
 def guardian1_tx2(guardian1_tx1, guardian1, static_transactions):
-    return guardian_tx(static_transactions, guardian1, 2)
+    return post_tx(static_transactions, guardian1, 2)
 
 @per_election_fixture
 def guardian2_tx2(guardian2_tx1, guardian2, static_transactions):
-    return guardian_tx(static_transactions, guardian2, 2)
+    return post_tx(static_transactions, guardian2, 2)
 
 @per_election_fixture
 def guardian3_tx2(guardian3_tx1, guardian3, static_transactions):
-    return guardian_tx(static_transactions, guardian3, 2)
+    return post_tx(static_transactions, guardian3, 2)
 
 @pytest.mark.testnet
 def test_guardian1_tx2(guardian1, guardian1_s2, guardian1_tx2):
@@ -324,27 +329,27 @@ def test_phase2_ceremony_round2(
 
 @per_election_fixture
 def guardian1_s3(guardian1_s0, static_transactions) -> ChannelState:
-    return guardian_state(static_transactions, guardian1_s0, 1, 3)
+    return post_state(static_transactions, guardian1_s0, 'guardian', 1, 3)
 
 @per_election_fixture
 def guardian2_s3(guardian2_s0, static_transactions) -> ChannelState:
-    return guardian_state(static_transactions, guardian2_s0, 2, 3)
+    return post_state(static_transactions, guardian2_s0, 'guardian', 2, 3)
 
 @per_election_fixture
 def guardian3_s3(guardian3_s0, static_transactions) -> ChannelState:
-    return guardian_state(static_transactions, guardian3_s0, 3, 3)
+    return post_state(static_transactions, guardian3_s0, 'guardian', 3, 3)
 
 @per_election_fixture
 def guardian1_tx3(guardian1_tx2, guardian1, static_transactions):
-    return guardian_tx(static_transactions, guardian1, 3)
+    return post_tx(static_transactions, guardian1, 3)
 
 @per_election_fixture
 def guardian2_tx3(guardian2_tx2, guardian2, static_transactions):
-    return guardian_tx(static_transactions, guardian2, 3)
+    return post_tx(static_transactions, guardian2, 3)
 
 @per_election_fixture
 def guardian3_tx3(guardian3_tx2, guardian3, static_transactions):
-    return guardian_tx(static_transactions, guardian3, 3)
+    return post_tx(static_transactions, guardian3, 3)
 
 @pytest.mark.testnet
 def test_guardian1_tx3(guardian1, guardian1_s3, guardian1_tx3):
@@ -418,61 +423,29 @@ def test_phase2_ceremony_round3(
 ## 3. ElectionVotingPhase
 ## =================================
 
-# device_state and device_tx are generic because it was easy
-# to have them match the guardian versions above. There's only
-# the one device in this election though.
-
-def device_state(
-        static_transactions,
-        prev_state: ChannelState,
-        role_index: int,
-        tx_index: int, # seq and also index in static_transactions
-        ) -> ChannelState:
-    ch_str = 'device' + str(role_index)
-    records = static_transactions[ch_str][tx_index][1]
-    LOG.debug(f'{ch_str}_s{tx_index} records: {records}')
-    assert isinstance(records, list)
-    return SubChannel(state=replace(
-        prev_state.state,
-        new_records = records,
-        seq = tx_index,
-    ))
-
-def device_tx(
-        static_transactions,
-        device: DeviceNode,
-        tx_index: int, # index in static_transactions
-    ) -> Transaction:
-    ch_str = guardian.channel_str()
-    (_, recs) = static_transactions[ch_str][tx_index]
-    tx = device.post_public_records(new_records=recs)
-    LOG.debug(f'{ch_str}_tx{tx_index}: {tx}')
-    guardian.wait_for_confirmation(tx)
-    return tx
-
 @per_election_fixture
 def device1_s1(device1_s0, static_transactions) -> ChannelState:
-    return device_state(static_transactions, device1_s0, 1, 1)
+    return post_state(static_transactions, device1_s0, 'device', 1, 1)
 
 @per_election_fixture
 def device1_s2(device1_s1, static_transactions) -> ChannelState:
-    return device_state(static_transactions, device1_s1, 1, 2)
+    return post_state(static_transactions, device1_s1, 'device', 1, 2)
 
 @per_election_fixture
 def device1_s3(device1_s2, static_transactions) -> ChannelState:
-    return device_state(static_transactions, device1_s2, 1, 3)
+    return post_state(static_transactions, device1_s2, 'device', 1, 3)
 
 @per_election_fixture
 def device1_tx1(admin_tx2, device1, static_transactions):
-    return device_tx(static_transactions, device1, 1)
+    return post_tx(static_transactions, device1, 1)
 
 @per_election_fixture
 def device1_tx2(device1_tx1, device1, static_transactions):
-    return device_tx(static_transactions, device1, 2)
+    return post_tx(static_transactions, device1, 2)
 
 @per_election_fixture
 def device1_tx3(admin_tx2, device1, static_transactions):
-    return device_tx(static_transactions, device1, 3)
+    return post_tx(static_transactions, device1, 3)
 
 @pytest.mark.testnet
 def test_phase3_voting(
