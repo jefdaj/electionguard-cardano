@@ -43,15 +43,26 @@ def test_tx(node: ElectionNode, state: ChannelState, tx: Transaction):
 
 
 def assert_nodes_have_same_history(nodes: list[ElectionNode]):
-    # You probably want assert_nodes_converge below, unless you don't know what the stages should be
+    # You probably want assert_nodes_converge below,
+    # unless you don't know what the stages should be
     if len(nodes) < 2:
         return
-    ref_node = nodes[0]
+    ref_node = nodes[0]; other_nodes = nodes[1:]
     with ref_node.subscriber._history_lock:
         ref_hist = ref_node.subscriber._history
-        for node in nodes[1:]:
-            with node.subscriber._history_lock:
-                assert node.subscriber._history == ref_hist
+        for n in other_nodes:
+            with n.subscriber._history_lock:
+                try:
+                    assert n.subscriber._history == ref_hist
+                except AssertionError:
+                    r_str = ref_node.channel_str()
+                    n_str = n.channel_str()
+                    diff = DeepDiff(ref_hist, n.subscriber._history)
+                    LOG.error(
+                        f'Nodes {r_str} and {n_str} '
+                        f'disagree on history:\n{pformat(diff)}\n'
+                    )
+                    raise
 
 
 def assert_collateral(nodes: list[ElectionNode]):

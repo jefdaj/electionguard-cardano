@@ -4,9 +4,11 @@ import json
 import websockets
 import time
 import math
-from typing import Any, Dict, Optional
+import re
 
+from typing import Any, Dict, Optional, Callable
 from pycardano import *
+from ogmios.errors import ResponseError
 from pycardano.utils import max_tx_fee, min_lovelace_post_alonzo
 
 
@@ -32,13 +34,13 @@ OGMIOS_CTX = OgmiosV6ChainContext(
     network=Network.TESTNET
 )
 
-OGMIOS_POLL_SEC    =   1.0 # TODO does this matter? what's reasonable?
-OGMIOS_TIMEOUT_SEC = 300.0
+OGMIOS_POLL_SEC    =   1 # TODO does this matter? what's reasonable?
+OGMIOS_TIMEOUT_SEC = 300
 
 # Estimate of how long it might take a new TX to show up in the node.
 # TODO how much longer should this be for production use?
 # TODO rename network delay?
-OGMIOS_DELAY_SEC = 10.0
+OGMIOS_DELAY_SEC = 10
 
 
 ### inital health check before running any testnet tests ###
@@ -254,6 +256,101 @@ def set_out_value_and_fee(
         prev_fee = new_fee
     else:
         raise RuntimeError("Fee did not converge in 16 iterations")
+
+
+### error handling ###
+
+
+OGMIOS_RETRY_CODES = {3004, 3010}
+
+OGMIOS_RETRY_PATTERNS = (
+    "unknown transaction input",
+    "missing from utxo set",
+)
+
+OGMIOS_FATAL_CODES = {3110}
+
+# Substrings in data.error/data.reason that mean "already on-chain": succeed
+OGMIOS_SUCCESS_PATTERNS = (
+    "all inputs are spent",
+    "already been included",
+)
+
+
+def ogmios_extract_error_codes(e):
+    """Extract all nested 'code' values from an Ogmios ResponseError."""
+    codes = set()
+    err = getattr(e, "error", None) or getattr(e, "args", [{}])[0]
+    def walk(node):
+        if isinstance(node, dict):
+            if "code" in node and isinstance(node["code"], int):
+                codes.add(node["code"])
+            for v in node.values():
+                walk(v)
+        elif isinstance(node, list):
+            for v in node:
+                walk(v)
+    walk(err if isinstance(err, dict) else {})
+    LOG.debug(f'Ogmios responded with error codes: {codes}')
+    return sorted(codes)
+
+
+def ogmios_classify_error(e):
+    """Return one of: 'success', 'retry', 'fatal'."""
+
+    err = getattr(e, "error", None)
+    if not isinstance(err, dict):
+        LOG.error(f'Assuming this ogmios error is fatal: {e}')
+        return "fatal"
+
+    # Some error codes are unambiguous.
+    codes = ogmios_extract_error_codes(e)
+    if codes & OGMIOS_FATAL_CODES:
+        return "fatal"
+    if codes & OGMIOS_RETRY_CODES: # TODO not working?
+        return "retry"
+
+    # But for some we need to match on the text...
+    # Gather all free-text reasons anywhere in the payload
+    texts = []
+    def walk(n):
+        if isinstance(n, dict):
+            for k, v in n.items():
+                if k in ("error", "reason", "message") and isinstance(v, str):
+                    texts.append(v.lower())
+                walk(v)
+        elif isinstance(n, list):
+            for v in n:
+                walk(v)
+    walk(err)
+    if any(p in t for t in texts for p in OGMIOS_SUCCESS_PATTERNS):
+        return "success"
+    if any(p in t for t in texts for p in OGMIOS_RETRY_PATTERNS):
+        return "retry"
+
+    # Finally assume fatal, but log a warning so we can add a new case.
+    LOG.error(f'Assuming this ogmios error is fatal: {e}')
+    return "fatal"
+
+
+def ogmios_retry(fn: Callable, max_retries=3, retry_delay=2) -> Optional[Any]:
+    # Note that in case of "success" errors, we can't return a value.
+    # That should be OK for our particular use cases.
+    for attempt in range(1, max_retries + 1):
+        try:
+            return fn()
+        except ResponseError as e:
+            verdict = ogmios_classify_error(e)
+            if verdict == "success":
+                LOG.debug('ogmios responded with an error that probably implies success')
+                return
+            if verdict == "retry" and attempt < max_retries:
+                LOG.debug('ogmios responded with a retryable error')
+                time.sleep(retry_delay)
+                continue
+            LOG.debug(f'ogmios responded with a fatal error')
+            raise
+
 
 
 ### misc utils ###

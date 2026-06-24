@@ -111,59 +111,55 @@ class ElectionPublisher:
 
         return self.submit_tx(tx_signed)
 
-    def submit_tx(self, tx_signed: Transaction):
+    def submit_tx(self, tx_signed: Transaction, max_retries=3, retry_delay=2):
 
         # Log the actual inputs in the built transaction
+        # TODO remove?
         LOG.debug('tx inputs:')
         for inp in tx_signed.transaction_body.inputs:
             LOG.debug('  %s#%d' % (inp.transaction_id, inp.index))
 
-        fee = tx_signed.transaction_body.fee
-
-        LOG.debug(f'tx_signed about to be submitted:\n%s\n' % pformat(tx_signed))
-
-        try:
+        def submit_fn():
+            fee = tx_signed.transaction_body.fee
+            LOG.debug(f'tx_signed about to be submitted:\n%s\n' % pformat(tx_signed))
             OGMIOS_CTX.submit_tx(tx_signed) # always returns None?
-            LOG.debug(f'Submitted tx with id={tx_signed.id}')
+            LOG.debug(f'Successfully submitted tx with id={tx_signed.id}')
             self.fee_history.append(fee)
             ch_str = self.channel_str()
             fee_ada = self.total_fees_ada()
             LOG.debug(f'{ch_str} fees so far: {fee_ada} ADA')
             return tx_signed
-        except Exception as e:
-            LOG.debug(f'Failed to submit tx with id={tx_signed.id}')
-            raise
+
+        return ogmios_retry(
+            submit_fn,
+            max_retries = max_retries,
+            retry_delay = retry_delay
+        )
+
 
     # TODO get this working for the case where the utxo is confirmed + consumed between polls
     def wait_for_confirmation(
             self,
             tx: Transaction,
-            # max_seconds: int = 300,
-            # interval_seconds: int = 5
+            output_indices=(0,), # TODO remove if we always use 0?
         ):
         LOG.debug('ElectionPublisher.wait_for_confirmation')
-        tx_id = str(tx.id) # TODO is this the right way?
+        tx_id = str(tx.id)
         LOG.debug(
-            f'Waiting up to {OGMIOS_TIMEOUT_SEC} seconds for tx '
+            f'Waiting up to {OGMIOS_TIMEOUT_SEC}s for tx '
             f'{tx_id} to be confirmed.'
         )
-        waited_seconds = 0
+        deadline = time.monotonic() + OGMIOS_TIMEOUT_SEC
         while True:
-            time.sleep(OGMIOS_POLL_SEC)
-            waited_seconds += OGMIOS_POLL_SEC
-            utxo = OGMIOS_CTX.utxo_by_tx_id(tx_id, 0)
-            if utxo is None:
-                msg = f'tx {tx_id} not confirmed after {round(waited_seconds)} seconds.'
-                remaining_seconds = OGMIOS_TIMEOUT_SEC - waited_seconds
-                if remaining_seconds <= 0:
-                    LOG.error(msg)
-                    raise Exception(msg) # TODO custom error?
-                else:
-                    msg += f' Will wait {round(remaining_seconds)} more.'
-                    LOG.debug(msg)
-            else:
-                LOG.debug(f'tx {tx_id} confirmed after {round(waited_seconds)} seconds')
+            if all(
+                OGMIOS_CTX.utxo_by_tx_id(tx_id, i) is not None
+                for i in output_indices
+            ):
+                LOG.debug(f'tx {tx_id} confirmed.') # TODO log how many seconds it took?
                 return
+            if time.monotonic() >= deadline:
+                raise TimeoutError(f'tx {tx_id} not confirmed in {OGMIOS_TIMEOUT_SEC}s')
+            time.sleep(OGMIOS_POLL_SEC)
 
     def total_fees_ada(self) -> float:
         return round(

@@ -108,7 +108,9 @@ class ElectionNode:
         for an example."""
 
         # 1. Have Ogmios compute real ex_units, write them onto the redeemers.
-        evaluate_and_set_ex_units(txb, cont_utxo)
+        ogmios_retry(
+            lambda: evaluate_and_set_ex_units(txb, cont_utxo)
+        )
 
         # 2. Now that ex_units are pinned, converge fee + output coin.
         set_out_value_and_fee(txb, cont_utxo)
