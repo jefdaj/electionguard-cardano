@@ -86,14 +86,14 @@ class ElectionNode:
         return self.subscriber.current_phase()
 
     def wait_for_confirmation(self, tx: Transaction):
-        self.publisher.wait_for_confirmation(tx)
-        # TODO self.subscriber.wait_for_confirmation(tx.id)
         ch_str = self.channel_str()
-        LOG.debug(f'{ch_str} confirmed tx {tx.id}')
+        tx_str = str(tx.id)
 
-        # TODO instead of this, wait until a subscriber event mentions the tx!
-        # TODO also, remove now that assert_nodes_converge retries?
-        # time.sleep(OGMIOS_DELAY_SEC)
+        self.publisher.wait_for_confirmation(tx)
+        LOG.debug(f'{ch_str} publisher confirmed tx {tx.id}')
+
+        self.subscriber.wait_for_confirmation(tx_str)
+        LOG.debug(f'{ch_str} subscriber confirmed tx {tx.id}')
 
     def balance_and_sign_state_transition_tx(
             self,

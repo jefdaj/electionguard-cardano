@@ -83,7 +83,11 @@ def init_tx(
         # wait_for_confirmation_generic()
 
         burn_tx = funder.burn_test_tokens()
-        funder.wait_for_confirmation(burn_tx)
+
+        # Can't use the node-level wait_for_confirmation here,
+        # because the subscriber won't pick up the last TX.
+        # TODO fix! should detect STT burn without output match/state.
+        funder.publisher.wait_for_confirmation(burn_tx)
 
     except Exception as e:
         LOG.error(e, exc_info=True)
@@ -92,7 +96,12 @@ def init_tx(
     finally:
         # TODO should this be another fixture/helper?
         last_tx = funder.recover_all_collateral(keys_dir)
-        funder.wait_for_confirmation(last_tx)
+
+        # Can't use the node-level wait_for_confirmation here,
+        # because the subscriber won't pick up the unrelated TX.
+        # TODO rename to make that requirement clearer?
+        funder.publisher.wait_for_confirmation(last_tx)
+
         ada_after = get_balance_ada(funder.publisher.wallet.addr)
         LOG.debug(f'funder balance after {name} is {ada_after} ADA.')
         ada_diff = round(ada_before - ada_after, ndigits=2)

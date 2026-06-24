@@ -401,6 +401,44 @@ class ElectionSubscriber:
             return None
 
 
+    # TODO accept optional channel_id?
+    def all_events(self) -> list[ChannelEvent]:
+        # All events in _history, sorted by slot_no
+        events: dict[int, list[ChannelEvent]] = {}
+        with self._history_lock:
+            for es in self._history.values():
+                for e in es:
+                    if not e.slot_no in events:
+                        events[e.slot_no] = []
+                    events[e.slot_no].append(e)
+        events2 = []
+        for k in sorted(list(events.keys())):
+            events2 += events[k]
+        return events2
+
+
+    def is_confirmed(self, txid: str) -> bool:
+        # Does _history contain this txid?
+        events: list[ChannelEvent] = self.all_events()
+        for e in events:
+            if e.input_match and e.input_match['transaction_id'] == txid:
+                return True
+            if e.output_match and e.output_match['transaction_id'] == txid:
+                return True
+        return False
+
+
+    def wait_for_confirmation(self, txid: str, timeout=OGMIOS_TIMEOUT_SEC):
+        # Poll until _history contains txid
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if self.is_confirmed(txid):
+                LOG.debug(f'txid {txid} confirmed in _history')
+                return
+            time.sleep(OGMIOS_POLL_SEC)
+        raise TimeoutError(f'txid {txid} not confirmed in _history within {timeout}s.')
+
+
     ## process managment interface ##
 
 
