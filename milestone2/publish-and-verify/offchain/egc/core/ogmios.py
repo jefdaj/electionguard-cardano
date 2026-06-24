@@ -5,6 +5,7 @@ import websockets
 import time
 import math
 # import re
+import ast
 
 from typing import Any, Dict, Optional, Callable
 from pycardano import *
@@ -261,38 +262,44 @@ def set_out_value_and_fee(
 ### error handling ###
 
 
-OGMIOS_FATAL_CODES = {
-}
+OGMIOS_FATAL_CODES = set({
+})
 
-OGMIOS_RETRY_CODES = {
+OGMIOS_RETRY_CODES = set({
     3004,
     3010, # TODO is this really retryable?
     3110, # TODO is this really retryable?
-}
+})
 
-OGMIOS_RETRY_PATTERNS = {
+OGMIOS_RETRY_PATTERNS = set({
     "unknown transaction input", # TODO is this really retryable?
     "missing from utxo set",     # TODO is this really retryable?
-}
+})
 
-OGMIOS_SUCCESS_PATTERNS = {
+OGMIOS_SUCCESS_PATTERNS = set({
     "all inputs are spent",
     "already been included",
-}
+})
+
 
 def ogmios_get_err_dict(e) -> dict | None:
-    """Extract the 'error' dict from an Ogmios ResponseError."""
+    """Extract the Ogmios 'error' dict from a ResponseError."""
     LOG.debug(f'e: {type(e)} {e}')
-    # Primary: args[0] is the full response dict
-    raw = getattr(e, "args", [None])[0]
+    raw = str(e)  # works whether args[0] is str or something else
     LOG.debug(f'raw: {type(raw)} {raw}')
-    if isinstance(raw, dict):
-        return raw.get("error")
-    # Fallback: e.error is already the dict
-    candidate = getattr(e, "error", None)
-    LOG.debug(f'candidate: {type(candidate)} {candidate}')
-    if isinstance(candidate, dict):
-        return candidate
+    prefix = "Ogmios responded with error: "
+    idx = raw.find(prefix)
+    LOG.debug(f'idx: {idx}')
+    if idx == -1:
+        return None
+    try:
+        full = ast.literal_eval(raw[idx + len(prefix):])
+        LOG.debug(f'full: {full}')
+    except (ValueError, SyntaxError):
+        LOG.warning(f"Failed to parse Ogmios error dict from: {raw!r}")
+        return None
+    if isinstance(full, dict):
+        return full.get("error")
     return None
 
 
@@ -300,6 +307,9 @@ def ogmios_extract_error_codes(e):
     """Extract all nested 'code' values from an Ogmios ResponseError."""
     codes = set()
     err = ogmios_get_err_dict(e)
+    if err is None:
+        LOG.error(f'err has no error codes')
+        return set()
     def walk(node):
         if isinstance(node, dict):
             if "code" in node and isinstance(node["code"], int):
@@ -311,16 +321,16 @@ def ogmios_extract_error_codes(e):
                 walk(v)
     walk(err if isinstance(err, dict) else {})
     LOG.debug(f'Ogmios responded with error codes: {codes}')
-    return sorted(codes)
+    return codes
 
 
 def ogmios_extract_texts(e):
-    texts = []
+    texts = set()
     def walk(n):
         if isinstance(n, dict):
             for k, v in n.items():
                 if k in ("error", "reason", "message") and isinstance(v, str):
-                    texts.append(v.lower())
+                    texts.add(v.lower())
                 walk(v)
         elif isinstance(n, list):
             for v in n:
