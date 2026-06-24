@@ -371,10 +371,12 @@ def ogmios_classify_error(e):
     return "fatal"
 
 
-def ogmios_retry(fn: Callable, max_retries=3) -> Optional[Any]:
+def ogmios_retry(fn: Callable, timeout=OGMIOS_TIMEOUT_SEC) -> Optional[Any]:
     # Note that in case of "success" errors, we can't return a value.
     # That should be OK for our particular use cases.
-    for attempt in range(1, max_retries + 1):
+    deadline = time.monotonic() + timeout
+    attempt = 1
+    while time.monotonic() < deadline:
         try:
             return fn()
         except ResponseError as e:
@@ -382,11 +384,11 @@ def ogmios_retry(fn: Callable, max_retries=3) -> Optional[Any]:
             LOG.debug(f'ogmios_retry attempt={attempt} verdict={verdict} e={e}')
             if verdict == "success":
                 return
-            if verdict == "retry" and attempt < max_retries:
+            if verdict == "retry":
                 time.sleep(OGMIOS_DELAY_SEC)
+                attempt += 1
                 continue
             raise
-
 
 
 ### misc utils ###
