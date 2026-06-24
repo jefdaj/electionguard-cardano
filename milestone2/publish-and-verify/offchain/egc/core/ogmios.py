@@ -4,7 +4,7 @@ import json
 import websockets
 import time
 import math
-import re
+# import re
 
 from typing import Any, Dict, Optional, Callable
 from pycardano import *
@@ -261,20 +261,24 @@ def set_out_value_and_fee(
 ### error handling ###
 
 
-OGMIOS_RETRY_CODES = {3004, 3010}
+OGMIOS_FATAL_CODES = {
+    3110,
+}
 
-OGMIOS_RETRY_PATTERNS = (
-    "unknown transaction input",
-    "missing from utxo set",
-)
+OGMIOS_RETRY_CODES = {
+    3004,
+    3010, # TODO is this really retryable?
+}
 
-OGMIOS_FATAL_CODES = {3110}
+OGMIOS_RETRY_PATTERNS = {
+    "unknown transaction input", # TODO is this really retryable?
+    "missing from utxo set",     # TODO is this really retryable?
+}
 
-# Substrings in data.error/data.reason that mean "already on-chain": succeed
-OGMIOS_SUCCESS_PATTERNS = (
+OGMIOS_SUCCESS_PATTERNS = {
     "all inputs are spent",
     "already been included",
-)
+}
 
 
 def ogmios_extract_error_codes(e):
@@ -297,19 +301,20 @@ def ogmios_extract_error_codes(e):
 
 def ogmios_classify_error(e):
     """Return one of: 'success', 'retry', 'fatal'."""
-
     err = getattr(e, "error", None)
     if not isinstance(err, dict):
         LOG.error(f'Assuming this ogmios error is fatal: {e}')
         return "fatal"
-
     # Some error codes are unambiguous.
     codes = ogmios_extract_error_codes(e)
-    if codes & OGMIOS_FATAL_CODES:
+    any_fatal_codes = codes & OGMIOS_FATAL_CODES
+    any_retry_codes = codes & OGMIOS_RETRY_CODES
+    LOG.debug(f'any_fatal_codes: {any_fatal_codes}')
+    LOG.debug(f'any_retry_codes: {any_retry_codes}')
+    if any_fatal_codes:
         return "fatal"
-    if codes & OGMIOS_RETRY_CODES: # TODO not working?
+    if any_retry_codes:
         return "retry"
-
     # But for some we need to match on the text...
     # Gather all free-text reasons anywhere in the payload
     texts = []
@@ -323,13 +328,14 @@ def ogmios_classify_error(e):
             for v in n:
                 walk(v)
     walk(err)
-    if any(p in t for t in texts for p in OGMIOS_SUCCESS_PATTERNS):
+    any_success_text = any(p in t for t in texts for p in OGMIOS_SUCCESS_PATTERNS)
+    any_retry_text   = any(p in t for t in texts for p in OGMIOS_RETRY_PATTERNS)
+    LOG.debug(f'any_success_text: {any_success_text}')
+    LOG.debug(f'any_retry_text: {any_retry_text}')
+    if any_success_text:
         return "success"
-    if any(p in t for t in texts for p in OGMIOS_RETRY_PATTERNS):
+    if any_retry_text:
         return "retry"
-
-    # Finally assume fatal, but log a warning so we can add a new case.
-    LOG.error(f'Assuming this ogmios error is fatal: {e}')
     return "fatal"
 
 
@@ -342,13 +348,13 @@ def ogmios_retry(fn: Callable, max_retries=3, retry_delay=2) -> Optional[Any]:
         except ResponseError as e:
             verdict = ogmios_classify_error(e)
             if verdict == "success":
-                LOG.debug('ogmios responded with an error that probably implies success')
+                LOG.debug(f'ogmios responded with an error that probably implies success: {e}')
                 return
             if verdict == "retry" and attempt < max_retries:
-                LOG.debug('ogmios responded with a retryable error')
+                LOG.debug(f'ogmios responded with a retryable error: {e}')
                 time.sleep(retry_delay)
                 continue
-            LOG.debug(f'ogmios responded with a fatal error')
+            LOG.debug(f'ogmios responded with a fatal error: {e}')
             raise
 
 
