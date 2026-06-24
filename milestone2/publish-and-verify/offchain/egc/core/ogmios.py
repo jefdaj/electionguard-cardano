@@ -262,12 +262,12 @@ def set_out_value_and_fee(
 
 
 OGMIOS_FATAL_CODES = {
-    3110,
 }
 
 OGMIOS_RETRY_CODES = {
     3004,
     3010, # TODO is this really retryable?
+    3110, # TODO is this really retryable?
 }
 
 OGMIOS_RETRY_PATTERNS = {
@@ -280,11 +280,26 @@ OGMIOS_SUCCESS_PATTERNS = {
     "already been included",
 }
 
+def ogmios_get_err_dict(e) -> dict | None:
+    """Extract the 'error' dict from an Ogmios ResponseError."""
+    LOG.debug(f'e: {type(e)} {e}')
+    # Primary: args[0] is the full response dict
+    raw = getattr(e, "args", [None])[0]
+    LOG.debug(f'raw: {type(raw)} {raw}')
+    if isinstance(raw, dict):
+        return raw.get("error")
+    # Fallback: e.error is already the dict
+    candidate = getattr(e, "error", None)
+    LOG.debug(f'candidate: {type(candidate)} {candidate}')
+    if isinstance(candidate, dict):
+        return candidate
+    return None
+
 
 def ogmios_extract_error_codes(e):
     """Extract all nested 'code' values from an Ogmios ResponseError."""
     codes = set()
-    err = getattr(e, "error", None) or getattr(e, "args", [{}])[0]
+    err = ogmios_get_err_dict(e)
     def walk(node):
         if isinstance(node, dict):
             if "code" in node and isinstance(node["code"], int):
@@ -315,12 +330,13 @@ def ogmios_extract_texts(e):
 
 def ogmios_classify_error(e):
     """Return one of: 'success', 'retry', 'fatal'."""
-    # Assume fatal on parse errors.
-    err = getattr(e, "error", None)
+    # Parse error
+    err = ogmios_get_err_dict(e)
+    LOG.debug(f'err: {type(err)} {err}')
     if not isinstance(err, dict):
-        LOG.error(f'Assuming this ogmios error is fatal: {e}')
+        LOG.error(f'ogmios error does not have an error dict. Assuming fatal: {e}')
         return "fatal"
-    # Try to classify based on code first.
+    # Try to classify based on code first
     codes = ogmios_extract_error_codes(e)
     any_fatal_codes = codes & OGMIOS_FATAL_CODES
     any_retry_codes = codes & OGMIOS_RETRY_CODES
@@ -330,7 +346,7 @@ def ogmios_classify_error(e):
         return "fatal"
     if any_retry_codes:
         return "retry"
-    # Then try based on text.
+    # Then try based on text
     texts = ogmios_extract_texts(e)
     any_success_text = any(p in t for t in texts for p in OGMIOS_SUCCESS_PATTERNS)
     any_retry_text   = any(p in t for t in texts for p in OGMIOS_RETRY_PATTERNS)
@@ -340,8 +356,8 @@ def ogmios_classify_error(e):
         return "success"
     if any_retry_text:
         return "retry"
-    # Assume fatal if none of the those match.
-    LOG.error(f'Assuming this ogmios error is fatal: {e}')
+    # Otherwise assume fatal
+    LOG.error(f'ogmios error does not match a pattern. Assuming fatal: {e}')
     return "fatal"
 
 
@@ -353,14 +369,12 @@ def ogmios_retry(fn: Callable, max_retries=3) -> Optional[Any]:
             return fn()
         except ResponseError as e:
             verdict = ogmios_classify_error(e)
+            LOG.debug(f'ogmios_retry attempt={attempt} verdict={verdict} e={e}')
             if verdict == "success":
-                LOG.debug(f'ogmios responded with an error that probably implies success: {e}')
                 return
             if verdict == "retry" and attempt < max_retries:
-                LOG.debug(f'ogmios responded with a retryable error: {e}')
                 time.sleep(OGMIOS_DELAY_SEC)
                 continue
-            LOG.debug(f'ogmios responded with a fatal error: {e}')
             raise
 
 
