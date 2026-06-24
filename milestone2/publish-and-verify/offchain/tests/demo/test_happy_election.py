@@ -418,7 +418,61 @@ def test_phase2_ceremony_round3(
 ## 3. ElectionVotingPhase
 ## =================================
 
-# TODO device voting transactions here
+# device_state and device_tx are generic because it was easy
+# to have them match the guardian versions above. There's only
+# the one device in this election though.
+
+def device_state(
+        static_transactions,
+        prev_state: ChannelState,
+        role_index: int,
+        tx_index: int, # seq and also index in static_transactions
+        ) -> ChannelState:
+    ch_str = 'device' + str(role_index)
+    records = static_transactions[ch_str][tx_index][1]
+    LOG.debug(f'{ch_str}_s{tx_index} records: {records}')
+    assert isinstance(records, list)
+    return SubChannel(state=replace(
+        prev_state.state,
+        new_records = records,
+        seq = tx_index,
+    ))
+
+def device_tx(
+        static_transactions,
+        device: DeviceNode,
+        tx_index: int, # index in static_transactions
+    ) -> Transaction:
+    ch_str = guardian.channel_str()
+    (_, recs) = static_transactions[ch_str][tx_index]
+    tx = device.post_public_records(new_records=recs)
+    LOG.debug(f'{ch_str}_tx{tx_index}: {tx}')
+    guardian.wait_for_confirmation(tx)
+    return tx
+
+@per_election_fixture
+def device1_s1(device1_s0, static_transactions) -> ChannelState:
+    return device_state(static_transactions, device1_s0, 1, 1)
+
+@per_election_fixture
+def device1_s2(device1_s1, static_transactions) -> ChannelState:
+    return device_state(static_transactions, device1_s1, 1, 2)
+
+@per_election_fixture
+def device1_s3(device1_s2, static_transactions) -> ChannelState:
+    return device_state(static_transactions, device1_s2, 1, 3)
+
+@per_election_fixture
+def device1_tx1(admin_tx2, device1, static_transactions):
+    return device_tx(static_transactions, device1, 1)
+
+@per_election_fixture
+def device1_tx2(device1_tx1, device1, static_transactions):
+    return device_tx(static_transactions, device1, 2)
+
+@per_election_fixture
+def device1_tx3(admin_tx2, device1, static_transactions):
+    return device_tx(static_transactions, device1, 3)
 
 @pytest.mark.testnet
 def test_phase3_voting(
@@ -426,7 +480,7 @@ def test_phase3_voting(
         guardian1, guardian1_s3,
         guardian2, guardian2_s3,
         guardian3, guardian3_s3,
-        device1  , device1_s0  ,
+        device1  , device1_s3  , device1_tx3,
         verifier1, verifier1_s0,
     ):
     assert_nodes_converge([
@@ -434,7 +488,7 @@ def test_phase3_voting(
         (guardian1, guardian1_s3),
         (guardian2, guardian2_s3),
         (guardian3, guardian3_s3),
-        (device1  , device1_s0  ),
+        (device1  , device1_s3  ),
         (verifier1, verifier1_s0),
     ])
 
@@ -483,7 +537,7 @@ def test_phase4_tally(
         guardian1, guardian1_s3,
         guardian2, guardian2_s3,
         guardian3, guardian3_s3,
-        device1  , device1_s0  , # TODO finish
+        device1  , device1_s3  ,
         verifier1, verifier1_s0,
     ):
     assert_nodes_converge([
@@ -491,7 +545,7 @@ def test_phase4_tally(
         (guardian1, guardian1_s3),
         (guardian2, guardian2_s3),
         (guardian3, guardian3_s3),
-        (device1  , device1_s0  ),
+        (device1  , device1_s3  ),
         (verifier1, verifier1_s0),
     ])
 
@@ -538,7 +592,7 @@ def test_phase5_decrypt(
         guardian1, guardian1_s3,
         guardian2, guardian2_s3,
         guardian3, guardian3_s3,
-        device1  , device1_s0  ,
+        device1  , device1_s3  ,
         verifier1, verifier1_s0,
     ):
     assert_nodes_converge([
@@ -546,7 +600,7 @@ def test_phase5_decrypt(
         (guardian1, guardian1_s3),
         (guardian2, guardian2_s3),
         (guardian3, guardian3_s3),
-        (device1  , device1_s0  ),
+        (device1  , device1_s3  ),
         (verifier1, verifier1_s0),
     ])
 
@@ -628,7 +682,7 @@ def test_phase6_verify(
         guardian1, guardian1_s3,
         guardian2, guardian2_s3,
         guardian3, guardian3_s3,
-        device1  , device1_s0  ,
+        device1  , device1_s3  ,
         verifier1, verifier1_s0,
     ):
     assert_nodes_converge([
@@ -636,7 +690,7 @@ def test_phase6_verify(
         (guardian1, guardian1_s3),
         (guardian2, guardian2_s3),
         (guardian3, guardian3_s3),
-        (device1  , device1_s0  ),
+        (device1  , device1_s3  ),
         (verifier1, verifier1_s0),
     ])
 
