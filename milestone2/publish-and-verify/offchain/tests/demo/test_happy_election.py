@@ -136,7 +136,7 @@ def admin_tx2(
     LOG.info(f'admin got onboarding info from {', '.join(ch_strs)}')
     tx = admin.add_subchannels(
         subchannels = onboarding_info,
-        subchannel_ada = 10,
+        subchannel_ada = 20,
         done_onboarding = True, # advance to ConfigCeremonyPhase
     )
     LOG.debug(f'admin_tx2: {tx}')
@@ -444,31 +444,20 @@ def device1_tx2(device1_tx1, device1, static_transactions):
     return post_tx(static_transactions, device1, 2)
 
 @per_election_fixture
-def device1_tx3(admin_tx2, device1, static_transactions):
+def device1_tx3(device1_tx2, device1, static_transactions):
     return post_tx(static_transactions, device1, 3)
 
 @pytest.mark.testnet
-def test_phase3_voting(
-        admin    , admin_s3    , admin_tx3,
-        guardian1, guardian1_s3,
-        guardian2, guardian2_s3,
-        guardian3, guardian3_s3,
-        device1  , device1_s3  , device1_tx3,
-        verifier1, verifier1_s0,
-    ):
-    assert_nodes_converge([
-        (admin    , admin_s3    ),
-        (guardian1, guardian1_s3),
-        (guardian2, guardian2_s3),
-        (guardian3, guardian3_s3),
-        (device1  , device1_s3  ),
-        (verifier1, verifier1_s0),
-    ])
+def test_device1_tx1(device1, device1_s1, device1_tx1):
+    test_tx(device1, device1_s1, device1_tx1)
 
+@pytest.mark.testnet
+def test_device1_tx2(device1, device1_s2, device1_tx2):
+    test_tx(device1, device1_s2, device1_tx2)
 
-## =================================
-## 4. ResultsTallyPhase
-## =================================
+@pytest.mark.testnet
+def test_device1_tx3(device1, device1_s3, device1_tx3):
+    test_tx(device1, device1_s3, device1_tx3)
 
 # This could be combined with posting the tally, but in later versions I think
 # it would make more sense to have this be a definite stopping point where
@@ -503,6 +492,31 @@ def admin_tx4(
 @pytest.mark.testnet
 def test_admin_tx4(admin, admin_s4, admin_tx4):
     test_tx(admin, admin_s4, admin_tx4)
+
+@pytest.mark.testnet
+def test_phase3_voting(
+        admin    , admin_s4    , admin_tx4,
+        guardian1, guardian1_s3,
+        guardian2, guardian2_s3,
+        guardian3, guardian3_s3,
+        device1  , device1_s3  , device1_tx3,
+        verifier1, verifier1_s0,
+    ):
+    assert_nodes_converge([
+        (admin    , admin_s4    ),
+        (guardian1, guardian1_s3),
+        (guardian2, guardian2_s3),
+        (guardian3, guardian3_s3),
+        (device1  , device1_s3  ),
+        (verifier1, verifier1_s0),
+    ])
+
+
+## =================================
+## 4. ResultsTallyPhase
+## =================================
+
+# TODO more txs here
 
 @pytest.mark.testnet
 def test_phase4_tally(

@@ -71,7 +71,7 @@ def init_tx(
         script     = script,
         admin_addr = admin_addr,
         admin_vkh  = admin_vkh,
-        admin_ada  = 100, # TODO what's a good amount?
+        admin_ada  = 200, # TODO what's a good amount?
     )
     funder.wait_for_confirmation(init_tx)
 
