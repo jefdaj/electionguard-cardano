@@ -278,7 +278,7 @@ OGMIOS_RETRY_PATTERNS = set({
 
 OGMIOS_SUCCESS_PATTERNS = set({
     "all inputs are spent",
-    "already been included",
+    "probably already been included",
 })
 
 
@@ -324,19 +324,20 @@ def ogmios_extract_error_codes(e):
     return codes
 
 
-def ogmios_extract_texts(e):
-    texts = set()
-    def walk(n):
-        if isinstance(n, dict):
-            for k, v in n.items():
-                if k in ("error", "reason", "message") and isinstance(v, str):
-                    texts.add(v.lower())
-                walk(v)
-        elif isinstance(n, list):
-            for v in n:
-                walk(v)
-    walk(e)
-    return texts
+# def ogmios_extract_texts(e):
+#     texts = set()
+#     def walk(n):
+#         if isinstance(n, dict):
+#             for k, v in n.items():
+#                 if k in ("error", "reason", "message") and isinstance(v, str):
+#                     texts.add(v.lower())
+#                 walk(v)
+#         elif isinstance(n, list):
+#             for v in n:
+#                 walk(v)
+#     walk(e)
+#     return texts
+
 
 def ogmios_classify_error(e):
     """Return one of: 'success', 'retry', 'fatal'."""
@@ -357,9 +358,11 @@ def ogmios_classify_error(e):
     if any_retry_codes:
         return "retry"
     # Then try based on text
-    texts = ogmios_extract_texts(e)
-    any_success_text = any(p in t for t in texts for p in OGMIOS_SUCCESS_PATTERNS)
-    any_retry_text   = any(p in t for t in texts for p in OGMIOS_RETRY_PATTERNS)
+    # texts = ogmios_extract_texts(e)
+    # TODO make patterns regexes if the need comes up
+    txt = str(e).lower() # Error is unstructured; might as well match on the whole thing
+    any_success_text = any(p for p in OGMIOS_SUCCESS_PATTERNS if p in txt)
+    any_retry_text   = any(p for p in OGMIOS_RETRY_PATTERNS   if p in txt)
     LOG.debug(f'any_success_text: {any_success_text}')
     LOG.debug(f'any_retry_text: {any_retry_text}')
     if any_success_text:
