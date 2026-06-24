@@ -111,7 +111,7 @@ class ElectionPublisher:
 
         return self.submit_tx(tx_signed)
 
-    def submit_tx(self, tx_signed: Transaction, max_retries=3, retry_delay=2):
+    def submit_tx(self, tx_signed: Transaction, max_retries=3):
 
         # Log the actual inputs in the built transaction
         # TODO remove?
@@ -133,7 +133,6 @@ class ElectionPublisher:
         return ogmios_retry(
             submit_fn,
             max_retries = max_retries,
-            retry_delay = retry_delay
         )
 
 
