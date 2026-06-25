@@ -374,3 +374,73 @@ class AdminNode(ElectionNode):
             LOG.info(msg)
 
         return tx_signed
+
+    def end_election(self) -> Transaction:
+
+        # The admin can currently send the funds anywhere at this point,
+        # but the simple obvious thing is everything goes back to the funder.
+        # No need for the weird continuation calculations this time.
+
+        # TODO enforce sending them back to the funder/treasury address?
+        # TODO return most of collateral to funder too (base node method)
+
+        LOG.debug('AdminNode.end_election')
+
+        assets = mint_channel_stt_assets(script.policy_id, -1, [ADMIN_CHANNEL_ID])
+        LOG.debug('assets: %s' % pformat(assets))
+
+        # ensure own collateral
+        # TODO factor out
+        admin_collateral = self.publisher.wait_for_collateral()
+        LOG.debug('admin_collateral: %s' % pformat(admin_collateral))
+
+        in_utxo  = self.current_utxo()
+        in_datum = self.current_state()
+        in_state: AdminChannelState = in_datum.state
+        LOG.debug('in_utxo: %s' % pformat(in_utxo))
+        LOG.debug('in_datum: %s' % pformat(in_datum))
+        LOG.debug('in_state: %s' % pformat(in_state))
+
+        # Subchannels should be gone already.
+        assert len(in_state.subchannels) == 0,
+            f'EndElection with subchannels: {in_state.subchannels}'
+
+        # Phase should be finalize already.
+        assert in_state.phase == ElectionFinalizePhase(),
+            f'EndElection with wrong phase: {in_state.phase}'
+
+        mint_redeemer  = Redeemer(data=EndElection())
+        spend_redeemer = Redeemer(data=EndElection())
+        LOG.debug(f'mint_redeemer: {mint_redeemer}')
+        LOG.debug(f'spend_redeemer: {spend_redeemer}')
+
+        txb = (
+            TransactionBuilder(OGMIOS_CTX, mint=assets)
+            .add_minting_script(
+                script   = script.mint_script,
+                redeemer = mint_redeemer,
+            )
+            .add_script_input(
+                in_utxo,
+                script   = self.election.script.spend_script,
+                redeemer = spend_redeemer,
+            )
+            # TODO any explicit output needed here?
+        )
+
+        txb.collaterals.append(admin_collateral)
+        txb.required_signers = [self.publisher.wallet.vkh]
+        LOG.debug('txb:\n%s\n' % pformat(txb))
+
+        funder_addr: Address = self.election.deployment.funder_address
+        LOG.debug(f'funder_addr: {funder_addr}')
+
+        tx_signed = ogmios_retry(
+            lambda: txb.build_and_sign(
+                [self.wallet.sk],
+                change_address = funder_addr,
+            )
+        )
+        LOG.debug('tx_signed:\n%s\n' % pformat(tx_signed))
+
+        return self.submit_tx(tx_signed)
