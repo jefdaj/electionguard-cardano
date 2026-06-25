@@ -364,6 +364,18 @@ def test_guardian3_tx3(guardian3, guardian3_s3, guardian3_tx3):
     test_tx(guardian3, guardian3_s3, guardian3_tx3)
 
 @per_election_fixture
+def device1_s1(device1_s0, static_transactions) -> ChannelState:
+    return post_state(static_transactions, device1_s0, 'device', 1, 1)
+
+@per_election_fixture
+def device1_tx1(admin_tx2, device1, static_transactions):
+    return post_tx(static_transactions, device1, 1)
+
+@pytest.mark.testnet
+def test_device1_tx1(device1, device1_s1, device1_tx1):
+    test_tx(device1, device1_s1, device1_tx1)
+
+@per_election_fixture
 def admin_s3(
         admin_s2: ChannelState,
         static_transactions,
@@ -378,7 +390,8 @@ def admin_s3(
     ))
 
 # After the guardian backups are all confirmed, admin can publish the final
-# voting config and advance to voting phase.
+# voting config and advance to voting phase. Voting devices should probably
+# also be announced by this point, although not technically required.
 # TODO should there be a separate little phase for this step?
 @per_election_fixture
 def admin_tx3(
@@ -387,6 +400,7 @@ def admin_tx3(
         guardian1_tx3: Transaction,
         guardian2_tx3: Transaction,
         guardian3_tx3: Transaction,
+        device1_tx1: Transaction,
         static_transactions,
     ) -> Transaction:
     tx = admin.post_public_records(
@@ -407,7 +421,7 @@ def test_phase2_ceremony_round3(
         guardian1, guardian1_s3, guardian1_tx3,
         guardian2, guardian2_s3, guardian2_tx3,
         guardian3, guardian3_s3, guardian3_tx3,
-        device1  , device1_s0  ,
+        device1  , device1_s1  , device1_tx1,
         verifier1, verifier1_s0,
     ):
     assert_nodes_converge([
@@ -415,17 +429,13 @@ def test_phase2_ceremony_round3(
         (guardian1, guardian1_s3),
         (guardian2, guardian2_s3),
         (guardian3, guardian3_s3),
-        (device1  , device1_s0  ),
+        (device1  , device1_s1  ),
         (verifier1, verifier1_s0),
     ])
 
 ## =================================
 ## 3. ElectionVotingPhase
 ## =================================
-
-@per_election_fixture
-def device1_s1(device1_s0, static_transactions) -> ChannelState:
-    return post_state(static_transactions, device1_s0, 'device', 1, 1)
 
 @per_election_fixture
 def device1_s2(device1_s1, static_transactions) -> ChannelState:
@@ -436,20 +446,12 @@ def device1_s3(device1_s2, static_transactions) -> ChannelState:
     return post_state(static_transactions, device1_s2, 'device', 1, 3)
 
 @per_election_fixture
-def device1_tx1(admin_tx2, device1, static_transactions):
-    return post_tx(static_transactions, device1, 1)
-
-@per_election_fixture
 def device1_tx2(device1_tx1, device1, static_transactions):
     return post_tx(static_transactions, device1, 2)
 
 @per_election_fixture
 def device1_tx3(device1_tx2, device1, static_transactions):
     return post_tx(static_transactions, device1, 3)
-
-@pytest.mark.testnet
-def test_device1_tx1(device1, device1_s1, device1_tx1):
-    test_tx(device1, device1_s1, device1_tx1)
 
 @pytest.mark.testnet
 def test_device1_tx2(device1, device1_s2, device1_tx2):
