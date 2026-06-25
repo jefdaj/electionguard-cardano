@@ -79,15 +79,15 @@ def init_tx(
     yield init_tx
 
     try:
-        # TODO remove?
-        # wait_for_confirmation_generic()
-
-        burn_tx = funder.burn_test_tokens()
-
-        # Can't use the node-level wait_for_confirmation here,
-        # because the subscriber won't pick up the last TX.
-        # TODO fix! should detect STT burn without output match/state.
-        funder.publisher.wait_for_confirmation(burn_tx)
+        channel_ids = funder.subscriber.current_channel_ids()
+        if len(channel_ids) == 0:
+            LOG.debug('skip burn_tx because STTs already gone')
+        else:
+            # Can't use the node-level wait_for_confirmation here,
+            # because the subscriber won't pick up the last TX.
+            # TODO fix! should detect STT burn without output match/state.
+            burn_tx = funder.burn_test_tokens()
+            funder.publisher.wait_for_confirmation(burn_tx)
 
     except Exception as e:
         LOG.error(e, exc_info=True)
