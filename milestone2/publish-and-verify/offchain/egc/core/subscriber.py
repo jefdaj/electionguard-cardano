@@ -15,7 +15,6 @@ import time
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
-from deepdiff import DeepDiff
 from os import environ
 from pprint import pformat
 from requests.adapters import HTTPAdapter
@@ -27,6 +26,7 @@ from .plutus.types.channel import *
 from .plutus.types.action import *
 from .plutus.types.channel import *
 from .election import ElectionContext
+from .utils import safe_deepdiff
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -221,7 +221,7 @@ def _make_example_callback(callback_name: str):
 
 def _same_but_spent(old_event, new_event) -> bool:
     # TODO also allow the redeemer to change when a burn changes to spent? in case of diff ones per tx
-    diff = DeepDiff(old_event, new_event)
+    diff = safe_deepdiff(old_event, new_event)
     changes = diff.get("type_changes", {})
     try:
         assert set(diff.keys()) == {"type_changes"}, f"Unexpected diff keys: {diff.keys()}"
@@ -1114,7 +1114,7 @@ class ElectionSubscriber:
             i = event.channel_id
             with self._hsitory_lock:
                 prev = self._history[i][-1]
-            diff = DeepDiff(prev, event)
+            diff = safe_deepdiff(prev, event)
             LOG.debug(f'diff:\n{pformat(diff)}')
         assert self.current_phase() == None, 'InitElection should always happen first'
         assert event.channel_id == ADMIN_CHANNEL_ID # note this tx was published by the funder

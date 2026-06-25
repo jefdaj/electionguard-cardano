@@ -1,7 +1,6 @@
 import pytest
 from typing import List
 from pprint import pformat
-from deepdiff import DeepDiff
 from egc import *
 import logging
 import time
@@ -57,7 +56,7 @@ def assert_nodes_have_same_history(nodes: list[ElectionNode]):
                 except AssertionError:
                     r_str = ref_node.channel_str()
                     n_str = n.channel_str()
-                    diff = DeepDiff(ref_hist, n.subscriber._history)
+                    diff = safe_deepdiff(ref_hist, n.subscriber._history)
                     LOG.error(
                         f'Nodes {r_str} and {n_str} '
                         f'disagree on history:\n{pformat(diff)}\n'
@@ -122,7 +121,7 @@ def assert_nodes_converge(
                     n_states_correct += 1
                 except AssertionError as e:
                     if waited >= timeout:
-                        diff = DeepDiff(expected_state, actual_state)
+                        diff = safe_deepdiff(expected_state, actual_state)
                         LOG.debug(
                             f'{node_str} node has wrong {state_str} state'
                             f' after {waited} seconds:\n{pformat(diff)}'
