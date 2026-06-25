@@ -791,16 +791,13 @@ def admin_s8(
         seq         = 8,
     ))
 
-# TODO update guardian txs as you write the later ones
-# TODO and add device1 + verifier1
 @per_election_fixture
 def admin_tx8(
         admin: AdminNode,
         onboarding_info: dict[ChannelId, VerificationKeyHash],
         admin_tx7: Transaction,
-        guardian1_tx1: Transaction,
-        guardian2_tx1: Transaction,
-        guardian3_tx1: Transaction,
+        guardian1_tx5, guardian2_tx5, guardian3_tx5,
+        device1_tx3, verifier1_tx1,
     ) -> Transaction:
     sub_ids = list(onboarding_info.keys())
     ch_strs = [channel_id_to_string(k) for k in sub_ids]
@@ -813,19 +810,31 @@ def admin_tx8(
 def test_admin_tx8(admin, admin_s8, admin_tx8):
     test_tx(admin, admin_s8, admin_tx8)
 
+@per_election_fixture
+def admin_tx9(
+        admin: AdminNode,
+        admin_tx8: Transaction,
+    ) -> Transaction:
+    tx = admin.end_election()
+    LOG.debug(f'admin_tx9: {tx}')
+    admin.wait_for_confirmation(tx)
+    return tx
+
+@pytest.mark.testnet
+def test_admin_tx9(admin, admin_tx9):
+    test_tx(admin, None, admin_tx9)
+
 @pytest.mark.testnet
 def test_phase7_finalize(
-        admin, admin_s8, admin_tx8,
-        guardian1, guardian2, guardian3, device1, verifier1,
+        admin, admin_tx9,
+        guardian1, guardian2, guardian3,
+        device1, verifier1,
     ):
-    # TODO move this to test_admin_tx8 above and test that admin also None here?
     assert_nodes_converge([
-        (admin    , admin_s8),
-        (guardian1, None    ),
-        (guardian2, None    ),
-        (guardian3, None    ),
-        (device1  , None    ),
-        (verifier1, None    ),
+        (admin    , None),
+        (guardian1, None),
+        (guardian2, None),
+        (guardian3, None),
+        (device1  , None),
+        (verifier1, None),
     ])
-
-# TODO or, separate test for tx9 here?

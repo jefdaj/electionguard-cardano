@@ -386,7 +386,7 @@ class AdminNode(ElectionNode):
 
         LOG.debug('AdminNode.end_election')
 
-        assets = mint_channel_stt_assets(script.policy_id, -1, [ADMIN_CHANNEL_ID])
+        assets = mint_channel_stt_assets(self.election.script.policy_id, -1, [ADMIN_CHANNEL_ID])
         LOG.debug('assets: %s' % pformat(assets))
 
         # ensure own collateral
@@ -402,11 +402,11 @@ class AdminNode(ElectionNode):
         LOG.debug('in_state: %s' % pformat(in_state))
 
         # Subchannels should be gone already.
-        assert len(in_state.subchannels) == 0,
+        assert len(in_state.subchannels) == 0, \
             f'EndElection with subchannels: {in_state.subchannels}'
 
         # Phase should be finalize already.
-        assert in_state.phase == ElectionFinalizePhase(),
+        assert in_state.phase == ElectionFinalizePhase(), \
             f'EndElection with wrong phase: {in_state.phase}'
 
         mint_redeemer  = Redeemer(data=EndElection())
@@ -417,7 +417,7 @@ class AdminNode(ElectionNode):
         txb = (
             TransactionBuilder(OGMIOS_CTX, mint=assets)
             .add_minting_script(
-                script   = script.mint_script,
+                script   = self.election.script.mint_script,
                 redeemer = mint_redeemer,
             )
             .add_script_input(

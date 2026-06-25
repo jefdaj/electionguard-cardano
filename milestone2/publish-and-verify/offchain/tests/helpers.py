@@ -35,9 +35,10 @@ def sub_s0(sub_id: ChannelId, sub_vkh: VerificationKeyHash) -> ChannelState:
     ))
 
 
-def test_tx(node: ElectionNode, state: ChannelState, tx: Transaction):
+def test_tx(node: ElectionNode, state: Optional[ChannelState], tx: Transaction):
     # This seems trivial, but would be a good place to
     # also assert nodes converge after every tx if needed.
+    # TODO state instance check
     assert isinstance(tx, Transaction)
 
 
