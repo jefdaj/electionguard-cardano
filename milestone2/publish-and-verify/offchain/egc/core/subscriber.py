@@ -398,7 +398,7 @@ class ElectionSubscriber:
             with self._history_lock:
                 event = self.channel_history(ADMIN_CHANNEL_ID)[-1]
                 return deepcopy(event.output_state.state.phase)
-        except KeyError:
+        except (KeyError, AttributeError):
             return None
 
 
@@ -506,6 +506,7 @@ class ElectionSubscriber:
 
 
     def stop(self):
+        # TODO should this never be called internally (from same thread)?
         log_call()
         self._kupo_stop.set()
         if self._kupo_proc:
@@ -707,7 +708,8 @@ class ElectionSubscriber:
             # 6. special case for EndElection
             if event.action == EndElection():
                 LOG.debug('Got EndElection event; stopping Kupo.')
-                self.stop()
+                # error, but could probably work around it: self.stop()
+                self._kupo_stop()
 
 
     def _kupo_api_url(self) -> str:
