@@ -74,5 +74,5 @@ while not sub.is_done():
         LOG.warning('Got keyboard interrupt')
         break
 LOG.info('Stopping...')
-sub.stop()
+sub.stop() # TODO error here if already stopped?
 sub.join()

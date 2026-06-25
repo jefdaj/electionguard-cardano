@@ -817,6 +817,7 @@ def admin_tx9(
     ) -> Transaction:
     tx = admin.end_election()
     LOG.debug(f'admin_tx9: {tx}')
+    # TODO special case to allow wait_for_confirmation to work here too?
     admin.wait_for_phase(None) # TODO explicit "ended" phase?
     return tx
 
