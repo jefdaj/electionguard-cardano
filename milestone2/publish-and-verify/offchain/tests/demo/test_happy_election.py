@@ -668,6 +668,56 @@ def test_phase5_decrypt(
 ## =================================
 
 @per_election_fixture
+def guardian1_s5(guardian1_s4, static_transactions):
+    return post_state(static_transactions, guardian1_s4, 'guardian', 1, 5)
+
+@per_election_fixture
+def guardian2_s5(guardian2_s4, static_transactions):
+    return post_state(static_transactions, guardian2_s4, 'guardian', 2, 5)
+
+@per_election_fixture
+def guardian3_s5(guardian3_s4, static_transactions):
+    return post_state(static_transactions, guardian3_s4, 'guardian', 3, 5)
+
+@per_election_fixture
+def guardian1_tx5(guardian1_tx4, guardian1, static_transactions):
+    return post_tx(static_transactions, guardian1, 5)
+
+@per_election_fixture
+def guardian2_tx5(guardian2_tx4, guardian2, static_transactions):
+    return post_tx(static_transactions, guardian2, 5)
+
+@per_election_fixture
+def guardian3_tx5(guardian3_tx4, guardian3, static_transactions):
+    return post_tx(static_transactions, guardian3, 5)
+
+@pytest.mark.testnet
+def test_guardian1_tx5(guardian1, guardian1_s4, guardian1_tx5):
+    test_tx(guardian1, guardian1_s4, guardian1_tx5)
+
+@pytest.mark.testnet
+def test_guardian2_tx5(guardian2, guardian2_s4, guardian2_tx5):
+    test_tx(guardian2, guardian2_s4, guardian2_tx5)
+
+@pytest.mark.testnet
+def test_guardian3_tx5(guardian3, guardian3_s4, guardian3_tx5):
+    test_tx(guardian3, guardian3_s4, guardian3_tx5)
+
+# TODO should devices also post verifications?
+
+@per_election_fixture
+def verifier1_s1(guardian1_s0, static_transactions):
+    return post_state(static_transactions, verifier1_s0, 'verifier', 1, 0)
+
+@per_election_fixture
+def verifier1_tx1(verifier1_s0, static_transactions):
+    return post_state(static_transactions, verifier1_s0, 'verifier', 1, 1)
+
+@pytest.mark.testnet
+def test_verifier1_tx1(verifier1, verifier1_s0, verifier1_tx1):
+    test_tx(verifier1, verifier1_s0, verifier1_tx1)
+
+@per_election_fixture
 def admin_s7(
         admin_s6: ChannelState,
         static_transactions,
@@ -705,19 +755,19 @@ def test_admin_tx7(admin, admin_s7, admin_tx7):
 @pytest.mark.testnet
 def test_phase6_verify(
         admin    , admin_s7    , admin_tx7,
-        guardian1, guardian1_s4,
-        guardian2, guardian2_s4,
-        guardian3, guardian3_s4,
+        guardian1, guardian1_s5, guardian1_tx5,
+        guardian2, guardian2_s5, guardian2_tx5,
+        guardian3, guardian3_s5, guardian3_tx5,
         device1  , device1_s3  ,
-        verifier1, verifier1_s0,
+        verifier1, verifier1_s1, verifier1_tx1,
     ):
     assert_nodes_converge([
         (admin    , admin_s7    ),
-        (guardian1, guardian1_s4),
-        (guardian2, guardian2_s4),
-        (guardian3, guardian3_s4),
+        (guardian1, guardian1_s5),
+        (guardian2, guardian2_s5),
+        (guardian3, guardian3_s5),
         (device1  , device1_s3  ),
-        (verifier1, verifier1_s0),
+        (verifier1, verifier1_s1),
     ])
 
 
