@@ -341,7 +341,7 @@ class ElectionSubscriber:
         ]
 
 
-    def complete_history(self):
+    def all_history(self):
         log_call()
         with self._history_lock:
             return deepcopy(self._history)

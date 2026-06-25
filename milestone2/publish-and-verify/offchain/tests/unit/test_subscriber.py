@@ -47,14 +47,14 @@ def test_rollback(
     while len(subscriber._checkpoints) < 2:
         time.sleep(5)
 
-    before = subscriber.complete_history()
+    before = subscriber.all_history()
 
     # This triggers a rollback, which includes re-fetching matches,
     # and then sends the new matches through the normal process.
     subscriber._handle_matches( subscriber._handle_rollback() )
 
     time.sleep(5) # TODO how long is actually required?
-    after = subscriber.complete_history()
+    after = subscriber.all_history()
 
     # There presumably wasn't a real rollback during this period,
     # so the new history should come out exactly the same.
