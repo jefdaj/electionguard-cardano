@@ -51,16 +51,19 @@ sub = ElectionSubscriber(
 sub.start()
 
 # TODO this doesn't quite behave right: Ctrl-C quits without printing
-prev = (None, None)
+prev = (None, None, None)
 while not sub.is_done():
     try:
-        (_, prev_recs) = prev
-        states = sub.current_states()
+        (_, prev_recs, prev_phase) = prev
+        states  = sub.current_states()
         records = sub.all_records()
+        phase   = sub.current_phase()
         new_recs = [str(r) for r in records if not r in prev_recs]
-        cur = (states, records)
+        cur = (states, records, phase)
         if cur != prev:
             LOG.info(f'current states:\n\n{pformat(states)}\n')
+            if phase != prev_phase:
+                LOG.info(f'new phase: {phase}')
             if new_recs:
                 LOG.info('new records:')
                 for r in new_recs:

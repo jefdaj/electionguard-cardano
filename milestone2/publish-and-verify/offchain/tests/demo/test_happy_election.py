@@ -817,8 +817,7 @@ def admin_tx9(
     ) -> Transaction:
     tx = admin.end_election()
     LOG.debug(f'admin_tx9: {tx}')
-    # TODO fix subscriber for the EndElection case by waiting for phase instead
-    admin.wait_for_confirmation(tx)
+    admin.wait_for_phase(None) # TODO explicit "ended" phase?
     return tx
 
 @pytest.mark.testnet

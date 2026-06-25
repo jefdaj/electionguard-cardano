@@ -395,10 +395,24 @@ class ElectionSubscriber:
         log_call()
         # Returns None if the election hasn't started yet
         try:
-            event = self.channel_history(ADMIN_CHANNEL_ID)[-1]
-            return event.output_state.state.phase
+            with self._history_lock:
+                event = self.channel_history(ADMIN_CHANNEL_ID)[-1]
+                return deepcopy(event.output_state.state.phase)
         except KeyError:
             return None
+
+
+    def wait_for_phase(self, phase: Optional[ElectionPhase], timeout=OGMIOS_TIMEOUT_SEC):
+        # Poll until the election reaches the specified phase (or None)
+        # TODO disambiguate None before vs after election
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            actual_phase = self.current_phase()
+            if actual_phase == phase:
+                LOG.debug(f'Election reached phase: {phase}.')
+                return
+            time.sleep(OGMIOS_POLL_SEC)
+        raise TimeoutError(f'Election did not reach phase within {timeout}s: {phase}.')
 
 
     # TODO accept optional channel_id?
@@ -689,6 +703,11 @@ class ElectionSubscriber:
 
             # 5. Emit final events to clients
             self._client_on_action(event)
+
+            # 6. special case for EndElection
+            if event.action == EndElection():
+                LOG.debug('Got EndElection event; stopping Kupo.')
+                self.stop()
 
 
     def _kupo_api_url(self) -> str:
@@ -1152,6 +1171,7 @@ class ElectionSubscriber:
 
 
     def _on_endelection(self, event: ChannelEvent):
+        # TODO is this a good place to self.stop()? or does that need to be done elsewhere?
         log_call()
         assert event.channel_id == ADMIN_CHANNEL_ID, 'only admin can end election'
         self._on_burn(event)
