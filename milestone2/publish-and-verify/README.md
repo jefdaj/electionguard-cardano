@@ -10,110 +10,85 @@ It will have:
 * [ ] A [publish script](./offchain/publish.py) which publishes the records to Cardano + IPFS
 * [ ] A [verify script](./offchain/verify.py) which watches the chain and incrementally fetches + verifies the records
 
-WARNING: on-chain code is currently ahead of off-chain; the two don't match yet
+main demo
+---------
 
-on-chain (Aiken) code
----------------------
+This loads `onchain/election-plutus-traced.json`, so you need to build the
+on-chain code first; see next section. You also need a dev wallet
+`offchain/keys/dev.{sk,addr}` funded from the Preview faucet. See
+[here](../pubsub2-aiken-pycardano-kupo/README.md) to set that up.
 
-TODO:
+`publish.sh` runs the "happy election" tests, which publish static public
+records from a previous election run to Cardano + IPFS.
 
-* [x] plain CIDs -> records with metadata
-* [x] custom STT names including election name + channel name (egc-test1234-admin-stt etc)
-* [x] each subchannel has one authorized publisher for now
-* [x] subchannels are just a different thing for now, rather than nested "regular" channels
-* [x] admin is the only one who can close channels
-* [x] contract includes minting + burning subchannels
-* [x] all channels can be minted or burned at once (except admin)
-* [x] contract has an explicit election step/stage/phase variable
-* [x] contract holds and distributes tADA to cover posting fees
-* [x] contract returns tADA to admin when closing main channel
+`verify.sh` greps the subscriber info out of `pytest.log`, subscribes to smart
+contract updates, fetches public records from IPFS, and verifies them locally
+at the end. It does incremental fetching but not incremental verification yet.
 
-off-chain (Python) code
------------------------
+```
+$ nix develop
+$ docker compose up -d
+$ ./publish.sh # (terminal 1)
+# ./verify.sh  # (terminal 2)
+```
 
-Tests:
+build and test on-chain (Aiken) code
+------------------------------------
 
-* [ ] 1. funded wallet --[init election]--> ref script, admin stt, election info
-* [ ] 2. election info (script, deployment, election) round trip to/from json file
-* [ ] 3. election info --> subscriber config
-* [ ] 4. script, admin stt --[burn test tokens]--> funds back in wallet, ref script spent, stt burned
-* [ ] 5. subscriber subscribe to init election + burn test tokens
+```
+$ nix develop .#onchain
+running devShells.x86_64-linux.onchain shellHook
+aiken v1.1.21+42babe5
 
-TODO:
+$ ./build.sh
++ set -e
+++ dirname ./build.sh
++ cd .
++ aiken check --trace-level silent
+    Compiling jefdaj/electionguard-cardano 0.5.1 (.)
+    Resolving jefdaj/electionguard-cardano
+      Fetched 2 packages in 2.52s from cache
+    Compiling aiken-lang/stdlib 3.0.0 (./build/packages/aiken-lang-stdlib)
+    Compiling aiken-lang/fuzz v2 (./build/packages/aiken-lang-fuzz)
+   Collecting all tests scenarios across all modules
+      Testing ...
 
-* [x] write python types to match aiken types
-* [ ] script needs to be a reference script?
-* [ ] basic init election tests needed to try burning test tokens
-* [ ] burn-test-tokens script
-* [ ] manually construct pycardano txs for each step in an election
-* [ ] have each container generate its own keypair
-* [ ] all eg nodes share one cardano node for now
-* [ ] share addrs with admin (via top level script and bind mounts for now)
-* [ ] egsync should track and report election info: n each role, phase, n ballots, ...
+    ... bunch of test results ...
 
-The tests cover opening a new channel on testnet, publishing 0, 1, 2, or all
-(81) static election artifacts from a previous election run, and closing the
-channel. There's a [publisher](./offchain/pubsub/publisher.py) that submits
-the transactions and a [subscriber](./offchain/pubsub/subscriber.py) that
-reconstructs them from the on-chain datums. Then the tests assert that the
-reconstructed CID lists match the originals.
+      Summary 267 checks, 0 errors, 0 warnings
++ aiken build --out election-plutus.json
+    Compiling jefdaj/electionguard-cardano 0.5.1 (.)
+    Resolving jefdaj/electionguard-cardano
+      Fetched 1 package in 0.05s from cache
+    Compiling aiken-lang/stdlib 3.0.0 (./build/packages/aiken-lang-stdlib)
+    Compiling aiken-lang/fuzz v2 (./build/packages/aiken-lang-fuzz)
+   Generating project's blueprint (election-plutus.json)
+      Summary 0 errors, 0 warnings
++ aiken build --out election-plutus-traced.json --trace-level verbose
+    Compiling jefdaj/electionguard-cardano 0.5.1 (.)
+    Resolving jefdaj/electionguard-cardano
+      Fetched 1 package in 0.06s from cache
+    Compiling aiken-lang/stdlib 3.0.0 (./build/packages/aiken-lang-stdlib)
+    Compiling aiken-lang/fuzz v2 (./build/packages/aiken-lang-fuzz)
+   Generating project's blueprint (election-plutus-traced.json)
+      Summary 0 errors, 0 warnings
+```
 
-Before running them, make sure:
+test off-chain (Python) code
+----------------------------
 
-1. You have [Cardano node + Ogmios](../cardano-node-ogmios/) running and synced up
-2. You've generated a keypair and funded it with tADA (see below)
+Requires the onchain code + a funded dev wallet, same as the demo above. Each
+run generates a new `offchain/election-XXXXXXXXXXXX.json` with all the relevant
+settings in case you need them later to recover funds. It also logs generated
+private keys to `offchain/keys/test-keys.log`.
 
 ```
 $ nix develop .#offchain
-$ python
-Python 3.12.12 (main, Oct  9 2025, 11:07:00) [GCC 14.3.0] on linux
-Type "help", "copyright", "credits" or "license" for more information.
->>> import pubsub
->>> pubsub.generate_keys()
+running devShells.x86_64-linux.offchain shellHook
+aiken v1.1.21+42babe5
+kupo v2.11.0+de9c52
+Python 3.13.12
+pycardano 0.19.2
 
-    Your new Preview testnet keys are here:
-
-    /home/jefdaj/myrepos/electionguard-cardano/milestone2/publish-and-verify/offchain/keys/main.sk
-    /home/jefdaj/myrepos/electionguard-cardano/milestone2/publish-and-verify/offchain/keys/main.addr
-
-    Your public address (2nd file) is: addr_test1vr93qqyu30r5c7snd4wp8wu243st2xz8605yea78hgyg6uckjakk5
-
-    Before continuing, fund that address with tADA from the faucet:
-    https://docs.cardano.org/cardano-testnets/tools/faucet
-
-    If you don't, local tests will still work but testnet tests will fail.
-
->>>
-```
-
-You can watch that address accumulate transactions on CardanoScan
-during the tests if you want, and track mint + burn of various `egc-election-*-channel-stt` tokens.
-
-```
-$ nix develop .#offchain
 $ ./test.sh
-+ EXTRA_ARGS=
-+ pytest -vv
-+ tee test.log
-============================= test session starts ==============================
-...
-collecting ... collected 14 items
-
-tests/test_publish_0.py::test_pub0_open PASSED                           [  7%]
-tests/test_publish_0.py::test_pub0_closed PASSED                         [ 14%]
-tests/test_publish_0.py::test_sub0_closed PASSED                         [ 21%]
-tests/test_publish_1.py::test_pub1_open PASSED                           [ 28%]
-tests/test_publish_1.py::test_pub1_closed PASSED                         [ 35%]
-tests/test_publish_1.py::test_sub1_closed PASSED                         [ 42%]
-tests/test_publish_2.py::test_pub2_open PASSED                           [ 50%]
-tests/test_publish_2.py::test_pub2_closed PASSED                         [ 57%]
-tests/test_publish_2.py::test_sub2_closed PASSED                         [ 64%]
-tests/test_publish_all.py::test_sub_all_hist PASSED                      [ 71%]
-tests/test_publish_all.py::test_pub_all_open PASSED                      [ 78%]
-tests/test_publish_all.py::test_pub_all_closed PASSED                    [ 85%]
-tests/test_publish_all.py::test_sub_all_closed PASSED                    [ 92%]
-tests/test_records.py::test_load_election_records PASSED                 [100%]
-
-======================== 14 passed in 810.86s (0:13:30) ========================
-[INFO] [sub] Watcher thread exiting
 ```
