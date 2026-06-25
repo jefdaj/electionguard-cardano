@@ -38,7 +38,20 @@ services:
     ports:
       - ${OGMIOS_PORT:-1337}:1337
     networks:
-      - shared-net
+      - shared-net # TODO remove?
+
+  # In this test there's just one IPFS container.
+  # I've tested already that a more realistic setup with a bunch of them also works.
+  ipfs:
+    image: ipfs/kubo:v0.34.1 # TODO upgrade to current version
+    volumes:
+      - ./data/ipfs:/data/ipfs
+    ports:
+      - 4001:4001 # ipfs swarm
+      - 5001:5001 # ipfs api
+      - 8080:8080 # ipfs gateway (TODO remove?)
+    networks:
+      - shared-net # TODO remove?
 
   # This is number 2 to distinguish it from verifier1 on the publish side.
   # That doesn't have a docker container.
