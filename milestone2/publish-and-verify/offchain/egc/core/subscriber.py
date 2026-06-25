@@ -441,6 +441,16 @@ class ElectionSubscriber:
         raise TimeoutError(f'txid {txid} not confirmed in _history within {timeout}s.')
 
 
+    def all_records(self) -> list[PublicRecord]:
+        # All records in _history, sorted by slot_no
+        records = []
+        for e in self.all_events():
+            # TODO just out states should cover it, right?
+            if e.output_state:
+                records += e.output_state.state.new_records
+        return records
+
+
     ## process managment interface ##
 
 
