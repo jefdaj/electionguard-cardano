@@ -62,12 +62,12 @@ while not sub.is_done():
         cur = (states, records, phase)
         if cur != prev:
             LOG.info(f'current states:\n\n{pformat(states)}\n')
-            if phase != prev_phase:
-                LOG.info(f'new phase: {phase}')
             if new_recs:
                 LOG.info('new records:')
                 for r in new_recs:
                     LOG.info(r)
+            if phase != prev_phase:
+                LOG.info(f'new phase: {phase}')
             prev = cur
         sub.sleep(3)
     except KeyboardInterrupt:
