@@ -10,3 +10,6 @@ onchain/election-plutus-*.json
 offchain/election-*.json
 
 *.log
+
+# Docker data
+data/*

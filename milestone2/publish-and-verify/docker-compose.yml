@@ -40,14 +40,16 @@ services:
     networks:
       - shared-net
 
-    verifier:
-      image: ghcr.io/jefdaj/electionguard-python:1.4.0
-      command: [
-        "sh", "-c", "while true; do sleep 1000; done"
-      ]
-      volumes:
-        - ./egpy_scripts:/scripts
-        - ./data/verifier:/data/private
+  # This is number 2 to distinguish it from verifier1 on the publish side.
+  # That doesn't have a docker container.
+  verifier2:
+    image: ghcr.io/jefdaj/electionguard-python:1.4.0
+    command: [
+      "sh", "-c", "while true; do sleep 1000; done"
+    ]
+    volumes:
+      - ./egpy_scripts:/scripts
+      - ./data/verifier2:/data/private
 
 # allow communication with other docker-compose networks, for example kupo
 # TODO would just using the ipc socket work across networks instead?
