@@ -417,6 +417,7 @@ class ElectionSubscriber:
         return events2
 
 
+    # TODO n_confirmations
     def is_confirmed(self, txid: str) -> bool:
         # Does _history contain this txid?
         events: list[ChannelEvent] = self.all_events()
@@ -428,6 +429,7 @@ class ElectionSubscriber:
         return False
 
 
+    # TODO wait_for_n_confirmations?
     def wait_for_confirmation(self, txid: str, timeout=OGMIOS_TIMEOUT_SEC):
         # Poll until _history contains txid
         deadline = time.monotonic() + timeout
