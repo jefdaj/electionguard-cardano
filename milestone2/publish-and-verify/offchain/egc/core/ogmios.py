@@ -36,7 +36,9 @@ OGMIOS_CTX = OgmiosV6ChainContext(
 )
 
 OGMIOS_POLL_SEC    =   1 # TODO does this matter? what's reasonable?
-OGMIOS_TIMEOUT_SEC = 300
+
+# TODO What's reasonable here? I assumed 300 but doubled it after one failed.
+OGMIOS_TIMEOUT_SEC = 600
 
 # Estimate of how long it might take a new TX to show up in the node.
 # TODO how much longer should this be for production use?

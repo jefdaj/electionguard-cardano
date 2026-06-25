@@ -437,10 +437,10 @@ class AdminNode(ElectionNode):
 
         tx_signed = ogmios_retry(
             lambda: txb.build_and_sign(
-                [self.wallet.sk],
+                [self.publisher.wallet.sk],
                 change_address = funder_addr,
             )
         )
         LOG.debug('tx_signed:\n%s\n' % pformat(tx_signed))
 
-        return self.submit_tx(tx_signed)
+        return self.publisher.submit_tx(tx_signed)
