@@ -10,6 +10,7 @@ It will have:
 * [ ] A [publish script](./offchain/publish.py) which publishes the records to Cardano + IPFS
 * [ ] A [verify script](./offchain/verify.py) which watches the chain and incrementally fetches + verifies the records
 
+
 main demo
 ---------
 
@@ -19,18 +20,32 @@ on-chain code first; see next section. You also need a dev wallet
 [here](../pubsub2-aiken-pycardano-kupo/README.md) to set that up.
 
 `publish.sh` runs the "happy election" tests, which publish static public
-records from a previous election run to Cardano + IPFS.
-
-`verify.sh` greps the subscriber info out of `pytest.log`, subscribes to smart
-contract updates, fetches public records from IPFS, and verifies them locally
-at the end. It does incremental fetching but not incremental verification yet.
+records from a previous election run to Cardano + IPFS. Run it like so:
 
 ```
 $ nix develop
 $ docker compose up -d
-$ ./publish.sh # (terminal 1)
-# ./verify.sh  # (terminal 2)
+$ ./publish.sh
 ```
+
+`verify.sh` greps the subscriber info out of `pytest.log`, subscribes to smart
+contract updates, fetches public records from IPFS, and verifies them locally
+at the end. It does incremental fetching but not incremental verification yet.
+Run it in a separate terminal like so:
+
+```
+$ nix develop
+$ ./verify.sh
+```
+
+That should work any time after `publish.sh` has started,
+as long as the node + ipfs containers are still running.
+When done, shut them down:
+
+```
+$ docker compose down
+```
+
 
 build and test on-chain (Aiken) code
 ------------------------------------
@@ -73,6 +88,7 @@ $ ./build.sh
    Generating project's blueprint (election-plutus-traced.json)
       Summary 0 errors, 0 warnings
 ```
+
 
 test off-chain (Python) code
 ----------------------------
