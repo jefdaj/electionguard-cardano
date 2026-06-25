@@ -706,12 +706,12 @@ def test_guardian3_tx5(guardian3, guardian3_s4, guardian3_tx5):
 # TODO should devices also post verifications?
 
 @per_election_fixture
-def verifier1_s1(guardian1_s0, static_transactions):
-    return post_state(static_transactions, verifier1_s0, 'verifier', 1, 0)
+def verifier1_s1(verifier1_s0, static_transactions):
+    return post_state(static_transactions, verifier1_s0, 'verifier', 1, 1)
 
 @per_election_fixture
-def verifier1_tx1(verifier1_s0, static_transactions):
-    return post_state(static_transactions, verifier1_s0, 'verifier', 1, 1)
+def verifier1_tx1(verifier1, static_transactions):
+    return post_tx(static_transactions, verifier1, 1)
 
 @pytest.mark.testnet
 def test_verifier1_tx1(verifier1, verifier1_s0, verifier1_tx1):
