@@ -469,6 +469,7 @@ class ElectionSubscriber:
 
 
     def start(self) -> None:
+        # TODO assert being called from main thread?
         log_call()
         self._kupo_stop.clear()
 
@@ -496,25 +497,41 @@ class ElectionSubscriber:
 
 
     def join(self):
+        # TODO assert being called from main thread? or at least not the watcher
         log_call()
-        # TODO how is this actually supposed to be done?
-        n = 0
-        while not self.is_done():
-            time.sleep(1)
-            n += 1
-        LOG.debug(f'ElectionSubscriber stopped after {n} seconds')
+        t = self._kupo_thread
+        if t and t is not threading.current_thread():
+            t.join()
+        LOG.debug(f'ElectionSubscriber stopped.')
 
 
-    def stop(self):
-        # TODO should this never be called internally (from same thread)?
+    def request_stop(self):
+        """Idempotent, safe to call from ANY thread (including the watcher)."""
         log_call()
         self._kupo_stop.set()
         if self._kupo_proc:
-            self._kupo_proc.terminate()
-            self._kupo_proc.wait(timeout=5)  # confirm it's dead
-        if self._kupo_thread:
+            self._kupo_proc.terminate()  # don't .wait() here; let watcher unwind
+
+
+    def stop(self):
+        """Full teardown + reap. Call only from a thread that is NOT the watcher."""
+        log_call()
+        self.request_stop()
+
+        if self._kupo_proc:
+            try:
+                self._kupo_proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                self._kupo_proc.kill()
+                self._kupo_proc.wait()
+
+        # TODO self.join here?
+        t = self._kupo_thread
+        if t and t is not threading.current_thread():
             LOG.debug('Waiting for watcher thread to exit...')
-            self._kupo_thread.join(timeout=5)
+            t.join(timeout=5)
+            if t.is_alive():
+                LOG.warning('Watcher thread did not exit in time')
         self._kupo_thread = None
 
 
@@ -625,32 +642,6 @@ class ElectionSubscriber:
         LOG.debug('Kupo subprocess output thread terminating')
 
 
-    def _kupo_stop(self) -> None:
-        log_call()
-        proc = self._kupo_proc
-        if proc is None:
-            return
-        if proc.poll() is None:
-            LOG.debug(f'Terminating Kupo (pid={proc.pid})')
-            proc.terminate()
-            try:
-                proc.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                LOG.warning('Kupo did not exit in time, killing...')
-                proc.kill()
-                proc.wait() # TODO remove?
-
-        # Pipe gets EOF when proc exits; reader thread will return.
-        # Explicitly join it so it can't be mid-log at interpreter shutdown.
-        if self._log_thread is not None:
-            self._log_thread.join(timeout=2)
-            if self._log_thread.is_alive():
-                LOG.warning('Kupo log reader did not exit')
-            self._log_thread = None
-
-        self._kupo_proc = None
-
-
     def _kupo_watch(self) -> None:
         log_call()
         LOG.debug(f'Watcher thread started for policy_id={self.config.policy_id}')
@@ -706,10 +697,12 @@ class ElectionSubscriber:
             self._client_on_action(event)
 
             # 6. special case for EndElection
-            if event.action == EndElection():
-                LOG.debug('Got EndElection event; stopping Kupo.')
-                # error, but could probably work around it: self.stop()
-                self._kupo_stop()
+            # TODO use isinstance here if possible?
+            if event.action in [EndElection(), BurnTestTokens()]:
+                # TODO also handle BurnTestTokens if possible
+                # TODO assert this is the last event somehow?
+                LOG.debug('Got EndElection or BurnTestTokens; stopping Kupo.')
+                self.request_stop()
 
 
     def _kupo_api_url(self) -> str:
