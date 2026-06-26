@@ -3,6 +3,7 @@ from dataclasses import replace
 from pycardano import *
 from egc import *
 from helpers import *
+from data.static_records import *
 import logging
 import time
 
@@ -79,8 +80,9 @@ def admin_tx1(
         admin_tx0: Transaction,
         static_transactions,
     ) -> Transaction:
+    pairs = load_static_record_pairs(static_transactions['admin'][1][1])
     tx = admin.post_public_records(
-        new_records = static_transactions['admin'][1][1],
+        new_record_pairs = pairs,
         new_phase = ElectionConfigPhase(ConfigOnboardingPhase()),
     )
     LOG.debug(f'admin_tx1: {tx}')
@@ -206,7 +208,8 @@ def post_tx(
     ) -> Transaction:
     ch_str = node_.channel_str()
     (_, recs) = static_transactions[ch_str][tx_index]
-    tx = node_.post_public_records(new_records=recs)
+    pairs = load_static_record_pairs(recs)
+    tx = node_.post_public_records(new_record_pairs=pairs)
     LOG.debug(f'{ch_str}_tx{tx_index}: {tx}')
     node_.wait_for_confirmation(tx)
     return tx
@@ -403,8 +406,9 @@ def admin_tx3(
         device1_tx1: Transaction,
         static_transactions,
     ) -> Transaction:
+    pairs = load_public_record_pairs(static_transactions['admin'][3][1])
     tx = admin.post_public_records(
-        new_records = static_transactions['admin'][3][1],
+        new_record_pairs = pairs,
         new_phase = ElectionVotingPhase(),
     )
     LOG.debug(f'admin_tx3: {tx}')
@@ -577,8 +581,9 @@ def admin_tx5(
         guardian3_tx4: Transaction,
         static_transactions,
     ) -> Transaction:
+    pairs = load_public_record_pairs(static_transactions['admin'][5][1])
     tx = admin.post_public_records(
-        new_records = static_transactions['admin'][5][1],
+        new_record_pairs = pairs,
         new_phase = ElectionResultsPhase(ResultsDecryptPhase()),
     )
     LOG.debug(f'admin_tx5: {tx}')
@@ -632,8 +637,9 @@ def admin_tx6(
         admin_tx5: Transaction,
         static_transactions,
     ) -> Transaction:
+    pairs = load_public_record_pairs(static_transactions['admin'][6][1])
     tx = admin.post_public_records(
-        new_records = static_transactions['admin'][6][1],
+        new_record_pairs = pairs,
         new_phase = ElectionVerifyPhase(),
     )
     LOG.debug(f'admin_tx6: {tx}')
@@ -740,8 +746,9 @@ def admin_tx7(
         admin_tx6: Transaction,
         static_transactions,
     ) -> Transaction:
+    pairs = load_public_record_pairs(static_transactions['admin'][7][1])
     tx = admin.post_public_records(
-        new_records = static_transactions['admin'][7][1],
+        new_record_pairs = pairs,
         new_phase = ElectionFinalizePhase(),
     )
     LOG.debug(f'admin_tx7: {tx}')
