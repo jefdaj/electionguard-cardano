@@ -333,8 +333,18 @@ class FunderNode(ElectionNode):
         ch_str = self.channel_str()
         errors = []
         last_tx = None # only have to wait once
-        for channel_id in self.subscriber.current_channel_ids():
-            state = self.subscriber.current_state(channel_id)
+
+        for channel_id in self.subscriber.all_current_channel_ids():
+
+            # Can't use the current state because the channel may be closed.
+            # But it should have either an input or output at least.
+            with self.subscriber._history_lock:
+                event = self.subscriber._history[channel_id][-1]
+                if event.output_state:
+                    state = event.output_state
+                else:
+                    state = event.input_state
+
             try:
                 LOG.debug(f'state: {state}')
                 pub_addr   = publisher_address(state)

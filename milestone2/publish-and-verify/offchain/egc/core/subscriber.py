@@ -697,11 +697,9 @@ class ElectionSubscriber:
             self._client_on_action(event)
 
             # 6. special case for EndElection
-            # TODO use isinstance here if possible?
-            if event.action in [EndElection(), BurnTestTokens()]:
-                # TODO also handle BurnTestTokens if possible
+            if isinstance(event.action, EndElection) or isinstance(event.action, BurnTestTokens):
                 # TODO assert this is the last event somehow?
-                LOG.debug('Got EndElection or BurnTestTokens; stopping Kupo.')
+                LOG.debug('Got terminal ChannelEvent; stopping Kupo.')
                 self.request_stop()
 
 
