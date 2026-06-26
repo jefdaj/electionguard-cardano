@@ -261,17 +261,6 @@ class FunderNode(ElectionNode):
             LOG.error(msg)
             raise RuntimeError(msg)
 
-        # TODO aha! the subscribers aren't noticing when they're done?
-        # temporary workaround before rewriting subscriber, to confirm the issue:
-        # bad_ids = []
-        # for channel_id in channel_ids:
-        #     (utxo, state) = self.subscriber.current_state(channel_id)
-        #     still_good = is_utxo_unspent(utxo)
-        #     if not still_good:
-        #         LOG.error(f'Spent UTXO should have been removed from subscriber: {utxo}')
-        #         bad_ids.append(channel_id)
-        # channel_ids = [i for i in channel_ids if not i in bad_ids]
-
         burn_assets = mint_channel_stt_assets(
             self.election.script.policy_id,
             -1,
