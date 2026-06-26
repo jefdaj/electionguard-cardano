@@ -1,3 +1,4 @@
+import asyncio
 import time
 from dataclasses import replace
 from pathlib import Path
@@ -36,12 +37,15 @@ class ElectionNode:
         keys_dir: Optional[Path] = None,
         key_name: Optional[Path] = None,
 
-        # TODO ipfs (kubo)
+        ipfs: RetryingIPFS = RetryingIPFS(),
     ):
         LOG.debug('ElectionNode.__init__')
 
         # May be None in case of a Funder.
         self.election: Optional[ElectionContext] = election
+
+        # IPFS client for publishing record contents
+        self._ipfs = ipfs
 
         self.publisher = ElectionPublisher(
             role       = role,
@@ -150,11 +154,14 @@ class ElectionNode:
 
     def post_public_records(
             self,
-            new_records: List[PublicRecord],
+            new_record_pairs: List[Tuple[PublicRecord, dict]],
             new_phase: Optional[ElectionPhase] = None,
         ) -> Transaction:
 
         LOG.debug('ElectionNode.post_public_records')
+
+        new_records: list[PublicRecord] = [p[0] for p in new_record_pairs]
+        new_objs:    list[dict]         = [p[1] for p in new_record_pairs]
 
         assert len(new_records) > 0, 'post_public_records new_records empty'
 
@@ -245,6 +252,11 @@ class ElectionNode:
 
         for msg in tx_msgs:
             LOG.info(msg)
+
+        LOG.debug(f'Uploading {len(new_objs)} new record objects to IPFS')
+        with asyncio.Runner() as runner:
+            for obj in new_objs:
+                ipfs_publish_obj(self._ipfs, obj)
 
         return tx_signed
 

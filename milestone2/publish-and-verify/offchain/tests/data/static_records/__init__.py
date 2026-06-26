@@ -16,3 +16,19 @@ def make_static_files_by_cid():
     return {c: p for (c, p) in zip(cids, paths)}
 
 STATIC_FILES_BY_CID = make_static_files_by_cid()
+
+def load_static_record_obj(cid: str) -> dict:
+    path = STATIC_FILES_BY_CID[cid]
+    with open(path, 'r') as f:
+        return json.load(f)
+
+def load_static_record_objs(
+        records: list[PublicRecord],
+    ) -> list[Tuple[PublicRecord, dict]]:
+    pairs = []
+    for rec in records:
+        cid = ipfs_cid_to_string(rec.ipfs_cid)
+        obj = load_static_record_obj(cid)
+        pair = (rec, obj)
+        pairs.append(pair)
+    return pairs

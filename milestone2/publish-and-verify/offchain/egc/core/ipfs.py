@@ -94,6 +94,7 @@ async def ipfs_wait_until_ready(ipfs: RetryingIPFS, timeout=10):
             await asyncio.sleep(1)
 
 
+# TODO make this a method of RetryingIPFS?
 # TODO take a PublicRecordMetadata here too and return the finished PublicRecord?
 async def ipfs_publish_obj(ipfs: RetryingIPFS, obj: dict) -> bytes:
     # Publishes a dict and returns the ipfs_cid bytes, ready for use in PublicRecord.
@@ -105,6 +106,7 @@ async def ipfs_publish_obj(ipfs: RetryingIPFS, obj: dict) -> bytes:
     return cid_bytes
 
 
+# TODO make this a method of RetryingIPFS?
 async def ipfs_fetch_record_to_file(ipfs: RetryingIPFS, record: PublicRecord, pub_dir: Path):
 
     # Get destination path
