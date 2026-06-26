@@ -417,14 +417,16 @@ class ElectionSubscriber:
 
     # TODO accept optional channel_id?
     def all_events(self) -> list[ChannelEvent]:
-        # All events in _history, sorted by slot_no
+        # All events in _history, sorted by (slot_no, ch_str)
         events: dict[int, list[ChannelEvent]] = {}
         with self._history_lock:
-            for es in self._history.values():
+            for (ch, es) in self._history.items():
+                s = channel_id_to_string(ch)
                 for e in es:
-                    if not e.slot_no in events:
-                        events[e.slot_no] = []
-                    events[e.slot_no].append(e)
+                    k = (e.slot_no, s)
+                    if not k in events:
+                        events[k] = []
+                    events[k].append(e)
         events2 = []
         for k in sorted(list(events.keys())):
             events2 += events[k]
