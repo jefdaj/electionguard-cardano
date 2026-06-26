@@ -334,7 +334,7 @@ class FunderNode(ElectionNode):
         errors = []
         last_tx = None # only have to wait once
 
-        for channel_id in self.subscriber.all_current_channel_ids():
+        for channel_id in self.subscriber.all_channel_ids():
 
             # Can't use the current state because the channel may be closed.
             # But it should have either an input or output at least.

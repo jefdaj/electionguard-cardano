@@ -538,7 +538,7 @@ class ElectionSubscriber:
     def is_done(self):
         log_call()
         return self._kupo_stop.is_set() \
-           and self._kupo_thread is None
+           and not self._kupo_thread.is_alive()
 
 
     def sleep(self, seconds):
@@ -695,12 +695,6 @@ class ElectionSubscriber:
 
             # 5. Emit final events to clients
             self._client_on_action(event)
-
-            # 6. special case for EndElection
-            if isinstance(event.action, EndElection) or isinstance(event.action, BurnTestTokens):
-                # TODO assert this is the last event somehow?
-                LOG.debug('Got terminal ChannelEvent; stopping Kupo.')
-                self.request_stop()
 
 
     def _kupo_api_url(self) -> str:
@@ -1168,6 +1162,7 @@ class ElectionSubscriber:
         log_call()
         assert event.channel_id == ADMIN_CHANNEL_ID, 'only admin can end election'
         self._on_burn(event)
+        self.request_stop()
         return event
 
 
@@ -1200,6 +1195,7 @@ class ElectionSubscriber:
         log_call()
         # TODO remove for production use, or make a CLI flag for it
         self._on_burn(event)
+        self.request_stop()
         return event
 
 

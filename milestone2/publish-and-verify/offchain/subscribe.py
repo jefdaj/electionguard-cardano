@@ -4,6 +4,8 @@
   ./subscribe.py <policy_id> <slot> <block_hash>
 '''
 
+# TODO this doesn't quite behave right: Ctrl-C quits without printing
+
 import os
 from pprint import pformat
 from pycardano import *
@@ -50,29 +52,36 @@ sub = ElectionSubscriber(
 
 sub.start()
 
-# TODO this doesn't quite behave right: Ctrl-C quits without printing
+def log_srp_diff(prev, cur):
+    (_, prev_recs, prev_phase) = prev
+    (states, records, phase) = cur
+    new_recs = [str(r) for r in records if not r in prev_recs]
+    if cur != prev:
+        LOG.info(f'states:\n\n{pformat(states)}\n')
+        if new_recs:
+            LOG.info('records:')
+            for r in new_recs:
+                LOG.info(r)
+        if phase != prev_phase:
+            LOG.info(f'phase: {phase}')
+ 
 prev = (None, None, None)
+
 while not sub.is_done():
     try:
-        (_, prev_recs, prev_phase) = prev
         states  = sub.current_states()
         records = sub.all_records()
         phase   = sub.current_phase()
-        new_recs = [str(r) for r in records if not r in prev_recs]
         cur = (states, records, phase)
-        if cur != prev:
-            LOG.info(f'current states:\n\n{pformat(states)}\n')
-            if new_recs:
-                LOG.info('new records:')
-                for r in new_recs:
-                    LOG.info(r)
-            if phase != prev_phase:
-                LOG.info(f'new phase: {phase}')
-            prev = cur
-        sub.sleep(3)
+        log_srp_diff(prev, cur)
+        prev = cur
     except KeyboardInterrupt:
         LOG.warning('Got keyboard interrupt')
         break
+    finally:
+        time.sleep(3)
+
 LOG.info('Stopping...')
-sub.stop() # TODO error here if already stopped?
 sub.join()
+
+# log_srp_diff((None, None, None), prev)
