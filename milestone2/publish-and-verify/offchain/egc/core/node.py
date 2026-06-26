@@ -86,6 +86,8 @@ class ElectionNode:
         return self.subscriber.current_phase()
 
     def wait_for_confirmation(self, tx: Transaction):
+        # TODO how to handle cases not indexed by STT cleanly? (collateral etc)
+
         ch_str = self.channel_str()
         tx_str = str(tx.id)
 
@@ -245,6 +247,13 @@ class ElectionNode:
             LOG.info(msg)
 
         return tx_signed
+
+    def return_collateral(self):
+        # TODO only auto return if collateral originally came from admin/funder
+        if self.election is None:
+            raise Exception('No election, so no funder_address.')
+        return_addr = self.election.deployment.funder_address
+        return self.publisher.return_collateral(return_addr)
 
     def stop(self):
         if self.subscriber is not None:

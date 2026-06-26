@@ -47,80 +47,85 @@ def guardian1(
         election: ElectionContext,
         guardian1_wallet: Wallet,
     ) -> GuardianNode:
-    node = GuardianNode(
+    node_ = GuardianNode(
         election   = election,
         wallet     = guardian1_wallet,
         role_index = 1,
     )
-    LOG.debug(f'guardian1: {node}')
+    LOG.debug(f'guardian1: {node_}')
     try:
-        yield node
+        yield node_
+        node_.return_collateral()
     finally:
-        node.stop()
+        node_.stop()
 
 @per_election_fixture
 def guardian2(
         election: ElectionContext,
         guardian2_wallet: Wallet,
     ) -> GuardianNode:
-    node = GuardianNode(
+    node_ = GuardianNode(
         election   = election,
         wallet     = guardian2_wallet,
         role_index = 2,
     )
-    LOG.debug(f'guardian2: {node}')
+    LOG.debug(f'guardian2: {node_}')
     try:
-        yield node
+        yield node_
+        node_.return_collateral()
     finally:
-        node.stop()
+        node_.stop()
 
 @per_election_fixture
 def guardian3(
         election: ElectionContext,
         guardian3_wallet: Wallet,
     ) -> GuardianNode:
-    node = GuardianNode(
+    node_ = GuardianNode(
         election   = election,
         wallet     = guardian3_wallet,
         role_index = 3,
     )
-    LOG.debug(f'guardian3: {node}')
+    LOG.debug(f'guardian3: {node_}')
     try:
-        yield node
+        yield node_
+        node_.return_collateral()
     finally:
-        node.stop()
+        node_.stop()
 
 @per_election_fixture
 def device1(
         election: ElectionContext,
         device1_wallet: Wallet,
     ) -> DeviceNode:
-    node = DeviceNode(
+    node_ = DeviceNode(
         election   = election,
         wallet     = device1_wallet,
         role_index = 1,
     )
-    LOG.debug(f'device1: {node}')
+    LOG.debug(f'device1: {node_}')
     try:
-        yield node
+        yield node_
+        node_.return_collateral()
     finally:
-        node.stop()
+        node_.stop()
 
 @per_election_fixture
 def verifier1(
         election: ElectionContext,
         verifier1_wallet: Wallet,
     ) -> VerifierNode:
-    node = VerifierNode(
+    node_ = VerifierNode(
         election   = election,
         wallet     = verifier1_wallet,
         role_index = 1,
     )
-    LOG.debug(f'verifier1: {node}')
+    LOG.debug(f'verifier1: {node_}')
     try:
-        yield node
+        yield node_
+        node_.return_collateral()
     finally:
-        node.stop()
+        node_.stop()
 
 @per_election_fixture
 def subchannel_nodes(

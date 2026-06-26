@@ -22,9 +22,10 @@ def admin_addr(admin_wallet: Wallet) -> Address:
 
 @per_election_fixture
 def admin(election: ElectionContext, admin_wallet: Wallet) -> AdminNode:
-    node = AdminNode(election=election, wallet=admin_wallet)
-    LOG.debug(f'admin: {node}')
+    node_ = AdminNode(election=election, wallet=admin_wallet)
+    LOG.debug(f'admin: {node_}')
     try:
-        yield node
+        yield node_
+        node_.return_collateral()
     finally:
-        node.stop()
+        node_.stop()

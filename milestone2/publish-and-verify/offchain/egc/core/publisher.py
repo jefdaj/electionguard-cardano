@@ -278,6 +278,7 @@ class ElectionPublisher:
         original funder, less tx fee. The publisher is expected to do this,
         but it can't be enforced on chain. Returns None if the publisher has
         no collateral UTXO to return."""
+        # You probably want the version in egc/core/node.py that auto-picks return_addr.
         if from_wallet is None:
             wallet = self.wallet
         else:

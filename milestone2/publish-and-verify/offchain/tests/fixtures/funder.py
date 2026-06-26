@@ -18,12 +18,13 @@ def funder_addr(funder_wallet: Wallet) -> Address:
 
 @per_election_fixture
 def funder(funder_wallet: Wallet) -> FunderNode:
-    node = FunderNode(wallet=funder_wallet)
-    LOG.debug(f'funder: {node}')
+    node_ = FunderNode(wallet=funder_wallet)
+    LOG.debug(f'funder: {node_}')
     try:
-        yield node
+        yield node_
+        # no need to return collateral to self
     finally:
-        node.stop()
+        node_.stop()
 
 @per_election_fixture
 def init_tx_builder(

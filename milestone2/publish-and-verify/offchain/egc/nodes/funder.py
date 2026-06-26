@@ -353,17 +353,17 @@ class FunderNode(ElectionNode):
                 LOG.debug(f'sk_path: {sk_path}')
                 LOG.debug(f'pub_wallet: {pub_wallet}')
                 tx = self.publisher.return_collateral(
-                    return_addr = self.publisher.wallet.addr,
+                    self.publisher.wallet.addr,
                     from_wallet = pub_wallet,
                 )
                 if tx is not None:
                     last_tx = tx
                     LOG.info(f'{ch_str} recovered collateral from {sk_path}')
+                else:
+                    LOG.info(f'{ch_str} has no collateral UTXO. Already returned?')
             except Exception as e:
                 LOG.exception(f'{ch_str} failed to recover collateral from {pub_addr}')
                 errors.append(e)
-        # if last_tx is not None:
-            # self.wait_for_confirmation(last_tx)
         if errors:
             raise ExceptionGroup('recover_all_collateral had failures', errors)
         return last_tx

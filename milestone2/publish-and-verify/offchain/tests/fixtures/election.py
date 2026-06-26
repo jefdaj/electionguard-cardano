@@ -94,7 +94,6 @@ def init_tx(
         # raise
 
     finally:
-        # TODO should this be another fixture/helper?
         last_tx = funder.recover_all_collateral(keys_dir)
 
         # Can't use the node-level wait_for_confirmation here,
