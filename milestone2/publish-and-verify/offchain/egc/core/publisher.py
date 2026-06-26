@@ -142,6 +142,9 @@ class ElectionPublisher:
             output_indices=(0,), # TODO remove if we always use 0?
         ):
         LOG.debug('ElectionPublisher.wait_for_confirmation')
+        if tx is None:
+            LOG.debug('tx is None; not waiting for confirmation.')
+            return
         tx_id = str(tx.id)
         LOG.debug(
             f'Waiting up to {OGMIOS_TIMEOUT_SEC}s for tx '
