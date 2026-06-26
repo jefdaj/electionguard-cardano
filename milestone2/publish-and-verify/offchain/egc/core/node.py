@@ -10,6 +10,7 @@ from .publisher  import *
 from .subscriber import *
 from .election   import *
 from .plutus     import *
+from .ipfs       import *
 
 import logging
 
@@ -37,15 +38,12 @@ class ElectionNode:
         keys_dir: Optional[Path] = None,
         key_name: Optional[Path] = None,
 
-        ipfs: RetryingIPFS = RetryingIPFS(),
+        # TODO mk_ipfs or similar?
     ):
         LOG.debug('ElectionNode.__init__')
 
         # May be None in case of a Funder.
         self.election: Optional[ElectionContext] = election
-
-        # IPFS client for publishing record contents
-        self._ipfs = ipfs
 
         self.publisher = ElectionPublisher(
             role       = role,
@@ -154,18 +152,32 @@ class ElectionNode:
 
     def post_public_records(
             self,
-            new_record_pairs: List[Tuple[PublicRecord, dict]],
+            new_record_pairs: List[tuple[dict, PublicRecordMetadata]],
             new_phase: Optional[ElectionPhase] = None,
         ) -> Transaction:
 
         LOG.debug('ElectionNode.post_public_records')
 
-        new_records: list[PublicRecord] = [p[0] for p in new_record_pairs]
-        new_objs:    list[dict]         = [p[1] for p in new_record_pairs]
-
-        assert len(new_records) > 0, 'post_public_records new_records empty'
+        assert len(new_record_pairs) > 0, 'post_public_records new_record_pairs empty'
 
         ch_str = self.channel_str()
+
+        new_objs:  list[dict]         = [p[0] for p in new_record_pairs]
+        new_metas: list[PublicRecord] = [p[1] for p in new_record_pairs]
+        LOG.debug('new_objs: %s' % pformat(new_objs))
+        LOG.debug('new_metas: %s' % pformat(new_metas))
+
+        new_cids: list[bytes] = ipfs_publish_objs_sync(new_objs)
+        LOG.debug('new_cids: %s' % pformat(new_cids))
+
+        assert len(new_cids) == len(new_metas)
+
+        new_records = [
+            PublicRecord(ipfs_cid=c, metadata=m)
+            for (c, m) in zip(new_cids, new_metas)
+        ]
+        LOG.debug('new_records: %s' % pformat(new_records))
+
         tx_msgs = []
 
         pub_col_utxo = self.publisher.wait_for_collateral()
@@ -252,11 +264,6 @@ class ElectionNode:
 
         for msg in tx_msgs:
             LOG.info(msg)
-
-        LOG.debug(f'Uploading {len(new_objs)} new record objects to IPFS')
-        with asyncio.Runner() as runner:
-            for obj in new_objs:
-                ipfs_publish_obj(self._ipfs, obj)
 
         return tx_signed
 

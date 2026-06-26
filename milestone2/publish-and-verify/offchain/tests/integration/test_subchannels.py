@@ -4,6 +4,7 @@ import pytest
 from dataclasses import replace
 from pycardano import *
 from egc import *
+from data.static_records import *
 from helpers import *
 import logging
 import time
@@ -39,7 +40,7 @@ def s1(
         static_phases,
     ) -> ChannelState:
     prev = s0.state
-    record_pairs = load_static_record_objs(
+    record_pairs = load_static_record_pairs(
         static_transactions['admin'][1][1]
     )
     return AdminChannel(state=replace(
@@ -56,12 +57,12 @@ def tx1(
         static_transactions,
         static_phases,
     ) -> Transaction:
-    record_pairs = load_static_record_objs(
+    record_pairs = load_static_record_pairs(
         static_transactions['admin'][1][1]
     )
     tx = admin.post_public_records(
-        new_records = record_pairs,
-        new_phase   = static_phases[1],
+        new_record_pairs = record_pairs,
+        new_phase = static_phases[1],
     )
     LOG.debug(f'tx1: {tx}')
     admin.wait_for_confirmation(tx)

@@ -1,5 +1,6 @@
 from .code import STATIC_PHASES
 from .code import STATIC_TRANSACTIONS
+from egc import PublicRecord, PublicRecordMetadata, ipfs_cid_to_string
 
 import json
 from pathlib import Path
@@ -22,13 +23,13 @@ def load_static_record_obj(cid: str) -> dict:
     with open(path, 'r') as f:
         return json.load(f)
 
-def load_static_record_objs(
+def load_static_record_pairs(
         records: list[PublicRecord],
-    ) -> list[Tuple[PublicRecord, dict]]:
+    ) -> list[tuple[dict, PublicRecordMetadata]]:
     pairs = []
     for rec in records:
         cid = ipfs_cid_to_string(rec.ipfs_cid)
         obj = load_static_record_obj(cid)
-        pair = (rec, obj)
+        pair = (obj, rec.metadata)
         pairs.append(pair)
     return pairs

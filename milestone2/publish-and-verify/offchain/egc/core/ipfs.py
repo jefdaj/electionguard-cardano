@@ -18,7 +18,8 @@ LOG = logging.getLogger(__name__)
 
 
 # TODO set dynamically
-IPFS_MADDR = os.environ.get('IPFS_MADDR', '/dns4/publish-and-verify-ipfs-1/tcp/5001')
+# IPFS_MADDR = os.environ.get('IPFS_MADDR', '/dns4/publish-and-verify-ipfs-1/tcp/5001')
+IPFS_MADDR = os.environ.get('IPFS_MADDR', '/dns4/127.0.0.1/tcp/5001')
 LOG.debug(f'IPFS_MADDR: {IPFS_MADDR}')
 
 
@@ -29,11 +30,19 @@ class RetryingIPFS:
         self._delay   = delay
         self._backoff = backoff
 
+	# support use as an async context manager by delegating to _client
+    async def __aenter__(self):
+        return self
+    async def __aexit__(self, *exc):
+        await self._client.close()
+    async def close(self):
+        await self._client.close()
+
     async def _retry(self, coro_factory):
         delay = self._delay
         for attempt in range(self._retries):
             try:
-                await wait_for_ipfs(self) # TODO make it a method?
+                await ipfs_wait_until_ready(self) # TODO make it a method?
                 return await coro_factory()
             except (ClientConnectorError, ClientConnectorDNSError) as e:
                 if attempt == self._retries - 1:
@@ -104,6 +113,20 @@ async def ipfs_publish_obj(ipfs: RetryingIPFS, obj: dict) -> bytes:
     cid_bytes = coerce_ipfs_cid(cid_str)
     LOG.debug(f'cid_bytes: {cid_bytes}')
     return cid_bytes
+
+
+async def ipfs_publish_objs(objs: list[dict]) -> list[bytes]:
+    # TODO take ipfs or mk_ipfs as an arg to dynmically configure
+    async with RetryingIPFS() as ipfs:
+        return await asyncio.gather(
+            *(ipfs_publish_obj(ipfs, o) for o in objs)
+        )
+
+
+# TODO take ipfs or mk_ipfs as an arg to dynmically configure
+def ipfs_publish_objs_sync(objs: list[dict]) -> list[bytes]:
+    with asyncio.Runner() as runner:
+        return runner.run( ipfs_publish_objs(objs) )
 
 
 # TODO make this a method of RetryingIPFS?
