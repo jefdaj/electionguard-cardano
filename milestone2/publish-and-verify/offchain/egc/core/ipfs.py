@@ -1,11 +1,12 @@
 import aiofiles
-# import aioipfs
 from aioipfs import AsyncIPFS
 import asyncio
-import logging
 from aiohttp import ClientConnectorError, ClientConnectorDNSError
 import os
 
+from .plutus import *
+
+import logging
 
 LOG = logging.getLogger(__name__)
 
@@ -19,18 +20,6 @@ LOG = logging.getLogger(__name__)
 # TODO set dynamically
 IPFS_MADDR = os.environ.get('IPFS_MADDR', '/dns4/publish-and-verify-ipfs-1/tcp/5001')
 LOG.debug(f'IPFS_MADDR: {IPFS_MADDR}')
-
-
-async def wait_for_ipfs(ipfs, timeout=10):
-    end = asyncio.get_event_loop().time() + timeout
-    while True:
-        try:
-            await ipfs._client.version()  # raw client, single call
-            return
-        except (ClientConnectorError, ClientConnectorDNSError):
-            if asyncio.get_event_loop().time() > end:
-                raise
-            await asyncio.sleep(1)
 
 
 class RetryingIPFS:
@@ -93,117 +82,69 @@ class RetryingIPFS:
         return getattr(self._client, name)
 
 
-# TODO separate the code for actually saving the file from the ipfs code
-# TODO would it be better to save to a temporary location and let ipfs put the file in place?
-# async def to_public_record(
-#         ipfs: RetryingIPFS,
-#         channel: str,
-#         record_type: str,
-#         obj,
-#         **fmtargs
-#     ):
-#     # TODO if adding the file fails, what then? remove locally? retry?
-#     fpath = to_record(PUBLIC_RECORDS, record_type, obj, **fmtargs)
-#     cid = await publish_on_ipfs(ipfs, obj)
-#     fmtargs['cid'] = cid
-#     mockchain_post_public_record(channel, record_type, **fmtargs)
-#     # TODO return something? cid, bool, res
+async def ipfs_wait_until_ready(ipfs: RetryingIPFS, timeout=10):
+    end = asyncio.get_event_loop().time() + timeout
+    while True:
+        try:
+            await ipfs._client.version()  # raw client, single call
+            return
+        except (ClientConnectorError, ClientConnectorDNSError):
+            if asyncio.get_event_loop().time() > end:
+                raise
+            await asyncio.sleep(1)
 
 
-# def from_public_record(record_type: str, **fmtargs):
-#     return from_record(PUBLIC_RECORDS, record_type, **fmtargs)
+# TODO take a PublicRecordMetadata here too and return the finished PublicRecord?
+async def ipfs_publish_obj(ipfs: RetryingIPFS, obj: dict) -> bytes:
+    # Publishes a dict and returns the ipfs_cid bytes, ready for use in PublicRecord.
+    added_file = await ipfs.add_json(obj)
+    cid_str = added_file['Hash']
+    LOG.debug(f'cid_str: {cid_str}')
+    cid_bytes = coerce_ipfs_cid(cid_str)
+    LOG.debug(f'cid_bytes: {cid_bytes}')
+    return cid_bytes
 
 
-# def format_to_regex(
-#     fmt: str,
-#     field_patterns: dict[str, str] | None = None,
-#     suffix: str = r'\.json$',
-# ) -> Pattern:
-#     """
-#     Turn a format string like
-#       '.../{guardian_id}_backup_{backup_order}'
-#     into a regex with named groups.
-# 
-#     `field_patterns` can override the pattern for specific fields.
-#     """
-#     formatter = string.Formatter()
-#     field_patterns = field_patterns or {}
-# 
-#     regex_parts = []
-# 
-#     for literal_text, field_name, format_spec, conversion in formatter.parse(fmt):
-#         # Escape literal parts
-#         if literal_text:
-#             regex_parts.append(re.escape(literal_text))
-# 
-#         if field_name is None:
-#             continue  # no more fields
-# 
-#         # Pattern for this field: custom or default
-#         pat = field_patterns.get(field_name, r'[^/]+')
-#         regex_parts.append(f"(?P<{field_name}>{pat})")
-# 
-#     # Add optional suffix, e.g. file extension
-#     if suffix:
-#         regex_parts.append(suffix)
-# 
-#     return re.compile("".join(regex_parts))
+async def ipfs_fetch_record_to_file(ipfs: RetryingIPFS, record: PublicRecord, pub_dir: Path):
 
+    # Get destination path
+    if not isinstance(pub_dir, Path):
+        pub_dir = Path(pub_dir)
+    LOG.debug(f'pub_dir: {pub_dir}')
+    filename = str(record_path(record.metadata, pub_dir=pub_dir))
+    LOG.debug(f'filename: {filename}')
 
-# async def fetch_cid_to_file(ipfs: RetryingIPFS, cid: str, filename: str):
-#     # Get the raw bytes for the CID
-#     data = await ipfs.cat(cid)
-# 
-#     # Ensure parent dir exists
-#     dir_name = os.path.dirname(filename) or "."
-#     os.makedirs(dir_name, exist_ok=True)
-# 
-#     # Create a temp file in the same directory
-#     fd, tmp_path = tempfile.mkstemp(
-#         dir=dir_name,
-#         prefix=".tmp_",
-#         suffix=".part"
-#     )
-#     os.close(fd)  # we'll reopen it with aiofiles
-# 
-#     try:
-#         # Write to temp file
-#         async with aiofiles.open(tmp_path, "wb") as f:
-#             await f.write(data)
-#             await f.flush()
-# 
-#         # Atomically replace the target file
-#         os.replace(tmp_path, filename)
-#     finally:
-#         # Clean up temp file if anything went wrong before replace
-#         if os.path.exists(tmp_path):
-#             try:
-#                 os.remove(tmp_path)
-#             except OSError:
-#                 pass
+    # Get CID
+    cid_str = ipfs_cid_to_string(record.ipfs_cid)
+    LOG.debug(f'cid_str: {cid_str}')
 
+    # Get the raw bytes for the CID
+    data = await ipfs.cat(cid_str)
 
-# async def publish_on_ipfs(ipfs: RetryingIPFS, obj: dict) -> str:
-#     added_file = await ipfs.add_json(obj)
-#     cid = added_file['Hash'] # TODO is this a dict in this aioipfs version?
-#     return cid
+    # Ensure parent dir exists
+    dir_name = os.path.dirname(filename) # or "."
+    os.makedirs(dir_name, exist_ok=True)
 
+    # Create a temp file in the same directory
+    fd, tmp_path = tempfile.mkstemp(
+        dir=dir_name,
+        prefix=".tmp_",
+        suffix=".part"
+    )
+    os.close(fd)  # we'll reopen it with aiofiles
 
-# TODO should this go through MockchainSubscriber instead? or is separate more robust?
-# def next_json_path(channel: str) -> str:
-#     channel_dir = join(MOCKCHAIN_JSON_DIR, channel)
-#     index = 1
-#     while True:
-#         json_path = join(channel_dir, f'{index:03d}.json')
-#         if not exists(json_path):
-#             return json_path
-#         index += 1
+    try:
+        # Write to temp file
+        async with aiofiles.open(tmp_path, "wb") as f:
+            await f.write(data)
+            await f.flush()
 
-
-# TODO how to post a list of records rather than just one? need some kind of queue?
-# TODO cid type?
-# def mockchain_post_public_record(channel: str, record_type: str, **post_json):
-#     post_json['record_type'] = record_type
-#     mockchain_post_json(channel, 'post_public_record', **post_json)
-
-
+        # Atomically replace the target file
+        os.replace(tmp_path, filename)
+    finally:
+        # Clean up temp file if anything went wrong before replace
+        if os.path.exists(tmp_path):
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
