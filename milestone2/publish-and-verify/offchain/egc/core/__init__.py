@@ -7,3 +7,4 @@ from .plutus     import *
 from .election   import ElectionScript, ElectionDeployment, ElectionContext
 from .node       import ElectionNode
 from .utils      import safe_deepdiff
+from .records    import *
