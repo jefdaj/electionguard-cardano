@@ -13,6 +13,7 @@ import logging
 import time
 from pprint import pformat
 from docopt import docopt
+import shutil
 
 # import ecg
 # from ecg import subscriber as es
@@ -42,12 +43,21 @@ sub_cfg = SubscriberConfig(
 )
 LOG.info(f'sub_cfg:\n\n{pformat(sub_cfg)}\n')
 
-def log_event(event: ChannelEvent):
-    LOG.info('\n' + pformat(event) + '\n')
+# one dir up when called from offchain
+PUB_DIR = Path('../data/verifier2')
+
+def log_and_fetch(event: ChannelEvent):
+    LOG.debug('\n' + pformat(event) + '\n')
+    if not event.output_state:
+        return
+    new_records = event.output_state.state.new_records
+    paths = ipfs_fetch_records_to_file_sync(new_records, PUB_DIR)
+    for (r,p) in zip(new_records, paths):
+        LOG.info(f'{r} -> {p}')
 
 sub = ElectionSubscriber(
     sub_cfg,
-    on_action=log_event,
+    on_action=log_and_fetch,
 )
 
 sub.start()
@@ -57,13 +67,13 @@ def log_srp_diff(prev, cur):
     (states, records, phase) = cur
     new_recs = [str(r) for r in records if not r in prev_recs]
     if cur != prev:
-        LOG.info(f'Current states:\n\n{pformat(states)}\n')
+        LOG.debug(f'Current states:\n\n{pformat(states)}\n')
         if new_recs:
-            LOG.info('New records:')
+            LOG.debug('New records:')
             for r in new_recs:
-                LOG.info(r)
+                LOG.debug(r)
         if phase != prev_phase:
-            LOG.info(f'Current phase: {phase}')
+            LOG.debug(f'Current phase: {phase}')
  
 prev = (None, None, None)
 

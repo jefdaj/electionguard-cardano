@@ -13,3 +13,6 @@ offchain/election-*.json
 
 # Docker data
 data/*
+
+**/__pycache__
+**/*.pyc

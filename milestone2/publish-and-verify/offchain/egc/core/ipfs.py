@@ -3,8 +3,10 @@ from aioipfs import AsyncIPFS
 import asyncio
 from aiohttp import ClientConnectorError, ClientConnectorDNSError
 import os
+import tempfile
 
-from .plutus import *
+from .plutus  import *
+from .records import *
 
 import logging
 
@@ -165,6 +167,9 @@ async def ipfs_fetch_record_to_file(ipfs: RetryingIPFS, record: PublicRecord, pu
 
         # Atomically replace the target file
         os.replace(tmp_path, filename)
+
+        return Path(filename)
+
     finally:
         # Clean up temp file if anything went wrong before replace
         if os.path.exists(tmp_path):
@@ -172,3 +177,24 @@ async def ipfs_fetch_record_to_file(ipfs: RetryingIPFS, record: PublicRecord, pu
                 os.remove(tmp_path)
             except OSError:
                 pass
+
+
+async def ipfs_fetch_records_to_file(
+        records: list[PublicRecord],
+        pub_dir: Path,
+    ) -> list[Path]:
+    # TODO take ipfs or mk_ipfs as an arg to dynmically configure
+    async with RetryingIPFS() as ipfs:
+        return await asyncio.gather(
+            *(ipfs_fetch_record_to_file(ipfs, r, pub_dir) for r in records)
+        )
+
+
+# TODO take ipfs or mk_ipfs as an arg to dynmically configure
+# TODO rewrite with ipfs_run_all_sync
+def ipfs_fetch_records_to_file_sync(
+        records: list[PublicRecord],
+        pub_dir: Path,
+    ) -> list[Path]:
+    with asyncio.Runner() as runner:
+        return runner.run( ipfs_fetch_records_to_file(records, pub_dir=pub_dir) )

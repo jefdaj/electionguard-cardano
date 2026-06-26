@@ -27,19 +27,19 @@ PUBLIC_RECORD_TYPES = {
         # 'guardian_pubkey'
         # ElectionPublicKey,
         '1_config/2_ceremony/1_pubkeys',
-        '{guardian_id}'
+        'guardian_{guardian_number}'
     ),
     GuardianBackup: (
         # 'guardian_backup'
         # ElectionPartialKeyBackup,
         '1_config/2_ceremony/2_backups',
-        '{guardian_id}_backup_{backup_order}'
+        'guardian_{guardian_number}_backup_{backup_order}'
     ),
     GuardianVerification: (
         # 'guardian_verification'
         # ElectionPartialKeyVerification,
         '1_config/2_ceremony/3_verifications',
-        '{guardian_id}_backup_{backup_order}'
+        'guardian_{guardian_number}_backup_{backup_order}'
     ),
     JointKey: (
         # 'joint_key'
@@ -99,13 +99,13 @@ PUBLIC_RECORD_TYPES = {
         # 'tally_share'
         # DecryptionShare,
         '3_results/2_decrypt/1_shares/1_tally',
-        'tally_{guardian_id}'
+        'tally_guardian_{guardian_number}'
     ),
     SpoiledShare: (
         # 'spoiled_share'
         # DecryptionShare,
         '3_results/2_decrypt/1_shares/2_spoiled',
-        '{spoiled_id}_guardian{guardian_number}'
+        '{spoiled_id}_guardian_{guardian_number}'
     ),
     # TODO rename tally_result?
     PlaintextTally: (
@@ -131,6 +131,7 @@ PUBLIC_RECORD_TYPES = {
 
 def record_path(metadata: PublicRecordMetadata, pub_dir: Path) -> Path:
     "Find the path of a record in the public records dir by metadata."
+    LOG.debug(f'metadata: {metadata}')
     if isinstance(metadata, PublicRecord):
         LOG.warning(f'Passed PublicRecord rather than PublicRecordMetadata: {metadata}')
         metadata = metadata.metadata
@@ -141,7 +142,7 @@ def record_path(metadata: PublicRecordMetadata, pub_dir: Path) -> Path:
     (dname, fstr) = PUBLIC_RECORD_TYPES[m_type]
     LOG.debug(f'dname: {dname}')
     LOG.debug(f'fstr: {fstr}')
-    fname = fstr.format(**vars(record))
+    fname = fstr.format(**vars(metadata))
     LOG.debug(f'fname: {fname}')
     path = (pub_dir / dname / fname).with_suffix('.json')
     LOG.debug(f'path: {path}')

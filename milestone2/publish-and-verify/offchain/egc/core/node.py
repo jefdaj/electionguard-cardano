@@ -162,8 +162,8 @@ class ElectionNode:
 
         ch_str = self.channel_str()
 
-        new_objs:  list[dict]         = [p[0] for p in new_record_pairs]
-        new_metas: list[PublicRecord] = [p[1] for p in new_record_pairs]
+        new_objs  = [p[0] for p in new_record_pairs]
+        new_metas = [p[1] for p in new_record_pairs]
         LOG.debug('new_objs: %s' % pformat(new_objs))
         LOG.debug('new_metas: %s' % pformat(new_metas))
 
