@@ -11,7 +11,6 @@ import logging
 LOG = logging.getLogger(__name__)
 
 
-# TODO hook publisher to ipfs upload
 # TODO hook subscriber callback(s) to ipfs fetch
 # TODO extend fetch callbacks to save files -> private dir
 # TODO wrapper script: call verifier docker container on private dir after
