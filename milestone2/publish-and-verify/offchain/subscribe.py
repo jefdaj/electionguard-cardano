@@ -57,13 +57,13 @@ def log_srp_diff(prev, cur):
     (states, records, phase) = cur
     new_recs = [str(r) for r in records if not r in prev_recs]
     if cur != prev:
-        LOG.info(f'states:\n\n{pformat(states)}\n')
+        LOG.info(f'Current states:\n\n{pformat(states)}\n')
         if new_recs:
-            LOG.info('records:')
+            LOG.info('New records:')
             for r in new_recs:
                 LOG.info(r)
         if phase != prev_phase:
-            LOG.info(f'phase: {phase}')
+            LOG.info(f'Current phase: {phase}')
  
 prev = (None, None, None)
 
@@ -75,13 +75,14 @@ while not sub.is_done():
         cur = (states, records, phase)
         log_srp_diff(prev, cur)
         prev = cur
+        sub.sleep(3)
     except KeyboardInterrupt:
         LOG.warning('Got keyboard interrupt')
         break
-    finally:
-        time.sleep(3)
 
-LOG.info('Stopping...')
 sub.join()
 
-# log_srp_diff((None, None, None), prev)
+recs = sub.all_records()
+print(f'{len(recs)} records total:')
+for r in recs:
+    print(str(r))
