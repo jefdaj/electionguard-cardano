@@ -44,8 +44,8 @@ class SubChannelState(PlutusData):
         records_str = ', '.join([str(r) for r in self.new_records])
         return (
             'SubChannelState('
-            f'channel_id={ch_str}, '
-            f'publisher={self.publisher.hex()}, '   # TODO clean up to avoid bytes.fromhex
+            f'channel_id={self.channel_id}, '
+            f"publisher='{self.publisher.hex()}', "   # TODO clean up to avoid bytes.fromhex
             f'new_records=[' + records_str + '], '
             f'seq={self.seq})'
         )

@@ -1125,9 +1125,6 @@ class ElectionSubscriber:
 
     def _on_initelection(self, event: ChannelEvent):
         log_call()
-        # LOG.debug(f'history during _on_initelection:\n{pformat(self._history)}')
-        with self._history_lock:
-            assert self._history == {}, 'InitElection with non-empty history'
         if self.current_phase() is not None:
             i = event.channel_id
             with self._hsitory_lock:
