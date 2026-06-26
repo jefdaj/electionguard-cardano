@@ -48,8 +48,7 @@ services:
       - ./data/ipfs:/data/ipfs
     ports:
       - 4001:4001 # ipfs swarm
-      - 5001:5001 # ipfs api
-      - 8080:8080 # ipfs gateway (TODO remove?)
+      - 5001:5001 # ipfs api (and webui on /webui)
     networks:
       - shared-net # TODO remove?
 
