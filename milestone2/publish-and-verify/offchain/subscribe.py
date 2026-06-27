@@ -27,7 +27,8 @@ logging.basicConfig(
   # filename='subscribe.log',
   encoding='utf-8',
   level=logging.INFO,
-  format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+  # format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+  format="%(message)s",
 )
 
 # logging.getLogger('urllib3').setLevel(logging.DEBUG)
@@ -41,7 +42,7 @@ sub_cfg = SubscriberConfig(
     since_block_hash = args['<block_hash>'],
     policy_id = ScriptHash(bytes.fromhex(args['<policy_id>'])),
 )
-LOG.info(f'sub_cfg:\n\n{pformat(sub_cfg)}\n')
+LOG.info(f'\n{pformat(sub_cfg)}\n')
 
 # one dir up when called from offchain
 PUB_DIR = Path('../data/verifier2')
