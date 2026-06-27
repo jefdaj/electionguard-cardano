@@ -21,7 +21,10 @@ def make_static_files_by_cid():
     cids  = cids_path.read_text().splitlines()
     paths = files_path.read_text().splitlines()
     paths = [STATIC_FILES_DIR / p for p in paths]
-    return {c: p for (c, p) in zip(cids, paths)}
+    fbc = {c: p for (c, p) in zip(cids, paths)}
+    for (c, p) in fbc.items():
+        LOG.debug(f'fbc pair: cid={c}, path={p}')
+    return fbc
 
 
 STATIC_FILES_BY_CID = make_static_files_by_cid()

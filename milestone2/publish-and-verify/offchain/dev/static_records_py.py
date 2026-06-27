@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from egc import *
 
-IN_DIR = os.path.join(os.path.dirname(__file__), 'data/tests/static_records/files')
+IN_DIR = os.path.join(os.path.dirname(__file__), '../tests/data/static_records/files')
 IN_LOG = Path(IN_DIR) / 'egsync.log'
 
 print('''# Generated with static_records_py.py. Consider editing and re-running that to make any changes.
@@ -92,7 +92,7 @@ def guardian_verification(n, j, s):
     return (3, r)
 
 def summary(n, j, s):
-    i = j["verifier_id"].replace('_', '')
+    i = j["verifier_id"].replace('_', '').replace('admin1', 'admin')
     m = Summary(verifier_id=i)
     r = PublicRecord(ipfs_cid=s, metadata=m)
     seqs = {
@@ -218,7 +218,8 @@ for fn in render_fns:
     for j in JSONS:
         ppr = PostPublicRecords()
         channel = j["mockchain_channel"]
-        if channel == 'admin_1':
+        channel = channel.replace('_', '')
+        if channel == 'admin1':
             channel = 'admin'
         cid_str = j["cid"]
         fn_name = fn.__name__
@@ -243,8 +244,12 @@ for fn in render_fns:
                 TXS[channel][seq] = (ppr, [])
                 # print(f'init {channel} seq {seq}')
 
-            TXS[channel][seq][1].append(str(record)) # TODO fix properly
+            TXS[channel][seq][1].append(str(record))
             # pprint(TXS, width=250)
 
-print('STATIC_TRANSACTIONS = \\')
-pprint(TXS, width=250)
+# This, along with str(record) above, is a hack to get rid of quotes around
+# PublicRecord strings:
+formatted = pformat(TXS, width=220).replace('"PublicRecord',
+                                            'PublicRecord').replace('))"',
+                                                                    '))')
+print(f'STATIC_TRANSACTIONS = \\\n{formatted}')
