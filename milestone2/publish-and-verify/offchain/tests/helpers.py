@@ -125,11 +125,11 @@ def assert_nodes_converge(
                         diff = safe_deepdiff(expected_state, actual_state)
                         LOG.debug(
                             f'{node_str} node has wrong {state_str} state'
-                            f' after {waited} seconds:\n{pformat(diff)}'
+                            f' after {waited}s:\n{pformat(diff)}'
                         )
                         LOG.error(
                             'Nodes did not converge on expected states'
-                            f' within {timeout} seconds.'
+                            f' within {timeout}s.'
                         )
                         raise
                     else:
@@ -148,8 +148,16 @@ def assert_nodes_converge(
             n_nodes_correct_prev = n_nodes_correct
 
         if n_nodes_correct == n:
-            break
+            try:
+                # This normally works the first time, but occasionally fails.
+                # Perhaps there's a same-but-spent update during?
+                assert_nodes_have_same_history([n for (n, _) in expected])
+                break
+            except AssertionError as e:
+                if waited >= timeout:
+                    LOG.error(f'Nodes did not all have the same history within {timeout}s.')
+                else:
+                    LOG.debug('Nodes do not all have the same history yet.')
+
         time.sleep(interval)
         waited += interval
-
-    assert_nodes_have_same_history([n for (n, _) in expected])
