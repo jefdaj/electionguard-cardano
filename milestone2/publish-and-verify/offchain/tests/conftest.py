@@ -13,6 +13,9 @@ pytest_plugins = [
     "fixtures.subchannels",
 ]
 
+# Tell pytest to print diffs on assertions
+pytest.register_assert_rewrite("helpers") # TODO tests.helpers?
+
 def pytest_configure(config):
     # These are all probably worth looking at again if/when we have mysterious
     # API issues. But the rest of the time they're pretty noisy.
