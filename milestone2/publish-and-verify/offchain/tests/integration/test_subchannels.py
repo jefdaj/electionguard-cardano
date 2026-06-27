@@ -31,7 +31,7 @@ def tx0(init_tx: Transaction) -> Transaction:
 
 @pytest.mark.testnet
 def test_tx0(admin, s0, tx0):
-    test_tx(admin, s0, tx0)
+    assert_tx(admin, s0, tx0)
 
 @per_election_fixture
 def s1(
@@ -70,7 +70,7 @@ def tx1(
 
 @pytest.mark.testnet
 def test_tx1(admin, s1, tx1):
-    test_tx(admin, s1, tx1)
+    assert_tx(admin, s1, tx1)
 
 
 ## -------- tx2: add single subchannel --------
@@ -121,7 +121,7 @@ def test_add_subchannel(
         admin, s2, tx2,
         guardian1, guardian1_s0,
     ):
-    test_tx(admin, s2, tx2)
+    assert_tx(admin, s2, tx2)
     assert_nodes_converge([
         (admin, s2),
         (guardian1, guardian1_s0),
@@ -157,7 +157,7 @@ def tx3(
 
 @pytest.mark.testnet
 def test_rm_subchannel(admin, s3, tx3, guardian1):
-    test_tx(admin, s3, tx3)
+    assert_tx(admin, s3, tx3)
     assert_nodes_converge([
         (admin, s3),
         (guardian1, None)

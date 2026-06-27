@@ -35,11 +35,14 @@ def sub_s0(sub_id: ChannelId, sub_vkh: VerificationKeyHash) -> ChannelState:
     ))
 
 
-def test_tx(node: ElectionNode, state: Optional[ChannelState], tx: Transaction):
+def assert_tx(node_: ElectionNode, state: Optional[ChannelState], tx: Transaction):
     # This seems trivial, but would be a good place to
-    # also assert nodes converge after every tx if needed.
-    # TODO state instance check
+    # also assert nodes converge after every tx if needed,
+    # or gather any other per-tx tests.
+    assert isinstance(node_, ElectionNode)
     assert isinstance(tx, Transaction)
+    if state is not None:
+        assert isinstance_of_union(state, ChannelState)
 
 
 def assert_nodes_have_same_history(nodes: list[ElectionNode]):
