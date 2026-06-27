@@ -50,13 +50,36 @@ PUB_DIR = Path('../data/verifier2/public')
 
 def log_and_fetch(event: ChannelEvent):
     LOG.debug('\n' + pformat(event) + '\n')
+    ch_str = channel_id_to_string(event.channel_id)
+
     if not event.output_state:
         return
+
     new_records = event.output_state.state.new_records
-    ch_str = channel_id_to_string(event.channel_id)
     paths = ipfs_fetch_records_to_file_sync(new_records, PUB_DIR)
     for (r,_) in zip(new_records, paths):
         LOG.info(f'{ch_str}: {r}')
+
+    msgs = []
+    match event.action:
+        case InitElection():
+            ch_str = 'funder'
+            msgs.append('InitElection()')
+        case AdvancePhase():
+            msgs.append(event.output_state.state.phase)
+        case PostPublicRecords():
+            pass # covered above
+        case AddSubChannels(channels=cs):
+            if ch_str == 'admin':
+                msgs.append(AddSubChannels(channels=cs))
+        case RmSubChannels(channels=cs):
+            if ch_str == 'admin':
+                msgs.append(RmSubChannels(channels=cs))
+        case other:
+            msgs.append(other)
+    for msg in msgs:
+        LOG.info(f'{ch_str}: {msg}')
+
 
 sub = ElectionSubscriber(
     sub_cfg,
