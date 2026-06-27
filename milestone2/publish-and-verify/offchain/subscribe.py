@@ -45,7 +45,8 @@ sub_cfg = SubscriberConfig(
 LOG.info(f'\n{pformat(sub_cfg)}\n')
 
 # one dir up when called from offchain
-PUB_DIR = Path('../data/verifier2')
+# TODO arg for this
+PUB_DIR = Path('../data/verifier2/public')
 
 def log_and_fetch(event: ChannelEvent):
     LOG.debug('\n' + pformat(event) + '\n')
@@ -97,3 +98,4 @@ recs = sub.all_records()
 print(f'{len(recs)} records total:')
 for r in recs:
     print(str(r))
+print()

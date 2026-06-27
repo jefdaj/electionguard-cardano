@@ -1,4 +1,5 @@
-services: cardano-node:
+services:
+  cardano-node:
     image: ghcr.io/intersectmbo/cardano-node:11.0.1
     command: [
       "run",
