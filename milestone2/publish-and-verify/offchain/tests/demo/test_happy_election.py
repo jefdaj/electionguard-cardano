@@ -406,7 +406,7 @@ def admin_tx3(
         device1_tx1: Transaction,
         static_transactions,
     ) -> Transaction:
-    pairs = load_public_record_pairs(static_transactions['admin'][3][1])
+    pairs = load_static_record_pairs(static_transactions['admin'][3][1])
     tx = admin.post_public_records(
         new_record_pairs = pairs,
         new_phase = ElectionVotingPhase(),
@@ -581,7 +581,7 @@ def admin_tx5(
         guardian3_tx4: Transaction,
         static_transactions,
     ) -> Transaction:
-    pairs = load_public_record_pairs(static_transactions['admin'][5][1])
+    pairs = load_static_record_pairs(static_transactions['admin'][5][1])
     tx = admin.post_public_records(
         new_record_pairs = pairs,
         new_phase = ElectionResultsPhase(ResultsDecryptPhase()),
@@ -637,7 +637,7 @@ def admin_tx6(
         admin_tx5: Transaction,
         static_transactions,
     ) -> Transaction:
-    pairs = load_public_record_pairs(static_transactions['admin'][6][1])
+    pairs = load_static_record_pairs(static_transactions['admin'][6][1])
     tx = admin.post_public_records(
         new_record_pairs = pairs,
         new_phase = ElectionVerifyPhase(),
@@ -746,7 +746,7 @@ def admin_tx7(
         admin_tx6: Transaction,
         static_transactions,
     ) -> Transaction:
-    pairs = load_public_record_pairs(static_transactions['admin'][7][1])
+    pairs = load_static_record_pairs(static_transactions['admin'][7][1])
     tx = admin.post_public_records(
         new_record_pairs = pairs,
         new_phase = ElectionFinalizePhase(),
