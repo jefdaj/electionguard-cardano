@@ -1,5 +1,4 @@
-services:
-  cardano-node:
+services: cardano-node:
     image: ghcr.io/intersectmbo/cardano-node:11.0.1
     command: [
       "run",
@@ -61,7 +60,8 @@ services:
     ]
     volumes:
       - ./egpy_scripts:/scripts
-      - ./data/verifier2:/data/private
+      - ./data/verifier2/public:/data/public
+      - ./data/verifier2/private:/data/private
 
 # allow communication with other docker-compose networks, for example kupo
 # TODO would just using the ipc socket work across networks instead?

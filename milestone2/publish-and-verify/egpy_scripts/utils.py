@@ -25,17 +25,12 @@ import json
 import uuid
 from io import StringIO
 from dataclasses import dataclass, field
-import requests
-from urllib.parse import urlencode
-from pydantic.json import pydantic_encoder
-import time
+
 
 # hide INFO dumps of crypto from elgamal.py
 import logging
 logging.getLogger('electionguard').setLevel(logging.WARNING)
 
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 
 @dataclass
 class CastNotice:
@@ -190,123 +185,37 @@ def record_path(records_map, root_dir:str, record_type: str, **fmtargs):
 def private_path(private_dir: str, record_type: str, **fmtargs):
     return record_path(PUBLIC_RECORDS, private_dir, record_type, **fmtargs)
 
+def public_path(public_dir: str, record_type: str, **fmtargs):
+    return record_path(PUBLIC_RECORDS, public_dir, record_type, **fmtargs)
 
-### misc ###
-
-def make_session_with_retry(
-    total=10,
-    backoff_factor=0.5,
-    status_forcelist=(404, 500, 502, 503, 504),
-):
-    """Add retries with exponential backoff to API requests.
-    Usage:
-      session = make_session_with_retry()
-      resp = session.get(...)
-      resp.raise_for_status()
-    """
-    retry = Retry(
-        total=total,
-        read=total,
-        connect=total,
-        backoff_factor=backoff_factor,
-        status_forcelist=status_forcelist,
-        allowed_methods=frozenset(["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"]),
-        raise_on_status=False,
-    )
-
-    adapter = HTTPAdapter(max_retries=retry)
-    session = requests.Session()
-    session.mount("http://", adapter)
-    session.mount("https://", adapter)
-    return session
-
-
-### mint channel ###
-
-def mint_channel(egsync_api: str, sender_channel: str, new_channel_name: str, **fmtargs):
-    url = f"{egsync_api}/channels"
-    fmtargs['channel'] = sender_channel
-    fmtargs['new_channel_name'] = new_channel_name
-    url = f"{url}?{urlencode(fmtargs)}"
-    resp = make_session_with_retry().post(url, timeout=5) # TODO is some payload required?
-    resp.raise_for_status()  # raise if 4xx/5xx
 
 ### load and save single files ###
 
-def _public_record_url(egsync_api: str, record_type: str, **fmtargs) -> str:
-    url = f"{egsync_api}/public_records/{record_type}"
-    url = f"{url}?{urlencode(fmtargs)}" # TODO ok if no fmtargs?
-    return url
-
-def to_jsonable(obj):
-    """
-    Return a JSON-serializable structure (dict/list/str/...) using the same
-    rules as json.dumps(..., default=pydantic_encoder).
-    """
-    # First turn any custom types into JSON primitives using pydantic_encoder,
-    # then parse back into Python so `requests` / Flask `jsonify` can handle it.
-    return json.loads(json.dumps(obj, default=pydantic_encoder))
-
-def to_public_record(egsync_api: str, channel: str, record_type: str, obj, **fmtargs):
-    """
-    Remote version of to_public_record.
-    """
-    # serialize Python object → JSON-serializable dict
-    # raw = serialize.to_raw(obj).encode(serialize.BYTE_ENCODING)
-    payload = to_jsonable(obj)
-    # print(type(payload))
-    # pprint(egsync_api)
-    # pprint(payload)
-
-    fmtargs['channel'] = channel
-    url = _public_record_url(egsync_api, record_type, **fmtargs)
-    # print(url)
-    resp = make_session_with_retry().post(url, json=payload, timeout=5)
-    resp.raise_for_status()  # raise if 4xx/5xx
-
-def from_public_record(egsync_api: str, record_type: str, **fmtargs):
-    """
-    Remote version of from_public_record.
-    """
-    url = _public_record_url(egsync_api, record_type, **fmtargs)
-    resp = make_session_with_retry().get(url, timeout=5)
-    if resp.status_code == 404:
-        return None  # or raise a custom exception
-    resp.raise_for_status()
-
-    # raw = resp.json()
-    # print('resp json:'); pprint(raw)
-    raw = resp.text
-    # print('raw class:', type(raw))
-    # print('resp text:'); pprint(resp.text)
-
-    rtype, _, _ = PUBLIC_RECORDS[record_type]
-    # obj = serialize.from_dict(rtype, raw)
-    obj = serialize.from_raw(rtype, raw)
-    return obj
-
 # you probably want the public or private versions below
-def to_record(records_map, records_dir: str, record_type: str, obj, **fmtargs):
+def to_record(records_map, public_dir: str, record_type: str, obj, **fmtargs):
     (_, dname, fstr) = records_map[record_type]
-    dpath = join(records_dir, dname)
+    dpath = join(public_dir, dname)
     makedirs(dpath, exist_ok=True)
     # fmtargs['obj'] = obj # so we can use its fields too
     fname = fstr.format(**fmtargs)
     serialize.to_file(obj, fname, dpath)
 
 # you probably want the public or private versions below
-def from_record(records_map, records_dir: str, record_type: str, **fmtargs):
+def from_record(records_map, public_dir: str, record_type: str, **fmtargs):
     (rtype, dname, fstr) = records_map[record_type]
-    dpath = join(records_dir, dname)
+    dpath = join(public_dir, dname)
     fname = fstr.format(**fmtargs) + '.json'
     fpath = join(dpath, fname)
     return serialize.from_file(rtype, fpath)
 
+def to_public_record(public_dir: str, record_type: str, obj, **fmtargs):
+    return to_record(PUBLIC_RECORDS, public_dir, record_type, obj, **fmtargs)
+
 def to_private_record(private_dir: str, record_type: str, obj, **fmtargs):
     return to_record(PRIVATE_RECORDS, private_dir, record_type, obj, **fmtargs)
 
-# def from_public_record(egsync_api: str, record_type: str, **fmtargs):
-#     return from_record(PUBLIC_RECORDS, egsync_api, record_type, **fmtargs)
+def from_public_record(public_dir: str, record_type: str, **fmtargs):
+    return from_record(PUBLIC_RECORDS, public_dir, record_type, **fmtargs)
 
 def from_private_record(private_dir: str, record_type: str, **fmtargs):
     return from_record(PRIVATE_RECORDS, private_dir, record_type, **fmtargs)
@@ -314,140 +223,182 @@ def from_private_record(private_dir: str, record_type: str, **fmtargs):
 
 ### list all expected fmtargs for artifacts of a given type ###
 
-def list_record_fmtargs(egsync_api: str, record_type: str, n_expected=None, n_retries=3) -> List[dict]:
-    url = f"{egsync_api}/record_fmtargs/{record_type}"
-    resp = make_session_with_retry().get(url, timeout=5)
-    if resp.status_code == 404:
-        return None  # or raise a custom exception
-    resp.raise_for_status()
-    lst = resp.json()
-    # print(f'lst: {lst}')
-    if n_expected is not None:
-        n_actual = len(lst)
-        # print(f'n_actual: {n_actual} n_expected: {n_expected}')
-        if n_actual > n_expected:
-            raise Exception(f'list_record_fmtargs expected {n_expected} records, but got {n_actual}')
-        if n_actual < n_expected:
-            if n_retries < 1:
-                raise Exception(f'list_record_fmtargs expected {n_expected} records, but got {n_actual}')
-            else:
-                time.sleep(3)
-                return list_record_fmtargs(
-                    egsync_api,
-                    record_type,
-                    n_expected=n_expected,
-                    n_retries=n_retries-1
-                )
-    return lst
+def list_device_numbers(public_dir: str):
+    # TODO list the IDs instead?
+    device_dir = join(public_dir, PUBLIC_RECORDS['device'][1])
+    # TODO can this fail? there should always be at least one device
+    names = [splitext(n)[0].split('_')[-1] for n in listdir(device_dir)]
+    numbers = [int(name) for name in names]
+    return sorted(numbers)
 
-def load_records(egsync_api: str, record_type: str, n_expected=None):
-    "List all records of a particular record_type"
-    record_fmtargs = list_record_fmtargs(egsync_api, record_type, n_expected=n_expected)
-    records = []
-    for fmtargs in record_fmtargs:
-        record = from_public_record(egsync_api, record_type, **fmtargs)
-        records.append(record)
-    assert len(records) == len(record_fmtargs)
-    if n_expected is not None:
-        assert len(records) == n_expected
-    return records
+def list_ballot_ids(id_list_dir):
+    # TODO catch FileNotFoundError here? may not always want to swallow it
+    return [
+        splitext(n)[0]
+        for n in listdir(id_list_dir)
+        if n.startswith('ballot-') # TODO remove? may only be relevant for vim swapfiles
+    ]
+
+def list_submitted_ballot_fmtargs(public_dir):
+    submitted_dir = join(public_dir, PUBLIC_RECORDS['ballot_submitted'][1])
+    try:
+        ids = list_ballot_ids(submitted_dir)
+    except FileNotFoundError:
+        # probably there were no ballots at all
+        ids = []
+    return [{'ballot_id': i} for i in ids]
+
+def list_cast_ballot_fmtargs(public_dir):
+    cast_dir = join(public_dir, PUBLIC_RECORDS['cast_notice'][1])
+    try:
+        ids = list_ballot_ids(cast_dir)
+    except FileNotFoundError:
+        # probably there were no cast ballots
+        ids = []
+    return [{'ballot_id': i} for i in ids]
+
+def list_spoiled_ballot_fmtargs(public_dir):
+    spoiled_dir = join(public_dir, PUBLIC_RECORDS['ballot_spoiled'][1])
+    try:
+        ids = list_ballot_ids(spoiled_dir)
+    except FileNotFoundError:
+        # probably there were no spoiled ballots
+        ids = []
+    return [{'ballot_id': i} for i in ids]
+
+def list_guardian_pubkey_fmtargs(public_dir, n_guardians):
+    fmtargs_list = []
+    for n in range(1, n_guardians+1):
+        fmtargs_list.append({'guardian_id': f'guardian_{n}'})
+    return fmtargs_list
+
+def list_guardian_backup_fmtargs(public_dir, n_guardians):
+    fmtargs_list = []
+    for n in range(1, n_guardians+1):
+        guardian_id = f'guardian_{n}'
+        for backup_order in range(1, n_guardians+1):
+            if backup_order == n:
+                continue
+            fmtargs_list.append({
+                'guardian_id': guardian_id,
+                'backup_order': backup_order
+            })
+    return fmtargs_list
+
+def list_guardian_verification_fmtargs(public_dir, n_guardians):
+    return list_guardian_backup_fmtargs(public_dir, n_guardians)
 
 
 ### load sets of files ###
 
-# mainly for checking that the cast + spoiled ones add up to the total
-def load_submitted_ballots(egsync_api: str) -> List[SubmittedBallot]:
-    ballots: List[SubmittedBallot] = load_records(egsync_api, 'ballot_submitted')
+# you probably want the cast or spoiled versions below
+def load_ballots(
+        public_dir: str,
+        id_list_dir: str,
+        state: Optional[BallotBoxState]
+        ) -> List[SubmittedBallot]:
+    ballot_ids = list_ballot_ids(id_list_dir)
+    ballots = [
+        from_public_record(public_dir, 'ballot_submitted', ballot_id=bid)
+        for bid in ballot_ids
+    ]
+    # TODO is this right? seems too simple and hacky
+    if state is not None:
+        for b in ballots:
+            b.state = state
     return ballots
 
-# TODO dry this out
-def load_cast_ballots(egsync_api: str) -> List[SubmittedBallot]:
-    # Steps to load cast ballots:
-    # 1. load 'cast_notice' objects and get their 'ballot_id's
-    # 2. load 'ballot_submitted' objects for those ids
-    # 3. set their states to CAST
-    cast_notices: List[CastNotice] = load_records(egsync_api, 'cast_notice')
-    cast_ballot_ids: List[str] = [cn.ballot_id for cn in cast_notices]
-    cast_ballots: List[SubmittedBallot] = [
-        from_public_record(egsync_api, 'ballot_submitted', ballot_id=cbi)
-        for cbi in cast_ballot_ids
-    ]
-    for ballot in cast_ballots:
-        ballot.state = BallotBoxState.CAST
-    return cast_ballots
+# mainly for checking that the cast + spoiled ones add up to the total
+def load_submitted_ballots(public_dir: str) -> List[SubmittedBallot]:
+    submitted_dir = join(public_dir, PUBLIC_RECORDS['ballot_submitted'][1])
+    try:
+        return load_ballots(public_dir, submitted_dir, None)
+    except FileNotFoundError:
+        # probably no submitted ballots
+        return []
 
-# TODO dry this out
-def load_spoiled_ballots(egsync_api: str) -> List[SubmittedBallot]:
-    # Steps to load spoiled ballots:
-    # 1. load 'ballot_spoiled' records and get their 'ballot_id's
-    # 2. load 'ballot_submitted' objects for those ids
-    # 3. set their states to SPOILED
-    spoiled_ballots: List[CiphertextBallot] = load_records(egsync_api, 'ballot_spoiled')
-    spoiled_ballot_ids: List[str] = [sb.object_id for sb in spoiled_ballots]
-    submitted_ballots: List[SubmittedBallot] = [
-        from_public_record(egsync_api, 'ballot_submitted', ballot_id=sbi)
-        for sbi in spoiled_ballot_ids
-    ]
-    for ballot in submitted_ballots:
-        ballot.state = BallotBoxState.SPOILED
-    return submitted_ballots
+def load_cast_ballots(public_dir: str) -> List[SubmittedBallot]:
+    cast_dir = join(public_dir, PUBLIC_RECORDS['cast_notice'][1])
+    try:
+        return load_ballots(public_dir, cast_dir, BallotBoxState.CAST)
+    except FileNotFoundError:
+        # no cast ballots
+        return []
 
-def load_spoiled_results(egsync_api: str) -> List[PlaintextTally]:
-    # spoiled_dir = join(public_dir, PUBLIC_RECORDS['spoiled_result'][1])
-    # try:
-    #     spoiled_ids = [
-    #         splitext(n)[0]
-    #         for n in listdir(spoiled_dir)
-    #         if n.startswith('ballot-')
-    #     ]
-    # except FileNotFoundError:
-    #     spoiled_ids = []
-    # spoiled_results = [
-    #     from_public_record(public_dir, 'spoiled_result', ballot_id=i)
-    #     for i in spoiled_ids
-    # ]
-    # return spoiled_results
-    spoiled_results: List[PlaintextTally] = load_records(egsync_api, 'spoiled_result')
+def load_spoiled_ballots(public_dir: str) -> List[SubmittedBallot]:
+    spoiled_dir = join(public_dir, PUBLIC_RECORDS['ballot_spoiled'][1])
+    try:
+        return load_ballots(public_dir, spoiled_dir, BallotBoxState.SPOILED)
+    except FileNotFoundError:
+        # no spoiled ballots
+        return []
+
+def load_spoiled_results(public_dir: str) -> List[PlaintextTally]:
+    spoiled_dir = join(public_dir, PUBLIC_RECORDS['spoiled_result'][1])
+    try:
+        spoiled_ids = [
+            splitext(n)[0]
+            for n in listdir(spoiled_dir)
+            if n.startswith('ballot-')
+        ]
+    except FileNotFoundError:
+        spoiled_ids = []
+    spoiled_results = [
+        from_public_record(public_dir, 'spoiled_result', ballot_id=i)
+        for i in spoiled_ids
+    ]
     return spoiled_results
 
-def load_guardian_pubkeys(egsync_api: str) -> List[ElectionPublicKey]:
-    ceremony_details: CeremonyDetails = from_public_record(egsync_api, 'ceremony_details')
-    n_guardians: int = ceremony_details.number_of_guardians
-    guardian_pubkeys: List[ElectionPublicKey] = load_records(
-        egsync_api,
-        'guardian_pubkey',
-        n_expected=n_guardians
-    )
-    assert len(guardian_pubkeys) == n_guardians
+def load_guardian_pubkeys(public_dir: str) -> List[ElectionPublicKey]:
+    # for now, we just assume they're named sequentially
+    # TODO come up with a cleaner way
+    guardian_pubkeys: List[ElectionPublicKey] = []
+    guardian_number = 0
+    while True:
+        guardian_number += 1
+        try:
+            pubkey = from_public_record(
+                public_dir, 'guardian_pubkey',
+                guardian_id=f'guardian_{guardian_number}'
+            )
+            guardian_pubkeys.append(pubkey)
+        except FileNotFoundError:
+            break
+    assert len(guardian_pubkeys) > 0
     return guardian_pubkeys
 
-def load_guardian_pubkeys_dict(egsync_api: str) -> Dict[GuardianId, ElectionPublicKey]:
-    pubkeys_list = load_guardian_pubkeys(egsync_api)
+def load_guardian_pubkeys_dict(public_dir: str) -> Dict[GuardianId, ElectionPublicKey]:
+    pubkeys_list = load_guardian_pubkeys(public_dir)
     pubkeys_dict = {key.owner_id: key for key in pubkeys_list}
     return pubkeys_dict
 
-# TODO rewrite this
-def load_designated_backups(egsync_api: str, guardian_id: GuardianId) -> Dict[str, ElectionPartialKeyBackup]:
-    ceremony_details: CeremonyDetails = from_public_record(egsync_api, 'ceremony_details')
+def load_designated_backups(
+        public_dir: str,
+        guardian_id: GuardianId) -> Dict[str, ElectionPartialKeyBackup]:
+    # same as above: assume they're named sequentially
     designated_backups: Dict[str, ElectionPartialKeyBackup] = {}
     guardian_number = int(guardian_id.split('_')[-1])
-    for backup_order in range(1, ceremony_details.number_of_guardians+1):
+    backup_order = 0
+    while True:
+        backup_order += 1
         if backup_order == guardian_number:
             continue # skip self
-        backup = from_public_record(
-            egsync_api, 'guardian_backup',
-            guardian_id=f'guardian_{backup_order}',
-            backup_order=guardian_number
-        )
-        # print(f'backup {guardian_id} {backup_order}: {backup}')
-        designated_backups[backup.owner_id] = backup
-    # assert len(designated_backups) == ceremony_details.number_of_guardians - 1
+        try:
+            backup = from_public_record(
+                public_dir, 'guardian_backup',
+                guardian_id=f'guardian_{backup_order}',
+                backup_order=guardian_number
+            )
+            designated_backups[backup.owner_id] = backup
+        except FileNotFoundError:
+            break
+    assert len(designated_backups) > 0
     return designated_backups
 
 # you probably want the tally or spoiled ballot specific versions below
 def load_decryption_shares(
         share_type: str,
-        egsync_api: str,
+        public_dir: str,
         guardian_count: int,
         **fmtargs
     ) -> Dict[GuardianId, DecryptionShare]:
@@ -458,16 +409,13 @@ def load_decryption_shares(
         guardian_id = f'guardian_{n}'
         try:
             share = from_public_record(
-                egsync_api, share_type,
+                public_dir, share_type,
                 guardian_id=guardian_id,
                 **fmtargs
             )
             shares[guardian_id] = share
         except FileNotFoundError:
-            msg = f'WARNING {guardian_id} {share_type} missing'
-            if len(fmtargs) > 0:
-                msg += f' {fmtargs}'
-            print(msg)
+            print(f'WARNING {guardian_id} tally share missing')
     # assert len(shares) > 0
 
     # This shouldn't be required, but the ElectionGuard code actually goes into
@@ -478,14 +426,14 @@ def load_decryption_shares(
 
     return shares
 
-def load_tally_shares(egsync_api, guardian_count):
+def load_tally_shares(public_dir, guardian_count):
     return load_decryption_shares(
-        'tally_share', egsync_api, guardian_count
+        'tally_share', public_dir, guardian_count
     )
 
-def load_spoiled_shares(egsync_api, guardian_count, spoiled_id):
+def load_spoiled_shares(public_dir, guardian_count, spoiled_id):
     return load_decryption_shares(
-        'spoiled_share', egsync_api, guardian_count,
+        'spoiled_share', public_dir, guardian_count,
         spoiled_id=spoiled_id
     )
 
