@@ -1,6 +1,7 @@
 import json
 import pytest
 from egc import *
+from data.static_records import *
 import logging
 from pathlib import Path
 from typing import Tuple
@@ -33,21 +34,24 @@ def test_load_static_transactions(
                 assert isinstance(rec, PublicRecord)
 
 @pytest.mark.local
-def test_load_static_files_by_cid(
+def test_load_static_record_pairs(
         static_records_list: list[PublicRecord],
-        static_files_by_cid: dict[str, Path],
     ):
 
-    # There are 79 records, but the verifications all have the same
-    # CID because they agree exactly.
-    # TODO add something unique to prevent that?
-    # TODO lean more on the reverse path -> cid lookup instead?
-    assert len(static_records_list) == 79
-    assert len(static_files_by_cid) == 75
+    pairs = load_static_record_pairs(static_records_list)
 
-    for rec in static_records_list:
+    assert len(static_records_list) == 78
+    assert len(pairs) == 78
+
+    cid_strs = set()
+
+    for (rec, (obj, mdata)) in zip(static_records_list, pairs):
         cid_str = ipfs_cid_to_string(rec.ipfs_cid)
-        path = static_files_by_cid[cid_str]
-        assert isinstance(path, Path)
-        with path.open('r') as f:
-            assert json.load(f)
+        cid_strs.add(cid_str)
+        assert isinstance(rec, PublicRecord)
+        assert isinstance(obj, dict)
+        assert isinstance(mdata, PublicRecordMetadata)
+
+    # There are 78 records, but the 5 verifications all have the same
+    # CID because they agree exactly.
+    assert len(cid_strs) == 74

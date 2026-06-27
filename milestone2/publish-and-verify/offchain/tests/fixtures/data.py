@@ -17,10 +17,6 @@ def static_transactions():
     return STATIC_TRANSACTIONS
 
 @global_fixture
-def static_files_by_cid() -> dict[str, Path]:
-    return STATIC_FILES_BY_CID
-
-@global_fixture
 def subchannel_ids(static_transactions) -> list[ChannelId]:
     return static_transactions['admin'][2][0].channels
 
