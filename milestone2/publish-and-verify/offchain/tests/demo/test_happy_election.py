@@ -3,6 +3,7 @@ from dataclasses import replace
 from pycardano import *
 from egc import *
 from helpers import *
+from data.static_records import *
 import logging
 import time
 
@@ -79,8 +80,9 @@ def admin_tx1(
         admin_tx0: Transaction,
         static_transactions,
     ) -> Transaction:
+    pairs = load_static_record_pairs(static_transactions['admin'][1][1])
     tx = admin.post_public_records(
-        new_records = static_transactions['admin'][1][1],
+        new_record_pairs = pairs,
         new_phase = ElectionConfigPhase(ConfigOnboardingPhase()),
     )
     LOG.debug(f'admin_tx1: {tx}')
@@ -206,7 +208,8 @@ def post_tx(
     ) -> Transaction:
     ch_str = node_.channel_str()
     (_, recs) = static_transactions[ch_str][tx_index]
-    tx = node_.post_public_records(new_records=recs)
+    pairs = load_static_record_pairs(recs)
+    tx = node_.post_public_records(new_record_pairs=pairs)
     LOG.debug(f'{ch_str}_tx{tx_index}: {tx}')
     node_.wait_for_confirmation(tx)
     return tx
@@ -403,8 +406,9 @@ def admin_tx3(
         device1_tx1: Transaction,
         static_transactions,
     ) -> Transaction:
+    pairs = load_static_record_pairs(static_transactions['admin'][3][1])
     tx = admin.post_public_records(
-        new_records = static_transactions['admin'][3][1],
+        new_record_pairs = pairs,
         new_phase = ElectionVotingPhase(),
     )
     LOG.debug(f'admin_tx3: {tx}')
@@ -519,42 +523,6 @@ def test_phase3_voting(
 ## =================================
 
 @per_election_fixture
-def guardian1_s4(guardian1_s3, static_transactions) -> ChannelState:
-    return post_state(static_transactions, guardian1_s3, 'guardian', 1, 4)
-
-@per_election_fixture
-def guardian2_s4(guardian2_s3, static_transactions) -> ChannelState:
-    return post_state(static_transactions, guardian2_s3, 'guardian', 2, 4)
-
-@per_election_fixture
-def guardian3_s4(guardian3_s3, static_transactions) -> ChannelState:
-    return post_state(static_transactions, guardian3_s3, 'guardian', 3, 4)
-
-@per_election_fixture
-def guardian1_tx4(guardian1_tx3, guardian1, static_transactions):
-    return post_tx(static_transactions, guardian1, 4)
-
-@per_election_fixture
-def guardian2_tx4(guardian2_tx3, guardian2, static_transactions):
-    return post_tx(static_transactions, guardian2, 4)
-
-@per_election_fixture
-def guardian3_tx4(guardian3_tx3, guardian3, static_transactions):
-    return post_tx(static_transactions, guardian3, 4)
-
-@pytest.mark.testnet
-def test_guardian1_tx4(guardian1, guardian1_s3, guardian1_tx4):
-    test_tx(guardian1, guardian1_s3, guardian1_tx4)
-
-@pytest.mark.testnet
-def test_guardian2_tx4(guardian2, guardian2_s3, guardian2_tx4):
-    test_tx(guardian2, guardian2_s3, guardian2_tx4)
-
-@pytest.mark.testnet
-def test_guardian3_tx4(guardian3, guardian3_s3, guardian3_tx4):
-    test_tx(guardian3, guardian3_s3, guardian3_tx4)
-
-@per_election_fixture
 def admin_s5(
         admin_s4: ChannelState,
         static_transactions,
@@ -572,13 +540,11 @@ def admin_s5(
 def admin_tx5(
         admin: AdminNode,
         admin_tx4: Transaction,
-        guardian1_tx4: Transaction,
-        guardian2_tx4: Transaction,
-        guardian3_tx4: Transaction,
         static_transactions,
     ) -> Transaction:
+    pairs = load_static_record_pairs(static_transactions['admin'][5][1])
     tx = admin.post_public_records(
-        new_records = static_transactions['admin'][5][1],
+        new_record_pairs = pairs,
         new_phase = ElectionResultsPhase(ResultsDecryptPhase()),
     )
     LOG.debug(f'admin_tx5: {tx}')
@@ -588,6 +554,42 @@ def admin_tx5(
 @pytest.mark.testnet
 def test_admin_tx5(admin, admin_s5, admin_tx5):
     test_tx(admin, admin_s5, admin_tx5)
+
+@per_election_fixture
+def guardian1_s4(guardian1_s3, static_transactions) -> ChannelState:
+    return post_state(static_transactions, guardian1_s3, 'guardian', 1, 4)
+
+@per_election_fixture
+def guardian2_s4(guardian2_s3, static_transactions) -> ChannelState:
+    return post_state(static_transactions, guardian2_s3, 'guardian', 2, 4)
+
+@per_election_fixture
+def guardian3_s4(guardian3_s3, static_transactions) -> ChannelState:
+    return post_state(static_transactions, guardian3_s3, 'guardian', 3, 4)
+
+@per_election_fixture
+def guardian1_tx4(guardian1_tx3, admin_tx5, guardian1, static_transactions):
+    return post_tx(static_transactions, guardian1, 4)
+
+@per_election_fixture
+def guardian2_tx4(guardian2_tx3, admin_tx5, guardian2, static_transactions):
+    return post_tx(static_transactions, guardian2, 4)
+
+@per_election_fixture
+def guardian3_tx4(guardian3_tx3, admin_tx5, guardian3, static_transactions):
+    return post_tx(static_transactions, guardian3, 4)
+
+@pytest.mark.testnet
+def test_guardian1_tx4(guardian1, guardian1_s3, guardian1_tx4):
+    test_tx(guardian1, guardian1_s3, guardian1_tx4)
+
+@pytest.mark.testnet
+def test_guardian2_tx4(guardian2, guardian2_s3, guardian2_tx4):
+    test_tx(guardian2, guardian2_s3, guardian2_tx4)
+
+@pytest.mark.testnet
+def test_guardian3_tx4(guardian3, guardian3_s3, guardian3_tx4):
+    test_tx(guardian3, guardian3_s3, guardian3_tx4)
 
 @pytest.mark.testnet
 def test_phase4_tally(
@@ -632,8 +634,9 @@ def admin_tx6(
         admin_tx5: Transaction,
         static_transactions,
     ) -> Transaction:
+    pairs = load_static_record_pairs(static_transactions['admin'][6][1])
     tx = admin.post_public_records(
-        new_records = static_transactions['admin'][6][1],
+        new_record_pairs = pairs,
         new_phase = ElectionVerifyPhase(),
     )
     LOG.debug(f'admin_tx6: {tx}')
@@ -740,8 +743,9 @@ def admin_tx7(
         admin_tx6: Transaction,
         static_transactions,
     ) -> Transaction:
+    pairs = load_static_record_pairs(static_transactions['admin'][7][1])
     tx = admin.post_public_records(
-        new_records = static_transactions['admin'][7][1],
+        new_record_pairs = pairs,
         new_phase = ElectionFinalizePhase(),
     )
     LOG.debug(f'admin_tx7: {tx}')
