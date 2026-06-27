@@ -13,11 +13,6 @@ import logging
 LOG = logging.getLogger(__name__)
 
 
-# TODO hook subscriber callback(s) to ipfs fetch
-# TODO extend fetch callbacks to save files -> private dir
-# TODO wrapper script: call verifier docker container on private dir after
-
-
 # TODO set dynamically
 # IPFS_MADDR = os.environ.get('IPFS_MADDR', '/dns4/publish-and-verify-ipfs-1/tcp/5001')
 IPFS_MADDR = os.environ.get('IPFS_MADDR', '/dns4/127.0.0.1/tcp/5001')

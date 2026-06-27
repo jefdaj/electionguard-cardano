@@ -40,6 +40,7 @@ from pycardano import *
 
 
 # TODO use https://pypi.org/project/kupo-py/ ?
+# TODO assert that record metadata matches actual posting channel_id
 
 
 # The port will be incremented if in use.
