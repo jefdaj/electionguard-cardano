@@ -540,9 +540,6 @@ def admin_s5(
 def admin_tx5(
         admin: AdminNode,
         admin_tx4: Transaction,
-        guardian1_tx4: Transaction,
-        guardian2_tx4: Transaction,
-        guardian3_tx4: Transaction,
         static_transactions,
     ) -> Transaction:
     pairs = load_static_record_pairs(static_transactions['admin'][5][1])

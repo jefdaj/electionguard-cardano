@@ -117,7 +117,6 @@ def assert_nodes_converge(
                 state_str = node_for_id.channel_str()
                 actual_state = node_to_test.current_state(node_for_id.channel_id())
                 try:
-                    # TODO why isn't pytest creating nice diffs here?
                     assert expected_state == actual_state
                     n_states_correct += 1
                 except AssertionError as e:
