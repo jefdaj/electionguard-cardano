@@ -142,7 +142,13 @@ def record_path(metadata: PublicRecordMetadata, pub_dir: Path) -> Path:
     (dname, fstr) = PUBLIC_RECORD_TYPES[m_type]
     LOG.debug(f'dname: {dname}')
     LOG.debug(f'fstr: {fstr}')
-    fname = fstr.format(**vars(metadata))
+    var_strs = {}
+    for (k,v) in vars(metadata).items():
+        if isinstance(v, bytes):
+            v = v.decode('utf-8')
+        var_strs[k] = v
+    LOG.debug(f'var_strs: {var_strs}')
+    fname = fstr.format(**var_strs)
     LOG.debug(f'fname: {fname}')
     path = (pub_dir / dname / fname).with_suffix('.json')
     LOG.debug(f'path: {path}')
