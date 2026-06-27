@@ -27,19 +27,19 @@ PUBLIC_RECORD_TYPES = {
         # 'guardian_pubkey'
         # ElectionPublicKey,
         '1_config/2_ceremony/1_pubkeys',
-        'guardian{guardian_number}'
+        'guardian_{guardian_number}'
     ),
     GuardianBackup: (
         # 'guardian_backup'
         # ElectionPartialKeyBackup,
         '1_config/2_ceremony/2_backups',
-        'guardian{guardian_number}_backup{backup_order}'
+        'guardian_{guardian_number}_backup_{backup_order}'
     ),
     GuardianVerification: (
         # 'guardian_verification'
         # ElectionPartialKeyVerification,
         '1_config/2_ceremony/3_verifications',
-        'guardian{guardian_number}_backup{backup_order}'
+        'guardian_{guardian_number}_backup_{backup_order}'
     ),
     JointKey: (
         # 'joint_key'
@@ -63,7 +63,7 @@ PUBLIC_RECORD_TYPES = {
         # 'device'
         # EncryptionDevice,
         '1_config/4_devices',
-        'device{device_number}'
+        'device_{device_number}'
     ),
     BallotSubmitted: (
         # 'ballot_submitted'
@@ -99,13 +99,13 @@ PUBLIC_RECORD_TYPES = {
         # 'tally_share'
         # DecryptionShare,
         '3_results/2_decrypt/1_shares/1_tally',
-        'tally_guardian{guardian_number}'
+        'tally_guardian_{guardian_number}'
     ),
     SpoiledShare: (
         # 'spoiled_share'
         # DecryptionShare,
         '3_results/2_decrypt/1_shares/2_spoiled',
-        '{spoiled_id}_guardian{guardian_number}'
+        '{spoiled_id}_guardian_{guardian_number}'
     ),
     # TODO rename tally_result?
     PlaintextTally: (
