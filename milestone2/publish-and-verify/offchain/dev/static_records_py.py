@@ -2,7 +2,7 @@
 
 # Usage:
 # nix develop .#offchain
-# ./dev/static_records_py.py > tests/data/static_records/code.py
+# ./dev/static_records_py.py > tests/data/static_records/generated.py
 
 # TODO more standard logging?
 # TODO fix underscores in node names

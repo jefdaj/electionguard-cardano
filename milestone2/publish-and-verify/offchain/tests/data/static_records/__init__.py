@@ -1,10 +1,9 @@
-from .code import STATIC_PHASES
-from .code import STATIC_TRANSACTIONS
+from .generated import STATIC_PHASES
+from .generated import STATIC_TRANSACTIONS
 from egc import *
 
 import json
 from pathlib import Path
-
 import logging
 
 
