@@ -2,6 +2,7 @@
 
 echo 'Uploading static files to Cardano + IPFS.'
 echo 'Run verify.sh during or after to fetch + verify them.'
+echo
 
 export EGC_MODE=test
-pytest -v -k happy_election
+pytest -v -m testnet -k happy_election
