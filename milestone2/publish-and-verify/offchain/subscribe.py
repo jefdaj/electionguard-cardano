@@ -53,9 +53,10 @@ def log_and_fetch(event: ChannelEvent):
     if not event.output_state:
         return
     new_records = event.output_state.state.new_records
+    ch_str = channel_id_to_string(event.channel_id)
     paths = ipfs_fetch_records_to_file_sync(new_records, PUB_DIR)
-    for (r,p) in zip(new_records, paths):
-        LOG.info(f'{r} -> {p}')
+    for (r,_) in zip(new_records, paths):
+        LOG.info(f'{ch_str}: {r}')
 
 sub = ElectionSubscriber(
     sub_cfg,
