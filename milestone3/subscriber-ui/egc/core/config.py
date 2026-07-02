@@ -23,7 +23,7 @@ MODE = ElectionMode.current()
 IS_TEST = MODE is ElectionMode.TEST
 
 PLUTUS_JSON_PATH_PROD = (
-    Path(__file__).parents[3].absolute() /
+    Path(__file__).parents[2].absolute() /
     'onchain/election-plutus.json'
 )
 PLUTUS_JSON_PATH_TEST = Path(
