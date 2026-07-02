@@ -38,4 +38,27 @@ ENTRIES = [
     Entry(24, 47, 'WARNING', 'High temperature', '2026-03-03 10:18:45'),
 ]
 
+# Query format should match get_state_tree so they can be filtered together.
+def get_log_entries(query=None):
+    # will come from kupo indexer
+    entries = ENTRIES
+    if query is None or len(query) == 0:
+        return entries
+    entries = [e for e in entries if query.lower() in repr(e).lower()]
+    # for e in entries:
+    #     print(repr(e))
+    return entries
+
+# Query format should match get_log_entries so they can be filtered together.
+def get_state_tree(query=None):
+    # server-side parse of chain
+    state: Dict[str, Dict[str, int]] = {}
+    for e in get_log_entries(query):
+        if not e.type in state:
+            state[e.type] = {}
+        if not e.summary in state[e.type]:
+            state[e.type][e.summary] = 0
+        state[e.type][e.summary] += 1
+    return state
+
 
