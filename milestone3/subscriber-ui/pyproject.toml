@@ -1,0 +1,7 @@
+[tool.hatch.build.targets.wheel]
+packages = ["egc"]
+# non-.py files under the package are included by default with hatchling;
+# for setuptools use include_package_data + MANIFEST.in or package-data globs
+
+[tool.setuptools.package-data]
+"egc.webui" = ["static/**/*", "templates/**/*"]
