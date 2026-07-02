@@ -43,7 +43,7 @@ services:
   # In this test there's just one IPFS container.
   # I've tested already that a more realistic setup with a bunch of them also works.
   ipfs:
-    image: ipfs/kubo:v0.34.1 # TODO upgrade to current version
+    image: ipfs/kubo:v0.42.0
     volumes:
       - ./data/ipfs:/data/ipfs
     ports:
