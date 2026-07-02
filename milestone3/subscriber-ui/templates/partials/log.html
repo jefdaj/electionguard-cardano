@@ -1,0 +1,14 @@
+<div id="log-container">
+<ul class="log">
+  {% for e in entries %}
+    <li class="entry" id="entry-{{ e.id }}">
+      id: {{ e.id }}
+      height: {{ e.height }}
+      type: {{ e.type }}
+      <br/>summary: {{ e.summary }}
+      <br/>timestamp: {{ e.timestamp }}
+    </li>
+  {% else %}
+  {% endfor %}
+</ul>
+</div>

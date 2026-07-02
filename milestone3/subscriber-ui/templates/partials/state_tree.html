@@ -1,0 +1,10 @@
+<div class="state-tree">
+  {% for e_type in state.keys() %}
+    <p>{{ e_type }}</p>
+    <ul id="type-{{ e_type.lower() }}">
+      {% for k, v in state[e_type].items() %}
+        <li id="entry-{{ hash(k) }}">{{ k }}: {{ v }}</li>
+      {% endfor %}
+    </ul>
+  {% endfor %}
+</div>

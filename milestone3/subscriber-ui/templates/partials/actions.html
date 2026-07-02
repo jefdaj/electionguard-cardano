@@ -1,0 +1,12 @@
+<p>Role: {{ role|capitalize }}</p>
+<div class="actions">
+  {% for action in actions %}
+    <button
+      class="btn"
+      hx-get="{{ url_for('action_form', action_id=action.id) }}"
+      hx-target="#modal-root"
+      hx-swap="innerHTML">
+      {{ action.label }}
+    </button>
+  {% endfor %}
+</div>
