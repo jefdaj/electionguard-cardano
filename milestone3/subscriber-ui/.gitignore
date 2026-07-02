@@ -1,6 +1,9 @@
 # Dev wallet, and log of all generated private keys.
 keys/*
 
+# Temporary election context json files
+election-*.json
+
 *.log
 
 # Docker data

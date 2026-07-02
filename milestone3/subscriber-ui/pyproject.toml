@@ -47,10 +47,10 @@ pythonpath = [".", "tests"]
 asyncio_mode = "auto"
 testpaths = [
   "tests/setup",
+  "tests/webui",
   "tests/unit",
   "tests/integration",
   "tests/demo",
-  "tests/webui",
 ]
 
 markers = [

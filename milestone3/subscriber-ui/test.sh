@@ -8,6 +8,7 @@
 # and to log generated keys to <keys_dir>/test-keys.log.
 # Note that it doesn't control testnet vs mainnet,
 # and doesn't affect BurnTestTokens.
+# TODO unify with TESTING in the webui?
 export EGC_MODE=test
 
 EXTRA_ARGS="$@"
@@ -17,7 +18,7 @@ pytest -vv -m 'local' $EXTRA_ARGS 2>&1 | tee test.log
 exit_code=$?
 
 echo "running webui tests"
-pytest -vv webui $EXTRA_ARGS 2>&1 | tee test.log
+pytest -vv tests/webui $EXTRA_ARGS 2>&1 | tee test.log
 exit_code=$?
 
 # Exit code 5 = no tests collected, which is fine.
