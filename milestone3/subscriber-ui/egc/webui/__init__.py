@@ -1,7 +1,8 @@
 from quart import Quart, Config
 from quart import render_template, request
 
-from ..core import *
+# TODO remove pycardano.hash from core exports to avoid shadowing system one
+from ..core import Entry, get_log_entries, get_state_tree
 
 def create_app(config=None):
     app = Quart(__name__)  # static_folder/template_folder resolve to package dir
