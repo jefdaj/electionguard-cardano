@@ -95,6 +95,7 @@
                 echo "kupo $(kupo --version)"
                 echo "$(python --version)"
                 echo "pycardano $(python -c "import importlib.metadata as m; print(m.version('pycardano'))")"
+                python -m egc
               '';
 
               PYTHONDONTWRITEBYTECODE = "1";

@@ -1,23 +1,70 @@
-[tool.hatch.build.targets.wheel]
-packages = ["egc"]
-# non-.py files under the package are included by default with hatchling;
-# for setuptools use include_package_data + MANIFEST.in or package-data globs
+[project]
+name = "egc"
+version = "0.3.0"
+description = "ElectionGuard + Cardano Subscriber WebUI"
+requires-python = ">=3.9"
+dependencies = [
+    "pycardano>=0.9.0",
+    "aioipfs",
+    "cbor2",
+    "quart",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio",
+    "pytest-mock",
+]
 
 [tool.setuptools.package-data]
 "egc.webui" = ["static/**/*", "templates/**/*"]
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
 
-[project]
-name = "egc"
-version = "0.0.0"
-dependencies = ["quart"]
+# TODO try hatchling?
+# [build-system]
+# requires = ["hatchling"]
+# build-backend = "hatchling.build"
+# [tool.hatch.build.targets.wheel]
+# packages = ["egc"]
+# non-.py files under the package are included by default with hatchling;
+# for setuptools use include_package_data + MANIFEST.in or package-data globs
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/egc"]
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["egc*"]
 
 [tool.pytest.ini_options]
-asyncio_mode = "auto"
-testpaths = ["tests"]
+
+pythonpath = ["tests"]
+
+# Run tests in a particular non-alphabetical order.
+# I also run tests marked local before the ones marked testnet,
+# but that's controlled via CLI args in test.sh
+# asyncio_mode = "auto"
+testpaths = [
+  "tests",
+  # "tests/setup",
+  # "tests/unit",
+  # "tests/integration",
+  # "tests/demo"
+]
+
+markers = [
+  "local: marks tests as local (not requiring testnet) tests",
+  "testnet: marks tests as (slow) testnet tests",
+]
+
+# Keep the printed output clean but don't hide errors
+log_cli = false
+log_cli_level = "INFO"
+
+# Write all logs to a file.
+# See also tests/conftest.py for per-component log level tweaks.
+log_file = "pytest.log"
+log_file_level = "DEBUG"
+log_format = "%(asctime)s [%(levelname)s] %(name)s (%(filename)s:%(lineno)d): %(message)s"
+log_date_format = "%Y-%m-%d %H:%M:%S"
