@@ -5,3 +5,19 @@ packages = ["egc"]
 
 [tool.setuptools.package-data]
 "egc.webui" = ["static/**/*", "templates/**/*"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "egc"
+version = "0.0.0"
+dependencies = ["quart"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/egc"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

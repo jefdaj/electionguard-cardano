@@ -59,14 +59,14 @@ app = Quart(__name__, static_folder='static', static_url_path='/static')
 # allow hash() to be used in templates
 app.jinja_env.globals.update(hash=hash)
 
-@app.get("/")
-async def index():
-    return await render_template("index.html")
+# @app.get("/")
+# async def index():
+#     return await render_template("index.html")
 
-@app.get("/log")
-async def log_fragment():
-    entries = get_log_entries()
-    return await render_template("partials/log.html", entries=entries)
+# @app.get("/log")
+# async def log_fragment():
+#     entries = get_log_entries()
+#     return await render_template("partials/log.html", entries=entries)
 
 # State tree commented because I want to build the log + filter first
 
@@ -129,15 +129,15 @@ async def filter_results():
 #     # Close modal and maybe show a toast/status
 #     return render_template("partials/modal_result.html", result=result)
 
-async def main():
-    config = Config()
-    config.bind = ["0.0.0.0:5000"]
+# async def main():
+#     config = Config()
+#     config.bind = ["0.0.0.0:5000"]
+# 
+#     # For production, increase workers based on CPU cores
+#     # Recommended: (2 * num_cores) + 1
+#     config.workers = 1
+# 
+#     await serve(app, config)
 
-    # For production, increase workers based on CPU cores
-    # Recommended: (2 * num_cores) + 1
-    config.workers = 1
-
-    await serve(app, config)
-
-if __name__ == "__main__":
-    asyncio.run(main())
+# if __name__ == "__main__":
+#     asyncio.run(main())
