@@ -1,0 +1,7 @@
+*.log
+
+# Docker data
+data/*
+
+**/__pycache__
+**/*.pyc
