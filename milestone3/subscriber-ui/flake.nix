@@ -62,6 +62,7 @@
         pygments
         watchdog
         pytest
+        pytest-asyncio
         # pytest-instafail
         py-multiformats-cid # exposed on its own to help generate static CID examples
         rich
@@ -95,7 +96,7 @@
                 echo "kupo $(kupo --version)"
                 echo "$(python --version)"
                 echo "pycardano $(python -c "import importlib.metadata as m; print(m.version('pycardano'))")"
-                python -m egc
+                # python -m egc
               '';
 
               PYTHONDONTWRITEBYTECODE = "1";

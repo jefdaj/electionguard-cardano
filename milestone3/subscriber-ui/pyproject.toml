@@ -39,12 +39,12 @@ include = ["egc*"]
 
 [tool.pytest.ini_options]
 
-pythonpath = ["tests"]
+pythonpath = [".", "tests"]
 
 # Run tests in a particular non-alphabetical order.
 # I also run tests marked local before the ones marked testnet,
 # but that's controlled via CLI args in test.sh
-# asyncio_mode = "auto"
+asyncio_mode = "auto"
 testpaths = [
   "tests",
   # "tests/setup",
