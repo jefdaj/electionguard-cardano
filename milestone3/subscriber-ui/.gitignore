@@ -1,3 +1,6 @@
+# Dev wallet, and log of all generated private keys.
+keys/*
+
 *.log
 
 # Docker data

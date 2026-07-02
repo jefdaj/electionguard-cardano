@@ -46,11 +46,11 @@ pythonpath = [".", "tests"]
 # but that's controlled via CLI args in test.sh
 asyncio_mode = "auto"
 testpaths = [
-  "tests",
-  # "tests/setup",
-  # "tests/unit",
-  # "tests/integration",
-  # "tests/demo"
+  "tests/setup",
+  "tests/unit",
+  "tests/integration",
+  "tests/demo",
+  "tests/webui",
 ]
 
 markers = [
