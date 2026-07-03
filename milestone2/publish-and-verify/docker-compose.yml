@@ -22,8 +22,9 @@ services:
       - shared-net
 
   ogmios:
-    # TODO does ktorz normally publish "latest" from the dev branch?
-    # image: cardanosolutions/ogmios:v6.14.0
+    # The newest Ogmios release supports node 11 now, but it breaks the latest
+    # PyCardano! So I'm keeping the custom hacky image a while longer:
+    # image: cardanosolutions/ogmios:v7.0.0
     image: 3a21f883f83e # custom version i built for now
     restart: on-failure
     command: [
