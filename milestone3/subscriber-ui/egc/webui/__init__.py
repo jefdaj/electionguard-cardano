@@ -23,6 +23,9 @@ def create_app(config=None):
     from .blueprints.partials import bp as partials_bp
     app.register_blueprint(partials_bp, url_prefix="/partials")
 
+    from .blueprints.history import bp as history_bp
+    app.register_blueprint(history_bp, url_prefix="/history")
+
     # allow hash() to be used in templates
     app.jinja_env.globals.update(hash=hash)
 
