@@ -7,23 +7,23 @@ main {
   grid-template-rows: auto 1fr;
 }
 
-#filter-input {
+#history-filter-input {
   padding: 7px;
   border-bottom: 1px solid #ccc;
 }
 
-#main-area {
+#history-main-area {
   display: grid;
   grid-template-columns: 1fr 1fr;
   overflow: hidden; /* prevents layout breaking */
   border: 1px solid black;
 }
 
-#log-container {
+#history-log-container {
   overflow-y: auto;
 }
 
-#state-container {
+#history-state-container {
   padding: 1rem;
   border-left: 1px solid black;
 }

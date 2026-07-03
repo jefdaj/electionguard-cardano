@@ -33,16 +33,16 @@ def create_app(config=None):
     # divs wrapped in filter_result. Then each is swapped with its correct div
     # client side using hx-swap-oob.
     # TODO does specifying hx-swap-oob in the returned html like this work?
-    @app.get("/filter")
-    async def filter_results():
-        q = request.args.get("filter", "").strip() # TODO would "query" be more standard?
-        log_entries = get_log_entries(query=q)
-        state = get_state_tree(query=q)
-        return await render_template(
-            "partials/filter_results.html",
-            entries=log_entries,
-            state=state,
-        )
+#     @app.get("/filter")
+#     async def filter_results():
+#         q = request.args.get("filter", "").strip() # TODO would "query" be more standard?
+#         log_entries = get_log_entries(query=q)
+#         state = get_state_tree(query=q)
+#         return await render_template(
+#             "partials/filter_results.html",
+#             entries=log_entries,
+#             state=state,
+#         )
 
     return app
 
