@@ -17,18 +17,14 @@ def create_app(config=None):
         # Recommended: (2 * num_cores) + 1
     #     config.workers = 1
 
-    # from .blueprints.main import bp as main_bp
-    # app.register_blueprint(main_bp)
+    from .blueprints.main import bp as main_bp
+    app.register_blueprint(main_bp)
 
     from .blueprints.partials import bp as partials_bp
     app.register_blueprint(partials_bp, url_prefix="/partials")
 
     # allow hash() to be used in templates
     app.jinja_env.globals.update(hash=hash)
-
-    @app.get("/")
-    async def index():
-        return await render_template("index.html")
 
     # Because we want to filter both the log and tree at once, we return the two
     # divs wrapped in filter_result. Then each is swapped with its correct div
