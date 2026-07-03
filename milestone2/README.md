@@ -1,17 +1,11 @@
 milestone 2
 ===========
 
-[Dev update video](https://www.youtube.com/watch?v=qKZ2EL0CwM0).
-Since the video:
-
-- I have the actual (multichannel) contract working.
-- I've gone back to the original plan of publish + verify scripts rather than one integrated election thing.
-
-The main deliverables will all be in [publish-and-verify](./publish-and-verify).
+The main deliverables are under [publish-and-verify](./publish-and-verify).
 
 There's also some other misc related work:
 
-* [Cardano node + Ogmios](./cardano-node-ogmios)
+* [Cardano node + Ogmios Docker compose](./cardano-node-ogmios)
 * [ipfs-cluster experiment](./ipfs-cluster)
 * [pubsub with IPFS + simple mockchain](./pubsub1-ipfs)
 * [elections with IPFS + multi-party "mockchain"](./mockchain-local-ipfs)

@@ -11,7 +11,7 @@ ElectionGuard + Cardano
 
 Work in progress on [the Catalyst fund13 project](https://milestones.projectcatalyst.io/projects/1300090).
 
-Current status as of 2026-05-07:
+Current status as of 2026-07-03:
 
 - All Milestones (1, 2, and 3) approved
 
@@ -28,33 +28,21 @@ Current status as of 2026-05-07:
     - Partially archived [the NIST election format docs site](./milestone1/nist-docs)
     - Set up a [Nix environment](./milestone1/nix-environment.md)
 
-- [Milestone 2](./milestone2/) (Cardano stuff) in progress:
+- [x] [Milestone 2](./milestone2/) (Cardano stuff) finished:
 
-  * [Dev update video](https://www.youtube.com/watch?v=qKZ2EL0CwM0),
-    mostly still current except I now have the multichannel contract written,
-    and I've gone back to the original plan of having separate publish + verify scripts.
+  * [x] Output 2.1  [design docs](./milestone2/publish-and-verify/onchain/)
+  * [x] Output 2.2: [publish script](./milestone2/publish-and-verify/offchain/publish.py)
+  * [x] Output 2.3: [verify script](./milestone2/publish-and-verify/offchain/verify.py)
+  * Outputs 2 and 3 have combined YouTube videos (2 videos, both about both) + one combined blog post.
+  * Other misc things done along the way:
+    - [An IPFS-ified version of the 1.1 tests codebase](./milestone2/mockchain-local-ipfs) works
+    - [I worked a bit on making it more efficient](./milestone2/mockchain-local-ipfs-parallel)
+    - A minimal "pubsub" example shows that the plan for the election dApp is viable:
+      * [mockchain version with IPFS only](./milestone2/pubsub1-ipfs) syncs files given CIDs
+      * [Aiken + PyCardano + Kupo version](./milestone2/pubsub2-aiken-pycardano-kupo) syncs CIDs via Preview testnet
 
-  * Aiken smart contract:
-    - [x] [Validator](./milestone2/publish-and-verify/onchain/validators/election.ak) written
-    - [x] [Tests](./milestone2/publish-and-verify#on-chain-aiken-code) passing
-    - [x] [Video](https://www.youtube.com/watch?v=zWpfJSx9b1I)
-
-  * Starting on the milestone outputs:
-    - [x] Output 2.1 (mostly done): [contract design docs](./milestone2/publish-and-verify/onchain/)
-    - [ ] Output 2.2: [publish script](./milestone2/publish-and-verify/offchain/publish.py)
-    - [ ] Output 2.3: [verify script](./milestone2/publish-and-verify/offchain/verify.py)
-
-  * [An IPFS-ified version of the 1.1 tests codebase](./milestone2/mockchain-local-ipfs) works
-  * [I worked a bit on making it more efficient](./milestone2/mockchain-local-ipfs-parallel)
-
-  * A minimal "pubsub" example shows that the plan for the election dApp is viable:
-    - [mockchain version with IPFS only](./milestone2/pubsub1-ipfs) syncs files given CIDs
-    - [Aiken + PyCardano + Kupo version](./milestone2/pubsub2-aiken-pycardano-kupo) syncs CIDs via Preview testnet
-
-- [Milestone 3](./milestone3/) (ElectionGuard + Cardano integration):
+- [ ] [Milestone 3](./milestone3/) (ElectionGuard + Cardano integration):
 
   * Figured out overall architecture: Docker images, APIs, etc.
-
   * Started experimenting with [printing and scanning QR codes](./milestone3/qrcodes)
-
   * Starting to plan demos + talk
