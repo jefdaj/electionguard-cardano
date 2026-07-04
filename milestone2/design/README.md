@@ -1,6 +1,6 @@
 # Design Documentation
 
-Note: On Github, click the hamburger icon to show the TOC &#8599;
+_On Github, click the hamburger icon to show the outline_ &#8599;
 
 ## Tour of the electionguard-cardano smart contract
 
