@@ -539,4 +539,158 @@ Here's the JSON for that ballot, indented + truncated to 80 chars for readabilit
 }
 ```
 
-Most of the `PublicRecord` types just use the official JSON serialization from the reference implementation. The main exception so far is that the verification format is a simple dict, and may evolve in order to make incremental verification easier.
+Most of the `PublicRecord` types just use the official JSON serialization from the reference implementation. The main exception so far is that the verification format is a simple dict, and may evolve in order to make incremental verification easier. Currently a successful verification looks like:
+
+```json
+{
+  "Verified": {
+    "manifest": true,
+    "ceremony_details": true,
+    "gather_announce": true,
+    "guardian_pubkey": true,
+    "all_guardian_pubkeys": true,
+    "guardian_backup": true,
+    "all_guardian_backups": true,
+    "guardian_verification": true,
+    "all_guardian_verifications": true,
+    "gather_ceremony": true,
+    "joint_key": true,
+    "build_election": true,
+    "constants": true,
+    "context": true,
+    "gather_constants": true,
+    "device": true,
+    "all_devices": true,
+    "gather_config": true,
+    "ballot_submitted": true,
+    "all_ballots_submitted": true,
+    "cast_notice": true,
+    "all_ballots_cast": true,
+    "ballot_spoiled": true,
+    "all_ballots_spoiled": true,
+    "spoiled_result": true,
+    "all_spoiled_results": true,
+    "n_spoiled_decrypted": true,
+    "n_cast_spoiled_submitted": true,
+    "set_spoiled_decrypted": true,
+    "set_cast_spoiled_submitted": true,
+    "ballot_sets": true,
+    "ciphertext_tally": true,
+    "tally_aggregation": true,
+    "plaintext_tally": true,
+    "tally_decryption": true,
+    "gather_tally": true,
+    "gather_decryptions": true,
+    "gather_election": true
+  },
+  "Errors": {},
+  "Final tally of cast ballots": [
+    {
+      "question": "Should pineapple be banned on pizza?",
+      "answers": {
+        "Unsure": 3,
+        "No": 2,
+        "Yes": 1
+      }
+    }
+  ],
+  "Individual spoiled ballots": {
+    "476d9db6-1d64-11f1-9625-768fd7ed4145": [
+      {
+        "Should pineapple be banned on pizza?": "Yes"
+      }
+    ],
+    ...,
+    "4c9f842a-1d64-11f1-94d0-768fd7ed4145": [
+      {
+        "Should pineapple be banned on pizza?": "Unsure"
+      }
+    ]
+  }
+}
+```
+
+And a failed one looks like:
+
+```json
+```
+
+## Save/load lists of PublicRecords
+
+`PublicRecordMetadata` can also be translated to/from a path relative to a root public records dir. That makes it easy to read records on chain, fetch the corresponding files, and save them to disk in a standard archive format.
+
+[Here](./examples/static_records/) is the complete set of public records used in the static "happy election" tests:
+
+```
+examples/static_records/
+├── 1_config
+│   ├── 1_announce
+│   │   ├── 1_manifest.json
+│   │   └── 2_ceremony.json
+│   ├── 2_ceremony
+│   │   ├── 1_pubkeys
+│   │   │   ├── guardian_1.json
+│   │   │   ├── guardian_2.json
+│   │   │   └── guardian_3.json
+│   │   ├── 2_backups
+│   │   │   ├── guardian_1_backup_2.json
+│   │   │   ├── ...
+│   │   │   └── guardian_3_backup_2.json
+│   │   └── 3_verifications
+│   │       ├── guardian_1_backup_2.json
+│   │       ├── ...
+│   │       └── guardian_3_backup_2.json
+│   ├── 3_election
+│   │   ├── constants.json
+│   │   ├── context.json
+│   │   └── joint_key.json
+│   └── 4_devices
+│       └── device_1.json
+├── 2_ballots
+│   ├── 1_submitted
+│   │   ├── ballot-476d9db6-1d64-11f1-9625-768fd7ed4145.json
+│   │   ├── ...
+│   │   └── ballot-4e970104-1d64-11f1-a8cd-768fd7ed4145.json
+│   ├── 2_cast
+│   │   ├── ballot-4957f5fe-1d64-11f1-9226-768fd7ed4145.json
+│   │   ├── ...
+│   │   └── ballot-4e970104-1d64-11f1-a8cd-768fd7ed4145.json
+│   └── 3_spoiled
+│       ├── ballot-476d9db6-1d64-11f1-9625-768fd7ed4145.json
+│       ├── ...
+│       └── ballot-4c9f842a-1d64-11f1-94d0-768fd7ed4145.json
+├── 3_results
+│   ├── 1_tally.json
+│   └── 2_decrypt
+│       ├── 1_shares
+│       │   ├── 1_tally
+│       │   │   ├── tally_guardian_1.json
+│       │   │   ├── tally_guardian_2.json
+│       │   │   └── tally_guardian_3.json
+│       │   └── 2_spoiled
+│       │       ├── ballot-476d9db6-1d64-11f1-9625-768fd7ed4145_guardian_1.json
+│       │       ├── ...
+│       │       └── ballot-4c9f842a-1d64-11f1-94d0-768fd7ed4145_guardian_3.json
+│       └── 2_combined
+│           ├── 1_tally.json
+│           └── 2_spoiled
+│               ├── ballot-476d9db6-1d64-11f1-9625-768fd7ed4145.json
+│               ├── ...
+│               └── ballot-4c9f842a-1d64-11f1-94d0-768fd7ed4145.json
+└── 4_verify
+    ├── admin.json
+    ├── ...
+    └── verifier1.json
+```
+
+If it didn't already exist, you could create it by subscribing to run of the
+"happy election" pytest tests,
+passing an event handler like this to your `ElectionSubscriber`:
+
+```python
+def fetch_to_static_records_dir(event: ChannelEvent):
+    if not event.output_state:
+        return # ignore RmSubChannels, EndElection
+    new_records = event.output_state.state.new_records
+    ipfs_fetch_records_to_file_sync(new_records, 'examples/static_records')
+```
