@@ -619,7 +619,82 @@ Currently a successful verification looks like:
 And a failed one looks like:
 
 ```json
+{
+  "Verified": {
+    "manifest": true,
+    "ceremony_details": true,
+    "gather_announce": true,
+    "all_guardian_backups": true,
+    "all_guardian_verifications": true,
+    "gather_ceremony": true,
+    "joint_key": true,
+    "build_election": true,
+    "constants": true,
+    "internal_manifest": true,
+    "context": true,
+    "gather_constants": true,
+    "all_devices": true,
+    "gather_config": true,
+    "all_ballots_submitted": true,
+    "all_ballots_cast": true,
+    "all_ballots_spoiled": false,
+    "all_spoiled_results": true,
+    "n_spoiled_decrypted": false,
+    "n_cast_spoiled_submitted": false,
+    "set_spoiled_decrypted": false,
+    "set_cast_spoiled_submitted": false,
+    "ballot_sets": false,
+    "ciphertext_tally": true,
+    "tally_aggregation": true,
+    "plaintext_tally": true,
+    "tally_decryption": true,
+    "gather_tally": true,
+    "gather_decryptions": true,
+    "gather_election": false
+  },
+  "Errors": {
+    "ballot_submitted": {
+      "ballot-480eed2e-1d64-11f1-ac1f-768fd7ed4145": "[Errno 2] No such file or directory: '/data/public/2_ballots/1_submitted/ballot-480eed2e-1d64-11f1-ac1f-768fd7ed4145.json'"
+    },
+    "ballot_spoiled": {
+      "ballot-480eed2e-1d64-11f1-ac1f-768fd7ed4145": "dependencies failed: ballot_submitted"
+    },
+    "all_ballots_spoiled": "dependencies failed: ballot-480eed2e-1d64-11f1-ac1f-768fd7ed4145",
+    "n_spoiled_decrypted": "dependencies failed: all_ballots_spoiled",
+    "n_cast_spoiled_submitted": "dependencies failed: all_ballots_spoiled",
+    "set_spoiled_decrypted": "dependencies failed: all_ballots_spoiled",
+    "set_cast_spoiled_submitted": "dependencies failed: all_ballots_spoiled",
+    "ballot_sets": "dependencies failed: n_cast_spoiled_submitted, n_spoiled_decrypted, set_cast_spoiled_submitted, set_spoiled_decrypted",
+    "gather_election": "dependencies failed: ballot_sets"
+  },
+  "Final tally of cast ballots": [
+    {
+      "question": "Should pineapple be banned on pizza?",
+      "answers": {
+        "Unsure": 3,
+        "No": 2,
+        "Yes": 1
+      }
+    }
+  ],
+  "Individual spoiled ballots": {
+    "49fb726a-1d64-11f1-ad12-768fd7ed4145": [
+      {
+        "Should pineapple be banned on pizza?": "No"
+      }
+    ],
+    ...,
+    "48b5dc74-1d64-11f1-9b1b-768fd7ed4145": [
+      {
+        "Should pineapple be banned on pizza?": "Yes"
+      }
+    ]
+  }
+}
 ```
+
+Note that some errors prevent coming up with a final tally, but some don't.
+In this case I deleted one of the submitted ballots, but it was spoiled rather than cast, so it doesn't prevent tallying the cast ballots.
 
 The other exception is that there are a large number of details that can go in an ElectionGuard manifest file--overlapping jurisdiction boundaries, party affiliations, language translations of all the questions, etc--but aren't supported yet in ElectionGuard+Cardano. Those may be removed or replaced with trivial values.
 
