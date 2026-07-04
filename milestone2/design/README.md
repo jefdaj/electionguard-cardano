@@ -1,12 +1,10 @@
-# Design Documentation
+# ElectionGuard + Cardano Design
 
-This is mostly focused on explaining the smart contract for now, because that's both more important and better defined so far. There are examples of all the offchain data formats too though. Skip to [off-chain data](#off-chain-data) for those.
+This is mostly about the smart contract, because is's both more important and better defined than the off-chain code. There are examples of all the [off-chain data](#off-chain-data) formats too though.
 
 _On Github, click the hamburger icon to show the table of contents &#8599;
 
-## Smart Contract Tour
-
-See also [Dev Update #5 on YouTube](https://www.youtube.com/watch?v=zWpfJSx9b1I).
+## Motivation
 
 In this first MVP version of the ElectionGuard + Cardano system, the on-chain code serves two purposes, both related to limiting the power of the government (AKA election administrator) by decentralizing some of their duties:
 
@@ -21,6 +19,10 @@ There are many other things the blockchain would also be useful for, but they're
 - collateral/slashing to improve trust in election officials
 - incentives for 3rd parties to serve IPFS data and run verifiers + dashboards
 - ...
+
+## Smart Contract Tour
+
+See also [Dev Update #5 on YouTube](https://www.youtube.com/watch?v=zWpfJSx9b1I).
 
 ### Source Code
 
