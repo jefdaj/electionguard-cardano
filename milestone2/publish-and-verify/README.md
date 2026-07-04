@@ -14,11 +14,10 @@ See also these YouTube videos:
 * [Dev Update #6: Cardano Codebase](https://www.youtube.com/watch?v=Dr2lltC-zw0)
 * [Dev Update #7: Publish + Verify Demo](https://www.youtube.com/watch?v=Qe0vyI1Zazo) 
 
+... or [this Asciinema recording](https://asciinema.org/a/1260144) (best viewed full-screen)!
 
 Publish + Verify demo
 ---------------------
-
-[Asciinema demo](https://asciinema.org/a/1260144) (best viewed full-screen)
 
 This loads `onchain/election-plutus-traced.json`, so you need to build the
 on-chain code first; see next section. You also need a dev wallet
