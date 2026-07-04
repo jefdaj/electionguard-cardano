@@ -88,10 +88,6 @@ class Point:
         return cls(slot, hhash)
 
 
-# TODO separate ClientEvent or ElectionEvent type that's one per visible event we want to display!
-#      (pull the subscribe.py logic for that into the main subscriber)
-
-
 # These don't quite correspond to UTXOs because we store the state from the
 # latest UTXO but the redeemer used to spend the previous UTXO on that channel.
 # When a TX changes more than one channel, a ChannelEvent will be created for
@@ -135,6 +131,40 @@ class ElectionEvent:
     channel: str
     event_type: str # TODO codify this once it's clearer
     event_desc: str # TODO codify this once it's clearer
+
+
+def election_events(event: ChannelEvent) -> list[ElectionEvent]:
+    s = channel_id_to_string(event.channel_id)
+    es = []
+    ti = event_txid(event)
+    sn = event.slot_no
+    # add records
+    if event.output_state:
+        for record in event.output_state.state.new_records:
+            e = ElectionEvent(ti, sn, s, 'post record', f'posted {record}')
+            es.append(e)
+    # add main action
+    match event.action:
+        case InitElection():
+            e = ElectionEvent(ti, sn, 'funder', 'init election', 'announced election')
+            es.append(e)
+        case AdvancePhase():
+            phase = event.output_state.state.phase
+            e = ElectionEvent(ti, sn, s, 'advance phase', f'advanced to {phase}')
+            es.append(e)
+        case PostPublicRecords():
+            pass # covered above
+        case AddSubChannels(channels=cs):
+            if s != 'admin':
+                e = ElectionEvent(ti, sn, 'admin', 'add subchannel', f'created {s} channel')
+                es.append(e)
+        case RmSubChannels(channels=cs):
+            if s != 'admin':
+                e = ElectionEvent(ti, sn, 'admin', 'rm subchannel', f'removed {s} channel')
+                es.append(e)
+        case RebalanceFunds():
+            pass # no user facing message needed?
+    return es
 
 
 def event_txid(event: ChannelEvent):
@@ -728,12 +758,12 @@ class ElectionSubscriber:
                 continue
 
             # 4. Update internal state and do some double checking + cleanup for
-            #    particular action types, and produce ElectionEvents.
-            election_events = self._on_action(event)
+            #    particular action types.
+            event = self._on_action(event)
 
             # 5. Emit final ElectionEvents to clients
-            for election_event in election_events:
-                self._on_election_event(election_event)
+            for event in election_events(event):
+                self._on_election_event(event)
 
 
     def _kupo_api_url(self) -> str:
@@ -1146,39 +1176,6 @@ class ElectionSubscriber:
 
     ## handle events ##
 
-# for reference:
-# def log_and_fetch(event: ChannelEvent):
-#     LOG.debug('\n' + pformat(event) + '\n')
-#     ch_str = channel_id_to_string(event.channel_id)
-# 
-#     if not event.output_state:
-#         return
-# 
-#     new_records = event.output_state.state.new_records
-#     paths = ipfs_fetch_records_to_file_sync(new_records, PUB_DIR)
-#     for (r,_) in zip(new_records, paths):
-#         LOG.info(f'{ch_str}: {r}')
-# 
-#     msgs = []
-#     match event.action:
-#         case InitElection():
-#             ch_str = 'funder'
-#             msgs.append('InitElection()')
-#         case AdvancePhase():
-#             msgs.append(event.output_state.state.phase)
-#         case PostPublicRecords():
-#             pass # covered above
-#         case AddSubChannels(channels=cs):
-#             if ch_str == 'admin':
-#                 msgs.append(AddSubChannels(channels=cs))
-#         case RmSubChannels(channels=cs):
-#             if ch_str == 'admin':
-#                 msgs.append(RmSubChannels(channels=cs))
-#         case other:
-#             msgs.append(other)
-#     for msg in msgs:
-#         LOG.info(f'{ch_str}: {msg}')
-
 
     def _on_action(self, event: ChannelEvent):
         log_call()
@@ -1206,14 +1203,7 @@ class ElectionSubscriber:
         assert self.current_phase() == None, 'InitElection should always happen first'
         assert event.channel_id == ADMIN_CHANNEL_ID # note this tx was published by the funder
         self._on_mint(event)
-        ee = ElectionEvent(
-            tx_id   = event_txid(event),
-            slot_no = event.slot_no,
-            channel = 'funder',
-            event_type = 'init election',
-            event_desc = 'announce election',
-        )
-        return [ee]
+        return event
 
 
     def _on_addsubchannels(self, event: ChannelEvent):
@@ -1221,33 +1211,16 @@ class ElectionSubscriber:
         # remember this will be called once per channel touched
         if event.channel_id == ADMIN_CHANNEL_ID:
             self._on_cont(event)
-            return []
         else:
             self._on_mint(event)
-            ch_str = channel_id_to_string(event.channel_id)
-            ee = ElectionEvent(
-                tx_id      = event_txid(event),
-                slot_no    = event.slot_no,
-                channel    = 'admin',
-                event_type = 'add subchannel',
-                event_desc = f'created {ch_str} channel',
-            )
-            return [ee]
+        return event
 
 
     def _on_advancephase(self, event: ChannelEvent):
         log_call()
         assert event.channel_id == ADMIN_CHANNEL_ID, 'only admin can advance phase'
         self._on_cont(event)
-        phase = event.output_state.state.phase
-        ee = ElectionEvent(
-            tx_id      = event_txid(event),
-            slot_no    = event.slot_no,
-            channel    = 'admin',
-            event_type = 'advance phase',
-            event_desc = f'advanced to {phase}',
-        )
-        return [ee]
+        return event
 
 
     def _on_endelection(self, event: ChannelEvent):
@@ -1256,14 +1229,7 @@ class ElectionSubscriber:
         assert event.channel_id == ADMIN_CHANNEL_ID, 'only admin can end election'
         self._on_burn(event)
         self.request_stop()
-        ee = ElectionEvent(
-            tx_id      = event_txid(event),
-            slot_no    = event.slot_no,
-            channel    = 'admin',
-            event_type = 'end election',
-            event_desc = 'ended election',
-        )
-        return [ee]
+        return event
 
 
     def _on_rmsubchannels(self, event: ChannelEvent):
@@ -1272,44 +1238,23 @@ class ElectionSubscriber:
         assert event.channel_id in self._history, f'tried to remove non-existent channel {event.channel_id}'
         if event.channel_id == ADMIN_CHANNEL_ID:
             self._on_cont(event)
-            return []
         else:
             self._on_burn(event)
-            ch_str = channel_id_to_string(event.channel_id)
-            ee = ElectionEvent(
-                tx_id      = event_txid(event),
-                slot_no    = event.slot_no,
-                channel    = 'admin',
-                event_type = 'rm subchannel',
-                event_desc = f'removed {ch_str} channel',
-            )
-            return [ee]
+        return event
 
 
     def _on_rebalancefunds(self, event: ChannelEvent):
         log_call()
         # remember this will be called once per channel touched
         self._on_cont(event)
-        # no need for a user-facing event here right?
-        return []
+        return event
 
 
     def _on_postpublicrecords(self, event: ChannelEvent):
         log_call()
         # TODO fetch from IPFS here
         self._on_cont(event)
-        ch_str = channel_id_to_string(event.channel_id)
-        events = []
-        for record in event.output_state.state.new_records:
-            ee = ElectionEvent(
-                tx_id      = event_txid(event),
-                slot_no    = event.slot_no,
-                channel    = ch_str,
-                event_type = 'post record',
-                event_desc = f'posted {record}',
-            )
-            events.append(ee)
-        return events
+        return event
 
 
     def _on_burntesttokens(self, event: ChannelEvent):
@@ -1317,15 +1262,7 @@ class ElectionSubscriber:
         # TODO remove for production use, or make a CLI flag for it
         self._on_burn(event)
         self.request_stop()
-        # return event
-        ee = ElectionEvent(
-            tx_id      = event_txid(event),
-            slot_no    = event.slot_no,
-            channel    = 'someone',
-            event_type = 'burn test tokens',
-            event_desc = f'burned test tokens',
-        )
-        return [ee]
+        return event
 
 
     def _on_mint(self, event: ChannelEvent):
