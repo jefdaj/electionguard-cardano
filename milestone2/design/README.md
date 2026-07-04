@@ -360,15 +360,15 @@ You can run the entire test scenario at once, or pick out parts of it. See [runn
 ## Future QR Codes
 
 The `ElectionContext` includes all the info that we might want for any reason.
-Smaller amounts of info we definitely want to transfer between nodes out-of-band can go in QR codes:
+Smaller amounts of info we need to transfer between nodes out-of-band can go in QR codes:
 
 - slot number, block header hash, policy id for subscribing to an election
 - requests to be authorized as an election official, with public wallet address
 - unique session codes to prove to the challenge station that you're the voter who just submitted a particular ballot, and should now be allowed to cast or spoil it
 - reciepts that can be taken home and used later to check that your vote was counted
 
-The actual QR code formats aren't defined yet.
-Only the (slot, hash, policy id) one is currently part of the codebase. It looks like:
+None of the QR code formats are defined yet.
+Only the (slot, hash, policy id) info used in the current code. It looks like:
 
 ```python
 SubscriberConfig(since_slot='116492069',
@@ -379,4 +379,21 @@ SubscriberConfig(since_slot='116492069',
 It will probably also need a network code in the future.
 
 
-## Election Artifacts
+## Public Records
+
+All the artifacts that should be posted on chain and uploaded to IPFS are formatted as `PublicRecord`s. A public record has an IPFS CID(v1) and some typed metadata. There are matching definitions in Aiken and Python. For example:
+
+```aiken
+er.PublicRecord {
+  // orig base32: bafkreibttf67rmdea6gvgux7l4ongpd72cocduvmel65kevffiu5riahe4
+  ipfs_cid: #"0155122033997df8b064078d5352ff5f1cd33c7fd09c21d2ac22fdd512a52a29d8a00727",
+  metadata: er.BallotSubmitted { ballot_id: to_bytearray(@"ballot-480eed2e-1d64-11f1-ac1f-768fd7ed4145") }
+}
+```
+
+```python
+PublicRecord(
+	ipfs_cid='bafkreibttf67rmdea6gvgux7l4ongpd72cocduvmel65kevffiu5riahe4',
+	metadata=BallotSubmitted(ballot_id=b'ballot-480eed2e-1d64-11f1-ac1f-768fd7ed4145')
+)
+```
