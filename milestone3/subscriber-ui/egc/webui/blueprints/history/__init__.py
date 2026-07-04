@@ -10,11 +10,8 @@ async def index():
     return await render_template("index.html")
 
 def version_including_filter(sub_version: str, filter_str: str):
-    if filter_str is None:
-        return sub_version
-    else:
-        filter_version = hashlib.md5(filter_str.encode()).hexdigest()[:8]
-        return f'{filter_version}:{sub_version}'
+    filter_version = hashlib.md5(filter_str.encode()).hexdigest()[:8]
+    return f'{filter_version}:{sub_version}'
 
 # Because we want to filter both the log and tree at once, we return the two
 # divs wrapped in filter_result. Then each is swapped with its correct div
@@ -28,9 +25,8 @@ async def filter_results():
 
     # return 204 (no new content) if polling and the version hasn't changed
     req_ver = request.headers.get("HX-Trigger-Version")
-    is_poll = req_ver is not None # to avoid 204 when explicitly filtering
     cur_ver = version_including_filter(current_app.subscriber.version(), q)
-    if is_poll and cur_ver == req_ver:
+    if cur_ver == req_ver:
         return "", 204 # unchanged; htmx skips the swap
 
     events = current_app.subscriber.all_events()
