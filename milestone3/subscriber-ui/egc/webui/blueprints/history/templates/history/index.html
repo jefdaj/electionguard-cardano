@@ -3,7 +3,7 @@
 		<input 
 	     type="text" 
 	     name="history-filter" 
-	     id="filter-input"
+	     id="history-filter-input"
 	     hx-get="{{ url_for('history.history_filter_results') }}"
 	     hx-trigger="keyup changed delay:200ms"
 	     hx-target="#history-filter-results"
@@ -30,11 +30,11 @@
 <div id="history-filter-results" 
      class="hidden"
      hx-get="{{ url_for('history.history_filter_results') }}"
-     hx-trigger="load, every 5s [!document.activeElement.matches('#filter-input')]"
+     hx-trigger="load, every 5s [!document.activeElement.matches('#history-filter-input')]"
      hx-include="[name='history-filter']"
      hx-swap="innerHTML"
      hx-sync="this:replace"
-     hx-on::after-swap="if (!document.getElementById('filter-input').value.trim()) { lc = document.getElementById('history-log-container'); lc.scrollTop = lc.scrollHeight; }">
+     hx-on::after-swap="if (!document.getElementById('history-filter-input').value.trim()) { lc = document.getElementById('history-log-container'); lc.scrollTop = lc.scrollHeight; }">
   <!-- filtered log+state injected here and moved via oob-swap -->
 
 </div>
