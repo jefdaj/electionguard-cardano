@@ -385,8 +385,7 @@ It will probably also need a network code in the future.
 
 ### Public Records
 
-All the artifacts that should be posted on chain and uploaded to IPFS are formatted as `PublicRecord`s. A public record has an IPFS CID(v1) and some typed metadata. There are matching definitions in Aiken and Python. For example:
-
+All the artifacts that should be posted on chain and uploaded to IPFS are formatted as `PublicRecord`s. A public record has an IPFS CID(v1) and some typed metadata.
 The Python `PublicRecord`s are defined in terms of `PlutusData` and need to be kept in sync with the Aiken ones in order to round-trip the data via the blockchain. For example:
 
 ```aiken
