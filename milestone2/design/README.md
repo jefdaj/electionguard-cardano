@@ -22,7 +22,7 @@ There are many other things the blockchain would also be useful for, but they're
 - ...
 
 
-## Smart Contract Tour
+## Smart Contract
 
 See also [Dev Update #5 (whiteboard video) on YouTube](https://www.youtube.com/watch?v=zWpfJSx9b1I).
 
