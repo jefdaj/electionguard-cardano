@@ -141,12 +141,12 @@ def election_events(event: ChannelEvent) -> list[ElectionEvent]:
     # add records
     if event.output_state:
         for record in event.output_state.state.new_records:
-            e = ElectionEvent(ti, sn, s, 'post record', f'posted {record}')
+            e = ElectionEvent(ti, sn, s, 'post record', f'posted {record.metadata}')
             es.append(e)
     # add main action
     match event.action:
         case InitElection():
-            e = ElectionEvent(ti, sn, 'funder', 'init election', 'announced election')
+            e = ElectionEvent(ti, sn, 'funder', 'init election', 'authorized admin')
             es.append(e)
         case AdvancePhase():
             phase = event.output_state.state.phase
@@ -156,11 +156,11 @@ def election_events(event: ChannelEvent) -> list[ElectionEvent]:
             pass # covered above
         case AddSubChannels(channels=cs):
             if s != 'admin':
-                e = ElectionEvent(ti, sn, 'admin', 'add subchannel', f'created {s} channel')
+                e = ElectionEvent(ti, sn, 'admin', 'add subchannel', f'authorized {s}')
                 es.append(e)
         case RmSubChannels(channels=cs):
             if s != 'admin':
-                e = ElectionEvent(ti, sn, 'admin', 'rm subchannel', f'removed {s} channel')
+                e = ElectionEvent(ti, sn, 'admin', 'rm subchannel', f'revoked {s} authorization')
                 es.append(e)
         case RebalanceFunds():
             pass # no user facing message needed?
