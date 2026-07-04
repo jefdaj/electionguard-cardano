@@ -10,9 +10,14 @@ It has:
 * [x] A [publish script](./offchain/publish.sh) which publishes the records to Cardano + IPFS
 * [x] A [verify script](./offchain/verify.sh) which watches the chain and incrementally fetches + verifies the records
 
+See also these YouTube videos:
 
-main demo
----------
+* [Dev Update #6: Cardano Codebase](https://www.youtube.com/watch?v=Dr2lltC-zw0)
+* [Dev Update #7: Publish + Verify Demo](https://www.youtube.com/watch?v=Qe0vyI1Zazo) 
+
+
+Publish + Verify demo
+---------------------
 
 <!-- TODO asciinema demo here -->
 
