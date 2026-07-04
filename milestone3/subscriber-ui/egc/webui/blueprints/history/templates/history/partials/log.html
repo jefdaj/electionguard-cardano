@@ -2,9 +2,11 @@
 <ul class="history-log">
   {% for e in events %}
     <li class="event" id="event-{{ e.id }}">
-      slot: {{ e.slot_no }}
-      <br/>channel: {{ e.channel_id.decode('utf-8') }}
-      <br/>action: {{ e.action }}
+      {{ e.channel }} {{ e.event_desc }}
+      {{ e }}
+      <br/>tx_id: {{ e.tx_id }}
+      <br/>slot: {{ e.slot_no }}
+      <br/>channel: {{ e.channel }}
       <br/>
       <!-- height: {{ e.height }}
       type: {{ e.type }}
