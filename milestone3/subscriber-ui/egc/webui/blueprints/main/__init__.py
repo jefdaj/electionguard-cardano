@@ -1,6 +1,6 @@
 from quart import Blueprint, render_template
 
-bp = Blueprint("main", __name__)
+bp = Blueprint("main", __name__, template_folder="templates")
 
 @bp.get("/")
 async def index():
