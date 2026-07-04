@@ -12,12 +12,12 @@ async def index():
 # client side using hx-swap-oob.
 # TODO does specifying hx-swap-oob in the returned html like this work?
 @bp.get("/filter")
-async def history_filter_results():
+async def filter_results():
     q = request.args.get("history-filter", "").strip() # TODO would "query" be more standard?
     log_entries = get_log_entries(query=q)
     state = get_state_tree(query=q)
     return await render_template(
-        "history/partials/history_filter_results.html",
+        "history/partials/filter_results.html",
         entries=log_entries,
         state=state,
     )
