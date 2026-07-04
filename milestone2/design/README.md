@@ -222,7 +222,61 @@ $ ./check.sh
 [build.sh](../publish-and-verify/onchain/build.sh) produces 2 [Plutus blueprints](https://cips.cardano.org/cip/CIP-57): `election-plutus.json` + `election-plutus-traced.json`. The off-chain code loads one or the other depending on if you start it with `EGC_MODE=test` or not. The traced version is less efficient but produces better error messages.
 
 
-### Visualizing the on-chain data
+### Funding Transaction Fees
+
+The contract is set up to minimize the amount of ADA that needs to be handled by election officials. The expected workflow is:
+
+1. The admin locks a pool of ADA with each channel STT to pay for fees.
+2. The admin sends a little more ADA to the channel publisher's wallet to be used as smart contract collateral (that can't be provided by a contract).
+3. Posting records can be done for free using the channel's ADA pool.
+4. If needed, the admin can top up a channel pool or rebalance between them at any point.
+5. At the end of the election the admin can remove the remaining ADA. There could be custom treasury related logic here in the future.
+6. There's currently no mechanism to recover the collateral; publishers can keep it.
+
+Most of that will be handled by the off-chain code that constructs transactions, and by the Cardano ledger. The contract just ensures is that no one can take the ADA associated with a channel during the election. That's handled [here](../publish-and-verify/onchain/validators/election.ak#L428) and [here in fund.ak](../publish-and-verify/onchain/validators/election/fund.ak#L13). There's also a `RebalanceFunds` action for the admin, which is almost a no-op except that it needs to update the admin STT + each subchannel STT being rebalanced.
+
+
+### Burning Test Tokens
+
+When I first started working with the testnet, I accidentally made a few unspendable (or not easily spendable) test tokens. The current version of the contract includes a `BurnTestTokens` action (redeemer) to prevent that. Whenever one of the tests hits an unexpected issue, I'll run the burn script to clean it up. Obviously this part should be removed before production use!
+
+
+### Admin actions
+
+Now you know enough to understand [all the action (redeemer) types in action.ak](../publish-and-verify/onchain/validators/election/types/action.ak). They're grouped in the source code by which channels they touch, but would typically be used in this order by the admin:
+
+1. InitElection
+2. PostPublicRecords
+3. AddSubChannels
+4. AdvancePhase
+5. PostPublicRecords
+6. RmSubchannels
+7. EndElection
+
+
+### Election Phases
+
+Each election is broken into a series of standard phases defined in [phase.ak](../publish-and-verify/onchain/validators/election/types/phase.ak):
+
+1. Config
+
+    1. Announce
+    2. Onboarding
+    3. Key Ceremony
+
+2. Voting
+3. Results
+
+     1. Tally
+     2. Decrypt
+
+4. Verify
+5. Finalize
+
+These are good for adding phase-specific logic to the contract. For example ADA can't be removed except by the admin during `Finalize` (see [funding](#funding-transaction-fees)). They'll also be useful for displaying progress in a future UI, and for controlling which actions are available to each person/role at any given time.
+
+
+## On-Chain Data
 
 Cardano smart contracts can be tricky to visualize because they don't construct transactions; they only decide whether a given transaction is valid or not. So the simplest way to start is with an example of the data structure they're trying to force the off-chain code to create. In this case it's a multithreaded pubsub channel:
 
@@ -274,58 +328,6 @@ All records include an IPFS CID and some metadata. The possible metadata types a
 
 Each update (datum) only includes the latest batch of `new_records`. Observers or other node operators need to run a Kupo indexer to get the full history. There's no way around the general requirement to run a custom node, because it also needs to fetch files via IPFS in order to confirm that the current election state is valid.
 
-### Election Phases
-
-Each election is broken into a series of standard phases defined in [phase.ak](../publish-and-verify/onchain/validators/election/types/phase.ak):
-
-1. Config
-
-    1. Announce
-    2. Onboarding
-    3. Key Ceremony
-
-2. Voting
-3. Results
-
-     1. Tally
-     2. Decrypt
-
-4. Verify
-5. Finalize
-
-These are good for adding phase-specific logic to the contract. For example ADA can't be removed except by the admin during `Finalize` (see [funding](#funding-transaction-fees)). They'll also be useful for displaying progress in a future UI, and for controlling which actions are available to each person/role at any given time.
-
-
-### Funding Transaction Fees
-
-The contract is set up to minimize the amount of ADA that needs to be handled by election officials. The expected workflow is:
-
-1. The admin locks a pool of ADA with each channel STT to pay for fees.
-2. The admin sends a little more ADA to the channel publisher's wallet to be used as smart contract collateral (that can't be provided by a contract).
-3. Posting records can be done for free using the channel's ADA pool.
-4. If needed, the admin can top up a channel pool or rebalance between them at any point.
-5. At the end of the election the admin can remove the remaining ADA. There could be custom treasury related logic here in the future.
-6. There's currently no mechanism to recover the collateral; publishers can keep it.
-
-Most of that will be handled by the off-chain code that constructs transactions, and by the Cardano ledger. The contract just ensures is that no one can take the ADA associated with a channel during the election. That's handled [here](../publish-and-verify/onchain/validators/election.ak#L428) and [here in fund.ak](../publish-and-verify/onchain/validators/election/fund.ak#L13). There's also a `RebalanceFunds` action for the admin, which is almost a no-op except that it needs to update the admin STT + each subchannel STT being rebalanced.
-
-
-### Burning Test Tokens
-
-When I first started working with the testnet, I accidentally made a few unspendable (or not easily spendable) test tokens. The current version of the contract includes a `BurnTestTokens` action (redeemer) to prevent that. Whenever one of the tests hits an unexpected issue, I'll run the burn script to clean it up. Obviously this part should be removed before production use!
-
-
-### Admin actions
-
-Now you know enough to understand [all the action (redeemer) types in action.ak](../publish-and-verify/onchain/validators/election/types/action.ak). They're grouped in the source code by which channels they touch, but would typically be used in this order by the admin:
-
-1. InitElection
-2. PostPublicRecords
-3. AddSubChannels
-4. AdvancePhase
-5. PostPublicRecords
-6. RmSubchannels
-7. EndElection
 
 ### Channel State
 
