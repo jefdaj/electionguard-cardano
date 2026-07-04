@@ -9,12 +9,12 @@ It has:
 * [x] A [publish script](./offchain/publish.sh) which publishes the records to Cardano + IPFS
 * [x] A [verify script](./offchain/verify.sh) which watches the chain and incrementally fetches + verifies the records
 
-See also these YouTube videos:
+See also:
 
-* [Dev Update #6: Cardano Codebase](https://www.youtube.com/watch?v=Dr2lltC-zw0)
-* [Dev Update #7: Publish + Verify Demo](https://www.youtube.com/watch?v=Qe0vyI1Zazo) 
-
-... or [this Asciinema recording](https://asciinema.org/a/1260144) (best viewed full-screen)!
+* [Dev Update #6: Cardano Codebase (YouTube)](https://www.youtube.com/watch?v=Dr2lltC-zw0)
+* [Dev Update #7: Publish + Verify Demo (YouTube)](https://www.youtube.com/watch?v=Qe0vyI1Zazo) 
+* [Asciinema recording](https://asciinema.org/a/1260144)
+* [Blog post](https://cryptoisland.blog/posts/2026/07/03/egc-dev07-publish-and-verify/)
 
 Publish + Verify demo
 ---------------------
