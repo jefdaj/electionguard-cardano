@@ -6,7 +6,6 @@ It has:
 
 * [x] An [Aiken validator with some tests](./onchain/)
 * [x] A [PyCardano codebase with some more tests](./offchain/)
-* [x] Some [documentation](./docs/)
 * [x] A [publish script](./offchain/publish.sh) which publishes the records to Cardano + IPFS
 * [x] A [verify script](./offchain/verify.sh) which watches the chain and incrementally fetches + verifies the records
 
@@ -19,7 +18,7 @@ See also these YouTube videos:
 Publish + Verify demo
 ---------------------
 
-<!-- TODO asciinema demo here -->
+[Asciinema demo](https://asciinema.org/a/1260144) (best viewed full-screen)
 
 This loads `onchain/election-plutus-traced.json`, so you need to build the
 on-chain code first; see next section. You also need a dev wallet
