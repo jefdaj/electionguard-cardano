@@ -384,6 +384,8 @@ When deploying an election, the funder saves a JSON dump of all potentially rele
 }
 ```
 
+See also [a complete example](./examples/election-260703235512.json).
+
 
 ### Future QR Codes
 
