@@ -617,6 +617,8 @@ And a failed one looks like:
 ```json
 ```
 
+The other exception is that there are a large number of details that can go in an ElectionGuard manifest file--overlapping jurisdiction boundaries, party affiliations, language translations of all the questions, etc--but aren't supported yet in ElectionGuard+Cardano. Those may be removed or replaced with trivial values.
+
 ## Save/load lists of PublicRecords
 
 `PublicRecordMetadata` can also be translated to/from a path relative to a root public records dir. That makes it easy to read records on chain, fetch the corresponding files, and save them to disk in a standard archive format.
