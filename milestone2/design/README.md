@@ -387,6 +387,8 @@ It will probably also need a network code in the future.
 
 All the artifacts that should be posted on chain and uploaded to IPFS are formatted as `PublicRecord`s. A public record has an IPFS CID(v1) and some typed metadata. There are matching definitions in Aiken and Python. For example:
 
+The Python `PublicRecord`s are defined in terms of `PlutusData` and need to be kept in sync with the Aiken ones in order to round-trip the data via the blockchain. For example:
+
 ```aiken
 er.PublicRecord {
   // orig base32: bafkreibttf67rmdea6gvgux7l4ongpd72cocduvmel65kevffiu5riahe4
@@ -402,8 +404,9 @@ PublicRecord(
 )
 ```
 
-The actual Python objects are serialized to JSON and that's what gets added to IPFS.
-Here's the JSON for that ballot, indented + truncated to 80 chars for readability:
+The actual records (Python objects) are serialized to JSON. That's what gets
+added to IPFS and referred to by CID. Here's the JSON for that ballot,
+indented + truncated to 80 chars for readability:
 
 ```json
 {
@@ -543,7 +546,7 @@ Here's the JSON for that ballot, indented + truncated to 80 chars for readabilit
 }
 ```
 
-Most of the `PublicRecord` types just use the official JSON serialization from the reference implementation. The main exception so far is that the verification format is a freeform dict, and may evolve in order to make incremental verification easier. It will need to have a schema version defined before use in any real elections to make sure verifiers agree exactly.
+Most of the `PublicRecord` types just use the official JSON serialization from the reference implementation. The main exception so far is that the verification (`Summary`) format is a freeform dict, and may evolve in order to make incremental verification easier. It will need to have a schema version defined before use in any real elections to make sure verifiers agree exactly.
 
 Currently a successful verification looks like:
 
@@ -696,7 +699,8 @@ And a failed one looks like:
 Note that some errors prevent coming up with a final tally, but some don't.
 In this case I deleted one of the submitted ballots, but it was spoiled rather than cast, so it doesn't prevent tallying the cast ballots.
 
-The other exception is that there are a large number of details that can go in an ElectionGuard manifest file--overlapping jurisdiction boundaries, party affiliations, language translations of all the questions, etc--but aren't supported yet in ElectionGuard+Cardano. Those may be removed or replaced with trivial values.
+The other exception is that there are a large number of details that can go in an ElectionGuard manifest file---precinct boundaries, party affiliations, language translations, etc---but aren't supported yet in ElectionGuard+Cardano. Those may be removed or replaced with trivial values, or the entire manifest format may be simplified.
+
 
 ### Save/load lists of PublicRecords
 
