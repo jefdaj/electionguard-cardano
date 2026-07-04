@@ -1,8 +1,8 @@
 # ElectionGuard + Cardano Design
 
-This is mostly about the smart contract, because is's both more important and better defined than the off-chain code. There are examples of all the [off-chain data](#off-chain-data) formats too though.
+This is mostly about the smart contract, because it's both more important and better defined than the off-chain code. There are examples of all the [off-chain data](#off-chain-data) formats too though.
 
-_On Github, click the hamburger icon to show the table of contents &#8599;
+_On Github, click the hamburger icon to show the table of contents &#8599;_
 
 ## Motivation
 
