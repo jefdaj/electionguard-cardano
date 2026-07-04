@@ -29,7 +29,7 @@ async def filter_results():
     if cur_ver == req_ver:
         return "", 204 # unchanged; htmx skips the swap
 
-    events = current_app.subscriber.all_events()
+    events = current_app.subscriber.all_election_events()
 
     # TODO factor out into something more general
     if len(q.lower()) > 0:

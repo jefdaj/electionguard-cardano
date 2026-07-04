@@ -3,15 +3,10 @@
   {% for e in events %}
     <li class="event" id="event-{{ e.id }}">
       {{ e.channel }} {{ e.event_desc }}
-      {{ e }}
-      <br/>tx_id: {{ e.tx_id }}
+      <!-- <br/>tx_id: {{ e.tx_id }}
       <br/>slot: {{ e.slot_no }}
       <br/>channel: {{ e.channel }}
-      <br/>
-      <!-- height: {{ e.height }}
-      type: {{ e.type }}
-      <br/>summary: {{ e.summary }}
-      <br/>timestamp: {{ e.timestamp }} -->
+      <br/> -->
     </li>
   {% else %}
   {% endfor %}

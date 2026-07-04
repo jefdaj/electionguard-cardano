@@ -164,6 +164,11 @@ def election_events(event: ChannelEvent) -> list[ElectionEvent]:
                 es.append(e)
         case RebalanceFunds():
             pass # no user facing message needed?
+        case EndElection():
+            e = ElectionEvent(ti, sn, 'admin', 'end election', 'ended election')
+            es.append(e)
+        case _:
+            raise NotImplemented
     return es
 
 
@@ -490,6 +495,13 @@ class ElectionSubscriber:
         for k in sorted(list(events.keys())):
             events2 += events[k]
         return events2
+
+
+    def all_election_events(self) -> list[ElectionEvent]:
+        es = []
+        for ch_evt in self.all_events():
+            es += election_events(ch_evt)
+        return es
 
 
     # TODO n_confirmations
