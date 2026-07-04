@@ -1,7 +1,8 @@
 milestone 2
 ===========
 
-The main deliverables are under [publish-and-verify](./publish-and-verify).
+The main M2 deliverables are [the design docs](./design/)
+and the [publish-and-verify](./publish-and-verify) demo.
 
 There's also some other misc related work:
 
