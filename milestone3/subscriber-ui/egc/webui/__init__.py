@@ -30,9 +30,9 @@ def create_app(config=None):
     app.jinja_env.globals.update(hash=hash)
 
     # TODO get somehow rather than hardcoding
-    sub_cfg = SubscriberConfig(since_slot='116458744',
-                 since_block_hash='7c5bd72816b5e61e7814f3c385305ffc48411ab27ff2a0771d2cfae69af23943',
-                 policy_id=ScriptHash(bytes.fromhex('b8627e36b5434a5102f690785e1f22ae95093aef2d400a7cbcbb0b89')))
+    sub_cfg = SubscriberConfig(since_slot='116475398',
+                 since_block_hash='19d0a4a1c9027fa2a4babe7c02eb88441f9ce7e952d3cdcf20bae29edbe87947',
+                 policy_id=ScriptHash(bytes.fromhex('9ea1e52c2a65e5b8fb49ea8990816c4a1cff67f3d2360c53d1843159')))
 
     @app.before_serving
     async def startup():

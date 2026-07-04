@@ -470,6 +470,13 @@ class ElectionSubscriber:
         return records
 
 
+    def version(self):
+        "Re-use ETags for 204 no content checking in the webui"
+        if not self._checkpoints:
+            return 0
+        return self._checkpoints[-1].header_hash
+
+
     ## process managment interface ##
 
 

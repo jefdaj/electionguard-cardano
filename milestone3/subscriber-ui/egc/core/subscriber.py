@@ -115,6 +115,8 @@ class ChannelEvent:
     input_state:  Optional[ChannelState]
     output_state: Optional[ChannelState]
 
+    # TODO add txid? where it comes from depends on start/middle/end
+
 
 # TODO move to channel_id.py
 def channel_id_from_asset_name(encoded: str) -> ChannelId:
@@ -466,6 +468,13 @@ class ElectionSubscriber:
             if e.output_state:
                 records += e.output_state.state.new_records
         return records
+
+
+    def version(self):
+        "Re-use ETags for 204 no content checking in the webui"
+        if not self._checkpoints:
+            return 0
+        return self._checkpoints[-1].header_hash
 
 
     ## process managment interface ##
