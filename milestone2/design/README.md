@@ -276,6 +276,22 @@ Each election is broken into a series of standard phases defined in [phase.ak](.
 These are good for adding phase-specific logic to the contract. For example ADA can't be removed except by the admin during `Finalize` (see [funding](#funding-transaction-fees)). They'll also be useful for displaying progress in a future UI, and for controlling which actions are available to each person/role at any given time.
 
 
+### Test Election
+
+The most useful and comprehensive test to look through is probably [happy_election.ak](../publish-and-verify/onchain/validators/tests/integration/happy_election.ak). I ran an election locally, [generated](../publish-and-verify/offchain/dev/static_records_ak.py) Aiken code describing the [static records](../publish-and-verify/onchain/validators/tests/data/static_records.ak) from that election, and then manually wrote out every transaction and channel state needed to post them on chain. It's chopped up like this:
+
+- initial solo admin transactions
+- parallel admin transactions
+- guardian1 transactions
+- guardian2 transactions
+- guardian3 transactions
+- device1 transactions
+- verifier1 transactions
+- final admin transactions
+
+You can run the entire test scenario at once, or pick out parts of it. See [running the tests](#running-the-tests).
+
+
 ## On-Chain Data
 
 Cardano smart contracts can be tricky to visualize because they don't construct transactions; they only decide whether a given transaction is valid or not. So the simplest way to start is with an example of the data structure they're trying to force the off-chain code to create. In this case it's a multithreaded pubsub channel:
@@ -340,22 +356,6 @@ Both also have `new_records` lists that work the same way (they're replaced each
 The admin state has an extra `phase` variable as well as a `subchannels` list, while the subchannel state has a `channel_id`.
 
 The admin channel posts a mix of channel/election related state updates, as well as public records. Subchannels only post public records.
-
-
-### Test Election
-
-The most useful and comprehensive test to look through is probably [happy_election.ak](../publish-and-verify/onchain/validators/tests/integration/happy_election.ak). I ran an election locally, [generated](../publish-and-verify/offchain/dev/static_records_ak.py) Aiken code describing the [static records](../publish-and-verify/onchain/validators/tests/data/static_records.ak) from that election, and then manually wrote out every transaction and channel state needed to post them on chain. It's chopped up like this:
-
-- initial solo admin transactions
-- parallel admin transactions
-- guardian1 transactions
-- guardian2 transactions
-- guardian3 transactions
-- device1 transactions
-- verifier1 transactions
-- final admin transactions
-
-You can run the entire test scenario at once, or pick out parts of it. See [running the tests](#running-the-tests).
 
 
 ## Off-Chain Data
