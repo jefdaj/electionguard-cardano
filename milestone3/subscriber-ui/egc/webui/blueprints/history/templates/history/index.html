@@ -11,17 +11,12 @@
 </div>
 
 <div id="history-main-area">
-	<div id="history-log-container"
-	     hx-ext="morph"
-	     hx-swap="morph">
-		<!-- log fragment injected here -->
+	<div id="history-log-container" hx-ext="morph" hx-swap="morph">
+		<!-- log oob-swapped in here -->
 		Loading...
 	</div>
-
-	<div id="history-state-container"
-	     hx-ext="morph"
-	     hx-swap="morph">
-		<!-- state tree fragment -->
+	<div id="history-state-container" hx-ext="morph" hx-swap="morph">
+		<!-- tree oob-swapped in here -->
 	</div>
 </div>
 
@@ -33,5 +28,5 @@
      hx-swap="innerHTML"
      hx-sync="this:replace"
      hx-on::after-swap="if (!document.getElementById('history-filter-input').value.trim()) { lc = document.getElementById('history-log-container'); lc.scrollTop = lc.scrollHeight; }">
-	<!-- filtered log+state injected here and moved via oob-swap -->
+	<!-- filtered log + tree injected here and then oob-swapped -->
 </div>
