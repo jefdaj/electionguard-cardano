@@ -15,11 +15,11 @@ async def index():
 async def filter_results():
     q = request.args.get("history-filter", "").strip() # TODO would "query" be more standard?
     log_entries = get_log_entries(query=q)
-    state = get_state_tree(query=q)
+    tree = get_state_tree(query=q)
     return await render_template(
         "history/partials/filter_results.html",
         entries=log_entries,
-        state=state,
+        tree=tree,
     )
 
 

@@ -23,7 +23,7 @@ main {
   overflow-y: auto;
 }
 
-#history-state-container {
+#history-tree-container {
   padding: 1rem;
   border-left: 1px solid black;
 }
