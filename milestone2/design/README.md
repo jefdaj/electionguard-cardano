@@ -539,7 +539,9 @@ Here's the JSON for that ballot, indented + truncated to 80 chars for readabilit
 }
 ```
 
-Most of the `PublicRecord` types just use the official JSON serialization from the reference implementation. The main exception so far is that the verification format is a simple dict, and may evolve in order to make incremental verification easier. Currently a successful verification looks like:
+Most of the `PublicRecord` types just use the official JSON serialization from the reference implementation. The main exception so far is that the verification format is a freeform dict, and may evolve in order to make incremental verification easier. It will need to have a schema version defined before use in any real elections to make sure verifiers agree exactly.
+
+Currently a successful verification looks like:
 
 ```json
 {
@@ -683,14 +685,14 @@ examples/static_records/
     └── verifier1.json
 ```
 
-If it didn't already exist, you could create it by subscribing to run of the
-"happy election" pytest tests,
+If it didn't already exist you could create it by subscribing to any test run,
 passing an event handler like this to your `ElectionSubscriber`:
 
 ```python
 def fetch_to_static_records_dir(event: ChannelEvent):
     if not event.output_state:
-        return # ignore RmSubChannels, EndElection
+        # ignore RmSubChannels, EndElection
+        return
     new_records = event.output_state.state.new_records
     ipfs_fetch_records_to_file_sync(new_records, 'examples/static_records')
 ```
