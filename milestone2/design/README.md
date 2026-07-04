@@ -333,3 +333,26 @@ The most useful and comprehensive test to look through is probably [happy_electi
 - final admin transactions
 
 You can run the entire test scenario at once, or pick out parts of it. See [running the tests](#running-the-tests).
+
+# Off-Chain Data
+
+## ElectionContext
+
+```json
+{
+  "schema_version": 2,
+  "script": {
+    "oneshot_utxo": "828258202624b6cc5ed68fcb585e881159a0ccd7c403451e8c11a7a1a41700056009510e0082581d60cb10009c8bc74c7a136d5c13bb8aac60b51847d3e84cf7c7ba088d731a08c12b48",
+    "oneshot_hex": "d8799f58202624b6cc5ed68fcb585e881159a0ccd7c403451e8c11a7a1a41700056009510e00ff",
+    "aiken_blueprint": ...
+    "aiken_tracing": true
+  },
+  "deployment": {
+    "network": "testnet",
+    "funder_address": "addr_test1vr93qqyu30r5c7snd4wp8wu243st2xz8605yea78hgyg6uckjakk5",
+    "deployment_date": "2026-07-03T23:55:12.528731",
+    "index_from_slot": 116492069,
+    "index_from_block_hash": "53c07f8fa7ce9cd75f1139806afc5c36e11ea1d373a6abd30ba5bb5de6a14650"
+  }
+}
+```
