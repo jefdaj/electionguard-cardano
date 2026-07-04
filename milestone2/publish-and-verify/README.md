@@ -27,6 +27,8 @@ on-chain code first; see next section. You also need a dev wallet
 `publish.sh` runs the "happy election" tests, which publish static public
 records from a previous election run to Cardano + IPFS. Run it like so:
 
+WARNING: various projects are still adjusting to Cardano node 11. Ogmios has updated but PyCardano hasn't yet; if you want to run this as is you need to build [my fork of the *previous* Ogmios with node 11 support added](https://github.com/jefdaj/cardano-ogmios), and refer to the image in [docker-compose.yml](https://github.com/jefdaj/electionguard-cardano/blob/1e26069f5b310cebb41107aa102e347b2161474b/milestone2/publish-and-verify/docker-compose.yml#L28).
+
 ```
 $ nix develop
 $ docker compose up -d
