@@ -397,3 +397,146 @@ PublicRecord(
 	metadata=BallotSubmitted(ballot_id=b'ballot-480eed2e-1d64-11f1-ac1f-768fd7ed4145')
 )
 ```
+
+The actual Python objects are serialized to JSON and that's what gets added to IPFS.
+Here's the JSON for that ballot, indented + truncated to 80 chars for readability:
+
+```json
+{
+  "object_id": "ballot-480eed2e-1d64-11f1-ac1f-768fd7ed4145",
+  "style_id": "ballot-style-01",
+  "manifest_hash": "5BC6C81DAC9557C3094B85EBF7443C8A0115CE55CEFFC496D03F93245D21
+  "code_seed": "117973FC982F84F664C0C257D57614F54A1648EA6AB3CBE8DD6DCC878E6E13EF
+  "contests": [
+    {
+      "object_id": "referendum-pineapple",
+      "sequence_order": 0,
+      "description_hash": "2C170182C4279838F50B0204303AD58709E138713A16F2039D4A2
+      "ballot_selections": [
+        {
+          "object_id": "referendum-pineapple-affirmative-selection",
+          "sequence_order": 1,
+          "description_hash": "FC46ACDACC245DE35554191EB0EC4C8821C336AD89602C375
+          "ciphertext": {
+            "pad": "4B41F2DF18DBAB4C0F8B0F48DDA5FE74B1CD9C4DD13A56A7E9DD86F5221A
+            "data": "0CCA52A260EA61317726AC1C27CD0469CCC686449EB02466733892FD167
+          },
+          "crypto_hash": "A579D61FBC164318D28A0D8280BCB8D130C9187EB71339F120B4B5
+          "is_placeholder_selection": false,
+          "nonce": null,
+          "proof": {
+            "proof_zero_pad": "B8E09D8219355B68089B6AC5683BC80244291B843A55C5B36
+            "proof_zero_data": "3E6B2C110A4FD203E2953CE9368AF59ABD257F443459C766
+            "proof_one_pad": "1542A7FC4CB3FD9D66AD4143C62AE7B375749A23D09D29519E
+            "proof_one_data": "F44EF32E66FF9A41CBA52A79711365FC064E20F5A3CBF65F7
+            "proof_zero_challenge": "67403279ED27C9F59103FDFEF8FEBEDE88B6942C1CA
+            "proof_one_challenge": "E7D84D611458B6E5C61C9FA3DBC31656ED2A37EAFE4B
+            "challenge": "4F187FDB018080DB57209DA2D4C1D53575E0CC171AF19FC196246B
+            "proof_zero_response": "DAE6A7CC419C04D215A6D7C6CAAB9D6DA73309B9B258
+            "proof_one_response": "7E53F33F26132630EE026F449846F8080CDB8A40929D9
+            "usage": "Prove selection's value (0 or 1)"
+          }
+        },
+        {
+          "object_id": "referendum-pineapple-negative-selection",
+          "sequence_order": 2,
+          "description_hash": "D409BF16CA15A4A2158A23EDA99144A07C09214FA2C303B42
+          "ciphertext": {
+            "pad": "F0E7C5CDD765EB21EC24F50653D485A45F25510B0AB79A6764010DB8C693
+            "data": "1628E41AEFE88CE3DDC67972B8376F5FA010833DC1CB9A77E301EE601D8
+          },
+          "crypto_hash": "E684EB1EAB4029249642C8B3DDB359C68CB06F6FC781F74B786E94
+          "is_placeholder_selection": false,
+          "nonce": null,
+          "proof": {
+            "proof_zero_pad": "702B2FB7A917846D08861D693455946F059A4D76F4462C543
+            "proof_zero_data": "CD509BCE857CA04595D769295A7AA44CCD01578A4C733637
+            "proof_one_pad": "728AA2CE2582438C768E0886B5B0B8592FA831DC801CC02D20
+            "proof_one_data": "0DB40C5DC5DFDBEC5E42D024A14EE6FC3C4331594FD26346E
+            "proof_zero_challenge": "DF29A4289859264E3BB79B3773C2ACB16CA9045E939
+            "proof_one_challenge": "E9D173424C84CB103D1965B0569DABFB68B7234A1654
+            "challenge": "C8FB176AE4DDF15E78D100E7CA6058ACD56027A8A9F1E129DE9BDA
+            "proof_zero_response": "16A9897D65CCBECD100CF9A5DD83D4FDB2F21BF4BD6A
+            "proof_one_response": "518E2D90355214F3F4879C0E39A1E46C9A59DABAC4E4D
+            "usage": "Prove selection's value (0 or 1)"
+          }
+        },
+        {
+          "object_id": "referendum-pineapple-unsure-selection",
+          "sequence_order": 3,
+          "description_hash": "4894DD4D8480A8C7844F46F2AFCA143029E6289473736F0B7
+          "ciphertext": {
+            "pad": "08C3FA084C38AC93D054CCC9A6B4C7DFB2FB4E141D2C2EDB1F61FB7CA3D4
+            "data": "BE7969801F2596EA40EBAB1B6E3250EF05D85E19D57CE8A31DEC3E04210
+          },
+          "crypto_hash": "42AD335220DF2A9C39787524778F97F6579F849B3C3B50AF584D68
+          "is_placeholder_selection": false,
+          "nonce": null,
+          "proof": {
+            "proof_zero_pad": "2F745FE6C0FE9E4B059CE4FA258B74F8FA92AAEEB410C3488
+            "proof_zero_data": "EC0900324A8C0B8738D4FAC1CBC9D1ADE7B893DF3738F8BB
+            "proof_one_pad": "C881739010C1E8A07FC312A014727D3630755ED3A3DA680AE8
+            "proof_one_data": "8BEB1B73C652DAD0C158FDDD5C5013A3604C3052F9072EEDA
+            "proof_zero_challenge": "7177A92BE032BA7E3DEDD2EB5E983075989857FFCBE
+            "proof_one_challenge": "BAF7642394991944F8A7A0803B1648022A2C8890AF91
+            "challenge": "2C6F0D4F74CBD3C33695736B99AE7877C2C4E0907B811BBF888562
+            "proof_zero_response": "C52FC82587C74F61CB3A229796BB71E8D5D3CC4C06E3
+            "proof_one_response": "E64C2041B6028F34D7F2627B656E95F4711271C538BDA
+            "usage": "Prove selection's value (0 or 1)"
+          }
+        },
+        {
+          "object_id": "referendum-pineapple-4-placeholder",
+          "sequence_order": 4,
+          "description_hash": "2EF2EC6A22E31D292F3838A336D49558CEDE1E40B43115387
+          "ciphertext": {
+            "pad": "D7B4635CAF2293768FEC95BAD9DD13D088450E730B91D5C6677A3F67955E
+            "data": "5FA69D8343570B921985021B076A58CD42023E065F1795AF434FDDDFFB1
+          },
+          "crypto_hash": "0FE78627844F74F5E8D1AE0E7D4C22426225F7E8DFC11A73070278
+          "is_placeholder_selection": true,
+          "nonce": null,
+          "proof": {
+            "proof_zero_pad": "061536FDEAA1F031E5A77C0C0C3D966983654F9448975F53E
+            "proof_zero_data": "1C917A03FECD6AB46C0CF9D28812FE3E23FCCD58210A0BD0
+            "proof_one_pad": "0EDB01C6F1081C330830BAAEBA02DBBDC2D8672EB474586DD0
+            "proof_one_data": "D60E964304BE88B7DF3393A81AA6BB3BD64C6289A4FEDBAD0
+            "proof_zero_challenge": "32C6F51ADDBFFD7A1EC077980D73F7750A6FF5D351C
+            "proof_one_challenge": "06E932AB4AF04E9E9240C1A249F752867FC951B809C1
+            "challenge": "39B027C628B04C18B101393A576B49FB8A39478B5B8561514B4129
+            "proof_zero_response": "A1B6CA9AA82639FE9EFF92BDB638CCD524780957236A
+            "proof_one_response": "982D4AC8D6CDD1FFD36C8388C207D9D3E324899991D8A
+            "usage": "Prove selection's value (0 or 1)"
+          }
+        }
+      ],
+      "ciphertext_accumulation": {
+        "pad": "BF1CC52D326E44A4792BC08123408D1DCFDA17CF98DACE78C35B551E58124D9D
+        "data": "BCD97115A0898DB8DEF1D188E199FE4D83F6B2B03D6572EA691B8C72D16B902
+      },
+      "crypto_hash": "B297637041502A2249047F3D24E63B69E1A945198A92E0F2AFB597C104
+      "nonce": null,
+      "proof": {
+        "pad": "D71E8779A6EBE0A3DEF6ACC0A6D92EDAD2A07319A23B951BA49B500CA7AC2881
+        "data": "B31BBD4221927946D666D3420621DB74CDFF9867BB36F3FE8230763E8623231
+        "challenge": "45E394B72D4B92B60D07C3799BE19AEE2B03CDD3B3A2FE2F2CBBBE6B63
+        "response": "FFC175A5D643CDAD152E9ED022D7D07BCEE19A61577141A3D7453ABBF01
+        "constant": 1,
+        "usage": "Prove value within selection's limit"
+      },
+      "extended_data": {
+        "pad": "2F182A84189BFA3ACF2A4443414FBDED0D5F9E6474D3F098EFEAF70D0245D986
+        "data": "CE01D8317D08D2D5AFC6884A1157CE0DDC1C4ADA09FFE4DC15E41AE0F549764
+        "mac": "C131177A115181ADF12EF81F337F8B30113F4C55FBC20E3D19F60D002C3CED46
+      }
+    }
+  ],
+  "code": "4FB58F821B9CFBAE9C9F93043193A053BD86D799ED7FACF329CE89E006E37007",
+  "timestamp": 1773245196,
+  "crypto_hash": "05B2B047CF3CFEE3B14D9A482C4092B54336C7DF3B54B09C48D71D71BFA1A6
+  "nonce": null,
+  "state": 999
+}
+```
+
+Most of the `PublicRecord` types just use the official JSON serialization from the reference implementation. The main exception so far is that the verification format is a simple dict, and may evolve in order to make incremental verification easier.
