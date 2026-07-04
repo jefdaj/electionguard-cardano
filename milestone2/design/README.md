@@ -725,7 +725,7 @@ In this case I deleted one of the submitted ballots, but it was spoiled rather t
 The other exception is that there are a large number of details that can go in an ElectionGuard manifest file---precinct boundaries, party affiliations, language translations, etc---but aren't supported yet in ElectionGuard+Cardano. Those may be removed or replaced with trivial values, or the entire manifest format may be simplified.
 
 
-### Save/load lists of PublicRecords
+### Archiving Public Records
 
 `PublicRecordMetadata` can also be translated to/from a path relative to a root public records dir. That makes it easy to read records on chain, fetch the corresponding files, and save them to disk in a standard archive format.
 
