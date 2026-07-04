@@ -1,3 +1,5 @@
+import os
+
 from quart import Quart, Config
 from quart import render_template, request
 
@@ -29,10 +31,10 @@ def create_app(config=None):
     # allow hash() to be used in templates
     app.jinja_env.globals.update(hash=hash)
 
-    # TODO get somehow rather than hardcoding
-    sub_cfg = SubscriberConfig(since_slot='116475398',
-                 since_block_hash='19d0a4a1c9027fa2a4babe7c02eb88441f9ce7e952d3cdcf20bae29edbe87947',
-                 policy_id=ScriptHash(bytes.fromhex('9ea1e52c2a65e5b8fb49ea8990816c4a1cff67f3d2360c53d1843159')))
+    (policy_id, slot_no, header_hash) = os.environ['SUBSCRIBE_ARGS'].split(' ')[:3]
+    sub_cfg = SubscriberConfig(since_slot=int(slot_no),
+                 since_block_hash=header_hash,
+                 policy_id=ScriptHash(bytes.fromhex(policy_id)))
 
     @app.before_serving
     async def startup():
