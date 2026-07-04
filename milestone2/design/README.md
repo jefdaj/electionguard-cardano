@@ -1,4 +1,8 @@
-# Tour of the electionguard-cardano smart contract
+# Design Documentation
+
+Note: On Github, click the hamburger icon to show the TOC &#8599;
+
+## Tour of the electionguard-cardano smart contract
 
 See also [Dev Update #5 on YouTube](https://www.youtube.com/watch?v=zWpfJSx9b1I).
 
@@ -16,7 +20,7 @@ There are many other things the blockchain would also be useful for, but they're
 - incentives for 3rd parties to serve IPFS data and run verifiers + dashboards
 - ...
 
-## Files
+### Files
 
 Here's an overview of all the validator code so far.
 It's split into the production code and the test suite:
@@ -45,7 +49,7 @@ The test suite is organized into [mock.ak](./validators/tests/mock.ak) which is 
 
 The current integration tests are "happy path" tests that confirm the full contract lifecycle works. They start with `happy_`. Later, others can be added to check that the validator rejects all attempts at invalid state transitions. The happy path tests are a good starting point for that, because each invalid state can be reached by starting from one of the valid states and doing one thing wrong.
 
-## Running the tests
+### Running the tests
 
 You can run specific tests with trace statments,
 which is very useful for debugging:
@@ -206,7 +210,7 @@ $ ./check.sh
       Summary 267 checks, 0 errors, 0 warnings
 ```
 
-## Visualizing the on-chain data
+### Visualizing the on-chain data
 
 Cardano smart contracts can be tricky to visualize because they don't construct transactions; they only decide whether a given transaction is valid or not. So the simplest way to start is with an example of the data structure they're trying to force the off-chain code to create. In this case it's a multithreaded pubsub channel:
 
@@ -218,7 +222,7 @@ There's always one admin channel. The admin can post records to it, as well as u
 
 Each subchannel has one authorized publisher, and the only thing they can do is to post public records.
 
-## Public Records
+### Public Records
 
 Leaving the admin channel aside for a minute, most transactions are simple: one of the subchannel publishers posts a list of public records to their channel. In the case of a ballot encryption device, the list might look like:
 
@@ -257,7 +261,7 @@ All records include an IPFS CID and some metadata. The possible metadata types a
 
 Each update (datum) only includes the latest batch of `new_records`. Observers or other node operators need to run a Kupo indexer to get the full history. There's no way around the general requirement to run a custom node, because it also needs to fetch files via IPFS in order to confirm that the current election state is valid.
 
-## Election Phases
+### Election Phases
 
 Each election is broken into a series of standard phases defined in [phase.ak](./validators/election/types/phase.ak):
 
@@ -278,7 +282,7 @@ Each election is broken into a series of standard phases defined in [phase.ak](.
 
 These are good for adding phase-specific logic to the contract. For example ADA can't be removed except by the admin during `Finalize` (see [funding](#funding-transaction-fees)). They'll also be useful for displaying progress in a future UI, and for controlling which actions are available to each person/role at any given time.
 
-## Funding Transaction Fees
+### Funding Transaction Fees
 
 The contract is set up to minimize the amount of ADA that needs to be handled by election officials. The expected workflow is:
 
@@ -291,11 +295,11 @@ The contract is set up to minimize the amount of ADA that needs to be handled by
 
 Most of that will be handled by the off-chain code that constructs transactions, and by the Cardano ledger. The contract just ensures is that no one can take the ADA associated with a channel during the election. That's handled [here](./validators/election.ak#L428) and [here in fund.ak](./validators/election/fund.ak#L13). There's also a `RebalanceFunds` action for the admin, which is almost a no-op except that it needs to update the admin STT + each subchannel STT being rebalanced.
 
-## Burning Test Tokens
+### Burning Test Tokens
 
 When I first started working with the testnet, I accidentally made a few unspendable (or not easily spendable) test tokens. The current version of the contract includes a `BurnTestTokens` action (redeemer) to prevent that. Whenever one of the tests hits an unexpected issue, I'll run the burn script to clean it up. Obviously this part should be removed before production use!
 
-## Admin actions
+### Admin actions
 
 Now you know enough to understand [all the action (redeemer) types in action.ak](./validators/election/types/action.ak). They're grouped in the source code by which channels they touch, but would typically be used in this order by the admin:
 
@@ -307,7 +311,7 @@ Now you know enough to understand [all the action (redeemer) types in action.ak]
 6. RmSubchannels
 7. EndElection
 
-## Channel State
+### Channel State
 
 There are two types of channel states, defined in [channel.ak](./validators/election/types/channel.ak): `AdminChannelState` and `SubChannelState`.
 
@@ -319,7 +323,7 @@ The admin state has an extra `phase` variable as well as a `subchannels` list, w
 
 The admin channel posts a mix of channel/election related state updates, as well as public records. Subchannels only post public records.
 
-## Test Election
+### Test Election
 
 The most useful and comprehensive test to look through is probably [happy_election.ak](./validators/tests/integration/happy_election.ak). I ran an election locally, [generated](../offchain/static_records_ak.py) Aiken code describing the [static records](./validators/tests/data/static_records.ak) from that election, and then manually wrote out every transaction and channel state needed to post them on chain. It's chopped up like this:
 
@@ -334,9 +338,9 @@ The most useful and comprehensive test to look through is probably [happy_electi
 
 You can run the entire test scenario at once, or pick out parts of it. See [running the tests](#running-the-tests).
 
-# Off-Chain Data
+## Off-Chain Data
 
-## ElectionContext
+### ElectionContext
 
 ```json
 {
@@ -357,7 +361,7 @@ You can run the entire test scenario at once, or pick out parts of it. See [runn
 }
 ```
 
-## Future QR Codes
+### Future QR Codes
 
 The `ElectionContext` includes all the info that we might want for any reason.
 Smaller amounts of info we need to transfer between nodes out-of-band can go in QR codes:
@@ -379,7 +383,7 @@ SubscriberConfig(since_slot='116492069',
 It will probably also need a network code in the future.
 
 
-## Public Records
+### Public Records
 
 All the artifacts that should be posted on chain and uploaded to IPFS are formatted as `PublicRecord`s. A public record has an IPFS CID(v1) and some typed metadata. There are matching definitions in Aiken and Python. For example:
 
@@ -619,7 +623,7 @@ And a failed one looks like:
 
 The other exception is that there are a large number of details that can go in an ElectionGuard manifest file--overlapping jurisdiction boundaries, party affiliations, language translations of all the questions, etc--but aren't supported yet in ElectionGuard+Cardano. Those may be removed or replaced with trivial values.
 
-## Save/load lists of PublicRecords
+### Save/load lists of PublicRecords
 
 `PublicRecordMetadata` can also be translated to/from a path relative to a root public records dir. That makes it easy to read records on chain, fetch the corresponding files, and save them to disk in a standard archive format.
 
