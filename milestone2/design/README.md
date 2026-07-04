@@ -356,3 +356,27 @@ You can run the entire test scenario at once, or pick out parts of it. See [runn
   }
 }
 ```
+
+## Future QR Codes
+
+The `ElectionContext` includes all the info that we might want for any reason.
+Smaller amounts of info we definitely want to transfer between nodes out-of-band can go in QR codes:
+
+- slot number, block header hash, policy id for subscribing to an election
+- requests to be authorized as an election official, with public wallet address
+- unique session codes to prove to the challenge station that you're the voter who just submitted a particular ballot, and should now be allowed to cast or spoil it
+- reciepts that can be taken home and used later to check that your vote was counted
+
+The actual QR code formats aren't defined yet.
+Only the (slot, hash, policy id) one is currently part of the codebase. It looks like:
+
+```python
+SubscriberConfig(since_slot='116492069',
+                 since_block_hash='53c07f8fa7ce9cd75f1139806afc5c36e11ea1d373a6abd30ba5bb5de6a14650',
+                 policy_id=ScriptHash(hex='fa4cc29d56e896561b94369831cd9e83d1faf8fea7868dc72729a95d'))
+```
+
+It will probably also need a network code in the future.
+
+
+## Election Artifacts
