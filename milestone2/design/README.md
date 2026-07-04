@@ -1,8 +1,10 @@
 # Design Documentation
 
-_On Github, click the hamburger icon to show the outline_ &#8599;
+This is mostly focused on explaining the smart contract for now, because that's both more important and better defined so far. There are examples of all the offchain data formats too though. Skip to [off-chain data](#off-chain-data) for those.
 
-## Tour of the electionguard-cardano smart contract
+_On Github, click the hamburger icon to show the table of contents &#8599;
+
+## Smart Contract Tour
 
 See also [Dev Update #5 on YouTube](https://www.youtube.com/watch?v=zWpfJSx9b1I).
 
@@ -20,7 +22,7 @@ There are many other things the blockchain would also be useful for, but they're
 - incentives for 3rd parties to serve IPFS data and run verifiers + dashboards
 - ...
 
-### Files
+### Source Code
 
 Here's an overview of all the validator code so far.
 It's split into the production code and the test suite:
