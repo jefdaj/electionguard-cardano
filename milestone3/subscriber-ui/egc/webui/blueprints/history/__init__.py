@@ -1,3 +1,5 @@
+import hashlib
+
 from quart import Blueprint, render_template, request, current_app
 from egc.core import Entry, get_log_entries, get_state_tree
 
@@ -7,6 +9,13 @@ bp = Blueprint("history", __name__, template_folder="templates")
 async def index():
     return await render_template("index.html")
 
+def version_including_filter(sub_version: str, filter_str: str):
+    if filter_str is None:
+        return sub_version
+    else:
+        filter_version = hashlib.md5(filter_str.encode()).hexdigest()[:8]
+        return f'{filter_version}:{sub_version}'
+
 # Because we want to filter both the log and tree at once, we return the two
 # divs wrapped in filter_result. Then each is swapped with its correct div
 # client side using hx-swap-oob.
@@ -14,15 +23,16 @@ async def index():
 # TODO rename something like events? if it's also rendering by polling for changes
 @bp.get("/filter")
 async def filter_results():
+    # TODO rename filter here? or query elsewhere?
+    q = request.args.get("history-filter", "").strip()
 
     # return 204 (no new content) if polling and the version hasn't changed
     req_ver = request.headers.get("HX-Trigger-Version")
     is_poll = req_ver is not None # to avoid 204 when explicitly filtering
-    cur_ver = current_app.subscriber.version()
+    cur_ver = version_including_filter(current_app.subscriber.version(), q)
     if is_poll and cur_ver == req_ver:
         return "", 204 # unchanged; htmx skips the swap
 
-    q = request.args.get("history-filter", "").strip() # TODO would "query" be more standard?
     events = current_app.subscriber.all_events()
 
     # TODO factor out into something more general
