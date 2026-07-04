@@ -115,6 +115,8 @@ class ChannelEvent:
     input_state:  Optional[ChannelState]
     output_state: Optional[ChannelState]
 
+    # TODO add txid? where it comes from depends on start/middle/end
+
 
 # TODO move to channel_id.py
 def channel_id_from_asset_name(encoded: str) -> ChannelId:
