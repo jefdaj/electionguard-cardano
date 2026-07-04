@@ -30,7 +30,7 @@ Current status as of 2026-07-03:
 
 - [x] [Milestone 2](./milestone2/) (Cardano stuff) finished:
 
-  * [x] Output 2.1  [design docs](./milestone2/design/)
+  * [x] Output 2.1  [design docs](./milestone2/design/) and [video](https://www.youtube.com/watch?v=zWpfJSx9b1I)
   * [x] Output 2.2: [publish script](./milestone2/publish-and-verify/offchain/publish.sh)
   * [x] Output 2.3: [verify script](./milestone2/publish-and-verify/offchain/verify.sh)
   * Outputs 2 and 3 have combined YouTube videos (2 videos, [both](https://www.youtube.com/watch?v=Dr2lltC-zw0) about [both](https://www.youtube.com/watch?v=Qe0vyI1Zazo)) + one combined [blog post](https://cryptoisland.blog/posts/2026/07/03/egc-dev07-publish-and-verify/) and [Asciinema demo](https://asciinema.org/a/1260144).
