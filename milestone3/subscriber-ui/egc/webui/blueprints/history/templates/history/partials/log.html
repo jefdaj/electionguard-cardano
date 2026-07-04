@@ -1,12 +1,15 @@
 <div id="history-log-container">
 <ul class="history-log">
-  {% for e in entries %}
-    <li class="entry" id="entry-{{ e.id }}">
-      id: {{ e.id }}
-      height: {{ e.height }}
+  {% for e in events %}
+    <li class="event" id="event-{{ e.id }}">
+      slot: {{ e.slot_no }}
+      <br/>channel: {{ e.channel_id.decode('utf-8') }}
+      <br/>action: {{ e.action }}
+      <br/>
+      <!-- height: {{ e.height }}
       type: {{ e.type }}
       <br/>summary: {{ e.summary }}
-      <br/>timestamp: {{ e.timestamp }}
+      <br/>timestamp: {{ e.timestamp }} -->
     </li>
   {% else %}
   {% endfor %}

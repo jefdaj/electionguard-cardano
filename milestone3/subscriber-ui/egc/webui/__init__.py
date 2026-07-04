@@ -2,7 +2,7 @@ from quart import Quart, Config
 from quart import render_template, request
 
 # TODO remove pycardano.hash from core exports to avoid shadowing system one
-from ..core import Entry, get_log_entries, get_state_tree
+# from ..core import Entry, get_log_entries, get_state_tree
 
 from ..core import ElectionSubscriber, SubscriberConfig
 from pycardano import ScriptHash
