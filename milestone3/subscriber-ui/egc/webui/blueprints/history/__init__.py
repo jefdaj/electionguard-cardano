@@ -24,6 +24,10 @@ async def filter_results():
 
     q = request.args.get("history-filter", "").strip() # TODO would "query" be more standard?
     events = current_app.subscriber.all_events()
+
+    # TODO factor out into something more general
+    events = [e for e in events if q.lower() in str(e).lower()]
+
     tree = get_state_tree(query=q)
     return await render_template(
         "history/partials/filter_results.html",
