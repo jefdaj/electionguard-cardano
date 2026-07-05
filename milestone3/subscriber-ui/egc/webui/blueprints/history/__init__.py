@@ -42,7 +42,7 @@ def get_closed_ids() -> set[str]:
     return set(filter(None, request.args.get("closed", "").split(",")))
 
 def node_matches(node, f):
-    return f is None or f.lower() in str(node["label"]).lower()
+    return f is None or f.lower() in str(node).lower()
 
 def visible(node, f):
     if f is None:
