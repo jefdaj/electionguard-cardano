@@ -73,8 +73,14 @@ async def register_globals():
 async def tree():
     filter_str = get_history_filter()
     open_ids = get_open_ids()
+	# If loading the tree as a standalone page (for debugging),
+	# need to add the HTMX script to it.
+    template = (
+        "history/partials/tree.html" if request.headers.get("HX-Request")
+        else "history/tree_page.html"
+    )
     return await render_template(
-        "history/partials/tree.html",
+        template,
         tree=build_tree(filter_str), open_ids=open_ids, filter_str=filter_str,
     )
 
