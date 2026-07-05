@@ -5,8 +5,8 @@
       {% if node.children %}
         <button
           hx-get="{{ url_for('history.tree', open=toggle_ids(open_ids, node.id), **{'history-filter': filter_str}) }}"
-          hx-target="#history-tree-container"
-          hx-swap="innerHTML"
+          hx-target="closest .history-tree"
+          hx-swap="outerHTML"
           aria-expanded="{{ 'true' if is_open(node, open_ids, filter_str) else 'false' }}">
           {{ '▾' if is_open(node, open_ids, filter_str) else '▸' }}
         </button>
