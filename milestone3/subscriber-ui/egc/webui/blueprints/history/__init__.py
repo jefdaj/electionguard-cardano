@@ -4,6 +4,10 @@ from typing import Optional
 
 bp = Blueprint("history", __name__, template_folder="templates")
 
+
+### index ###
+
+
 @bp.route("/")
 async def index():
     return await render_template("index.html")
@@ -15,29 +19,67 @@ def version_including_filter(sub_version: str, filter_str: Optional[str]):
     else:
         return sub_version
 
+
+### tree ###
+
+
 def build_tree(filter_str=None):
-    tree = {"label": "Election", "children": [
-        {"label": "Key ceremony", "children": [
-            {"label": "Round 1", "children": []},
+    return {"id": "election", "label": "Election", "children": [
+        {"id": "key", "label": "Key ceremony", "children": [
+            {"id": "key-r1", "label": "Round 1", "children": []},
         ]},
-        {"label": "Voting", "children": []},
+        {"id": "voting", "label": "Voting", "children": []},
     ]}
-    # apply filter_str here later
-    return tree
 
 
 def get_history_filter() -> Optional[str]:
     return request.args.get("history-filter", "").strip() or None
+
+def get_open_ids() -> set[str]:
+    return set(filter(None, request.args.get("open", "").split(",")))
+
+
+def node_matches(node, f):
+    return f is None or f.lower() in str(node["label"]).lower()
+
+def visible(node, f):
+    if f is None:
+        return True
+    return node_matches(node, f) or any(visible(c, f) for c in node["children"])
+
+def has_visible_child(node, f):
+    return any(visible(c, f) for c in node["children"])
+
+def is_open(node, open_ids, f):
+    if f is not None and has_visible_child(node, f):
+        return True          # force-open ancestors of matches
+    return node["id"] in open_ids
+
+def toggle_ids(open_ids, node_id):
+    s = set(open_ids)
+    s.discard(node_id) if node_id in s else s.add(node_id)
+    return ",".join(sorted(s))   # canonical, stable URLs
+
+
+@bp.before_app_serving
+async def register_globals():
+    current_app.jinja_env.globals.update(
+        visible=visible, is_open=is_open, toggle_ids=toggle_ids,
+    )
 
 
 # This isn't technically needed, but helps with debugging.
 @bp.route("/tree")
 async def tree():
     filter_str = get_history_filter()
+    open_ids = get_open_ids()
     return await render_template(
         "history/partials/tree.html",
-        tree=build_tree(filter_str=filter_str)
+        tree=build_tree(filter_str), open_ids=open_ids, filter_str=filter_str,
     )
+
+
+### filter_results ###
 
 
 # Because we want to filter both the log and tree at once, we return the two
@@ -47,6 +89,7 @@ async def tree():
 @bp.get("/filter")
 async def filter_results():
     filter_str = get_history_filter()
+    open_ids = get_open_ids()
 
     # return 204 (no new content) if polling and the version hasn't changed
     req_ver = request.headers.get("HX-Trigger-Version")
@@ -61,9 +104,6 @@ async def filter_results():
 
     return await render_template(
         "history/partials/filter_results.html",
-        events=events,
-        tree=build_tree(filter_str=filter_str),
-        history_ver=cur_ver,
+        events=events, tree=build_tree(filter_str),
+        open_ids=open_ids, filter_str=filter_str, history_ver=cur_ver,
     )
-
-
