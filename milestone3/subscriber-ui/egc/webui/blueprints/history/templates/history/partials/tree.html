@@ -1,4 +1,4 @@
 <div class="history-tree">
   {% from 'history/partials/node.html' import render_node %}
-  <ul>{{ render_node(tree, open_ids, filter_str) }}</ul>
+  <ul>{{ render_node(tree, open_ids, closed_ids, filter_str) }}</ul>
 </div>

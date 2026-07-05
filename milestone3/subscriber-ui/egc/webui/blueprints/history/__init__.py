@@ -38,6 +38,8 @@ def get_history_filter() -> Optional[str]:
 def get_open_ids() -> set[str]:
     return set(filter(None, request.args.get("open", "").split(",")))
 
+def get_closed_ids() -> set[str]:
+    return set(filter(None, request.args.get("closed", "").split(",")))
 
 def node_matches(node, f):
     return f is None or f.lower() in str(node["label"]).lower()
@@ -50,15 +52,20 @@ def visible(node, f):
 def has_visible_child(node, f):
     return any(visible(c, f) for c in node["children"])
 
-def is_open(node, open_ids, f):
+def is_open(node, open_ids, closed_ids, f):
+    if node["id"] in closed_ids:
+        return False                      # explicit user collapse always wins
     if f is not None and has_visible_child(node, f):
-        return True          # force-open ancestors of matches
+        return True                       # filter force-open
     return node["id"] in open_ids
 
-def toggle_ids(open_ids, node_id):
-    s = set(open_ids)
-    s.discard(node_id) if node_id in s else s.add(node_id)
-    return ",".join(sorted(s))   # canonical, stable URLs
+def toggle_ids(open_ids, closed_ids, node_id, currently_open):
+    o, c = set(open_ids), set(closed_ids)
+    if currently_open:                    # user is collapsing it
+        o.discard(node_id); c.add(node_id)
+    else:                                 # user is expanding it
+        c.discard(node_id); o.add(node_id)
+    return ",".join(sorted(o)), ",".join(sorted(c))
 
 
 @bp.before_app_serving
@@ -72,7 +79,8 @@ async def register_globals():
 @bp.route("/tree")
 async def tree():
     filter_str = get_history_filter()
-    open_ids = get_open_ids()
+    open_ids   = get_open_ids()
+    closed_ids = get_closed_ids()
 	# If loading the tree as a standalone page (for debugging),
 	# need to add the HTMX script to it.
     template = (
@@ -81,7 +89,9 @@ async def tree():
     )
     return await render_template(
         template,
-        tree=build_tree(filter_str), open_ids=open_ids, filter_str=filter_str,
+        tree=build_tree(filter_str),
+        open_ids=open_ids, closed_ids=closed_ids,
+        filter_str=filter_str,
     )
 
 
@@ -95,7 +105,8 @@ async def tree():
 @bp.get("/filter")
 async def filter_results():
     filter_str = get_history_filter()
-    open_ids = get_open_ids()
+    open_ids   = get_open_ids()
+    closed_ids = get_closed_ids()
 
     # return 204 (no new content) if polling and the version hasn't changed
     req_ver = request.headers.get("HX-Trigger-Version")
@@ -111,5 +122,6 @@ async def filter_results():
     return await render_template(
         "history/partials/filter_results.html",
         events=events, tree=build_tree(filter_str),
-        open_ids=open_ids, filter_str=filter_str, history_ver=cur_ver,
+        open_ids=open_ids, closed_ids=closed_ids,
+        filter_str=filter_str, history_ver=cur_ver,
     )

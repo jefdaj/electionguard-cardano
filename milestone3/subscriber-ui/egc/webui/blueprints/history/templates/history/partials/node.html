@@ -1,22 +1,24 @@
-{% macro render_node(node, open_ids, filter_str) %}
+{% macro render_node(node, open_ids, closed_ids, filter_str) %}
   {% if visible(node, filter_str) %}
-  <li id="node-{{ node.id }}">
+  {% set open_now = is_open(node, open_ids, closed_ids, filter_str) %}
+  <li id="node-{{ node.id }}" class="tree-node">
     <div class="node-header">
       {% if node.children %}
+        {% set new_open, new_closed = toggle_ids(open_ids, closed_ids, node.id, open_now) %}
         <button
-          hx-get="{{ url_for('history.tree', open=toggle_ids(open_ids, node.id), **{'history-filter': filter_str}) }}"
+          hx-get="{{ url_for('history.tree', open=new_open, closed=new_closed, **{'history-filter': filter_str}) }}"
           hx-target="closest .history-tree"
           hx-swap="outerHTML"
-          aria-expanded="{{ 'true' if is_open(node, open_ids, filter_str) else 'false' }}">
-          {{ '▾' if is_open(node, open_ids, filter_str) else '▸' }}
+          aria-expanded="{{ 'true' if open_now else 'false' }}">
+          {{ '▾' if open_now else '▸' }}
         </button>
       {% endif %}
       <span>{{ node.label }}</span>
     </div>
-    {% if is_open(node, open_ids, filter_str) and node.children %}
+    {% if is_open(node, open_ids, closed_ids, filter_str) and node.children %}
       <ul>
         {% for c in node.children %}
-          {{ render_node(c, open_ids, filter_str) }}
+          {{ render_node(c, open_ids, closed_ids, filter_str) }}
         {% endfor %}
       </ul>
     {% endif %}
