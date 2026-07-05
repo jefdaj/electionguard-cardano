@@ -12,18 +12,28 @@ def version_including_filter(sub_version: str, filter_str: str):
     filter_version = hashlib.md5(filter_str.encode()).hexdigest()[:8]
     return f'{filter_version}:{sub_version}'
 
-# Query format should match get_log_entries so they can be filtered together.
-def get_state_tree(query=None):
-    state: Dict[str, Dict[str, int]] = {}
-    state["1"] = {"1.1": "one point one", "1.2": "one point two"}
-    state["2"] = {"2.1": "one point one"}
-    state["3"] = {"3.1": "three point one"}
-    return state
+def build_tree(filter_str=None):
+    tree = {"label": "Election", "children": [
+        {"label": "Key ceremony", "children": [
+            {"label": "Round 1", "children": []},
+        ]},
+        {"label": "Voting", "children": []},
+    ]}
+    # apply filter_str here later
+    return tree
+
+# This isn't technically needed, but helps with debugging.
+@bp.route("/tree")
+async def tree():
+    q = request.args.get("history-filter", "").strip() or None
+    return await render_template(
+        "history/partials/tree.html",
+        tree=build_tree(filter_str=q)
+    )
 
 # Because we want to filter both the log and tree at once, we return the two
 # divs wrapped in filter_result. Then each is swapped with its correct div
 # client side using hx-swap-oob.
-# TODO does specifying hx-swap-oob in the returned html like this work?
 # TODO rename something like events? if it's also rendering by polling for changes
 @bp.get("/filter")
 async def filter_results():
@@ -42,11 +52,10 @@ async def filter_results():
     if len(q.lower()) > 0:
         events = [e for e in events if q.lower() in str(e).lower()]
 
-    tree = get_state_tree(query=q)
     return await render_template(
         "history/partials/filter_results.html",
         events=events,
-        tree=tree,
+        tree=build_tree(filter_str=q),
         history_ver=cur_ver,
     )
 

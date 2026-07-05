@@ -1,0 +1,10 @@
+{% macro render_node(node) %}
+  <li>
+    {{ node.label }}
+    {% if node.children %}
+      <ul>
+        {% for c in node.children %}{{ render_node(c) }}{% endfor %}
+      </ul>
+    {% endif %}
+  </li>
+{% endmacro %}

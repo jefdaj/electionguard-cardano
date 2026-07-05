@@ -1,10 +1,4 @@
 <div class="history-tree">
-  {% for e_type in tree.keys() %}
-    <p>{{ e_type }}</p>
-    <ul id="type-{{ e_type.lower() }}">
-      {% for k, v in tree[e_type].items() %}
-        <li id="entry-{{ hash(k) }}">{{ k }}: {{ v }}</li>
-      {% endfor %}
-    </ul>
-  {% endfor %}
+  {% from 'history/partials/node.html' import render_node %}
+  <ul>{{ render_node(tree) }}</ul>
 </div>
