@@ -1,7 +1,6 @@
 import hashlib
 
 from quart import Blueprint, render_template, request, current_app
-from egc.core import Entry, get_log_entries, get_state_tree
 
 bp = Blueprint("history", __name__, template_folder="templates")
 
@@ -12,6 +11,14 @@ async def index():
 def version_including_filter(sub_version: str, filter_str: str):
     filter_version = hashlib.md5(filter_str.encode()).hexdigest()[:8]
     return f'{filter_version}:{sub_version}'
+
+# Query format should match get_log_entries so they can be filtered together.
+def get_state_tree(query=None):
+    state: Dict[str, Dict[str, int]] = {}
+    state["1"] = {"1.1": "one point one", "1.2": "one point two"}
+    state["2"] = {"2.1": "one point one"}
+    state["3"] = {"3.1": "three point one"}
+    return state
 
 # Because we want to filter both the log and tree at once, we return the two
 # divs wrapped in filter_result. Then each is swapped with its correct div

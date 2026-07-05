@@ -753,9 +753,10 @@ class ElectionSubscriber:
 
                 # This is split into fetch and handle matches to make it easier to test rollbacks.
                 # (See test_subscriber.py for an example of that)
-                # TODO if not helpful, put back in one large _poll() call
-                matches_by_sc = self._fetch_matches_by_sc()
-                self._handle_matches(matches_by_sc)
+                # TODO is this lock needed? does it prevent refresh issues?
+                with self._history_lock:
+                    matches_by_sc = self._fetch_matches_by_sc()
+                    self._handle_matches(matches_by_sc)
 
                 self.sleep(KUPO_POLL_SEC)
             except requests.RequestException as e:
