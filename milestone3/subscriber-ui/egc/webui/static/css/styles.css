@@ -50,4 +50,5 @@ main {
 #settings {
   color: blue;
   border: 1px solid blue;
+  height: 20vh;
 }
