@@ -11,6 +11,7 @@ import subprocess
 import sys
 import threading
 import time
+import hashlib
 
 from collections import defaultdict
 from copy import deepcopy
@@ -95,6 +96,9 @@ class Point:
 @dataclass
 class ChannelEvent:
 
+    # TODO channel_event_id?
+    id: str
+
     # Should always exist, and whenever there's both a spent and unspent match
     # the two should be equal. Used to remove history during rollbacks.
     slot_no: int
@@ -118,6 +122,16 @@ class ChannelEvent:
     # TODO add txid? where it comes from depends on start/middle/end
 
 
+# TODO is there a cleaner way to do this?
+def unique_id(*args, **kwargs) -> str:
+    LOG.debug('unique_id')
+    LOG.debug(f'kwargs: {kwargs}')
+    args_str = str(args) + str(kwargs)
+    LOG.debug(f'args_str: {args_str}')
+    uniq_id = hashlib.md5(args_str.encode()).hexdigest()[:8]
+    return uniq_id
+
+
 @dataclass
 class ElectionEvent:
     # The ChannelEvents above are for internal use; ElectionEvents are meant to
@@ -126,11 +140,18 @@ class ElectionEvent:
     # and slot_no.
     # TODO are ChannelEvents closer to transactions than events?
     # TODO what other fields should they have? see what the UI needs
+    # TODO election_event_id?
+    id: str
     tx_id: str
     slot_no: str
     channel: str
     event_type: str # TODO codify this once it's clearer
     event_desc: str # TODO codify this once it's clearer
+
+
+def election_event(*args):
+    ee_id = f'electionevent-{unique_id(*args)}'
+    return ElectionEvent(ee_id, *args)
 
 
 def election_events(event: ChannelEvent) -> list[ElectionEvent]:
@@ -141,31 +162,31 @@ def election_events(event: ChannelEvent) -> list[ElectionEvent]:
     # add records
     if event.output_state:
         for record in event.output_state.state.new_records:
-            e = ElectionEvent(ti, sn, s, 'post record', f'posted {record.metadata}')
+            e = election_event(ti, sn, s, 'post record', f'posted {record.metadata}')
             es.append(e)
     # add main action
     match event.action:
         case InitElection():
-            e = ElectionEvent(ti, sn, 'funder', 'init election', 'authorized admin')
+            e = election_event(ti, sn, 'funder', 'init election', 'authorized admin')
             es.append(e)
         case AdvancePhase():
             phase = event.output_state.state.phase
-            e = ElectionEvent(ti, sn, s, 'advance phase', f'advanced to {phase}')
+            e = election_event(ti, sn, s, 'advance phase', f'advanced to {phase}')
             es.append(e)
         case PostPublicRecords():
             pass # covered above
         case AddSubChannels(channels=cs):
             if s != 'admin':
-                e = ElectionEvent(ti, sn, 'admin', 'add subchannel', f'authorized {s}')
+                e = election_event(ti, sn, 'admin', 'add subchannel', f'authorized {s}')
                 es.append(e)
         case RmSubChannels(channels=cs):
             if s != 'admin':
-                e = ElectionEvent(ti, sn, 'admin', 'rm subchannel', f'revoked {s} authorization')
+                e = election_event(ti, sn, 'admin', 'rm subchannel', f'revoked {s} authorization')
                 es.append(e)
         case RebalanceFunds():
             pass # no user facing message needed?
         case EndElection():
-            e = ElectionEvent(ti, sn, 'admin', 'end election', 'ended election')
+            e = election_event(ti, sn, 'admin', 'end election', 'ended election')
             es.append(e)
         case _:
             raise NotImplemented
@@ -1062,15 +1083,18 @@ class ElectionSubscriber:
             input_state  = self._fetch_state( input_match) if  input_match else None
             output_state = self._fetch_state(output_match) if output_match else None
 
-            event = ChannelEvent(
-                slot_no      = slot_no,
-                channel_id   = coerce_channel_id(ch_str),
-                action       = action,
-                input_match  = input_match,
-                output_match = output_match,
-                input_state  = input_state,
-                output_state = output_state,
-            )
+            # TODO add unique id here
+            kwargs = {
+                'slot_no'      : slot_no,
+                'channel_id'   : coerce_channel_id(ch_str),
+                'action'       : action,
+                'input_match'  : input_match,
+                'output_match' : output_match,
+                'input_state'  : input_state,
+                'output_state' : output_state,
+            }
+            kwargs['id'] = f'channelevent-{unique_id(**kwargs)}'
+            event = ChannelEvent(**kwargs)
             LOG.debug(f'event:\n{pformat(event)}')
             yield event
 

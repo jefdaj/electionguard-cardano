@@ -1,7 +1,7 @@
 <div id="history-log-container">
 <ul class="history-log">
   {% for e in events %}
-    <li class="event" id="event-{{ e.id }}">
+    <li class="event" id="{{ e.id }}">
       {{ e.channel }} {{ e.event_desc }}
       <!-- <br/>tx_id: {{ e.tx_id }}
       <br/>slot: {{ e.slot_no }}
