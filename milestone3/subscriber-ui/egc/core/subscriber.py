@@ -540,9 +540,10 @@ class ElectionSubscriber:
 
     def version(self):
         "Re-use ETags for 204 no content checking in the webui"
-        if not self._checkpoints:
-            return 0
-        return self._checkpoints[-1].header_hash
+        with self._history_lock:
+            if not self._checkpoints:
+                return 0
+            return self._checkpoints[-1].header_hash
 
 
     ## process managment interface ##
@@ -788,17 +789,18 @@ class ElectionSubscriber:
         # TODO should it return a point if none exactly match slot_no?
         # TODO remove the slot_no option if not using it anymore?
         log_call()
-        n_points = len(self._checkpoints)
-        LOG.debug(f'Have {n_points} saved checkpoints.')
-        if len(self._checkpoints) == 0:
-            return None
-        elif slot_no is None:
-            return self._checkpoints[-1]
-        else:
-            return next(
-                (p for p in reversed(self._checkpoints) if p.slot_no == slot_no),
-                None
-            )
+        with self._history_lock:
+            n_points = len(self._checkpoints)
+            LOG.debug(f'Have {n_points} saved checkpoints.')
+            if len(self._checkpoints) == 0:
+                return None
+            elif slot_no is None:
+                return self._checkpoints[-1]
+            else:
+                return next(
+                    (p for p in reversed(self._checkpoints) if p.slot_no == slot_no),
+                    None
+                )
 
 
     def _add_checkpoint(self, headers: dict) -> bool:
@@ -811,13 +813,14 @@ class ElectionSubscriber:
             # Kupo doesn't seem to send these until the first match is found.
             LOG.debug(f"Wait for Kupo to send slot + block hash.")
             return False
-        if len(self._checkpoints) > 0 and tip == self._checkpoints[-1]:
-            return False
-        else:
-            self._checkpoints.append(tip)
-            LOG.debug(f'Saved checkpoint {tip}')
-            self._checkpoints = self._checkpoints[-KUPO_MAX_CHECKPOINTS:]
-            return True
+        with self._history_lock:
+            if len(self._checkpoints) > 0 and tip == self._checkpoints[-1]:
+                return False
+            else:
+                self._checkpoints.append(tip)
+                LOG.debug(f'Saved checkpoint {tip}')
+                self._checkpoints = self._checkpoints[-KUPO_MAX_CHECKPOINTS:]
+                return True
 
 
     def _fetch_matches_by_sc(self) -> list[dict]:
