@@ -1,5 +1,15 @@
 :root { color-scheme: light dark; }
 
+.htmx-indicator {
+    display: none;
+}
+.htmx-request .htmx-indicator {
+    display: inline;
+}
+.htmx-request.htmx-indicator {
+    display: inline;
+}
+
 body {
     font-family: system-ui, -apple-system, sans-serif;
     margin: 0 auto;
@@ -35,4 +45,9 @@ main {
 }
 
 .footer {
+}
+
+#settings {
+  color: blue;
+  border: 1px solid blue;
 }
