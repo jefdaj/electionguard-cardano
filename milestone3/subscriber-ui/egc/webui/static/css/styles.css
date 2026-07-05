@@ -1,4 +1,6 @@
-:root { color-scheme: light dark; }
+:root {
+  color-scheme: light dark;
+}
 
 .htmx-indicator {
     display: none;
@@ -23,25 +25,30 @@ main {
   grid-template-rows: auto 1fr;
 }
 
+#history-top-bar {
+  border: 3px solid brown;
+}
+
 #history-filter-input {
   padding: 7px;
-  border-bottom: 1px solid #ccc;
+  border: 3px solid red;
 }
 
 #history-main-area {
   display: grid;
   grid-template-columns: 1fr 1fr;
   overflow: hidden; /* prevents layout breaking */
-  border: 1px solid black;
+  border: 3px solid orange;
 }
 
 #history-log-container {
   overflow-y: auto;
+  border: 3px solid skyblue;
 }
 
 #history-tree-container {
   padding: 1rem;
-  border-left: 1px solid black;
+  border: 3px solid forestgreen;
 }
 
 .footer {
@@ -49,6 +56,6 @@ main {
 
 #settings {
   color: blue;
-  border: 1px solid blue;
+  border: 3px solid red;
   height: 20vh;
 }
