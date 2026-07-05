@@ -559,6 +559,7 @@ class ElectionSubscriber:
         return records
 
 
+    # TODO why does this sometimes get stuck mid-election when refreshing?
     def version(self):
         "Re-use ETags for 204 no content checking in the webui"
         with self._history_lock:
