@@ -82,6 +82,15 @@ li.tree-record {
   list-style-type: none;
 }
 
+ul.tree-channels {
+  margin: 0;
+  padding: 0;
+}
+
+li.tree-channel {
+  list-style-type: none;
+}
+
 .phase-past {
 }
 

@@ -69,11 +69,11 @@ def build_records_node(id_, records, filter_str=None):
         children = [],
     )
 
-def build_channels_node(id_, channels, filter_str=None):
+def build_channels_node(id_, channel_strs, filter_str=None):
     return build_node(
         id = id_,
         type = 'channels',
-        channels = channels,
+        channel_strs = channel_strs,
         children = [],
     )
 
@@ -110,7 +110,7 @@ def build_configannouncephase(phase, records=[], filter_str=None):
         ],
     )
 
-def build_configonboardingphase(phase, channels=[], filter_str=None):
+def build_configonboardingphase(phase, channel_strs=[], filter_str=None):
     node_phase_key = (ElectionConfigPhase.CONSTR_ID, ConfigOnboardingPhase.CONSTR_ID)
     return build_node(
         id = 'configonboardingphase',
@@ -118,7 +118,8 @@ def build_configonboardingphase(phase, channels=[], filter_str=None):
         title = 'Onboarding',
         phase_class = node_phase_class(node_phase_key, phase),
         children = [
-            build_channels_node('onboarding-channels', channels, filter_str)
+            # TODO should admin be excluded here? or is it a good place to include it?
+            build_channels_node('onboarding-channels', channel_strs, filter_str)
         ],
     )
 
@@ -158,7 +159,7 @@ def build_configfinalizephase(phase, records=[], filter_str=None):
         ],
     )
 
-def build_configphase(phase, records=[], channels=[], filter_str=None):
+def build_configphase(phase, records=[], channel_strs=[], filter_str=None):
     node_phase_key = (ElectionConfigPhase.CONSTR_ID,)
     return build_node(
         id = 'configphase',
@@ -167,7 +168,7 @@ def build_configphase(phase, records=[], channels=[], filter_str=None):
         phase_class = node_phase_class(node_phase_key, phase),
         children = [
             build_configannouncephase(phase, records, filter_str),
-            build_configonboardingphase(phase, channels, filter_str),
+            build_configonboardingphase(phase, channel_strs, filter_str),
             build_configceremonyphase(phase, records, filter_str),
             build_configfinalizephase(phase, records, filter_str),
         ],
@@ -223,7 +224,7 @@ def build_resultstallyphase(phase, records=[], filter_str=None):
     return build_node(
         id = 'resultstallyphase',
         type = 'phase',
-        title = 'Encrypted Tally',
+        title = 'Tally',
         phase_class = node_phase_class(node_phase_key, phase),
         children = [],
     )
@@ -255,11 +256,11 @@ def build_resultsphase(phase, records=[], filter_str=None):
 ### tree again ###
 
 
-def build_tree(phase, records=[], channels=[], filter_str=None):
+def build_tree(phase, records=[], channel_strs=[], filter_str=None):
     # TODO add an empty root template just to avoid this being weird in node.html?
     return {
         'id': 'node-root', 'type': 'root', 'children': [
-            build_configphase(phase, records, channels, filter_str),
+            build_configphase(phase, records, channel_strs, filter_str),
             build_votingphase(phase, records, filter_str),
             build_resultsphase(phase, records, filter_str),
             build_verifyphase(phase, records, filter_str),
@@ -325,8 +326,8 @@ async def tree():
     closed_ids = get_closed_ids()
     phase    = current_app.subscriber.current_phase()
     records  = current_app.subscriber.all_records()
-    channels = [channel_id_to_string(c) for c in current_app.subscriber.all_channel_ids()]
-    LOG.debug(f'channels: {channels}')
+    channel_strs = [channel_id_to_string(c) for c in current_app.subscriber.all_channel_ids()]
+    LOG.debug(f'channel_strs: {channel_strs}')
     # If loading the tree as a standalone page (for debugging),
     # need to add the HTMX script to it.
     template = (
@@ -335,7 +336,7 @@ async def tree():
     )
     return await render_template(
         template,
-        tree=build_tree(phase, records, channels, filter_str),
+        tree=build_tree(phase, records, channel_strs, filter_str),
         open_ids=open_ids, closed_ids=closed_ids,
         filter_str=filter_str,
     )
@@ -363,7 +364,7 @@ async def filter_results():
     events   = current_app.subscriber.all_election_events()
     records  = current_app.subscriber.all_records()
     phase    = current_app.subscriber.current_phase()
-    channels = [channel_id_to_string(c) for c in current_app.subscriber.all_channel_ids()]
+    channel_strs = [channel_id_to_string(c) for c in current_app.subscriber.all_channel_ids()]
 
     if filter_str:
         events = [e for e in events if filter_str.lower() in str(e).lower()]
@@ -371,7 +372,7 @@ async def filter_results():
     return await render_template(
         "history/partials/filter_results.html",
         events=events,
-        tree=build_tree(phase, records, channels, filter_str),
+        tree=build_tree(phase, records, channel_strs, filter_str),
         open_ids=open_ids, closed_ids=closed_ids,
         filter_str=filter_str, history_ver=cur_ver,
     )

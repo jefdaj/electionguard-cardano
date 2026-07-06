@@ -1247,7 +1247,7 @@ class ElectionSubscriber:
             with self._history_lock:
                 prev = self._history[i][-1]
             diff = safe_deepdiff(prev, event)
-            LOG.debug(f'diff:\n{pformat(diff)}')
+            LOG.error(f'diff:\n{pformat(diff)}')
         assert self.current_phase() == 'ElectionNotStarted', 'InitElection should always happen first'
         assert event.channel_id == ADMIN_CHANNEL_ID # note this tx was published by the funder
         self._on_mint(event)
