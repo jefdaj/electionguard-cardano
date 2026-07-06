@@ -101,3 +101,9 @@ li.tree-channel {
 .phase-future {
   opacity: 0.2;
 }
+
+.success {
+  color: green;
+  font-size: 18pt;
+  letter-spacing: -0.3em;
+}
