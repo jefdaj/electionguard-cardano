@@ -79,7 +79,7 @@ def build_channels_node(id_, channel_strs, filter_str=None):
         children = [],
     )
 
-def build_ballots_node(id_, title, records, filter_str=None):
+def build_records_group_node(id_, title, records, filter_str=None):
     if filter_str:
         records = [r for r in records if obj_matches(r, filter_str)]
     return build_node(
@@ -194,10 +194,10 @@ def build_votingphase(phase, records=[], filter_str=None):
         title = 'Voting',
         phase_class = node_phase_class(node_phase_key, phase),
         children = [
-            build_ballots_node('ballots-submitted', 'Submitted', submitted, filter_str),
-            build_ballots_node('ballots-pending'  , 'Pending'  , pending  , filter_str),
-            build_ballots_node('ballots-cast'     , 'Cast'     , cast     , filter_str),
-            build_ballots_node('ballots-spoiled'  , 'Spoiled'  , spoiled  , filter_str),
+            build_records_group_node('ballots-submitted', 'Submitted', submitted, filter_str),
+            build_records_group_node('ballots-pending'  , 'Pending'  , pending  , filter_str),
+            build_records_group_node('ballots-cast'     , 'Cast'     , cast     , filter_str),
+            build_records_group_node('ballots-spoiled'  , 'Spoiled'  , spoiled  , filter_str),
         ],
     )
 
@@ -223,22 +223,41 @@ def build_finalizephase(phase, records=[], filter_str=None):
 
 def build_resultstallyphase(phase, records=[], filter_str=None):
     node_phase_key = (ElectionResultsPhase.CONSTR_ID, ResultsTallyPhase.CONSTR_ID)
+    records = [
+        r for r in records
+        if isinstance(r.metadata, CiphertextTally)
+    ]
     return build_node(
         id = 'resultstallyphase',
         type = 'phase',
         title = 'Tally',
         phase_class = node_phase_class(node_phase_key, phase),
-        children = [],
+        children = [
+            build_records_node('tally-records', records, filter_str)
+        ],
     )
 
 def build_resultsdecryptphase(phase, records=[], filter_str=None):
     node_phase_key = (ElectionResultsPhase.CONSTR_ID, ResultsDecryptPhase.CONSTR_ID)
+    shares = [
+        r for r in records
+        if isinstance(r.metadata, TallyShare)
+        or isinstance(r.metadata, SpoiledShare)
+    ]
+    combined = [
+        r for r in records
+        if isinstance(r.metadata, PlaintextTally)
+        or isinstance(r.metadata, SpoiledResult)
+    ]
     return build_node(
         id = 'resultsdecryptphase',
         type = 'phase',
         title = 'Decrypt',
         phase_class = node_phase_class(node_phase_key, phase),
-        children = [],
+        children = [
+            build_records_group_node('decrypt-shares', 'Shares', shares, filter_str),
+            build_records_group_node('decrypt-combined', 'Combined', combined, filter_str),
+        ],
     )
 
 def build_resultsphase(phase, records=[], filter_str=None):
