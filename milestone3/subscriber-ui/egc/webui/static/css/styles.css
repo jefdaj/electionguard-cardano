@@ -36,13 +36,16 @@ main {
   display: grid;
   grid-template-columns: 1fr 1fr;
   overflow: hidden; /* prevents layout breaking */
+  outline: 1px solid;
 }
 
 #history-log-container {
   overflow-y: auto;
+  outline: 1px solid;
 }
 
 #history-tree-container {
+  outline: 1px solid;
 }
 
 .footer {
