@@ -27,7 +27,7 @@ def build_tree(filter_str=None):
     # Note that the root node isn't currently shown. So no point having a root.html template.
     return {"id": "election", "type": "root", "label": "Election", "children": [
         {"id": "key", "type": "key_ceremony", "label": "Key ceremony", "children": [
-            {"id": "key-r1", "type": "key_round", "round": 1, "done": 2, "total": 3, "children": []},
+            {"id": "key-r1", "type": "key_round", "round": 1, "label": "Round 1", "done": 2, "total": 3, "children": []},
         ]},
         {"id": "voting", "type": "voting", "label": "Voting", "submitted": 25, "children": []},
     ]}

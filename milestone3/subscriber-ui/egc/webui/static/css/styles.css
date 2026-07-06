@@ -47,7 +47,6 @@ main {
 }
 
 #history-tree-container {
-  padding: 1rem;
   border: 3px solid forestgreen;
 }
 
@@ -59,11 +58,22 @@ main {
   height: 20vh;
 }
 
+ul.history-log {
+  margin: 0;
+  padding: 0;
+}
+
 .history-tree>ul {
   margin: 0;
   padding: 0;
 }
 
+li.event {
+  list-style-type: none;
+  border: 1px solid green;
+}
+
 li.tree-node {
   list-style-type: none;
+  border: 1px solid blue;
 }
