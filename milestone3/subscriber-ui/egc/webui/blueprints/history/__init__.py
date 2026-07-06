@@ -25,140 +25,144 @@ def version_including_filter(sub_version: str, filter_str: Optional[str]):
 ### tree ###
 
 
+def phase_key(p: ElectionPhase | str) -> tuple[int, ...]:
+    match p:
+        case ElectionConfigPhase(phase=p2) if p2 is not None:
+            return (p.CONSTR_ID, p2.CONSTR_ID)
+        case ElectionResultsPhase(phase=p2) if p2 is not None:
+            return (p.CONSTR_ID, p2.CONSTR_ID)
+        # TODO codify these properly
+        case 'ElectionNotStarted':
+            return (-1,)
+        case 'ElectionEnded':
+            return (ElectionFinalizePhase.CONSTR_ID + 1,)
+        case _:
+            return (p.CONSTR_ID,)
+
+
+# Gotcha: because we can't construct a value of for example ElectionConfigPhase
+# without a concrete sub-phase, we take a hardcoded node_key but look up the
+# key for the current_phase.
+# TODO need to adjust math here?
+def node_phase_class(node_phase_key, phase):
+    b = phase_key(phase)
+    depth = len(node_phase_key)
+    a, b = node_phase_key, b[:depth]        # compare at the node's granularity
+    return "phase-past" if a < b else "phase-present" if a == b else "phase-future"
+
+
 # Makes sure we can't forget structural parts of a build tree node dict
 def build_node(id, type, children=None, **fields):
     return {"id": id, "type": type, "children": children or [], **fields}
 
-def build_configannouncephase(filter_str=None, phase=None):
-    match phase:
-        case ElectionConfigPhase(phase=ConfigAnnouncePhase()): is_current = True
-        case _: is_current = False
+def build_configannouncephase(phase, filter_str=None):
+    node_phase_key = (ElectionConfigPhase.CONSTR_ID, ConfigAnnouncePhase.CONSTR_ID)
     return build_node(
         id = 'configannouncephase',
         type = 'configannouncephase',
         children = [],
-        is_current = is_current,
+        phase_class = node_phase_class(node_phase_key, phase),
     )
 
-def build_configonboardingphase(filter_str=None, phase=None):
-    match phase:
-        case ElectionConfigPhase(phase=ConfigOnboardingPhase()): is_current = True
-        case _: is_current = False
+def build_configonboardingphase(phase, filter_str=None):
+    node_phase_key = (ElectionConfigPhase.CONSTR_ID, ConfigOnboardingPhase.CONSTR_ID)
     return build_node(
         id = 'configonboardingphase',
         type = 'configonboardingphase',
         children = [],
-        is_current = is_current,
+        phase_class = node_phase_class(node_phase_key, phase),
     )
 
-def build_configceremonyphase(filter_str=None, phase=None):
-    match phase:
-        case ElectionConfigPhase(phase=ConfigCeremonyPhase()): is_current = True
-        case _: is_current = False
+def build_configceremonyphase(phase, filter_str=None):
+    node_phase_key = (ElectionConfigPhase.CONSTR_ID, ConfigCeremonyPhase.CONSTR_ID)
     return build_node(
         id = 'configceremonyphase',
         type = 'configceremonyphase',
         children = [],
-        is_current = is_current,
+        phase_class = node_phase_class(node_phase_key, phase),
     )
 
-def build_configfinalizephase(filter_str=None, phase=None):
-    match phase:
-        case ElectionConfigPhase(phase=ConfigFinalizePhase()): is_current = True
-        case _: is_current = False
+def build_configfinalizephase(phase, filter_str=None):
+    node_phase_key = (ElectionConfigPhase.CONSTR_ID, ConfigFinalizePhase.CONSTR_ID)
     return build_node(
         id = 'configfinalizephase',
         type = 'configfinalizephase',
         children = [],
-        is_current = is_current,
+        phase_class = node_phase_class(node_phase_key, phase),
     )
 
-def build_configphase(filter_str=None, phase=None):
-    match phase:
-        case ElectionConfigPhase(phase=p): is_current = True
-        case _: is_current = False
+def build_configphase(phase, filter_str=None):
+    node_phase_key = (ElectionConfigPhase.CONSTR_ID,)
     return build_node(
         id = 'configphase',
         type = 'configphase',
         children = [
-            build_configannouncephase(filter_str, phase),
-            build_configonboardingphase(filter_str, phase),
-            build_configceremonyphase(filter_str, phase),
-            build_configfinalizephase(filter_str, phase),
+            build_configannouncephase(phase, filter_str),
+            build_configonboardingphase(phase, filter_str),
+            build_configceremonyphase(phase, filter_str),
+            build_configfinalizephase(phase, filter_str),
         ],
-        is_current = is_current,
+        phase_class = node_phase_class(node_phase_key, phase),
     )
 
-def build_votingphase(filter_str=None, phase=None):
-    match phase:
-        case ElectionVotingPhase(): is_current = True
-        case _: is_current = False
+def build_votingphase(phase, filter_str=None):
+    node_phase_key = (ElectionVotingPhase.CONSTR_ID,)
     return build_node(
         id = 'votingphase',
         type = 'votingphase',
         children = [],
-        is_current = is_current,
+        phase_class = node_phase_class(node_phase_key, phase),
     )
 
-def build_verifyphase(filter_str=None, phase=None):
-    match phase:
-        case ElectionVerifyPhase(): is_current = True
-        case _: is_current = False
+def build_verifyphase(phase, filter_str=None):
+    node_phase_key = (ElectionVerifyPhase.CONSTR_ID,)
     return build_node(
         id = 'verifyphase',
         type = 'verifyphase',
         children = [],
-        is_current = is_current,
+        phase_class = node_phase_class(node_phase_key, phase),
     )
 
-def build_finalizephase(filter_str=None, phase=None):
-    match phase:
-        case ElectionFinalizePhase(): is_current = True
-        case _: is_current = False
+def build_finalizephase(phase, filter_str=None):
+    node_phase_key = (ElectionFinalizePhase.CONSTR_ID,)
     return build_node(
         id = 'finalizephase',
         type = 'finalizephase',
         children = [],
-        is_current = is_current,
+        phase_class = node_phase_class(node_phase_key, phase),
     )
 
-def build_resultstallyphase(filter_str=None, phase=None):
-    match phase:
-        case ElectionResultsPhase(phase=ResultsTallyPhase()): is_current = True
-        case _: is_current = False
+def build_resultstallyphase(phase, filter_str=None):
+    node_phase_key = (ElectionResultsPhase.CONSTR_ID, ResultsTallyPhase.CONSTR_ID)
     return build_node(
         id = 'resultstallyphase',
         type = 'resultstallyphase',
         children = [],
-        is_current = is_current,
+        phase_class = node_phase_class(node_phase_key, phase),
     )
 
-def build_resultsdecryptphase(filter_str=None, phase=None):
-    match phase:
-        case ElectionResultsPhase(phase=ResultsDecryptPhase()): is_current = True
-        case _: is_current = False
+def build_resultsdecryptphase(phase, filter_str=None):
+    node_phase_key = (ElectionResultsPhase.CONSTR_ID, ResultsDecryptPhase.CONSTR_ID)
     return build_node(
         id = 'resultsdecryptphase',
         type = 'resultsdecryptphase',
         children = [],
-        is_current = is_current,
+        phase_class = node_phase_class(node_phase_key, phase),
     )
 
-def build_resultsphase(filter_str=None, phase=None):
-    match phase:
-        case ElectionResultsPhase(phase=p): is_current = True
-        case _: is_current = False
+def build_resultsphase(phase, filter_str=None):
+    node_phase_key = (ElectionResultsPhase.CONSTR_ID,)
     return build_node(
         id = 'resultsphase',
         type = 'resultsphase',
         children = [
-            build_resultstallyphase(filter_str, phase),
-            build_resultsdecryptphase(filter_str, phase),
+            build_resultstallyphase(phase, filter_str),
+            build_resultsdecryptphase(phase, filter_str),
         ],
-        is_current = is_current,
+        phase_class = node_phase_class(node_phase_key, phase),
     )
 
-def build_tree(filter_str=None, phase=None):
+def build_tree(phase, filter_str=None):
     # Note that the root node isn't currently shown. So no point having a root.html template.
     # return {"id": "election", "type": "root", "label": "Election", "children": [
     #     {"id": "key", "type": "key_ceremony", "label": "Key ceremony", "children": [
@@ -168,11 +172,11 @@ def build_tree(filter_str=None, phase=None):
     # ]}
     return {
         'id': 'node-root', 'type': 'root', 'children': [
-            build_configphase(filter_str, phase),
-            build_votingphase(filter_str, phase),
-            build_resultsphase(filter_str, phase),
-            build_verifyphase(filter_str, phase),
-            build_finalizephase(filter_str, phase),
+            build_configphase(phase, filter_str),
+            build_votingphase(phase, filter_str),
+            build_resultsphase(phase, filter_str),
+            build_verifyphase(phase, filter_str),
+            build_finalizephase(phase, filter_str),
         ]
     }
 
@@ -226,15 +230,15 @@ async def tree():
     open_ids   = get_open_ids()
     closed_ids = get_closed_ids()
     phase = current_app.subscriber.current_phase()
-	# If loading the tree as a standalone page (for debugging),
-	# need to add the HTMX script to it.
+    # If loading the tree as a standalone page (for debugging),
+    # need to add the HTMX script to it.
     template = (
         "history/partials/tree.html" if request.headers.get("HX-Request")
         else "history/tree_page.html"
     )
     return await render_template(
         template,
-        tree=build_tree(filter_str, phase),
+        tree=build_tree(phase, filter_str),
         open_ids=open_ids, closed_ids=closed_ids,
         filter_str=filter_str,
     )
@@ -268,7 +272,7 @@ async def filter_results():
     return await render_template(
         "history/partials/filter_results.html",
         events=events,
-        tree=build_tree(filter_str, phase),
+        tree=build_tree(phase, filter_str),
         open_ids=open_ids, closed_ids=closed_ids,
         filter_str=filter_str, history_ver=cur_ver,
     )

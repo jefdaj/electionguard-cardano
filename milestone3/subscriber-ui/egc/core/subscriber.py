@@ -476,15 +476,22 @@ class ElectionSubscriber:
             return states
 
 
-    def current_phase(self) -> Optional[ElectionPhase]:
+    def current_phase(self) -> ElectionPhase | str:
         log_call()
         # Returns None if the election hasn't started yet
-        try:
-            with self._history_lock:
+        with self._history_lock:
+            try:
                 event = self.channel_history(ADMIN_CHANNEL_ID)[-1]
                 return deepcopy(event.output_state.state.phase)
-        except (KeyError, AttributeError):
-            return None
+            except (KeyError, AttributeError):
+                if self._history:
+                    # None with history implies election ended
+                    # TODO codify this in a better way!
+                    return 'ElectionEnded'
+                else:
+                    # Otherwise, implies election hasn't started yet.
+                    # TODO codify this in a better way!
+                    return 'ElectionNotStarted'
 
 
     def wait_for_phase(self, phase: Optional[ElectionPhase], timeout=OGMIOS_TIMEOUT_SEC):
@@ -1235,13 +1242,13 @@ class ElectionSubscriber:
 
     def _on_initelection(self, event: ChannelEvent):
         log_call()
-        if self.current_phase() is not None:
+        if self.current_phase() is not 'ElectionNotStarted':
             i = event.channel_id
-            with self._hsitory_lock:
+            with self._history_lock:
                 prev = self._history[i][-1]
             diff = safe_deepdiff(prev, event)
             LOG.debug(f'diff:\n{pformat(diff)}')
-        assert self.current_phase() == None, 'InitElection should always happen first'
+        assert self.current_phase() == 'ElectionNotStarted', 'InitElection should always happen first'
         assert event.channel_id == ADMIN_CHANNEL_ID # note this tx was published by the funder
         self._on_mint(event)
         return event

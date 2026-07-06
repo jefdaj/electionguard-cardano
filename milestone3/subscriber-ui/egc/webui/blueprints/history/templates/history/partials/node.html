@@ -2,7 +2,7 @@
   {% if visible(node, filter_str) %}
   {% set open_now = is_open(node, open_ids, closed_ids, filter_str) %}
   <li id="node-{{ node.id }}" class="tree-node">
-    <div class="node-header">
+      <div class="node-header {{ node.phase_class }}">
       {% if node.children %}
         {% set new_open, new_closed = toggle_ids(open_ids, closed_ids, node.id, open_now) %}
         <button
