@@ -9,7 +9,7 @@
           hx-get="{{ url_for('history.tree', open=new_open, closed=new_closed, **{'history-filter': filter_str}) }}"
           hx-target="closest .history-tree"
           hx-swap="outerHTML"
-          aria-expanded="{{ 'true' if open_now else 'false' }}">
+          aria-expanded="{{ 'true' if (open_now or node.current_phase) else 'false' }}">
           {{ '▾' if open_now else '▸' }}
         </button>
       {% endif %}

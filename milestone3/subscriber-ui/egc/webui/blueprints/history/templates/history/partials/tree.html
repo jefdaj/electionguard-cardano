@@ -1,4 +1,9 @@
 <div class="history-tree">
+
+  <!-- state that should survive when the tree is re-rendered -->
+  <input name="open"   type="hidden" value="{{ open_ids  |join(',') }}">
+  <input name="closed" type="hidden" value="{{ closed_ids|join(',') }}">
+
   {% from 'history/partials/node.html' import render_node %}
   <ul>
     {% for child in tree.children %}

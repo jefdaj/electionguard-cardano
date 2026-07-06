@@ -3,6 +3,9 @@ from quart import Blueprint, render_template, request, current_app
 from typing import Optional
 
 from egc import *
+import logging
+
+LOG = logging.getLogger('egc.webui.blueprints.history')
 
 bp = Blueprint("history", __name__, template_folder="templates")
 
@@ -184,10 +187,14 @@ def get_history_filter() -> Optional[str]:
     return request.args.get("history-filter", "").strip() or None
 
 def get_open_ids() -> set[str]:
-    return set(filter(None, request.args.get("open", "").split(",")))
+    ids = set(filter(None, request.args.get("open", "").split(",")))
+    LOG.info(f'open_ids: {ids}')
+    return ids
 
 def get_closed_ids() -> set[str]:
-    return set(filter(None, request.args.get("closed", "").split(",")))
+    ids = set(filter(None, request.args.get("closed", "").split(",")))
+    LOG.info(f'closed_ids: {ids}')
+    return ids
 
 def node_matches(node, f):
     return f is None or f.lower() in str(node).lower()
