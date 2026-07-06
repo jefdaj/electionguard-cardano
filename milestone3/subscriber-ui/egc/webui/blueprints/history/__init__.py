@@ -250,7 +250,7 @@ def build_resultsdecryptphase(phase, records=[], filter_str=None):
         if isinstance(r.metadata, TallyShare)
         or isinstance(r.metadata, SpoiledShare)
     ]
-    combined = [
+    plaintext = [
         r for r in records
         if isinstance(r.metadata, PlaintextTally)
         or isinstance(r.metadata, SpoiledResult)
@@ -261,8 +261,8 @@ def build_resultsdecryptphase(phase, records=[], filter_str=None):
         title = 'Decrypt',
         phase_class = node_phase_class(node_phase_key, phase),
         children = [
-            build_records_group_node('decrypt-shares', 'Shares', shares, filter_str),
-            build_records_group_node('decrypt-combined', 'Combined', combined, filter_str),
+            build_records_group_node('decrypt-shares'   , 'Shares'   , shares   , filter_str),
+            build_records_group_node('decrypt-plaintext', 'Plaintext', plaintext, filter_str),
         ],
     )
 
