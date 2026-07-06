@@ -102,22 +102,38 @@ def build_configonboardingphase(phase, records=[], filter_str=None):
 
 def build_configceremonyphase(phase, records=[], filter_str=None):
     node_phase_key = (ElectionConfigPhase.CONSTR_ID, ConfigCeremonyPhase.CONSTR_ID)
+    ceremony_records = [
+        r for r in records
+        if isinstance(r.metadata, GuardianPubkey)
+        or isinstance(r.metadata, GuardianBackup)
+        or isinstance(r.metadata, GuardianVerification)
+    ]
     return build_node(
         id = 'configceremonyphase',
         type = 'phase',
         phase_title = 'Key Ceremony',
         phase_class = node_phase_class(node_phase_key, phase),
-        children = [],
+        children = [
+            build_records_node(ceremony_records, filter_str)
+        ],
     )
 
 def build_configfinalizephase(phase, records=[], filter_str=None):
     node_phase_key = (ElectionConfigPhase.CONSTR_ID, ConfigFinalizePhase.CONSTR_ID)
+    finalize_records = [
+        r for r in records
+        if isinstance(r.metadata, JointKey)
+        or isinstance(r.metadata, Constants)
+        or isinstance(r.metadata, Context)
+    ]
     return build_node(
         id = 'configfinalizephase',
         type = 'phase',
         phase_title = 'Finalize', # TODO OK to duplicate?
         phase_class = node_phase_class(node_phase_key, phase),
-        children = [],
+        children = [
+            build_records_node(finalize_records, filter_str)
+        ],
     )
 
 def build_configphase(phase, records=[], filter_str=None):
