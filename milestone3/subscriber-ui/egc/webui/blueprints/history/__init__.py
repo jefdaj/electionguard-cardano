@@ -70,6 +70,8 @@ def build_records_node(id_, records, filter_str=None):
     )
 
 def build_channels_node(id_, channel_strs, filter_str=None):
+    if filter_str:
+        channel_strs = [s for s in channel_strs if obj_matches(s, filter_str)]
     return build_node(
         id = id_,
         type = 'channels',
