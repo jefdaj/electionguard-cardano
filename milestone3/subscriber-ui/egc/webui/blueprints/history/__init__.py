@@ -78,6 +78,8 @@ def build_channels_node(id_, channels, filter_str=None):
     )
 
 def build_ballots_node(id_, title, records, filter_str=None):
+    if filter_str:
+        records = [r for r in records if obj_matches(r, filter_str)]
     return build_node(
         id = id_,
         type = 'simple',
@@ -190,9 +192,9 @@ def build_votingphase(phase, records=[], filter_str=None):
         phase_class = node_phase_class(node_phase_key, phase),
         children = [
             build_ballots_node('ballots-submitted', 'Submitted', submitted, filter_str),
+            build_ballots_node('ballots-pending'  , 'Pending'  , pending  , filter_str),
             build_ballots_node('ballots-cast'     , 'Cast'     , cast     , filter_str),
             build_ballots_node('ballots-spoiled'  , 'Spoiled'  , spoiled  , filter_str),
-            build_ballots_node('ballots-pending'  , 'Pending'  , pending  , filter_str),
         ],
     )
 
@@ -278,13 +280,14 @@ def get_closed_ids() -> set[str]:
     LOG.info(f'closed_ids: {ids}')
     return ids
 
-def node_matches(node, f):
-    return f is None or f.lower() in str(node).lower()
+# TODO better way to do this for nodes that themselves include lists?
+def obj_matches(obj, f):
+    return f is None or f.lower() in str(obj).lower()
 
 def visible(node, f):
     if f is None:
         return True
-    return node_matches(node, f) or any(visible(c, f) for c in node["children"])
+    return obj_matches(node, f) or any(visible(c, f) for c in node["children"])
 
 def has_visible_child(node, f):
     return any(visible(c, f) for c in node["children"])
