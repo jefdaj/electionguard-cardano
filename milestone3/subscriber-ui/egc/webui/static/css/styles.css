@@ -71,7 +71,6 @@ li.tree-node {
 }
 
 .phase-past {
-  color: red;
 }
 
 .phase-present {
@@ -79,5 +78,5 @@ li.tree-node {
 }
 
 .phase-future {
-  color: blue;
+  opacity: 0.2;
 }
