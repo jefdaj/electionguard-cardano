@@ -1,5 +1,5 @@
 <ul class="tree-records">
   {% for r in node.records %}
-    <li class="tree-record"><span>{{ r.metadata }}</span></li>
+    {% include 'history/partials/node_types/record.html' %}
   {% endfor %}
 </ul>
