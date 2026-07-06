@@ -2,6 +2,8 @@ import hashlib
 from quart import Blueprint, render_template, request, current_app
 from typing import Optional
 
+from egc import *
+
 bp = Blueprint("history", __name__, template_folder="templates")
 
 
@@ -23,14 +25,86 @@ def version_including_filter(sub_version: str, filter_str: Optional[str]):
 ### tree ###
 
 
-def build_tree(filter_str=None):
+# Makes sure we can't forget structural parts of a build tree node dict
+def build_node(id, type, children=None, **fields):
+    return {"id": id, "type": type, "children": children or [], **fields}
+
+def build_configannouncephase(filter_str=None, phase=None):
+    match phase:
+        case ElectionConfigPhase(phase=ConfigAnnouncePhase()): is_current = True
+        case _: is_current = False
+    return build_node(
+        id = 'configannouncephase',
+        type = 'configannouncephase',
+        children = [],
+        is_current = is_current,
+    )
+
+def build_configonboardingphase(filter_str=None, phase=None):
+    match phase:
+        case ElectionConfigPhase(phase=ConfigOnboardingPhase()): is_current = True
+        case _: is_current = False
+    return build_node(
+        id = 'configonboardingphase',
+        type = 'configonboardingphase',
+        children = [],
+        is_current = is_current,
+    )
+
+def build_configceremonyphase(filter_str=None, phase=None):
+    match phase:
+        case ElectionConfigPhase(phase=ConfigCeremonyPhase()): is_current = True
+        case _: is_current = False
+    return build_node(
+        id = 'configceremonyphase',
+        type = 'configceremonyphase',
+        children = [],
+        is_current = is_current,
+    )
+
+def build_configfinalizephase(filter_str=None, phase=None):
+    match phase:
+        case ElectionConfigPhase(phase=ConfigFinalizePhase()): is_current = True
+        case _: is_current = False
+    return build_node(
+        id = 'configfinalizephase',
+        type = 'configfinalizephase',
+        children = [],
+        is_current = is_current,
+    )
+
+# TODO def build_configceremonyphase
+# TODO def build_configfinalizephase
+
+def build_configphase(filter_str=None, phase=None):
+    match phase:
+        case ElectionConfigPhase(phase=p): is_current = True
+        case _: is_current = False
+    return build_node(
+        id = 'configphase',
+        type = 'configphase',
+        children = [
+            build_configannouncephase(filter_str, phase),
+            build_configonboardingphase(filter_str, phase),
+            build_configceremonyphase(filter_str, phase),
+            build_configfinalizephase(filter_str, phase),
+        ],
+        is_current = is_current,
+    )
+
+def build_tree(filter_str=None, phase=None):
     # Note that the root node isn't currently shown. So no point having a root.html template.
-    return {"id": "election", "type": "root", "label": "Election", "children": [
-        {"id": "key", "type": "key_ceremony", "label": "Key ceremony", "children": [
-            {"id": "key-r1", "type": "key_round", "round": 1, "label": "Round 1", "done": 2, "total": 3, "children": []},
-        ]},
-        {"id": "voting", "type": "voting", "label": "Voting", "submitted": 25, "children": []},
-    ]}
+    # return {"id": "election", "type": "root", "label": "Election", "children": [
+    #     {"id": "key", "type": "key_ceremony", "label": "Key ceremony", "children": [
+    #         {"id": "key-r1", "type": "key_round", "round": 1, "label": "Round 1", "done": 2, "total": 3, "children": []},
+    #     ]},
+    #     {"id": "voting", "type": "voting", "label": "Voting", "submitted": 25, "children": []},
+    # ]}
+    return {
+        'id': 'node-root', 'type': 'root', 'children': [
+            build_configphase(filter_str, phase)
+        ]
+    }
 
 def get_history_filter() -> Optional[str]:
     return request.args.get("history-filter", "").strip() or None
@@ -81,6 +155,7 @@ async def tree():
     filter_str = get_history_filter()
     open_ids   = get_open_ids()
     closed_ids = get_closed_ids()
+    phase = current_app.subscriber.current_phase()
 	# If loading the tree as a standalone page (for debugging),
 	# need to add the HTMX script to it.
     template = (
@@ -89,7 +164,7 @@ async def tree():
     )
     return await render_template(
         template,
-        tree=build_tree(filter_str),
+        tree=build_tree(filter_str, phase),
         open_ids=open_ids, closed_ids=closed_ids,
         filter_str=filter_str,
     )
@@ -115,13 +190,15 @@ async def filter_results():
         return "", 204 # unchanged; htmx skips the swap
 
     events = current_app.subscriber.all_election_events()
+    phase  = current_app.subscriber.current_phase()
 
     if filter_str:
         events = [e for e in events if filter_str.lower() in str(e).lower()]
 
     return await render_template(
         "history/partials/filter_results.html",
-        events=events, tree=build_tree(filter_str),
+        events=events,
+        tree=build_tree(filter_str, phase),
         open_ids=open_ids, closed_ids=closed_ids,
         filter_str=filter_str, history_ver=cur_ver,
     )
