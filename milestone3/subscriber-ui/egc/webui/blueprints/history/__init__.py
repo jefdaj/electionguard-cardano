@@ -59,14 +59,22 @@ def build_node(id, type, children=None, **fields):
     return {"id": id, "type": type, "children": children or [], **fields}
 
 
-### record nodes ###
+### other nodes ###
 
-def build_records_node(records, filter_str=None):
+def build_records_node(id_, records, filter_str=None):
     return build_node(
-        id = 'announcephase-records',
+        id = id_,
         type = 'records',
         # default_open = True,
         records = records,
+        children = [],
+    )
+
+def build_channels_node(id_, channels, filter_str=None):
+    return build_node(
+        id = id_,
+        type = 'channels',
+        channels = channels,
         children = [],
     )
 
@@ -86,18 +94,20 @@ def build_configannouncephase(phase, records=[], filter_str=None):
         phase_class = node_phase_class(node_phase_key, phase),
         phase_title = 'Announce',
         children = [
-            build_records_node(announce_records, filter_str)
+            build_records_node('announce-records', announce_records, filter_str)
         ],
     )
 
-def build_configonboardingphase(phase, records=[], filter_str=None):
+def build_configonboardingphase(phase, channels=[], filter_str=None):
     node_phase_key = (ElectionConfigPhase.CONSTR_ID, ConfigOnboardingPhase.CONSTR_ID)
     return build_node(
         id = 'configonboardingphase',
         type = 'phase',
         phase_title = 'Onboarding',
         phase_class = node_phase_class(node_phase_key, phase),
-        children = [],
+        children = [
+            build_channels_node('onboarding-channels', channels, filter_str)
+        ],
     )
 
 def build_configceremonyphase(phase, records=[], filter_str=None):
@@ -114,7 +124,7 @@ def build_configceremonyphase(phase, records=[], filter_str=None):
         phase_title = 'Key Ceremony',
         phase_class = node_phase_class(node_phase_key, phase),
         children = [
-            build_records_node(ceremony_records, filter_str)
+            build_records_node('ceremony-records', ceremony_records, filter_str)
         ],
     )
 
@@ -132,11 +142,11 @@ def build_configfinalizephase(phase, records=[], filter_str=None):
         phase_title = 'Finalize', # TODO OK to duplicate?
         phase_class = node_phase_class(node_phase_key, phase),
         children = [
-            build_records_node(finalize_records, filter_str)
+            build_records_node('configfinalize-records', finalize_records, filter_str)
         ],
     )
 
-def build_configphase(phase, records=[], filter_str=None):
+def build_configphase(phase, records=[], channels=[], filter_str=None):
     node_phase_key = (ElectionConfigPhase.CONSTR_ID,)
     return build_node(
         id = 'configphase',
@@ -145,7 +155,7 @@ def build_configphase(phase, records=[], filter_str=None):
         phase_class = node_phase_class(node_phase_key, phase),
         children = [
             build_configannouncephase(phase, records, filter_str),
-            build_configonboardingphase(phase, records, filter_str),
+            build_configonboardingphase(phase, channels, filter_str),
             build_configceremonyphase(phase, records, filter_str),
             build_configfinalizephase(phase, records, filter_str),
         ],
@@ -218,11 +228,11 @@ def build_resultsphase(phase, records=[], filter_str=None):
 ### tree again ###
 
 
-def build_tree(phase, records=[], filter_str=None):
+def build_tree(phase, records=[], channels=[], filter_str=None):
     # TODO add an empty root template just to avoid this being weird in node.html?
     return {
         'id': 'node-root', 'type': 'root', 'children': [
-            build_configphase(phase, records, filter_str),
+            build_configphase(phase, records, channels, filter_str),
             build_votingphase(phase, records, filter_str),
             build_resultsphase(phase, records, filter_str),
             build_verifyphase(phase, records, filter_str),
@@ -285,8 +295,10 @@ async def tree():
     filter_str = get_history_filter()
     open_ids   = get_open_ids()
     closed_ids = get_closed_ids()
-    phase = current_app.subscriber.current_phase()
-    records = current_app.subscriber.all_records()
+    phase    = current_app.subscriber.current_phase()
+    records  = current_app.subscriber.all_records()
+    channels = [channel_id_to_string(c) for c in current_app.subscriber.all_channel_ids()]
+    LOG.debug(f'channels: {channels}')
     # If loading the tree as a standalone page (for debugging),
     # need to add the HTMX script to it.
     template = (
@@ -295,7 +307,7 @@ async def tree():
     )
     return await render_template(
         template,
-        tree=build_tree(phase, records, filter_str),
+        tree=build_tree(phase, records, channels, filter_str),
         open_ids=open_ids, closed_ids=closed_ids,
         filter_str=filter_str,
     )
@@ -320,9 +332,10 @@ async def filter_results():
     if cur_ver == req_ver:
         return "", 204 # unchanged; htmx skips the swap
 
-    events = current_app.subscriber.all_election_events()
-    records = current_app.subscriber.all_records()
-    phase  = current_app.subscriber.current_phase()
+    events   = current_app.subscriber.all_election_events()
+    records  = current_app.subscriber.all_records()
+    phase    = current_app.subscriber.current_phase()
+    channels = [channel_id_to_string(c) for c in current_app.subscriber.all_channel_ids()]
 
     if filter_str:
         events = [e for e in events if filter_str.lower() in str(e).lower()]
@@ -330,7 +343,7 @@ async def filter_results():
     return await render_template(
         "history/partials/filter_results.html",
         events=events,
-        tree=build_tree(phase, records, filter_str),
+        tree=build_tree(phase, records, channels, filter_str),
         open_ids=open_ids, closed_ids=closed_ids,
         filter_str=filter_str, history_ver=cur_ver,
     )

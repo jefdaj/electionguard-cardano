@@ -1242,7 +1242,7 @@ class ElectionSubscriber:
 
     def _on_initelection(self, event: ChannelEvent):
         log_call()
-        if self.current_phase() is not 'ElectionNotStarted':
+        if self.current_phase() != 'ElectionNotStarted':
             i = event.channel_id
             with self._history_lock:
                 prev = self._history[i][-1]
