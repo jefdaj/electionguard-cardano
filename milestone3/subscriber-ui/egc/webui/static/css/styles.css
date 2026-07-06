@@ -45,6 +45,7 @@ main {
 
 #history-tree-container {
   outline: 1px solid;
+  overflow-y: auto;
 }
 
 .footer {
