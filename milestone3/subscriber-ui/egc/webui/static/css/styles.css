@@ -58,3 +58,12 @@ main {
   border: 3px solid red;
   height: 20vh;
 }
+
+.history-tree>ul {
+  margin: 0;
+  padding: 0;
+}
+
+li.tree-node {
+  list-style-type: none;
+}
