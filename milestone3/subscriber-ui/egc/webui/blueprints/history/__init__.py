@@ -203,12 +203,18 @@ def build_votingphase(phase, records=[], filter_str=None):
 
 def build_verifyphase(phase, records=[], filter_str=None):
     node_phase_key = (ElectionVerifyPhase.CONSTR_ID,)
+    records = [
+        r for r in records
+        if isinstance(r.metadata, Summary)
+    ]
     return build_node(
         id = 'verifyphase',
         type = 'phase',
         title = 'Verification',
         phase_class = node_phase_class(node_phase_key, phase),
-        children = [],
+        children = [
+            build_records_node('summary-records', records, filter_str)
+        ],
     )
 
 def build_finalizephase(phase, records=[], filter_str=None):
