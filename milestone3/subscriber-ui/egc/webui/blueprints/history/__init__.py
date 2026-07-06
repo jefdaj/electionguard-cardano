@@ -65,7 +65,6 @@ def build_records_node(id_, records, filter_str=None):
     return build_node(
         id = id_,
         type = 'records',
-        # default_open = True,
         records = records,
         children = [],
     )
@@ -77,6 +76,17 @@ def build_channels_node(id_, channels, filter_str=None):
         channels = channels,
         children = [],
     )
+
+def build_ballots_node(id_, title, records, filter_str=None):
+    return build_node(
+        id = id_,
+        type = 'simple',
+        title = title,
+        children = [
+            build_records_node(id_ + '-records', records, filter_str),
+        ],
+    )
+
 
 
 ### phase nodes ###
@@ -92,7 +102,7 @@ def build_configannouncephase(phase, records=[], filter_str=None):
         id = 'configannouncephase',
         type = 'phase',
         phase_class = node_phase_class(node_phase_key, phase),
-        phase_title = 'Announce',
+        title = 'Announce',
         children = [
             build_records_node('announce-records', announce_records, filter_str)
         ],
@@ -103,7 +113,7 @@ def build_configonboardingphase(phase, channels=[], filter_str=None):
     return build_node(
         id = 'configonboardingphase',
         type = 'phase',
-        phase_title = 'Onboarding',
+        title = 'Onboarding',
         phase_class = node_phase_class(node_phase_key, phase),
         children = [
             build_channels_node('onboarding-channels', channels, filter_str)
@@ -121,7 +131,7 @@ def build_configceremonyphase(phase, records=[], filter_str=None):
     return build_node(
         id = 'configceremonyphase',
         type = 'phase',
-        phase_title = 'Key Ceremony',
+        title = 'Key Ceremony',
         phase_class = node_phase_class(node_phase_key, phase),
         children = [
             build_records_node('ceremony-records', ceremony_records, filter_str)
@@ -139,7 +149,7 @@ def build_configfinalizephase(phase, records=[], filter_str=None):
     return build_node(
         id = 'configfinalizephase',
         type = 'phase',
-        phase_title = 'Finalize', # TODO OK to duplicate?
+        title = 'Finalize', # TODO OK to duplicate?
         phase_class = node_phase_class(node_phase_key, phase),
         children = [
             build_records_node('configfinalize-records', finalize_records, filter_str)
@@ -151,7 +161,7 @@ def build_configphase(phase, records=[], channels=[], filter_str=None):
     return build_node(
         id = 'configphase',
         type = 'phase',
-        phase_title = 'Config',
+        title = 'Config',
         phase_class = node_phase_class(node_phase_key, phase),
         children = [
             build_configannouncephase(phase, records, filter_str),
@@ -163,12 +173,27 @@ def build_configphase(phase, records=[], channels=[], filter_str=None):
 
 def build_votingphase(phase, records=[], filter_str=None):
     node_phase_key = (ElectionVotingPhase.CONSTR_ID,)
+    submitted = [r for r in records if isinstance(r.metadata, BallotSubmitted)]
+    cast      = [r for r in records if isinstance(r.metadata, BallotSpoiled)]
+    spoiled   = [r for r in records if isinstance(r.metadata, CastNotice)]
+    cast_ids    = set(r.metadata.ballot_id for r in cast)
+    spoiled_ids = set(r.metadata.ballot_id for r in spoiled)
+    pending = [
+        r for r in submitted
+        if  not r.metadata.ballot_id in cast_ids
+        and not r.metadata.ballot_id in spoiled_ids
+    ]
     return build_node(
         id = 'votingphase',
         type = 'phase',
-        phase_title = 'Voting',
+        title = 'Voting',
         phase_class = node_phase_class(node_phase_key, phase),
-        children = [],
+        children = [
+            build_ballots_node('ballots-submitted', 'Submitted', submitted, filter_str),
+            build_ballots_node('ballots-cast'     , 'Cast'     , cast     , filter_str),
+            build_ballots_node('ballots-spoiled'  , 'Spoiled'  , spoiled  , filter_str),
+            build_ballots_node('ballots-pending'  , 'Pending'  , pending  , filter_str),
+        ],
     )
 
 def build_verifyphase(phase, records=[], filter_str=None):
@@ -176,7 +201,7 @@ def build_verifyphase(phase, records=[], filter_str=None):
     return build_node(
         id = 'verifyphase',
         type = 'phase',
-        phase_title = 'Verification',
+        title = 'Verification',
         phase_class = node_phase_class(node_phase_key, phase),
         children = [],
     )
@@ -186,7 +211,7 @@ def build_finalizephase(phase, records=[], filter_str=None):
     return build_node(
         id = 'finalizephase',
         type = 'phase',
-        phase_title = 'Finalize', # TODO OK to duplicate?
+        title = 'Finalize', # TODO OK to duplicate?
         phase_class = node_phase_class(node_phase_key, phase),
         children = [],
     )
@@ -196,7 +221,7 @@ def build_resultstallyphase(phase, records=[], filter_str=None):
     return build_node(
         id = 'resultstallyphase',
         type = 'phase',
-        phase_title = 'Encrypted Tally',
+        title = 'Encrypted Tally',
         phase_class = node_phase_class(node_phase_key, phase),
         children = [],
     )
@@ -206,7 +231,7 @@ def build_resultsdecryptphase(phase, records=[], filter_str=None):
     return build_node(
         id = 'resultsdecryptphase',
         type = 'phase',
-        phase_title = 'Decrypt',
+        title = 'Decrypt',
         phase_class = node_phase_class(node_phase_key, phase),
         children = [],
     )
@@ -216,7 +241,7 @@ def build_resultsphase(phase, records=[], filter_str=None):
     return build_node(
         id = 'resultsphase',
         type = 'phase',
-        phase_title = 'Results',
+        title = 'Results',
         phase_class = node_phase_class(node_phase_key, phase),
         children = [
             build_resultstallyphase(phase, records, filter_str),
