@@ -77,7 +77,8 @@ def build_configannouncephase(phase, records=[], filter_str=None):
     node_phase_key = (ElectionConfigPhase.CONSTR_ID, ConfigAnnouncePhase.CONSTR_ID)
     announce_records = [
         r for r in records
-        # if isinstance(r, Manifest) or isinstance(r, CeremonyDetails)
+        if isinstance(r.metadata, Manifest)
+        or isinstance(r.metadata, CeremonyDetails)
     ]
     return build_node(
         id = 'configannouncephase',
