@@ -212,7 +212,9 @@ def is_open(node, open_ids, closed_ids, f):
         return False                      # explicit user collapse always wins
     if f is not None and has_visible_child(node, f):
         return True                       # filter force-open
-    return node["id"] in open_ids
+    if node["id"] in open_ids:
+        return True
+    return 'phase_class' in node and node['phase_class'] == 'phase-present'
 
 def toggle_ids(open_ids, closed_ids, node_id, currently_open):
     o, c = set(open_ids), set(closed_ids)
