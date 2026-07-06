@@ -58,128 +58,158 @@ def node_phase_class(node_phase_key, phase):
 def build_node(id, type, children=None, **fields):
     return {"id": id, "type": type, "children": children or [], **fields}
 
-def build_configannouncephase(phase, filter_str=None):
+
+### record nodes ###
+
+# def build_records_node(records, filter_str=None):
+#     return build_node(
+#         id = 'announcephase-records',
+#         type = 'records',
+#         default_open = True,
+#         children = [],
+#     )
+
+
+### phase nodes ###
+
+# TODO actually, can these all be one phase.html template? the differences are in their children?
+
+def build_configannouncephase(phase, records=[], filter_str=None):
     node_phase_key = (ElectionConfigPhase.CONSTR_ID, ConfigAnnouncePhase.CONSTR_ID)
+#     announce_records = [
+#         r for r in records
+#         if isinstance(r, Manifest) or isinstance(r, CeremonyDetails)
+#     ]
     return build_node(
         id = 'configannouncephase',
-        type = 'configannouncephase',
-        children = [],
+        type = 'phase',
         phase_class = node_phase_class(node_phase_key, phase),
+        phase_title = 'Announce',
+        children = [
+            # build_records_node(announce_records, filter_str)
+        ],
     )
 
-def build_configonboardingphase(phase, filter_str=None):
+def build_configonboardingphase(phase, records=[], filter_str=None):
     node_phase_key = (ElectionConfigPhase.CONSTR_ID, ConfigOnboardingPhase.CONSTR_ID)
     return build_node(
         id = 'configonboardingphase',
-        type = 'configonboardingphase',
-        children = [],
+        type = 'phase',
+        phase_title = 'Onboarding',
         phase_class = node_phase_class(node_phase_key, phase),
+        children = [],
     )
 
-def build_configceremonyphase(phase, filter_str=None):
+def build_configceremonyphase(phase, records=[], filter_str=None):
     node_phase_key = (ElectionConfigPhase.CONSTR_ID, ConfigCeremonyPhase.CONSTR_ID)
     return build_node(
         id = 'configceremonyphase',
-        type = 'configceremonyphase',
-        children = [],
+        type = 'phase',
+        phase_title = 'Key Ceremony',
         phase_class = node_phase_class(node_phase_key, phase),
+        children = [],
     )
 
-def build_configfinalizephase(phase, filter_str=None):
+def build_configfinalizephase(phase, records=[], filter_str=None):
     node_phase_key = (ElectionConfigPhase.CONSTR_ID, ConfigFinalizePhase.CONSTR_ID)
     return build_node(
         id = 'configfinalizephase',
-        type = 'configfinalizephase',
-        children = [],
+        type = 'phase',
+        phase_title = 'Finalize', # TODO OK to duplicate?
         phase_class = node_phase_class(node_phase_key, phase),
+        children = [],
     )
 
-def build_configphase(phase, filter_str=None):
+def build_configphase(phase, records=[], filter_str=None):
     node_phase_key = (ElectionConfigPhase.CONSTR_ID,)
     return build_node(
         id = 'configphase',
-        type = 'configphase',
+        type = 'phase',
+        phase_title = 'Config',
+        phase_class = node_phase_class(node_phase_key, phase),
         children = [
             build_configannouncephase(phase, filter_str),
             build_configonboardingphase(phase, filter_str),
             build_configceremonyphase(phase, filter_str),
             build_configfinalizephase(phase, filter_str),
         ],
-        phase_class = node_phase_class(node_phase_key, phase),
     )
 
-def build_votingphase(phase, filter_str=None):
+def build_votingphase(phase, records=[], filter_str=None):
     node_phase_key = (ElectionVotingPhase.CONSTR_ID,)
     return build_node(
         id = 'votingphase',
-        type = 'votingphase',
-        children = [],
+        type = 'phase',
+        phase_title = 'Voting',
         phase_class = node_phase_class(node_phase_key, phase),
+        children = [],
     )
 
-def build_verifyphase(phase, filter_str=None):
+def build_verifyphase(phase, records=[], filter_str=None):
     node_phase_key = (ElectionVerifyPhase.CONSTR_ID,)
     return build_node(
         id = 'verifyphase',
-        type = 'verifyphase',
-        children = [],
+        type = 'phase',
+        phase_title = 'Verification',
         phase_class = node_phase_class(node_phase_key, phase),
+        children = [],
     )
 
-def build_finalizephase(phase, filter_str=None):
+def build_finalizephase(phase, records=[], filter_str=None):
     node_phase_key = (ElectionFinalizePhase.CONSTR_ID,)
     return build_node(
         id = 'finalizephase',
-        type = 'finalizephase',
-        children = [],
+        type = 'phase',
+        phase_title = 'Finalize', # TODO OK to duplicate?
         phase_class = node_phase_class(node_phase_key, phase),
+        children = [],
     )
 
-def build_resultstallyphase(phase, filter_str=None):
+def build_resultstallyphase(phase, records=[], filter_str=None):
     node_phase_key = (ElectionResultsPhase.CONSTR_ID, ResultsTallyPhase.CONSTR_ID)
     return build_node(
         id = 'resultstallyphase',
-        type = 'resultstallyphase',
-        children = [],
+        type = 'phase',
+        phase_title = 'Encrypted Tally',
         phase_class = node_phase_class(node_phase_key, phase),
+        children = [],
     )
 
-def build_resultsdecryptphase(phase, filter_str=None):
+def build_resultsdecryptphase(phase, records=[], filter_str=None):
     node_phase_key = (ElectionResultsPhase.CONSTR_ID, ResultsDecryptPhase.CONSTR_ID)
     return build_node(
         id = 'resultsdecryptphase',
-        type = 'resultsdecryptphase',
-        children = [],
+        type = 'phase',
+        phase_title = 'Decrypt',
         phase_class = node_phase_class(node_phase_key, phase),
+        children = [],
     )
 
-def build_resultsphase(phase, filter_str=None):
+def build_resultsphase(phase, records=[], filter_str=None):
     node_phase_key = (ElectionResultsPhase.CONSTR_ID,)
     return build_node(
         id = 'resultsphase',
-        type = 'resultsphase',
+        type = 'phase',
+        phase_title = 'Results',
+        phase_class = node_phase_class(node_phase_key, phase),
         children = [
             build_resultstallyphase(phase, filter_str),
             build_resultsdecryptphase(phase, filter_str),
         ],
-        phase_class = node_phase_class(node_phase_key, phase),
     )
 
-def build_tree(phase, filter_str=None):
-    # Note that the root node isn't currently shown. So no point having a root.html template.
-    # return {"id": "election", "type": "root", "label": "Election", "children": [
-    #     {"id": "key", "type": "key_ceremony", "label": "Key ceremony", "children": [
-    #         {"id": "key-r1", "type": "key_round", "round": 1, "label": "Round 1", "done": 2, "total": 3, "children": []},
-    #     ]},
-    #     {"id": "voting", "type": "voting", "label": "Voting", "submitted": 25, "children": []},
-    # ]}
+
+### tree again ###
+
+
+def build_tree(phase, records=[], filter_str=None):
     return {
         'id': 'node-root', 'type': 'root', 'children': [
-            build_configphase(phase, filter_str),
-            build_votingphase(phase, filter_str),
-            build_resultsphase(phase, filter_str),
-            build_verifyphase(phase, filter_str),
-            build_finalizephase(phase, filter_str),
+            build_configphase(phase, records, filter_str),
+            build_votingphase(phase, records, filter_str),
+            build_resultsphase(phase, records, filter_str),
+            build_verifyphase(phase, records, filter_str),
+            build_finalizephase(phase, records, filter_str),
         ]
     }
 
@@ -239,6 +269,7 @@ async def tree():
     open_ids   = get_open_ids()
     closed_ids = get_closed_ids()
     phase = current_app.subscriber.current_phase()
+    records = current_app.subscriber.all_records()
     # If loading the tree as a standalone page (for debugging),
     # need to add the HTMX script to it.
     template = (
@@ -247,7 +278,7 @@ async def tree():
     )
     return await render_template(
         template,
-        tree=build_tree(phase, filter_str),
+        tree=build_tree(phase, records, filter_str),
         open_ids=open_ids, closed_ids=closed_ids,
         filter_str=filter_str,
     )
@@ -273,6 +304,7 @@ async def filter_results():
         return "", 204 # unchanged; htmx skips the swap
 
     events = current_app.subscriber.all_election_events()
+    records = current_app.subscriber.all_records()
     phase  = current_app.subscriber.current_phase()
 
     if filter_str:
@@ -281,7 +313,7 @@ async def filter_results():
     return await render_template(
         "history/partials/filter_results.html",
         events=events,
-        tree=build_tree(phase, filter_str),
+        tree=build_tree(phase, records, filter_str),
         open_ids=open_ids, closed_ids=closed_ids,
         filter_str=filter_str, history_ver=cur_ver,
     )
