@@ -26,35 +26,29 @@ main {
 }
 
 #history-top-bar {
-  border: 3px solid brown;
 }
 
 #history-filter-input {
   padding: 7px;
-  border: 3px solid red;
 }
 
 #history-main-area {
   display: grid;
   grid-template-columns: 1fr 1fr;
   overflow: hidden; /* prevents layout breaking */
-  border: 3px solid orange;
 }
 
 #history-log-container {
   overflow-y: auto;
-  border: 3px solid skyblue;
 }
 
 #history-tree-container {
-  border: 3px solid forestgreen;
 }
 
 .footer {
 }
 
 #settings {
-  border: 3px solid red;
   height: 20vh;
 }
 
@@ -70,10 +64,8 @@ ul.history-log {
 
 li.event {
   list-style-type: none;
-  border: 1px solid green;
 }
 
 li.tree-node {
   list-style-type: none;
-  border: 1px solid blue;
 }
