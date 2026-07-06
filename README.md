@@ -43,7 +43,7 @@ Current status as of 2026-07-03:
 
 - [ ] [Milestone 3](./milestone3/) (ElectionGuard + Cardano integration):
 
-  * Started work on [a subscriber UI with HTMX](./milestone3/subscriber-ui)
+  * Started work on [a subscriber UI with HTMX](./milestone3/webui)
   * Figured out overall architecture: Docker images, APIs, etc.
   * Started experimenting with [printing and scanning QR codes](./milestone3/qrcodes)
   * Starting to plan demos + talk
