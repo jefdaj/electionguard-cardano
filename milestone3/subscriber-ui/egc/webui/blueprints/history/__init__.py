@@ -73,9 +73,6 @@ def build_configfinalizephase(filter_str=None, phase=None):
         is_current = is_current,
     )
 
-# TODO def build_configceremonyphase
-# TODO def build_configfinalizephase
-
 def build_configphase(filter_str=None, phase=None):
     match phase:
         case ElectionConfigPhase(phase=p): is_current = True
@@ -92,6 +89,75 @@ def build_configphase(filter_str=None, phase=None):
         is_current = is_current,
     )
 
+def build_votingphase(filter_str=None, phase=None):
+    match phase:
+        case ElectionVotingPhase(): is_current = True
+        case _: is_current = False
+    return build_node(
+        id = 'votingphase',
+        type = 'votingphase',
+        children = [],
+        is_current = is_current,
+    )
+
+def build_verifyphase(filter_str=None, phase=None):
+    match phase:
+        case ElectionVerifyPhase(): is_current = True
+        case _: is_current = False
+    return build_node(
+        id = 'verifyphase',
+        type = 'verifyphase',
+        children = [],
+        is_current = is_current,
+    )
+
+def build_finalizephase(filter_str=None, phase=None):
+    match phase:
+        case ElectionFinalizePhase(): is_current = True
+        case _: is_current = False
+    return build_node(
+        id = 'finalizephase',
+        type = 'finalizephase',
+        children = [],
+        is_current = is_current,
+    )
+
+def build_resultstallyphase(filter_str=None, phase=None):
+    match phase:
+        case ElectionResultsPhase(phase=ResultsTallyPhase()): is_current = True
+        case _: is_current = False
+    return build_node(
+        id = 'resultstallyphase',
+        type = 'resultstallyphase',
+        children = [],
+        is_current = is_current,
+    )
+
+def build_resultsdecryptphase(filter_str=None, phase=None):
+    match phase:
+        case ElectionResultsPhase(phase=ResultsDecryptPhase()): is_current = True
+        case _: is_current = False
+    return build_node(
+        id = 'resultsdecryptphase',
+        type = 'resultsdecryptphase',
+        children = [],
+        is_current = is_current,
+    )
+
+def build_resultsphase(filter_str=None, phase=None):
+    match phase:
+        case ElectionResultsPhase(phase=p): is_current = True
+        case _: is_current = False
+    return build_node(
+        id = 'resultsphase',
+        type = 'resultsphase',
+        children = [
+            build_resultstallyphase(filter_str, phase),
+            build_resultsdecryptphase(filter_str, phase),
+        ],
+        is_current = is_current,
+    )
+
 def build_tree(filter_str=None, phase=None):
     # Note that the root node isn't currently shown. So no point having a root.html template.
     # return {"id": "election", "type": "root", "label": "Election", "children": [
@@ -102,7 +168,11 @@ def build_tree(filter_str=None, phase=None):
     # ]}
     return {
         'id': 'node-root', 'type': 'root', 'children': [
-            build_configphase(filter_str, phase)
+            build_configphase(filter_str, phase),
+            build_votingphase(filter_str, phase),
+            build_resultsphase(filter_str, phase),
+            build_verifyphase(filter_str, phase),
+            build_finalizephase(filter_str, phase),
         ]
     }
 
