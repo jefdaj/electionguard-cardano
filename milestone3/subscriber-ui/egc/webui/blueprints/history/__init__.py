@@ -24,13 +24,12 @@ def version_including_filter(sub_version: str, filter_str: Optional[str]):
 
 
 def build_tree(filter_str=None):
-    return {"id": "election", "label": "Election", "children": [
-        {"id": "key", "label": "Key ceremony", "children": [
-            {"id": "key-r1", "label": "Round 1", "children": []},
+    return {"id": "election", "type": "root", "label": "Election", "children": [
+        {"id": "key", "type": "key_ceremony", "label": "Key ceremony", "children": [
+            {"id": "key-r1", "type": "key_round", "round": 1, "done": 2, "total": 3, "children": []},
         ]},
-        {"id": "voting", "label": "Voting", "children": []},
+        {"id": "voting", "type": "voting", "submitted": 25, "children": []},
     ]}
-
 
 def get_history_filter() -> Optional[str]:
     return request.args.get("history-filter", "").strip() or None

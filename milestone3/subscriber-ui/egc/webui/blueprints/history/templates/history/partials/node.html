@@ -13,7 +13,8 @@
           {{ '▾' if open_now else '▸' }}
         </button>
       {% endif %}
-      <span>{{ node.label }}</span>
+      {% include ["history/partials/node_types/" ~ node.type ~ ".html",
+                  "history/partials/node_types/default.html"] ignore missing %}
     </div>
     {% if is_open(node, open_ids, closed_ids, filter_str) and node.children %}
       <ul>
