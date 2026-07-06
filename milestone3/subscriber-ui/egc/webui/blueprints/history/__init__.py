@@ -61,32 +61,31 @@ def build_node(id, type, children=None, **fields):
 
 ### record nodes ###
 
-# def build_records_node(records, filter_str=None):
-#     return build_node(
-#         id = 'announcephase-records',
-#         type = 'records',
-#         default_open = True,
-#         children = [],
-#     )
+def build_records_node(records, filter_str=None):
+    return build_node(
+        id = 'announcephase-records',
+        type = 'records',
+        # default_open = True,
+        records = records,
+        children = [],
+    )
 
 
 ### phase nodes ###
 
-# TODO actually, can these all be one phase.html template? the differences are in their children?
-
 def build_configannouncephase(phase, records=[], filter_str=None):
     node_phase_key = (ElectionConfigPhase.CONSTR_ID, ConfigAnnouncePhase.CONSTR_ID)
-#     announce_records = [
-#         r for r in records
-#         if isinstance(r, Manifest) or isinstance(r, CeremonyDetails)
-#     ]
+    announce_records = [
+        r for r in records
+        # if isinstance(r, Manifest) or isinstance(r, CeremonyDetails)
+    ]
     return build_node(
         id = 'configannouncephase',
         type = 'phase',
         phase_class = node_phase_class(node_phase_key, phase),
         phase_title = 'Announce',
         children = [
-            # build_records_node(announce_records, filter_str)
+            build_records_node(announce_records, filter_str)
         ],
     )
 
@@ -128,10 +127,10 @@ def build_configphase(phase, records=[], filter_str=None):
         phase_title = 'Config',
         phase_class = node_phase_class(node_phase_key, phase),
         children = [
-            build_configannouncephase(phase, filter_str),
-            build_configonboardingphase(phase, filter_str),
-            build_configceremonyphase(phase, filter_str),
-            build_configfinalizephase(phase, filter_str),
+            build_configannouncephase(phase, records, filter_str),
+            build_configonboardingphase(phase, records, filter_str),
+            build_configceremonyphase(phase, records, filter_str),
+            build_configfinalizephase(phase, records, filter_str),
         ],
     )
 
@@ -193,8 +192,8 @@ def build_resultsphase(phase, records=[], filter_str=None):
         phase_title = 'Results',
         phase_class = node_phase_class(node_phase_key, phase),
         children = [
-            build_resultstallyphase(phase, filter_str),
-            build_resultsdecryptphase(phase, filter_str),
+            build_resultstallyphase(phase, records, filter_str),
+            build_resultsdecryptphase(phase, records, filter_str),
         ],
     )
 
@@ -203,6 +202,7 @@ def build_resultsphase(phase, records=[], filter_str=None):
 
 
 def build_tree(phase, records=[], filter_str=None):
+    # TODO add an empty root template just to avoid this being weird in node.html?
     return {
         'id': 'node-root', 'type': 'root', 'children': [
             build_configphase(phase, records, filter_str),

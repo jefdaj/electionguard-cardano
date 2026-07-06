@@ -72,6 +72,15 @@ li.tree-node {
   list-style-type: none;
 }
 
+ul.tree-records {
+  margin: 0;
+  padding: 0;
+}
+
+li.tree-record {
+  list-style-type: none;
+}
+
 .phase-past {
 }
 
