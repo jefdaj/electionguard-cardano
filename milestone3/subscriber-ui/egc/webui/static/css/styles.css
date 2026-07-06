@@ -69,3 +69,15 @@ li.event {
 li.tree-node {
   list-style-type: none;
 }
+
+.phase-past {
+  color: red;
+}
+
+.phase-present {
+  color: green;
+}
+
+.phase-future {
+  color: blue;
+}
