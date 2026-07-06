@@ -6,7 +6,7 @@
      hx-get="{{ url_for('history.filter_results') }}"
      hx-trigger="keyup changed delay:200ms"
      hx-headers='js:{"HX-Trigger-Version": document.getElementById("history-ver").dataset.ver}'
-     hx-include="[name='open'],[name='closed'],[name='history-filter']"
+     hx-include="[name='open'],[name='closed'],[name='filter']"
      hx-target="#history-filter-results"
      hx-swap="innerHTML"
      placeholder="Filter entries...">
@@ -28,7 +28,7 @@
      hx-get="{{ url_for('history.filter_results') }}"
      hx-trigger="load, every 5s"
      hx-headers='js:{"HX-Trigger-Version": document.getElementById("history-ver").dataset.ver}'
-     hx-include="[name='open'],[name='closed'],[name='history-filter']"
+     hx-include="[name='open'],[name='closed'],[name='filter']"
      hx-swap="innerHTML"
      hx-sync="this:replace"
      hx-on::after-swap="if (!document.getElementById('history-filter-input').value.trim()) { lc = document.getElementById('history-log-container'); lc.scrollTop = lc.scrollHeight; }">

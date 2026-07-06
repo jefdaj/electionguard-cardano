@@ -41,7 +41,6 @@ main {
 
 #history-log-container {
   overflow-y: auto;
-  outline: 1px solid;
 }
 
 #history-tree-container {
