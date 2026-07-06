@@ -293,10 +293,10 @@ def has_visible_child(node, f):
     return any(visible(c, f) for c in node["children"])
 
 def is_open(node, open_ids, closed_ids, f):
-    if node["id"] in closed_ids:
-        return False                      # explicit user collapse always wins
     if f is not None and has_visible_child(node, f):
         return True                       # filter force-open
+    if node["id"] in closed_ids:
+        return False
     if node["id"] in open_ids:
         return True
     return 'phase_class' in node and node['phase_class'] == 'phase-present'
