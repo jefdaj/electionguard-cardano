@@ -161,7 +161,7 @@ def build_configphase(phase, records=[], channels=[], filter_str=None):
     return build_node(
         id = 'configphase',
         type = 'phase',
-        title = 'Config',
+        title = 'Setup',
         phase_class = node_phase_class(node_phase_key, phase),
         children = [
             build_configannouncephase(phase, records, filter_str),
@@ -266,7 +266,7 @@ def build_tree(phase, records=[], channels=[], filter_str=None):
     }
 
 def get_history_filter() -> Optional[str]:
-    return request.args.get("filter", "").strip() or None
+    return request.args.get("history-filter", "").strip() or None
 
 def get_open_ids() -> set[str]:
     ids = set(filter(None, request.args.get("open", "").split(",")))
