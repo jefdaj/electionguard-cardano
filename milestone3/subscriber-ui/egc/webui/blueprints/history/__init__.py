@@ -174,8 +174,8 @@ def build_configphase(phase, records=[], channels=[], filter_str=None):
 def build_votingphase(phase, records=[], filter_str=None):
     node_phase_key = (ElectionVotingPhase.CONSTR_ID,)
     submitted = [r for r in records if isinstance(r.metadata, BallotSubmitted)]
-    cast      = [r for r in records if isinstance(r.metadata, BallotSpoiled)]
-    spoiled   = [r for r in records if isinstance(r.metadata, CastNotice)]
+    cast      = [r for r in records if isinstance(r.metadata, CastNotice)]
+    spoiled   = [r for r in records if isinstance(r.metadata, BallotSpoiled)]
     cast_ids    = set(r.metadata.ballot_id for r in cast)
     spoiled_ids = set(r.metadata.ballot_id for r in spoiled)
     pending = [
@@ -266,7 +266,7 @@ def build_tree(phase, records=[], channels=[], filter_str=None):
     }
 
 def get_history_filter() -> Optional[str]:
-    return request.args.get("history-filter", "").strip() or None
+    return request.args.get("filter", "").strip() or None
 
 def get_open_ids() -> set[str]:
     ids = set(filter(None, request.args.get("open", "").split(",")))
