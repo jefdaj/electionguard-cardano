@@ -38,5 +38,5 @@ include = [
 "src/egc_server" = "egc_server"
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "editables"]
 build-backend = "hatchling.build"
