@@ -11,7 +11,7 @@ from pprint import pprint
 from os import makedirs, listdir
 from os.path import join
 from typing import List, Tuple
-from datetime import datetime
+import datetime
 from dataclasses import dataclass
 
 from electionguard.key_ceremony import (
@@ -67,7 +67,7 @@ POLLING_PLACE  = 'electionguard-cardano-polling-place'
 @dataclass
 class CastBallotNotice(object):
     ballot_id: str
-    cast_at: datetime
+    cast_at: datetime.datetime
 
 
 def add_device(device_number, egsync_api):
@@ -201,7 +201,7 @@ def vote_reveal(egsync_api, private_dir, device_number, ballot_id, spoil):
         cast_notice = CastBallotNotice(
             # ballot_id=ballot_enc.object_id, # TODO just ballot_id here?
             ballot_id=ballot_id,
-            cast_at=datetime.now(datetime.UTC)
+            cast_at=datetime.datetime.now(datetime.UTC)
         )
 
         device_id = 'device_' + str(device_number)

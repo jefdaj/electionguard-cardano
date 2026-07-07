@@ -25,7 +25,7 @@ import logging
 
 from os.path import join, splitext
 from typing import List, Tuple
-from datetime import datetime, timedelta
+import datetime
 from pprint import pprint
 
 from electionguard.key_ceremony import (
@@ -109,7 +109,7 @@ def BuildManifestCommand(
     provided by the user.
     """
 
-    now = datetime.now(datetime.UTC)
+    now = datetime.datetime.now(datetime.UTC)
     county_id = "electionguard-cardano-test-county"
     contest_name = referendum_question
 
@@ -118,7 +118,7 @@ def BuildManifestCommand(
         'spec_version': '1.0', # TODO is this right?
         'type': 'general',
         'start_date': now,
-        'end_date': now + timedelta(days=2, hours=12), # TODO does it matter?
+        'end_date': now + datetime.timedelta(days=2, hours=12), # TODO does it matter?
         'geopolitical_units': [{
             "object_id": county_id,
             "name": "ElectionGuard + Cardano Test County",
