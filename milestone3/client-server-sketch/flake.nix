@@ -39,16 +39,7 @@
               ++ final.resolveBuildSystem names;
           });
         in {
-          atomicwrites     = addBuildSystem { setuptools = []; wheel = []; } prev.atomicwrites;
-          bottle-websocket = addBuildSystem { setuptools = []; wheel = []; } prev.bottle-websocket;
-          eel              = addBuildSystem { setuptools = []; wheel = []; } prev.eel;
-          electionguard    = addBuildSystem { hatchling = []; editables = []; } prev.electionguard;
-          gmpy2 = (addBuildSystem { setuptools = []; cython = []; } prev.gmpy2).overrideAttrs (old: {
-            nativeBuildInputs = (old.nativeBuildInputs or []) ++ [ ];
-            buildInputs = (old.buildInputs or []) ++ [ pkgs.gmp pkgs.mpfr pkgs.libmpc ];
-            NIX_CFLAGS_COMPILE = "-I${pkgs.gmp.dev}/include";
-            NIX_LDFLAGS = "-L${pkgs.gmp}/lib";
-          });
+          # TODO python overrides here as needed
         };
 
         pythonSet =
@@ -100,7 +91,7 @@
       # dev shell with editable install
       devShells.${system}.default =
         let
-          editableOverlay = workspace.mkEditablePyprojectOverlay { root = "${toString ./.}"; };
+          editableOverlay = workspace.mkEditablePyprojectOverlay { root = "$PWD"; };
           editablePythonSet = pythonSet.overrideScope editableOverlay;
           venv = editablePythonSet.mkVirtualEnv "egc-client-server-sketch-env" workspace.deps.all;
         in
