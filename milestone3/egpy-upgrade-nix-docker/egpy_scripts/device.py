@@ -201,7 +201,7 @@ def vote_reveal(egsync_api, private_dir, device_number, ballot_id, spoil):
         cast_notice = CastBallotNotice(
             # ballot_id=ballot_enc.object_id, # TODO just ballot_id here?
             ballot_id=ballot_id,
-            cast_at=datetime.utcnow()
+            cast_at=datetime.now(datetime.UTC)
         )
 
         device_id = 'device_' + str(device_number)

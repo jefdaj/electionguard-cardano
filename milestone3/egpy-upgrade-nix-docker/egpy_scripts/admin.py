@@ -109,7 +109,7 @@ def BuildManifestCommand(
     provided by the user.
     """
 
-    now = datetime.utcnow()
+    now = datetime.now(datetime.UTC)
     county_id = "electionguard-cardano-test-county"
     contest_name = referendum_question
 
