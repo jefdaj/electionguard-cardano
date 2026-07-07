@@ -71,7 +71,7 @@
 
         dockerImage = pkgs.dockerTools.buildLayeredImage {
           name = "egc-client-server-sketch";
-          tag = "0.1";
+          tag = "0.1.0";
           contents = [
             pythonEnv
             pkgs.coreutils
