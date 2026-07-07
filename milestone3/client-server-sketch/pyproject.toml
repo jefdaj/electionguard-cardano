@@ -21,9 +21,6 @@ egc-server = "egc_server.start:run" # TODO figure out
 dev = [
 ]
 
-[tool.uv]
-default-groups = ["dev"]
-
 [tool.hatch.build.targets.sdist]
 include = [
     "src/egc_client",
