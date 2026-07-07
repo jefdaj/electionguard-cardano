@@ -203,6 +203,7 @@ def run_process(cfg, log, args):
 def setup(cfg, log):
 
     # Only needed when a previous run was inturrupted
+    # TODO chown here too?
     run_process(cfg, log, ['arion', 'down'])
 
     # For some reason this occassionally fails with a Docker "network not found" error.
@@ -214,7 +215,8 @@ def setup(cfg, log):
             run_process(cfg, log, ['arion', 'up', '-d', '--remove-orphans'])
 
             # There doesn't seem to be any good way to get Docker or Arion to handle this,
-            # but the bad way works.
+            # but again the hacky way works.
+            # TODO convention so all the GIDs line up nicely?
             run_process(cfg, log, ['sudo', 'chown', '1000:100', './data', '-R'])
 
             return
@@ -719,7 +721,7 @@ if __name__ == '__main__':
 
 ### tests ###
 
-TESTS_DIR = './tests'
+TESTS_DIR = './data'
 
 def hash_config(cfg: RunConfig, truncate=99) -> (int, str):
     "Ensures tmpdirs are not being reused after their configs change"
