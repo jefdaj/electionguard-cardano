@@ -92,8 +92,6 @@ let
     ];
   };
 
-  # TODO write egsync
-  # TODO no private_dir needed?
   egsyncContainer = mode: project_name: mockchain_dir: private_dir: n: {
     # service.image = "busybox:latest";
 

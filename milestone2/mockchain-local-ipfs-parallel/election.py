@@ -721,7 +721,7 @@ if __name__ == '__main__':
 
 ### tests ###
 
-TESTS_DIR = './data'
+TESTS_DIR = './data/tests'
 
 def hash_config(cfg: RunConfig, truncate=99) -> (int, str):
     "Ensures tmpdirs are not being reused after their configs change"
