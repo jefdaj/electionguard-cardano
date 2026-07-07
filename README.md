@@ -41,6 +41,7 @@ Current status as of 2026-07-06:
 
 - [ ] [Milestone 3](./milestone3/) (ElectionGuard + Cardano integration):
 
+  * [Nix Packaged the reference implementation](https://github.com/jefdaj/electionguard-python)
   * Mainly working on [merging the M1 + M2 codebases](./milestone3/merge-codebases)
   * Experimented with [a Quart + HTMX WebUI](./milestone3/webui)
   * Experimented with [printing and scanning QR codes](./milestone3/qrcodes)
