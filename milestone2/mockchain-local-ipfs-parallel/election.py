@@ -215,7 +215,7 @@ def setup(cfg, log):
 
             # There doesn't seem to be any good way to get Docker or Arion to handle this,
             # but the bad way works.
-            run_process(cfg, log, ['sudo', 'chown', '1000:1000', './data', '-R'])
+            run_process(cfg, log, ['sudo', 'chown', '1000:100', './data', '-R'])
 
             return
         except Exception as e:
@@ -225,6 +225,7 @@ def setup(cfg, log):
 
 @explain_step
 def teardown(cfg, log):
+    run_process(cfg, log, ['sudo', 'chown', '1000:100', './data', '-R'])
     run_process(cfg, log, ['arion', 'down'])
 
 ### election ###
