@@ -76,8 +76,7 @@ def run_in_container(
 ):
     container_name = cfg.arion.project_name + "-" + container_role + str(container_number) + "-egpy-1"
     script_path = join(cfg.arion.bind_mounts.scripts, script_name)
-    args = ["docker", "exec", container_name,
-            "poetry", "run", script_path] + args
+    args = ["docker", "exec", container_name, script_path] + args
     kwargs.update(stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     log.info(' '.join(args))
     proc = subprocess.Popen(args, **kwargs)
@@ -213,6 +212,11 @@ def setup(cfg, log):
         time.sleep(retry * 2) # delay 2, 4, 6, 8 sec
         try:
             run_process(cfg, log, ['arion', 'up', '-d', '--remove-orphans'])
+
+            # There doesn't seem to be any good way to get Docker or Arion to handle this,
+            # but the bad way works.
+            run_process(cfg, log, ['sudo', 'chown', '1000:1000', './data', '-R'])
+
             return
         except Exception as e:
             log.error(f'arion up failed {retry+1} times: {e}')
