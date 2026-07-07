@@ -86,6 +86,7 @@
             User = "1000:100"; # TODO named egc user? 1000:1000?
             Env = [ "PATH=/bin" ];
             Labels = {};
+            ExposedPorts = { "5000/tcp" = {}; }; # TODO why doesn't this work?
           };
         };
 
