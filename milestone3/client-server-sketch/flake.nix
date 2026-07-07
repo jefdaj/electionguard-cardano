@@ -34,6 +34,7 @@
 
       pyprojectOverrides = final: prev:
         let
+          # lots of the overrides seem to be about adding a build system
           addBuildSystem = names: pkg: pkg.overrideAttrs (old: {
             nativeBuildInputs = (old.nativeBuildInputs or [])
               ++ final.resolveBuildSystem names;
@@ -58,8 +59,10 @@
       packages.${system} = {
 
         # This is the Python library code + binaries.
+        # TODO also needs cacert?
         default = pythonEnv;
 
+        # TODO also needs cacert?
         dockerImage = pkgs.dockerTools.buildLayeredImage {
           name = "egc-client-server-sketch";
           tag = "0.1.0";
@@ -100,11 +103,16 @@
             jq
             uv
             venv
+            cacert # TODO really needed?
           ];
           env = {
             UV_NO_SYNC = "1";
             UV_PYTHON = "${venv}/bin/python";
             UV_PYTHON_DOWNLOADS = "never";
+
+            # TODO are these really needed?
+            SSL_CERT_FILE     = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+            NIX_SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
           };
           shellHook = ''
             unset PYTHONPATH

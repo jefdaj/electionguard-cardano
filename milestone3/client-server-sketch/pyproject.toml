@@ -14,8 +14,8 @@ dependencies = [
 ]
 
 [project.scripts]
-egc        = "egc_client.start:cli" # TODO figure out
-egc-server = "egc_server.start:run" # TODO figure out
+egc        = "egc_client.cli:main"
+egc-server = "egc_server.server.main"
 
 [dependency-groups]
 dev = [
