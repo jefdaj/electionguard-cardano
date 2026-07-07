@@ -11,6 +11,7 @@ keywords = []
 classifiers = [
 ]
 dependencies = [
+    "quart>=0.20.0",
 ]
 
 [project.scripts]
