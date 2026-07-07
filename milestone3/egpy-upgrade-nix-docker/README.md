@@ -8,3 +8,12 @@ to use my new Nix based Docker image. It also adds a few misc niceties along the
 
 - better watch scripts
 - non-root data permissions (works for new egpy containers, but not old egsync ones)
+
+Usage:
+
+```
+./test.sh           # terminal 1
+./watch-docker.sh   # terminal 2
+./watch-logs.sh     # terminal 3
+ranger ./data/tests # terminal 4
+```
