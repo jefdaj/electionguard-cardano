@@ -75,7 +75,7 @@ let
 
   egpyContainer = mode: scripts_dir: mockchain_dir: private_dir: n: {
     service.image = "ghcr.io/jefdaj/electionguard-python:1.4.0-py313.nix";
-    service.user = "1000:1000"; # TODO does this matter?
+    service.user = "1000:100"; # TODO 1000?
 
     service.volumes = [
       "${scripts_dir}:/scripts/"
