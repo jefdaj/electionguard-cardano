@@ -1,0 +1,45 @@
+[project]
+name = "egc-client-server-sketch"
+version = "0.1.0"
+description = "ElectionGuard+Cardano Client/Server Sketch"
+authors = [{ name = "jefdaj", email = "1198065+jefdaj@users.noreply.github.com" }]
+requires-python = ">=3.13,<3.14"
+readme = "README.md"
+license = "MIT"
+maintainers = []
+keywords = []
+classifiers = [
+]
+dependencies = [
+]
+
+[project.scripts]
+egc        = "egc_client.start:cli" # TODO figure out
+egc-server = "egc_server.start:run" # TODO figure out
+
+[dependency-groups]
+dev = [
+]
+
+[tool.uv]
+default-groups = ["dev"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/egc_client",
+    "src/egc_server",
+]
+
+[tool.hatch.build.targets.wheel]
+include = [
+    "src/egc_client",
+    "src/egc_server",
+]
+
+[tool.hatch.build.targets.wheel.sources]
+"src/egc_client" = "egc_client"
+"src/egc_server" = "egc_server"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
