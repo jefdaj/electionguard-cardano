@@ -109,6 +109,7 @@
             UV_NO_SYNC = "1";
             UV_PYTHON = "${venv}/bin/python";
             UV_PYTHON_DOWNLOADS = "never";
+            PYTHONDONTWRITEBYTECODE = true;
 
             # TODO are these really needed?
             SSL_CERT_FILE     = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
