@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/bin/python3
 
 # Based on the functional_key_ceremony integration test.
 # Instead of one script, this has one script per party

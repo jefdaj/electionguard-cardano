@@ -74,7 +74,9 @@ let
   ##############
 
   egpyContainer = mode: scripts_dir: mockchain_dir: private_dir: n: {
-    service.image = "ghcr.io/jefdaj/electionguard-python:1.4.0";
+    # service.image = "ghcr.io/jefdaj/electionguard-python:1.4.0";
+    service.image = "electionguard:1.4.0-py313.nix";
+    service.user = "1000:1000"; # TODO 100?
 
     service.volumes = [
       "${scripts_dir}:/scripts/"
@@ -82,9 +84,7 @@ let
       "${private_dir}/${mode}_${builtins.toString n}/egpy:/data/private"
     ];
 
-    service.command = [ "sh" "-c" ''
-      while true; do sleep 1000; done
-    '' ];
+    service.command = [ "sleep" "infinity" ];
 
     # [egpy] <--> egsync
     service.networks = [
@@ -92,8 +92,6 @@ let
     ];
   };
 
-  # TODO write egsync
-  # TODO no private_dir needed?
   egsyncContainer = mode: project_name: mockchain_dir: private_dir: n: {
     # service.image = "busybox:latest";
 

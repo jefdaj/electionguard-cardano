@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/bin/python3
 
 # Instead of one script, this has one script per party and they coordinate via
 # a shared folder on the local filesystem.  This script is written from the

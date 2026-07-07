@@ -76,8 +76,7 @@ def run_in_container(
 ):
     container_name = cfg.arion.project_name + "-" + container_role + str(container_number) + "-egpy-1"
     script_path = join(cfg.arion.bind_mounts.scripts, script_name)
-    args = ["docker", "exec", container_name,
-            "poetry", "run", script_path] + args
+    args = ["docker", "exec", container_name, script_path] + args
     kwargs.update(stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     log.info(' '.join(args))
     proc = subprocess.Popen(args, **kwargs)
@@ -204,6 +203,7 @@ def run_process(cfg, log, args):
 def setup(cfg, log):
 
     # Only needed when a previous run was inturrupted
+    # TODO chown here too?
     run_process(cfg, log, ['arion', 'down'])
 
     # For some reason this occassionally fails with a Docker "network not found" error.
@@ -213,6 +213,12 @@ def setup(cfg, log):
         time.sleep(retry * 2) # delay 2, 4, 6, 8 sec
         try:
             run_process(cfg, log, ['arion', 'up', '-d', '--remove-orphans'])
+
+            # There doesn't seem to be any good way to get Docker or Arion to handle this,
+            # but again the hacky way works.
+            # TODO convention so all the GIDs line up nicely?
+            run_process(cfg, log, ['sudo', 'chown', '1000:100', './data', '-R'])
+
             return
         except Exception as e:
             log.error(f'arion up failed {retry+1} times: {e}')
@@ -221,6 +227,7 @@ def setup(cfg, log):
 
 @explain_step
 def teardown(cfg, log):
+    run_process(cfg, log, ['sudo', 'chown', '1000:100', './data', '-R'])
     run_process(cfg, log, ['arion', 'down'])
 
 ### election ###
@@ -714,7 +721,7 @@ if __name__ == '__main__':
 
 ### tests ###
 
-TESTS_DIR = './tests'
+TESTS_DIR = './data/tests'
 
 def hash_config(cfg: RunConfig, truncate=99) -> (int, str):
     "Ensures tmpdirs are not being reused after their configs change"

@@ -1,7 +1,7 @@
 {
   "arion": {
-    "project_name": "test",
-    "data_dir": "./data",
+    "project_name": "election",
+    "data_dir": "./data/election",
     "bind_mounts": {
       "scripts": "/scripts",
       "mockchain": "/data/mockchain",
