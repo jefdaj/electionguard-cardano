@@ -14,8 +14,8 @@ dependencies = [
 ]
 
 [project.scripts]
-egc        = "egc_client.cli:main"
-egc-server = "egc_server.server.main"
+egc        = "egc_client.client:main"
+egc-server = "egc_server.server:main"
 
 [dependency-groups]
 dev = [
