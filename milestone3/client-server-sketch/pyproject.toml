@@ -24,17 +24,20 @@ dev = [
 
 [tool.hatch.build.targets.sdist]
 include = [
+    "src/egc",
     "src/egc_client",
     "src/egc_server",
 ]
 
 [tool.hatch.build.targets.wheel]
 include = [
+    "src/egc",
     "src/egc_client",
     "src/egc_server",
 ]
 
 [tool.hatch.build.targets.wheel.sources]
+"src/egc"        = "egc"
 "src/egc_client" = "egc_client"
 "src/egc_server" = "egc_server"
 
