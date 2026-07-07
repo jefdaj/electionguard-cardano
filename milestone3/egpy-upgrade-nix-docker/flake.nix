@@ -25,6 +25,7 @@
         jq
         time
         tree
+        multitail
       ];
 
       mainPyPkgList = ps: with ps; [
