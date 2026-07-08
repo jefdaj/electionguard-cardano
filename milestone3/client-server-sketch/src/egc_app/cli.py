@@ -1,10 +1,8 @@
 import click, asyncio
 
-# TODO relative?
-from egc_client.lib import Client
+from egc_app.client import Client
 
 import logging
-
 LOG = logging.getLogger(__name__)
 
 @click.group()

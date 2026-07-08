@@ -99,15 +99,13 @@
           '';
           config = {
 
-            # TODO fix this entrypoint/cmd thing
             # TODO log to stdout? also a logfile under /data?
-            Entrypoint = [ "${pythonEnv}/bin/egc-server" ];
-            # Cmd = [ "${pythonEnv}/bin/egc" ];
+            Entrypoint = [ "${pythonEnv}/bin/egc" ];
+            # Cmd = [ "serve" ]; # TODO is this how it works?
 
             User = "1000:100"; # TODO named egc user? 1000:1000?
             Env = [
               "PATH=/bin"
-              # "HYPERCORN_BIND=0.0.0.0:5000"
             ];
             Labels = {};
             # ExposedPorts = { "5000/tcp" = {}; }; # TODO does this do anything?

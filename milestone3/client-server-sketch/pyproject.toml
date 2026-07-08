@@ -21,8 +21,7 @@ dependencies = [
 ]
 
 [project.scripts]
-egc        = "egc_client.cli:cli"
-egc-server = "egc_server.server:main"
+egc = "egc_app.cli:cli"
 
 [dependency-groups]
 dev = [
@@ -31,21 +30,18 @@ dev = [
 [tool.hatch.build.targets.sdist]
 include = [
     "src/egc",
-    "src/egc_client",
-    "src/egc_server",
+    "src/egc_app",
 ]
 
 [tool.hatch.build.targets.wheel]
 include = [
     "src/egc",
-    "src/egc_client",
-    "src/egc_server",
+    "src/egc_app",
 ]
 
 [tool.hatch.build.targets.wheel.sources]
-"src/egc"        = "egc"
-"src/egc_client" = "egc_client"
-"src/egc_server" = "egc_server"
+"src/egc"     = "egc"
+"src/egc_app" = "egc_app"
 
 [build-system]
 requires = ["hatchling", "editables"]
