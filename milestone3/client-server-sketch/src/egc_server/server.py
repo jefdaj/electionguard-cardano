@@ -11,6 +11,10 @@ def create_app(config=None):
     LOG.debug('create_app')
 
     app = Quart(__name__)  # static_folder/template_folder resolve to package dir
+
+    # for testing the api
+    app.state = 0
+
     if config:
         app.config.from_mapping(config)
 

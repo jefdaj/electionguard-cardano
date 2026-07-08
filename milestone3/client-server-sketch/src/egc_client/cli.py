@@ -12,6 +12,10 @@ def cli() -> None:
 def incr(n):
     asyncio.run(Client().incr())
 
+@cli.command()
+def state(n):
+    asyncio.run(Client().state())
+
 # interactive command
 @cli.command()
 def repl():

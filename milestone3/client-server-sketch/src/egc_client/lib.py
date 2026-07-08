@@ -10,7 +10,7 @@ class Client:
         r.raise_for_status()
         return r.json()
 
-    async def status(self):
-        r = await self._c.get("/status")
+    async def state(self):
+        r = await self._c.get("/state")
         r.raise_for_status()
         return r.json()
