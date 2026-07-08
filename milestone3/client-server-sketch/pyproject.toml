@@ -17,10 +17,11 @@ dependencies = [
     "cbor2==5.8.0",
     "cbor2pure==5.8.0",
     "deepdiff>=9.1.0",
+    "httpx>=0.28.1",
 ]
 
 [project.scripts]
-egc        = "egc_client.client:main"
+egc        = "egc_client.cli:cli"
 egc-server = "egc_server.server:main"
 
 [dependency-groups]
