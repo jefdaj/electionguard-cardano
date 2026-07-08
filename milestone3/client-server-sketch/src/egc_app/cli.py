@@ -1,6 +1,7 @@
 import click, asyncio
 
 from egc_app.client import Client
+from egc_app.server.run import run_server
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -8,6 +9,10 @@ LOG = logging.getLogger(__name__)
 @click.group()
 def cli() -> None:
 	pass
+
+@cli.command()
+def serve():
+    run_server()
 
 @cli.command()
 def health():
@@ -27,6 +32,7 @@ def state():
     print(resp)
 
 # interactive command
+# TODO fix/write this
 @cli.command()
 def repl():
     """Interactive session."""
