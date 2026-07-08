@@ -19,3 +19,8 @@ class Client:
         r = await self._c.get("/state")
         r.raise_for_status()
         return r.json()
+
+    async def subscribe(self, policy_id, slot_no, block_header_hash):
+        r = await self._c.post(f'/subscribe/{policy_id}/{slot_no}/{block_header_hash}')
+        r.raise_for_status()
+        return r.json()

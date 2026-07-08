@@ -33,6 +33,14 @@ def state():
     resp = asyncio.run(Client().state())
     print(resp)
 
+@cli.command()
+@click.option('--policy-id', type=click.STRING)
+@click.option('--slot-no', type=click.INT)
+@click.option('--block-header-hash', type=click.STRING)
+def subscribe(policy_id, slot_no, block_header_hash):
+    resp = asyncio.run(Client().subscribe(policy_id, slot_no, block_header_hash))
+    print(resp) # TODO click.echo?
+
 # TODO repl? something like:
 # @cli.command()
 # def repl():

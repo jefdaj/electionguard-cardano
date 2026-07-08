@@ -15,6 +15,8 @@ def create_app(config=None):
     # for testing the api
     app.state = 0
 
+    app.subscriber = None
+
     if config:
         app.config.from_mapping(config)
 

@@ -74,6 +74,11 @@
 
         pythonEnv = pythonSet.mkVirtualEnv "egc-client-server-sketch-env" workspace.deps.default;
 
+        kupo = pkgs.callPackage ./nix/kupo.nix {};
+        otherDeps = [
+          kupo
+        ];
+
     in
     {
 
@@ -91,7 +96,7 @@
             pythonEnv
             pkgs.coreutils
             pkgs.bashInteractive
-          ];
+          ] ++ otherDeps;
           enableFakechroot = true;
           fakeRootCommands = ''
             mkdir /data; chown 1000:100 /data
@@ -124,7 +129,7 @@
             uv
             venv
             cacert # TODO really needed?
-          ];
+          ] ++ otherDeps;
           env = {
             UV_NO_SYNC = "1";
             UV_PYTHON = "${venv}/bin/python";
