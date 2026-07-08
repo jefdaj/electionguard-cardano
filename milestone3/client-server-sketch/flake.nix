@@ -32,7 +32,7 @@
       overlay = workspace.mkPyprojectOverlay { sourcePreference = "wheel"; };
 
       # python = pkgs.python313;
-      python = myPython313;
+      # python = myPython313;
 
       myPython313 = pkgs.python313.override {
         packageOverrides = pyself: pysuper: {
@@ -60,7 +60,7 @@
         };
 
         pythonSet =
-          (pkgs.callPackage pyproject-nix.build.packages { inherit python; })
+          (pkgs.callPackage pyproject-nix.build.packages { python = myPython313; })
             .overrideScope (lib.composeManyExtensions [
               pyproject-build-systems.overlays.default
               overlay
