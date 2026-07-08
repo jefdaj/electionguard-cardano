@@ -17,7 +17,7 @@ def serve():
 @cli.command()
 def health():
     resp = asyncio.run(Client().health())
-    print(resp)
+    click.echo(resp)
 
 # TODO remove
 @cli.command()
@@ -31,7 +31,7 @@ def incr(n):
 @cli.command()
 def state():
     resp = asyncio.run(Client().state())
-    print(resp)
+    click.echo(resp)
 
 @cli.command()
 @click.option('--policy-id', type=click.STRING)
@@ -39,19 +39,10 @@ def state():
 @click.option('--block-header-hash', type=click.STRING)
 def subscribe(policy_id, slot_no, block_header_hash):
     resp = asyncio.run(Client().subscribe(policy_id, slot_no, block_header_hash))
-    print(resp) # TODO click.echo?
+    click.echo(resp)
 
-# TODO repl? something like:
-# @cli.command()
-# def repl():
-#     """Interactive session."""
-#     c = Client()
-#     while True:
-#         cmd = click.prompt("egc", type=str)
-#         if cmd in ("quit", "exit"):
-#             break
-#         # dispatch cmd to client...
-#         click.echo(asyncio.run(c.run(cmd)))
+# TODO observe
+# TODO init_election
 
 if __name__ == '__main__':
     cli()

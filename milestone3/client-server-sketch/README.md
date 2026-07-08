@@ -29,6 +29,11 @@ $ egc incr 2
 
 $ egc state
 {'state': 5}
+
+$ egc subscribe \
+    --policy-id a52bfeac6281fe3fa0f15a75159cefac25c0f41b2f742bd1efc32c74 \
+    --slot-no 116668881 \
+    --block-header-hash 567a2fbb6583f7bca0a5a5e6b24c9aa3509c040e079c6586aec16d2316e7ad41
 ```
 
 Docker server:
