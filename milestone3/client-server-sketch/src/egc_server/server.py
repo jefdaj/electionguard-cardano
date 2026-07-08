@@ -1,4 +1,8 @@
 from quart import Quart, Config
+
+# just to check that it works for now:
+from egc import *
+
 import logging
 
 LOG = logging.getLogger(__name__)
