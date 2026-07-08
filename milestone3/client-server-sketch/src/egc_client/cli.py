@@ -12,6 +12,11 @@ def cli() -> None:
 	pass
 
 @cli.command()
+def health():
+    resp = asyncio.run(Client().health())
+    print(resp)
+
+@cli.command()
 @click.argument("n", type=int)
 def incr(n):
     LOG.debug('incr')
@@ -21,7 +26,7 @@ def incr(n):
 @cli.command()
 def state():
     resp = asyncio.run(Client().state())
-    print(f'resp: {resp}')
+    print(resp)
 
 # interactive command
 @cli.command()

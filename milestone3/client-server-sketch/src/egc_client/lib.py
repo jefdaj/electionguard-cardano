@@ -5,6 +5,11 @@ class Client:
         # transport lets you point at a unix socket or ASGI app in tests
         self._c = httpx.AsyncClient(base_url=base_url, transport=transport)
 
+    async def health(self):
+        r = await self._c.get("/health")
+        r.raise_for_status()
+        return r.json()
+
     async def incr(self, n):
         r = await self._c.post(f"/incr/{n}")
         r.raise_for_status()
