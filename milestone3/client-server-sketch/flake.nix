@@ -98,16 +98,19 @@
             mkdir /tmp ; chmod 1777 /tmp
           '';
           config = {
-            # Default to running the server in the foreground
+
+            # TODO fix this entrypoint/cmd thing
             # TODO log to stdout? also a logfile under /data?
             Entrypoint = [ "${pythonEnv}/bin/egc-server" ];
-            # When given args, assume they're for the client app instead.
-            # TODO where do logs go?
-            Cmd = [ "${pythonEnv}/bin/egc" ];
+            # Cmd = [ "${pythonEnv}/bin/egc" ];
+
             User = "1000:100"; # TODO named egc user? 1000:1000?
-            Env = [ "PATH=/bin" ];
+            Env = [
+              "PATH=/bin"
+              # "HYPERCORN_BIND=0.0.0.0:5000"
+            ];
             Labels = {};
-            ExposedPorts = { "5000/tcp" = {}; }; # TODO why doesn't this work?
+            # ExposedPorts = { "5000/tcp" = {}; }; # TODO does this do anything?
           };
         };
 
