@@ -1,5 +1,5 @@
 from . import api
-from quart import current_app, redirect, url_for
+from quart import current_app
 
 @api.get('/health')
 async def health():
