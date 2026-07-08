@@ -28,9 +28,25 @@
       inherit (nixpkgs) lib;
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
-      python = pkgs.python313;
       workspace = uv2nix.lib.workspace.loadWorkspace { workspaceRoot = ./.; };
       overlay = workspace.mkPyprojectOverlay { sourcePreference = "wheel"; };
+
+      # python = pkgs.python313;
+      python = myPython313;
+
+      myPython313 = pkgs.python313.override {
+        packageOverrides = pyself: pysuper: {
+
+          # package new things here:
+          pytest-runner       = pyself.callPackage ./nix/pytest-runner.nix       {};
+          py-multiformats-cid = pyself.callPackage ./nix/py-multiformats-cid.nix {};
+          aioipfs             = pyself.callPackage ./nix/aioipfs.nix             {};
+          pycardano           = pyself.callPackage ./nix/pycardano.nix           {};
+          cbor2               = pyself.callPackage ./nix/cbor2.nix               {};
+          cbor2pure           = pyself.callPackage ./nix/cbor2pure.nix           {};
+
+        };
+      };
 
       pyprojectOverrides = final: prev:
         let
@@ -40,15 +56,7 @@
               ++ final.resolveBuildSystem names;
           });
         in {
-
-          pytest-runner       = pyself.callPackage ./nix/pytest-runner.nix       {};
-          py-multiformats-cid = pyself.callPackage ./nix/py-multiformats-cid.nix {};
-          aioipfs             = pyself.callPackage ./nix/aioipfs.nix             {};
-          pycardano           = pyself.callPackage ./nix/pycardano.nix           {};
-          cbor2               = pyself.callPackage ./nix/cbor2.nix               {};
-          cbor2pure           = pyself.callPackage ./nix/cbor2pure.nix           {};
- 
-          # TODO python overrides here as needed
+          # TODO tweak existing packages here
         };
 
         pythonSet =
