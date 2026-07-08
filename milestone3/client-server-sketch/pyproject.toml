@@ -16,6 +16,7 @@ dependencies = [
     "aioipfs",
     "cbor2==5.8.0",
     "cbor2pure==5.8.0",
+    "deepdiff>=9.1.0",
 ]
 
 [project.scripts]
