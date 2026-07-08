@@ -37,7 +37,8 @@
       myPython313 = pkgs.python313.override {
         packageOverrides = pyself: pysuper: {
 
-          # package new things here:
+          # add new packages here:
+          # TODO and get some into nixpkgs when you have time
           pytest-runner       = pyself.callPackage ./nix/pytest-runner.nix       {};
           py-multiformats-cid = pyself.callPackage ./nix/py-multiformats-cid.nix {};
           aioipfs             = pyself.callPackage ./nix/aioipfs.nix             {};
@@ -56,7 +57,10 @@
               ++ final.resolveBuildSystem names;
           });
         in {
-          # TODO tweak existing packages here
+          # tweak existing packages here, especially adding build systems:
+          gitignore-parser = addBuildSystem {"setuptools" = []; } prev.gitignore-parser;
+          varint           = addBuildSystem {"setuptools" = []; } prev.varint;
+          python-baseconv  = addBuildSystem {"setuptools" = []; } prev.python-baseconv;
         };
 
         pythonSet =
