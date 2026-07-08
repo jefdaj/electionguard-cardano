@@ -58,6 +58,7 @@
           });
         in {
           # tweak existing packages here, especially adding build systems:
+          # TODO factor out the weird arg format
           gitignore-parser = addBuildSystem {"setuptools" = []; } prev.gitignore-parser;
           varint           = addBuildSystem {"setuptools" = []; } prev.varint;
           python-baseconv  = addBuildSystem {"setuptools" = []; } prev.python-baseconv;
