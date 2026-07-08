@@ -3,6 +3,10 @@ import click, asyncio
 # TODO relative?
 from egc_client.lib import Client
 
+import logging
+
+LOG = logging.getLogger(__name__)
+
 @click.group()
 def cli() -> None:
 	pass
@@ -10,11 +14,14 @@ def cli() -> None:
 @cli.command()
 @click.argument("n", type=int)
 def incr(n):
-    asyncio.run(Client().incr())
+    LOG.debug('incr')
+    LOG.debug(f'n: {n}')
+    asyncio.run(Client().incr(n))
 
 @cli.command()
-def state(n):
-    asyncio.run(Client().state())
+def state():
+    resp = asyncio.run(Client().state())
+    print(f'resp: {resp}')
 
 # interactive command
 @cli.command()
