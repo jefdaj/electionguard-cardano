@@ -19,6 +19,7 @@ def health():
     resp = asyncio.run(Client().health())
     print(resp)
 
+# TODO remove
 @cli.command()
 @click.argument("n", type=int)
 def incr(n):
@@ -26,23 +27,23 @@ def incr(n):
     LOG.debug(f'n: {n}')
     asyncio.run(Client().incr(n))
 
+# TODO remove
 @cli.command()
 def state():
     resp = asyncio.run(Client().state())
     print(resp)
 
-# interactive command
-# TODO fix/write this
-@cli.command()
-def repl():
-    """Interactive session."""
-    c = Client()
-    while True:
-        cmd = click.prompt("egc", type=str)
-        if cmd in ("quit", "exit"):
-            break
-        # dispatch cmd to client...
-        click.echo(asyncio.run(c.run(cmd)))
+# TODO repl? something like:
+# @cli.command()
+# def repl():
+#     """Interactive session."""
+#     c = Client()
+#     while True:
+#         cmd = click.prompt("egc", type=str)
+#         if cmd in ("quit", "exit"):
+#             break
+#         # dispatch cmd to client...
+#         click.echo(asyncio.run(c.run(cmd)))
 
 if __name__ == '__main__':
     cli()
