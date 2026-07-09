@@ -45,17 +45,15 @@ def health():
 
 # TODO remove
 @cli.command()
-@click.argument("n", type=int)
-def incr(n):
-    LOG.debug('incr')
-    LOG.debug(f'n: {n}')
-    asyncio.run(Client().incr(n))
-
-# TODO remove
-@cli.command()
-def state():
-    resp = asyncio.run(Client().state())
-    click.echo(resp)
+@click.argument("n", type=int, required=False)
+def trivial(n: int | None):
+    # LOG.debug('incr')
+    # LOG.debug(f'n: {n}')
+    if n is None:
+        n = asyncio.run(Client().get_trivial())
+    else:
+        n = asyncio.run(Client().set_trivial(n))
+    click.echo(n)
 
 @cli.command()
 @click.option('--policy-id', type=click.STRING)

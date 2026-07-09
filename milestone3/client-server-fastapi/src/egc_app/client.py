@@ -10,12 +10,12 @@ class Client:
         r.raise_for_status()
         return r.json()
 
-    async def incr(self, n):
+    async def set_trivial(self, n):
         r = await self._c.post(f"/trivial/{n}")
         r.raise_for_status()
         return r.json()
 
-    async def state(self):
+    async def get_trivial(self):
         r = await self._c.get("/trivial")
         r.raise_for_status()
         return r.json()
