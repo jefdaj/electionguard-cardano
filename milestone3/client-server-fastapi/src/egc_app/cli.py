@@ -1,7 +1,9 @@
-import click, asyncio
+import click
+import asyncio
+import uvicorn
 
 from egc_app.client import Client
-from egc_app.server.run import run_server
+# from egc_app.server.run import run_server
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -11,8 +13,30 @@ def cli() -> None:
 	pass
 
 @cli.command()
-def serve():
-    run_server()
+@click.option("--host", default="0.0.0.0")
+@click.option("--port", default=8000, type=int)
+@click.option("--reload", is_flag=True, help="Auto-reload on code changes (dev only).")
+@click.option("--workers", default=1, type=int)
+@click.option("--log-level", default="info")
+def serve(host, port, reload, workers, log_level):
+    """Run the API server."""
+    if reload and workers > 1:
+        raise click.UsageError("--reload is incompatible with --workers > 1.")
+
+    uvicorn.run(
+        "egc_app.server.app:create_app",
+        factory=True,
+        host=host,
+        port=port,
+        reload=reload,
+        workers=workers,
+        log_level=log_level,
+    )
+
+# old code for reference:
+# @cli.command()
+# def serve():
+#     run_server()
 
 @cli.command()
 def health():

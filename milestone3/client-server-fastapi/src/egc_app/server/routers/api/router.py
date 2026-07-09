@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from . import health
+from . import health, trivial
 
 router = APIRouter(prefix="/api")
 router.include_router(health.router)

@@ -14,10 +14,11 @@ async def lifespan(app: FastAPI):
     # startup: init lib resources, DB pools, etc.
     app.state.trivial = 0 # TODO remove trivial_state
     app.state.subscriber = None
-    app.state.subscriber.start()
+    # app.state.subscriber.start()
     yield
     # shutdown: cleanup
-    app.state.subscriber.stop()
+    if app.state.subscriber is not None:
+        app.state.subscriber.stop()
 
 def create_app() -> FastAPI:
     app = FastAPI(lifespan=lifespan)

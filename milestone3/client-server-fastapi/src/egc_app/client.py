@@ -11,12 +11,12 @@ class Client:
         return r.json()
 
     async def incr(self, n):
-        r = await self._c.post(f"/incr/{n}")
+        r = await self._c.post(f"/trivial/{n}")
         r.raise_for_status()
         return r.json()
 
     async def state(self):
-        r = await self._c.get("/state")
+        r = await self._c.get("/trivial")
         r.raise_for_status()
         return r.json()
 
