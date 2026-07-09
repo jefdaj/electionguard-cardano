@@ -20,8 +20,8 @@ async def lifespan(app: FastAPI):
     if app.state.subscriber is not None:
         app.state.subscriber.stop()
 
-def create_app() -> FastAPI:
-    app = FastAPI(lifespan=lifespan)
+def create_app(**kwargs) -> FastAPI:
+    app = FastAPI(lifespan=lifespan, debug=True) # TODO env var to toggle?
     app.include_router(api_router)
     app.include_router(web_router)
     return app

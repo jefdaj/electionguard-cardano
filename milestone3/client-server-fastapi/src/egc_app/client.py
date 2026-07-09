@@ -42,6 +42,7 @@ class Client:
     async def observe(self):
         url = "/subscriber/events"
         async with self._c.stream("GET", url, timeout=httpx.Timeout(5.0, read=None)) as r:
+            r.raise_for_status()
             async for line in r.aiter_lines():
                  if line.startswith("data:"): # SSE event
                      line = line[5:].strip()

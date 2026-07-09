@@ -6,11 +6,11 @@ import asyncio
 import json
 from fastapi.responses import StreamingResponse
 
-router = APIRouter(tags=["subscriber"])
+router = APIRouter(prefix="/subscriber", tags=["subscriber"])
 
 # TODO rename subscriber -> election? observer?
 
-@router.post("/subscriber", status_code=201)
+@router.post("")
 async def start_subscriber(sub_cfg_dict: dict, state=Depends(get_state)):
 
     # So far there's only ever one subscriber running at a time. But we call it
@@ -19,8 +19,8 @@ async def start_subscriber(sub_cfg_dict: dict, state=Depends(get_state)):
     # events.
 
     # Enforce the only one election thing.
-    if state.subscriber is not None:
-        return 409 # TODO proper idiom?
+    if getattr(state, "subscriber", None) is not None:
+        raise HTTPException(status_code=409, detail="subscriber already exists")
 
     # TODO proper auto-decode here
     policy_id = ScriptHash(bytes.fromhex(sub_cfg_dict['policy_id']))
@@ -31,12 +31,12 @@ async def start_subscriber(sub_cfg_dict: dict, state=Depends(get_state)):
     )
 
    # TODO integrate on_event with fastapi logging
-    state.subscriber = ElectionSubscriber(sub_cfg, on_event=lambda e: print(e))
+    state.subscriber = ElectionSubscriber(sub_cfg, on_event=lambda e: None)
     state.subscriber.start()
 
     return 201
 
-@router.get("/subscriber/events") # TODO response model?
+@router.get("/events") # TODO response model?
 async def stream_events(request: Request, state=Depends(get_state)):
 
     if state.subscriber is None:

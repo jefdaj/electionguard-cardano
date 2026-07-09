@@ -1,10 +1,10 @@
 from fastapi import APIRouter
-from . import health, trivial, subscribers
+from . import health, trivial, subscriber
 
 router = APIRouter(prefix="/api")
 router.include_router(health.router)
 router.include_router(trivial.router)
-router.include_router(subscribers.router)
+router.include_router(subscriber.router)
 
 # old code for reference:
 # from . import api
