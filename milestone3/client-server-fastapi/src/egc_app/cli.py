@@ -15,21 +15,17 @@ def cli() -> None:
 @cli.command()
 @click.option("--host", default="0.0.0.0")
 @click.option("--port", default=8000, type=int)
-@click.option("--reload", is_flag=True, help="Auto-reload on code changes (dev only).", default=True)
 @click.option("--workers", default=1, type=int)
 @click.option("--log-level", default="info")
-def serve(host, port, reload, workers, log_level):
+def serve(host, port, workers, log_level):
     """Run the API server."""
-    if reload and workers > 1:
-        raise click.UsageError("--reload is incompatible with --workers > 1.")
-
     uvicorn.run(
         "egc_app.server.app:create_app",
         factory=True,
         host=host,
         port=port,
-        reload=reload,
-        workers=workers,
+        reload=True,
+        workers=1, # TODO more for production?
         log_level=log_level,
     )
 
