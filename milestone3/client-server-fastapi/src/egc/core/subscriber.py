@@ -203,7 +203,18 @@ def election_events(event: ChannelEvent) -> list[ElectionEvent]:
             es.append(e)
         case _:
             raise NotImplemented
-    return es
+
+    # TODO where are these duplicates sneaking in?
+    seen = set()
+    es2 = []
+    for e in es:
+        if e.id in seen:
+            LOG.warning(f'discard duplicate election event {e}')
+        else:
+            es2.append(e)
+            seen.add(e.id)
+
+    return es2
 
 
 def event_txid(event: ChannelEvent):
