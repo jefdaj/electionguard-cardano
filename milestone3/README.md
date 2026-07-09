@@ -7,7 +7,7 @@ Work in progress on that:
 
 * [Nix Packaged the reference implementation](https://github.com/jefdaj/electionguard-python)
 * [M1 mockchain tests using new Nix Docker](./egpy-upgrade-nix-docker)
-* [Sketch out a client/server codebase](./client-server-sketch)
+* [Sketch out a client/server codebase](./client-server-quart)
 
 And a few other misc things done along the way:
 
