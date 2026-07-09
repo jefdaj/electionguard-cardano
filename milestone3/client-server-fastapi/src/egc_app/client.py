@@ -15,16 +15,6 @@ class Client:
         r.raise_for_status()
         return r.json()
 
-    async def set_trivial(self, n):
-        r = await self._c.put(f"/trivial/{n}")
-        r.raise_for_status()
-        return r.json()
-
-    async def get_trivial(self):
-        r = await self._c.get("/trivial")
-        r.raise_for_status()
-        return r.json()
-
     async def subscribe(self, policy_id, slot_no, block_header_hash):
         # r = await self._c.post(f'/subscribe/{policy_id}/{slot_no}/{block_header_hash}')
 

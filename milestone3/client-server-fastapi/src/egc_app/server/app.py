@@ -12,7 +12,6 @@ LOG = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # startup: init lib resources, DB pools, etc.
-    app.state.trivial = 0 # TODO remove trivial_state
     app.state.subscriber = None
     # app.state.subscriber.start()
     yield

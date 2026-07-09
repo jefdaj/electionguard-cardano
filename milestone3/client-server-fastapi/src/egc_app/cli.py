@@ -33,27 +33,11 @@ def serve(host, port, reload, workers, log_level):
         log_level=log_level,
     )
 
-# old code for reference:
-# @cli.command()
-# def serve():
-#     run_server()
-
 @cli.command()
 def health():
     resp = asyncio.run(Client().health())
     click.echo(resp)
 
-# TODO remove
-@cli.command()
-@click.argument("n", type=int, required=False)
-def trivial(n: int | None):
-    # LOG.debug('incr')
-    # LOG.debug(f'n: {n}')
-    if n is None:
-        n = asyncio.run(Client().get_trivial())
-    else:
-        n = asyncio.run(Client().set_trivial(n))
-    click.echo(n)
 
 @cli.command()
 @click.option('--policy-id', type=click.STRING)
@@ -69,8 +53,6 @@ def observe():
         async for event in Client().observe():
             click.echo(event)
     asyncio.run(_run())
-
-# TODO init_election
 
 if __name__ == '__main__':
     cli()
