@@ -19,6 +19,7 @@ dependencies = [
     "httpx>=0.28.1",
     "click>=8.4.2",
     "fastapi>=0.139.0",
+    "uvicorn>=0.51.0",
 ]
 
 [project.scripts]
