@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Request
 from egc_app.server.deps import get_state
-# from egc_app.server.schemas.election import ElectionOut
+from egc_app.server.schemas.subscribers import SubscriberOut
 from egc import *
 import asyncio
 import json
@@ -34,7 +34,7 @@ async def start_subscriber(sub_cfg_dict: dict, state=Depends(get_state)):
     state.subscriber = ElectionSubscriber(sub_cfg, on_event=lambda e: print(e))
     state.subscriber.start()
 
-    return ElectionOut(policy_id=policy_id)
+    return SubscriberOut(policy_id=policy_id)
 
 @router.get("/subscribers/{policy_id}/events") # TODO response model?
 async def stream_events(policy_id: str, request: Request, state=Depends(get_state)):
@@ -56,7 +56,9 @@ async def stream_events(policy_id: str, request: Request, state=Depends(get_stat
             for event in events[sent:]:     # only the new tail
                 yield f"data: {json.dumps(event, default=str)}\n\n" # TODO fix ScriptHash json thing?
             sent = len(events)
-            await asyncio.sleep(0.5)         # poll interval
+            if len(events) == sent:      # nothing new
+                yield ": keepalive\n\n"  # comment line, ignored by client
+            await asyncio.sleep(0.5)     # poll interval
 
     return StreamingResponse(gen(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache"})

@@ -64,10 +64,14 @@ def subscribe(policy_id, slot_no, block_header_hash):
     click.echo(resp)
 
 @cli.command()
-@click.option('--policy-id', type=click.STRING)
+@click.option('--policy-id', type=click.STRING, required=True)
 def observe(policy_id: str):
-    events = asyncio.run(Client().observe(policy_id))
-    click.echo(events)
+    # events = asyncio.run(Client().observe(policy_id))
+    # click.echo(events)
+    async def _run():
+        async for event in Client().observe(policy_id):
+            click.echo(event)
+    asyncio.run(_run())
 
 # TODO init_election
 

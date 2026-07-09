@@ -7,6 +7,9 @@ class Client:
         # transport lets you point at a unix socket or ASGI app in tests
         self._c = httpx.AsyncClient(base_url=base_url, transport=transport)
 
+    async def aclose(self):
+        await self._c.aclose()
+
     async def health(self):
         r = await self._c.get("/health")
         r.raise_for_status()
@@ -37,6 +40,8 @@ class Client:
         return r.json()
 
     async def observe(self, policy_id: str):
-        r = await self._c.get(f"/subscribers/{policy_id}/events")
-        r.raise_for_status()
-        return r.json()
+        url = f"/subscribers/{policy_id}/events"
+        async with self._c.stream("GET", url, timeout=httpx.Timeout(5.0, read=None)) as r:
+            async for line in r.aiter_lines():
+                 if line.startswith("data:"):
+                     yield line[5:].strip()
