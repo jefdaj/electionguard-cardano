@@ -39,14 +39,14 @@ def health():
 @click.option('--policy-id', type=click.STRING)
 @click.option('--slot-no', type=click.INT)
 @click.option('--block-header-hash', type=click.STRING)
-def subscribe(policy_id, slot_no, block_header_hash):
-    resp = asyncio.run(Client().subscribe(policy_id, slot_no, block_header_hash))
+def set_election(policy_id, slot_no, block_header_hash):
+    resp = asyncio.run(Client().set_election(policy_id, slot_no, block_header_hash))
     click.echo(resp)
 
 @cli.command()
 def observe():
     async def _run():
-        async for event in Client().observe():
+        async for event in Client().stream_events():
             click.echo(event)
     asyncio.run(_run())
 

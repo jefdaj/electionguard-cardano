@@ -6,10 +6,9 @@ import asyncio
 import json
 from fastapi.responses import StreamingResponse
 
-router = APIRouter(prefix="/subscriber", tags=["subscriber"])
+router = APIRouter(prefix="/election", tags=["election"])
 
-# TODO rename subscriber -> election? observer?
-
+# TODO anything more needed to make clear POST election -> start_subscriber?
 @router.post("")
 async def start_subscriber(sub_cfg_dict: dict, state=Depends(get_state)):
 

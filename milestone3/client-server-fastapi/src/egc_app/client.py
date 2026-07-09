@@ -15,9 +15,7 @@ class Client:
         r.raise_for_status()
         return r.json()
 
-    async def subscribe(self, policy_id, slot_no, block_header_hash):
-        # r = await self._c.post(f'/subscribe/{policy_id}/{slot_no}/{block_header_hash}')
-
+    async def set_election(self, policy_id, slot_no, block_header_hash):
         # TODO proper auto encode/decode of actual SubscriberConfig (policy_id is sticking point)
         sub_cfg_dict = {
             'since_slot'      : slot_no,
@@ -25,12 +23,12 @@ class Client:
             'policy_id'       : policy_id,
         }
 
-        r = await self._c.post('/subscriber', json=sub_cfg_dict)
+        r = await self._c.post('/election', json=sub_cfg_dict)
         r.raise_for_status()
         return r.json()
 
-    async def observe(self):
-        url = "/subscriber/events"
+    async def stream_events(self):
+        url = "/election/events"
         async with self._c.stream("GET", url, timeout=httpx.Timeout(5.0, read=None)) as r:
             r.raise_for_status()
             async for line in r.aiter_lines():
