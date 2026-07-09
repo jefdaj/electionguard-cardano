@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 from fastapi import HTTPException
 from egc_app.server.deps import get_state
+from egc_app.server.deps import reset_state
 from egc import *
 import asyncio
 import json
@@ -9,17 +10,8 @@ from fastapi.responses import StreamingResponse
 router = APIRouter(prefix="/election", tags=["election"])
 
 # TODO anything more needed to make clear POST election -> start_subscriber?
-@router.post("")
+@router.put("")
 async def start_subscriber(sub_cfg_dict: dict, state=Depends(get_state)):
-
-    # So far there's only ever one subscriber running at a time. But we call it
-    # subscribers here 1) in case we want multiple later, and 2) to enforce that you
-    # have to post args for the subscriber before you can get the corresponding
-    # events.
-
-    # Enforce the only one election thing.
-    if getattr(state, "subscriber", None) is not None:
-        raise HTTPException(status_code=409, detail="subscriber already exists")
 
     # TODO proper auto-decode here
     policy_id = ScriptHash(bytes.fromhex(sub_cfg_dict['policy_id']))
@@ -29,7 +21,13 @@ async def start_subscriber(sub_cfg_dict: dict, state=Depends(get_state)):
         policy_id        = policy_id,
     )
 
-   # TODO integrate on_event with fastapi logging
+    if getattr(state, "subscriber", None) is not None:
+        # Changing the election should wipe out any existing election-specific state,
+        # except it shouldn't touch the wallet if any.
+        # TODO should this be functional instead of mutating?
+        reset_state(state)
+
+    # TODO integrate on_event with fastapi logging
     state.subscriber = ElectionSubscriber(sub_cfg, on_event=lambda e: None)
     state.subscriber.start()
 

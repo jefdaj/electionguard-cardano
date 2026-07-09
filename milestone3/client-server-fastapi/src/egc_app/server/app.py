@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from egc_app.server.routers.api.router import router as api_router
 from egc_app.server.routers.web.router import router as web_router
+from egc_app.server.deps import reset_state
 
 # just to check that it works for now:
 from egc import *
@@ -12,8 +13,7 @@ LOG = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # startup: init lib resources, DB pools, etc.
-    app.state.subscriber = None
-    # app.state.subscriber.start()
+    reset_state(app)
     yield
     # shutdown: cleanup
     if app.state.subscriber is not None:

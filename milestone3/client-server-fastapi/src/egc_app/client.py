@@ -23,7 +23,7 @@ class Client:
             'policy_id'       : policy_id,
         }
 
-        r = await self._c.post('/election', json=sub_cfg_dict)
+        r = await self._c.put('/election', json=sub_cfg_dict)
         r.raise_for_status()
         return r.json()
 
