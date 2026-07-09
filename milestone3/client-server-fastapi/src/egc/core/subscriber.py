@@ -330,18 +330,29 @@ def _make_example_callback(callback_name: str):
 
 def _same_but_spent(old_event, new_event) -> bool:
     # TODO also allow the redeemer to change when a burn changes to spent? in case of diff ones per tx
-    diff = safe_deepdiff(old_event, new_event)
-    changes = diff.get("type_changes", {})
-    try:
-        assert set(diff.keys()) == {"type_changes"}, f"Unexpected diff keys: {diff.keys()}"
-        assert len(changes) == 1, f"Expected 1 change, got: {changes}"
-        change = changes.get("root.output_match['spent_at']")
-        assert change is not None, "Expected spent_at to change"
-        assert change["old_value"] is None
-        assert isinstance(change["new_value"], dict)
-        return True
-    except:
-        return False
+    # TODO are the IDs reliable enough to go by exclusively now?
+    # diff = safe_deepdiff(old_event, new_event)
+    # changes = diff.get("type_changes", {})
+    same_id = old_event.id == new_event.id
+    old_unspent = \
+        old_event.output_match is None \
+        or old_event.output_match['spent_at'] is None
+    new_unspent = \
+        new_event.output_match is None \
+        or new_event.output_match['spent_at'] is None
+    return same_id and old_unspent and (not new_unspent)
+#     try:
+#         assert set(diff.keys()) == {"type_changes"}, f"Unexpected diff keys: {diff.keys()}"
+#         assert len(changes) == 1, f"Expected 1 change, got: {changes}"
+#         change = changes.get("root.output_match['spent_at']")
+#         assert change is not None, "Expected spent_at to change"
+#         assert change["old_value"] is None
+#         assert isinstance(change["new_value"], dict)
+#         assert old_event.id == new_event.id, f"old and new id should line up: {old_event}, {new_event}"
+#         return True
+#     except:
+#         assert old_event.id != new_event.id, f"duplicate ids: {old_event}, {new_event}"
+#         return False
 
 
 # TODO where should this live?
@@ -809,7 +820,7 @@ class ElectionSubscriber:
         if not matches_by_sc:
             return
 
-        # 1. Assemble matches them into (input, output) pairs, still by (slot_no, channel_str).
+        # 1. Assemble matches into (input, output) pairs, still by (slot_no, channel_str).
         io_pairs_by_sc = self._pair_inputs_with_outputs(matches_by_sc)
 
         # 2. Add actions (AKA redeemers), still keyed by (slot_no, channel_str).
@@ -818,10 +829,12 @@ class ElectionSubscriber:
         # 3. Assemble event objects, now with no need for keys.
         for event in self._assemble_events(ioa_triples_by_sc):
 
-            if self._handle_same_but_spent(event):
+            if self._is_duplicate_event(event):
+                # print(f'discard duplicate channelevent: {event}')
                 continue
 
-            if self._is_duplicate_event(event):
+            if self._handle_same_but_spent(event):
+                # print(f'discard same-but-spent channelevent: {event}')
                 continue
 
             # 4. Update internal state and do some double checking + cleanup for
@@ -1116,7 +1129,6 @@ class ElectionSubscriber:
             input_state  = self._fetch_state( input_match) if  input_match else None
             output_state = self._fetch_state(output_match) if output_match else None
 
-            # TODO add unique id here
             kwargs = {
                 'slot_no'      : slot_no,
                 'channel_id'   : coerce_channel_id(ch_str),
@@ -1126,7 +1138,15 @@ class ElectionSubscriber:
                 'input_state'  : input_state,
                 'output_state' : output_state,
             }
-            kwargs['id'] = f'channelevent-{unique_id(**kwargs)}'
+
+            # Because UTXOs often/usually first appear as unspent, then change to spent,
+            # we exclude the output_match['spent_at'] part from the ID hash:
+            # TODO factor out?
+            kwargs_for_id = deepcopy(kwargs)
+            if kwargs_for_id['output_match']:
+                kwargs_for_id['output_match']['spent_at'] = None
+            kwargs['id'] = f'channelevent-{unique_id(**kwargs_for_id)}'
+
             event = ChannelEvent(**kwargs)
             LOG.debug(f'event:\n{pformat(event)}')
             yield event
@@ -1162,6 +1182,8 @@ class ElectionSubscriber:
                 if _same_but_spent(prev_event, event):
                     self._history[i][-1] = event
                     LOG.debug(f'Replaced last {s} event with a new spent version.')
+                    diff = safe_deepdiff(prev_event, event)
+                    LOG.debug(f'diff before and after: {diff}')
                     return True
                  # The 2nd type is we get the spent one first, and should ignore the unspent.
                 if _same_but_spent(event, prev_event):
