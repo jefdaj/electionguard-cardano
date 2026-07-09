@@ -129,6 +129,7 @@
             uv
             venv
             cacert # TODO really needed?
+            uv
           ] ++ otherDeps;
           env = {
             UV_NO_SYNC = "1";
