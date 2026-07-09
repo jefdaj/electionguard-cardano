@@ -35,12 +35,12 @@ class Client:
             'policy_id'       : policy_id,
         }
 
-        r = await self._c.post('/subscribers', json=sub_cfg_dict)
+        r = await self._c.post('/subscriber', json=sub_cfg_dict)
         r.raise_for_status()
         return r.json()
 
-    async def observe(self, policy_id: str):
-        url = f"/subscribers/{policy_id}/events"
+    async def observe(self):
+        url = "/subscriber/events"
         async with self._c.stream("GET", url, timeout=httpx.Timeout(5.0, read=None)) as r:
             async for line in r.aiter_lines():
                  if line.startswith("data:"): # SSE event

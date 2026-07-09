@@ -15,7 +15,7 @@ def cli() -> None:
 @cli.command()
 @click.option("--host", default="0.0.0.0")
 @click.option("--port", default=8000, type=int)
-@click.option("--reload", is_flag=True, help="Auto-reload on code changes (dev only).")
+@click.option("--reload", is_flag=True, help="Auto-reload on code changes (dev only).", default=True)
 @click.option("--workers", default=1, type=int)
 @click.option("--log-level", default="info")
 def serve(host, port, reload, workers, log_level):
@@ -64,12 +64,9 @@ def subscribe(policy_id, slot_no, block_header_hash):
     click.echo(resp)
 
 @cli.command()
-@click.option('--policy-id', type=click.STRING, required=True)
-def observe(policy_id: str):
-    # events = asyncio.run(Client().observe(policy_id))
-    # click.echo(events)
+def observe():
     async def _run():
-        async for event in Client().observe(policy_id):
+        async for event in Client().observe():
             click.echo(event)
     asyncio.run(_run())
 

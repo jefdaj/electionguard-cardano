@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, Request
 from fastapi import HTTPException
 from egc_app.server.deps import get_state
-from egc_app.server.schemas.subscriber import SubscriberOut
 from egc import *
 import asyncio
 import json
@@ -11,8 +10,7 @@ router = APIRouter(tags=["subscriber"])
 
 # TODO rename subscriber -> election? observer?
 
-@router.post("/subscribers", status_code=201)
-# async def start_subscriber(policy_id: str, slot_no: int, header_hash: str, state=Depends(get_state)):
+@router.post("/subscriber", status_code=201)
 async def start_subscriber(sub_cfg_dict: dict, state=Depends(get_state)):
 
     # So far there's only ever one subscriber running at a time. But we call it
@@ -36,18 +34,18 @@ async def start_subscriber(sub_cfg_dict: dict, state=Depends(get_state)):
     state.subscriber = ElectionSubscriber(sub_cfg, on_event=lambda e: print(e))
     state.subscriber.start()
 
-    return SubscriberOut(policy_id=policy_id)
+    return 201
 
-@router.get("/subscribers/{policy_id}/events") # TODO response model?
-async def stream_events(policy_id: str, request: Request, state=Depends(get_state)):
+@router.get("/subscriber/events") # TODO response model?
+async def stream_events(request: Request, state=Depends(get_state)):
 
     if state.subscriber is None:
         raise HTTPException(404)
 
-    sub_cfg = state.subscriber.config
-    script_hash = ScriptHash(bytes.fromhex(policy_id))
-    if not script_hash == sub_cfg.policy_id:
-        raise HTTPException(409) # TODO proper idiom?
+    # sub_cfg = state.subscriber.config
+    # script_hash = ScriptHash(bytes.fromhex(policy_id))
+    # if not script_hash == sub_cfg.policy_id:
+    #     raise HTTPException(409) # TODO proper idiom?
 
     async def gen():
         sent = 0
