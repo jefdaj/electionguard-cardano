@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Request
+from fastapi import HTTPException
 from egc_app.server.deps import get_state
-from egc_app.server.schemas.subscribers import SubscriberOut
+from egc_app.server.schemas.subscriber import SubscriberOut
 from egc import *
 import asyncio
 import json
@@ -24,10 +25,11 @@ async def start_subscriber(sub_cfg_dict: dict, state=Depends(get_state)):
         return 409 # TODO proper idiom?
 
     # TODO proper auto-decode here
+    policy_id = ScriptHash(bytes.fromhex(sub_cfg_dict['policy_id']))
     sub_cfg = SubscriberConfig(
         since_slot       = sub_cfg_dict['since_slot'],
         since_block_hash = sub_cfg_dict['since_block_hash'],
-        policy_id        = ScriptHash(bytes.fromhex(sub_cfg_dict['policy_id'])),
+        policy_id        = policy_id,
     )
 
    # TODO integrate on_event with fastapi logging
@@ -52,9 +54,10 @@ async def stream_events(policy_id: str, request: Request, state=Depends(get_stat
         while True:
             if await request.is_disconnected():
                 break
-            events = state.subscriber.all_election_events()   # full list, grows over time
+            events = state.subscriber.all_election_events() # full list, grows over time
+            # The data: and : (comment line) thing here is part of the SSE spec
             for event in events[sent:]:     # only the new tail
-                yield f"data: {json.dumps(event, default=str)}\n\n" # TODO fix ScriptHash json thing?
+                yield f"data: {event.to_raw()}\n\n" # double newline dispatches SSE event
             sent = len(events)
             if len(events) == sent:      # nothing new
                 yield ": keepalive\n\n"  # comment line, ignored by client

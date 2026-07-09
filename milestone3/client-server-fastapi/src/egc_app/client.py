@@ -43,5 +43,12 @@ class Client:
         url = f"/subscribers/{policy_id}/events"
         async with self._c.stream("GET", url, timeout=httpx.Timeout(5.0, read=None)) as r:
             async for line in r.aiter_lines():
-                 if line.startswith("data:"):
-                     yield line[5:].strip()
+                 if line.startswith("data:"): # SSE event
+                     line = line[5:].strip()
+                     event_dict = json.loads(line)
+                     event = ElectionEvent.from_dict(event_dict)
+                     yield event
+                     if event.event_type == 'burn test tokens':
+                         return
+                     if event.event_type == 'end election':
+                         return

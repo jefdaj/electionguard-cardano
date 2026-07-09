@@ -21,6 +21,7 @@ from pprint import pformat
 from requests.adapters import HTTPAdapter
 from typing import Any, Tuple, Optional, Self, Iterable
 from urllib3.util.retry import Retry
+from pydantic_core import to_jsonable_python
 
 from .ogmios import *
 from .plutus.types.channel import *
@@ -148,6 +149,18 @@ class ElectionEvent:
     event_type: str # TODO codify this once it's clearer
     event_desc: str # TODO codify this once it's clearer
 
+    # TODO is this right?
+    def to_raw(self) -> str:
+        return json.dumps(to_jsonable_python(self))
+
+    # TODO is this right?
+    def to_json(self):
+        return json.dumps(self)
+
+    # TODO is this right?
+    @classmethod
+    def from_dict(cls, data: dict) -> Self:
+        return cls(**data)
 
 def election_event(*args):
     ee_id = f'electionevent-{unique_id(*args)}'
