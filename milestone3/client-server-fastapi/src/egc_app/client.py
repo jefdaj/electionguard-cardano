@@ -11,7 +11,7 @@ class Client:
         return r.json()
 
     async def set_trivial(self, n):
-        r = await self._c.post(f"/trivial/{n}")
+        r = await self._c.put(f"/trivial/{n}")
         r.raise_for_status()
         return r.json()
 
