@@ -25,9 +25,9 @@ async def start_subscriber(sub_cfg_dict: dict, state=Depends(get_state)):
 
     # TODO proper auto-decode here
     sub_cfg = SubscriberConfig(
-        since_slot = sub_cfg_dict['since_slot'],
+        since_slot       = sub_cfg_dict['since_slot'],
         since_block_hash = sub_cfg_dict['since_block_hash'],
-        policy_id = ScriptHash(bytes.fromhex(sub_cfg_dict['policy_id'])),
+        policy_id        = ScriptHash(bytes.fromhex(sub_cfg_dict['policy_id'])),
     )
 
    # TODO integrate on_event with fastapi logging

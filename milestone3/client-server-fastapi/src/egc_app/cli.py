@@ -63,7 +63,12 @@ def subscribe(policy_id, slot_no, block_header_hash):
     resp = asyncio.run(Client().subscribe(policy_id, slot_no, block_header_hash))
     click.echo(resp)
 
-# TODO observe
+@cli.command()
+@click.option('--policy-id', type=click.STRING)
+def observe(policy_id: str):
+    events = asyncio.run(Client().observe(policy_id))
+    click.echo(events)
+
 # TODO init_election
 
 if __name__ == '__main__':

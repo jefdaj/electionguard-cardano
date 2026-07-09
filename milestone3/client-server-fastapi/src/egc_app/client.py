@@ -35,3 +35,8 @@ class Client:
         r = await self._c.post('/subscribers', json=sub_cfg_dict)
         r.raise_for_status()
         return r.json()
+
+    async def observe(self, policy_id: str):
+        r = await self._c.get(f"/subscribers/{policy_id}/events")
+        r.raise_for_status()
+        return r.json()
