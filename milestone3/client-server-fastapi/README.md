@@ -9,8 +9,8 @@ $ egc serve
  * Serving Quart app 'egc_app.server.app'
  * Debug mode: False
  * Please use an ASGI server (e.g. Hypercorn) directly in production
- * Running on http://0.0.0.0:5000 (CTRL + C to quit)
-[2026-07-07 21:41:30 -0700] [3250111] [INFO] Running on http://0.0.0.0:5000 (CTRL + C to quit)
+ * Running on http://0.0.0.0:8000 (CTRL + C to quit)
+[2026-07-07 21:41:30 -0700] [3250111] [INFO] Running on http://0.0.0.0:8000 (CTRL + C to quit)
 ```
 
 Client:
@@ -41,5 +41,5 @@ Docker server:
 ```
 $ nix build .#dockerImage
 $ docker load < result
-$ docker run -p 5000:5000 egc-client-server-sketch:0.1.0 serve
+$ docker run -p 8000:8000 egc-client-server-sketch:0.1.0 serve
 ```

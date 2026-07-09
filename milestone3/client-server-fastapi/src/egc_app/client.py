@@ -1,7 +1,7 @@
 import httpx
 
 class Client:
-    def __init__(self, base_url="http://localhost:5000/api", transport=None):
+    def __init__(self, base_url="http://localhost:8000/api", transport=None):
         # transport lets you point at a unix socket or ASGI app in tests
         self._c = httpx.AsyncClient(base_url=base_url, transport=transport)
 

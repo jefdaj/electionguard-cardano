@@ -110,7 +110,7 @@
               "PATH=/bin"
             ];
             Labels = {};
-            # ExposedPorts = { "5000/tcp" = {}; }; # TODO does this do anything?
+            # ExposedPorts = { "8000/tcp" = {}; }; # TODO does this do anything?
           };
         };
 
