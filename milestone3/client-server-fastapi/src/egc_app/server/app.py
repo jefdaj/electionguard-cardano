@@ -16,7 +16,7 @@ async def lifespan(app: FastAPI):
     reset_state(app)
     yield
     # shutdown: cleanup
-    if app.state.subscriber is not None:
+    if getattr(app.state, 'subscriber', None) is not None:
         app.state.subscriber.stop()
 
 def create_app(**kwargs) -> FastAPI:
