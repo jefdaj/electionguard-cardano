@@ -6,47 +6,28 @@ from egc_app.server.deps import reset_state
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
-# just to check that it works for now:
-from egc import *
-
 import logging
 LOG = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+
     # startup: init lib resources, DB pools, etc.
     reset_state(app)
+
     yield
+
     # shutdown: cleanup
     if getattr(app.state, 'subscriber', None) is not None:
         app.state.subscriber.stop()
 
+STATIC_DIR = str(
+    Path(__file__).resolve().parent / 'static'
+)
+
 def create_app(**kwargs) -> FastAPI:
     app = FastAPI(lifespan=lifespan, debug=True) # TODO env var to toggle?
-    cur_dir = Path(__file__).resolve().parent
-    app.mount('/static', StaticFiles(directory=str(cur_dir / 'static')), name='static')
+    app.mount('/static', StaticFiles(directory=STATIC_DIR), name='static')
     app.include_router(api_router)
     app.include_router(web_router)
     return app
-
-# old code for reference:
-# from quart import Quart, Config
-# def create_app(config=None):
-#     LOG.debug('create_app')
-#     app = Quart(__name__)  # static_folder/template_folder resolve to package dir
-#     # for testing the api
-#     app.state = 0
-#     app.subscriber = None
-#     if config:
-#         app.config.from_mapping(config)
-#     from .blueprints.api import api
-#     app.register_blueprint(api)
-#     # allow hash() to be used in templates
-#     app.jinja_env.globals.update(hash=hash)
-#     @app.before_serving
-#     async def startup():
-#         LOG.debug('startup') # TODO debug_call
-#     @app.after_serving
-#     async def shutdown():
-#         LOG.debug('shutdown') # TODO debug_call
-#     return app

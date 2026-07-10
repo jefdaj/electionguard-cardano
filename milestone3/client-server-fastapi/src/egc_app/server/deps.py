@@ -14,6 +14,6 @@ def reset_state(state):
         # Don't clobber existing wallet
         state.wallet = None
 
-templates = Jinja2Templates(
-    directory=str(Path(__file__).resolve().parent / "templates")
-)
+TEMPLATES_DIR = str(Path(__file__).resolve().parent / "templates")
+
+templates = Jinja2Templates(directory=TEMPLATES_DIR)
