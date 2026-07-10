@@ -1,5 +1,5 @@
 {
-  description = "ElectionGuard+Cardano Client/Server Sketch";
+  description = "ElectionGuard+Cardano CLI Design";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -72,7 +72,7 @@
               pyprojectOverrides
             ]);
 
-        pythonEnv = pythonSet.mkVirtualEnv "egc-client-server-sketch-env" workspace.deps.default;
+        pythonEnv = pythonSet.mkVirtualEnv "egc-cli-design-env" workspace.deps.default;
 
         kupo = pkgs.callPackage ./nix/kupo.nix {};
         otherDeps = [
@@ -90,7 +90,7 @@
 
         # TODO also needs cacert?
         dockerImage = pkgs.dockerTools.buildLayeredImage {
-          name = "egc-client-server-sketch";
+          name = "egc-cli-design";
           tag = "0.1.1";
           contents = [
             pythonEnv
@@ -122,7 +122,7 @@
         let
           editableOverlay = workspace.mkEditablePyprojectOverlay { root = "$PWD"; };
           editablePythonSet = pythonSet.overrideScope editableOverlay;
-          venv = editablePythonSet.mkVirtualEnv "egc-client-server-sketch-env" workspace.deps.all;
+          venv = editablePythonSet.mkVirtualEnv "egc-cli-design-env" workspace.deps.all;
         in
         pkgs.mkShell {
           packages = with pkgs; [
