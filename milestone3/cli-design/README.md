@@ -7,8 +7,7 @@ the next step will be to write a version of the election + test scripts that run
 a bash script of `egc` commands per node rather than `docker exec`ing each command
 individually.
 
-While designing the commands, I'm also running into a few edge cases I hadn't
-thought of before and fixing them...
+While designing the commands, I'm also running into a few edge cases and fixing them.
 
 
 Overview
@@ -19,12 +18,12 @@ config       : node, election, batch, ... (maybe more)
 server       : start, status, stop
 election     : init, observe, end, burntesttokens
 channel      : request, add, remove, await
-ballot       : create, submit (both batch and save token), lookup (by token), cast, spoil
+ballot       : create, submit (add to batch + save token), cast or spoil (by token)
 manifest     : create, announce
 phase        : announce, await
-ceremony     : create, announce, keygen, announce-key, backup, confirm-backups
+ceremony     : create, announce, keygen, announce-key, announce-backup, confirm-backup
 tally        : create, announce, announce-share, combine-shares
-spoiled      : announce-share, combine-shares, decrypt-by-nonce (later)
+spoiled      : announce-share, combine-shares, decrypt-by-nonce (future work)
 verification : create, announce, await
 batch        : add, status, flush
 ```
