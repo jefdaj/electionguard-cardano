@@ -12,12 +12,16 @@ LOG = logging.getLogger(__name__)
 def cli() -> None:
 	pass
 
-@cli.command()
+@cli.group()
+def server() -> None:
+	pass
+
+@server.command()
 @click.option("--host", default="0.0.0.0")
 @click.option("--port", default=8000, type=int)
 @click.option("--workers", default=1, type=int)
 @click.option("--log-level", default="info")
-def serve(host, port, workers, log_level):
+def start(host, port, workers, log_level):
     """Run the API server."""
     uvicorn.run(
         "egc_app.server.app:create_app",
@@ -29,11 +33,11 @@ def serve(host, port, workers, log_level):
         log_level=log_level,
     )
 
-@cli.command()
+@server.command()
 def health():
+    """Is the server OK?"""
     resp = asyncio.run(Client().health())
     click.echo(resp)
-
 
 @cli.command()
 @click.option('--policy-id', type=click.STRING)
