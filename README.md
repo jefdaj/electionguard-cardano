@@ -13,18 +13,14 @@ Work in progress on [the Catalyst fund13 project](https://milestones.projectcata
 
 Current status as of 2026-07-10:
 
-- [x] [Milestone 1](./milestone1/) (ElectionGuard stuff) finished:
-  * The 3 main scripts work:
-    - [x] Output 1.1: [election](./milestone1/election)
-    - [x] Output 1.2: [verifier](./milestone1/verifier)
-    - [x] Output 1.3: [tests](./milestone1/tests)
-  * They each have a companion video on [my YouTube channel][yt] and post on [my blog][blog]
-  * Other misc things done along the way:
-    - Have [electionguard-python passing its tests](./milestone1/electionguard-python-tests.md)
-    - Cleaned up [my fork](https://github.com/jefdaj/electionguard-python)
-      and pushed [a Docker image](https://ghcr.io/jefdaj/electionguard-python)
-    - Partially archived [the NIST election format docs site](./milestone1/nist-docs)
-    - Set up a [Nix environment](./milestone1/nix-environment.md)
+- [ ] [Milestone 3](./milestone3/) (ElectionGuard + Cardano integration):
+
+  * Currently [designing the CLI and workflows](./milestone3/cli-design).
+  * [Nix Packaged the reference implementation](https://github.com/jefdaj/electionguard-python) (finally!)
+  * [M1 mockchain tests using new Nix Docker](./milestone3/egpy-upgrade-nix-docker)
+  * Experimented with [a Quart + HTMX WebUI](./milestone3/webui-quart-htmx)
+  * Experimented with [printing and scanning QR codes](./milestone3/qrcodes)
+  * Starting to plan demos + talk
 
 - [x] [Milestone 2](./milestone2/) (Cardano stuff) finished:
 
@@ -39,11 +35,15 @@ Current status as of 2026-07-10:
       * [mockchain version with IPFS only](./milestone2/pubsub1-ipfs) syncs files given CIDs
       * [Aiken + PyCardano + Kupo version](./milestone2/pubsub2-aiken-pycardano-kupo) syncs CIDs via Preview testnet
 
-- [ ] [Milestone 3](./milestone3/) (ElectionGuard + Cardano integration):
-
-  * Currently [designing the CLI and workflows](./milestone3/cli-design).
-  * [Nix Packaged the reference implementation](https://github.com/jefdaj/electionguard-python) (finally!)
-  * [M1 mockchain tests using new Nix Docker](./milestone3/egpy-upgrade-nix-docker)
-  * Experimented with [a Quart + HTMX WebUI](./milestone3/webui-quart-htmx)
-  * Experimented with [printing and scanning QR codes](./milestone3/qrcodes)
-  * Starting to plan demos + talk
+- [x] [Milestone 1](./milestone1/) (ElectionGuard stuff) finished:
+  * The 3 main scripts work:
+    - [x] Output 1.1: [election](./milestone1/election)
+    - [x] Output 1.2: [verifier](./milestone1/verifier)
+    - [x] Output 1.3: [tests](./milestone1/tests)
+  * They each have a companion video on [my YouTube channel][yt] and post on [my blog][blog]
+  * Other misc things done along the way:
+    - Have [electionguard-python passing its tests](./milestone1/electionguard-python-tests.md)
+    - Cleaned up [my fork](https://github.com/jefdaj/electionguard-python)
+      and pushed [a Docker image](https://ghcr.io/jefdaj/electionguard-python)
+    - Partially archived [the NIST election format docs site](./milestone1/nist-docs)
+    - Set up a [Nix environment](./milestone1/nix-environment.md)
