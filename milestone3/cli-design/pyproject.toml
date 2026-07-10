@@ -1,0 +1,51 @@
+[project]
+name = "egc-client-server-sketch"
+version = "0.1.1"
+description = "ElectionGuard+Cardano Client/Server Sketch"
+authors = [{ name = "jefdaj", email = "1198065+jefdaj@users.noreply.github.com" }]
+requires-python = ">=3.13,<3.14"
+readme = "README.md"
+license = "MIT"
+maintainers = []
+keywords = []
+classifiers = [
+]
+dependencies = [
+    "pycardano>=0.9.0",
+    "aioipfs",
+    "cbor2==5.8.0",
+    "cbor2pure==5.8.0",
+    "deepdiff>=9.1.0",
+    "httpx>=0.28.1",
+    "click>=8.4.2",
+    "fastapi>=0.139.0",
+    "uvicorn>=0.51.0",
+    "jinja2>=3.1.6",
+]
+
+[project.scripts]
+egc = "egc_app.cli:cli"
+
+[dependency-groups]
+dev = [
+]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/egc",
+    "src/egc_app",
+]
+
+[tool.hatch.build.targets.wheel]
+include = [
+    "src/egc",
+    "src/egc_app",
+]
+
+[tool.hatch.build.targets.wheel.sources]
+"src/egc"     = "egc"
+"src/egc_app" = "egc_app"
+
+[build-system]
+requires = ["hatchling", "editables"]
+build-backend = "hatchling.build"
