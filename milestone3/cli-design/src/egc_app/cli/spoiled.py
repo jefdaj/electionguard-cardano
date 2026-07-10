@@ -1,5 +1,5 @@
 import click
 
 @click.group()
-def server() -> None:
+def spoiled() -> None:
     pass
