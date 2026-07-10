@@ -91,7 +91,7 @@
         # TODO also needs cacert?
         dockerImage = pkgs.dockerTools.buildLayeredImage {
           name = "egc-client-server-sketch";
-          tag = "0.1.0";
+          tag = "0.1.1";
           contents = [
             pythonEnv
             pkgs.coreutils
@@ -105,6 +105,7 @@
           config = {
             # TODO log to stdout? also a logfile under /data?
             Entrypoint = [ "${pythonEnv}/bin/egc" ];
+            Cmd = [ "server" "start" ];
             User = "1000:100"; # TODO named egc user? 1000:1000?
             Env = [
               "PATH=/bin"

@@ -1,6 +1,6 @@
 [project]
 name = "egc-client-server-sketch"
-version = "0.1.0"
+version = "0.1.1"
 description = "ElectionGuard+Cardano Client/Server Sketch"
 authors = [{ name = "jefdaj", email = "1198065+jefdaj@users.noreply.github.com" }]
 requires-python = ">=3.13,<3.14"
