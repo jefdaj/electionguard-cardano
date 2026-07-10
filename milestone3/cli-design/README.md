@@ -62,8 +62,8 @@ custom text. I'll start with custom text using `to/from_qrcode` class methods
 on the dataclasses. Containers can have `qrcodes_in/out` bind mounts to
 simulate scanning and showing them. For the first version there will be:
 
-- vote tokens
-- final voter reciepts (for checking your ballot was included later)
+- vote in progress tokens
+- final voter receipts (for checking your ballot was included later)
 - channel requests with node `VerificationKeyHash`es for the admin to authorize
 
 Future versions might also have a mechanism for election officials to do
