@@ -10,7 +10,7 @@ class Client:
     async def aclose(self):
         await self._c.aclose()
 
-    async def health(self):
+    async def status(self):
         r = await self._c.get("/health")
         r.raise_for_status()
         return r.json()

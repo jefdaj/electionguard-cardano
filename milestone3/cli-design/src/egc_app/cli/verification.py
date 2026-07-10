@@ -3,3 +3,15 @@ import click
 @click.group()
 def verification() -> None:
     pass
+
+@verification.command()
+def create():
+    pass
+
+@verification.command()
+def announce():
+    pass
+
+@verification.command(name='await')
+def await_():
+    pass

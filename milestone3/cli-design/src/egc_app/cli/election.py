@@ -26,3 +26,15 @@ def observe(filter: str|None = None):
         async for event in Client().stream_events(filter):
             click.echo(event)
     asyncio.run(_run())
+
+@election.command()
+def init():
+    pass
+
+@election.command()
+def end():
+    pass
+
+@election.command()
+def burntesttokens():
+    pass
