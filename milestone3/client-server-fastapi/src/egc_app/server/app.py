@@ -3,6 +3,8 @@ from fastapi import FastAPI
 from egc_app.server.routers.api.router import router as api_router
 from egc_app.server.routers.web.router import router as web_router
 from egc_app.server.deps import reset_state
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 
 # just to check that it works for now:
 from egc import *
@@ -21,6 +23,8 @@ async def lifespan(app: FastAPI):
 
 def create_app(**kwargs) -> FastAPI:
     app = FastAPI(lifespan=lifespan, debug=True) # TODO env var to toggle?
+    cur_dir = Path(__file__).resolve().parent
+    app.mount('/static', StaticFiles(directory=str(cur_dir / 'static')), name='static')
     app.include_router(api_router)
     app.include_router(web_router)
     return app
