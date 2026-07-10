@@ -1,4 +1,5 @@
 import click
+import asyncio
 from egc_app.client import Client
 
 @click.group()
