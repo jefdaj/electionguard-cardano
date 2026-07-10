@@ -39,7 +39,7 @@ runtime, and then optionally re-save that as a file.
 Challenge Workflow
 ------------------
 
-I think an explicit mapping of ballot ID -> random token/UUID saved as files in
+I think an explicit mapping of random token (UUID?) -> ballot saved as files in
 a dedicated private dir makes the most sense for now. That could later be
 adapted to separate the submit and challenge (cast/spoil) stations into
 separate nodes if needed. And in the meantime it will be easy to debug.
