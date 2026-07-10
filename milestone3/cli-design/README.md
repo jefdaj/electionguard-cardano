@@ -19,11 +19,12 @@ config       : node, election, batch, ... (maybe more)
 server       : start, status, stop
 election     : init, observe, end, burntesttokens
 channel      : request, add, remove, await
-ballot       : create, submit, lookup, cast, spoil
+ballot       : create, submit (both batch and save token), lookup (by token), cast, spoil
 manifest     : create, announce
 phase        : announce, await
 ceremony     : create, announce, keygen, announce-key, backup, confirm-backups
-results      : tally, announce-shares, combine-shares
+tally        : create, announce, announce-share, combine-shares
+spoiled      : announce-share, combine-shares, decrypt-by-nonce (later)
 verification : create, announce, await
 batch        : add, status, flush
 ```
