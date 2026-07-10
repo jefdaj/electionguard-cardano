@@ -55,6 +55,9 @@ def health():
 def election() -> None:
 	pass
 
+# TODO compress down to one string with colons?
+# TODO and define a qrcode format... qrcode:egc:election:policy_id:slot_no:hash?
+#      (ask though)
 @election.command()
 @click.option('--policy-id', type=click.STRING)
 @click.option('--slot-no', type=click.INT)
