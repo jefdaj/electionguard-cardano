@@ -1,5 +1,5 @@
-ElectionGuard+Cardano Client/Server Sketch
-==========================================
+CLI Design
+==========
 
 The [client/server sketch with Click/FastAPI](../client-server-fastapi) seems good.
 Now I'm fleshing out the CLI commands and workflows. Assuming that goes well,
