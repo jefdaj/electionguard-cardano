@@ -44,9 +44,10 @@ def set_election(policy_id, slot_no, block_header_hash):
     click.echo(resp)
 
 @cli.command()
-def observe():
+@click.option('--filter', type=click.STRING, required=False)
+def observe(filter: str|None = None):
     async def _run():
-        async for event in Client().stream_events():
+        async for event in Client().stream_events(filter):
             click.echo(event)
     asyncio.run(_run())
 
