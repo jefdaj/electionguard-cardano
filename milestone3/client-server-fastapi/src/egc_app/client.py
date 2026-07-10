@@ -27,7 +27,7 @@ class Client:
         r.raise_for_status()
         return r.json()
 
-    async def stream_events(self):
+    async def stream_events(self, filter: str|None = None):
         url = "/election/events"
         async with self._c.stream("GET", url, timeout=httpx.Timeout(5.0, read=None)) as r:
             r.raise_for_status()
@@ -36,7 +36,8 @@ class Client:
                      line = line[5:].strip()
                      event_dict = json.loads(line)
                      event = ElectionEvent.from_dict(event_dict)
-                     yield event
+                     if (not filter) or (filter.lower() in str(event).lower()):
+                        yield event
                      if event.event_type == 'burn test tokens':
                          return
                      if event.event_type == 'end election':
