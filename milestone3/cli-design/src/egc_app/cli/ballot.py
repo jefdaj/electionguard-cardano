@@ -2,7 +2,7 @@ import click
 
 @click.group()
 def ballot() -> None:
-    pass
+    "Create, submit, and cast/spoil ballots."
 
 @ballot.command()
 def create():

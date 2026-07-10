@@ -4,7 +4,7 @@ from egc_app.client import Client
 
 @click.group()
 def election() -> None:
-	pass
+    "Create, observe, or end an election."
 
 # TODO compress down to one string with colons?
 # TODO and define a qrcode format... qrcode:egc:election:policy_id:slot_no:hash?

@@ -2,7 +2,7 @@ import click
 
 @click.group()
 def spoiled() -> None:
-    pass
+    "Decrypt spoiled ballots."
 
 @spoiled.command()
 def announce_share():

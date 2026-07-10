@@ -2,7 +2,7 @@ import click
 
 @click.group()
 def manifest() -> None:
-    pass
+    "Create and announce an election manifest."
 
 @manifest.command()
 def create():

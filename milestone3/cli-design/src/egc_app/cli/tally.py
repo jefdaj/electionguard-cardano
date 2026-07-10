@@ -2,7 +2,7 @@ import click
 
 @click.group()
 def tally() -> None:
-    pass
+    "Decrypt the final election tally."
 
 @tally.command()
 def create():

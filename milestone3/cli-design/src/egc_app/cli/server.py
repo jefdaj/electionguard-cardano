@@ -3,9 +3,11 @@ import asyncio
 import uvicorn
 from egc_app.client import Client
 
+# TODO rename node
+
 @click.group()
 def server() -> None:
-	pass
+    "Start, view status, or stop the local EGC server (node)."
 
 @server.command()
 @click.option("--host", default="0.0.0.0")

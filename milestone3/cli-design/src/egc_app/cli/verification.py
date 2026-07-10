@@ -2,7 +2,7 @@ import click
 
 @click.group()
 def verification() -> None:
-    pass
+    "Verify an election, or specific properties/records."
 
 @verification.command()
 def create():

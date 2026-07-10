@@ -2,7 +2,7 @@ import click
 
 @click.group()
 def config() -> None:
-    pass
+    "View and manage the current EGC node config."
 
 @config.command()
 def node():

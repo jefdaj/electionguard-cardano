@@ -2,7 +2,7 @@ import click
 
 @click.group()
 def channel() -> None:
-    pass
+    "Request, add, remove, or await channels."
 
 @channel.command()
 def request():

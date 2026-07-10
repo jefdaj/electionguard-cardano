@@ -2,7 +2,7 @@ import click
 
 @click.group()
 def phase() -> None:
-    pass
+    "Announce or await a particular election phase."
 
 @phase.command()
 def announce():

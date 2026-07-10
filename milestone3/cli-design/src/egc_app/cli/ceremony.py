@@ -2,7 +2,7 @@ import click
 
 @click.group()
 def ceremony() -> None:
-    pass
+    "Perform the guardian key ceremony."
 
 @ceremony.command()
 def create():

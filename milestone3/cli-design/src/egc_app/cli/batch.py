@@ -2,7 +2,7 @@ import click
 
 @click.group()
 def batch() -> None:
-    pass
+    "Batch multiple records into a transaction."
 
 @batch.command()
 def add():
