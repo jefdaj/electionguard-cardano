@@ -1,4 +1,6 @@
 from fastapi import Request
+from fastapi.templating import Jinja2Templates
+from pathlib import Path
 
 # app.state is a plain namespace (starlette.datastructures.State). Fine for
 # holding pools, clients, config, and simple mutable values.
@@ -11,3 +13,7 @@ def reset_state(state):
     if not hasattr(state, 'wallet'):
         # Don't clobber existing wallet
         state.wallet = None
+
+templates = Jinja2Templates(
+    directory=str(Path(__file__).resolve().parent / "templates")
+)
