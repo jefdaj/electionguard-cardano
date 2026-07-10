@@ -44,17 +44,14 @@ a dedicated private dir makes the most sense for now. That could later be
 adapted to separate the submit and challenge (cast/spoil) stations into
 separate nodes if needed. And in the meantime it will be easy to debug.
 
-The random token will be shown to the voter as a QR code and also saved to
-disk. Then the voter goes over to the challenge station and stands in another
-line, and at the same time hopefully the submit goes through on chain. Then at
-the challenge station they present the token as proof they're the same voter,
-and get to cast/spoil.
+There should be an initial "vote in progress token" given by whoever checks
+voter registrations. That's needed to submit a ballot at the submit station,
+and then also at the challenge station to cast/spoil it.
 
-There should also be an initial "eligible voter" token given by whoever checks
-voter registrations to get into the submit line. In a real election, a new one
-of these would be issued by the challenge station when spoiling so you can go
-around again. But for the demo version I think relying on physical security +
-an audible "ding" or similar is reasonable.
+TODO should these be two different random tokens? Or is one OK?
+
+In the case of a spoil, the challenge station issues a new vote in progress
+token, unlinked to the previous one, and the voter can loop back around.
 
 
 QR Codes
@@ -65,7 +62,7 @@ custom text. I'll start with custom text using `to/from_qrcode` class methods
 on the dataclasses. Containers can have `qrcodes_in/out` bind mounts to
 simulate scanning and showing them. For the first version there will be:
 
-- challenge tokens
+- vote tokens
 - final voter reciepts (for checking your ballot was included later)
 - channel requests with node `VerificationKeyHash`es for the admin to authorize
 
