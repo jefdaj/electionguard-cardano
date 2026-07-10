@@ -8,9 +8,18 @@ from egc_app.client import Client
 import logging
 LOG = logging.getLogger(__name__)
 
+
+### main ###
+
 @click.group()
 def cli() -> None:
 	pass
+
+if __name__ == '__main__':
+    cli()
+
+
+### server ###
 
 @cli.group()
 def server() -> None:
@@ -39,21 +48,27 @@ def health():
     resp = asyncio.run(Client().health())
     click.echo(resp)
 
-@cli.command()
+
+### election ###
+
+@cli.group()
+def election() -> None:
+	pass
+
+@election.command()
 @click.option('--policy-id', type=click.STRING)
 @click.option('--slot-no', type=click.INT)
 @click.option('--block-header-hash', type=click.STRING)
-def set_election(policy_id, slot_no, block_header_hash):
+def set(policy_id, slot_no, block_header_hash):
+    """Set which election the server is following."""
     resp = asyncio.run(Client().set_election(policy_id, slot_no, block_header_hash))
     click.echo(resp)
 
-@cli.command()
+@election.command()
 @click.option('--filter', type=click.STRING, required=False)
 def observe(filter: str|None = None):
+    """Stream election events to the terminal."""
     async def _run():
         async for event in Client().stream_events(filter):
             click.echo(event)
     asyncio.run(_run())
-
-if __name__ == '__main__':
-    cli()
