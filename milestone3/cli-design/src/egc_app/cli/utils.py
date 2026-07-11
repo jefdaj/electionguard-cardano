@@ -116,7 +116,7 @@ class RoleAwareGroup(click.Group):
         if not rows:
             formatter.write(f"\nNo {role} commands in this group.")
         else:
-            label = f"{role.capitalize()} commands"
+            label = f"{role.replace("any", "all").capitalize()} commands"
 
             with formatter.section(label):
                 formatter.write_dl(rows)

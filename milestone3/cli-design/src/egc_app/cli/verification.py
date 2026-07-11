@@ -3,7 +3,7 @@ from egc_app.cli.utils import RoleAwareGroup
 
 @click.group(cls=RoleAwareGroup)
 def verification() -> None:
-    "Verify an election, or specific properties/records."
+    "Verify all or part of an election."
 
 @verification.command()
 def create():

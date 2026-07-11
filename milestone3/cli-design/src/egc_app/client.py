@@ -10,12 +10,12 @@ class Client:
     async def aclose(self):
         await self._c.aclose()
 
-    async def status(self):
+    async def node_status(self):
         r = await self._c.get("/health")
         r.raise_for_status()
         return r.json()
 
-    async def set_election(self, policy_id, slot_no, block_header_hash):
+    async def election_subscribe(self, policy_id, slot_no, block_header_hash):
         # TODO proper auto encode/decode of actual SubscriberConfig (policy_id is sticking point)
         sub_cfg_dict = {
             'since_slot'      : slot_no,
@@ -27,7 +27,7 @@ class Client:
         r.raise_for_status()
         return r.json()
 
-    async def stream_events(self, filter: str|None = None):
+    async def election_events(self, filter: str|None = None):
         url = "/election/events"
         async with self._c.stream("GET", url, timeout=httpx.Timeout(5.0, read=None)) as r:
             r.raise_for_status()

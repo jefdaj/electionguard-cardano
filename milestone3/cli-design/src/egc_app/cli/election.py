@@ -14,9 +14,9 @@ def election() -> None:
 @click.option('--policy-id', type=click.STRING)
 @click.option('--slot-no', type=click.INT)
 @click.option('--block-header-hash', type=click.STRING)
-def set(policy_id, slot_no, block_header_hash):
-    """Set which election the server is following."""
-    resp = asyncio.run(Client().set_election(policy_id, slot_no, block_header_hash))
+def subscribe(policy_id, slot_no, block_header_hash):
+    "Set which election the node is following."
+    resp = asyncio.run(Client().election_subscribe(policy_id, slot_no, block_header_hash))
     click.echo(resp)
 
 @election.command()
@@ -24,7 +24,7 @@ def set(policy_id, slot_no, block_header_hash):
 def observe(filter: str|None = None):
     """Stream election events to the terminal."""
     async def _run():
-        async for event in Client().stream_events(filter):
+        async for event in Client().election_events(filter):
             click.echo(event)
     asyncio.run(_run())
 
@@ -38,4 +38,4 @@ def end():
 
 @election.command()
 def burntesttokens():
-    "!!!REMOVE BEFORE PRODUCTION USE!!!"
+    "!REMOVE BEFORE PRODUCTION USE!"
