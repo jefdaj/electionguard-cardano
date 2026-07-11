@@ -105,8 +105,8 @@ Here two required args are picked up from the config and one from the env:
 {
 	"election": {
 		"subscribe": {
-			"slot_no": 117083322,
-			"block_header_hash": "a8a5153fc6532593c67b5e7672a7cad64d7073bacb0bdf53e21dd8ae3bada95a"
+			"since_slot": 117083322,
+			"since_block": "a8a5153fc6532593c67b5e7672a7cad64d7073bacb0bdf53e21dd8ae3bada95a"
 		}
 	}
 }
@@ -118,10 +118,12 @@ $ egc --config config.json election subscribe
 201
 ```
 
-You can also save the current config back to JSON, including changes made at runtime:
+You can also save the live node config back to JSON.
+Notice that `--config` isn't used here; the defaults come from earlier
+`egc node run` and `egc election subscribe` commands:
 
 ```
-$ egc --config config.json config save config2.json
+$ egc config save config2.json
 Saved config → config2.json
 ```
 
@@ -129,10 +131,15 @@ Saved config → config2.json
 {
   "election": {
     "subscribe": {
-      "slot_no": 117083322,
-      "block_header_hash": "a8a5153fc6532593c67b5e7672a7cad64d7073bacb0bdf53e21dd8ae3bada95a",
       "policy_id": "af3dc31662117bc7e821eb2e29271138d23a9e2688149b306de25fa8"
+      "since_slot": 117083322,
+      "since_block": "a8a5153fc6532593c67b5e7672a7cad64d7073bacb0bdf53e21dd8ae3bada95a",
     }
+  }
+  "node": {
+    "host": "0.0.0.0",
+    "port": 8000,
+    "dev_mode": true
   }
 }
 ```
