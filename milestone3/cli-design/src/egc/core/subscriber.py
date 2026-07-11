@@ -57,9 +57,9 @@ KUPO_MAX_CHECKPOINTS = 50
 
 @dataclass
 class SubscriberConfig:
-    since_slot:       int # For kupo --since
-    since_block_hash: str # For kupo --since
-    policy_id:        str # For kupo --match
+    since_slot:  int # For kupo --since
+    since_block: str # For kupo --since
+    policy_id:   str # For kupo --match
 
     @classmethod
     def from_election(cls, election: ElectionContext) -> Self:
@@ -81,7 +81,7 @@ class Point:
 
     @classmethod
     def from_config(cls, data: SubscriberConfig) -> Self:
-        return cls(data.since_slot, data.since_block_hash)
+        return cls(data.since_slot, data.since_block)
 
     @classmethod
     def from_kupo_headers(cls, headers: dict):
@@ -392,7 +392,7 @@ def _make_session():
 
 class ElectionSubscriber:
     '''Runs kupo and feeds matches to a callback.
-    Note that since_slot and since_block_hash should be figured out *before* deploying the contract,
+    Note that since_slot and since_block should be figured out *before* deploying the contract,
     to be sure the indexed range will include the first transaction.
     '''
 
@@ -728,7 +728,7 @@ class ElectionSubscriber:
             LOG.warning(f'Kupo already running (pid={self._kupo_proc.pid})')
             return
 
-        since_arg = f'{self.config.since_slot}.{self.config.since_block_hash}'
+        since_arg = f'{self.config.since_slot}.{self.config.since_block}'
 
         cmd = [
             'kupo',

@@ -151,9 +151,9 @@ class FunderNode(ElectionNode):
         if self.election is None:
             raise Exception('_init_subscriber should be called as part of init_election')
         sub_cfg = SubscriberConfig(
-            since_slot       = self.election.deployment.index_from_slot,
-            since_block_hash = self.election.deployment.index_from_block_hash,
-            policy_id        = self.election.script.policy_id,
+            since_slot  = self.election.deployment.index_from_slot,
+            since_block = self.election.deployment.index_from_block_hash,
+            policy_id   = self.election.script.policy_id,
         )
         self.subscriber = ElectionSubscriber(
             config      = sub_cfg,
@@ -164,7 +164,7 @@ class FunderNode(ElectionNode):
         LOG.info(f'Subscribe to this election with:\n\n{pformat(sub_cfg)}\n')
         LOG.debug(
             f'Or for dev debugging:\n\n'
-            f'./subscribe.py {sub_cfg.policy_id} {sub_cfg.since_slot} {sub_cfg.since_block_hash}\n'
+            f'./subscribe.py {sub_cfg.policy_id} {sub_cfg.since_slot} {sub_cfg.since_block}\n'
         )
 
     def deploy_election(

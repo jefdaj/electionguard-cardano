@@ -13,7 +13,7 @@ def election() -> None:
 @election.command()
 @click.option('--policy-id', type=click.STRING)
 @click.option('--since-slot', type=click.INT)
-@click.option('--since-block-hash', type=click.STRING)
+@click.option('--since-block', type=click.STRING)
 def subscribe(**sub_cfg_kwargs):
     "Set which election the node is following."
     resp = asyncio.run(Client().election_subscribe(**sub_cfg_kwargs))

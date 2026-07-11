@@ -16,9 +16,9 @@ async def start_subscriber(sub_cfg_dict: dict, state=Depends(get_state)):
     # TODO proper auto-decode here
     policy_id = ScriptHash(bytes.fromhex(sub_cfg_dict['policy_id']))
     sub_cfg = SubscriberConfig(
-        since_slot       = sub_cfg_dict['since_slot'],
-        since_block_hash = sub_cfg_dict['since_block_hash'],
-        policy_id        = policy_id,
+        since_slot  = sub_cfg_dict['since_slot'],
+        since_block = sub_cfg_dict['since_block'],
+        policy_id   = policy_id,
     )
 
     # Reset election-specific state, leaving alone the config, wallet, etc
