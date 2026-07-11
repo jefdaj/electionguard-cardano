@@ -7,11 +7,11 @@ def spoiled() -> None:
 
 @spoiled.command(roles=['guardian'])
 def announce_share():
-    pass
+    raise NotImplementedError
 
 @spoiled.command(roles=['admin'])
 def combine_shares():
-    pass
+    raise NotImplementedError
 
 @spoiled.command(roles=['verifier', 'observer'])
 def decrypt_by_nonce():

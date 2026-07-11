@@ -7,16 +7,16 @@ def ballot() -> None:
 
 @ballot.command(roles=['device'])
 def create():
-    pass
+    raise NotImplementedError
 
 @ballot.command(roles=['device'])
 def submit():
-    pass
+    raise NotImplementedError
 
 @ballot.command(roles=['device'])
 def cast():
-    pass
+    raise NotImplementedError
 
 @ballot.command(roles=['device'])
 def spoil():
-    pass
+    raise NotImplementedError

@@ -16,8 +16,7 @@ def election() -> None:
 @click.option('--since-block', type=click.STRING)
 def subscribe(**sub_cfg_kwargs):
     "Set which election the node is following."
-    resp = asyncio.run(Client().election_subscribe(**sub_cfg_kwargs))
-    click.echo(resp)
+    asyncio.run(Client().election_subscribe(**sub_cfg_kwargs))
 
 # TODO elaborate filter to take structured queries?
 @election.command()

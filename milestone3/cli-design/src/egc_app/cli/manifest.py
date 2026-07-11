@@ -7,8 +7,8 @@ def manifest() -> None:
 
 @manifest.command(roles=['admin'])
 def create():
-    pass
+    raise NotImplementedError
 
 @manifest.command(roles=['admin'])
 def announce():
-    pass
+    raise NotImplementedError

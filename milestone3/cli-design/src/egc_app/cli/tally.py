@@ -7,16 +7,16 @@ def tally() -> None:
 
 @tally.command(roles=['admin'])
 def create():
-    pass
+    raise NotImplementedError
 
 @tally.command(roles=['admin'])
 def announce():
-    pass
+    raise NotImplementedError
 
 @tally.command(roles=['guardian'])
 def announce_share():
-    pass
+    raise NotImplementedError
 
 @tally.command(roles=['admin'])
 def combine_shares():
-    pass
+    raise NotImplementedError

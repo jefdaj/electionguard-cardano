@@ -7,13 +7,13 @@ def verification() -> None:
 
 @verification.command()
 def create():
-    pass
+    raise NotImplementedError
 
 # TODO also device?
 @verification.command(roles=['admin', 'guardian', 'verifier'])
 def announce():
-    pass
+    raise NotImplementedError
 
 @verification.command(name='await')
 def await_():
-    pass
+    raise NotImplementedError

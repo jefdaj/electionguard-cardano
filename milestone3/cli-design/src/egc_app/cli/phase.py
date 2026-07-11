@@ -7,8 +7,8 @@ def phase() -> None:
 
 @phase.command(roles=['admin'])
 def announce():
-    pass
+    raise NotImplementedError
 
 @phase.command(name='await')
 def await_():
-    pass
+    raise NotImplementedError

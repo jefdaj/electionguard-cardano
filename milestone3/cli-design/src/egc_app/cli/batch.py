@@ -8,12 +8,12 @@ def batch() -> None:
 # TODO verifier? could batch but have no reason to
 @batch.command(roles=['admin', 'guardian', 'device'])
 def add():
-    pass
+    raise NotImplementedError
 
 @batch.command(roles=['admin', 'guardian', 'device'])
 def status():
-    pass
+    raise NotImplementedError
 
 @batch.command(roles=['admin', 'guardian', 'device'])
 def flush():
-    pass
+    raise NotImplementedError

@@ -7,24 +7,24 @@ def ceremony() -> None:
 
 @ceremony.command(roles=['admin'])
 def create():
-    pass
+    raise NotImplementedError
 
 @ceremony.command(roles=['admin'])
 def announce():
-    pass
+    raise NotImplementedError
 
 @ceremony.command(roles=['guardian'])
 def keygen():
-    pass
+    raise NotImplementedError
 
 @ceremony.command(roles=['guardian'])
 def announce_pubkey():
-    pass
+    raise NotImplementedError
 
 @ceremony.command(roles=['guardian'])
 def announce_backup():
-    pass
+    raise NotImplementedError
 
 @ceremony.command(roles=['guardian'])
 def confirm_backup():
-    pass
+    raise NotImplementedError
