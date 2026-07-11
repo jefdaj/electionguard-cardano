@@ -16,3 +16,7 @@ def election():
 @config.command()
 def batch():
     pass
+
+@config.command()
+def role():
+    pass
