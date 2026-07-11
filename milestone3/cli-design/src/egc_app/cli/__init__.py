@@ -1,4 +1,6 @@
 import click
+import json
+
 from egc_app.cli.utils import RoleAwareGroup, VALID_ROLES
 
 from egc_app.cli import ballot
@@ -17,6 +19,11 @@ from egc_app.cli import verification
 
 @click.group(cls=RoleAwareGroup, invoke_without_command=True)
 @click.option(
+    "--config",
+    type=click.Path(exists=True, dir_okay=False),
+    required=False,
+)
+@click.option(
     "--role",
     envvar="CLI_ROLE",
     default="all",
@@ -24,8 +31,11 @@ from egc_app.cli import verification
     type=click.Choice(VALID_ROLES, case_sensitive=False),
 )
 @click.pass_context
-def cli(ctx, role):
+def cli(ctx, config, role):
     ctx.ensure_object(dict)
+    if config:
+        with open(config, "r", encoding="utf-8") as f:
+            ctx.default_map = json.load(f)
     ctx.obj["role"] = role.lower()
     if ctx.invoked_subcommand is None:
         click.echo(ctx.get_help())
