@@ -13,6 +13,6 @@ def announce_share():
 def combine_shares():
     pass
 
-@spoiled.command()
+@spoiled.command(roles=['verifier', 'observer'])
 def decrypt_by_nonce():
     raise NotImplementedError

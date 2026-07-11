@@ -38,7 +38,9 @@ def deep_merge(base: dict, override: dict) -> dict:
 
 ### role-aware group ###
 
-CLI_ROLES = ('any', 'admin', 'guardian', 'device', 'verifier')
+# TODO remove 'any'?
+# TODO enum type
+CLI_ROLES = ('any', 'funder', 'admin', 'guardian', 'device', 'verifier', 'observer')
 
 class RoleAwareGroup(click.Group):
     def _role(self, ctx: click.Context) -> str:

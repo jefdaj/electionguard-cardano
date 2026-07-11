@@ -5,18 +5,31 @@ from egc_app.cli.utils import RoleAwareGroup
 def channel() -> None:
     "Request, add, remove, or await channels."
 
-@channel.command()
+@channel.command(roles=['admin', 'guardian', 'device', 'verifier'])
 def request():
-    pass
+    """Save a subchannel request.
+
+    Subchannel requests are communicated to the admin offchain.
+    This saves your request to JSON or a QR code.
+    """
+    raise NotImplementedError
 
 @channel.command(roles=['admin'])
 def add():
-    pass
+    "Add (mint) a subchannel."
+    raise NotImplementedError
 
 @channel.command(roles=['admin'])
 def remove():
-    pass
+    "Remove (burn) a subchannel."
+    raise NotImplementedError
 
 @channel.command(name='await')
 def await_():
-    pass
+    """Wait for your channel to appear.
+
+    This should normally be done by an observer. You can also use it once you
+    have a role, but then it's more like an assert statement. The admin can
+    also use this to wait for their channel from the funder.
+    """
+    raise NotImplementedError

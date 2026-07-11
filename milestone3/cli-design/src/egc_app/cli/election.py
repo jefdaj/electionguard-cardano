@@ -28,14 +28,17 @@ def events(filter: str|None = None):
             click.echo(event)
     asyncio.run(_run())
 
-@election.command(roles=['admin']) # TODO funder?
+@election.command(roles=['funder'])
 def init():
     "Create the election by minting an admin channel token."
+    raise NotImplementedError
 
 @election.command(roles=['admin'])
 def end():
     "End the election by burning the admin channel token."
+    raise NotImplementedError
 
 @election.command()
 def burntesttokens():
     "!REMOVE BEFORE PRODUCTION USE!"
+    raise NotImplementedError

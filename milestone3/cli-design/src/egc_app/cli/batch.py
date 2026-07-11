@@ -5,14 +5,15 @@ from egc_app.cli.utils import RoleAwareGroup
 def batch() -> None:
     "Batch multiple records into a transaction."
 
-@batch.command()
+# TODO verifier? could batch but have no reason to
+@batch.command(roles=['admin', 'guardian', 'device'])
 def add():
     pass
 
-@batch.command()
+@batch.command(roles=['admin', 'guardian', 'device'])
 def status():
     pass
 
-@batch.command()
+@batch.command(roles=['admin', 'guardian', 'device'])
 def flush():
     pass

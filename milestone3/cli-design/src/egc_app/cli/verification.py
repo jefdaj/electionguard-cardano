@@ -9,7 +9,8 @@ def verification() -> None:
 def create():
     pass
 
-@verification.command()
+# TODO also device?
+@verification.command(roles=['admin', 'guardian', 'verifier'])
 def announce():
     pass
 

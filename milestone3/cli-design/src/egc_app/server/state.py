@@ -17,6 +17,7 @@ def reset_election_state(state):
     # - subscriber
     # - node (future)
     state.subscriber = None
+    state.config['role'] = 'observer'
 
     # Leaves alone the parts that should persist:
     # - config
