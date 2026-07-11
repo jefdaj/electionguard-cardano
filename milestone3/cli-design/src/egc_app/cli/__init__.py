@@ -1,7 +1,7 @@
 import click
 import json
 
-from egc_app.cli.utils import RoleAwareGroup, VALID_ROLES
+from egc_app.cli.utils import *
 
 from egc_app.cli import ballot
 from egc_app.cli import batch
@@ -32,10 +32,14 @@ from egc_app.cli import verification
 )
 @click.pass_context
 def cli(ctx, config, role):
-    ctx.ensure_object(dict)
     if config:
         with open(config, "r", encoding="utf-8") as f:
-            ctx.default_map = json.load(f)
+            config_defaults = json.load(f)
+    else:
+        config_defaults = {}
+    env_defaults = env_to_default_map()
+    ctx.ensure_object(dict)
+    ctx.default_map = deep_merge(config_defaults, env_defaults)
     ctx.obj["role"] = role.lower()
     if ctx.invoked_subcommand is None:
         click.echo(ctx.get_help())

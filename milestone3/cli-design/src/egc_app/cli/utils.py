@@ -1,9 +1,42 @@
 from __future__ import annotations
 from typing import Iterable
 import click
+import os
 
-import click
 
+### config parsing ###
+
+
+def env_to_default_map(prefix="EGC_"):
+    "Parse simple env vars into a default map."
+    out = {}
+    for key, value in os.environ.items():
+        if not key.startswith(prefix):
+            continue
+        parts = key[len(prefix):].lower().split("_")
+        if len(parts) < 3:
+            continue
+        group, command = parts[0], parts[1]
+        option = "_".join(parts[2:])
+        out.setdefault(group, {}).setdefault(command, {})[option] = value
+    return out
+
+def deep_merge(base: dict, override: dict) -> dict:
+    "Merge options from env vars with options from config file."
+    result = dict(base)
+    for key, value in override.items():
+        if (
+            key in result
+            and isinstance(result[key], dict)
+            and isinstance(value, dict)
+        ):
+            result[key] = deep_merge(result[key], value)
+        else:
+            result[key] = value
+    return result
+
+
+### role-aware group ###
 
 VALID_ROLES = ('any', 'admin', 'guardian', 'device', 'verifier')
 
