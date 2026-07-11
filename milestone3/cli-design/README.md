@@ -29,6 +29,71 @@ batch        : add, status, flush
 ```
 
 
+Roles
+-----
+
+Because there are a lot of commands, I added a way to filter them by role.
+For example here are all the key ceremony commands:
+
+```
+$ egc ceremony
+Usage: egc ceremony [OPTIONS] COMMAND [ARGS]...
+
+  Perform the guardian key ceremony.
+
+Options:
+  --help  Show this message and exit.
+
+All commands:
+  announce
+  announce-backup
+  announce-pubkey
+  confirm-backup
+  create
+  keygen
+```
+
+And here are the ones an admin, guardian, and verifier can do respectively:
+
+```
+$ egc --role admin ceremony
+Usage: egc ceremony [OPTIONS] COMMAND [ARGS]...
+
+  Perform the guardian key ceremony.
+
+Options:
+  --help  Show this message and exit.
+
+Admin commands:
+  announce
+  create
+
+$ egc --role guardian ceremony
+Usage: egc ceremony [OPTIONS] COMMAND [ARGS]...
+
+  Perform the guardian key ceremony.
+
+Options:
+  --help  Show this message and exit.
+
+Guardian commands:
+  announce-backup
+  announce-pubkey
+  confirm-backup
+  keygen
+
+$ egc --role verifier ceremony
+Usage: egc ceremony [OPTIONS] COMMAND [ARGS]...
+
+  Perform the guardian key ceremony.
+
+Options:
+  --help  Show this message and exit.
+
+No verifier commands in this group.
+```
+
+
 Config
 ------
 
