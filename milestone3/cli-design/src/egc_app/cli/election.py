@@ -30,12 +30,12 @@ def observe(filter: str|None = None):
 
 @election.command(roles=['admin']) # TODO funder?
 def init():
-    pass
+    "Create the election by minting an admin channel token."
 
 @election.command(roles=['admin'])
 def end():
-    pass
+    "End the election by burning the admin channel token."
 
 @election.command()
 def burntesttokens():
-    pass
+    "!!!REMOVE BEFORE PRODUCTION USE!!!"

@@ -105,7 +105,7 @@
           config = {
             # TODO log to stdout? also a logfile under /data?
             Entrypoint = [ "${pythonEnv}/bin/egc" ];
-            Cmd = [ "server" "start" ];
+            Cmd = [ "server" "run" ];
             User = "1000:100"; # TODO named egc user? 1000:1000?
             Env = [
               "PATH=/bin"

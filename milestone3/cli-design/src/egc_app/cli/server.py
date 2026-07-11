@@ -15,8 +15,8 @@ def server() -> None:
 @click.option("--port", default=8000, type=int)
 @click.option("--workers", default=1, type=int)
 @click.option("--log-level", default="info")
-def start(host, port, workers, log_level):
-    """Run the API server."""
+def run(host, port, workers, log_level):
+    "Run the API server."
     uvicorn.run(
         "egc_app.server.app:create_app",
         factory=True,
