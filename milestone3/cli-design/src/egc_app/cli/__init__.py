@@ -26,7 +26,7 @@ from egc_app.cli import verification
 @click.option(
     "--role",
     envvar="CLI_ROLE",
-    default="all",
+    default="any",
     show_default=True,
     type=click.Choice(VALID_ROLES, case_sensitive=False),
 )

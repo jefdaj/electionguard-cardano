@@ -5,15 +5,15 @@ import click
 import click
 
 
-VALID_ROLES = ('all', 'admin', 'guardian', 'device', 'verifier')
+VALID_ROLES = ('any', 'admin', 'guardian', 'device', 'verifier')
 
 class RoleAwareGroup(click.Group):
     def _role(self, ctx: click.Context) -> str:
-        return (ctx.obj or {}).get("role", "all")
+        return (ctx.obj or {}).get("role", "any")
 
     def _allowed(self, ctx: click.Context, cmd: click.Command) -> bool:
         role = self._role(ctx)
-        if role == "all":
+        if role == "any":
             return True
         roles = getattr(cmd, "roles", frozenset())
         return not roles or role in roles
@@ -79,7 +79,7 @@ class RoleAwareGroup(click.Group):
 
             rows.append((name, cmd.get_short_help_str()))
 
-        role = (ctx.obj or {}).get("role", "all")
+        role = (ctx.obj or {}).get("role", "any")
         if not rows:
             formatter.write(f"\nNo {role} commands in this group.")
         else:
