@@ -7,12 +7,17 @@ from pathlib import Path
 def get_state(request: Request):
     return request.app.state
 
-def reset_state(state):
-    # Resets everything *except* it should preserve the wallet if any.
+# TODO does this need to go in deps rather than app?
+def reset_election_state(state):
+
+    # Resets the parts of the state that depend on the current election:
+    # - subscriber
+    # - node (future)
     state.subscriber = None
-    if not hasattr(state, 'wallet'):
-        # Don't clobber existing wallet
-        state.wallet = None
+
+    # Leaves alone the parts that should persist:
+    # - config
+    # - wallet
 
 TEMPLATES_DIR = str(Path(__file__).resolve().parent / "templates")
 

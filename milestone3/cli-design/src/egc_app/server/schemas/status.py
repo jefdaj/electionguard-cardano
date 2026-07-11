@@ -1,4 +1,4 @@
 from pydantic import BaseModel
 
-class HealthOut(BaseModel):
+class StatusOut(BaseModel):
     status: str = "ok"

@@ -18,6 +18,12 @@ def run(host, port, dev_mode):
     run_server(**locals())
 
 @node.command()
+def config():
+    "Get the current node config."
+    resp = asyncio.run(Client().node_config())
+    click.echo(resp)
+
+@node.command()
 def status():
     "Is the node OK?"
     resp = asyncio.run(Client().node_status())

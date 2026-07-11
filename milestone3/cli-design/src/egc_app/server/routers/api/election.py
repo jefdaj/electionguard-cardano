@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 from fastapi import HTTPException
 from egc_app.server.deps import get_state
-from egc_app.server.deps import reset_state
+from egc_app.server.deps import reset_election_state
 from egc import *
 import asyncio
 import json
@@ -21,11 +21,8 @@ async def start_subscriber(sub_cfg_dict: dict, state=Depends(get_state)):
         policy_id        = policy_id,
     )
 
-    if getattr(state, "subscriber", None) is not None:
-        # Changing the election should wipe out any existing election-specific state,
-        # except it shouldn't touch the wallet if any.
-        # TODO should this be functional instead of mutating?
-        reset_state(state)
+    # Reset election-specific state, leaving alone the config, wallet, etc
+    reset_election_state(state)
 
     # TODO integrate on_event with fastapi logging
     state.subscriber = ElectionSubscriber(sub_cfg, on_event=lambda e: None)

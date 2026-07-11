@@ -1,5 +1,7 @@
+import asyncio
 import click
 import json
+from egc_app.client import Client
 from egc_app.cli.utils import *
 
 @click.group(cls=RoleAwareGroup)
@@ -32,8 +34,7 @@ def save(ctx, out_json):
     saved = dict(root_ctx.default_map or {})
 
     # Merge live server state on top — wins over stored defaults
-    # live = fetch_live_state(ctx.obj) # TODO write this
-    live = {}
+    live = asyncio.run(Client().node_config())
     saved = deep_merge(saved, live)
 
     with open(out_json, "w", encoding="utf-8") as f:
