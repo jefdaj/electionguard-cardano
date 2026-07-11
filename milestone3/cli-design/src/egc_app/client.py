@@ -15,8 +15,8 @@ class Client:
         r.raise_for_status()
         return r.json()
 
-    async def node_status(self):
-        r = await self._c.get("/health")
+    async def status(self):
+        r = await self._c.get("/status")
         r.raise_for_status()
         return r.json()
 
