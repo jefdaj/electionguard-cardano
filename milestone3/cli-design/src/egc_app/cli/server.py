@@ -2,10 +2,11 @@ import click
 import asyncio
 import uvicorn
 from egc_app.client import Client
+from egc_app.cli.utils import RoleAwareGroup
 
 # TODO rename node
 
-@click.group()
+@click.group(cls=RoleAwareGroup)
 def server() -> None:
     "Start, view status, or stop the local EGC server (node)."
 

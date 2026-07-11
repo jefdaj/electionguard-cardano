@@ -1,21 +1,22 @@
 import click
+from egc_app.cli.utils import RoleAwareGroup
 
-@click.group()
+@click.group(cls=RoleAwareGroup)
 def tally() -> None:
     "Decrypt the final election tally."
 
-@tally.command()
+@tally.command(roles=['admin'])
 def create():
     pass
 
-@tally.command()
+@tally.command(roles=['admin'])
 def announce():
     pass
 
-@tally.command()
+@tally.command(roles=['guardian'])
 def announce_share():
     pass
 
-@tally.command()
+@tally.command(roles=['admin'])
 def combine_shares():
     pass

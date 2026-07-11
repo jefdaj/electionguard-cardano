@@ -1,8 +1,9 @@
 import click
 import asyncio
 from egc_app.client import Client
+from egc_app.cli.utils import RoleAwareGroup
 
-@click.group()
+@click.group(cls=RoleAwareGroup)
 def election() -> None:
     "Create, observe, or end an election."
 
@@ -27,11 +28,11 @@ def observe(filter: str|None = None):
             click.echo(event)
     asyncio.run(_run())
 
-@election.command()
+@election.command(roles=['admin']) # TODO funder?
 def init():
     pass
 
-@election.command()
+@election.command(roles=['admin'])
 def end():
     pass
 

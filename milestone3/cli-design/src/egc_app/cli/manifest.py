@@ -1,13 +1,14 @@
 import click
+from egc_app.cli.utils import RoleAwareGroup
 
-@click.group()
+@click.group(cls=RoleAwareGroup)
 def manifest() -> None:
     "Create and announce an election manifest."
 
-@manifest.command()
+@manifest.command(roles=['admin'])
 def create():
     pass
 
-@manifest.command()
+@manifest.command(roles=['admin'])
 def announce():
     pass

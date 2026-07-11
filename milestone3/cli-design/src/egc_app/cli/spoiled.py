@@ -1,17 +1,18 @@
 import click
+from egc_app.cli.utils import RoleAwareGroup
 
-@click.group()
+@click.group(cls=RoleAwareGroup)
 def spoiled() -> None:
     "Decrypt spoiled ballots."
 
-@spoiled.command()
+@spoiled.command(roles=['guardian'])
 def announce_share():
     pass
 
-@spoiled.command()
+@spoiled.command(roles=['admin'])
 def combine_shares():
     pass
 
 @spoiled.command()
 def decrypt_by_nonce():
-    pass
+    raise NotImplementedError

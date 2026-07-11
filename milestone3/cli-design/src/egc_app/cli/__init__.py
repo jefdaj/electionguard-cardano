@@ -1,4 +1,5 @@
 import click
+from egc_app.cli.utils import RoleAwareGroup, VALID_ROLES
 
 from egc_app.cli import ballot
 from egc_app.cli import batch
@@ -14,9 +15,20 @@ from egc_app.cli import spoiled
 from egc_app.cli import tally
 from egc_app.cli import verification
 
-@click.group()
-def cli() -> None:
-	pass
+@click.group(cls=RoleAwareGroup, invoke_without_command=True)
+@click.option(
+    "--role",
+    envvar="CLI_ROLE",
+    default="all",
+    show_default=True,
+    type=click.Choice(VALID_ROLES, case_sensitive=False),
+)
+@click.pass_context
+def cli(ctx, role):
+    ctx.ensure_object(dict)
+    ctx.obj["role"] = role.lower()
+    if ctx.invoked_subcommand is None:
+        click.echo(ctx.get_help())
 
 cli.add_command(ballot.ballot)
 cli.add_command(batch.batch)

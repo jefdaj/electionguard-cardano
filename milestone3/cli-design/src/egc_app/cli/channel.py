@@ -1,6 +1,7 @@
 import click
+from egc_app.cli.utils import RoleAwareGroup
 
-@click.group()
+@click.group(cls=RoleAwareGroup)
 def channel() -> None:
     "Request, add, remove, or await channels."
 
@@ -8,11 +9,11 @@ def channel() -> None:
 def request():
     pass
 
-@channel.command()
+@channel.command(roles=['admin'])
 def add():
     pass
 
-@channel.command()
+@channel.command(roles=['admin'])
 def remove():
     pass
 

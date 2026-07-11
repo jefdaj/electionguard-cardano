@@ -1,10 +1,11 @@
 import click
+from egc_app.cli.utils import RoleAwareGroup
 
-@click.group()
+@click.group(cls=RoleAwareGroup)
 def phase() -> None:
     "Announce or await a particular election phase."
 
-@phase.command()
+@phase.command(roles=['admin'])
 def announce():
     pass
 

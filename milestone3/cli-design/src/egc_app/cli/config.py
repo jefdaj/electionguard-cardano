@@ -1,6 +1,7 @@
 import click
+from egc_app.cli.utils import RoleAwareGroup
 
-@click.group()
+@click.group(cls=RoleAwareGroup)
 def config() -> None:
     "View and manage the current EGC node config."
 
