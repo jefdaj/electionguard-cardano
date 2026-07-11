@@ -32,8 +32,26 @@ batch        : add, status, flush
 Config
 ------
 
-I'm thinking a main JSON config file, and you can override parts of it at
-runtime, and then optionally re-save that as a file.
+There's an optional JSON config file, and you can override parts of it at
+runtime. You can also set options with environment variables.
+Here two required args are picked up from the config and one from the env:
+
+```json
+{
+	"election": {
+		"subscribe": {
+			"slot_no": 117083322,
+			"block_header_hash": "a8a5153fc6532593c67b5e7672a7cad64d7073bacb0bdf53e21dd8ae3bada95a"
+		}
+	}
+}
+```
+
+```
+$ export EGC_ELECTION_SUBSCRIBE_POLICY_ID=af3dc31662117bc7e821eb2e29271138d23a9e2688149b306de25fa8
+$ egc --config config.json election subscribe
+201
+```
 
 
 Challenge Workflow
