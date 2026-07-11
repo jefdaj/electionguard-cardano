@@ -5,7 +5,7 @@ from egc_app.cli.utils import RoleAwareGroup
 
 @click.group(cls=RoleAwareGroup)
 def election() -> None:
-    "Create, observe, or end an election."
+    "Create, stream events from, or end an election."
 
 # TODO compress down to one string with colons?
 # TODO and define a qrcode format... qrcode:egc:election:policy_id:slot_no:hash?
@@ -21,7 +21,7 @@ def subscribe(**sub_cfg_kwargs):
 
 @election.command()
 @click.option('--filter', type=click.STRING, required=False)
-def observe(filter: str|None = None):
+def events(filter: str|None = None):
     """Stream election events to the terminal."""
     async def _run():
         async for event in Client().election_events(filter):
