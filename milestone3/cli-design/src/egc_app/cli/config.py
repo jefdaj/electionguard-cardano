@@ -1,6 +1,6 @@
 import click
 import json
-from egc_app.cli.utils import RoleAwareGroup, deep_merge
+from egc_app.cli.utils import *
 
 @click.group(cls=RoleAwareGroup)
 def config() -> None:
@@ -8,25 +8,25 @@ def config() -> None:
 
 @config.command()
 def node():
-    pass
+    "Get your current node API URL."
 
 @config.command()
 def election():
-    pass
+    "Get your current election config."
 
 @config.command()
 def batch():
-    pass
+    "Get your current batch config."
 
 @config.command()
 def role():
-    pass
+    "Get your current election role."
 
 @config.command()
 @click.argument("out_json", type=click.Path(dir_okay=False, writable=True))
 @click.pass_context
 def save(ctx, out_json):
-    "Write the current config to JSON."
+    "Write your current config to JSON."
 
     root_ctx = ctx.find_root()
     saved = dict(root_ctx.default_map or {})

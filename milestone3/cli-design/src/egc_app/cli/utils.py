@@ -38,7 +38,7 @@ def deep_merge(base: dict, override: dict) -> dict:
 
 ### role-aware group ###
 
-VALID_ROLES = ('any', 'admin', 'guardian', 'device', 'verifier')
+CLI_ROLES = ('any', 'admin', 'guardian', 'device', 'verifier')
 
 class RoleAwareGroup(click.Group):
     def _role(self, ctx: click.Context) -> str:

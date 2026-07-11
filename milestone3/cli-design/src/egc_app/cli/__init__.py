@@ -27,7 +27,7 @@ from egc_app.cli import verification
     envvar="CLI_ROLE",
     default="any",
     show_default=True,
-    type=click.Choice(VALID_ROLES, case_sensitive=False),
+    type=click.Choice(CLI_ROLES, case_sensitive=False),
 )
 @click.pass_context
 def cli(ctx, config, role):
