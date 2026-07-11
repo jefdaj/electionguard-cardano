@@ -1,7 +1,7 @@
 [project]
-name = "egc-client-server-sketch"
+name = "egc-cli-design"
 version = "0.1.1"
-description = "ElectionGuard+Cardano Client/Server Sketch"
+description = "ElectionGuard+Cardano CLI Design"
 authors = [{ name = "jefdaj", email = "1198065+jefdaj@users.noreply.github.com" }]
 requires-python = ">=3.13,<3.14"
 readme = "README.md"
