@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, Request
 from fastapi import HTTPException
-from egc_app.server.deps import get_state
-from egc_app.server.deps import reset_election_state
+from egc_app.server.state import get_state, reset_election_state
 from egc import *
 import asyncio
 import json

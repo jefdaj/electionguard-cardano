@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from egc_app.server.routers.api.router import router as api_router
 from egc_app.server.routers.web.router import router as web_router
-from egc_app.server.deps import reset_election_state
+from egc_app.server.state import setup_state, teardown_state
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
@@ -19,12 +19,10 @@ def create_app(config: dict) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         # startup: init lib resources, DB pools, etc.
-        app.state.config = config
-        reset_election_state(app)
+        setup_state(app.state, config)
         yield
         # shutdown: cleanup
-        if getattr(app.state, 'subscriber', None) is not None:
-            app.state.subscriber.stop()
+        teardown_state(app.state)
 
     app = FastAPI(lifespan=lifespan)
     app.mount('/static', StaticFiles(directory=STATIC_DIR), name='static')
