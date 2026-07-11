@@ -31,15 +31,7 @@ from egc_app.cli import verification
 )
 @click.pass_context
 def cli(ctx, config, role):
-    if config:
-        with open(config, "r", encoding="utf-8") as f:
-            config_defaults = json.load(f)
-    else:
-        config_defaults = {}
-    env_defaults = env_to_default_map()
-    ctx.ensure_object(dict)
-    ctx.default_map = deep_merge(config_defaults, env_defaults)
-    ctx.obj["role"] = role.lower()
+    apply_config(ctx, config, role)
     if ctx.invoked_subcommand is None:
         click.echo(ctx.get_help())
 

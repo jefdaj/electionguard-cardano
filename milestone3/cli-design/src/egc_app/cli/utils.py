@@ -2,12 +2,27 @@ from __future__ import annotations
 from typing import Iterable
 import click
 import os
+import asyncio
+from egc_app.client import Client
 
 
 ### config parsing ###
 
 
-def env_to_default_map(prefix="EGC_"):
+def get_cli_config(config):
+    if config:
+        with open(config, "r", encoding="utf-8") as f:
+            return json.load(f)
+    else:
+        return {}
+
+def get_node_config():
+    try:
+        return asyncio.run(Client().config())
+    except:
+        return {}
+
+def get_env_config(prefix="EGC_"):
     "Parse simple env vars into a default map."
     out = {}
     for key, value in os.environ.items():
@@ -34,6 +49,24 @@ def deep_merge(base: dict, override: dict) -> dict:
         else:
             result[key] = value
     return result
+
+def apply_config(ctx, cli_config_path, role):
+    "Load and merge cfg from CLI, env vars, node."
+    ctx.ensure_object(dict)
+    from_cli  = get_cli_config(cli_config_path)
+    from_env  = get_env_config()
+    from_node = get_node_config()
+    ctx.default_map = deep_merge(
+        deep_merge(
+            from_cli,
+            from_node,
+        ),
+        deep_merge(
+            from_env,
+            {'role': role}
+        ),
+    )
+    ctx.default_map['role'] = role
 
 
 ### role-aware group ###

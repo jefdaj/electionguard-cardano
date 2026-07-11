@@ -19,6 +19,7 @@ def subscribe(**sub_cfg_kwargs):
     resp = asyncio.run(Client().election_subscribe(**sub_cfg_kwargs))
     click.echo(resp)
 
+# TODO elaborate filter to take structured queries?
 @election.command()
 @click.option('--filter', type=click.STRING, required=False)
 def events(filter: str|None = None):
@@ -40,5 +41,10 @@ def end():
 
 @election.command()
 def burntesttokens():
-    "!REMOVE BEFORE PRODUCTION USE!"
+    """!REMOVE BEFORE PRODUCTION USE!
+
+    Burns all tokens, ending the election suddenly.
+    Anyone can call this, not just the admin or funder.
+    It helps clean up after broken tests.
+    """
     raise NotImplementedError
