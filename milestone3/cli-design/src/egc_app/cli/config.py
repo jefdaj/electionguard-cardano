@@ -9,10 +9,12 @@ def config() -> None:
     "View and manage the EGC node config."
 
 @config.command()
-def role():
+@click.pass_context
+def role(ctx):
     "Get current election role."
-    cfg = asyncio.run(Client().config())
-    role = cfg['role']
+    # The CLI calls the node API for the current config *every* time
+    # it's invoked, so now we can just pull role out of the context:
+    role = ctx.find_root().default_map.get("role")
     click.echo(role)
 
 # only needed for root_ctx in the merge below:

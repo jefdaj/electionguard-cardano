@@ -25,13 +25,12 @@ from egc_app.cli import verification
 @click.option(
     "--role",
     envvar="CLI_ROLE",
-    default="any",
+    default="observer",
     show_default=True,
     type=click.Choice(CLI_ROLES, case_sensitive=False),
 )
 @click.pass_context
 def cli(ctx, config, role):
-    apply_config(ctx, config, role)
     if ctx.invoked_subcommand is None:
         click.echo(ctx.get_help())
 

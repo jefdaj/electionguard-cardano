@@ -50,23 +50,27 @@ def deep_merge(base: dict, override: dict) -> dict:
             result[key] = value
     return result
 
-def apply_config(ctx, cli_config_path, role):
-    "Load and merge cfg from CLI, env vars, node."
-    ctx.ensure_object(dict)
-    from_cli  = get_cli_config(cli_config_path)
+def _peek_arg(args: list[str], flag: str) -> str | None:
+    """Read --flag VALUE or --flag=VALUE from raw args without consuming them."""
+    for i, arg in enumerate(args):
+        if arg == flag and i + 1 < len(args):
+            return args[i + 1]
+        if arg.startswith(f"{flag}="):
+            return arg.split("=", 1)[1]
+    return None
+
+
+def _build_default_map(config_path: str | None, role: str) -> dict:
+    from_cli  = get_cli_config(config_path)
     from_env  = get_env_config()
     from_node = get_node_config()
-    ctx.default_map = deep_merge(
-        deep_merge(
-            from_cli,
-            from_node,
-        ),
-        deep_merge(
-            from_env,
-            {'role': role}
-        ),
+    dm = deep_merge(
+        deep_merge(from_cli, from_node),
+        from_env,
+        # deep_merge(from_env, {"role": role}),
     )
-    ctx.default_map['role'] = role
+    dm["role"] = role  # CLI/env always wins
+    return dm
 
 
 ### role-aware group ###
@@ -76,8 +80,24 @@ def apply_config(ctx, cli_config_path, role):
 CLI_ROLES = ('any', 'funder', 'admin', 'guardian', 'device', 'verifier', 'observer')
 
 class RoleAwareGroup(click.Group):
+
+    def make_context(
+        self,
+        info_name: str,
+        args: list[str],
+        parent: click.Context | None = None,
+        **kwargs,
+    ) -> click.Context:
+        # Build default_map early at root so --help and eager options
+        # see the correct role before the callback ever runs.
+        if parent is None:
+            config_path = _peek_arg(args, "--config")
+            role = _peek_arg(args, "--role") or os.environ.get("CLI_ROLE", "observer")
+            kwargs.setdefault("default_map", _build_default_map(config_path, role))
+        return super().make_context(info_name, args, parent=parent, **kwargs)
+
     def _role(self, ctx: click.Context) -> str:
-        return (ctx.obj or {}).get("role", "any")
+        return (ctx.find_root().default_map or {}).get("role", "observer")
 
     def _allowed(self, ctx: click.Context, cmd: click.Command) -> bool:
         role = self._role(ctx)
@@ -135,26 +155,21 @@ class RoleAwareGroup(click.Group):
 
     def format_commands(self, ctx: click.Context, formatter: click.HelpFormatter) -> None:
         rows = []
-        for name in self.list_commands(ctx):
+        for name in self.list_commands(ctx):  # list_commands already filters by role
             cmd = self.get_command(ctx, name)
             if cmd is None:
                 continue
-
-            is_group = isinstance(cmd, click.Group)
-            allowed = is_group or self._allowed(ctx, cmd)
-            if not allowed:
-                continue
-
             rows.append((name, cmd.get_short_help_str()))
 
-        role = (ctx.obj or {}).get("role", "any")
         if not rows:
-            formatter.write(f"\nNo {role} commands in this group.")
-        else:
-            label = f"{role.replace("any", "all").capitalize()} commands"
+            role = self._role(ctx)
+            formatter.write(f"\nNo commands available for role '{role}'.\n")
+            return
 
-            with formatter.section(label):
-                formatter.write_dl(rows)
+        role = self._role(ctx)
+        label = f"{role.replace("any", "all").capitalize()} commands"
+        with formatter.section(label):
+            formatter.write_dl(rows)
 
 
 def _parse_roles_and_args(first, rest, kwargs):
