@@ -10,7 +10,7 @@ class Client:
     async def aclose(self):
         await self._c.aclose()
 
-    async def node_config(self):
+    async def config(self):
         r = await self._c.get("/config")
         r.raise_for_status()
         return r.json()

@@ -6,23 +6,48 @@ from egc_app.cli.utils import *
 
 @click.group(cls=RoleAwareGroup)
 def config() -> None:
-    "View and manage the current EGC node config."
+    "View and manage the EGC node config."
+
+def get_cfg(section=None):
+    cfg = asyncio.run(Client().config())
+    if section is None:
+        return cfg
+    if not section in cfg:
+        return {}
+    return cfg[section]
+
+# TODO remove?
+@config.command()
+def all():
+    "Get the complete config as JSON."
+    cfg = get_cfg()
+    click.echo(json.dumps(cfg, indent=2))
 
 @config.command()
 def node():
-    "Get your current node API URL."
+    "Get current node config as JSON."
+    cfg = get_cfg(section='node')
+    click.echo(json.dumps(cfg, indent=2))
 
 @config.command()
 def election():
-    "Get your current election config."
+    "Get current election config as JSON."
+    cfg = get_cfg(section='election')
+    click.echo(json.dumps(cfg, indent=2))
 
 @config.command()
 def batch():
-    "Get your current batch config."
+    "Get current batch config as JSON."
+    cfg = get_cfg(section='batch')
+    click.echo(json.dumps(cfg, indent=2))
 
 @config.command()
 def role():
-    "Get your current election role."
+    "Get current election role."
+    role = get_cfg(section='role')
+    if not role:
+        role = 'any' # TODO default to observer
+    click.echo(role)
 
 @config.command()
 @click.argument("out_json", type=click.Path(dir_okay=False, writable=True))
@@ -34,7 +59,7 @@ def save(ctx, out_json):
     saved = dict(root_ctx.default_map or {})
 
     # Merge live server state on top — wins over stored defaults
-    live = asyncio.run(Client().node_config())
+    live = asyncio.run(Client().config())
     saved = deep_merge(saved, live)
 
     with open(out_json, "w", encoding="utf-8") as f:
