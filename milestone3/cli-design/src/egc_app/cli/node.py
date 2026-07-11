@@ -3,6 +3,7 @@ import asyncio
 import uvicorn
 from egc_app.client import Client
 from egc_app.cli.utils import RoleAwareGroup
+from egc_app.server.run import run as run_server
 
 @click.group(cls=RoleAwareGroup)
 def node() -> None:
@@ -11,19 +12,10 @@ def node() -> None:
 @node.command()
 @click.option("--host", default="0.0.0.0")
 @click.option("--port", default=8000, type=int)
-@click.option("--workers", default=1, type=int)
-@click.option("--log-level", default="info")
-def run(host, port, workers, log_level):
-    "Run the node (API server)."
-    uvicorn.run(
-        "egc_app.server.app:create_app",
-        factory=True,
-        host=host,
-        port=port,
-        reload=True,
-        workers=1, # TODO more for production?
-        log_level=log_level,
-    )
+@click.option("--dev-mode", is_flag=True, default=False)
+def run(host, port, dev_mode):
+    "Run the EGC node (API server)."
+    run_server(**locals())
 
 @node.command()
 def status():
