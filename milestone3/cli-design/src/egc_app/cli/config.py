@@ -15,10 +15,12 @@ def role():
     role = cfg['role']
     click.echo(role)
 
-# only needed for root_ctx in the merge below: @click.pass_context
+# only needed for root_ctx in the merge below:
+# @click.pass_context
+# def save(ctx, out_json):
 @config.command()
 @click.argument("out_json", type=click.Path(dir_okay=False, writable=True))
-def save(ctx, out_json):
+def save(out_json):
     "Write your current config to JSON."
 
     # This works but seems counter-intuitive...

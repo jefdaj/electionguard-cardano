@@ -1,5 +1,6 @@
 import click
 import asyncio
+import json
 import uvicorn
 from egc_app.client import Client
 from egc_app.cli.utils import RoleAwareGroup
@@ -17,16 +18,17 @@ def run(host, port, dev_mode):
     "Run the EGC node (API server)."
     run_server(**locals())
 
+# TODO pick: egc node config (here)? or egc config node?
 @node.command()
 def config():
     "Get the current node config."
-    resp = asyncio.run(Client().node_config())
-    click.echo(resp)
+    resp = asyncio.run(Client().config())
+    click.echo(json.dumps(resp, indent=2))
 
 @node.command()
 def status():
     "Is the node OK?"
-    resp = asyncio.run(Client().node_status())
+    resp = asyncio.run(Client().status())
     click.echo(resp)
 
 @node.command()
