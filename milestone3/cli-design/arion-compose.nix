@@ -1,11 +1,23 @@
 { pkgs, ... }:
 let
 
-  parentDir        = "../../milestone2/cardano-node-ogmios";
-  cardanoConfigDir = "${parentDir}/config";
-  cardanoDataDir   = "${parentDir}/data";
+
+  ### config ###
+
+  # Main per-election config.
+  # Can be written manually or generated via pytest.
+  electionConfig = builtins.fromJSON (builtins.readFile (builtins.getEnv "ELECTION_JSON"));
+
+  # Shared cardano node data (~15G) for all the dev codebases
+  cardanoDir = "../../milestone2/cardano-node-ogmios";
+  cardanoConfigDir = "${cardanoDir}/config";
+  cardanoDataDir   = "${cardanoDir}/data";
   cardanoNetwork   = "preview";
-  ogmiosPort       = 1337;
+
+  ogmiosPort = 1337;
+
+
+  ### packages ###
 
   # smuggle flake in via pkgs
   # see https://github.com/hercules-ci/arion/issues/247
@@ -16,19 +28,110 @@ let
   egcApp    = flake.outputs.${system}.default;
   egcDocker = flake.outputs.${system}.dockerImage;
 
-in
-{
-  project.name = "cardano";
 
-  # TODO remove and generate a specific ogmios network per pair
-  # docker-compose.raw = {
-  #   networks.ogmios = {
-  #     internal = true;
-  #     name = "ogmios";
-  #   };
-  # };
+  ### networks ###
 
-  services.node.service = {
+  # TODO pass ogmios networks all to ogmios too
+  ogmiosNetworkName   = role: n: "${role}${builtins.toString n}-ogmios-net";
+  ipfsNetworkName     = role: n: "${role}${builtins.toString n}-ipfs-net";
+  ipfsMeshNetworkName = "ipfs-mesh-net";
+
+  mkOgmiosNetworks = cfg:
+    builtins.filterAttrs
+      (name: v: builtins.match "-ogmios-net" name != null)
+      (mkNetworks cfg);
+
+  mkNetworks = cfg:
+    let
+      counts = [
+        { role = "admin";    n = 1; }
+        { role = "device";   n = cfg.election.devices.count; }
+        { role = "guardian"; n = cfg.election.guardians.count; }
+        { role = "verifier"; n = cfg.election.verifiers.count; }
+      ];
+
+      # For each pair: ogmios-net and ipfs-net
+      perPairNetworks =
+        pkgs.lib.concatMap
+          (c: pkgs.lib.concatMap
+            (n: [
+              {
+                name = ogmiosNetworkName c.role n;
+                value = { driver = "bridge"; }; # TODO not bridge?
+              }
+              {
+                name = ipfsNetworkName c.role n;
+                value = { driver = "bridge"; }; # TODO not bridge?
+              }
+            ])
+            (pkgs.lib.range 1 c.n)
+          )
+          counts;
+
+    in
+    builtins.listToAttrs (
+      perPairNetworks ++ [
+        {
+          # shared IPFS mesh network (ipfs only)
+          name = ipfsMeshNetworkName;
+          value = { driver = "bridge"; }; # TODO does bridge also allow internet?
+        }
+      ]
+    );
+
+
+  ### containers ###
+
+  egcContainer = role: project_name: records_dir: private_dir: n: {
+    service.image = egcDocker;
+    service.volumes = [
+      "${records_dir}:/data/records"
+      "${private_dir}/${role}_${builtins.toString n}/egc:/data/private" # TODO no _?
+    ];
+    service.networks = [
+      (ogmiosNetworkName role n)
+      (ipfsNetworkName role n)
+    ];
+    # service.useHostStore = true;
+    service.stop_signal = "SIGINT"; # TODO get it to shut down properly
+    service.environment = 
+      let ipfsContainerName = "${project_name}-${role}${builtins.toString n}-ipfs-1";
+      in {
+        IPFS_API_ADDR = "/dns4/${ipfsContainerName}/tcp/5001";
+        PUBLIC_RECORDS_DIR = "/data/records"; # TODO prefix with EGC_ or similar
+      };
+  };
+
+  ipfsContainer = role: private_dir: n: {
+    service.image = "ipfs/kubo:v0.42.0"; 
+    service.restart = "always"; # TODO does this fix intermittent panics?
+    service.volumes = [
+      "${private_dir}/${role}_${builtins.toString n}/ipfs:/data/ipfs" # TODO no _?
+    ];
+    service.networks = [
+      (ipfsNetworkName role n)
+      ipfsMeshNetworkName
+    ];
+    service.ports = [
+      # host:container
+      # TODO are these only needed for testing but not production?
+      # TODO add 127.0.0.1?
+      # "${builtins.toString (4000 + portSuffix)}:4001" # ipfs swarm
+      # "${builtins.toString (5000 + portSuffix)}:5001" # ipfs api
+      # "${builtins.toString (8080 + portSuffix)}:8080" # ipfs gateway
+    ];
+    service.environment = {
+      IPFS_IMPORT_CIDVERSION = "1";
+      IPFS_LOGGING           = "fatal";
+      IPFS_TELEMETRY         = "off";
+    };
+  };
+
+
+  ### services ###
+
+  # services.node.service = {
+  cardanoService = {
     image = "ghcr.io/intersectmbo/cardano-node:11.0.1";
     command = [
       "run"
@@ -51,10 +154,11 @@ in
     #     max-file = "20";
     #   };
     # };
-    networks = [ "default" ];
+    networks = [ "default" ]; # TODO "cardano"?
   };
 
-  services.ogmios.service = {
+  # services.ogmios.service = {
+  ogmiosService = networks: {
     image = "3a21f883f83e";
     restart = "on-failure";
     command = [
@@ -68,6 +172,59 @@ in
     ];
     ports = [ "127.0.0.1:${toString ogmiosPort}:1337" ];
     # networks = [ "ogmios" ];
-    networks = [ ]; # TODO list of all <pair>-ogmios networks here
+    # networks = [ ]; # TODO list of all <pair>-ogmios networks here
+    inherit networks;
   };
+
+  egcAttrs = role: project_name: records_dir: private_dir: n: {
+    name = "${role}${builtins.toString n}-egc";
+    value = egcContainer role project_name records_dir private_dir n;
+  };
+
+  ipfsAttrs = role: private_dir: n: {
+    name = "${role}${builtins.toString n}-ipfs";
+    value = ipfsContainer role private_dir n;
+  };
+
+  # Produce (egc, ipfs) pairs for 1..nVms
+  pairAttrsList = project_name: dataDir: role: nVms:
+    let
+      records_dir = "${dataDir}/records";
+      private_dir = "${dataDir}/private";
+      range       = pkgs.lib.range 1 nVms;
+    in
+    pkgs.lib.concatMap (n: [
+      (egcAttrs  role project_name records_dir private_dir n)
+      (ipfsAttrs role private_dir n)
+    ]) range;
+
+  # TODO can builtins. be dropped?
+  mkServices = cfg:
+    # {
+      # cardano = cardanoService;
+      # ogmios  = ogmiosService (mkOgmiosNetworks cfg);
+    # } //
+    builtins.listToAttrs (pairAttrsList cfg.arion.project_name cfg.arion.data_dir "admin"    1); # //
+    # builtins.listToAttrs (pairAttrsList cfg.arion.project_name cfg.arion.data_dir "device"   cfg.election.devices.count) //
+    # builtins.listToAttrs (pairAttrsList cfg.arion.project_name cfg.arion.data_dir "guardian" cfg.election.guardians.count) //
+    # builtins.listToAttrs (pairAttrsList cfg.arion.project_name cfg.arion.data_dir "verifier" cfg.election.verifiers.count);
+
+
+# in
+# {
+  # project.name = "cardano";
+
+in {
+  config.project.name = electionConfig.arion.project_name;
+  config.services = mkServices electionConfig;
+  config.networks = mkNetworks electionConfig;
 }
+
+  # TODO remove and generate a specific ogmios network per pair
+  # docker-compose.raw = {
+  #   networks.ogmios = {
+  #     internal = true;
+  #     name = "ogmios";
+  #   };
+  # };
+# }
