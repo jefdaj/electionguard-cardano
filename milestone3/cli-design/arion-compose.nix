@@ -84,12 +84,11 @@ let
 
   ### containers ###
 
-  egcContainer = egc_image: role: project_name: records_dir: private_dir: i: {
+  egcContainer = egc_image: role: project_name: data_dir: i: {
     service.image = egc_image;
     image.nixBuild = false;
     service.volumes = [
-      "${records_dir}:/data/records"
-      "${private_dir}/${nodeName role i}/egc:/data/private"
+      "${data_dir}/${nodeName role i}/egc:/data/private"
     ];
     service.networks = [
       (ogmiosNetworkName role i)
@@ -105,11 +104,11 @@ let
       };
   };
 
-  ipfsContainer = role: private_dir: i: {
+  ipfsContainer = role: data_dir: i: {
     service.image = "ipfs/kubo:v0.42.0"; 
     service.restart = "always"; # TODO does this fix intermittent panics?
     service.volumes = [
-      "${private_dir}/${nodeName role i}/ipfs:/data/ipfs"
+      "${data_dir}/${nodeName role i}/ipfs:/data/ipfs"
     ];
     service.networks = [
       (ipfsNetworkName role i)
@@ -179,33 +178,31 @@ let
     inherit networks;
   };
 
-  egcAttrs = egc_image: role: project_name: records_dir: private_dir: i: {
+  egcAttrs = egc_image: role: project_name: data_dir: i: {
     name = "${nodeName role i}-egc";
-    value = egcContainer egc_image role project_name records_dir private_dir i;
+    value = egcContainer egc_image role project_name data_dir i;
   };
 
-  ipfsAttrs = role: private_dir: i: {
+  ipfsAttrs = role: data_dir: i: {
     name = "${nodeName role i}-ipfs";
-    value = ipfsContainer role private_dir i;
+    value = ipfsContainer role data_dir i;
   };
 
   # Produce (egc, ipfs) pairs for 1..nVms
-  pairAttrsList = project_name: egc_image: dataDir: role: nVms:
+  pairAttrsList = project_name: egc_image: data_dir: role: nVms:
     let
-      records_dir = "${dataDir}/records";
-      private_dir = "${dataDir}/private";
-      range       = pkgs.lib.range 1 nVms;
+      range = pkgs.lib.range 1 nVms;
     in
     pkgs.lib.concatMap (i: [
-      (egcAttrs egc_image role project_name records_dir private_dir i)
-      (ipfsAttrs role private_dir i)
+      (egcAttrs egc_image role project_name data_dir i)
+      (ipfsAttrs role data_dir i)
     ]) range;
 
   # TODO can builtins. be dropped?
   mkServices = cfg:
     {
-      cardano.service = cardanoService;
-      ogmios.service  = mkOgmiosService (mkOgmiosNetworks cfg);
+      "shared-cardano".service = cardanoService;
+      "shared-ogmios".service = mkOgmiosService (mkOgmiosNetworks cfg);
     } //
     builtins.listToAttrs (pairAttrsList cfg.arion.project_name cfg.arion.egc_image cfg.arion.data_dir "admin"    1) //
     builtins.listToAttrs (pairAttrsList cfg.arion.project_name cfg.arion.egc_image cfg.arion.data_dir "device"   cfg.election.devices.count) //
