@@ -20,9 +20,8 @@ class Client:
         r.raise_for_status()
         return r.json()
 
-    async def election_subscribe(self, **sub_cfg_kwargs):
-        # TODO proper auto encode/decode of actual SubscriberConfig (policy_id is sticking point)
-        r = await self._c.put('/election', json=sub_cfg_kwargs)
+    async def election_subscribe(self, sub_cfg: SubscriberConfig):
+        r = await self._c.put('/election', json=asdict(sub_cfg))
         r.raise_for_status()
         return r.json()
 

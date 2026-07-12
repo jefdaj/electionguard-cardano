@@ -82,7 +82,7 @@ def print_qrcode(obj: Any) -> None:
 
 
 def scan_qrcode(decode_cls=None, video_device=0, timeout=0):
-    "Scan a QR Code and optionally decode it using from_qrcode."
+    "Scan a QR Code and optionally decode it using from_qr_str."
     cap = cv2.VideoCapture(video_device)
     if not cap.isOpened():
         raise Exception(f"Cannot open video device {video_device!r}")
@@ -98,7 +98,7 @@ def scan_qrcode(decode_cls=None, video_device=0, timeout=0):
             data, pts, _ = det.detectAndDecode(frame)
             if data:
                 try:
-                    return decode_cls.from_qrcode(data)
+                    return decode_cls.from_qr_str(data)
                 except:
                     # TODO raise error here?
                     return data
@@ -106,3 +106,6 @@ def scan_qrcode(decode_cls=None, video_device=0, timeout=0):
                 raise TimeoutError
     finally:
         cap.release()
+
+if __name__ == "__main__":
+    main()

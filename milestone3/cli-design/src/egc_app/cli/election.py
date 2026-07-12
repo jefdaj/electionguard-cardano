@@ -1,6 +1,8 @@
 import click
+import cloup
+from cloup.constraints import RequireExactly
 import asyncio
-from egc import SubscriberConfig, print_qrcode
+from egc import SubscriberConfig, scan_qrcode, print_qrcode # TODO relative?
 from egc_app.client import Client
 from egc_app.cli.utils import RoleAwareGroup
 
@@ -8,16 +10,29 @@ from egc_app.cli.utils import RoleAwareGroup
 def election() -> None:
     "Create, share, stream, or end an election."
 
-# TODO compress down to one string with colons?
-# TODO and define a qrcode format... qrcode:egc:election:policy_id:slot_no:hash?
-#      (ask though)
+# TODO clean up and factor out the qrcode parts
 @election.command()
-@click.option('--policy-id', type=click.STRING)
-@click.option('--since-slot', type=click.INT)
-@click.option('--since-block', type=click.STRING)
-def subscribe(**sub_cfg_kwargs):
-    "Set which election the node is following."
-    asyncio.run(Client().election_subscribe(**sub_cfg_kwargs))
+@cloup.option_group(
+    "Election input options",
+    cloup.option('--scan-qrcode', is_flag=True, required=False),
+    cloup.option('--parse-str', type=click.STRING, required=False),
+    RequireExactly(1),
+)
+def subscribe(**kwargs):
+    """Set which election the node is following.
+
+    For --parse-str, the input should be in the same format
+    you would get from the QR code. Line wraps are OK.
+
+    egc:election:<policy_id>:<since_slot>:<since_block>
+    """
+    # print(f'sub_cfg_kwargs: {sub_cfg_kwargs}')
+    # print(f'kwargs: {kwargs}')
+    if kwargs['scan_qrcode']:
+        sub_cfg = scan_qrcode(decode_cls=SubscriberConfig)
+    else:
+        sub_cfg = SubscriberConfig.from_qr_str(kwargs['parse_str'])
+    asyncio.run(Client().election_subscribe(sub_cfg))
 
 # TODO rename -> share?
 # TODO option to share json instead?
@@ -32,7 +47,7 @@ def qrcode(ctx):
 
 # TODO elaborate filter to take structured queries?
 @election.command()
-@click.option('--filter', type=click.STRING, required=False)
+@cloup.option('--filter', type=click.STRING, required=False)
 def events(filter: str|None = None):
     """Stream election events to the terminal."""
     async def _run():

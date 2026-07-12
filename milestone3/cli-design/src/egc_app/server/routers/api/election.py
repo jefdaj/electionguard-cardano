@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, Request
 from fastapi import HTTPException
+from dataclasses import asdict
 from egc_app.server.state import get_state, reset_election_state
 from egc import *
 import asyncio
@@ -10,22 +11,23 @@ router = APIRouter(prefix="/election", tags=["election"])
 
 # TODO anything more needed to make clear POST election -> start_subscriber?
 @router.put("")
-async def start_subscriber(sub_cfg_dict: dict, state=Depends(get_state)):
+async def start_subscriber(sub_cfg: SubscriberConfig, state=Depends(get_state)):
 
     # TODO proper auto-decode here
-    policy_id = ScriptHash(bytes.fromhex(sub_cfg_dict['policy_id']))
-    sub_cfg = SubscriberConfig(
-        policy_id   = policy_id,
-        since_slot  = sub_cfg_dict['since_slot'],
-        since_block = sub_cfg_dict['since_block'],
-    )
+    # policy_id = ScriptHash(bytes.fromhex(sub_cfg_dict['policy_id']))
+    # sub_cfg = SubscriberConfig(
+    #     policy_id   = policy_id,
+    #     since_slot  = sub_cfg_dict['since_slot'],
+    #     since_block = sub_cfg_dict['since_block'],
+    # )
+    # sub_cfg = SubscriberConfig.from_qrcode_str(qrcode_str)
 
     # Reset election-specific state, leaving alone the config, wallet, etc
     reset_election_state(state)
     # TODO defaultdict or something to avoid this
     if not 'election' in state.config:
         state.config['election'] = {}
-    state.config['election']['subscribe'] = sub_cfg_dict
+    state.config['election']['subscribe'] = asdict(sub_cfg)
 
     # TODO integrate on_event with fastapi logging
     state.subscriber = ElectionSubscriber(sub_cfg, on_event=lambda e: None)

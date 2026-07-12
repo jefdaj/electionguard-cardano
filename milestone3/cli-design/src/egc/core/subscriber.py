@@ -87,8 +87,9 @@ class SubscriberConfig:
         )
 
     @classmethod
-    def from_qrcode(cls, txt: str) -> Self:
-        # expected format: "egc:election:..."
+    def from_qr_str(cls, txt: str) -> Self:
+        # expected format: "egc:election:...", maybe with wrapping
+        txt = ''.join(l.strip() for l in txt.splitlines())
         words = txt.split(':')
         prefix = words[:2]
         args   = words[2:]

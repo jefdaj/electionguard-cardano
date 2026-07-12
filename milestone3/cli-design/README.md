@@ -166,8 +166,7 @@ token, unlinked to the previous one, and the voter can loop back around.
 QR Codes
 --------
 
-They're just a transport, and could carry many things. Those could be JSON, or
-custom text. I'll start with custom text using `to/from_qrcode` class methods
+I'll start with custom text using `to/from_qrcode` class methods
 on the dataclasses. Containers can have `qrcodes_in/out` bind mounts to
 simulate scanning and showing them. For the first version there will be:
 
@@ -179,6 +178,57 @@ Future versions might also have a mechanism for election officials to do
 airgapped transactions. I'm not sure yet whether the security gain would
 outweigh the UX complexity in most cases.
 
+First working round-trip is the SubscriberConfig:
+
+```
+$ egc election qrcode
+                                                         
+                                                         
+    █▀▀▀▀▀█  ▄▀█▄▄▄ ▀█▄▄██▀█ ▄█▄▄██▄ █▀  ▄▄▄█ █▀▀▀▀▀█    
+    █ ███ █  ▀▀ ▄▀█▄▄ ▄▀▀▄▄▄▀ ▀█ ▄██▀ ▀▄   █▀ █ ███ █    
+    █ ▀▀▀ █ ▄▀▄▀ █▄█▄ █▀█▄█▀▀▀█▄ ▄█▀█ ▄▄ ▄▄   █ ▀▀▀ █    
+    ▀▀▀▀▀▀▀ ▀▄▀ █▄█▄█▄█ ▀ █ ▀ █▄▀▄▀▄█ █▄█▄▀▄▀ ▀▀▀▀▀▀▀    
+    ▀▄ ▀▄█▀▄██▄ █▀▀▄▀▀▀█▀█▀▀▀▀▀█▀▄   ▄ ▄█▄ █ █ ▀ ▄▄ ▄    
+    ▀▄ █ ▀▀█▄▀█▄  ▀▀█▀ ██▄▀ █▀▄ ▄█ ▄▀▀▀ █▄▄▀ █▄▀ █ ▄▀    
+    ▀ ██ █▀▄▄▄▄▄▄▀▀█▀ ▄▄█▀ ▀█  ▄▀▀▀▀▀▀█▀▀▀  ▄ ▀▄▀▀▄██    
+    ▄█▄█▀▄▀▀█▄ ▄█▀█ ▀▀▄ █ ▄▀██▀▄██ ▄█▄ ▀▄█▀▀ ▀ ▄▄▀▀ ▀    
+     █▄█ █▀██▄  █ █ █  ▄▄▄ ▄▀▀▄█▄▀▀▄▀▄▀▄█▄▄ ▀ ▀ █ ▀▀█    
+    ▀▀█▄▀ ▀ █▄█ ▀█▄▀▀█▄█ ██▄█   ▀▀ ███▄ ██▄▄▀█ ▀█▀▄▀█    
+    ▄▄█▀▄█▀▀ ▀▄███▄█▀ ██▀█ ▄▀█ ▄▀▄▀▄ ▀ ▀▀▀▀  █ ▀    █    
+    ▄  ▄█▀▀▀█▀▀ ▀█  ▄██▄█ █▀▀▀█▀▄▀▄█▀▄█▄▄▀▄▄█▀▀▀██  ▀    
+    ▄▄ ██ ▀ █ ▀▀  █▀█ █▄ ▄█ ▀ █▄▀ ▀████ ▀█ ██ ▀ █▀▄ █    
+    █▀█ ▀▀▀██▄██▀▀ █▄ █  ███▀▀█▄██ ▀▄▀  █ ▀▀▀▀█▀▀█▀██    
+    ▀ ▄█▀▀▀██▀▄▀ ▀▀█▄▀ ▄██ ▄██▀█▄  ▀█▄  ▀██▄▀█▀▄▄▀▀▀█    
+    ▀▄████▀█▀▄▄▄▀▀▀▀▀  ▀▀█▀ ▄▀█ ▀█ ▀██▄▀██ ▀▄██   ██▀    
+    █▄▄▄ ▄▀██▄▀███ ▄▀ ▄█▀▄█▀ █▄▄█▄▀▀▄▀ █▀ ▀▄▄ ▀█▀▄ ▀█    
+    ▄▄▀██ ▀▀█  ▀█▀▄▄█ ▀ █▄▄▀█▀▀▄▄▀ ▀▀▄▀██▀  ▀▀██ █▀▄▀    
+    ▄▀▀▀██▀ ▀▄▀▀  █▄▄  ▀ █ █ ▀▀█▀ ▀▄█▀█▄█  ▄  ▀▄ ▀▄▀█    
+     █▄▄ ▀▀█▄▄▄▄█ ▀▀▄ ▀▀▀███  ▄▄█▀  ▄▄ ██▀▀ ▄▀█▀ ▀ ▀▀    
+    ▀▀▀   ▀ ▄█▄▀ ▀█▄▀  ▄▄▄█▀▀▀██▄█▀█▀▄▀█▀▄█ █▀▀▀█ ▀██    
+    █▀▀▀▀▀█ ▄█▄▄ ▀▀▀█▄▄▄ ██ ▀ █ ▀▄▄███▄▄▄▀ ██ ▀ █▄█ ▀    
+    █ ███ █ ▄██▀ █▀█▄▄█ ▄ █▀█▀▀▄▀▄▀▄ █▀▄█   ██▀███  ▀    
+    █ ▀▀▀ █  ▀▄█▄▄▄▄▀  ▀ ▄▄▄█▄▄▀▄█  ▀▀▀ ▄█▄▄▄▄▀▄▀ ▀      
+    ▀▀▀▀▀▀▀ ▀▀▀▀▀ ▀ ▀▀▀▀  ▀ ▀ ▀ ▀▀▀ ▀ ▀▀▀  ▀▀      ▀▀    
+                                                         
+    egc:election:d9a3ad58f50d2b9bc0ca764e6557eed158d7    
+    e9e2f9267e38ebb0f621:117150954:120e7c40b965d13045    
+    b92d02d9cb2257057edbb95f9536bd36b3d3ffa1522b17    
+```
+
+Now a different node can subscribe using either the QR code or the text.
+
+```
+$ egc election subscribe --scan-qrcode # (wave webcam at screen)
+```
+
+The text can be nicely formatted, or a messy paste job:
+
+```
+$ egc election subscribe --parse-str '''    egc:election:d9a3ad58f50d2b9bc0ca764e6557eed158d7    
+    e9e2f9267e38ebb0f621:117150954:120e7c40b965d13045    
+    b92d02d9cb2257057edbb95f9536bd36b3d3ffa1522b17    
+'''
+```
 
 Batching
 --------

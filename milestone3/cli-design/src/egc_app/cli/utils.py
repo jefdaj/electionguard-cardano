@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import Iterable
 import click
+import cloup
 import os
 import asyncio
 from egc_app.client import Client
@@ -79,7 +80,7 @@ def _build_default_map(config_path: str | None, role: str) -> dict:
 # TODO enum type
 CLI_ROLES = ('any', 'funder', 'admin', 'guardian', 'device', 'verifier', 'observer')
 
-class RoleAwareGroup(click.Group):
+class RoleAwareGroup(cloup.Group):
 
     def make_context(
         self,
@@ -138,7 +139,7 @@ class RoleAwareGroup(click.Group):
 
     def command(self, *args, roles=None, **kwargs):
         def decorator(f):
-            cmd = click.command(*args, **kwargs)(f)
+            cmd = cloup.command(*args, **kwargs)(f)
             cmd.roles = frozenset(roles or ())
             self.add_command(cmd)
             return cmd
@@ -148,7 +149,7 @@ class RoleAwareGroup(click.Group):
         kwargs.setdefault("cls", type(self))
 
         def decorator(f):
-            grp = click.group(*args, **kwargs)(f)
+            grp = cloup.group(*args, **kwargs)(f)
             self.add_command(grp)
             return grp
         return decorator
