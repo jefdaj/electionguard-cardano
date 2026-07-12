@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 let
 
 
@@ -31,15 +31,13 @@ let
 
   ### networks ###
 
-  # TODO pass ogmios networks all to ogmios too
   ogmiosNetworkName   = role: n: "${role}${builtins.toString n}-ogmios-net";
   ipfsNetworkName     = role: n: "${role}${builtins.toString n}-ipfs-net";
   ipfsMeshNetworkName = "ipfs-mesh-net";
 
-  mkOgmiosNetworks = cfg:
-    builtins.filterAttrs
-      (name: v: builtins.match "-ogmios-net" name != null)
-      (mkNetworks cfg);
+  mkOgmiosNetworks = cfg: lib.filter
+                            (lib.hasSuffix "-ogmios-net")
+                            (builtins.attrNames (mkNetworks cfg));
 
   mkNetworks = cfg:
     let
@@ -159,7 +157,7 @@ let
   };
 
   # services.ogmios.service = {
-  ogmiosService = networks: {
+  mkOgmiosService = networks: {
     image = "3a21f883f83e";
     restart = "on-failure";
     command = [
@@ -201,31 +199,18 @@ let
 
   # TODO can builtins. be dropped?
   mkServices = cfg:
-    # {
-      # cardano = cardanoService;
-      # ogmios  = ogmiosService (mkOgmiosNetworks cfg);
-    # } //
+    {
+      cardano.service = cardanoService;
+      ogmios.service  = mkOgmiosService (mkOgmiosNetworks cfg);
+    } //
     builtins.listToAttrs (pairAttrsList cfg.arion.project_name cfg.arion.egc_image cfg.arion.data_dir "admin"    1) //
     builtins.listToAttrs (pairAttrsList cfg.arion.project_name cfg.arion.egc_image cfg.arion.data_dir "device"   cfg.election.devices.count) //
     builtins.listToAttrs (pairAttrsList cfg.arion.project_name cfg.arion.egc_image cfg.arion.data_dir "guardian" cfg.election.guardians.count) //
     builtins.listToAttrs (pairAttrsList cfg.arion.project_name cfg.arion.egc_image cfg.arion.data_dir "verifier" cfg.election.verifiers.count);
 
 
-# in
-# {
-  # project.name = "cardano";
-
 in {
   config.project.name = electionConfig.arion.project_name;
   config.services = mkServices electionConfig;
   config.networks = mkNetworks electionConfig;
 }
-
-  # TODO remove and generate a specific ogmios network per pair
-  # docker-compose.raw = {
-  #   networks.ogmios = {
-  #     internal = true;
-  #     name = "ogmios";
-  #   };
-  # };
-# }
