@@ -31,8 +31,12 @@ let
 
   ### networks ###
 
-  ogmiosNetworkName   = role: n: "${role}${builtins.toString n}-ogmios-net";
-  ipfsNetworkName     = role: n: "${role}${builtins.toString n}-ipfs-net";
+  nodeName = role: index: if builtins.elem role ["funder" "admin"]
+                            then role
+                            else "${role}${builtins.toString index}";
+
+  ogmiosNetworkName   = role: i: "${nodeName role i}-ogmios-net";
+  ipfsNetworkName     = role: i: "${nodeName role i}-ipfs-net";
   ipfsMeshNetworkName = "ipfs-mesh-net";
 
   mkOgmiosNetworks = cfg: lib.filter
@@ -80,35 +84,35 @@ let
 
   ### containers ###
 
-  egcContainer = egc_image: role: project_name: records_dir: private_dir: n: {
+  egcContainer = egc_image: role: project_name: records_dir: private_dir: i: {
     service.image = egc_image;
     image.nixBuild = false;
     service.volumes = [
       "${records_dir}:/data/records"
-      "${private_dir}/${role}_${builtins.toString n}/egc:/data/private" # TODO no _?
+      "${private_dir}/${nodeName role i}/egc:/data/private"
     ];
     service.networks = [
-      (ogmiosNetworkName role n)
-      (ipfsNetworkName role n)
+      (ogmiosNetworkName role i)
+      (ipfsNetworkName role i)
     ];
     # service.useHostStore = true;
     service.stop_signal = "SIGINT"; # TODO get it to shut down properly
     service.environment = 
-      let ipfsContainerName = "${project_name}-${role}${builtins.toString n}-ipfs-1";
+      let ipfsContainerName = "${project_name}-${nodeName role i}-ipfs-1";
       in {
         IPFS_API_ADDR = "/dns4/${ipfsContainerName}/tcp/5001";
         PUBLIC_RECORDS_DIR = "/data/records"; # TODO prefix with EGC_ or similar
       };
   };
 
-  ipfsContainer = role: private_dir: n: {
+  ipfsContainer = role: private_dir: i: {
     service.image = "ipfs/kubo:v0.42.0"; 
     service.restart = "always"; # TODO does this fix intermittent panics?
     service.volumes = [
-      "${private_dir}/${role}_${builtins.toString n}/ipfs:/data/ipfs" # TODO no _?
+      "${private_dir}/${nodeName role i}/ipfs:/data/ipfs"
     ];
     service.networks = [
-      (ipfsNetworkName role n)
+      (ipfsNetworkName role i)
       ipfsMeshNetworkName
     ];
     service.ports = [
@@ -175,14 +179,14 @@ let
     inherit networks;
   };
 
-  egcAttrs = egc_image: role: project_name: records_dir: private_dir: n: {
-    name = "${role}${builtins.toString n}-egc";
-    value = egcContainer egc_image role project_name records_dir private_dir n;
+  egcAttrs = egc_image: role: project_name: records_dir: private_dir: i: {
+    name = "${nodeName role i}-egc";
+    value = egcContainer egc_image role project_name records_dir private_dir i;
   };
 
-  ipfsAttrs = role: private_dir: n: {
-    name = "${role}${builtins.toString n}-ipfs";
-    value = ipfsContainer role private_dir n;
+  ipfsAttrs = role: private_dir: i: {
+    name = "${nodeName role i}-ipfs";
+    value = ipfsContainer role private_dir i;
   };
 
   # Produce (egc, ipfs) pairs for 1..nVms
@@ -192,9 +196,9 @@ let
       private_dir = "${dataDir}/private";
       range       = pkgs.lib.range 1 nVms;
     in
-    pkgs.lib.concatMap (n: [
-      (egcAttrs egc_image role project_name records_dir private_dir n)
-      (ipfsAttrs role private_dir n)
+    pkgs.lib.concatMap (i: [
+      (egcAttrs egc_image role project_name records_dir private_dir i)
+      (ipfsAttrs role private_dir i)
     ]) range;
 
   # TODO can builtins. be dropped?
