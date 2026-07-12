@@ -163,7 +163,7 @@ class RoleAwareGroup(click.Group):
 
         if not rows:
             role = self._role(ctx)
-            formatter.write(f"\nNo commands available for role '{role}'.\n")
+            formatter.write(f"\nNo {role} commands here.\n")
             return
 
         role = self._role(ctx)

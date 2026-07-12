@@ -12,6 +12,7 @@ import sys
 import threading
 import time
 import hashlib
+import qrcode
 
 from collections import defaultdict
 from copy import deepcopy
@@ -57,17 +58,58 @@ KUPO_MAX_CHECKPOINTS = 50
 
 @dataclass
 class SubscriberConfig:
+
+    policy_id:   str # For kupo --match
     since_slot:  int # For kupo --since
     since_block: str # For kupo --since
-    policy_id:   str # For kupo --match
+
+    @classmethod
+    def from_dict(cls, data: dict) -> Self:
+        return cls(
+            data['policy_id'],
+            int(data['since_slot']),
+            data['since_block'],
+        )
+
+    # TODO is this right?
+    @classmethod
+    def from_json(cls, data: str) -> Self:
+        return cls.from_dict(
+            json.loads(data)
+        )
 
     @classmethod
     def from_election(cls, election: ElectionContext) -> Self:
         return cls(
+            str(election.script.policy_id),
             election.deployment.index_from_slot,
             election.deployment.index_from_block_hash,
-            str(election.script.policy_id),
         )
+
+    @classmethod
+    def from_qrcode(cls, txt: str) -> Self:
+        # expected format: "egc:election:..."
+        words = txt.split(':')
+        prefix = words[:2]
+        args   = words[2:]
+        assert prefix == ['egc', 'election']
+        assert len(args) == 3
+        policy_id, since_slot, since_block = args
+        since_slot = int(since_slot)
+        return cls(policy_id, since_slot, since_block)
+
+    def to_qrcode(self) -> qrcode.QRCode:
+        # TODO also prefix with qrcode: ?
+        txt = ':'.join((
+            'egc', 'election',
+            self.policy_id,
+            str(self.since_slot),
+            self.since_block
+        ))
+        qr = qrcode.QRCode()
+        qr.add_data(txt)
+        qr.make()
+        return qr
 
 
 # TODO also use this in subscriberconfig?

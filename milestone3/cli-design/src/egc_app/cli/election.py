@@ -1,11 +1,12 @@
 import click
 import asyncio
+from egc import SubscriberConfig, print_qrcode
 from egc_app.client import Client
 from egc_app.cli.utils import RoleAwareGroup
 
 @click.group(cls=RoleAwareGroup)
 def election() -> None:
-    "Create, stream events from, or end an election."
+    "Create, share, stream, or end an election."
 
 # TODO compress down to one string with colons?
 # TODO and define a qrcode format... qrcode:egc:election:policy_id:slot_no:hash?
@@ -17,6 +18,17 @@ def election() -> None:
 def subscribe(**sub_cfg_kwargs):
     "Set which election the node is following."
     asyncio.run(Client().election_subscribe(**sub_cfg_kwargs))
+
+# TODO rename -> share?
+# TODO option to share json instead?
+@election.command()
+@click.pass_context
+def qrcode(ctx):
+    "Share subscribe config as a QR code."
+    # TODO what should the error be if no election config yet?
+    election = ctx.find_root().default_map.get("election")
+    sub_cfg = SubscriberConfig.from_dict(election['subscribe'])
+    print_qrcode(sub_cfg)
 
 # TODO elaborate filter to take structured queries?
 @election.command()
