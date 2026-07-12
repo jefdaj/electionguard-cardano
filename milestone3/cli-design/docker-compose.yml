@@ -1,5 +1,6 @@
+name: cardano
 services:
-  cardano-node:
+  node:
     image: ghcr.io/intersectmbo/cardano-node:11.0.1
     command: [
       "run",
@@ -19,7 +20,8 @@ services:
         max-size: "400k"
         max-file: "20"
     networks:
-      - egc-shared-net
+      - default # internet
+      # also talks to ogmios via socket
 
   ogmios:
     # The newest Ogmios release supports node 11 now, but it breaks the latest
@@ -27,6 +29,8 @@ services:
     # image: cardanosolutions/ogmios:v7.0.0
     image: 3a21f883f83e # custom version i built for now
     restart: on-failure
+    # The host here is 0.0.0.0 inside the container; 127.0.0.1 in ports below
+    # limits that to only reachable by the host machine rather than LAN.
     command: [
       "--host", "0.0.0.0",
       "--node-socket", "/ipc/node.socket",
@@ -36,10 +40,12 @@ services:
       # TODO make the same as the node one above?
       - ../../milestone2/cardano-node-ogmios/config/network/${NETWORK:-preview}:/config
       - ../../milestone2/cardano-node-ogmios/data/node-ipc:/ipc
+    # TODO if containers can't access ogmios, try removing 127.0.0.1 here
     ports:
-      - ${OGMIOS_PORT:-1337}:1337
+      - 127.0.0.1:${OGMIOS_PORT:-1337}:1337
     networks:
-      - egc-shared-net # TODO remove?
+      - ogmios # arion-generated containers can connect here
+      # also talks to cardano-node via socket
 
   # In this test there's just one IPFS container.
   # I've tested already that a more realistic setup with a bunch of them also works.
@@ -55,8 +61,10 @@ services:
   #   networks:
   #     - egc-shared-net # TODO remove?
 
-# allow communication with other docker-compose networks, for example kupo
-# TODO would just using the ipc socket work across networks instead?
 networks:
-  egc-shared-net:
-    driver: bridge
+  # Allows Arion-generated containers to talk to Ogmios,
+  # but does not allow host access to the Ogmios webui at 1337.
+  # TODO test this
+  ogmios:
+    internal: true
+    name: cardano_ogmios
