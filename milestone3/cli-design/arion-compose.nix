@@ -198,16 +198,16 @@ let
       (ipfsAttrs role data_dir i)
     ]) range;
 
-  # TODO can builtins. be dropped?
   mkServices = cfg:
-    {
+    let mkService = pairAttrsList cfg.arion.project_name cfg.arion.egc_image cfg.arion.data_dir;
+    in {
       "shared-cardano".service = cardanoService;
       "shared-ogmios".service = mkOgmiosService (mkOgmiosNetworks cfg);
     } //
-    builtins.listToAttrs (pairAttrsList cfg.arion.project_name cfg.arion.egc_image cfg.arion.data_dir "admin"    1) //
-    builtins.listToAttrs (pairAttrsList cfg.arion.project_name cfg.arion.egc_image cfg.arion.data_dir "device"   cfg.election.devices.count) //
-    builtins.listToAttrs (pairAttrsList cfg.arion.project_name cfg.arion.egc_image cfg.arion.data_dir "guardian" cfg.election.guardians.count) //
-    builtins.listToAttrs (pairAttrsList cfg.arion.project_name cfg.arion.egc_image cfg.arion.data_dir "verifier" cfg.election.verifiers.count);
+      builtins.listToAttrs (mkService "admin"    1) //
+      builtins.listToAttrs (mkService "device"   cfg.election.devices.count) //
+      builtins.listToAttrs (mkService "guardian" cfg.election.guardians.count) //
+      builtins.listToAttrs (mkService "verifier" cfg.election.verifiers.count);
 
 
 in {
