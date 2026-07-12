@@ -141,6 +141,7 @@
         in
         pkgs.mkShell {
           packages = with pkgs; [
+            arion
             jq
             uv
             venv

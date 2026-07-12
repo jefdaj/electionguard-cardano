@@ -13,8 +13,8 @@ let
 
   # now we can get anything else needed from the flake
   system = "x86_64-linux";
-  egcApp   = flake.outputs.${system}.default;
-  egcImage = flake.outputs.${system}.dockerImage;
+  egcApp    = flake.outputs.${system}.default;
+  egcDocker = flake.outputs.${system}.dockerImage;
 
 in
 {
@@ -24,7 +24,7 @@ in
   # docker-compose.raw = {
   #   networks.ogmios = {
   #     internal = true;
-  #     name = "cardano_ogmios";
+  #     name = "ogmios";
   #   };
   # };
 
@@ -68,6 +68,6 @@ in
     ];
     ports = [ "127.0.0.1:${toString ogmiosPort}:1337" ];
     # networks = [ "ogmios" ];
-    networks = [ ];
+    networks = [ ]; # TODO list of all <pair>-ogmios networks here
   };
 }
