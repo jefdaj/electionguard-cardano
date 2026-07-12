@@ -178,7 +178,8 @@ Future versions might also have a mechanism for election officials to do
 airgapped transactions. I'm not sure yet whether the security gain would
 outweigh the UX complexity in most cases.
 
-First working round-trip is the SubscriberConfig:
+First working round-trip is the SubscriberConfig.
+Note this looks nice in a terminal; it's only messed up on Github:
 
 ```
 $ egc election qrcode
