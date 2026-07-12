@@ -19,7 +19,7 @@ services:
         max-size: "400k"
         max-file: "20"
     networks:
-      - shared-net
+      - egc-shared-net
 
   ogmios:
     # The newest Ogmios release supports node 11 now, but it breaks the latest
@@ -39,24 +39,24 @@ services:
     ports:
       - ${OGMIOS_PORT:-1337}:1337
     networks:
-      - shared-net # TODO remove?
+      - egc-shared-net # TODO remove?
 
   # In this test there's just one IPFS container.
   # I've tested already that a more realistic setup with a bunch of them also works.
-  ipfs:
-    image: ipfs/kubo:v0.42.0
-    volumes:
-      - ./data/ipfs:/data/ipfs
-    environment:
-      - IPFS_TELEMETRY=off
-    ports:
-      - 4001:4001 # ipfs swarm
-      - 5001:5001 # ipfs api (and webui on /webui)
-    networks:
-      - shared-net # TODO remove?
+  # ipfs:
+  #   image: ipfs/kubo:v0.42.0
+  #   volumes:
+  #     - ./data/ipfs:/data/ipfs
+  #   environment:
+  #     - IPFS_TELEMETRY=off
+  #   ports:
+  #     - 4001:4001 # ipfs swarm
+  #     - 5001:5001 # ipfs api (and webui on /webui)
+  #   networks:
+  #     - egc-shared-net # TODO remove?
 
 # allow communication with other docker-compose networks, for example kupo
 # TODO would just using the ipc socket work across networks instead?
 networks:
-  shared-net:
+  egc-shared-net:
     driver: bridge
