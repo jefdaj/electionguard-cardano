@@ -66,31 +66,36 @@
           python-baseconv  = addBuildSystem {"setuptools" = []; } prev.python-baseconv;
         };
 
-        pythonSet =
-          (pkgs.callPackage pyproject-nix.build.packages { python = myPython313; })
-            .overrideScope (lib.composeManyExtensions [
-              pyproject-build-systems.overlays.default
-              overlay
-              pyprojectOverrides
-            ]);
+      pythonSet =
+        (pkgs.callPackage pyproject-nix.build.packages { python = myPython313; })
+          .overrideScope (lib.composeManyExtensions [
+            pyproject-build-systems.overlays.default
+            overlay
+            pyprojectOverrides
+          ]);
 
-        pythonEnv = pythonSet.mkVirtualEnv "egc-cli-design-env" workspace.deps.default;
+      pythonEnv = pythonSet.mkVirtualEnv "egc-cli-design-env" workspace.deps.default;
 
-        kupo = pkgs.callPackage ./nix/kupo.nix {};
-        otherDeps = [
-          kupo
-        ];
+      kupo = pkgs.callPackage ./nix/kupo.nix {};
+      otherDeps = [
+        kupo
+      ];
 
-        # This is an actual output; see note below.
-        # TODO does this also need kupo etc?
-        arionPkgs = pkgs; # nixpkgs.legacyPackages.${system}.extend myPython313;
+      # This is an actual output; see note below.
+      myPkgs = pkgs.extend (final: prev: rec {
+        inherit kupo;
+        egc       = pythonEnv;
+        python    = python3;
+        python3   = python313;
+        python313 = myPython313;
+      });
 
     in
     {
 
       # This is expected by arion-pkgs.nix
       # See https://github.com/hercules-ci/arion/issues/247
-      inherit arionPkgs;
+      pkgs = myPkgs;
 
       packages.${system} = {
 

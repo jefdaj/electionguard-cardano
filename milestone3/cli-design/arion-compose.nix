@@ -1,4 +1,4 @@
-{ ... }:
+{ pkgs, ... }:
 let
 
   parentDir        = "../../milestone2/cardano-node-ogmios";
@@ -9,7 +9,12 @@ let
 
   # smuggle flake in via pkgs
   # see https://github.com/hercules-ci/arion/issues/247
-  # inherit (pkgs) flake;
+  inherit (pkgs) flake;
+
+  # now we can get anything else needed from the flake
+  system = "x86_64-linux";
+  egcApp   = flake.outputs.${system}.default;
+  egcImage = flake.outputs.${system}.dockerImage;
 
 in
 {
@@ -38,6 +43,7 @@ in
       "${cardanoDataDir}/node-ipc:/ipc"
     ];
     restart = "on-failure";
+    # TODO how should this look in Arion?
     # logging = {
     #   driver = "json-file";
     #   options = {
