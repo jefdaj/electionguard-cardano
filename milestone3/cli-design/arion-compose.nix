@@ -37,6 +37,7 @@ let
   ogmiosNetworkName   = role: i: "${nodeName role i}-ogmios-net";
   ipfsNetworkName     = role: i: "${nodeName role i}-ipfs-net";
   ipfsMeshNetworkName = "ipfs-mesh-net";
+  cardanoNetworkName  = "cardano-net";
 
   mkOgmiosNetworks = cfg: lib.filter
                             (lib.hasSuffix "-ogmios-net")
@@ -58,11 +59,13 @@ let
             (n: [
               {
                 name = ogmiosNetworkName c.role n;
-                value = { driver = "bridge"; }; # TODO not bridge?
+                # value = { driver = "bridge"; }; # TODO not bridge?
+                value = { internal = true; };
               }
               {
                 name = ipfsNetworkName c.role n;
-                value = { driver = "bridge"; }; # TODO not bridge?
+                # value = { driver = "bridge"; }; # TODO not bridge?
+                value = { internal = true; };
               }
             ])
             (pkgs.lib.range 1 c.n)
@@ -73,9 +76,14 @@ let
     builtins.listToAttrs (
       perPairNetworks ++ [
         {
-          # shared IPFS mesh network (ipfs only)
+          # network for Cardano node with bridge to internet
+          name = cardanoNetworkName;
+          value = { driver = "bridge"; };
+        }
+        {
+          # shared IPFS mesh network with bridge to internet
           name = ipfsMeshNetworkName;
-          value = { driver = "bridge"; }; # TODO does bridge also allow internet?
+          value = { driver = "bridge"; };
         }
       ]
     );
@@ -155,7 +163,7 @@ let
     #     max-file = "20";
     #   };
     # };
-    networks = [ "default" ]; # TODO "cardano"?
+    networks = [ cardanoNetworkName ];
   };
 
   # services.ogmios.service = {
