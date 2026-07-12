@@ -1,7 +1,6 @@
 { pkgs, lib, ... }:
 let
 
-
   ### config ###
 
   # Main per-election config.
