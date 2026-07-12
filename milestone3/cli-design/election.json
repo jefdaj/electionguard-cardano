@@ -2,7 +2,7 @@
   "arion": {
     "project_name": "election",
     "data_dir": "./data/election",
-    "egc_image": "egc-cli-design:0.1.1"
+    "egc_image": "egc-cli-design:0.1.2"
   },
   "election": {
     "guardians": {"count": 3, "quorum": 2},

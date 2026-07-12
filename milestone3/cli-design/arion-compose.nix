@@ -83,7 +83,6 @@ let
   ### containers ###
 
   egcContainer = egc_image: role: project_name: records_dir: private_dir: n: {
-    # image.tarball = egcDocker;
     service.image = egc_image;
     image.nixBuild = false;
     service.volumes = [
