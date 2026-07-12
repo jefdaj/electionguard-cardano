@@ -25,8 +25,8 @@ let
 
   # now we can get anything else needed from the flake
   system = "x86_64-linux";
-  egcApp    = flake.outputs.${system}.default;
-  egcDocker = flake.outputs.${system}.dockerImage;
+  egcApp    = flake.outputs.packages.${system}.default;
+  egcDocker = flake.outputs.packages.${system}.dockerImage;
 
 
   ### networks ###
@@ -82,8 +82,10 @@ let
 
   ### containers ###
 
-  egcContainer = role: project_name: records_dir: private_dir: n: {
-    service.image = egcDocker;
+  egcContainer = egc_image: role: project_name: records_dir: private_dir: n: {
+    # image.tarball = egcDocker;
+    service.image = egc_image;
+    image.nixBuild = false;
     service.volumes = [
       "${records_dir}:/data/records"
       "${private_dir}/${role}_${builtins.toString n}/egc:/data/private" # TODO no _?
@@ -176,9 +178,9 @@ let
     inherit networks;
   };
 
-  egcAttrs = role: project_name: records_dir: private_dir: n: {
+  egcAttrs = egc_image: role: project_name: records_dir: private_dir: n: {
     name = "${role}${builtins.toString n}-egc";
-    value = egcContainer role project_name records_dir private_dir n;
+    value = egcContainer egc_image role project_name records_dir private_dir n;
   };
 
   ipfsAttrs = role: private_dir: n: {
@@ -187,14 +189,14 @@ let
   };
 
   # Produce (egc, ipfs) pairs for 1..nVms
-  pairAttrsList = project_name: dataDir: role: nVms:
+  pairAttrsList = project_name: egc_image: dataDir: role: nVms:
     let
       records_dir = "${dataDir}/records";
       private_dir = "${dataDir}/private";
       range       = pkgs.lib.range 1 nVms;
     in
     pkgs.lib.concatMap (n: [
-      (egcAttrs  role project_name records_dir private_dir n)
+      (egcAttrs egc_image role project_name records_dir private_dir n)
       (ipfsAttrs role private_dir n)
     ]) range;
 
@@ -204,10 +206,10 @@ let
       # cardano = cardanoService;
       # ogmios  = ogmiosService (mkOgmiosNetworks cfg);
     # } //
-    builtins.listToAttrs (pairAttrsList cfg.arion.project_name cfg.arion.data_dir "admin"    1); # //
-    # builtins.listToAttrs (pairAttrsList cfg.arion.project_name cfg.arion.data_dir "device"   cfg.election.devices.count) //
-    # builtins.listToAttrs (pairAttrsList cfg.arion.project_name cfg.arion.data_dir "guardian" cfg.election.guardians.count) //
-    # builtins.listToAttrs (pairAttrsList cfg.arion.project_name cfg.arion.data_dir "verifier" cfg.election.verifiers.count);
+    builtins.listToAttrs (pairAttrsList cfg.arion.project_name cfg.arion.egc_image cfg.arion.data_dir "admin"    1) //
+    builtins.listToAttrs (pairAttrsList cfg.arion.project_name cfg.arion.egc_image cfg.arion.data_dir "device"   cfg.election.devices.count) //
+    builtins.listToAttrs (pairAttrsList cfg.arion.project_name cfg.arion.egc_image cfg.arion.data_dir "guardian" cfg.election.guardians.count) //
+    builtins.listToAttrs (pairAttrsList cfg.arion.project_name cfg.arion.egc_image cfg.arion.data_dir "verifier" cfg.election.verifiers.count);
 
 
 # in
