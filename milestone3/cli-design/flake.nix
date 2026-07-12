@@ -4,6 +4,8 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
+    arion.url = "github:jefdaj/arion/rm-obsolete-version-attribute";
+
     pyproject-nix = {
       url = "github:pyproject-nix/pyproject.nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -79,8 +81,16 @@
           kupo
         ];
 
+        # This is an actual output; see note below.
+        # TODO does this also need kupo etc?
+        arionPkgs = pkgs; # nixpkgs.legacyPackages.${system}.extend myPython313;
+
     in
     {
+
+      # This is expected by arion-pkgs.nix
+      # See https://github.com/hercules-ci/arion/issues/247
+      inherit arionPkgs;
 
       packages.${system} = {
 
