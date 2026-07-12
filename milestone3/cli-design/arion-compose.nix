@@ -19,13 +19,13 @@ let
   ### packages ###
 
   # smuggle flake in via pkgs
+  # TODO put back if it's possible to use egcDocker rather than egc_image name
   # see https://github.com/hercules-ci/arion/issues/247
-  inherit (pkgs) flake;
-
+  # inherit (pkgs) flake;
   # now we can get anything else needed from the flake
-  system = "x86_64-linux";
-  egcApp    = flake.outputs.packages.${system}.default;
-  egcDocker = flake.outputs.packages.${system}.dockerImage;
+  # system = "x86_64-linux";
+  # egcApp    = flake.outputs.packages.${system}.default;
+  # egcDocker = flake.outputs.packages.${system}.dockerImage;
 
 
   ### networks ###
