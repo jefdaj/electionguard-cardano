@@ -164,7 +164,7 @@ class FunderNode(ElectionNode):
         LOG.info(f'Subscribe to this election with:\n\n{pformat(sub_cfg)}\n')
         LOG.debug(
             f'Or for dev debugging:\n\n'
-            f'./subscribe.py {sub_cfg.policy_id} {sub_cfg.since_slot} {sub_cfg.since_block}\n'
+            f'egc:election:{sub_cfg.policy_id}:{sub_cfg.since_slot}:{sub_cfg.since_block}\n'
         )
 
     def deploy_election(
