@@ -59,12 +59,10 @@ let
             (n: [
               {
                 name = ogmiosNetworkName c.role n;
-                # value = { driver = "bridge"; }; # TODO not bridge?
                 value = { internal = true; };
               }
               {
                 name = ipfsNetworkName c.role n;
-                # value = { driver = "bridge"; }; # TODO not bridge?
                 value = { internal = true; };
               }
             ])
@@ -87,8 +85,8 @@ let
           # Restricting the IPFS net to internal only fixes my internet issues
           # for now, but will prevent testing elections over the internet
           # later...
-          # value = { driver = "bridge"; };
-          value = { internal = true; };
+          value = { driver = "bridge"; };
+          # value = { internal = true; };
 
         }
       ]
@@ -121,6 +119,8 @@ let
     service.restart = "always"; # TODO does this fix intermittent panics?
     service.volumes = [
       "${data_dir}/${nodeName role i}/ipfs:/data/ipfs"
+      "${./ipfs-init.sh}:/container-init.d/001-config.sh:ro"
+      "${./ipfs-caps.json}:/data/ipfs/libp2p-resource-limit-overrides.json:ro"
     ];
     service.networks = [
       (ipfsNetworkName role i)
@@ -136,8 +136,11 @@ let
     ];
     service.environment = {
       IPFS_IMPORT_CIDVERSION = "1";
-      IPFS_LOGGING           = "info";
+      IPFS_LOGGING           = "error";
       IPFS_TELEMETRY         = "off";
+      # TODO does this prevent hogging all internet bandwidth?
+      # Note that you it takes effect after removing the existing ipfs data.
+      # IPFS_PROFILE = "lowpower";
     };
   };
 
