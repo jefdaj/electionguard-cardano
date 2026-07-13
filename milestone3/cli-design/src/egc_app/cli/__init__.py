@@ -15,6 +15,7 @@ from egc_app.cli import phase
 from egc_app.cli import spoiled
 from egc_app.cli import tally
 from egc_app.cli import verification
+from egc_app.cli import wallet
 
 @click.group(cls=RoleAwareGroup, invoke_without_command=True)
 @click.option(
@@ -46,6 +47,7 @@ cli.add_command(phase.phase)
 cli.add_command(spoiled.spoiled)
 cli.add_command(tally.tally)
 cli.add_command(verification.verification)
+cli.add_command(wallet.wallet)
 
 if __name__ == '__main__':
     cli()

@@ -55,9 +55,15 @@ def events(filter: str|None = None):
             click.echo(event)
     asyncio.run(_run())
 
-@election.command(roles=['funder'])
+# TODO get rid of separate funder role?
+@election.command()
 def init():
-    "Create the election by minting an admin channel token."
+    """Create the election by minting an admin channel token.
+
+    Expects funds to come from a pre-funded dev wallet in .sk format.  Can be
+    run as any role. Sets 'admin' role and subscribes to the new election.
+    Clears any previous election state, except wallets.
+    """
     raise NotImplementedError
 
 @election.command(roles=['admin'])
