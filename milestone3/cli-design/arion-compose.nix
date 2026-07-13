@@ -83,7 +83,13 @@ let
         {
           # shared IPFS mesh network with bridge to internet
           name = ipfsMeshNetworkName;
-          value = { driver = "bridge"; };
+
+          # Restricting the IPFS net to internal only fixes my internet issues
+          # for now, but will prevent testing elections over the internet
+          # later...
+          # value = { driver = "bridge"; };
+          value = { internal = true; };
+
         }
       ]
     );
