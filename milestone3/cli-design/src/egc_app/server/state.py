@@ -9,6 +9,7 @@ def get_state(request: Request):
 # Fine for holding pools, clients, config, and simple mutable values.
 def setup_state(state, config):
     state.config = config
+    state.wallet = None
     reset_election_state(state)
 
 def reset_election_state(state):

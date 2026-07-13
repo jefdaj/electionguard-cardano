@@ -56,13 +56,34 @@ def events(filter: str|None = None):
     asyncio.run(_run())
 
 # TODO get rid of separate funder role?
+# TODO accept a qrcode (file or scan) as the admin addr
+# TODO accept a qrcode (file or scan) as the funder sk
 @election.command()
 def init():
     """Create the election by minting an admin channel token.
 
-    Expects funds to come from a pre-funded dev wallet in .sk format.  Can be
-    run as any role. Sets 'admin' role and subscribes to the new election.
-    Clears any previous election state, except wallets.
+    There are two ways you might want to do this:
+
+    1. If you're the funder but not the admin, run this as a one-off command,
+    passing your wallet sk + the admin wallet addr. Then you'll become an
+    observer. Example:
+
+    \b
+      egc election init --funds-from ./keys/funder.sk --admin-addr ./keys/admin.addr
+      egc election observe
+
+    2. If you're the admin and also sending funds, you should generate your
+    admin wallet first. Then you can either fund that wallet from the faucet
+    (https://docs.cardano.org/cardano-testnets/tools/faucet), or pass a
+    separate funder wallet sk here. You'll become the admin. Example:
+
+    \b
+      egc wallet create
+      egc election init --funds-from ./keys/funder.sk
+      egc channel await --role 'admin'
+
+    Either way, this command will clear any previous election state and
+    subscribe to the new election.
     """
     raise NotImplementedError
 
