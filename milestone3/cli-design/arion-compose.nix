@@ -39,7 +39,7 @@ let
   ipfsMeshNetworkName = "ipfs-mesh-net";
   cardanoNetworkName  = "cardano-net";
 
-  mkOgmiosNetworks = cfg: lib.filter
+  listOgmiosNetworks = cfg: lib.filter
                             (lib.hasSuffix "-ogmios-net")
                             (builtins.attrNames (mkNetworks cfg));
 
@@ -89,9 +89,9 @@ let
     );
 
 
-  ### containers ###
+  ### services ###
 
-  egcContainer = egc_image: role: project_name: data_dir: i: {
+  egcService = egc_image: role: project_name: data_dir: i: {
     service.image = egc_image;
     image.nixBuild = false;
     service.volumes = [
@@ -104,14 +104,14 @@ let
     # service.useHostStore = true;
     service.stop_signal = "SIGINT"; # TODO get it to shut down properly
     service.environment = 
-      let ipfsContainerName = "${project_name}-${nodeName role i}-ipfs-1";
+      let ipfsServiceName = "${project_name}-${nodeName role i}-ipfs-1";
       in {
-        IPFS_API_ADDR = "/dns4/${ipfsContainerName}/tcp/5001";
+        IPFS_API_ADDR = "/dns4/${ipfsServiceName}/tcp/5001";
         PUBLIC_RECORDS_DIR = "/data/records"; # TODO prefix with EGC_ or similar
       };
   };
 
-  ipfsContainer = role: data_dir: i: {
+  ipfsService = role: data_dir: i: {
     service.image = "ipfs/kubo:v0.42.0"; 
     service.restart = "always"; # TODO does this fix intermittent panics?
     service.volumes = [
@@ -136,10 +136,6 @@ let
     };
   };
 
-
-  ### services ###
-
-  # services.node.service = {
   cardanoService = {
     image = "ghcr.io/intersectmbo/cardano-node:11.0.1";
     command = [
@@ -154,7 +150,8 @@ let
       "${cardanoDataDir}/node-db:/data"
       "${cardanoDataDir}/node-ipc:/ipc"
     ];
-    restart = "on-failure";
+    restart = "on-failure"; # TODO remove?
+    networks = [ cardanoNetworkName ];
     # TODO how should this look in Arion?
     # logging = {
     #   driver = "json-file";
@@ -163,11 +160,9 @@ let
     #     max-file = "20";
     #   };
     # };
-    networks = [ cardanoNetworkName ];
   };
 
-  # services.ogmios.service = {
-  mkOgmiosService = networks: {
+  ogmiosService = networks: {
     image = "3a21f883f83e";
     restart = "on-failure";
     command = [
@@ -180,45 +175,47 @@ let
       "${cardanoDataDir}/node-ipc:/ipc"
     ];
     ports = [ "127.0.0.1:${toString ogmiosPort}:1337" ];
-    # networks = [ "ogmios" ];
-    # networks = [ ]; # TODO list of all <pair>-ogmios networks here
     inherit networks;
   };
 
-  egcAttrs = egc_image: role: project_name: data_dir: i: {
-    name = "${nodeName role i}-egc";
-    value = egcContainer egc_image role project_name data_dir i;
-  };
-
-  ipfsAttrs = role: data_dir: i: {
-    name = "${nodeName role i}-ipfs";
-    value = ipfsContainer role data_dir i;
-  };
-
-  # Produce (egc, ipfs) pairs for 1..nVms
-  pairAttrsList = project_name: egc_image: data_dir: role: nVms:
-    let
-      range = pkgs.lib.range 1 nVms;
-    in
-    pkgs.lib.concatMap (i: [
-      (egcAttrs egc_image role project_name data_dir i)
-      (ipfsAttrs role data_dir i)
-    ]) range;
-
   mkServices = cfg:
-    let mkService = pairAttrsList cfg.arion.project_name cfg.arion.egc_image cfg.arion.data_dir;
+    let
+
+      pairEgcAttrs = egc_image: role: project_name: data_dir: i: {
+        name = "${nodeName role i}-egc";
+        value = egcService egc_image role project_name data_dir i;
+      };
+
+      pairIpfsAttrs = role: data_dir: i: {
+        name = "${nodeName role i}-ipfs";
+        value = ipfsService role data_dir i;
+      };
+
+      # Produce (egc, ipfs) pairs for 1..nVms
+      pairAttrsList = project_name: egc_image: data_dir: role: nVms:
+        let
+          range = pkgs.lib.range 1 nVms;
+        in
+        pkgs.lib.concatMap (i: [
+          (pairEgcAttrs egc_image role project_name data_dir i)
+          (pairIpfsAttrs role data_dir i)
+        ]) range;
+
+      mkServicePairs = pairAttrsList cfg.arion.project_name cfg.arion.egc_image cfg.arion.data_dir;
+
     in {
       "shared-cardano".service = cardanoService;
-      "shared-ogmios".service = mkOgmiosService (mkOgmiosNetworks cfg);
+      "shared-ogmios".service = ogmiosService (listOgmiosNetworks cfg);
     } //
-      builtins.listToAttrs (mkService "admin"    1) //
-      builtins.listToAttrs (mkService "device"   cfg.election.devices.count) //
-      builtins.listToAttrs (mkService "guardian" cfg.election.guardians.count) //
-      builtins.listToAttrs (mkService "verifier" cfg.election.verifiers.count);
+      builtins.listToAttrs (mkServicePairs "admin"    1) //
+      builtins.listToAttrs (mkServicePairs "device"   cfg.election.devices.count) //
+      builtins.listToAttrs (mkServicePairs "guardian" cfg.election.guardians.count) //
+      builtins.listToAttrs (mkServicePairs "verifier" cfg.election.verifiers.count);
 
 
 in {
   config.project.name = electionConfig.arion.project_name;
-  config.services = mkServices electionConfig;
+  config.enableDefaultNetwork = false;
   config.networks = mkNetworks electionConfig;
+  config.services = mkServices electionConfig;
 }
