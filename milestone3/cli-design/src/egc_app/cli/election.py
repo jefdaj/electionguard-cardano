@@ -59,6 +59,8 @@ def events(filter: str|None = None):
 # TODO accept a qrcode (file or scan) as the admin addr
 # TODO accept a qrcode (file or scan) as the funder sk
 @election.command()
+@cloup.option('--funds-from', type=click.STRING, required=False)
+@cloup.option('--admin-addr', type=click.STRING, required=False)
 def init():
     """Create an election by minting an admin channel token.
 
@@ -71,7 +73,7 @@ def init():
     \b
       egc wallet load ./keys/funder.sk
       egc election init --admin-addr ./keys/admin.addr
-      egc election observe
+      egc election events
 
     2. If you're the admin and also sending funds, you should generate your
     admin wallet first. Then you can either fund that wallet from the faucet
