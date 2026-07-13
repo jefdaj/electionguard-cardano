@@ -1,7 +1,7 @@
 {
   "arion": {
     "project_name": "election",
-    "data_dir": "./data/election",
+    "data_dir": "./data",
     "egc_image": "egc-cli-design:0.1.2"
   },
   "election": {
