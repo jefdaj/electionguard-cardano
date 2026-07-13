@@ -102,12 +102,11 @@ let
       (ipfsNetworkName role i)
     ];
     # service.useHostStore = true;
-    service.stop_signal = "SIGINT"; # TODO get it to shut down properly
+    service.stop_signal = "SIGINT";
     service.environment = 
       let ipfsServiceName = "${project_name}-${nodeName role i}-ipfs-1";
       in {
-        IPFS_API_ADDR = "/dns4/${ipfsServiceName}/tcp/5001";
-        PUBLIC_RECORDS_DIR = "/data/records"; # TODO prefix with EGC_ or similar
+        IPFS_API_ADDR = "/dns4/${ipfsServiceName}/tcp/5001"; # TODO load properly
       };
   };
 
@@ -131,7 +130,7 @@ let
     ];
     service.environment = {
       IPFS_IMPORT_CIDVERSION = "1";
-      IPFS_LOGGING           = "fatal";
+      IPFS_LOGGING           = "info";
       IPFS_TELEMETRY         = "off";
     };
   };
