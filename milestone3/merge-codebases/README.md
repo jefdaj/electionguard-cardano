@@ -1,5 +1,5 @@
-Merge M1 + M2 code
-==================
+Merge codebases
+===============
 
 The M1 code runs test elections using a "mockchain", and verifies IPFS syncing.
 It runs on the older, now-outdated paradigm of electionguard-python containers.
