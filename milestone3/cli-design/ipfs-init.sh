@@ -4,29 +4,28 @@ set -eu
 # Keep DHT so content is still findable, but as client only
 ipfs config Routing.Type dhtclient
 
+# Don't be a general IPFS gateway for finding everyones' content.
+# Only serve the election data.
+ipfs config --json Gateway.NoFetch true
+
+# Announce only roots ("pinned" strategy or "roots"), and less often.
+# TODO does this matter in our case?
+ipfs config Provide.Strategy pinned
+
+# HARD caps on total connections — this is the real lever
+# Specific caps are set by bind mounting ipfs-caps.json
+ipfs config --json Swarm.ResourceMgr.Enabled true
+
 # Much tighter connection budget
-# (Claude recommended 8 and 20)
+# Note that these must be lower than the hard caps above.
 ipfs config --json Swarm.ConnMgr.LowWater 4
 ipfs config --json Swarm.ConnMgr.HighWater 8
 ipfs config Swarm.ConnMgr.GracePeriod 20s
 
-# HARD caps on total connections — this is the real lever
-# used in combination with ipfs-resource-caps.json
-# TODO tune this more carefully
-ipfs config --json Swarm.ResourceMgr.Enabled true
-
-# Reprovider = periodic DHT re-announce of ALL local blocks. Huge upload cost.
-# Announce only roots ("pinned" strategy or "roots"), and less often.
-ipfs config Provide.Strategy pinned
-
-# Should probably be below 24h to ensure content isn't dropped from DHT?
-ipfs config Provide.DHT.Interval 12h # 0 disables entirely
-# ipfs config --json Provide.Enabled false
-
 # Kill relay serving (you don't need to relay others' traffic)
-# ipfs config --json Swarm.RelayService.Enabled false
-# ipfs config --json Swarm.Transports.Network.Relay true # required for next one
-# ipfs config --json Swarm.RelayClient.Enabled true   # keep so YOU stay reachable
+ipfs config --json Swarm.RelayService.Enabled false
+ipfs config --json Swarm.Transports.Network.Relay true # required for next one
+ipfs config --json Swarm.RelayClient.Enabled true      # keep so YOU stay reachable
 
 # Reduce NAT probing chatter
 # ipfs config AutoNAT.ServiceMode disabled
@@ -43,7 +42,7 @@ ipfs config Provide.DHT.Interval 12h # 0 disables entirely
 ipfs config --json Routing.AcceleratedDHTClient false
 
 # Stop advertising a relay & stop NAT port mapping storms
-ipfs config --json Swarm.RelayService.Enabled false
+# ipfs config --json Swarm.RelayService.Enabled false
 ipfs config --json Swarm.DisableNatPortMap true
 
 # QUIC opens lots of UDP flows -> conntrack blowup on cheap routers.
