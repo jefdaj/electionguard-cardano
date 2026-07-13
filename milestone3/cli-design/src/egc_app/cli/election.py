@@ -60,16 +60,17 @@ def events(filter: str|None = None):
 # TODO accept a qrcode (file or scan) as the funder sk
 @election.command()
 def init():
-    """Create the election by minting an admin channel token.
+    """Create an election by minting an admin channel token.
 
     There are two ways you might want to do this:
 
-    1. If you're the funder but not the admin, run this as a one-off command,
-    passing your wallet sk + the admin wallet addr. Then you'll become an
-    observer. Example:
+    1. If you're the funder but not the admin, load your wallet and then run
+    this, passing a separate admin addr. You'll become an observer.
+    Example:
 
     \b
-      egc election init --funds-from ./keys/funder.sk --admin-addr ./keys/admin.addr
+      egc wallet load ./keys/funder.sk
+      egc election init --admin-addr ./keys/admin.addr
       egc election observe
 
     2. If you're the admin and also sending funds, you should generate your
@@ -79,7 +80,7 @@ def init():
 
     \b
       egc wallet create
-      egc election init --funds-from ./keys/funder.sk
+      egc election init [--funds-from ./keys/funder.sk]
       egc channel await --role 'admin'
 
     Either way, this command will clear any previous election state and
