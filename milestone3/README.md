@@ -1,9 +1,9 @@
 M3
 ==
 
-Currently working on [merging the M1 + M2 + M3 codebases](./merge-codebases)
+Currently working on [merging the M1 + M2 + M3 codebases](./merge-codebases).
 
-Other progress towards an integrated demo codebase:
+Other progress towards an integrated demo:
 
 * [Nix Packaged the reference implementation](https://github.com/jefdaj/electionguard-python)
 * [M1 mockchain tests using new Nix Docker](./egpy-upgrade-nix-docker)
