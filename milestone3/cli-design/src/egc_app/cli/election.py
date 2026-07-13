@@ -64,7 +64,7 @@ def events(filter: str|None = None):
 def init():
     """Create an election by minting an admin channel token.
 
-    There are two ways you might want to do this:
+    There are two main ways you might want to do this:
 
     1. If you're the funder but not the admin, load your wallet and then run
     this, passing a separate admin addr. You'll become an observer.
