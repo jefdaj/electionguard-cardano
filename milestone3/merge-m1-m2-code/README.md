@@ -9,3 +9,9 @@ static artifacts (no ElectionGuard running) and doesn't do much with IPFS.
 
 Since M2, I've finally Nix packaged electionguard-python. So the integrated
 codebase can hopefully be just one `egc` Docker container built with Nix.
+
+I've also designed a client/server thing: that container will have a stateful
+FastAPI server + a Click CLI that talks to the server. Both demos and tests can
+use the CLI. Hopefully later, after the demo (post fund13 in general), I can
+elaborate the server with a webui and keep the CLI for the scripting/test
+cases.
