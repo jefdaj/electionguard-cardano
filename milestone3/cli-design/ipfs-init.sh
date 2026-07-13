@@ -20,7 +20,7 @@ ipfs config --json Swarm.ResourceMgr.Enabled true
 # Note that these must be lower than the hard caps above.
 ipfs config --json Swarm.ConnMgr.LowWater 4
 ipfs config --json Swarm.ConnMgr.HighWater 8
-ipfs config Swarm.ConnMgr.GracePeriod 20s
+ipfs config Swarm.ConnMgr.GracePeriod 5s
 
 # Kill relay serving (you don't need to relay others' traffic)
 ipfs config --json Swarm.RelayService.Enabled false
@@ -43,7 +43,7 @@ ipfs config --json Routing.AcceleratedDHTClient false
 
 # Stop advertising a relay & stop NAT port mapping storms
 # ipfs config --json Swarm.RelayService.Enabled false
-ipfs config --json Swarm.DisableNatPortMap true
+# ipfs config --json Swarm.DisableNatPortMap true
 
 # QUIC opens lots of UDP flows -> conntrack blowup on cheap routers.
 # Test with TCP only to confirm that's the cause:
