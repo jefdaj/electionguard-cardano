@@ -1,7 +1,7 @@
 M3
 ==
 
-Currently working on [merging the M1 + M2 codebases](./merge-m1-m2-code)
+Currently working on [merging the M1 + M2 + M3 codebases](./merge-codebases)
 
 Other progress towards an integrated demo codebase:
 

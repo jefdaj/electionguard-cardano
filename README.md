@@ -15,7 +15,7 @@ Current status as of 2026-07-13:
 
 - [ ] [Milestone 3](./milestone3/) (ElectionGuard + Cardano integration):
 
-  * Currently working on [merging the M1 + M2 codebases](./milestone3/merge-m1-m2-code)
+  * Currently working on [merging the M1 + M2 + M3 codebases](./milestone3/merge-codebases)
   * [Designed the CLI](./milestone3/cli-design)
   * [Nix Packaged the reference implementation](https://github.com/jefdaj/electionguard-python) (finally!)
   * [M1 mockchain tests using new Nix Docker](./milestone3/egpy-upgrade-nix-docker)
