@@ -1,13 +1,14 @@
 M3
 ==
 
-Currently [designing the CLI and workflows](./cli-design).
+Currently working on [merging the M1 + M2 codebases](./merge-m1-m2-code)
 
 Other progress towards an integrated demo codebase:
 
 * [Nix Packaged the reference implementation](https://github.com/jefdaj/electionguard-python)
 * [M1 mockchain tests using new Nix Docker](./egpy-upgrade-nix-docker)
-- [Try a client/server codebase with FastAPI](./client-server-fastapi)
+* [Try a client/server codebase with FastAPI](./client-server-fastapi)
+* [Designed the CLI](./cli-design)
 
 And other misc experiments:
 
