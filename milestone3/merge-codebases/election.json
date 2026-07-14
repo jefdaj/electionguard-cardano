@@ -1,0 +1,21 @@
+{
+  "arion": {
+    "project_name": "election",
+    "data_dir": "./data",
+    "egc_image": "egc-cli-design:0.1.2"
+  },
+  "election": {
+    "guardians": {"count": 3, "quorum": 2},
+    "devices": {"count": 1},
+    "verifiers": {"count": 1}
+  },
+  "votes": [{
+    "question": "Should pineapple be banned on pizza?",
+    "answers": {
+      "Yes":    {"cast": 1, "spoil":3},
+      "No":     {"cast": 2, "spoil":2},
+      "Unsure": {"cast": 3, "spoil":1}
+    }
+  }],
+  "attacks": []
+}
