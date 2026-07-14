@@ -55,10 +55,11 @@ def events(filter: str|None = None):
             click.echo(event)
     asyncio.run(_run())
 
-# TODO get rid of separate funder role?
+# The reason this is for an observer is that you don't want to run it while
+# having an official role in another election. And you start as an observer.
 # TODO accept a qrcode (file or scan) as the admin addr
 # TODO accept a qrcode (file or scan) as the funder sk
-@election.command()
+@election.command(roles=['observer'])
 @cloup.option('--funds-from', type=click.STRING, required=False)
 @cloup.option('--admin-addr', type=click.STRING, required=False)
 def init():
