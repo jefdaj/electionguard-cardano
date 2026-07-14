@@ -7,8 +7,8 @@
     electionguard-python = {
 
       # To edit both, swap this + the pyproject.toml uv source line:
-      # url = "github:jefdaj/electionguard-python";
-      url = "path:/home/jefdaj/myrepos/electionguard-python";
+      url = "github:jefdaj/electionguard-python/nix-lib-outputs";
+      # url = "path:/home/jefdaj/myrepos/electionguard-python";
 
       inputs.nixpkgs.follows = "nixpkgs";
     };
@@ -77,7 +77,8 @@
         (pkgs.callPackage pyproject-nix.build.packages { python = myPython313; })
           .overrideScope (lib.composeManyExtensions [
             pyproject-build-systems.overlays.default
-            electionguard-python.pyprojectOverrides
+            # electionguard-python.pyprojectOverrides
+            electionguard-python.lib.overlay
             overlay
             pyprojectOverrides
           ]);
@@ -100,6 +101,9 @@
 
     in
     {
+
+      # temporary for debugging
+      inherit workspace;
 
       # This is expected by arion-pkgs.nix
       # See https://github.com/hercules-ci/arion/issues/247
