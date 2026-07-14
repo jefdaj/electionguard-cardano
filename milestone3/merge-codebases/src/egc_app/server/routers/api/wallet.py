@@ -35,11 +35,13 @@ async def wallet_show(state=Depends(get_state)):
     }
     return cfg
 
-@router.post("/clear")
+# TODO should this delete the .sk file too?
+@router.delete("")
 async def wallet_clear(state=Depends(get_state)):
     state.wallet = None
     state.config['wallet_name'] = None
 
+# TODO _sk in the name? export?
 @router.get("/save")
 async def wallet_save(state=Depends(get_state)):
     return state.wallet.to_json()

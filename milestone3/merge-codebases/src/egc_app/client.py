@@ -54,7 +54,7 @@ class Client:
         return r.json()
 
     async def wallet_clear(self):
-        r = await self._c.post('/wallet/clear')
+        r = await self._c.delete('/wallet')
         r.raise_for_status()
         return r.json()
 
