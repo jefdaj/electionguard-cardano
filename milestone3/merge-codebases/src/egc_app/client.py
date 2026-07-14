@@ -50,3 +50,8 @@ class Client:
         r = await self._c.get('/wallet')
         r.raise_for_status()
         return r.json()
+
+    async def wallet_clear(self):
+        r = await self._c.post('/wallet/clear')
+        r.raise_for_status()
+        return r.json()

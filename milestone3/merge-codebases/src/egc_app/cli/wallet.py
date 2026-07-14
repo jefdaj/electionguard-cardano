@@ -32,4 +32,4 @@ def save():
 @wallet.command()
 def clear():
     "Clear wallet, leaving files."
-    raise NotImplementedError
+    asyncio.run(Client().wallet_clear())

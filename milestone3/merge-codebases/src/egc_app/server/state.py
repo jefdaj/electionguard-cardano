@@ -10,6 +10,7 @@ def get_state(request: Request):
 def setup_state(state, config):
     state.config = config
     state.wallet = None
+    state.config['wallet_name'] = None
     reset_election_state(state)
 
 def reset_election_state(state):

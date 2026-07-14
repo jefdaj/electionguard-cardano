@@ -25,3 +25,8 @@ async def wallet_show(state=Depends(get_state)):
         'vkh' : str(state.wallet.vkh),
     }
     return cfg
+
+@router.post("/clear")
+async def wallet_clear(state=Depends(get_state)):
+    state.wallet = None
+    state.config['wallet_name'] = None
