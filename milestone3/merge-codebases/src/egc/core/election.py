@@ -71,7 +71,7 @@ class ElectionScript:
             'oneshot_utxo': oneshot_utxo.to_cbor_hex(),
             'oneshot_hex': oneshot_hex,
             'aiken_blueprint': blueprint_dict,
-            "aiken_tracing": IS_TEST,
+            "aiken_tracing": IS_TEST, # TODO hardcode True for now to avoid having to get this?
         }
         return cls.from_dict(cls_dict)
 

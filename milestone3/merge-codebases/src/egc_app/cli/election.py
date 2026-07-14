@@ -73,7 +73,7 @@ def init():
     Example:
 
     \b
-      egc wallet load ./keys/funder.sk
+      egc wallet load --sk-path ./keys/funder.sk
       egc election init --admin-addr ./keys/admin.addr
       egc election events
 
@@ -83,9 +83,9 @@ def init():
     separate funder wallet sk here. You'll become the admin. Example:
 
     \b
-      egc wallet create
+      egc wallet create --name admin
       egc election init [--funds-from ./keys/funder.sk]
-      egc channel await --role 'admin'
+      egc channel await --role admin
 
     Either way, this command will clear any previous election state and
     subscribe to the new election.

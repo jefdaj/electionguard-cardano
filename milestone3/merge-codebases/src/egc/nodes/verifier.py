@@ -2,13 +2,14 @@ import time
 from pathlib import Path
 from typing import List, Optional
 from ..core import *
+from .observer import ObserverNode
 from pycardano import *
 from dataclasses import replace
 import logging
 
 LOG = logging.getLogger(__name__)
 
-class VerifierNode(ElectionNode):
+class VerifierNode(ObserverNode):
 
     def __init__(
         self,

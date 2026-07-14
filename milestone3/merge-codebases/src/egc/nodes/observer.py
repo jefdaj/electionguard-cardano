@@ -15,28 +15,53 @@ import logging
 LOG = logging.getLogger(__name__)
 
 
-class FunderNode(ElectionNode):
-    """Node to create + fund the Admin, and to recover ADA after the election.
+# TODO where should this live?
+def election_json_path(ctx: ElectionContext) -> Path:
+	# TODO default dir?
+	timestamp = ctx.deployment.deployment_date.strftime("%y%m%d%H%M%S")
+	json_path = f'election-{timestamp}.json'
+	return json_path
+
+
+class ObserverNode(ElectionNode):
+    """This is the initial and simplest type of ElectionNode.
+
+    Besides observing an election (subscribing + streaming events), it can also:
+    1. request an official role from the admin of an existing election
+    2. create a new election, either designating an admin or becoming one
+
+    If only observing though, no need for a wallet.
     """
 
     def __init__(
         self,
 
-        # Expected usage is to create and fund the Funder wallet manually,
-        # so no need for Funder to take key_dir + key_name like the other roles.
-        wallet: Wallet,
+        # Observers don't have channels, so they don't officially have an index.
+        # But it's still useful for distinguishing state dirs during tests.
+        role_index: int,
+
+        # No election context is needed at init time; it's assumed you will
+        # create or subscribe to one separately later.
+
+        # If you pass a wallet it'll be used directly. If you pass keys_dir +
+        # key_name, a wallet will be generated based on the role_index in the
+        # default dir. If you don't pass either you won't have to bother with a
+        # wallet, until you want to request/create an official role.
+        wallet: Optional[Wallet] = None,
+        keys_dir: Optional[Path] = None,
+        key_name: Optional[Path] = None,
 
     ):
-        LOG.debug('Funder.__init__')
+        LOG.debug('Observer.__init__')
 
-        # No election here because the Funder has to exist in order to create
+        # No election here because the Observer has to exist in order to create
         # it. And with no election, the ElectionNode class won't init a
         # subscriber yet either.
         super().__init__(
-            role='funder',
-            role_index=1,
+            role='observer',
+            role_index=role_index,
             wallet=wallet,
-            election=None,
+            script=None,
         )
 
     def _build_init_tx(
@@ -51,12 +76,12 @@ class FunderNode(ElectionNode):
         no point pulling them from static_records.py.
         """
 
-        LOG.debug('Funder._build_init_tx')
+        LOG.debug('Observer._build_init_tx')
 
         ch_str = self.channel_str()
         tx_msgs = []
 
-        # Without this set, the FunderNode risks the entire dev wallet when
+        # Without this set, the ObserverNode risks the entire dev wallet when
         # deploying a contract.
         self.publisher.create_own_collateral()
         funder_collateral = self.publisher.wait_for_collateral()
@@ -89,6 +114,7 @@ class FunderNode(ElectionNode):
         admin_stt_amount = Value(admin_ada * LOVELACE_PER_ADA, assets)
         LOG.debug('admin_stt_amount: %s' % pformat(admin_stt_amount))
 
+        # TODO what needs updating here? just the comment?
         # Normally we get the addr via self.election.address,
         # but that won't exist until after init_election.
         script_addr = Address(script.policy_id, network=Network.TESTNET)
@@ -131,7 +157,7 @@ class FunderNode(ElectionNode):
     def fund_admin_collateral(
         admin_address: Address,
     ) -> Transaction:
-        """Funder sends COLLATERAL_ADA to the admin address. In practice this
+        """Observer sends COLLATERAL_ADA to the admin address. In practice this
         is usually folded into the admin STT mint tx as an extra output — keep
         this around for tests and for the case where the admin needs a fresh
         collateral mid-election."""
@@ -145,15 +171,19 @@ class FunderNode(ElectionNode):
         LOG.debug('script:\n%s\n' % pformat(script))
         return script
 
-    def _init_subscriber(self):
+    def _guard_election(self):
+        raise Exception('create or subscribe to an election first')
+
+    def _init_subscriber_from_ctx(self, ctx: ElectionContext):
         """Delayed init for subscriber because we need to know the args for `kupo --since`."""
-        LOG.debug('Funder._init_subscriber')
-        if self.election is None:
-            raise Exception('_init_subscriber should be called as part of init_election')
+        LOG.debug('Observer._init_subscriber_from_ctx')
+        # if self.election is None:
+        #     raise Exception('_init_subscriber_from_ctx should be called as part of init_election')
+        # self._guard_election()
         sub_cfg = SubscriberConfig(
-            policy_id   = self.election.script.policy_id,
-            since_slot  = self.election.deployment.index_from_slot,
-            since_block = self.election.deployment.index_from_block_hash,
+            policy_id   = ctx.script.policy_id,
+            since_slot  = ctx.deployment.index_from_slot,
+            since_block = ctx.deployment.index_from_block_hash,
         )
         self.subscriber = ElectionSubscriber(
             config      = sub_cfg,
@@ -173,7 +203,7 @@ class FunderNode(ElectionNode):
             init_txb: TransactionBuilder
         ) -> (Transaction, ElectionContext):
 
-        LOG.debug('Funder.deploy_election')
+        LOG.debug('Observer.deploy_election')
 
         tip = query_network_tip_sync()
         LOG.debug('tip before init_tx submitted: %s' % pformat(tip))
@@ -202,7 +232,7 @@ class FunderNode(ElectionNode):
             admin_ada: int = 100
         ) -> Transaction:
 
-        LOG.debug('Funder.init_election')
+        LOG.debug('Observer.init_election')
 
         (tx_msgs, init_txb) = self._build_init_tx(
             script     = script,
@@ -215,144 +245,16 @@ class FunderNode(ElectionNode):
         # TODO come up with a better default path here
         # timestamp = election_ctx.deployment.deployment_date.strftime("%y%m%d%H%M%S")
         # json_path = f'election-{timestamp}.json'
-        self.election = election_ctx
-        json_path = self.election_json_path()
-        self.election.to_json(json_path)
+        # self.election = election_ctx
+        self.script = election_ctx.script
+        json_path = election_json_path(election_ctx)
+        election.to_json(json_path)
         LOG.info(f'{self.channel_str()} deployed contract and saved details to {json_path}')
         for msg in tx_msgs:
             LOG.info(msg)
 
-        self._init_subscriber()
+        self._init_subscriber_from_ctx(election_ctx)
 
         # All the info we really need should be in self.election now;
         # the main reason to return init_tx is so the caller can wait for confirmation.
         return init_tx
-
-    def election_json_path(self) -> Optional[Path]:
-        # TODO default dir?
-        if self.election is None:
-            return None
-        timestamp = self.election.deployment.deployment_date.strftime("%y%m%d%H%M%S")
-        json_path = f'election-{timestamp}.json'
-        return json_path
-
-    def _build_burn_tx(self) -> Tuple[List[str], TransactionBuilder]:
-
-        # Without this set, the FunderNode risks the entire dev wallet when
-        # deploying a contract.
-        self.publisher.create_own_collateral()
-        funder_collateral = self.publisher.wait_for_collateral()
-
-        # Messages to log if/when the TX succeeds
-        ch_str = self.channel_str()
-        tx_msgs = []
-
-        mint_redeemer = Redeemer(data=BurnTestTokens())
-        LOG.debug(f'mint_redeemer: {mint_redeemer}')
-
-        # TODO why is this failing? seems to not get the message that STTs have been burned?
-        channel_ids = self.subscriber.current_channel_ids()
-        LOG.debug(f'channel_ids: {channel_ids}')
-
-        if len(channel_ids) == 0:
-            # shouldn't normally happen
-            LOG.debug(f'subscriber history:\n{pformat(self.subscriber._history)}')
-            msg = 'skip burn tx because no channels to burn'
-            LOG.error(msg)
-            raise RuntimeError(msg)
-
-        burn_assets = mint_channel_stt_assets(
-            self.election.script.policy_id,
-            -1,
-            channel_ids,
-        )
-        LOG.debug(f'burn_assets: {burn_assets}')
-
-        burn_txb = (
-            TransactionBuilder(OGMIOS_CTX, mint=burn_assets)
-            .add_minting_script(script=self.election.script.mint_script, redeemer=mint_redeemer)
-        )
-
-        burn_txb.collaterals.append(funder_collateral)
-
-        for channel_id in channel_ids:
-            ch_str = channel_id_to_string(channel_id)
-            utxo = self.subscriber.current_utxo(channel_id)
-            LOG.debug(f'{ch_str} STT UTXO to spend: {utxo}')
-            spend_redeemer = Redeemer(data=BurnTestTokens())
-            burn_txb = burn_txb.add_script_input(
-                utxo,
-                script=self.election.script.spend_script,
-                redeemer=spend_redeemer
-            )
-            tx_msgs.append(f'{ch_str} burned {ch_str} channel STT and recovered fee pool ADA.')
-
-        LOG.debug('burn_txb:\n%s\n' % pformat(burn_txb))
-
-        return (tx_msgs, burn_txb)
-
-    def burn_test_tokens(self):
-        """Clean up test tokens.
-
-        WARNING: The on-chain code lets anyone do this, not just the funder.
-        BurnTestTokens should be removed before production use.
-        """
-        if not IS_TEST:
-            err = 'burn_test_tokens is only for test mode'
-            LOG.error(err)
-            raise RuntimeError(err)
-        if self.election is None:
-            raise Exception('init_election must be called before burn_test_tokens')
-        if self.subscriber is None:
-            raise Exception('init_subscriber must be called before burn_test_tokens')
-        (tx_msgs, burn_txb) = self._build_burn_tx()
-        burn_tx  = self.publisher.sign_and_submit_tx(burn_txb)
-        json_path = self.election_json_path()
-        for msg in tx_msgs:
-            LOG.info(msg)
-        ch_str = self.channel_str()
-        LOG.info(f'{ch_str} burned all test tokens and recovered fee pool ADA from {json_path}')
-        return burn_tx
-
-    def recover_all_collateral(self, keys_dir: Path) -> Transaction:
-        if not IS_TEST:
-            err = 'recover_all_collateral is only for test mode'
-            LOG.error(err)
-            raise RuntimeError(err)
-        ch_str = self.channel_str()
-        errors = []
-        last_tx = None # only have to wait once
-
-        for channel_id in self.subscriber.all_channel_ids():
-
-            # Can't use the current state because the channel may be closed.
-            # But it should have either an input or output at least.
-            with self.subscriber._history_lock:
-                event = self.subscriber._history[channel_id][-1]
-                if event.output_state:
-                    state = event.output_state
-                else:
-                    state = event.input_state
-
-            try:
-                LOG.debug(f'state: {state}')
-                pub_addr   = publisher_address(state)
-                LOG.debug(f'pub_addr: {pub_addr}')
-                (sk_path, pub_wallet) = load_wallet_by_address(pub_addr, keys_dir=keys_dir)
-                LOG.debug(f'sk_path: {sk_path}')
-                LOG.debug(f'pub_wallet: {pub_wallet}')
-                tx = self.publisher.return_collateral(
-                    self.publisher.wallet.addr,
-                    from_wallet = pub_wallet,
-                )
-                if tx is not None:
-                    last_tx = tx
-                    LOG.info(f'{ch_str} recovered collateral from {sk_path}')
-                else:
-                    LOG.info(f'{ch_str} has no collateral UTXO. Already returned?')
-            except Exception as e:
-                LOG.exception(f'{ch_str} failed to recover collateral from {pub_addr}')
-                errors.append(e)
-        if errors:
-            raise ExceptionGroup('recover_all_collateral had failures', errors)
-        return last_tx

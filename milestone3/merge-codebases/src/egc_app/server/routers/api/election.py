@@ -24,14 +24,18 @@ async def start_subscriber(sub_cfg: SubscriberConfig, state=Depends(get_state)):
 
     # Reset election-specific state, leaving alone the config, wallet, etc
     reset_election_state(state)
-    # TODO defaultdict or something to avoid this
-    if not 'election' in state.config:
-        state.config['election'] = {}
+
+    # TODO defaultdict or something to avoid this?
+    state.config['election'] = {}
     state.config['election']['subscribe'] = asdict(sub_cfg)
 
     # TODO integrate on_event with fastapi logging
-    state.subscriber = ElectionSubscriber(sub_cfg, on_event=lambda e: None)
-    state.subscriber.start()
+    # state.subscriber = ElectionSubscriber(sub_cfg, on_event=lambda e: None)
+    # state.subscriber.start()
+    state.node = ObserverNode(
+        role_index = 1, # TODO pass this in
+        wallet     = state.wallet,
+    )
 
     return 201
 

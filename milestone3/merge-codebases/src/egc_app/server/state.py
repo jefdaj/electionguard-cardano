@@ -18,7 +18,8 @@ def reset_election_state(state):
     # Resets the parts of the state that depend on the current election:
     # - subscriber
     # - node (future)
-    state.subscriber = None
+    state.node = None
+    state.config['election'] = None
     state.config['role'] = 'observer'
 
     # Leaves alone the parts that should persist:
@@ -26,5 +27,7 @@ def reset_election_state(state):
     # - wallet
 
 def teardown_state(state):
-    if getattr(state, 'subscriber', None) is not None:
+    # TODO clean up
+    if getattr(state, 'node', None) is not None and \
+            getattr(state.node, 'subscriber', None) is not None:
         state.subscriber.stop()

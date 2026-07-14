@@ -56,43 +56,54 @@ class ElectionPublisher:
         self.role = role
         self.role_index = role_index
 
-        if wallet is None:
-            LOG.debug('wallet is None; create new Wallet')
-            if keys_dir is None:
-                keys_dir = DEF_KEYS_DIR
-                LOG.debug(f'keys_dir is None; default to {keys_dir}')
-            keys_dir = Path(keys_dir) # TODO ok if already a Path?
-            if key_name is None:
-                key_name = channel_id_to_string(self.channel_id())
-                LOG.debug(f'key_name is None; default to {key_name}')
-            self.wallet = Wallet(keys_dir=keys_dir, name=key_name, verbose=False)
-        else:
-            LOG.debug(f'use existing wallet {wallet}')
-            self.wallet = wallet
+        # TODO add explicit wallet creation to tests + docs
+        # if wallet is None:
+        #     LOG.debug('wallet is None; create new Wallet')
+        #     if keys_dir is None:
+        #         keys_dir = DEF_KEYS_DIR
+        #         LOG.debug(f'keys_dir is None; default to {keys_dir}')
+        #     keys_dir = Path(keys_dir) # TODO ok if already a Path?
+        #     if key_name is None:
+        #         key_name = channel_id_to_string(self.channel_id())
+        #         LOG.debug(f'key_name is None; default to {key_name}')
+        #     self.wallet = Wallet(keys_dir=keys_dir, name=key_name, verbose=False)
+        # else:
+        #     LOG.debug(f'use existing wallet {wallet}')
+        self.wallet = wallet
 
         # Lovelace per TX submitted. Useful to estimate what future elections
         # will cost, and to make sure that we aren't forgetting anything in the
         # test cleanup fns.
         self.fee_history: list[int] = []
 
-    def channel_id(self) -> ChannelId:
+    # TODO clarify: channel_id won't exist for observers, but channel_str will?
+    def channel_id(self) -> Optional[ChannelId]:
         LOG.debug('ElectionPublisher.channel_id')
-        if self.role in ['funder', 'admin']:
-            # TODO is there ever a need for the Funder's "channel_id", since there's no channel?
+        if self.role == 'observer':
+            return None
+        if self.role == 'admin':
             channel_str = self.role
         else:
             channel_str = f'{self.role}{self.role_index}'
         return coerce_channel_id(channel_str)
 
     def channel_str(self):
-        "Like channel_id, but informal for logs. Includes funder as valid."
-        try:
+        "Like channel_id, but informal for logs. Includes observer as valid."
+        if self.role == 'observer':
+            return f'{self.role}{self.role_index}'
+        else:
             return channel_id_to_string(self.channel_id())
-        except:
-            return 'funder' # TODO safer way?
+        # except:
+        #    return 'funder' # TODO safer way?
+
+    def _guard_wallet(self):
+        if self.wallet is None:
+            raise Exception('create a wallet first')
 
     def sign_and_submit_tx(self, txb: TransactionBuilder):
         LOG.debug('ElectionPublisher.sign_and_submit')
+
+        self._guard_wallet()
 
         # Check what the node actually sees
         utxos = OGMIOS_CTX.utxos(self.wallet.addr)
@@ -176,6 +187,7 @@ class ElectionPublisher:
         """Plain wallet-to-wallet ADA send. Internal helper shared by the
         collateral funding / return / sweep functions. Not for spending from
         a script address."""
+        self._guard_wallet()
         txb = TransactionBuilder(OGMIOS_CTX)
         txb.add_input_address(self.wallet.addr)
         txb.add_output(TransactionOutput(recipient, Value(lovelace)))
@@ -196,6 +208,7 @@ class ElectionPublisher:
         funding functions produce and won't collide with other holdings.
         """
         if from_wallet is None:
+            self._guard_wallet()
             wallet = self.wallet
         else:
             wallet = from_wallet
@@ -220,6 +233,7 @@ class ElectionPublisher:
         """Like find_collateral_utxo but raises if missing. Publishers call
         this when building any contract tx and pass the result as the
         collateral input."""
+        self._guard_wallet()
         utxo = self.find_collateral_utxo()
         if utxo is None:
             raise RuntimeError(
@@ -235,6 +249,7 @@ class ElectionPublisher:
         OGMIOS_TIMEOUT_SEC elapses. Used right after a funding tx to bridge
         the gap between submission and the publisher's address being
         re-indexed."""
+        self._guard_wallet()
         deadline = time.monotonic() + OGMIOS_TIMEOUT_SEC
         while True:
             utxo = self.find_collateral_utxo()
@@ -259,6 +274,7 @@ class ElectionPublisher:
         usable collateral UTXO. No-op (returns None-ish? see below) if one
         already exists — callers that want to force a new one should spend
         the existing one first."""
+        self._guard_wallet()
         ch_str = self.channel_str()
         existing = self.find_collateral_utxo()
         if existing is not None:
@@ -283,6 +299,7 @@ class ElectionPublisher:
         no collateral UTXO to return."""
         # You probably want the version in egc/core/node.py that auto-picks return_addr.
         if from_wallet is None:
+            self._guard_wallet()
             wallet = self.wallet
         else:
             wallet = from_wallet

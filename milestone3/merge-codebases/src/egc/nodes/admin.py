@@ -2,6 +2,7 @@ import time
 from pathlib import Path
 from typing import List, Optional
 from ..core import *
+from .verifier import VerifierNode
 from pycardano import *
 from dataclasses import replace
 import logging
@@ -10,15 +11,15 @@ LOG = logging.getLogger(__name__)
 
 # TODO how should this relate to the eventual Quart server? guess it's the backend/model?
 
-class AdminNode(ElectionNode):
+class AdminNode(VerifierNode):
 
     def __init__(
         self,
 
         election: ElectionContext,
 
-        # Takes a key pair rather than dir + name by default, because the
-        # VerificationKeyHash needs to be known by the Funder when creating the
+        # Takes a wallet rather than dir + name by default, because the
+        # VerificationKeyHash needs to be known by the funder when creating the
         # admin STT. We can't create the Admin itself at that point though,
         # because there's no ElectionContext yet.
         wallet: Wallet,
