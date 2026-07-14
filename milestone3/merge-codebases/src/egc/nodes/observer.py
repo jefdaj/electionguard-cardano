@@ -185,9 +185,12 @@ class ObserverNode(ElectionNode):
             since_slot  = ctx.deployment.index_from_slot,
             since_block = ctx.deployment.index_from_block_hash,
         )
+        return self.subscribe(sub_cfg)
+
+    def subscribe(self, sub_cfg: SubscriberConfig):
         self.subscriber = ElectionSubscriber(
             config      = sub_cfg,
-            on_action   = lambda x: None,
+            on_event    = lambda x: None,
             on_rollback = lambda x: None,
         )
         self.subscriber.start()

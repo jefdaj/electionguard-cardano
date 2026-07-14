@@ -36,13 +36,14 @@ async def start_subscriber(sub_cfg: SubscriberConfig, state=Depends(get_state)):
         role_index = 1, # TODO pass this in
         wallet     = state.wallet,
     )
+    state.node.subscribe(sub_cfg)
 
     return 201
 
 @router.get("/events") # TODO response model?
 async def stream_events(request: Request, state=Depends(get_state)):
 
-    if state.subscriber is None:
+    if state.node is None:
         raise HTTPException(404)
 
     # sub_cfg = state.subscriber.config
@@ -55,7 +56,7 @@ async def stream_events(request: Request, state=Depends(get_state)):
         while True:
             if await request.is_disconnected():
                 break
-            events = state.subscriber.all_election_events() # full list, grows over time
+            events = state.node.subscriber.all_election_events() # full list, grows over time
             # The data: and : (comment line) thing here is part of the SSE spec
             for event in events[sent:]:     # only the new tail
                 yield f"data: {event.to_raw()}\n\n" # double newline dispatches SSE event
