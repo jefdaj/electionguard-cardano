@@ -21,6 +21,29 @@
         "type": "github"
       }
     },
+    "electionguard-python": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "pyproject-build-systems": "pyproject-build-systems",
+        "pyproject-nix": "pyproject-nix",
+        "uv2nix": "uv2nix"
+      },
+      "locked": {
+        "lastModified": 1783446042,
+        "narHash": "sha256-inN2QYynVMXvRACKqA/S/igiP2kpY2cF3HPUCOT2HeA=",
+        "owner": "jefdaj",
+        "repo": "electionguard-python",
+        "rev": "ae764199f7b80300d44d8be7c03665313cfc823e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "jefdaj",
+        "repo": "electionguard-python",
+        "type": "github"
+      }
+    },
     "flake-parts": {
       "inputs": {
         "nixpkgs-lib": [
@@ -93,6 +116,35 @@
     "pyproject-build-systems": {
       "inputs": {
         "nixpkgs": [
+          "electionguard-python",
+          "nixpkgs"
+        ],
+        "pyproject-nix": [
+          "electionguard-python",
+          "pyproject-nix"
+        ],
+        "uv2nix": [
+          "electionguard-python",
+          "uv2nix"
+        ]
+      },
+      "locked": {
+        "lastModified": 1782093830,
+        "narHash": "sha256-6gmEVe69+KlRkZD4PEEV5xAlB9CB0Y9TiuEgQjDrKTQ=",
+        "owner": "pyproject-nix",
+        "repo": "build-system-pkgs",
+        "rev": "430680a19bc85a3bda55f12e4cc1a1aadcf2e478",
+        "type": "github"
+      },
+      "original": {
+        "owner": "pyproject-nix",
+        "repo": "build-system-pkgs",
+        "type": "github"
+      }
+    },
+    "pyproject-build-systems_2": {
+      "inputs": {
+        "nixpkgs": [
           "nixpkgs"
         ],
         "pyproject-nix": [
@@ -119,6 +171,27 @@
     "pyproject-nix": {
       "inputs": {
         "nixpkgs": [
+          "electionguard-python",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1782905613,
+        "narHash": "sha256-SvXJcAemihifkTn4BGvyE5K1FJX9bl4U8DQ5pqKvD0s=",
+        "owner": "pyproject-nix",
+        "repo": "pyproject.nix",
+        "rev": "7af23cfe91064865ecf2e835da28b45b3c6f49fd",
+        "type": "github"
+      },
+      "original": {
+        "owner": "pyproject-nix",
+        "repo": "pyproject.nix",
+        "type": "github"
+      }
+    },
+    "pyproject-nix_2": {
+      "inputs": {
+        "nixpkgs": [
           "nixpkgs"
         ]
       },
@@ -139,13 +212,39 @@
     "root": {
       "inputs": {
         "arion": "arion",
+        "electionguard-python": "electionguard-python",
         "nixpkgs": "nixpkgs_2",
-        "pyproject-build-systems": "pyproject-build-systems",
-        "pyproject-nix": "pyproject-nix",
-        "uv2nix": "uv2nix"
+        "pyproject-build-systems": "pyproject-build-systems_2",
+        "pyproject-nix": "pyproject-nix_2",
+        "uv2nix": "uv2nix_2"
       }
     },
     "uv2nix": {
+      "inputs": {
+        "nixpkgs": [
+          "electionguard-python",
+          "nixpkgs"
+        ],
+        "pyproject-nix": [
+          "electionguard-python",
+          "pyproject-nix"
+        ]
+      },
+      "locked": {
+        "lastModified": 1783307743,
+        "narHash": "sha256-oseisp2tblvzYZdojkA5URLnMjrpPiemzr5T7BdUyuU=",
+        "owner": "pyproject-nix",
+        "repo": "uv2nix",
+        "rev": "288b0a580ede39d3d7f96e3d835f9df0a7080223",
+        "type": "github"
+      },
+      "original": {
+        "owner": "pyproject-nix",
+        "repo": "uv2nix",
+        "type": "github"
+      }
+    },
+    "uv2nix_2": {
       "inputs": {
         "nixpkgs": [
           "nixpkgs"

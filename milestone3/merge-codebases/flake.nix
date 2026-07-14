@@ -3,9 +3,11 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-
     arion.url = "github:jefdaj/arion/rm-obsolete-version-attribute";
-
+    electionguard-python = {
+      url = "github:jefdaj/electionguard-python";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     pyproject-nix = {
       url = "github:pyproject-nix/pyproject.nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -21,8 +23,6 @@
       inputs.uv2nix.follows = "uv2nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
-    # TODO electionguard-python input
   };
 
   outputs = { self, nixpkgs, uv2nix, pyproject-nix, pyproject-build-systems, ... }:
