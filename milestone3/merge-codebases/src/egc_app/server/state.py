@@ -1,4 +1,5 @@
 from fastapi import Request
+from egc import *
 
 # TODO is this a reasonable state pattern?
 
@@ -14,20 +15,15 @@ def setup_state(state, config):
     reset_election_state(state)
 
 def reset_election_state(state):
-
-    # Resets the parts of the state that depend on the current election:
-    # - subscriber
-    # - node (future)
-    state.node = None
-    state.config['election'] = None
-    state.config['role'] = 'observer'
-
-    # Leaves alone the parts that should persist:
-    # - config
-    # - wallet
+    # Resets the parts of the state that depend on the current election.
+    # Should NOT reset the wallet.
+    state.node = ObserverNode(
+        role_index = 1, # TODO pass this in
+        wallet = state.wallet,
+    )
+    # state.config['election'] = None
+    # state.config['role'] = None
 
 def teardown_state(state):
-    # TODO clean up
-    if getattr(state, 'node', None) is not None and \
-            getattr(state.node, 'subscriber', None) is not None:
-        state.subscriber.stop()
+    if getattr(state, 'node', None) is not None:
+        state.node.stop()

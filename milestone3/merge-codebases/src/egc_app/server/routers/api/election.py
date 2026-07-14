@@ -26,8 +26,8 @@ async def start_subscriber(sub_cfg: SubscriberConfig, state=Depends(get_state)):
     reset_election_state(state)
 
     # TODO defaultdict or something to avoid this?
-    state.config['election'] = {}
-    state.config['election']['subscribe'] = asdict(sub_cfg)
+    # state.config['election'] = {}
+    state.config['election'] = asdict(sub_cfg)
 
     # TODO integrate on_event with fastapi logging
     # state.subscriber = ElectionSubscriber(sub_cfg, on_event=lambda e: None)

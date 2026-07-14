@@ -1,4 +1,4 @@
-from .funder   import FunderNode # TODO remove?
+# from .funder   import FunderNode # TODO remove?
 from .observer import ObserverNode
 from .verifier import VerifierNode
 from .admin    import AdminNode
