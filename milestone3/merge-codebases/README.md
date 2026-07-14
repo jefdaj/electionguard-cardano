@@ -19,11 +19,27 @@ cases.
 Dev
 ---
 
-You can pull in local work on electionguard-python, but it's a little iffy
-because you have to be careful of uv commands that might try to update
-pyproject.toml or uv.lock and get messed up by the temporary version. I haven't
-found a better way yet...
+Set up a test network:
+
+```
+nix develop
+nix build .#dockerImage
+docker load < result
+export ELECTION_JSON=$PWD/election.json
+arion up -d
+```
+
+Monitor it:
+
+```
+arion logs -f
+./watch-docker.sh
+```
+
+Test changes to electionguard-python:
 
 ```
 nix develop --override-input electionguard-python path:$HOME/myrepos/electionguard-python
 ```
+
+Be careful not to update pyproject.toml or uv.lock to include the temporary version.
