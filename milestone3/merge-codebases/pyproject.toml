@@ -26,6 +26,11 @@ dependencies = [
     "cloup>=3.1.0",
 ]
 
+[tool.uv.sources]
+# To edit both, swap this + the flake.nix input url line:
+electionguard-python = { path = "../electionguard-python", editable = True }
+# electionguard-python = { git = "https://github.com/jefdaj/electionguard-python" }
+
 [project.scripts]
 egc = "egc_app.cli:cli"
 

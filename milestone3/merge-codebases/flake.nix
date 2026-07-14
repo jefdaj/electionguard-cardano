@@ -5,7 +5,11 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     arion.url = "github:jefdaj/arion/rm-obsolete-version-attribute";
     electionguard-python = {
-      url = "github:jefdaj/electionguard-python";
+
+      # To edit both, swap this + the pyproject.toml uv source line:
+      # url = "github:jefdaj/electionguard-python";
+      url = "path:../electionnguard-python";
+
       inputs.nixpkgs.follows = "nixpkgs";
     };
     pyproject-nix = {
@@ -25,7 +29,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, uv2nix, pyproject-nix, pyproject-build-systems, ... }:
+  outputs = { self, nixpkgs, arion, electionguard-python, uv2nix, pyproject-nix, pyproject-build-systems, ... }:
     let
       inherit (nixpkgs) lib;
       system = "x86_64-linux";
@@ -70,6 +74,7 @@
         (pkgs.callPackage pyproject-nix.build.packages { python = myPython313; })
           .overrideScope (lib.composeManyExtensions [
             pyproject-build-systems.overlays.default
+            electionguard-python.pyprojectOverrides
             overlay
             pyprojectOverrides
           ]);
@@ -141,12 +146,12 @@
         in
         pkgs.mkShell {
           packages = with pkgs; [
-            arion
+            arion.packages.${system}.default
+            electionguard-python.packages.${system}.default
             jq
             uv
             venv
-            cacert # TODO really needed?
-            uv
+            # cacert # TODO remove?
           ] ++ otherDeps;
           env = {
             UV_NO_SYNC = "1";
@@ -154,9 +159,9 @@
             UV_PYTHON_DOWNLOADS = "never";
             PYTHONDONTWRITEBYTECODE = true;
 
-            # TODO are these really needed?
-            SSL_CERT_FILE     = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
-            NIX_SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+            # TODO remove?
+            # SSL_CERT_FILE     = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+            # NIX_SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
           };
           shellHook = ''
             unset PYTHONPATH
