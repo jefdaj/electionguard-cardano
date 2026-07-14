@@ -39,3 +39,7 @@ async def wallet_show(state=Depends(get_state)):
 async def wallet_clear(state=Depends(get_state)):
     state.wallet = None
     state.config['wallet_name'] = None
+
+@router.get("/save")
+async def wallet_save(state=Depends(get_state)):
+    return state.wallet.to_json()

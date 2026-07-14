@@ -1,5 +1,6 @@
 import httpx
 from dataclasses import asdict
+from pathlib import Path
 from egc import *
 
 class Client:
@@ -54,5 +55,10 @@ class Client:
 
     async def wallet_clear(self):
         r = await self._c.post('/wallet/clear')
+        r.raise_for_status()
+        return r.json()
+
+    async def wallet_save(self):
+        r = await self._c.get('/wallet/save')
         r.raise_for_status()
         return r.json()

@@ -41,4 +41,10 @@ def load(sk_path):
 @wallet.command()
 def save(sk_path):
     "Save wallet to a local .sk file."
-    raise NotImplementedError
+    sk_path = Path(sk_path)
+    sk_json = asyncio.run(Client().wallet_save())
+    if sk_path.exists():
+        raise Exception(f'sk_path exists: {sk_path}')
+    with sk_path.open('w') as f:
+        f.write(sk_json) # already json; no dump needed
+    click.echo(f"Saved wallet → {sk_path}")
