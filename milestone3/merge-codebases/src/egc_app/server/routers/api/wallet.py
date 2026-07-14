@@ -9,10 +9,19 @@ router = APIRouter(prefix="/wallet")
 # clobber existing wallet files though.
 
 @router.put("")
-async def wallet(wallet_dict: dict, state=Depends(get_state)):
+async def wallet_create(wallet_dict: dict, state=Depends(get_state)):
     name = wallet_dict['name']
     keys_dir = state.config['private_dir'] / 'keys'
     # TODO capture verbose msg here and return to cli?
     state.wallet = create_wallet(keys_dir=keys_dir, name=name, verbose=False)
     state.config['wallet_name'] = name
     return 201
+
+@router.get("")
+async def wallet_show(state=Depends(get_state)):
+    cfg = {
+        'name': state.config['wallet_name'],
+        'addr': str(state.wallet.addr),
+        'vkh' : str(state.wallet.vkh),
+    }
+    return cfg

@@ -8,8 +8,9 @@ router = APIRouter(prefix="/config")
 async def config(state=Depends(get_state)):
     cfg = deepcopy(state.config)
     # TODO move wallet_name into wallet?
-    cfg['wallet'] = {
-        'addr': str(state.wallet.addr),
-        'vkh' : str(state.wallet.vkh),
-    }
+    if state.wallet is not None:
+        cfg['wallet'] = {
+            'addr': str(state.wallet.addr),
+            'vkh' : str(state.wallet.vkh),
+        }
     return cfg

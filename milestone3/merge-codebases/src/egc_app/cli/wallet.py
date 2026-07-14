@@ -16,7 +16,8 @@ def create(name):
 @wallet.command()
 def show():
     "Show wallet, except the signing key."
-    raise NotImplementedError
+    resp = asyncio.run(Client().wallet_show())
+    click.echo(json.dumps(resp, indent=2))
 
 @wallet.command()
 def load():

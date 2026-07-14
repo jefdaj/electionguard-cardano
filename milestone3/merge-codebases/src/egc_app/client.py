@@ -45,3 +45,8 @@ class Client:
         r = await self._c.put('/wallet', json={'name': name})
         r.raise_for_status()
         return r.json() # TODO remove?
+
+    async def wallet_show(self):
+        r = await self._c.get('/wallet')
+        r.raise_for_status()
+        return r.json()
