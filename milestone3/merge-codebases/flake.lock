@@ -31,17 +31,14 @@
         "uv2nix": "uv2nix"
       },
       "locked": {
-        "lastModified": 1783446042,
-        "narHash": "sha256-inN2QYynVMXvRACKqA/S/igiP2kpY2cF3HPUCOT2HeA=",
-        "owner": "jefdaj",
-        "repo": "electionguard-python",
-        "rev": "ae764199f7b80300d44d8be7c03665313cfc823e",
-        "type": "github"
+        "lastModified": 1783991029,
+        "narHash": "sha256-GW87Y30Zv9OUxn1F6AyIgvBqE6oaM/Zz+YqbhSd6sMk=",
+        "path": "/home/jefdaj/myrepos/electionguard-python",
+        "type": "path"
       },
       "original": {
-        "owner": "jefdaj",
-        "repo": "electionguard-python",
-        "type": "github"
+        "path": "/home/jefdaj/myrepos/electionguard-python",
+        "type": "path"
       }
     },
     "flake-parts": {

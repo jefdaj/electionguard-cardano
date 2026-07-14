@@ -8,7 +8,7 @@
 
       # To edit both, swap this + the pyproject.toml uv source line:
       # url = "github:jefdaj/electionguard-python";
-      url = "path:../electionnguard-python";
+      url = "path:/home/jefdaj/myrepos/electionguard-python";
 
       inputs.nixpkgs.follows = "nixpkgs";
     };
@@ -147,7 +147,7 @@
         pkgs.mkShell {
           packages = with pkgs; [
             arion.packages.${system}.default
-            electionguard-python.packages.${system}.default
+            # electionguard-python.packages.${system}.default
             jq
             uv
             venv
