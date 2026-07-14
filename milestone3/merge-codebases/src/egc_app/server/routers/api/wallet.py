@@ -12,7 +12,7 @@ router = APIRouter(prefix="/wallet")
 @router.put("")
 async def wallet_load_or_create(wallet_dict: dict, state=Depends(get_state)):
     name = wallet_dict['name']
-    keys_dir = state.config['private_dir'] / 'keys'
+    keys_dir = state.config['node']['private_dir'] / 'keys'
     sk_path = (keys_dir / name).with_suffix('.sk')
     if sk_path.exists():
         raise Exception(f'sk_path exists: {sk_path}') # TODO better error
