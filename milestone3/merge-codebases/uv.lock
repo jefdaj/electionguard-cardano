@@ -2,9 +2,6 @@ version = 1
 revision = 3
 requires-python = "==3.13.*"
 
-[manifest]
-overrides = [{ name = "pydantic", specifier = ">=2.9.0" }]
-
 [[package]]
 name = "aiofiles"
 version = "25.1.0"
@@ -577,23 +574,20 @@ jinja2 = [
 [[package]]
 name = "electionguard"
 version = "1.4.0"
-source = { registry = "https://pypi.org/simple" }
+source = { git = "https://github.com/jefdaj/electionguard-python?branch=nix-lib-outputs#1e352785d92cea6e00b802aad07716ade3835e4e" }
 dependencies = [
     { name = "click" },
     { name = "dacite" },
     { name = "dependency-injector" },
     { name = "eel", extra = ["jinja2"] },
     { name = "gmpy2" },
+    { name = "ordered-set" },
     { name = "psutil" },
     { name = "pydantic" },
     { name = "pymongo" },
     { name = "pytest-mock" },
     { name = "python-dateutil" },
     { name = "types-python-dateutil" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/bd/bd/74e1d64b9db33ee914709289791d86c82b4d11a72c54562db29314bfeb05/electionguard-1.4.0.tar.gz", hash = "sha256:8dd7990004f1ed9477be50a3f65ecf5f7b4427bd219b847a065dd899e0abb94c", size = 668070, upload-time = "2022-10-03T17:17:47.731Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/5d/69/1081a74e3a1c8022bfbb6c3deb9b1faba6c62988d3b5735bcbdc38043b1d/electionguard-1.4.0-py3-none-any.whl", hash = "sha256:66e7d23b12e4ae4c4b3961266ed037fe0c1dd5e24861f8506bd3dcae317ce260", size = 752849, upload-time = "2022-10-03T17:17:45.969Z" },
 ]
 
 [[package]]
@@ -625,7 +619,7 @@ requires-dist = [
     { name = "click", specifier = ">=8.4.2" },
     { name = "cloup", specifier = ">=3.1.0" },
     { name = "deepdiff", specifier = ">=9.1.0" },
-    { name = "electionguard", specifier = "==1.4.0" },
+    { name = "electionguard", git = "https://github.com/jefdaj/electionguard-python?branch=nix-lib-outputs" },
     { name = "fastapi", specifier = ">=0.139.0" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "jinja2", specifier = ">=3.1.6" },
@@ -1095,6 +1089,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/9b/21/f6ef335f6e65724aa78b8d792b48d40a48c381715f1e62f5a5049e09d07e/opencv_python_headless-5.0.0.93-cp37-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:ed709fdf9aa0bd1f2ed8549e71d19449b03a675bb581eb292285f6861953be37", size = 61204038, upload-time = "2026-07-02T06:56:41.823Z" },
     { url = "https://files.pythonhosted.org/packages/d0/8f/b8756467ea991449a293797f6b3fa80fcfdd29598a0a60d1cd5715b96e61/opencv_python_headless-5.0.0.93-cp37-abi3-win32.whl", hash = "sha256:c6bcd96b185975ea240d22cfdb15a1f6d080cc95264cfbe2621f21bb144d89b9", size = 35411237, upload-time = "2026-07-02T05:50:12.901Z" },
     { url = "https://files.pythonhosted.org/packages/b8/88/763b967f7efd7226b82c9fae16d560cba049b1f0c036647e65c610fd636e/opencv_python_headless-5.0.0.93-cp37-abi3-win_amd64.whl", hash = "sha256:829717b6a95554f273e49e357cee3b3a2a26b6f4842fbc1bed2b45bdd8f87e0e", size = 43825962, upload-time = "2026-07-02T05:50:09.627Z" },
+]
+
+[[package]]
+name = "ordered-set"
+version = "4.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/4c/ca/bfac8bc689799bcca4157e0e0ced07e70ce125193fc2e166d2e685b7e2fe/ordered-set-4.1.0.tar.gz", hash = "sha256:694a8e44c87657c59292ede72891eb91d34131f6531463aab3009191c77364a8", size = 12826, upload-time = "2022-01-26T14:38:56.6Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/33/55/af02708f230eb77084a299d7b08175cff006dea4f2721074b92cdb0296c0/ordered_set-4.1.0-py3-none-any.whl", hash = "sha256:046e1132c71fcf3330438a539928932caf51ddbc582496833e23de611de14562", size = 7634, upload-time = "2022-01-26T14:38:48.677Z" },
 ]
 
 [[package]]

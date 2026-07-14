@@ -31,11 +31,11 @@
         "uv2nix": "uv2nix"
       },
       "locked": {
-        "lastModified": 1783994374,
-        "narHash": "sha256-bLdavnnsJZCCBjr6fuTllf/rH8nI1xzCFxh0N95lL5Q=",
+        "lastModified": 1783995007,
+        "narHash": "sha256-1Dp02b0liXKnOnl3FaTXuP8svRJjvrqV+536DqHoP2M=",
         "owner": "jefdaj",
         "repo": "electionguard-python",
-        "rev": "0a7ac832b0bb7c75a0f8a71c2c0f240b1b7ea3f8",
+        "rev": "1e352785d92cea6e00b802aad07716ade3835e4e",
         "type": "github"
       },
       "original": {

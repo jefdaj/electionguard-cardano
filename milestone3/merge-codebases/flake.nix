@@ -62,23 +62,27 @@
             nativeBuildInputs = (old.nativeBuildInputs or [])
               ++ final.resolveBuildSystem names;
           });
-        in {
+        in
+          (electionguard-python.lib.pyprojectOverrides final prev) # TODO is this right?
+        // {
           # tweak existing packages here, especially adding build systems:
           # TODO factor out the weird arg format
           gitignore-parser = addBuildSystem {"setuptools" = []; } prev.gitignore-parser;
           varint           = addBuildSystem {"setuptools" = []; } prev.varint;
           python-baseconv  = addBuildSystem {"setuptools" = []; } prev.python-baseconv;
-          electionguard    = prev.electionguard.overrideAttrs (old: {
-            src = electionguard-python;
-          });
         };
 
       pythonSet =
         (pkgs.callPackage pyproject-nix.build.packages { python = myPython313; })
           .overrideScope (lib.composeManyExtensions [
             pyproject-build-systems.overlays.default
-            # electionguard-python.pyprojectOverrides
+
+            # TODO why doesn't this work?
+            # electionguard-python.lib.pyprojectOverrides
+
+            # TODO is this needed?
             electionguard-python.lib.overlay
+
             overlay
             pyprojectOverrides
           ]);

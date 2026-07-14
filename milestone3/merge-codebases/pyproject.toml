@@ -27,13 +27,13 @@ dependencies = [
     "electionguard==1.4.0",
 ]
 
-[tool.uv]
-override-dependencies = ["pydantic>=2.9.0"]
+# [tool.uv]
+# override-dependencies = ["pydantic>=2.9.0"]
 
-# [tool.uv.sources]
+[tool.uv.sources]
 # To edit both, swap this + the flake.nix input url line:
 # electionguard = { path = "/home/jefdaj/myrepos/electionguard-python" }
-# electionguard = { git = "https://github.com/jefdaj/electionguard-python" }
+electionguard = { git = "https://github.com/jefdaj/electionguard-python", branch = "nix-lib-outputs" }
 
 [project.scripts]
 egc = "egc_app.cli:cli"
