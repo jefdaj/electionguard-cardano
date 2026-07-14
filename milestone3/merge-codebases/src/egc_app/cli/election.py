@@ -45,6 +45,7 @@ def qrcode(ctx):
     sub_cfg = SubscriberConfig.from_dict(election['subscribe'])
     print_qrcode(sub_cfg)
 
+# TODO error if ogmios unreachable? or separate status endpoint expected for that?
 # TODO elaborate filter to take structured queries?
 @election.command()
 @cloup.option('--filter', type=click.STRING, required=False)

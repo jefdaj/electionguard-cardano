@@ -170,7 +170,7 @@ let
     # };
   };
 
-  ogmiosService = networks: {
+  ogmiosService = perPairNetworks: {
     image = "3a21f883f83e";
     restart = "on-failure";
     command = [
@@ -183,7 +183,7 @@ let
       "${cardanoDataDir}/node-ipc:/ipc"
     ];
     ports = [ "127.0.0.1:${toString ogmiosPort}:1337" ];
-    inherit networks;
+    networks = [ cardanoNetworkName ] ++ perPairNetworks;
   };
 
   mkServices = cfg:

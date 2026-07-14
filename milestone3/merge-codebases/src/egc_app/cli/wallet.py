@@ -12,7 +12,7 @@ def create():
 
 @wallet.command()
 def show():
-    "Show wallet, except the private key."
+    "Show wallet, except the secret key."
     raise NotImplementedError
 
 @wallet.command()

@@ -1,4 +1,5 @@
-# TODO remove once these all work in flake.nix
+# This isn't needed in the final code, but I keep it around as a sort of
+# documentation for how to incrementally add Python packages to Nix.
 
 with import <nixpkgs> {};
 let
