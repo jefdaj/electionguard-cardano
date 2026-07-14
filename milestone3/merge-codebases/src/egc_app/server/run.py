@@ -1,8 +1,9 @@
 import uvicorn
 from egc_app.server.app import create_app
 from copy import deepcopy
+from pathlib import Path
 
-def run(dev_mode: bool, **uvicorn_kwargs):
+def run(dev_mode: bool, private_dir: str, **uvicorn_kwargs):
     # uvicorn's reload=True seems more trouble than it's worth...
     # if dev_mode:
         # uvicorn.run(
@@ -16,7 +17,8 @@ def run(dev_mode: bool, **uvicorn_kwargs):
     app_cfg = {}
     node_cfg = deepcopy(uvicorn_kwargs)
     node_cfg['dev_mode'] = dev_mode
-    app_cfg['node'] = node_cfg
+    app_cfg['node'] = node_cfg # TODO rename 'server'?
+    app_cfg['private_dir'] = Path(private_dir).absolute()
     app = create_app(app_cfg)
     cfg = uvicorn.Config(app, **uvicorn_kwargs)
     server = uvicorn.Server(cfg)

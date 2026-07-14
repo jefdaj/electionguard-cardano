@@ -1,18 +1,21 @@
 import click
 from egc_app.cli.utils import RoleAwareGroup
+from egc_app.client import Client
+from egc import *
 
 @click.group(cls=RoleAwareGroup)
 def wallet() -> None:
     "Basic wallet management for elections."
 
+@click.option('--name', type=click.STRING, required=True)
 @wallet.command()
-def create():
+def create(name):
     "Generate wallet."
-    raise NotImplementedError
+    asyncio.run(Client().wallet_create(name))
 
 @wallet.command()
 def show():
-    "Show wallet, except the secret key."
+    "Show wallet, except the signing key."
     raise NotImplementedError
 
 @wallet.command()

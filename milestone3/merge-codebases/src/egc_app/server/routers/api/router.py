@@ -1,7 +1,8 @@
 from fastapi import APIRouter
-from . import config, status, election
+from . import config, status, election, wallet
 
 router = APIRouter(prefix="/api")
 router.include_router(config.router)
 router.include_router(status.router)
 router.include_router(election.router)
+router.include_router(wallet.router)

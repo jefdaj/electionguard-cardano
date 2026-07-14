@@ -133,6 +133,7 @@ def load_wallet_by_address(address: Address, keys_dir=DEF_KEYS_DIR) -> Optional[
             return (sk_path, w)
     return None
 
+# TODO rename .sk -> _sk.json?
 def create_wallet(keys_dir=DEF_KEYS_DIR, name='default', verbose=True) -> Wallet:
     LOG.debug('create_wallet')
     keys_dir = Path(keys_dir)
@@ -142,7 +143,7 @@ def create_wallet(keys_dir=DEF_KEYS_DIR, name='default', verbose=True) -> Wallet
         err = f'ERROR: at least one wallet file already exists: {sk_path}, {addr_path}'
         LOG.error(err)
         raise Exception(err)
-    keys_dir.mkdir(exist_ok=True)
+    keys_dir.mkdir(parents=True, exist_ok=True)
     signing_key = PaymentSigningKey.generate()
     signing_key.save(str(sk_path))
     LOG.info(f'Generated {sk_path}')

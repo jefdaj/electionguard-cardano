@@ -14,7 +14,8 @@ def node() -> None:
 @click.option("--host", default="0.0.0.0")
 @click.option("--port", default=8000, type=int)
 @click.option("--dev-mode", is_flag=True, default=False)
-def run(host, port, dev_mode):
+@click.option("--private-dir", type=click.STRING, required=True) # TODO click.PATH?
+def run(host, port, dev_mode, private_dir):
     "Run the EGC node (API server)."
     run_server(**locals())
 
