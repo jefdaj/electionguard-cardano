@@ -68,6 +68,9 @@
           gitignore-parser = addBuildSystem {"setuptools" = []; } prev.gitignore-parser;
           varint           = addBuildSystem {"setuptools" = []; } prev.varint;
           python-baseconv  = addBuildSystem {"setuptools" = []; } prev.python-baseconv;
+          electionguard    = prev.electionguard.overrideAttrs (old: {
+            src = electionguard-python;
+          });
         };
 
       pythonSet =
