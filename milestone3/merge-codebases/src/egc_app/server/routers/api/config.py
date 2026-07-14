@@ -5,6 +5,7 @@ from dataclasses import asdict
 
 router = APIRouter(prefix="/config")
 
+# TODO is this different from egc config save?
 @router.get("")
 async def config(state=Depends(get_state)):
     cfg = deepcopy(state.config)

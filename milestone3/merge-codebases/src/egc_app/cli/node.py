@@ -20,11 +20,11 @@ def run(host, port, dev_mode, private_dir):
     run_server(**locals())
 
 # TODO pick: egc node config (here)? or egc config node?
-@node.command()
-def config():
-    "Get the current node config."
-    resp = asyncio.run(Client().config())
-    click.echo(json.dumps(resp, indent=2))
+# @node.command()
+# def config():
+#     "Get the current node config."
+#     resp = asyncio.run(Client().config())
+#     click.echo(json.dumps(resp, indent=2))
 
 @node.command()
 def status():
