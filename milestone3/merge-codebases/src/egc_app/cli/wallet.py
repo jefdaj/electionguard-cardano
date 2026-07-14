@@ -1,4 +1,5 @@
 import click
+import json
 from egc_app.cli.utils import RoleAwareGroup
 from egc_app.client import Client
 from egc import *
@@ -11,7 +12,7 @@ def wallet() -> None:
 @wallet.command()
 def create(name):
     "Generate wallet."
-    asyncio.run(Client().wallet_create(name))
+    asyncio.run(Client().wallet_load_or_create(name, sk_dict=None))
 
 @wallet.command()
 def show():
@@ -20,16 +21,24 @@ def show():
     click.echo(json.dumps(resp, indent=2))
 
 @wallet.command()
-def load():
-    "Load wallet from (.sk, .addr) files."
-    raise NotImplementedError
-
-@wallet.command()
-def save():
-    "Save wallet to (.sk, .addr) files."
-    raise NotImplementedError
-
-@wallet.command()
 def clear():
     "Clear wallet, leaving files."
     asyncio.run(Client().wallet_clear())
+
+@click.option('--sk-path', type=click.STRING, required=True)
+@wallet.command()
+def load(sk_path):
+    "Load wallet from a local .sk file."
+    sk_path = Path(sk_path).absolute()
+    with sk_path.open('r') as f:
+        sk_dict = json.load(f)
+    asyncio.run(Client().wallet_load_or_create(
+        name    = sk_path.stem,
+        sk_dict = sk_dict
+    ))
+
+@click.option('--sk-path', type=click.STRING, required=True)
+@wallet.command()
+def save(sk_path):
+    "Save wallet to a local .sk file."
+    raise NotImplementedError

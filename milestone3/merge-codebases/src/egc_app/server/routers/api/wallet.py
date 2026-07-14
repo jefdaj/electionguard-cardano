@@ -1,3 +1,4 @@
+import json
 from fastapi import APIRouter, Depends
 from egc_app.server.state import get_state
 from egc import *
@@ -9,11 +10,19 @@ router = APIRouter(prefix="/wallet")
 # clobber existing wallet files though.
 
 @router.put("")
-async def wallet_create(wallet_dict: dict, state=Depends(get_state)):
+async def wallet_load_or_create(wallet_dict: dict, state=Depends(get_state)):
     name = wallet_dict['name']
     keys_dir = state.config['private_dir'] / 'keys'
-    # TODO capture verbose msg here and return to cli?
-    state.wallet = create_wallet(keys_dir=keys_dir, name=name, verbose=False)
+    sk_path = (keys_dir / name).with_suffix('.sk')
+    if sk_path.exists():
+        raise Exception(f'sk_path exists: {sk_path}') # TODO better error
+    sk_dict = wallet_dict['sk_dict']
+    if sk_dict is None:
+        # TODO capture verbose msg here and return to cli?
+        state.wallet = create_wallet(keys_dir=keys_dir, name=name, verbose=False)
+    else:
+        state.wallet = Wallet.from_json(json.dumps(sk_dict))
+        state.wallet.save(sk_path)
     state.config['wallet_name'] = name
     return 201
 

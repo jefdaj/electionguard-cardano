@@ -41,8 +41,9 @@ class Client:
                      if event.event_type == 'end election':
                          return
 
-    async def wallet_create(self, name: str):
-        r = await self._c.put('/wallet', json={'name': name})
+    async def wallet_load_or_create(self, name: str, sk_dict: dict | None = None):
+        "Load a wallet from sk_dict, or create one if empty."
+        r = await self._c.put('/wallet', json={'name': name, 'sk_dict': sk_dict})
         r.raise_for_status()
         return r.json() # TODO remove?
 
