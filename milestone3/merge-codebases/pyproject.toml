@@ -1,7 +1,7 @@
 [project]
-name = "egc-cli-design"
-version = "0.1.2"
-description = "ElectionGuard+Cardano CLI Design"
+name = "electionguard-cardano"
+version = "0.2.0"
+description = "End-to-end verifiable blockchain elections."
 authors = [{ name = "jefdaj", email = "1198065+jefdaj@users.noreply.github.com" }]
 requires-python = ">=3.13,<3.14"
 readme = "README.md"

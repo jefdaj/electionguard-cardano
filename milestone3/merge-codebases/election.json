@@ -2,7 +2,7 @@
   "arion": {
     "project_name": "election",
     "data_dir": "./data",
-    "egc_image": "egc-cli-design:0.1.2"
+    "egc_image": "electionguard-cardano:0.2.0"
   },
   "election": {
     "guardians": {"count": 3, "quorum": 2},

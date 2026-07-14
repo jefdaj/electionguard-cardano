@@ -74,7 +74,7 @@
             pyprojectOverrides
           ]);
 
-      pythonEnv = pythonSet.mkVirtualEnv "egc-cli-design-env" workspace.deps.default;
+      pythonEnv = pythonSet.mkVirtualEnv "electionguard-cardano" workspace.deps.default;
 
       kupo = pkgs.callPackage ./nix/kupo.nix {};
       otherDeps = [
@@ -105,8 +105,8 @@
 
         # TODO also needs cacert?
         dockerImage = pkgs.dockerTools.buildLayeredImage {
-          name = "egc-cli-design";
-          tag = "0.1.2";
+          name = "electionguard-cardano";
+          tag = "0.2.0";
           contents = [
             pythonEnv
             pkgs.coreutils
@@ -137,7 +137,7 @@
         let
           editableOverlay = workspace.mkEditablePyprojectOverlay { root = "$PWD"; };
           editablePythonSet = pythonSet.overrideScope editableOverlay;
-          venv = editablePythonSet.mkVirtualEnv "egc-cli-design-env" workspace.deps.all;
+          venv = editablePythonSet.mkVirtualEnv "electionguard-cardano" workspace.deps.all;
         in
         pkgs.mkShell {
           packages = with pkgs; [
