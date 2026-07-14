@@ -6,9 +6,14 @@
     arion.url = "github:jefdaj/arion/rm-obsolete-version-attribute";
     electionguard-python = {
 
-      # To edit both, swap this + the pyproject.toml uv source line:
-      url = "github:jefdaj/electionguard-python/nix-lib-outputs";
-      # url = "path:/home/jefdaj/myrepos/electionguard-python";
+      # To edit both packages together:
+      # 1. change this url to "path:/path/to/your/repo"
+      # 2. change the pyproject.toml uv source line to match
+      # 3. nix flake update electionguard-python
+      # 4. nix develop
+      # 5. uv lock
+      # url = "github:jefdaj/electionguard-python/nix-lib-outputs";
+      url = "path:/home/jefdaj/myrepos/electionguard-python";
 
       inputs.nixpkgs.follows = "nixpkgs";
     };
