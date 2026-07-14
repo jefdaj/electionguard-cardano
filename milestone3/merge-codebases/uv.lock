@@ -574,7 +574,7 @@ jinja2 = [
 [[package]]
 name = "electionguard"
 version = "1.4.0"
-source = { directory = "/home/jefdaj/myrepos/electionguard-python" }
+source = { git = "https://github.com/jefdaj/electionguard-python?branch=nix-lib-outputs#383720e4b1e158626c46b9bc8afec35e15efb4e8" }
 dependencies = [
     { name = "click" },
     { name = "dacite" },
@@ -588,45 +588,6 @@ dependencies = [
     { name = "pytest-mock" },
     { name = "python-dateutil" },
     { name = "types-python-dateutil" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "click", specifier = ">=8.1.0,<9.0.0" },
-    { name = "dacite", specifier = ">=1.6.0,<2.0.0" },
-    { name = "dependency-injector", specifier = ">=4.39.1,<5.0.0" },
-    { name = "eel", extras = ["jinja2"], specifier = ">=0.14.0,<1.0.0" },
-    { name = "gmpy2", specifier = ">=2.0.8,<3.0.0" },
-    { name = "ordered-set", specifier = ">=4.1.0,<5.0.0" },
-    { name = "psutil", specifier = ">=5.7.2" },
-    { name = "pydantic", specifier = "==2.13.0" },
-    { name = "pymongo", specifier = ">=4.1.1,<5.0.0" },
-    { name = "pytest-mock", specifier = ">=3.8.2,<4.0.0" },
-    { name = "python-dateutil", specifier = ">=2.8.2,<3.0.0" },
-    { name = "types-python-dateutil", specifier = ">=2.8.14,<3.0.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "atomicwrites" },
-    { name = "black", specifier = "==25.11.0" },
-    { name = "coverage" },
-    { name = "docutils" },
-    { name = "hypothesis", specifier = ">=5.15.1" },
-    { name = "ipykernel", specifier = ">=6.4.1,<7" },
-    { name = "ipython", specifier = ">=7.31.1,<8" },
-    { name = "jeepney" },
-    { name = "jupyter-black", specifier = ">=0.3.1,<0.4" },
-    { name = "mkdocs", specifier = ">=1.6.1,<2" },
-    { name = "mkdocs-jupyter", specifier = ">=0.26.2,<0.27" },
-    { name = "mkinit", specifier = ">=0.3.3,<0.4" },
-    { name = "mypy", specifier = "==1.19.1" },
-    { name = "pydeps" },
-    { name = "pylint" },
-    { name = "pytest" },
-    { name = "secretstorage" },
-    { name = "twine" },
-    { name = "typish" },
 ]
 
 [[package]]
@@ -658,7 +619,7 @@ requires-dist = [
     { name = "click", specifier = ">=8.4.2" },
     { name = "cloup", specifier = ">=3.1.0" },
     { name = "deepdiff", specifier = ">=9.1.0" },
-    { name = "electionguard", directory = "/home/jefdaj/myrepos/electionguard-python" },
+    { name = "electionguard", git = "https://github.com/jefdaj/electionguard-python?branch=nix-lib-outputs" },
     { name = "fastapi", specifier = ">=0.139.0" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "jinja2", specifier = ">=3.1.6" },

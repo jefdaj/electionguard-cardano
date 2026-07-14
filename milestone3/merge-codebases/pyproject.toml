@@ -28,10 +28,7 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-
-# See the flake input comment about editing both packages together
-electionguard = { path = "/home/jefdaj/myrepos/electionguard-python" }
-# electionguard = { git = "https://github.com/jefdaj/electionguard-python", branch = "nix-lib-outputs" }
+electionguard = { git = "https://github.com/jefdaj/electionguard-python", branch = "nix-lib-outputs" }
 
 [project.scripts]
 egc = "egc_app.cli:cli"
