@@ -223,12 +223,12 @@ Direction = Literal["in", "out"]
 Medium = Literal["qr", "qr-image", "json"]
 
 @dataclass
-class Endpoint:
+class PayloadIO:
     direction: Direction
     medium: Medium
     path: Path | None = None
 
-def resolve_endpoint(direction: Direction, **params) -> Endpoint:
+def resolve_payload(direction: Direction, **params) -> PayloadIO:
     prefix = f"{direction}_"
     # collect only this direction's medium params
     chosen = {
@@ -240,7 +240,7 @@ def resolve_endpoint(direction: Direction, **params) -> Endpoint:
         raise click.UsageError("Exactly one data source/destination required.")
     medium, value = next(iter(chosen.items()))
     path = None if medium == "qr" else Path(value)
-    return Endpoint(direction, medium, path)
+    return PayloadIO(direction, medium, path)
 
 
 def payload_io(*mediums, direction=None, required=True):
@@ -290,20 +290,20 @@ def payload_io(*mediums, direction=None, required=True):
     return decorator
 
 
-def read_endpoint(ep: Endpoint) -> bytes:
-    match ep.medium:
+def read_payload(pio: PayloadIO) -> bytes:
+    match pio.medium:
         case "qr":       return scan_qr_camera()
-        case "qr-image": return decode_qr_image(ep.path)
-        case "json":     return ep.path.read_bytes()
+        case "qr-image": return decode_qr_image(pio.path)
+        case "json":     return pio.path.read_bytes()
 
-def write_endpoint(ep: Endpoint, data: bytes) -> None:
-    match ep.medium:
+def write_payload(pio: PayloadIO, data: bytes) -> None:
+    match pio.medium:
         case "qr":       show_qr_screen(data)
-        case "qr-image": encode_qr_image(data, ep.path)
-        case "json":     ep.path.write_bytes(data)
+        case "qr-image": encode_qr_image(data, pio.path)
+        case "json":     pio.path.write_bytes(data)
 
-def run_endpoint(ep: Endpoint, data: bytes | None = None):
-    return read_endpoint(ep) if ep.direction == "in" else write_endpoint(ep, data)
+# def run_payload(pio: PayloadIO, data: bytes | None = None):
+#     return read_payload(pio) if pio.direction == "in" else write_payload(pio, data)
 
 # TODO remove? or is it useful?
 def io_command(direction, *mediums, **cmd_kw):
@@ -313,8 +313,8 @@ def io_command(direction, *mediums, **cmd_kw):
         @payload_io(*mediums, direction=direction)
         @functools.wraps(fn)
         def wrapper(**params):
-            ep = resolve_endpoint(direction, **params)
-            return fn(ep, **{k: v for k, v in params.items()
+            pio = resolve_payload(direction, **params)
+            return fn(pio, **{k: v for k, v in params.items()
                              if not k.startswith(f"{direction}_")})
         return wrapper
     return decorator
@@ -322,9 +322,9 @@ def io_command(direction, *mediums, **cmd_kw):
 # usage examples:
 
 # @io_command("out", "qr", "qr-image", "json")
-# def request(ep: Endpoint):
-#     write_endpoint(ep, build_role_request(...))
+# def request(pio: PayloadIO):
+#     write_payload(pio, build_role_request(...))
 
 # @io_command("in", "qr-image", "json")
-# def subscription(ep: Endpoint):
-#     store_subscription(parse_subscription(read_endpoint(ep)))
+# def subscription(pio: PayloadIO):
+#     store_subscription(parse_subscription(read_payload(pio)))
