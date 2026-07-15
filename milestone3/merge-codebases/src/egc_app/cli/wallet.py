@@ -64,12 +64,14 @@ def save(wallet: MultiIOArg):
     # print(f'pio_args: {pio_args}')
     # pio = resolve_payload("out", **pio_args) # TODO direction?
     print(f'wallet: {wallet}')
-    return # TODO finish
+    # return # TODO finish
     # sk_path = Path(sk_path)
     sk_json = asyncio.run(Client().wallet_save())
+    w = Wallet.from_json(sk_json)
+    print(f'w: {w}')
     # if sk_path.exists():
     #     raise Exception(f'sk_path exists: {sk_path}')
     # with sk_path.open('w') as f:
     #     f.write(sk_json) # already json; no dump needed
     # click.echo(f"Saved wallet → {sk_path}")
-    write_payload(pio, sk_json, exist_ok=False)
+    multi_save(wallet, w, exist_ok=False)

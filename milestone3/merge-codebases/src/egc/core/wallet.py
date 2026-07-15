@@ -11,6 +11,8 @@ When EGC_MODE=test, it will:
 
 from __future__ import annotations
 
+import json
+import qrcode
 from pathlib import Path
 from typing import Optional, Self, Tuple
 from dataclasses import dataclass
@@ -71,6 +73,42 @@ class Wallet:
     @classmethod
     def from_json(cls, data: str) -> Self:
         return cls.from_signing_key(SigningKey.from_json(data))
+
+    @classmethod
+    def from_qr_str(cls, txt: str) -> Self:
+        # expected format: "egc:wallet:<name>:<cborhex>" maybe with wrapping
+        txt = ''.join(l.strip() for l in txt.splitlines())
+        words = txt.split(':')
+        prefix = words[:2]
+        args   = words[2:]
+        assert prefix == ['egc', 'wallet', type_]
+        assert len(args) == 1
+        # TODO add name to this class too?
+        # name, cbor_hex = args
+        type_, cbor_hex = args[0]
+        sk_dict = {
+              "type": type_,
+              "description": type_,
+              "cborHex": cbor_hex,
+        }
+        return cls.from_json(sk_dict)
+
+    # TODO save with name to prevent mix-ups?
+    def to_qrcode(self) -> qrcode.QRCode:
+        # TODO also prefix with qrcode: ?
+        sk_dict = json.loads(self.sk.to_json())
+        print(f'sk_dict: {sk_dict}')
+        qr_txt = ':'.join((
+            'egc', 'wallet',
+            sk_dict['type'],
+            # name,
+            sk_dict['cborHex'],
+        ))
+        print(f'qr_txt: {qr_txt}')
+        qr = qrcode.QRCode()
+        qr.add_data(qr_txt)
+        # qr.make()
+        return qr
 
     @classmethod
     def from_sk_path(cls, sk_path: Path) -> Self:

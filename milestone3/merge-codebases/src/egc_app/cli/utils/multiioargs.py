@@ -70,15 +70,24 @@ def _add_options(f, name, mediums, direction, required):
 
 def build_multi_arg(name, direction, params) -> MultiIOArg:
     """Pop this group's params out of `params` (mutates) and build a MultiIOArg."""
+    # TODO proper logging here
+    print(f'name: {name}')
+    print(f'direction: {direction}')
+    print(f'params: {params}')
     prefix = f"{name}_"
     chosen = {}
     for k in [k for k in params if k.startswith(prefix)]:
         v = params.pop(k)
         if v:
             chosen[k[len(prefix):].replace("_", "-")] = v
+    print(f'chosen: {chosen}')
     if len(chosen) != 1:
         raise click.UsageError(f"Exactly one {name} {direction}-source required.")
     medium, value = next(iter(chosen.items()))
+    medium = "qr" if ("show" in medium or "scan" in medium) else \
+                     ("json" if "json" in medium else "qr-image")
+    print(f'medium: {medium}')
+    print(f'value: {value}')
     path = None if medium == "qr" else Path(value)
     return MultiIOArg(name, direction, medium, path)
 
@@ -87,25 +96,26 @@ def build_multi_arg(name, direction, params) -> MultiIOArg:
 
 # This could be part of the interface, but can normally be automated via
 # multi_load_arg below.
-def _multi_read(fio: MultiIOArg, decode_cls=None):
-    match fio.medium:
+def _multi_read(mio: MultiIOArg, decode_cls=None):
+    match mio.medium:
         case "qr":       return scan_qrcode(decode_cls=decode_cls)
-        case "qr-image": return decode_qr_image(fio.path)  # TODO -> decode_cls?
+        case "qr-image": return decode_qr_image(mio.path)  # TODO -> decode_cls?
         case "json":
-            with fio.path.open("r") as f:
+            with mio.path.open("r") as f:
                 return decode_cls.from_json(_json.load(f))
 
 
 # This can't be automated the same way, so it becomes par of the interface.
 # Use inside a command after multi_save_arg has built the MultiIOArg.
-def multi_save(fio: MultiIOArg, obj: Any, exist_ok=True) -> None:
-    if fio.path is not None and fio.path.exists() and not exist_ok:
-        raise click.UsageError(f"path already exists: {fio.path}")
-    match fio.medium:
+def multi_save(mio: MultiIOArg, obj: Any, exist_ok=True) -> None:
+    print(f'mio: {mio}')
+    if mio.path is not None and mio.path.exists() and not exist_ok:
+        raise click.UsageError(f"path already exists: {mio.path}")
+    match mio.medium:
         case "qr":       print_qrcode(obj)
-        case "qr-image": save_qrcode(obj, fio.path)
+        case "qr-image": save_qrcode(obj, mio.path)
         case "json":
-            with fio.path.open("w") as f:
+            with mio.path.open("w") as f:
                 _json.dump(obj, f)
 
 
