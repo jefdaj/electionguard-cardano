@@ -27,18 +27,22 @@ def clear():
 
 # @click.option('--sk-path', type=click.STRING, required=True)
 @wallet.command()
-@payload_io("qr", "qr-image", "json", direction="in")
-def load(**pio_args):
+@payload_load("wallet", Wallet, ["qr", "qr-image", "json"])
+def load(wallet: Wallet):
     """Load wallet.
 
     Note that .sk files can be loaded with the JSON option.
     """
-    pio = resolve_payload("in", **pio_args)
-    print(f'pio: {pio}')
-    return # TODO finish
-    sk_path = Path(sk_path).absolute()
-    with sk_path.open('r') as f:
-        sk_dict = json.load(f)
+    # pio = resolve_payload("in", **pio_args)
+    # print(f'pio: {pio}')
+    # return # TODO finish
+    # sk_path = Path(sk_path).absolute()
+    # with sk_path.open('r') as f:
+    #     sk_dict = json.load(f)
+    
+    print(f'wallet: {wallet}')
+    sk_dict = wallet.to_json()
+    print(f'sk_dict from wallet: {sk_dict}')
     asyncio.run(Client().wallet_load_or_create(
         name    = sk_path.stem,
         sk_dict = sk_dict
@@ -46,16 +50,16 @@ def load(**pio_args):
 
 # @click.option('--sk-path', type=click.STRING, required=True)
 @wallet.command()
-@payload_io("qr", "qr-image", "json", direction="out")
-def save(**pio_args):
+@payload_save_arg("wallet", ["qr", "qr-image", "json"])
+def save(wallet: PayloadIO):
     """Save wallet, INCLUDING THE SIGNING KEY.
 
     Note that .sk files can be saved with the JSON option.
     """
-    print(f'pio_args: {pio_args}')
-    pio = resolve_payload("out", **pio_args) # TODO direction?
-    print(f'pio: {pio}')
-    # return # TODO finish
+    # print(f'pio_args: {pio_args}')
+    # pio = resolve_payload("out", **pio_args) # TODO direction?
+    print(f'wallet: {wallet}')
+    return # TODO finish
     # sk_path = Path(sk_path)
     sk_json = asyncio.run(Client().wallet_save())
     # if sk_path.exists():

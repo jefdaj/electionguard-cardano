@@ -218,126 +218,117 @@ def role_group(first=None, /, *grp_args, **grp_kwargs):
 
 ### IO decorators ###
 
-# TODO better name than "endpoint"?
+import functools
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Literal
+import json as _json
+
+import click
+import cloup
+from cloup.constraints import mutually_exclusive, require_one
 
 Direction = Literal["in", "out"]
 Medium = Literal["qr", "qr-image", "json"]
 
+
 @dataclass
 class PayloadIO:
+    name: str
     direction: Direction
     medium: Medium
     path: Path | None = None
 
-def resolve_payload(direction: Direction, **params) -> PayloadIO:
-    prefix = f"{direction}_"
-    # collect only this direction's medium params
-    chosen = {
-        k[len(prefix):].replace("_", "-"): v
-        for k, v in params.items()
-        if k.startswith(prefix) and v
-    }
-    if len(chosen) != 1:
-        raise click.UsageError("Exactly one data source/destination required.")
-    medium, value = next(iter(chosen.items()))
-    path = None if medium == "qr" else Path(value)
-    return PayloadIO(direction, medium, path)
 
+# ---- option construction -------------------------------------------------
 
-def payload_io(*mediums, direction=None, required=True):
-    """Attach QR/JSON source-or-destination options as a constrained group.
-
-    mediums:   any of "qr", "qr-image", "json".
-    direction: None | "in" | "out". When set, flags are prefixed
-               (e.g. --out-qr) and help verbs reflect the direction.
-    required:  True  -> require_one (exactly one medium must be given)
-               False -> mutually_exclusive (at most one)
-    """
-    prefix = f"{direction}-" if direction else ""
-    verb = {"in": "Read", "out": "Write"}.get(direction, "Read/write")
-
-    group = cloup.OptionGroup(
-        "Data source / destination",
-        constraint=(require_one if required else mutually_exclusive),
+def _make_group(name, direction, required):
+    title = f"{name}: source" if direction == "in" else f"{name}: destination"
+    return cloup.OptionGroup(
+        title, constraint=require_one if required else mutually_exclusive
     )
 
-    def _qr():
-        return group.option(
+
+def _add_options(f, name, mediums, direction, required):
+    prefix = f"{name}-"
+    verb = {"in": "Read", "out": "Write"}[direction]
+    group = _make_group(name, direction, required)
+
+    factories = {
+        "qr": lambda: group.option(
             f"--{prefix}qr", is_flag=True,
-            help=f"{verb} a QR code via the camera / screen.",
-        )
-
-    def _qr_image():
-        return group.option(
+            help=f"{verb} a QR code via the camera / screen."),
+        "qr-image": lambda: group.option(
             f"--{prefix}qr-image", type=click.Path(), metavar="PATH",
-            help=f"{verb} a QR code as an image file.",
-        )
-
-    # simpler: let Click derive the dest normally
-    def _json():
-        return group.option(
+            help=f"{verb} a QR code as an image file."),
+        "json": lambda: group.option(
             f"--{prefix}json", type=click.Path(), metavar="PATH",
-            help=f"{verb} data as a JSON file.",
-        )
-
-    factories = {"qr": _qr, "qr-image": _qr_image, "json": _json}
+            help=f"{verb} data as a JSON file."),
+    }
     opts = [factories[m]() for m in mediums]
-
-    def decorator(f):
-        for opt in reversed(opts): # reverse -> declaration order in --help
-            f = opt(f)
-        return f
-
-    return decorator
+    for opt in reversed(opts):           # reverse -> declaration order in --help
+        f = opt(f)
+    return f
 
 
-# TODO type?
+def resolve_payload(name, direction, params) -> PayloadIO:
+    """Pop this group's params out of `params` (mutates) and build a PayloadIO."""
+    prefix = f"{name}_"
+    chosen = {}
+    for k in [k for k in params if k.startswith(prefix)]:
+        v = params.pop(k)
+        if v:
+            chosen[k[len(prefix):].replace("_", "-")] = v
+    if len(chosen) != 1:
+        raise click.UsageError(f"Exactly one {name} {direction}-source required.")
+    medium, value = next(iter(chosen.items()))
+    path = None if medium == "qr" else Path(value)
+    return PayloadIO(name, direction, medium, path)
+
+
+# ---- read / write --------------------------------------------------------
+
 def read_payload(pio: PayloadIO, decode_cls=None):
     match pio.medium:
         case "qr":       return scan_qrcode(decode_cls=decode_cls)
-        case "qr-image": return decode_qr_image(pio.path) # TODO write this
-        # case "json":     return pio.path.read_bytes() # TODO json.load?
+        case "qr-image": return decode_qr_image(pio.path)  # TODO -> decode_cls?
         case "json":
-            with pio.path.open('r') as f:
-                json_dict = _json.load(f)
-                # TODO text here?
-                return decode_cls.from_json(json_dict)
+            with pio.path.open("r") as f:
+                return decode_cls.from_json(_json.load(f))
 
 
-# TODO type?
 def write_payload(pio: PayloadIO, obj: Any, exist_ok=True) -> None:
     if pio.path is not None and pio.path.exists() and not exist_ok:
-        raise Exception(f'path already exists: {str(pio.path)}')
+        raise click.UsageError(f"path already exists: {pio.path}")
     match pio.medium:
         case "qr":       print_qrcode(obj)
         case "qr-image": save_qrcode(obj, pio.path)
         case "json":
-            with pio.path.open('w') as f:
+            with pio.path.open("w") as f:
                 _json.dump(obj, f)
 
-# def run_payload(pio: PayloadIO, data: bytes | None = None):
-#     return read_payload(pio) if pio.direction == "in" else write_payload(pio, data)
 
-# TODO remove? or is it useful?
-def io_command(direction, *mediums, **cmd_kw):
-    """Decorator: cloup command + payload_io + auto-resolved endpoint."""
+# ---- public decorators ---------------------------------------------------
+
+def payload_load(name, decode_cls, mediums, *, required=True):
+    """`in` direction: gather args, read + parse to `decode_cls`, inject as `name`."""
     def decorator(fn):
-        @cloup.command(**cmd_kw)
-        @payload_io(*mediums, direction=direction)
         @functools.wraps(fn)
         def wrapper(**params):
-            pio = resolve_payload(direction, **params)
-            return fn(pio, **{k: v for k, v in params.items()
-                             if not k.startswith(f"{direction}_")})
-        return wrapper
+            pio = resolve_payload(name, "in", params)      # pops name_* keys
+            params[name] = read_payload(pio, decode_cls=decode_cls)
+            return fn(**params)
+        return _add_options(wrapper, name, mediums, "in", required)
     return decorator
 
-# usage examples:
 
-# @io_command("out", "qr", "qr-image", "json")
-# def request(pio: PayloadIO):
-#     write_payload(pio, build_role_request(...))
+def payload_save_arg(name, mediums, *, required=True):
+    """`out` direction: gather args into a PayloadIO, inject as `name`."""
+    def decorator(fn):
+        @functools.wraps(fn)
+        def wrapper(**params):
+            params[name] = resolve_payload(name, "out", params)
+            return fn(**params)
+        return _add_options(wrapper, name, mediums, "out", required)
+    return decorator
 
-# @io_command("in", "qr-image", "json")
-# def subscription(pio: PayloadIO):
-#     store_subscription(parse_subscription(read_payload(pio)))
