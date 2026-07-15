@@ -12,14 +12,14 @@ router = APIRouter(prefix="/wallet")
 @router.put("")
 async def wallet_load_or_create(wallet_dict: dict, state=Depends(get_state)):
     name = wallet_dict['name']
-    keys_dir = state.config['node']['private_dir'] / 'keys'
-    sk_path = (keys_dir / name).with_suffix('.sk')
+    wallets_dir = state.config['node']['private_dir'] / 'wallets'
+    sk_path = (wallets_dir / name).with_suffix('.sk')
     if sk_path.exists():
         raise Exception(f'sk_path exists: {sk_path}') # TODO better error
     sk_dict = wallet_dict['sk_dict']
     if sk_dict is None:
         # TODO capture verbose msg here and return to cli?
-        state.wallet = create_wallet(keys_dir=keys_dir, name=name, verbose=False)
+        state.wallet = create_wallet(keys_dir=wallets_dir, name=name, verbose=False)
     else:
         state.wallet = Wallet.from_json(json.dumps(sk_dict))
         state.wallet.save(sk_path)

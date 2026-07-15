@@ -42,7 +42,7 @@ def qrcode(ctx):
     "Share subscribe config as a QR code."
     # TODO what should the error be if no election config yet?
     election = ctx.find_root().default_map.get("election")
-    sub_cfg = SubscriberConfig.from_dict(election['subscribe'])
+    sub_cfg = SubscriberConfig.from_dict(election)
     print_qrcode(sub_cfg)
 
 # TODO error if ogmios unreachable? or separate status endpoint expected for that?
@@ -73,8 +73,8 @@ def init():
     Example:
 
     \b
-      egc wallet load --sk-path ./keys/funder.sk
-      egc election init --admin-addr ./keys/admin.addr
+      egc wallet load --sk-path ./wallets/funder.sk
+      egc election init --admin-addr ./wallets/admin.addr
       egc election events
 
     2. If you're the admin and also sending funds, you should generate your
@@ -84,7 +84,7 @@ def init():
 
     \b
       egc wallet create --name admin
-      egc election init [--funds-from ./keys/funder.sk]
+      egc election init [--funds-from ./wallets/funder.sk]
       egc channel await --role admin
 
     Either way, this command will clear any previous election state and
