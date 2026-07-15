@@ -15,7 +15,7 @@ Medium = Literal["qr", "qr-image", "json"]
 
 
 @dataclass
-class FancyIOArg:
+class MultiIOArg:
     name: str
     direction: Direction
     medium: Medium
@@ -57,8 +57,8 @@ def _add_options(f, name, mediums, direction, required):
     return f
 
 
-def build_fancy_arg(name, direction, params) -> FancyIOArg:
-    """Pop this group's params out of `params` (mutates) and build a FancyIOArg."""
+def build_multi_arg(name, direction, params) -> MultiIOArg:
+    """Pop this group's params out of `params` (mutates) and build a MultiIOArg."""
     prefix = f"{name}_"
     chosen = {}
     for k in [k for k in params if k.startswith(prefix)]:
@@ -69,14 +69,14 @@ def build_fancy_arg(name, direction, params) -> FancyIOArg:
         raise click.UsageError(f"Exactly one {name} {direction}-source required.")
     medium, value = next(iter(chosen.items()))
     path = None if medium == "qr" else Path(value)
-    return FancyIOArg(name, direction, medium, path)
+    return MultiIOArg(name, direction, medium, path)
 
 
 # ---- read / write --------------------------------------------------------
 
 # This could be part of the interface, but can normally be automated via
-# fancy_load_arg below.
-def _fancy_read(fio: FancyIOArg, decode_cls=None):
+# multi_load_arg below.
+def _multi_read(fio: MultiIOArg, decode_cls=None):
     match fio.medium:
         case "qr":       return scan_qrcode(decode_cls=decode_cls)
         case "qr-image": return decode_qr_image(fio.path)  # TODO -> decode_cls?
@@ -86,8 +86,8 @@ def _fancy_read(fio: FancyIOArg, decode_cls=None):
 
 
 # This can't be automated the same way, so it becomes par of the interface.
-# Use inside a command after fancy_save_arg has built the FancyIOArg.
-def fancy_save(fio: FancyIOArg, obj: Any, exist_ok=True) -> None:
+# Use inside a command after multi_save_arg has built the MultiIOArg.
+def multi_save(fio: MultiIOArg, obj: Any, exist_ok=True) -> None:
     if fio.path is not None and fio.path.exists() and not exist_ok:
         raise click.UsageError(f"path already exists: {fio.path}")
     match fio.medium:
@@ -100,25 +100,24 @@ def fancy_save(fio: FancyIOArg, obj: Any, exist_ok=True) -> None:
 
 # ---- public decorators ---------------------------------------------------
 
-def fancy_load_arg(name, decode_cls, mediums, *, required=True):
+def multi_load(name, decode_cls, mediums, *, required=True):
     """`in` direction: gather args, read + parse to `decode_cls`, inject as `name`."""
     def decorator(fn):
         @functools.wraps(fn)
         def wrapper(**params):
-            pio = build_fancy_arg(name, "in", params)      # pops name_* keys
-            params[name] = _fancy_read(pio, decode_cls=decode_cls)
+            pio = build_multi_arg(name, "in", params)      # pops name_* keys
+            params[name] = _multi_read(pio, decode_cls=decode_cls)
             return fn(**params)
         return _add_options(wrapper, name, mediums, "in", required)
     return decorator
 
 
-def fancy_save_arg(name, mediums, *, required=True):
-    """`out` direction: gather args into a FancyIOArg, inject as `name`."""
+def multi_save_arg(name, mediums, *, required=True):
+    """`out` direction: gather args into a MultiIOArg, inject as `name`."""
     def decorator(fn):
         @functools.wraps(fn)
         def wrapper(**params):
-            params[name] = build_fancy_arg(name, "out", params)
+            params[name] = build_multi_arg(name, "out", params)
             return fn(**params)
         return _add_options(wrapper, name, mediums, "out", required)
     return decorator
-

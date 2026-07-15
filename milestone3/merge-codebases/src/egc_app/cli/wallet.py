@@ -27,10 +27,10 @@ def clear():
 
 # @click.option('--sk-path', type=click.STRING, required=True)
 @wallet.command()
-@fancy_load_arg("wallet", Wallet, ["qr", "qr-image", "json"])
-# @fancy_load_arg("something", Wallet, ["qr", "qr-image", "json"])
-# @fancy_save_arg("otherthing", ["qr", "qr-image", "json"])
-# def load(wallet: Wallet, something: Wallet, otherthing: FancyIOArg):
+@multi_load("wallet", Wallet, ["qr", "qr-image", "json"])
+# @multi_load_arg("something", Wallet, ["qr", "qr-image", "json"])
+# @multi_save_arg("otherthing", ["qr", "qr-image", "json"])
+# def load(wallet: Wallet, something: Wallet, otherthing: MultiIOArg):
 def load(wallet: Wallet):
     """Load wallet.
 
@@ -55,8 +55,8 @@ def load(wallet: Wallet):
 
 # @click.option('--sk-path', type=click.STRING, required=True)
 @wallet.command()
-@fancy_save_arg("wallet", ["qr", "qr-image", "json"])
-def save(wallet: FancyIOArg):
+@multi_save_arg("wallet", ["qr", "qr-image", "json"])
+def save(wallet: MultiIOArg):
     """Save wallet, INCLUDING THE SIGNING KEY.
 
     Note that .sk files can be saved with the JSON option.
