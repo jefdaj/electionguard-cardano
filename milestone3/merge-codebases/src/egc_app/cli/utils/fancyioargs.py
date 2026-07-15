@@ -32,19 +32,23 @@ def _make_group(name, direction, required):
 
 
 def _add_options(f, name, mediums, direction, required):
-    prefix = f"{name}-"
+    # prefix = f"{name}-"
     verb = {"in": "Read", "out": "Write"}[direction]
+    cli_verbs = {
+        "in" : {"qr": "scan-qr", "qr-image": "load-qr", "json": "load-json"},
+        "out": {"qr": "show-qr", "qr-image": "save-qr", "json": "save-json"},
+    }
     group = _make_group(name, direction, required)
 
     factories = {
         "qr": lambda: group.option(
-            f"--{prefix}qr", is_flag=True,
+            f"--{name}-{cli_verbs[direction]["qr"]}", is_flag=True,
             help=f"{verb} a QR code via the camera / screen."),
         "qr-image": lambda: group.option(
-            f"--{prefix}qr-image", type=click.Path(), metavar="PATH",
+            f"--{name}-{cli_verbs[direction]["qr-image"]}", type=click.Path(), metavar="PATH",
             help=f"{verb} a QR code as an image file."),
         "json": lambda: group.option(
-            f"--{prefix}json", type=click.Path(), metavar="PATH",
+            f"--{name}-{cli_verbs[direction]["json"]}", type=click.Path(), metavar="PATH",
             help=f"{verb} data as a JSON file."),
     }
     opts = [factories[m]() for m in mediums]

@@ -28,6 +28,9 @@ def clear():
 # @click.option('--sk-path', type=click.STRING, required=True)
 @wallet.command()
 @fancy_load_arg("wallet", Wallet, ["qr", "qr-image", "json"])
+# @fancy_load_arg("something", Wallet, ["qr", "qr-image", "json"])
+# @fancy_save_arg("otherthing", ["qr", "qr-image", "json"])
+# def load(wallet: Wallet, something: Wallet, otherthing: FancyIOArg):
 def load(wallet: Wallet):
     """Load wallet.
 
@@ -41,6 +44,8 @@ def load(wallet: Wallet):
     #     sk_dict = json.load(f)
     
     print(f'wallet: {wallet}')
+    # print(f'something: {something}')
+    # print(f'otherthing: {otherthing}')
     sk_dict = wallet.to_json()
     print(f'sk_dict from wallet: {sk_dict}')
     asyncio.run(Client().wallet_load_or_create(
