@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Literal
 import functools
 import json as _json # json conflicts with payload_io
+from egc.core.qrcodes import *
 
 
 ### config parsing ###
@@ -290,17 +291,29 @@ def payload_io(*mediums, direction=None, required=True):
     return decorator
 
 
-def read_payload(pio: PayloadIO) -> bytes:
+# TODO type?
+def read_payload(pio: PayloadIO, decode_cls=None):
     match pio.medium:
-        case "qr":       return scan_qr_camera()
-        case "qr-image": return decode_qr_image(pio.path)
-        case "json":     return pio.path.read_bytes()
+        case "qr":       return scan_qrcode(decode_cls=decode_cls)
+        case "qr-image": return decode_qr_image(pio.path) # TODO write this
+        # case "json":     return pio.path.read_bytes() # TODO json.load?
+        case "json":
+            with pio.path.open('r') as f:
+                json_dict = _json.load(f)
+                # TODO text here?
+                return decode_cls.from_json(json_dict)
 
-def write_payload(pio: PayloadIO, data: bytes) -> None:
+
+# TODO type?
+def write_payload(pio: PayloadIO, obj: Any, exist_ok=True) -> None:
+    if pio.path is not None and pio.path.exists() and not exist_ok:
+        raise Exception(f'path already exists: {str(pio.path)}')
     match pio.medium:
-        case "qr":       show_qr_screen(data)
-        case "qr-image": encode_qr_image(data, pio.path)
-        case "json":     pio.path.write_bytes(data)
+        case "qr":       print_qrcode(obj)
+        case "qr-image": save_qrcode(obj, pio.path)
+        case "json":
+            with pio.path.open('w') as f:
+                _json.dump(obj, f)
 
 # def run_payload(pio: PayloadIO, data: bytes | None = None):
 #     return read_payload(pio) if pio.direction == "in" else write_payload(pio, data)

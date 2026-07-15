@@ -55,11 +55,12 @@ def save(**pio_args):
     print(f'pio_args: {pio_args}')
     pio = resolve_payload("out", **pio_args) # TODO direction?
     print(f'pio: {pio}')
-    return # TODO finish
-    sk_path = Path(sk_path)
+    # return # TODO finish
+    # sk_path = Path(sk_path)
     sk_json = asyncio.run(Client().wallet_save())
-    if sk_path.exists():
-        raise Exception(f'sk_path exists: {sk_path}')
-    with sk_path.open('w') as f:
-        f.write(sk_json) # already json; no dump needed
-    click.echo(f"Saved wallet → {sk_path}")
+    # if sk_path.exists():
+    #     raise Exception(f'sk_path exists: {sk_path}')
+    # with sk_path.open('w') as f:
+    #     f.write(sk_json) # already json; no dump needed
+    # click.echo(f"Saved wallet → {sk_path}")
+    write_payload(pio, sk_json, exist_ok=False)

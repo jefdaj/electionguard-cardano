@@ -109,7 +109,7 @@ class SubscriberConfig:
         ))
         qr = qrcode.QRCode()
         qr.add_data(txt)
-        qr.make()
+        # qr.make()
         return qr
 
 

@@ -1,4 +1,5 @@
 import io
+import json
 import os
 import qrcode
 import subprocess
@@ -7,6 +8,7 @@ import sys
 import cv2
 import time
 from pprint import pprint
+from pathlib import Path
 
 
 def is_linux_dark_mode() -> bool:
@@ -57,9 +59,9 @@ def print_qrcode(obj: Any) -> None:
         qr = obj.to_qrcode()
     else:
         # TODO raise error here?
-        qr = str(obj) # TODO repr instead? or json.dumps?
+        txt = str(obj) # TODO repr instead? or json.dumps?
         qr = qrcode.QRCode(txt)
-        qr.make()
+    qr.make()
 
     # save to a buffer so we can get width
     buf = io.StringIO()
@@ -79,6 +81,21 @@ def print_qrcode(obj: Any) -> None:
         if end > len(txt):
             break
     print()
+
+
+# TODO don't do anything fancy here; require a to_qrcode method instead
+def save_qrcode(obj: Any, path: Path):
+    # encode obj
+    if hasattr(obj, 'to_qrcode'):
+        qr = obj.to_qrcode()
+    # elif isinstance(obj, dict):
+    else:
+        qr = qrcode.QRCode()
+        qr.add_data(json.dumps(obj)) # TODO prefix?
+    # else:
+        # qr = qrcode.QRCode(str(obj)) # TODO repr? prefix? error instead?
+    img = qr.make_image()
+    img.save(path)
 
 
 def scan_qrcode(decode_cls=None, video_device=0, timeout=0):
