@@ -25,7 +25,7 @@ class MultiIOArg:
 # ---- option construction -------------------------------------------------
 
 def _make_group(name, direction, required):
-    title = f"{name}: source" if direction == "in" else f"{name}: destination"
+    title = f"{name} input" if direction == "in" else f"{name} output"
     return cloup.OptionGroup(
         title, constraint=require_one if required else mutually_exclusive
     )
@@ -33,23 +33,34 @@ def _make_group(name, direction, required):
 
 def _add_options(f, name, mediums, direction, required):
     # prefix = f"{name}-"
-    verb = {"in": "Read", "out": "Write"}[direction]
+    help_text = {
+        "in": {
+            "qr": "Scan QR code via the camera.",
+            "qr-image": "Load QR code from an image.",
+            "json": "Load from a JSON file."
+        },
+        "out": {
+            "qr": "Show QR code on screen.",
+            "qr-image": "Save QR code as an image.",
+            "json": "Save to a JSON file."
+        },
+    }[direction]
     cli_verbs = {
         "in" : {"qr": "scan-qr", "qr-image": "load-qr", "json": "load-json"},
         "out": {"qr": "show-qr", "qr-image": "save-qr", "json": "save-json"},
-    }
+    }[direction]
     group = _make_group(name, direction, required)
 
     factories = {
         "qr": lambda: group.option(
-            f"--{name}-{cli_verbs[direction]["qr"]}", is_flag=True,
-            help=f"{verb} a QR code via the camera / screen."),
+            f"--{name}-{cli_verbs["qr"]}", is_flag=True,
+            help=help_text["qr"]),
         "qr-image": lambda: group.option(
-            f"--{name}-{cli_verbs[direction]["qr-image"]}", type=click.Path(), metavar="PATH",
-            help=f"{verb} a QR code as an image file."),
+            f"--{name}-{cli_verbs["qr-image"]}", type=click.Path(), metavar="PATH",
+            help=help_text["qr-image"]),
         "json": lambda: group.option(
-            f"--{name}-{cli_verbs[direction]["json"]}", type=click.Path(), metavar="PATH",
-            help=f"{verb} data as a JSON file."),
+            f"--{name}-{cli_verbs["json"]}", type=click.Path(), metavar="PATH",
+            help=help_text["json"]),
     }
     opts = [factories[m]() for m in mediums]
     for opt in reversed(opts):           # reverse -> declaration order in --help
