@@ -15,7 +15,7 @@ Medium = Literal["qr", "qr-image", "json"]
 
 
 @dataclass
-class PayloadIO:
+class FancyIOArg:
     name: str
     direction: Direction
     medium: Medium
@@ -53,8 +53,8 @@ def _add_options(f, name, mediums, direction, required):
     return f
 
 
-def resolve_payload(name, direction, params) -> PayloadIO:
-    """Pop this group's params out of `params` (mutates) and build a PayloadIO."""
+def build_fancy_arg(name, direction, params) -> FancyIOArg:
+    """Pop this group's params out of `params` (mutates) and build a FancyIOArg."""
     prefix = f"{name}_"
     chosen = {}
     for k in [k for k in params if k.startswith(prefix)]:
@@ -65,51 +65,55 @@ def resolve_payload(name, direction, params) -> PayloadIO:
         raise click.UsageError(f"Exactly one {name} {direction}-source required.")
     medium, value = next(iter(chosen.items()))
     path = None if medium == "qr" else Path(value)
-    return PayloadIO(name, direction, medium, path)
+    return FancyIOArg(name, direction, medium, path)
 
 
 # ---- read / write --------------------------------------------------------
 
-def read_payload(pio: PayloadIO, decode_cls=None):
-    match pio.medium:
+# This could be part of the interface, but can normally be automated via
+# fancy_load_arg below.
+def _fancy_read(fio: FancyIOArg, decode_cls=None):
+    match fio.medium:
         case "qr":       return scan_qrcode(decode_cls=decode_cls)
-        case "qr-image": return decode_qr_image(pio.path)  # TODO -> decode_cls?
+        case "qr-image": return decode_qr_image(fio.path)  # TODO -> decode_cls?
         case "json":
-            with pio.path.open("r") as f:
+            with fio.path.open("r") as f:
                 return decode_cls.from_json(_json.load(f))
 
 
-def write_payload(pio: PayloadIO, obj: Any, exist_ok=True) -> None:
-    if pio.path is not None and pio.path.exists() and not exist_ok:
-        raise click.UsageError(f"path already exists: {pio.path}")
-    match pio.medium:
+# This can't be automated the same way, so it becomes par of the interface.
+# Use inside a command after fancy_save_arg has built the FancyIOArg.
+def fancy_save(fio: FancyIOArg, obj: Any, exist_ok=True) -> None:
+    if fio.path is not None and fio.path.exists() and not exist_ok:
+        raise click.UsageError(f"path already exists: {fio.path}")
+    match fio.medium:
         case "qr":       print_qrcode(obj)
-        case "qr-image": save_qrcode(obj, pio.path)
+        case "qr-image": save_qrcode(obj, fio.path)
         case "json":
-            with pio.path.open("w") as f:
+            with fio.path.open("w") as f:
                 _json.dump(obj, f)
 
 
 # ---- public decorators ---------------------------------------------------
 
-def payload_load(name, decode_cls, mediums, *, required=True):
+def fancy_load_arg(name, decode_cls, mediums, *, required=True):
     """`in` direction: gather args, read + parse to `decode_cls`, inject as `name`."""
     def decorator(fn):
         @functools.wraps(fn)
         def wrapper(**params):
-            pio = resolve_payload(name, "in", params)      # pops name_* keys
-            params[name] = read_payload(pio, decode_cls=decode_cls)
+            pio = build_fancy_arg(name, "in", params)      # pops name_* keys
+            params[name] = _fancy_read(pio, decode_cls=decode_cls)
             return fn(**params)
         return _add_options(wrapper, name, mediums, "in", required)
     return decorator
 
 
-def payload_save_arg(name, mediums, *, required=True):
-    """`out` direction: gather args into a PayloadIO, inject as `name`."""
+def fancy_save_arg(name, mediums, *, required=True):
+    """`out` direction: gather args into a FancyIOArg, inject as `name`."""
     def decorator(fn):
         @functools.wraps(fn)
         def wrapper(**params):
-            params[name] = resolve_payload(name, "out", params)
+            params[name] = build_fancy_arg(name, "out", params)
             return fn(**params)
         return _add_options(wrapper, name, mediums, "out", required)
     return decorator

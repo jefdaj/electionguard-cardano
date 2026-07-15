@@ -27,7 +27,7 @@ def clear():
 
 # @click.option('--sk-path', type=click.STRING, required=True)
 @wallet.command()
-@payload_load("wallet", Wallet, ["qr", "qr-image", "json"])
+@fancy_load_arg("wallet", Wallet, ["qr", "qr-image", "json"])
 def load(wallet: Wallet):
     """Load wallet.
 
@@ -50,8 +50,8 @@ def load(wallet: Wallet):
 
 # @click.option('--sk-path', type=click.STRING, required=True)
 @wallet.command()
-@payload_save_arg("wallet", ["qr", "qr-image", "json"])
-def save(wallet: PayloadIO):
+@fancy_save_arg("wallet", ["qr", "qr-image", "json"])
+def save(wallet: FancyIOArg):
     """Save wallet, INCLUDING THE SIGNING KEY.
 
     Note that .sk files can be saved with the JSON option.
