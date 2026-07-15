@@ -1,7 +1,7 @@
 import click
 import json
-from egc_app.cli.utils import RoleAwareGroup
 from egc_app.client import Client
+from egc_app.cli.utils import *
 from egc import *
 
 @click.group(cls=RoleAwareGroup)
@@ -37,10 +37,16 @@ def load(sk_path):
         sk_dict = sk_dict
     ))
 
-@click.option('--sk-path', type=click.STRING, required=True)
+# @click.option('--sk-path', type=click.STRING, required=True)
+# @io_command("out", "qr", "qr-image", "json")
 @wallet.command()
-def save(sk_path):
-    "Save wallet to a local .sk file."
+@payload_io("qr", "qr-image", "json", direction="out")
+def save(**params):
+    "Save wallet, INCLUDING THE SIGNING KEY."
+    print(f'params: {params}')
+    ep = resolve_endpoint("out", **params) # TODO direction?
+    print(f'ep: {ep}')
+    return
     sk_path = Path(sk_path)
     sk_json = asyncio.run(Client().wallet_save())
     if sk_path.exists():

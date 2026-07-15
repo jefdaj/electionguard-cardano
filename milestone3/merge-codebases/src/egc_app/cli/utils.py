@@ -2,9 +2,15 @@ from __future__ import annotations
 from typing import Iterable
 import click
 import cloup
+from cloup.constraints import mutually_exclusive, require_one
 import os
 import asyncio
 from egc_app.client import Client
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Literal
+import functools
+import json as _json # json conflicts with payload_io
 
 
 ### config parsing ###
@@ -13,7 +19,7 @@ from egc_app.client import Client
 def get_cli_config(config):
     if config:
         with open(config, "r", encoding="utf-8") as f:
-            return json.load(f)
+            return _json.load(f)
     else:
         return {}
 
@@ -207,3 +213,118 @@ def role_group(first=None, /, *grp_args, **grp_kwargs):
         return grp
 
     return deco
+
+
+### IO decorators ###
+
+# TODO better name than "endpoint"?
+
+Direction = Literal["in", "out"]
+Medium = Literal["qr", "qr-image", "json"]
+
+@dataclass
+class Endpoint:
+    direction: Direction
+    medium: Medium
+    path: Path | None = None
+
+def resolve_endpoint(direction: Direction, **params) -> Endpoint:
+    prefix = f"{direction}_"
+    # collect only this direction's medium params
+    chosen = {
+        k[len(prefix):].replace("_", "-"): v
+        for k, v in params.items()
+        if k.startswith(prefix) and v
+    }
+    if len(chosen) != 1:
+        raise click.UsageError("Exactly one data source/destination required.")
+    medium, value = next(iter(chosen.items()))
+    path = None if medium == "qr" else Path(value)
+    return Endpoint(direction, medium, path)
+
+
+def payload_io(*mediums, direction=None, required=True):
+    """Attach QR/JSON source-or-destination options as a constrained group.
+
+    mediums:   any of "qr", "qr-image", "json".
+    direction: None | "in" | "out". When set, flags are prefixed
+               (e.g. --out-qr) and help verbs reflect the direction.
+    required:  True  -> require_one (exactly one medium must be given)
+               False -> mutually_exclusive (at most one)
+    """
+    prefix = f"{direction}-" if direction else ""
+    verb = {"in": "Read", "out": "Write"}.get(direction, "Read/write")
+
+    group = cloup.OptionGroup(
+        "Data source / destination",
+        constraint=(require_one if required else mutually_exclusive),
+    )
+
+    def _qr():
+        return group.option(
+            f"--{prefix}qr", is_flag=True,
+            help=f"{verb} a QR code via the camera / screen.",
+        )
+
+    def _qr_image():
+        return group.option(
+            f"--{prefix}qr-image", type=click.Path(), metavar="PATH",
+            help=f"{verb} a QR code as an image file.",
+        )
+
+    # simpler: let Click derive the dest normally
+    def _json():
+        return group.option(
+            f"--{prefix}json", type=click.Path(), metavar="PATH",
+            help=f"{verb} data as a JSON file.",
+        )
+
+    factories = {"qr": _qr, "qr-image": _qr_image, "json": _json}
+    opts = [factories[m]() for m in mediums]
+
+    def decorator(f):
+        for opt in reversed(opts): # reverse -> declaration order in --help
+            f = opt(f)
+        return f
+
+    return decorator
+
+
+def read_endpoint(ep: Endpoint) -> bytes:
+    match ep.medium:
+        case "qr":       return scan_qr_camera()
+        case "qr-image": return decode_qr_image(ep.path)
+        case "json":     return ep.path.read_bytes()
+
+def write_endpoint(ep: Endpoint, data: bytes) -> None:
+    match ep.medium:
+        case "qr":       show_qr_screen(data)
+        case "qr-image": encode_qr_image(data, ep.path)
+        case "json":     ep.path.write_bytes(data)
+
+def run_endpoint(ep: Endpoint, data: bytes | None = None):
+    return read_endpoint(ep) if ep.direction == "in" else write_endpoint(ep, data)
+
+# TODO remove? or is it useful?
+def io_command(direction, *mediums, **cmd_kw):
+    """Decorator: cloup command + payload_io + auto-resolved endpoint."""
+    def decorator(fn):
+        @cloup.command(**cmd_kw)
+        @payload_io(*mediums, direction=direction)
+        @functools.wraps(fn)
+        def wrapper(**params):
+            ep = resolve_endpoint(direction, **params)
+            return fn(ep, **{k: v for k, v in params.items()
+                             if not k.startswith(f"{direction}_")})
+        return wrapper
+    return decorator
+
+# usage examples:
+
+# @io_command("out", "qr", "qr-image", "json")
+# def request(ep: Endpoint):
+#     write_endpoint(ep, build_role_request(...))
+
+# @io_command("in", "qr-image", "json")
+# def subscription(ep: Endpoint):
+#     store_subscription(parse_subscription(read_endpoint(ep)))
