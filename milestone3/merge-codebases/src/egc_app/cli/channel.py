@@ -5,13 +5,17 @@ from egc_app.cli.utils import RoleAwareGroup
 def channel() -> None:
     "Request, add, remove, or await channels."
 
-@channel.command(roles=['admin', 'guardian', 'device', 'verifier'])
-def request():
+@click.option('--role', type=click.STRING, required=True)
+@channel.command(roles=['observer'])
+def request(role):
     """Save a subchannel request.
 
     Subchannel requests are communicated to the admin offchain.
     This saves your request to JSON or a QR code.
     """
+    # TODO guard wallet
+    # TODO guard role
+    # TODO guard election? maybe not needed
     raise NotImplementedError
 
 @channel.command(roles=['admin'])
