@@ -3,6 +3,9 @@ import json
 
 from egc_app.cli.utils import *
 
+
+### main CLI ###
+
 from egc_app.cli import ballot
 from egc_app.cli import batch
 from egc_app.cli import ceremony
@@ -48,6 +51,30 @@ cli.add_command(spoiled.spoiled)
 cli.add_command(tally.tally)
 cli.add_command(verification.verification)
 cli.add_command(wallet.wallet)
+
+
+### list commands ###
+
+# TODO remove? not sure if useful except for development
+
+def iter_commands(cmd, ctx, prefix=""):
+    yield prefix.strip()
+    if isinstance(cmd, click.Group):
+        for name in cmd.list_commands(ctx):
+            sub = cmd.get_command(ctx, name)
+            if sub is None:
+                continue
+            yield from iter_commands(sub, ctx, f"{prefix} {name}")
+
+@cli.command()
+@click.pass_context
+def list_commands(ctx):
+    root = ctx.find_root().command
+    for path in sorted(filter(None, iter_commands(root, ctx))):
+        if not ' ' in path:
+            continue
+        click.echo(path)
+
 
 if __name__ == '__main__':
     cli()
