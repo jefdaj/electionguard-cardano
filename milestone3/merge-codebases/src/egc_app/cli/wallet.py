@@ -8,11 +8,11 @@ from egc import *
 def wallet() -> None:
     "Basic wallet management for elections."
 
-@click.option('--name', type=click.STRING, required=True)
+@click.option('--description', type=click.STRING, required=True)
 @wallet.command()
-def create(name):
+def create(description):
     "Generate wallet."
-    asyncio.run(Client().wallet_load_or_create(name, sk_dict=None))
+    asyncio.run(Client().wallet_load_or_create(description, sk_dict=None))
 
 @wallet.command()
 def show():
@@ -49,7 +49,7 @@ def load(wallet: Wallet):
     sk_dict = wallet.to_json()
     print(f'sk_dict from wallet: {sk_dict}')
     asyncio.run(Client().wallet_load_or_create(
-        name    = sk_path.stem,
+        # description = sk_path.stem,
         sk_dict = sk_dict
     ))
 

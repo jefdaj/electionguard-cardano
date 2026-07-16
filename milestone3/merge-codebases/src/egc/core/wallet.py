@@ -113,7 +113,8 @@ class Wallet:
     def load_or_create(
         cls,
         keys_dir: Path = DEF_KEYS_DIR,
-        name: str = 'default',
+        name: str = 'wallet',
+        description: str = 'Generated EGC wallet', # TODO no default?
         verbose: bool = True,
     ) -> Self:
         """Load the wallet named `name` from `keys_dir`, generating it if absent."""
@@ -124,7 +125,12 @@ class Wallet:
             LOG.debug('sk_path exists; loading: %s', sk_path)
             return load_wallet(sk_path)
 
-        return create_wallet(keys_dir=keys_dir, name=name, verbose=verbose)
+        return create_wallet(
+            keys_dir    = keys_dir,
+            name        = name,
+            description = description,
+            verbose     = verbose
+        )
 
     def to_json(self, *args, **kwargs) -> str:
         return self.sk.to_json(*args, **kwargs)
@@ -165,8 +171,15 @@ def load_wallet_by_address(address: Address, keys_dir=DEF_KEYS_DIR) -> Optional[
             return (sk_path, w)
     return None
 
+def _set_sk_description(sk: PaymentSigningKey, desc: str) -> PaymentSigningKey:
+    # roundabout way to set description, which doesn't have a setter
+    sk_dict = json.loads(sk.to_json())
+    sk_dict['description'] = desc
+    sk = PaymentSigningKey.from_json(json.dumps(sk_dict))
+    return sk
+
 # TODO rename .sk -> _sk.json?
-def create_wallet(keys_dir=DEF_KEYS_DIR, name='default', verbose=True) -> Wallet:
+def create_wallet(keys_dir=DEF_KEYS_DIR, name='wallet', description='Generated EGC wallet', verbose=True) -> Wallet:
     LOG.debug('create_wallet')
     keys_dir = Path(keys_dir)
     sk_path   = keys_dir / f'{name}.sk'
@@ -177,11 +190,14 @@ def create_wallet(keys_dir=DEF_KEYS_DIR, name='default', verbose=True) -> Wallet
         raise Exception(err)
     keys_dir.mkdir(parents=True, exist_ok=True)
     signing_key = PaymentSigningKey.generate()
-    signing_key.save(str(sk_path))
+    signing_key = _set_sk_description(signing_key, description)
+    print(f'signing_key: {signing_key}')
+    # signing_key.description = description # TODO is this right?
+    signing_key.save(str(sk_path)) # TODO Path OK?
     LOG.info(f'Generated {sk_path}')
     wallet = Wallet.from_sk_path(sk_path)
     msg = f'''
-    Your new Preview testnet key is here:
+    Your new Preview testnet key \"{name} ({description})\" is here:
 
     {sk_path}
 
@@ -203,12 +219,14 @@ def create_wallet(keys_dir=DEF_KEYS_DIR, name='default', verbose=True) -> Wallet
     KEYS_LOG.debug(
         'Created Wallet:\n\n'
         '  name = %s\n'
+        '  desc = %s\n'
         '  addr = %s\n'
         '  vkh  = %s\n'
         '  vk   = %s\n'
         '  sk   = %s\n',
         name,
         wallet.addr,
+        wallet.sk.description, # TODO is this right?
         wallet.vkh.to_cbor_hex(),
         wallet.vk.to_json(),
         wallet.sk.to_json(),

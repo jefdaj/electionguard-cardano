@@ -12,6 +12,7 @@ from pathlib import Path
 
 
 def is_linux_dark_mode() -> bool:
+    # TODO what does it look like inside the Nix Docker container?
 
     # GNOME / GTK (most common)
     try:
