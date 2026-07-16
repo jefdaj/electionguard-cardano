@@ -34,7 +34,8 @@ class RetryingIPFS:
         await self._client.close()
 
     async def _retry(self, coro_factory):
-        await ipfs_wait_until_stable(self) # TODO make it a method?
+        # TODO should we call anything each time before trying here?
+        # await ipfs_wait_until_stable(self) # TODO make it a method?
         delay = self._delay
         for attempt in range(self._retries):
             try:
@@ -98,13 +99,13 @@ class RetryingIPFS:
 #             await asyncio.sleep(1)
 
 async def ipfs_wait_until_stable(
-    ipfs: RetryingIPFS,
     timeout=180,
     min_peers=1,
     rate_threshold=1024,        # bytes/sec (RateIn + RateOut)
     required_stable_polls=3,
     interval=5,
 ):
+    ipfs = RetryingIPFS()
     end = asyncio.get_event_loop().time() + timeout
     stable = 0
     prev_peers = None
@@ -128,6 +129,11 @@ async def ipfs_wait_until_stable(
         if asyncio.get_event_loop().time() > end:
             raise TimeoutError("IPFS did not stabilize in time")
         await asyncio.sleep(interval)
+
+
+def ipfs_wait_until_stable_sync(**kwargs):
+    with asyncio.Runner() as runner:
+        return runner.run( ipfs_wait_until_stable(**kwargs) )
 
 
 # TODO make this a method of RetryingIPFS?
