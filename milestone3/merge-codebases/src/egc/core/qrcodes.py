@@ -50,25 +50,26 @@ def is_linux_dark_mode() -> bool:
     return True # assume dark if unknown
 
 
+def make_qr_code(obj: Any) -> qrcode.QRCode:
+    # Should by followed by qr.make() or qr.make_image()
+    # TODO also prefix with qrcode: ?
+    if not hasattr(obj, 'to_qr_str'):
+        raise Exception(f'{type(obj)} obj has no to_qr_str method')
+    qr_str = obj.to_qr_str()
+    qr = qrcode.QRCode()
+    qr.add_data(qr_txt)
+    return qr
+
+
 def print_qrcode(obj: Any) -> None:
     "Print a QR code with wrapped text below."
-    # TODO is there a cleaner way?
-
-    # encode obj
-    if hasattr(obj, 'to_qrcode'):
-        qr = obj.to_qrcode()
-    else:
-        # TODO raise error here?
-        txt = str(obj) # TODO repr instead? or json.dumps?
-        qr = qrcode.QRCode(txt)
+    qr = make_qr_code(obj)
     qr.make()
-
     # save to a buffer so we can get width
     buf = io.StringIO()
     qr.print_ascii(out=buf, invert=is_linux_dark_mode())
     qr_lines = buf.getvalue().splitlines()
     qr_width = len(qr_lines[0]) - (2 * qr.border)
-
     # print code with wrapped text below
     print('\n'.join(qr_lines[:-1]))
     txt = b''.join(d.data for d in qr.data_list).decode('utf-8')
@@ -83,17 +84,8 @@ def print_qrcode(obj: Any) -> None:
     print()
 
 
-# TODO don't do anything fancy here; require a to_qrcode method instead
 def save_qrcode(obj: Any, path: Path):
-    # encode obj
-    if hasattr(obj, 'to_qrcode'):
-        qr = obj.to_qrcode()
-    # elif isinstance(obj, dict):
-    else:
-        qr = qrcode.QRCode()
-        qr.add_data(json.dumps(obj)) # TODO prefix?
-    # else:
-        # qr = qrcode.QRCode(str(obj)) # TODO repr? prefix? error instead?
+    qr = make_qr_code(obj)
     img = qr.make_image()
     img.save(path)
 
@@ -112,17 +104,13 @@ def scan_qrcode(decode_cls=None, video_device=0, timeout=0):
             if not ok:
                 time.sleep(0.1) # TODO remove?
                 continue
-            data, pts, _ = det.detectAndDecode(frame)
-            if data:
-                try:
-                    return decode_cls.from_qr_str(data)
-                except:
-                    # TODO raise error here?
-                    return data
+            qr_str, pts, _ = det.detectAndDecode(frame)
+            if qr_str:
+                if decode_cls is None:
+                    return qr_str
+                else:
+                    return decode_cls.from_qr_str(qr_str)
             if timeout and time.time() - start > timeout:
                 raise TimeoutError
     finally:
         cap.release()
-
-if __name__ == "__main__":
-    main()

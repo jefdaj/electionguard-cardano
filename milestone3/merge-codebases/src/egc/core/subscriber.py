@@ -88,7 +88,7 @@ class SubscriberConfig:
 
     @classmethod
     def from_qr_str(cls, txt: str) -> Self:
-        # expected format: "egc:election:...", maybe with wrapping
+        "egc:election:<policy_id>:<since_slot>:<since_block>, maybe with wrapping"
         txt = ''.join(l.strip() for l in txt.splitlines())
         words = txt.split(':')
         prefix = words[:2]
@@ -99,18 +99,15 @@ class SubscriberConfig:
         since_slot = int(since_slot)
         return cls(policy_id, since_slot, since_block)
 
-    def to_qrcode(self) -> qrcode.QRCode:
-        # TODO also prefix with qrcode: ?
-        txt = ':'.join((
+    def to_qr_str(self) -> str:
+        "egc:election:<policy_id>:<since_slot>:<since_block>" 
+        qr_str = ':'.join([
             'egc', 'election',
             self.policy_id,
             str(self.since_slot),
             self.since_block
-        ))
-        qr = qrcode.QRCode()
-        qr.add_data(txt)
-        # qr.make()
-        return qr
+        ])
+        return qr_str
 
 
 # TODO also use this in subscriberconfig?

@@ -54,7 +54,8 @@ class Wallet:
     persistence are all driven by the signing key alone.
     """
 
-    sk:   SigningKey
+    # TODO parse desc, and write it back, and remove wallet_name from server state
+    sk:   SigningKey # holds the wallet name (TODO desc?) as its description field
     vk:   VerificationKey
     vkh:  VerificationKeyHash
     addr: Address
@@ -76,39 +77,32 @@ class Wallet:
 
     @classmethod
     def from_qr_str(cls, txt: str) -> Self:
-        # expected format: "egc:wallet:<name>:<cborhex>" maybe with wrapping
+        "egc:wallet:<desc>:<type>:<cborhex>, maybe with wrapping"
         txt = ''.join(l.strip() for l in txt.splitlines())
         words = txt.split(':')
         prefix = words[:2]
         args   = words[2:]
-        assert prefix == ['egc', 'wallet', type_]
-        assert len(args) == 1
-        # TODO add name to this class too?
-        # name, cbor_hex = args
-        type_, cbor_hex = args[0]
+        assert prefix == ['egc', 'wallet']
+        assert len(args) == 3
+        desc, type_, cbor_hex = args
+        assert type_ == "PaymentSigningKeyShelley_ed25519"
         sk_dict = {
               "type": type_,
-              "description": type_,
+              "description": desc,
               "cborHex": cbor_hex,
         }
         return cls.from_json(sk_dict)
 
-    # TODO save with name to prevent mix-ups?
-    def to_qrcode(self) -> qrcode.QRCode:
-        # TODO also prefix with qrcode: ?
+    def to_qr_str(self) -> str:
+        "egc:wallet:<desc>:<type>:<cborhex>"
         sk_dict = json.loads(self.sk.to_json())
-        print(f'sk_dict: {sk_dict}')
-        qr_txt = ':'.join((
+        qr_txt = ':'.join([
             'egc', 'wallet',
+            sk_dict['description'].replace(':', ';'), # escape colons
             sk_dict['type'],
-            # name,
             sk_dict['cborHex'],
-        ))
-        print(f'qr_txt: {qr_txt}')
-        qr = qrcode.QRCode()
-        qr.add_data(qr_txt)
-        # qr.make()
-        return qr
+        ])
+        return qr_txt
 
     @classmethod
     def from_sk_path(cls, sk_path: Path) -> Self:

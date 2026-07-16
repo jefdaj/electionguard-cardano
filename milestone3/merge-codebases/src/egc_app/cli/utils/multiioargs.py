@@ -114,9 +114,7 @@ def multi_save(mio: MultiIOArg, obj: Any, exist_ok=True) -> None:
     match mio.medium:
         case "qr":       print_qrcode(obj)
         case "qr-image": save_qrcode(obj, mio.path)
-        case "json":
-            with mio.path.open("w") as f:
-                _json.dump(obj, f)
+        case "json":     mio.path.write_text(obj.to_json())
 
 
 # ---- public decorators ---------------------------------------------------
