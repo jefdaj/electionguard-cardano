@@ -21,10 +21,10 @@ class TokenKind(IntEnum):
 
 
 # ---- canonical signing payload -------------------------------------------------
-def _signing_bytes(jti: bytes, kind: int, exp: int,
+def _signing_bytes(kind: int, jti: bytes, exp: int,
                    issuer: bytes, cid: bytes) -> bytes:
     # deterministic CBOR array; excludes sig. Order matters.
-    return cbor2.dumps([jti, int(kind), int(exp), issuer, cid])
+    return cbor2.dumps([int(kind), jti, int(exp), issuer, cid])
 
 
 class HexReprMixin:
@@ -39,21 +39,16 @@ class HexReprMixin:
 
 @dataclass(repr=False)
 class AuthToken(HexReprMixin):
-    jti: bytes                 # 16 random bytes, the nullifier id
     kind: TokenKind
+    jti: bytes                 # 16 random bytes, the nullifier id
     exp: int                   # unix seconds
     issuer: bytes              # issuer Ed25519 pubkey (32 bytes)
     cid: bytes = b""           # IPFS CID (raw bytes) when relevant, else empty
     sig: bytes = b""           # 64-byte Ed25519 signature
 
-    # pretty printing
-
-    # def __repr__(self) -> str:
-        
-
     # ---- signing / verification ----
     def _payload(self) -> bytes:
-        return _signing_bytes(self.jti, self.kind, self.exp, self.issuer, self.cid)
+        return _signing_bytes(self.kind, self.jti, self.exp, self.issuer, self.cid)
 
     def sign(self, sk: PaymentSigningKey) -> "AuthToken":
         self.sig = sk.sign(self._payload())
@@ -72,15 +67,15 @@ class AuthToken(HexReprMixin):
     # ---- QR (matches your existing pattern) ----
     def to_qr_str(self) -> str:
         blob = cbor2.dumps([
-            self.jti, int(self.kind), self.exp, self.issuer, self.cid, self.sig
+            int(self.kind), self.jti, self.exp, self.issuer, self.cid, self.sig
         ])
         return base64.urlsafe_b64encode(blob).decode()
 
     @classmethod
     def from_qr_str(cls, s: str) -> "AuthToken":
-        jti, kind, exp, issuer, cid, sig = cbor2.loads(
+        kind, jti, exp, issuer, cid, sig = cbor2.loads(
             base64.urlsafe_b64decode(s.encode()))
-        return cls(jti, TokenKind(kind), exp, issuer, cid, sig)
+        return cls(TokenKind(kind), jti, exp, issuer, cid, sig)
 
 
 # ---- single-use nullifier store (swap for a DB / chain later) -------------------
@@ -156,32 +151,32 @@ class ChallengeStation(Station):
 if __name__ == '__main__':
     store = NullifierStore()
 
-    checkin_sk  = PaymentSigningKey.generate()
-    submit_sk   = PaymentSigningKey.generate()
+    checkin_sk   = PaymentSigningKey.generate()
+    submit_sk    = PaymentSigningKey.generate()
     challenge_sk = PaymentSigningKey.generate()
 
     pk = lambda sk: PaymentVerificationKey.from_signing_key(sk).payload
 
     # who each station trusts as an issuer of its *input* token:
     submit_trusts    = {pk(checkin_sk), pk(challenge_sk)}   # OK-to-vote sources
-    challenge_trusts = {pk(submit_sk)}                       # in-progress source
+    challenge_trusts = {pk(submit_sk)}                      # in-progress source
 
     checkin   = CheckInStation(checkin_sk, set(), store)     # issues only
     submit    = SubmitStation(submit_sk, submit_trusts, store)
     challenge = ChallengeStation(challenge_sk, challenge_trusts, store)
 
-    ok  = checkin.check_in()
+    ok1 = checkin.check_in()
     ok2 = checkin.check_in()
-    print(f'\nok: {ok}')
+    print(f'\nok1: {ok1}')
     print(f'\nok2: {ok2}')
 
-    ip  = submit.submit(AuthToken.from_qr_str(ok.to_qr_str()), b"bafk...cid")
+    ip  = submit.submit(AuthToken.from_qr_str(ok1.to_qr_str()), b"bafk...cid")
     ip2 = submit.submit(AuthToken.from_qr_str(ok2.to_qr_str()), b"bafk...cid")
     print(f'\nip: {ip}')
     print(f'\nip2: {ip2}')
 
     # correctly fails with "already spent":
-    # ip  = submit.submit(AuthToken.from_qr_str(ok.to_qr_str()), b"bafk...cid")
+    # ip  = submit.submit(AuthToken.from_qr_str(ok1.to_qr_str()), b"bafk...cid")
 
     receipt, ok3 = challenge.challenge(ip, spoiled=True, final_cid=b"bafk...spoil")
     receipt2, ok4 = challenge.challenge(ip2, spoiled=False, final_cid=b"bafk...cast")
