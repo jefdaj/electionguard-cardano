@@ -185,22 +185,26 @@ if __name__ == '__main__':
 
     print('check_in 1')
     ok1 = checkin.check_in()
-    print(f'\nok1: {ok1}\n')
+    print(f'\nok1: {ok1}')
+    print(f'\nok1 verify: {ok1.verify()}\n')
     qrcodes.print_qrcode(ok1)
 
     print('check_in 2')
     ok2 = checkin.check_in()
-    print(f'\nok2: {ok2}\n')
+    print(f'\nok2: {ok2}')
+    print(f'\nok2 verify: {ok2.verify()}\n')
     qrcodes.print_qrcode(ok2)
     
     print('submit 1')
     ip1 = submit.submit(AuthToken.from_qr_str(ok1.to_qr_str()), b"bafk...cid")
-    print(f'\nip1: {ip1}\n')
+    print(f'\nip1: {ip1}')
+    print(f'\nip1 verify: {ip1.verify()}\n')
     qrcodes.print_qrcode(ip1)
 
     print('submit 2')
     ip2 = submit.submit(AuthToken.from_qr_str(ok2.to_qr_str()), b"bafk...cid")
-    print(f'\nip2: {ip2}\n')
+    print(f'\nip2: {ip2}')
+    print(f'\nip2 verify: {ip2.verify()}\n')
     qrcodes.print_qrcode(ip2)
 
     # correctly fails with "already spent":
@@ -209,23 +213,31 @@ if __name__ == '__main__':
     print('spoil 1, creating ok3')
     r1, ok3 = challenge.challenge(ip1, spoiled=True, final_cid=b"bafk...spoil")
     print(f'\nr1: {r1}')
+    print(f'\nr1 verify: {r1.verify()}\n')
     qrcodes.print_qrcode(r1)
     print(f'\nok3: {ok3}')
+    print(f'\nok3 verify: {ok3.verify()}\n')
     qrcodes.print_qrcode(ok3)
 
     print('cast 2')
     r2, ok4 = challenge.challenge(ip2, spoiled=False, final_cid=b"bafk...cast")
     print(f'\nr2: {r2}')
+    print(f'\nr2 verify: {r2.verify()}\n')
+    qrcodes.print_qrcode(r2)
     assert ok4 is None
     print(f'\nok4: {ok4}')
 
     print('submit 3')
     ip3 = submit.submit(AuthToken.from_qr_str(ok3.to_qr_str()), b"bafk...cid")
     print(f'\nip3: {ip3}')
+    print(f'\nip3 verify: {ip3.verify()}\n')
+    qrcodes.print_qrcode(ip3)
 
     print('cast 3')
     r3, ok5 = challenge.challenge(ip3, spoiled=False, final_cid=b"bafk...cast")
     print(f'\nr3: {r3}')
+    print(f'\nr3 verify: {r3.verify()}\n')
+    qrcodes.print_qrcode(r3)
     assert ok5 is None
     print(f'\nok5: {ok5}')
 
