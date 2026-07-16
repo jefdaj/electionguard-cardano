@@ -171,9 +171,30 @@ if __name__ == '__main__':
     challenge = ChallengeStation(challenge_sk, challenge_trusts, store)
 
     ok  = checkin.check_in()
+    ok2 = checkin.check_in()
     print(f'\nok: {ok}')
+    print(f'\nok2: {ok2}')
+
     ip  = submit.submit(AuthToken.from_qr_str(ok.to_qr_str()), b"bafk...cid")
+    ip2 = submit.submit(AuthToken.from_qr_str(ok2.to_qr_str()), b"bafk...cid")
     print(f'\nip: {ip}')
+    print(f'\nip2: {ip2}')
+
+    # correctly fails with "already spent":
+    # ip  = submit.submit(AuthToken.from_qr_str(ok.to_qr_str()), b"bafk...cid")
+
     receipt, reissue = challenge.challenge(ip, spoiled=True, final_cid=b"bafk...spoil")
+    receipt2, reissue2 = challenge.challenge(ip2, spoiled=False, final_cid=b"bafk...cast")
     print(f'\nreceipt: {receipt}')
     print(f'\nreissue: {reissue}')
+    print(f'\nreceipt2: {receipt2}')
+    print(f'\nreissue2: {reissue2}')
+
+    print(f'\ncheckin station state: {checkin.__dict__}')
+    print(f'\ncheckin station nullifiers: {checkin.nullifiers.__dict__}')
+
+    print(f'\nsubmit station state: {submit.__dict__}')
+    print(f'\nsubmit station nullifiers: {submit.nullifiers.__dict__}')
+
+    print(f'\nchallenge station state: {challenge.__dict__}')
+    print(f'\nchallenge station nullifiers: {challenge.nullifiers.__dict__}')
