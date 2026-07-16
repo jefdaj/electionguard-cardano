@@ -98,6 +98,10 @@ let
   egcService = egc_image: role: project_name: data_dir: i: {
     service.image = egc_image;
     image.nixBuild = false;
+    service.command = [
+      "node" "run"
+      "--private-dir" "/data/private"
+    ];
     service.volumes = [
       "${data_dir}/${nodeName role i}/egc:/data/private"
     ];
