@@ -13,15 +13,14 @@ import logging
 LOG = logging.getLogger(__name__)
 
 
-# TODO set dynamically
-# IPFS_MADDR = os.environ.get('IPFS_MADDR', '/dns4/publish-and-verify-ipfs-1/tcp/5001')
-IPFS_MADDR = os.environ.get('IPFS_MADDR', '/dns4/127.0.0.1/tcp/5001')
-LOG.debug(f'IPFS_MADDR: {IPFS_MADDR}')
+# TODO is there a better way to set it?
+IPFS_MADDR = os.environ.get('IPFS_API_ADDR', '/dns4/127.0.0.1/tcp/5001')
+LOG.debug(f'IPFS_API_ADDR: {IPFS_API_ADDR}')
 
 
 class RetryingIPFS:
     def __init__(self, retries=10, delay=1.0, backoff=1.5):
-        self._client  = AsyncIPFS(maddr=IPFS_MADDR)
+        self._client  = AsyncIPFS(maddr=IPFS_API_ADDR)
         self._retries = retries
         self._delay   = delay
         self._backoff = backoff
@@ -35,10 +34,10 @@ class RetryingIPFS:
         await self._client.close()
 
     async def _retry(self, coro_factory):
+        await ipfs_wait_until_stable(self) # TODO make it a method?
         delay = self._delay
         for attempt in range(self._retries):
             try:
-                await ipfs_wait_until_ready(self) # TODO make it a method?
                 return await coro_factory()
             except (ClientConnectorError, ClientConnectorDNSError) as e:
                 if attempt == self._retries - 1:
@@ -87,16 +86,48 @@ class RetryingIPFS:
         return getattr(self._client, name)
 
 
-async def ipfs_wait_until_ready(ipfs: RetryingIPFS, timeout=10):
+# async def ipfs_wait_until_ready(ipfs: RetryingIPFS, timeout=10):
+#     end = asyncio.get_event_loop().time() + timeout
+#     while True:
+#         try:
+#             await ipfs._client.version()  # raw client, single call
+#             return
+#         except (ClientConnectorError, ClientConnectorDNSError):
+#             if asyncio.get_event_loop().time() > end:
+#                 raise
+#             await asyncio.sleep(1)
+
+async def ipfs_wait_until_stable(
+    ipfs: RetryingIPFS,
+    timeout=180,
+    min_peers=1,
+    rate_threshold=1024,        # bytes/sec (RateIn + RateOut)
+    required_stable_polls=3,
+    interval=5,
+):
     end = asyncio.get_event_loop().time() + timeout
+    stable = 0
+    prev_peers = None
     while True:
         try:
-            await ipfs._client.version()  # raw client, single call
-            return
+            peers = (await ipfs._client.swarm.peers()).get("Peers") or []
+            n = len(peers)
+            bw = await ipfs._client.stats.bw()
+            rate = bw.get("RateIn", 0) + bw.get("RateOut", 0)
+
+            if n >= min_peers and n == prev_peers and rate < rate_threshold:
+                stable += 1
+                if stable >= required_stable_polls:
+                    return
+            else:
+                stable = 0
+            prev_peers = n
         except (ClientConnectorError, ClientConnectorDNSError):
-            if asyncio.get_event_loop().time() > end:
-                raise
-            await asyncio.sleep(1)
+            stable = 0  # node not up yet; don't count toward stability
+
+        if asyncio.get_event_loop().time() > end:
+            raise TimeoutError("IPFS did not stabilize in time")
+        await asyncio.sleep(interval)
 
 
 # TODO make this a method of RetryingIPFS?
