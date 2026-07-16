@@ -100,9 +100,7 @@ def _multi_read(mio: MultiIOArg, decode_cls=None):
     match mio.medium:
         case "qr":       return scan_qrcode(decode_cls=decode_cls)
         case "qr-image": return decode_qr_image(mio.path)  # TODO -> decode_cls?
-        case "json":
-            with mio.path.open("r") as f:
-                return decode_cls.from_json(_json.load(f))
+        case "json":     return decode_cls.from_json(mio.path.read_text())
 
 
 # This can't be automated the same way, so it becomes par of the interface.

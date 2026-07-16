@@ -30,6 +30,7 @@ async def wallet_load_or_create(wallet_dict: dict, state=Depends(get_state)):
         )
     else:
         state.wallet = Wallet.from_json(json.dumps(sk_dict))
+        sk_path.absolute().parent.mkdir(parents=True, exist_ok=True)
         state.wallet.save(sk_path)
     return 201
 

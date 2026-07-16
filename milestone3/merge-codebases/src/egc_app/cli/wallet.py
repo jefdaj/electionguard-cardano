@@ -25,32 +25,19 @@ def clear():
     "Clear wallet, leaving files."
     asyncio.run(Client().wallet_clear())
 
-# @click.option('--sk-path', type=click.STRING, required=True)
 @wallet.command()
 @multi_load("wallet", Wallet, ["qr", "qr-image", "json"])
-# @multi_load_arg("something", Wallet, ["qr", "qr-image", "json"])
-# @multi_save_arg("otherthing", ["qr", "qr-image", "json"])
-# def load(wallet: Wallet, something: Wallet, otherthing: MultiIOArg):
 def load(wallet: Wallet):
     """Load wallet.
 
     Note that .sk files can be loaded with the JSON option.
     """
-    # pio = resolve_payload("in", **pio_args)
-    # print(f'pio: {pio}')
-    # return # TODO finish
-    # sk_path = Path(sk_path).absolute()
-    # with sk_path.open('r') as f:
-    #     sk_dict = json.load(f)
-    
     print(f'wallet: {wallet}')
-    # print(f'something: {something}')
-    # print(f'otherthing: {otherthing}')
-    sk_dict = wallet.to_json()
+    sk_dict = json.loads(wallet.to_json())
     print(f'sk_dict from wallet: {sk_dict}')
     asyncio.run(Client().wallet_load_or_create(
-        # description = sk_path.stem,
-        sk_dict = sk_dict
+        description = sk_dict['description'],
+        sk_dict = sk_dict,
     ))
 
 # @click.option('--sk-path', type=click.STRING, required=True)
