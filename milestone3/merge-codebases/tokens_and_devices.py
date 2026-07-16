@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 import base64, os, time
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field, fields, asdict
 from enum import IntEnum
 from typing import Optional
 
@@ -27,8 +27,18 @@ def _signing_bytes(jti: bytes, kind: int, exp: int,
     return cbor2.dumps([jti, int(kind), int(exp), issuer, cid])
 
 
-@dataclass
-class AuthToken:
+class HexReprMixin:
+    def __repr__(self):
+        parts = []
+        for f in fields(self):
+            v = getattr(self, f.name)
+            v = "'" + v.hex() + "'" if isinstance(v, (bytes, bytearray)) else repr(v)
+            parts.append(f"{f.name}={v}")
+        return f"{type(self).__name__}({', '.join(parts)})"
+
+
+@dataclass(repr=False)
+class AuthToken(HexReprMixin):
     jti: bytes                 # 16 random bytes, the nullifier id
     kind: TokenKind
     exp: int                   # unix seconds
