@@ -183,12 +183,17 @@ if __name__ == '__main__':
     # correctly fails with "already spent":
     # ip  = submit.submit(AuthToken.from_qr_str(ok.to_qr_str()), b"bafk...cid")
 
-    receipt, reissue = challenge.challenge(ip, spoiled=True, final_cid=b"bafk...spoil")
-    receipt2, reissue2 = challenge.challenge(ip2, spoiled=False, final_cid=b"bafk...cast")
+    receipt, ok3 = challenge.challenge(ip, spoiled=True, final_cid=b"bafk...spoil")
+    receipt2, ok4 = challenge.challenge(ip2, spoiled=False, final_cid=b"bafk...cast")
     print(f'\nreceipt: {receipt}')
-    print(f'\nreissue: {reissue}')
+    print(f'\nok3: {ok3}')
     print(f'\nreceipt2: {receipt2}')
-    print(f'\nreissue2: {reissue2}')
+    print(f'\nok4: {ok4}')
+
+    ip3 = submit.submit(AuthToken.from_qr_str(ok3.to_qr_str()), b"bafk...cid")
+    print(f'\nip3: {ip3}')
+    receipt3, ok5 = challenge.challenge(ip3, spoiled=False, final_cid=b"bafk...cast")
+    print(f'\nreceipt3: {receipt3}')
 
     print(f'\ncheckin station state: {checkin.__dict__}')
     print(f'\ncheckin station nullifiers: {checkin.nullifiers.__dict__}')
