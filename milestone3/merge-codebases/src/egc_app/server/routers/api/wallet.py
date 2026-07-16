@@ -23,8 +23,10 @@ async def wallet_load_or_create(wallet_dict: dict, state=Depends(get_state)):
         # TODO capture verbose msg here and return to cli?
         state.wallet = create_wallet(
             keys_dir    = sk_path.absolute().parent,
+            name        = 'wallet', # only one stored on the server at a time
             description = description,
             verbose     = True, # TODO False
+            overwrite   = True,
         )
     else:
         state.wallet = Wallet.from_json(json.dumps(sk_dict))

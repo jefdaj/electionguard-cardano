@@ -58,7 +58,7 @@ def make_qr_code(obj: Any) -> qrcode.QRCode:
         raise Exception(f'{type(obj)} obj has no to_qr_str method')
     qr_str = obj.to_qr_str()
     qr = qrcode.QRCode()
-    qr.add_data(qr_txt)
+    qr.add_data(qr_str)
     return qr
 
 

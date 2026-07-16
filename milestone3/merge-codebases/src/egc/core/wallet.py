@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from pycardano import *
 from .config import IS_TEST
 import logging
+import shutil
 
 
 DEF_KEYS_DIR = Path(__file__).parent.parent.parent / 'keys'
@@ -178,23 +179,25 @@ def _set_sk_description(sk: PaymentSigningKey, desc: str) -> PaymentSigningKey:
     sk = PaymentSigningKey.from_json(json.dumps(sk_dict))
     return sk
 
-# TODO rename .sk -> _sk.json?
-def create_wallet(keys_dir=DEF_KEYS_DIR, name='wallet', description='Generated EGC wallet', verbose=True) -> Wallet:
+def create_wallet(keys_dir=DEF_KEYS_DIR, name='wallet', description='Generated EGC wallet', verbose=True, overwrite=False) -> Wallet:
     LOG.debug('create_wallet')
     keys_dir = Path(keys_dir)
-    sk_path   = keys_dir / f'{name}.sk'
-    addr_path = keys_dir / f'{name}.addr'
-    if sk_path.exists() or addr_path.exists():
-        err = f'ERROR: at least one wallet file already exists: {sk_path}, {addr_path}'
+    sk_path  = keys_dir / f'{name}.sk'
+    if sk_path.exists() and not overwrite:
+        err = f'ERROR: sk_path already exists: {sk_path}'
         LOG.error(err)
         raise Exception(err)
+    if overwrite:
+        shutil.rmtree(sk_path, ignore_errors=True)
     keys_dir.mkdir(parents=True, exist_ok=True)
     signing_key = PaymentSigningKey.generate()
     signing_key = _set_sk_description(signing_key, description)
-    print(f'signing_key: {signing_key}')
-    # signing_key.description = description # TODO is this right?
-    signing_key.save(str(sk_path)) # TODO Path OK?
+    # this has issues with existing files, and description not setting:
+    # signing_key.save(str(sk_path))
+    # so we save it manually instead:
+    sk_path.write_text(signing_key.to_json())
     LOG.info(f'Generated {sk_path}')
+    # round-trip to make sure it was saved properly before using:
     wallet = Wallet.from_sk_path(sk_path)
     msg = f'''
     Your new Preview testnet key \"{name} ({description})\" is here:
