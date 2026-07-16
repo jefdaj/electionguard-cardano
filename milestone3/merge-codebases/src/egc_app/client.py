@@ -17,12 +17,12 @@ class Client:
         return r.json()
 
     async def node_status(self):
-        r = await self._c.get("/status")
+        r = await self._c.get("/node/status")
         r.raise_for_status()
         return r.json()
 
     async def node_await(self):
-        r = await self._c.get("/await")
+        r = await self._c.get("/node/await")
         r.raise_for_status()
         return r.json()
 

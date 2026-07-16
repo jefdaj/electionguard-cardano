@@ -36,6 +36,7 @@ class RetryingIPFS:
     async def _retry(self, coro_factory):
         # TODO should we call anything each time before trying here?
         # await ipfs_wait_until_stable(self) # TODO make it a method?
+        await ipfs_wait_until_ready(self)
         delay = self._delay
         for attempt in range(self._retries):
             try:
@@ -57,6 +58,12 @@ class RetryingIPFS:
 
     async def cat(self, *args, **kwargs):
         return await self._retry(lambda: self._client.cat(*args, **kwargs))
+
+    async def swarm(self, *args, **kwargs):
+        return await self._retry(lambda: self._client.swarm(*args, **kwargs))
+
+    async def stats(self, *args, **kwargs):
+        return await self._retry(lambda: self._client.stats(*args, **kwargs))
 
     @property
     def pin(self):
@@ -87,16 +94,26 @@ class RetryingIPFS:
         return getattr(self._client, name)
 
 
-# async def ipfs_wait_until_ready(ipfs: RetryingIPFS, timeout=10):
-#     end = asyncio.get_event_loop().time() + timeout
-#     while True:
-#         try:
-#             await ipfs._client.version()  # raw client, single call
-#             return
-#         except (ClientConnectorError, ClientConnectorDNSError):
-#             if asyncio.get_event_loop().time() > end:
-#                 raise
-#             await asyncio.sleep(1)
+# TODO remove in favor of ipfs_wait_until_stable?
+async def ipfs_wait_until_ready(ipfs: RetryingIPFS, timeout=10):
+    end = asyncio.get_event_loop().time() + timeout
+    while True:
+        try:
+            await ipfs._client.version()  # raw client, single call
+            return
+        except (ClientConnectorError, ClientConnectorDNSError):
+            if asyncio.get_event_loop().time() > end:
+                raise
+            await asyncio.sleep(1)
+
+
+async def ipfs_status():
+    ipfs  = RetryingIPFS()
+    peers = (await ipfs._client.swarm.peers()).get("Peers") or []
+    bw    = await ipfs._client.stats.bw()
+    rate  = bw.get("RateIn", 0) + bw.get("RateOut", 0) # TODO units?
+    return {'peers': len(peers), 'rate': rate}
+
 
 async def ipfs_wait_until_stable(
     timeout=180,

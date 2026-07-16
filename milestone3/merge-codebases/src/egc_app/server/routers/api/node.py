@@ -1,17 +1,21 @@
 from fastapi import APIRouter
-from egc.core.ipfs import ipfs_wait_until_stable
-from egc_app.server.schemas.node import StatusOut
+from egc.core.ipfs import ipfs_wait_until_stable, ipfs_status
+from egc_app.server.schemas.node import NodeStatusOut
 
-router = APIRouter(tags=["status"])
+router = APIRouter(prefix="/node", tags=["status"])
 
-# TODO include ogmios status here
-# TODO include ipfs status here
-@router.get("/status", response_model=StatusOut)
+@router.get("/status", response_model=NodeStatusOut)
 async def status():
-    return StatusOut()
+    # TODO status1 is cardano
+    status2 = await ipfs_status()
+    print(f'status2: {status2}')
+    return NodeStatusOut(
+        ipfs_peers = status2['peers'],
+        ipfs_bw_bs = int(status2['rate']),
+    )
 
 @router.get("/await")
 async def await_():
+    # TODO wait for ogmios sync progress == 1.0 here
     await ipfs_wait_until_stable()
-    # TODO also wait for ogmios sync progress == 1.0 here
     return 200 # TODO is this right?
