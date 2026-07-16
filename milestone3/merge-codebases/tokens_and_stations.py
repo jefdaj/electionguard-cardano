@@ -11,7 +11,7 @@ import json
 import cbor2
 from nacl.signing import VerifyKey
 from nacl.exceptions import BadSignatureError
-from pycardano import PaymentSigningKey, PaymentVerificationKey
+from pycardano import PaymentSigningKey, PaymentVerificationKey, VerificationKeyHash
 
 from egc.core import qrcodes
 
@@ -124,55 +124,82 @@ class NullifierStore:
         self._spent.add(jti)
         return True
 
+# ---- trust registry -----
+
+class TrustRegistry:
+    """Wraps the on-chain set of authorized issuer hashes."""
+    def __init__(self, hashes: set[VerificationKeyHash]):
+        self._hashes = hashes  # normalized from chain
+
+    def is_trusted(self, issuer: bytes) -> bool:
+        vk = PaymentVerificationKey.from_primitive(issuer)
+        return vk.hash() in self._hashes
+
+    def refresh(self, hashes: set[VerificationKeyHash]) -> None:
+        self._hashes = hashes
+
+
+def verify_token(tok: AuthToken, registry: TrustRegistry) -> None:
+    # 1. authorization: issuer hash on chain
+    if not registry.is_trusted(tok.issuer):
+        raise PermissionError("issuer not in trust set")
+    # 2. authentication: signature valid for that pubkey
+    try:
+        VerifyKey(tok.issuer).verify(tok._payload(), tok.sig)
+    except BadSignatureError:
+        raise PermissionError("bad signature")
+    # 3. freshness
+    if tok.exp < int(time.time()):
+        raise PermissionError("expired")
+
 
 # ---- stations ------------------------------------------------------------------
 DEFAULT_TTL = 15 * 60  # seconds
 
 
 class Station:
-    def __init__(self, sk: PaymentSigningKey, trusted: set[bytes],
+    def __init__(self, sk: PaymentSigningKey, registry: TrustRegistry,
                  nullifiers: NullifierStore):
         self.sk = sk
         self.pk = PaymentVerificationKey.from_signing_key(sk).payload  # 32 bytes
-        self.trusted = trusted          # set of acceptable issuer pubkeys
+        self.registry = registry
         self.nullifiers = nullifiers
 
     def _issue(self, kind: TokenKind, cid: bytes = b"",
                ttl: int = DEFAULT_TTL) -> AuthToken:
         return AuthToken(
-            jti=os.urandom(16), kind=kind, exp=int(time.time()) + ttl,
+            kind=kind, jti=os.urandom(16), exp=int(time.time()) + ttl,
             issuer=self.pk, cid=cid,
         ).sign(self.sk)
 
-    def _accept(self, tok: AuthToken, expect: TokenKind) -> AuthToken:
-        if tok.kind != expect:
-            raise ValueError(f"wrong kind: {tok.kind!r}")
-        if tok.issuer not in self.trusted:
-            raise ValueError("untrusted issuer")
+    def _accept(self, tok: AuthToken, expected: TokenKind) -> AuthToken:
+        verify_token(tok, self.registry)
+        if tok.kind != expected:
+            raise PermissionError(f"expected {expected}, got {tok.kind}")
+        if not self.nullifiers.spend(tok.jti):   # atomic single-use
+            raise PermissionError("token already spent")
         if not tok.verify():
             raise ValueError("bad signature")
         if tok.expired():
             raise ValueError("expired")
-        if not self.nullifiers.spend(tok.jti):  # atomic single-use
-            raise ValueError("already spent")
         return tok
 
 
-# TODO minimal demo: one checkin + one combined challenge/submit?
-# TODO or just keep them as 3 separate things for code simplicity
-
 class CheckInStation(Station):
-    def check_in(self) -> AuthToken:                     # after eligibility check
+    # initial ok-to-vote
+    def check_in(self) -> AuthToken: # after eligibility check
         return self._issue(TokenKind.OK_TO_VOTE)
 
 class SubmitStation(Station):
+    # ok-to-vote -> vote-in-progress
     def submit(self, ok_token: AuthToken, ballot_cid: bytes) -> AuthToken:
-        self._accept(ok_token, TokenKind.OK_TO_VOTE)     # consumes OK-to-vote
+        self._accept(ok_token, TokenKind.OK_TO_VOTE) # consumes OK-to-vote
         # ...ElectionGuard encrypt + publish ciphertext to IPFS happens here...
         return self._issue(TokenKind.VOTE_IN_PROGRESS, cid=ballot_cid)
 
 
 class ChallengeStation(Station):
+    # vote-in-progress -> (i-voted, optional ok-to-vote)
     def challenge(self, ip_token: AuthToken, spoiled: bool,
                final_cid: bytes) -> tuple[AuthToken, Optional[AuthToken]]:
         self._accept(ip_token, TokenKind.VOTE_IN_PROGRESS)    # consumes in-progress
@@ -187,14 +214,27 @@ if __name__ == '__main__':
     checkin_sk   = PaymentSigningKey.generate()
     submit_sk    = PaymentSigningKey.generate()
     challenge_sk = PaymentSigningKey.generate()
+    
+    print(f'checkin_sk: {checkin_sk}\n')
+    print(f'submit_sk: {submit_sk}\n')
+    print(f'challenge_sk: {challenge_sk}\n')
 
-    pk = lambda sk: PaymentVerificationKey.from_signing_key(sk).payload
+    pk  = lambda sk: PaymentVerificationKey.from_signing_key(sk).payload
+    vkh = lambda sk: PaymentVerificationKey.from_primitive(pk(sk)).hash()
 
     # who each station trusts as an issuer of its *input* token:
     # TODO these should be assembled from onchain channel publishers
-    submit_trusts    = {pk(checkin_sk), pk(challenge_sk)}   # ok-to-vote sources
-    challenge_trusts = {pk(submit_sk)}                      # vote-in-progress source
+    submit_vkh_set    = {vkh(checkin_sk), vkh(challenge_sk)} # ok-to-vote sources
+    challenge_vkh_set = {vkh(submit_sk)}                     # vote-in-progress source
 
+    checkin_registry   = TrustRegistry(set()) # checkin only creates new tokens
+    submit_registry    = TrustRegistry(submit_vkh_set)
+    challenge_registry = TrustRegistry(challenge_vkh_set)
+    
+    print(f'checkin_registry: {checkin_registry.__dict__}\n')
+    print(f'submit_registry: {submit_registry.__dict__}\n')
+    print(f'challenge_registry: {challenge_registry.__dict__}\n')
+    
     # correctly fails with "untrusted issuer" when submitting ok1:
     # submit_trusts = {pk(challenge_sk)}
 
@@ -204,30 +244,30 @@ if __name__ == '__main__':
     # correctly fails with "untrusted issuer" when submitting ip1
     # challenge_trusts = {} # vote-in-progress source
 
-    checkin   = CheckInStation(checkin_sk, set(), store)     # issues only
-    submit    = SubmitStation(submit_sk, submit_trusts, store)
-    challenge = ChallengeStation(challenge_sk, challenge_trusts, store)
+    checkin_station   = CheckInStation(checkin_sk, set(), store)     # issues only
+    submit_station    = SubmitStation(submit_sk, submit_registry, store)
+    challenge_station = ChallengeStation(challenge_sk, challenge_registry, store)
 
     print('check_in 1')
-    ok1 = checkin.check_in()
+    ok1 = checkin_station.check_in()
     print(f'\nok1: {ok1}')
     print(f'\nok1 verify: {ok1.verify()}\n')
     qrcodes.print_qrcode(ok1)
 
     print('check_in 2')
-    ok2 = checkin.check_in()
+    ok2 = checkin_station.check_in()
     print(f'\nok2: {ok2}')
     print(f'\nok2 verify: {ok2.verify()}\n')
     qrcodes.print_qrcode(ok2)
     
     print('submit 1')
-    ip1 = submit.submit(AuthToken.from_qr_str(ok1.to_qr_str()), b"bafk...cid")
+    ip1 = submit_station.submit(AuthToken.from_qr_str(ok1.to_qr_str()), b"bafk...cid")
     print(f'\nip1: {ip1}')
     print(f'\nip1 verify: {ip1.verify()}\n')
     qrcodes.print_qrcode(ip1)
 
     print('submit 2')
-    ip2 = submit.submit(AuthToken.from_qr_str(ok2.to_qr_str()), b"bafk...cid")
+    ip2 = submit_station.submit(AuthToken.from_qr_str(ok2.to_qr_str()), b"bafk...cid")
     print(f'\nip2: {ip2}')
     print(f'\nip2 verify: {ip2.verify()}\n')
     qrcodes.print_qrcode(ip2)
@@ -236,7 +276,7 @@ if __name__ == '__main__':
     # ip1_again = submit.submit(AuthToken.from_qr_str(ok1.to_qr_str()), b"bafk...cid")
 
     print('spoil 1, creating ok3')
-    r1, ok3 = challenge.challenge(ip1, spoiled=True, final_cid=b"bafk...spoil")
+    r1, ok3 = challenge_station.challenge(ip1, spoiled=True, final_cid=b"bafk...spoil")
     print(f'\nr1: {r1}')
     print(f'\nr1 verify: {r1.verify()}\n')
     qrcodes.print_qrcode(r1)
@@ -245,7 +285,7 @@ if __name__ == '__main__':
     qrcodes.print_qrcode(ok3)
 
     print('cast 2')
-    r2, ok4 = challenge.challenge(ip2, spoiled=False, final_cid=b"bafk...cast")
+    r2, ok4 = challenge_station.challenge(ip2, spoiled=False, final_cid=b"bafk...cast")
     print(f'\nr2: {r2}')
     print(f'\nr2 verify: {r2.verify()}\n')
     qrcodes.print_qrcode(r2)
@@ -253,21 +293,21 @@ if __name__ == '__main__':
     print(f'\nok4: {ok4}\n')
 
     print('submit 3')
-    ip3 = submit.submit(AuthToken.from_qr_str(ok3.to_qr_str()), b"bafk...cid")
+    ip3 = submit_station.submit(AuthToken.from_qr_str(ok3.to_qr_str()), b"bafk...cid")
     print(f'\nip3: {ip3}')
     print(f'\nip3 verify: {ip3.verify()}\n')
     qrcodes.print_qrcode(ip3)
 
     print('cast 3')
-    r3, ok5 = challenge.challenge(ip3, spoiled=False, final_cid=b"bafk...cast")
+    r3, ok5 = challenge_station.challenge(ip3, spoiled=False, final_cid=b"bafk...cast")
     print(f'\nr3: {r3}')
     print(f'\nr3 verify: {r3.verify()}\n')
     qrcodes.print_qrcode(r3)
     assert ok5 is None
     print(f'\nok5: {ok5}\n')
 
-    print(f'\nfinal checkin station state: {checkin.__dict__}')
-    print(f'\nfinal submit station state: {submit.__dict__}')
-    print(f'\nfinal challenge station state: {challenge.__dict__}')
+    print(f'\nfinal checkin station state: {checkin_station.__dict__}')
+    print(f'\nfinal submit station state: {submit_station.__dict__}')
+    print(f'\nfinal challenge station state: {challenge_station.__dict__}')
 
     print(f'\nfinal nullifier store: {store._spent}')
