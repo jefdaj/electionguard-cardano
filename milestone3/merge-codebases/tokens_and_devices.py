@@ -13,6 +13,8 @@ from nacl.signing import VerifyKey
 from nacl.exceptions import BadSignatureError
 from pycardano import PaymentSigningKey, PaymentVerificationKey
 
+from egc.core import qrcodes
+
 
 class TokenKind(IntEnum):
     OK_TO_VOTE = 0
@@ -69,13 +71,29 @@ class AuthToken(HexReprMixin):
         blob = cbor2.dumps([
             int(self.kind), self.jti, self.exp, self.issuer, self.cid, self.sig
         ])
-        return base64.urlsafe_b64encode(blob).decode()
+        blob = base64.urlsafe_b64encode(blob).decode()
+        qr_str = ':'.join([
+            'egc',
+            token_prefix(self), # this is extra for human readability
+            blob
+        ])
+        return qr_str
 
     @classmethod
     def from_qr_str(cls, s: str) -> "AuthToken":
+        txt = ''.join(l.strip() for l in s.splitlines())
+        words = txt.split(':')
+        prefix = words[:2]
+        assert prefix[0] == 'egc'
+        assert prefix[1] in ['oktovote', 'voteinprogress', 'ivoted']
+        blob = words[2]
         kind, jti, exp, issuer, cid, sig = cbor2.loads(
-            base64.urlsafe_b64decode(s.encode()))
+            base64.urlsafe_b64decode(blob.encode()))
         return cls(TokenKind(kind), jti, exp, issuer, cid, sig)
+
+
+def token_prefix(tok: AuthToken) -> str:
+    return str(tok.kind.name).lower().replace('_', '')
 
 
 # ---- single-use nullifier store (swap for a DB / chain later) -------------------
@@ -165,36 +183,57 @@ if __name__ == '__main__':
     submit    = SubmitStation(submit_sk, submit_trusts, store)
     challenge = ChallengeStation(challenge_sk, challenge_trusts, store)
 
+    print('check_in 1')
     ok1 = checkin.check_in()
-    ok2 = checkin.check_in()
-    print(f'\nok1: {ok1}')
-    print(f'\nok2: {ok2}')
+    print(f'\nok1: {ok1}\n')
+    qrcodes.print_qrcode(ok1)
 
-    ip  = submit.submit(AuthToken.from_qr_str(ok1.to_qr_str()), b"bafk...cid")
+    print('check_in 2')
+    ok2 = checkin.check_in()
+    print(f'\nok2: {ok2}\n')
+    qrcodes.print_qrcode(ok2)
+    
+    print('submit 1')
+    ip1 = submit.submit(AuthToken.from_qr_str(ok1.to_qr_str()), b"bafk...cid")
+    print(f'\nip1: {ip1}\n')
+    qrcodes.print_qrcode(ip1)
+
+    print('submit 2')
     ip2 = submit.submit(AuthToken.from_qr_str(ok2.to_qr_str()), b"bafk...cid")
-    print(f'\nip: {ip}')
-    print(f'\nip2: {ip2}')
+    print(f'\nip2: {ip2}\n')
+    qrcodes.print_qrcode(ip2)
 
     # correctly fails with "already spent":
-    # ip  = submit.submit(AuthToken.from_qr_str(ok1.to_qr_str()), b"bafk...cid")
+    # ip1_again = submit.submit(AuthToken.from_qr_str(ok1.to_qr_str()), b"bafk...cid")
 
-    receipt, ok3 = challenge.challenge(ip, spoiled=True, final_cid=b"bafk...spoil")
-    receipt2, ok4 = challenge.challenge(ip2, spoiled=False, final_cid=b"bafk...cast")
-    print(f'\nreceipt: {receipt}')
+    print('spoil 1, creating ok3')
+    r1, ok3 = challenge.challenge(ip1, spoiled=True, final_cid=b"bafk...spoil")
+    print(f'\nr1: {r1}')
+    qrcodes.print_qrcode(r1)
     print(f'\nok3: {ok3}')
-    print(f'\nreceipt2: {receipt2}')
+    qrcodes.print_qrcode(ok3)
+
+    print('cast 2')
+    r2, ok4 = challenge.challenge(ip2, spoiled=False, final_cid=b"bafk...cast")
+    print(f'\nr2: {r2}')
+    assert ok4 is None
     print(f'\nok4: {ok4}')
 
+    print('submit 3')
     ip3 = submit.submit(AuthToken.from_qr_str(ok3.to_qr_str()), b"bafk...cid")
     print(f'\nip3: {ip3}')
-    receipt3, ok5 = challenge.challenge(ip3, spoiled=False, final_cid=b"bafk...cast")
-    print(f'\nreceipt3: {receipt3}')
 
-    print(f'\ncheckin station state: {checkin.__dict__}')
-    print(f'\ncheckin station nullifiers: {checkin.nullifiers.__dict__}')
+    print('cast 3')
+    r3, ok5 = challenge.challenge(ip3, spoiled=False, final_cid=b"bafk...cast")
+    print(f'\nr3: {r3}')
+    assert ok5 is None
+    print(f'\nok5: {ok5}')
 
-    print(f'\nsubmit station state: {submit.__dict__}')
-    print(f'\nsubmit station nullifiers: {submit.nullifiers.__dict__}')
+    print(f'\nfinal checkin station state: {checkin.__dict__}')
+    print(f'\nfinal checkin station nullifiers: {checkin.nullifiers.__dict__}')
 
-    print(f'\nchallenge station state: {challenge.__dict__}')
-    print(f'\nchallenge station nullifiers: {challenge.nullifiers.__dict__}')
+    print(f'\nfinal submit station state: {submit.__dict__}')
+    print(f'\nfinal submit station nullifiers: {submit.nullifiers.__dict__}')
+
+    print(f'\nfinal challenge station state: {challenge.__dict__}')
+    print(f'\nfinal challenge station nullifiers: {challenge.nullifiers.__dict__}')
