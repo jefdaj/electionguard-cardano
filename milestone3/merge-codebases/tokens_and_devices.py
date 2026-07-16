@@ -16,8 +16,8 @@ from pycardano import PaymentSigningKey, PaymentVerificationKey
 
 class TokenKind(IntEnum):
     OK_TO_VOTE = 0
-    IN_PROGRESS = 1
-    FINAL = 2  # optional: issued at challenge station as the end receipt
+    VOTE_IN_PROGRESS = 1
+    I_VOTED = 2  # optional: issued at challenge station as the end receipt
 
 
 # ---- canonical signing payload -------------------------------------------------
@@ -136,15 +136,15 @@ class SubmitStation(Station):
     def submit(self, ok_token: AuthToken, ballot_cid: bytes) -> AuthToken:
         self._accept(ok_token, TokenKind.OK_TO_VOTE)     # consumes OK-to-vote
         # ...ElectionGuard encrypt + publish ciphertext to IPFS happens here...
-        return self._issue(TokenKind.IN_PROGRESS, cid=ballot_cid)
+        return self._issue(TokenKind.VOTE_IN_PROGRESS, cid=ballot_cid)
 
 
 class ChallengeStation(Station):
     def challenge(self, ip_token: AuthToken, spoiled: bool,
                final_cid: bytes) -> tuple[AuthToken, Optional[AuthToken]]:
-        self._accept(ip_token, TokenKind.IN_PROGRESS)    # consumes in-progress
+        self._accept(ip_token, TokenKind.VOTE_IN_PROGRESS)    # consumes in-progress
         # ...record cast/spoil decision in ElectionGuard...
-        receipt = self._issue(TokenKind.FINAL, cid=final_cid)
+        receipt = self._issue(TokenKind.I_VOTED, cid=final_cid)
         reissue = self._issue(TokenKind.OK_TO_VOTE) if spoiled else None
         return receipt, reissue
 
