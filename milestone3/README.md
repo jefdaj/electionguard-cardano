@@ -9,6 +9,7 @@ Other progress towards an integrated demo:
 * [M1 mockchain tests using new Nix Docker](./egpy-upgrade-nix-docker)
 * [Try a client/server codebase with FastAPI](./client-server-fastapi)
 * [Designed the CLI](./cli-design)
+* [Designed the auth token workflow and polling place stations](./tokens-and-stations)
 
 And other misc experiments:
 

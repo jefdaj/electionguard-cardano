@@ -22,6 +22,14 @@ issuing it (checkin desk, submit station, challenge station). That way it's
 ready to incorporate into future on-chain dispute resolution, and could be used
 today for manual audits.
 
+Each type of station (Checkin, Submit, Challenge) will be a type of
+ElectionNode.  CheckStations can probably just be observers, but Submit +
+Challenge stations should be devices.
+
+Other than via the auth QR codes, the stations don't need to communicate. I'll
+add a couple new contract operations to register each type of station with its
+`VerificationKeyHash` on chain, and they can read that.
+
 Quick test script:
 
 ```

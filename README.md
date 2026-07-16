@@ -11,11 +11,12 @@ ElectionGuard + Cardano
 
 Work in progress on [the Catalyst fund13 project](https://milestones.projectcatalyst.io/projects/1300090).
 
-Current status as of 2026-07-13:
+Current status as of 2026-07-16:
 
 - [ ] [Milestone 3](./milestone3/) (ElectionGuard + Cardano integration):
 
   * Currently working on [merging the M1 + M2 + M3 codebases](./milestone3/merge-codebases)
+  * [Designed the auth token workflow and polling place stations](./milestone3/tokens-and-stations)
   * [Designed the CLI](./milestone3/cli-design)
   * [Nix Packaged the reference implementation](https://github.com/jefdaj/electionguard-python) (finally!)
   * [M1 mockchain tests using new Nix Docker](./milestone3/egpy-upgrade-nix-docker)
