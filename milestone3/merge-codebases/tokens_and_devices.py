@@ -97,11 +97,26 @@ def token_prefix(tok: AuthToken) -> str:
 
 
 # ---- single-use nullifier store (swap for a DB / chain later) -------------------
+
+class HexByteSet(set):
+    "Just makes a set[bytes] more human readable."
+    def __repr__(self):
+        return "{" + ", ".join(
+            v.hex() if isinstance(v, (bytes, bytearray)) else repr(v)
+            for v in self
+        ) + "}"
+    def __or__(self, o):  return HexByteSet(super().__or__(o))
+    def __and__(self, o): return HexByteSet(super().__and__(o))
+    def __sub__(self, o): return HexByteSet(super().__sub__(o))
+    def __xor__(self, o): return HexByteSet(super().__xor__(o))
+    def copy(self):       return HexByteSet(self)
+
+
 class NullifierStore:
     """Atomic insert-if-absent. In-memory for now; give it the same interface
     when you move to Redis SETNX or an on-chain mapping."""
     def __init__(self) -> None:
-        self._spent: set[bytes] = set()
+        self._spent = HexByteSet()
 
     def spend(self, jti: bytes) -> bool:
         if jti in self._spent:
@@ -176,8 +191,18 @@ if __name__ == '__main__':
     pk = lambda sk: PaymentVerificationKey.from_signing_key(sk).payload
 
     # who each station trusts as an issuer of its *input* token:
-    submit_trusts    = {pk(checkin_sk), pk(challenge_sk)}   # OK-to-vote sources
-    challenge_trusts = {pk(submit_sk)}                      # in-progress source
+    # TODO these should be assembled from onchain channel publishers
+    submit_trusts    = {pk(checkin_sk), pk(challenge_sk)}   # ok-to-vote sources
+    challenge_trusts = {pk(submit_sk)}                      # vote-in-progress source
+
+    # correctly fails with "untrusted issuer" when submitting ok1:
+    # submit_trusts = {pk(challenge_sk)}
+
+    # correctly fails with "untrusted issuer" when submitting ok3:
+    # submit_trusts = {pk(checkin_sk)}
+
+    # correctly fails with "untrusted issuer" when submitting ip1
+    # challenge_trusts = {} # vote-in-progress source
 
     checkin   = CheckInStation(checkin_sk, set(), store)     # issues only
     submit    = SubmitStation(submit_sk, submit_trusts, store)
@@ -225,7 +250,7 @@ if __name__ == '__main__':
     print(f'\nr2 verify: {r2.verify()}\n')
     qrcodes.print_qrcode(r2)
     assert ok4 is None
-    print(f'\nok4: {ok4}')
+    print(f'\nok4: {ok4}\n')
 
     print('submit 3')
     ip3 = submit.submit(AuthToken.from_qr_str(ok3.to_qr_str()), b"bafk...cid")
@@ -239,13 +264,10 @@ if __name__ == '__main__':
     print(f'\nr3 verify: {r3.verify()}\n')
     qrcodes.print_qrcode(r3)
     assert ok5 is None
-    print(f'\nok5: {ok5}')
+    print(f'\nok5: {ok5}\n')
 
     print(f'\nfinal checkin station state: {checkin.__dict__}')
-    print(f'\nfinal checkin station nullifiers: {checkin.nullifiers.__dict__}')
-
     print(f'\nfinal submit station state: {submit.__dict__}')
-    print(f'\nfinal submit station nullifiers: {submit.nullifiers.__dict__}')
-
     print(f'\nfinal challenge station state: {challenge.__dict__}')
-    print(f'\nfinal challenge station nullifiers: {challenge.nullifiers.__dict__}')
+
+    print(f'\nfinal nullifier store: {store._spent}')
