@@ -14,7 +14,7 @@ LOG = logging.getLogger(__name__)
 
 
 # TODO is there a better way to set it?
-IPFS_MADDR = os.environ.get('IPFS_API_ADDR', '/dns4/127.0.0.1/tcp/5001')
+IPFS_API_ADDR = os.environ.get('IPFS_API_ADDR', '/dns4/127.0.0.1/tcp/5001')
 LOG.debug(f'IPFS_API_ADDR: {IPFS_API_ADDR}')
 
 

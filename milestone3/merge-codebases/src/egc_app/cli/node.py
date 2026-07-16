@@ -8,7 +8,7 @@ from egc_app.server.run import run as run_server
 
 @click.group(cls=RoleAwareGroup)
 def node() -> None:
-    "Start, stop, or check status of your node."
+    "Start, stop, await, check status of your node."
 
 @node.command()
 @click.option("--host", default="0.0.0.0")
@@ -29,7 +29,18 @@ def run(host, port, dev_mode, private_dir):
 @node.command()
 def status():
     "Is the node OK?"
-    resp = asyncio.run(Client().status())
+    # TODO add Kubo + Ogmios status too
+    resp = asyncio.run(Client().node_status())
+    click.echo(resp)
+
+@node.command(name="await")
+def await_():
+    """Wait until the node is stable.
+
+    Only waits for the IPFS (Kubo) node so far.
+    """
+    # TODO add Ogmios too
+    resp = asyncio.run(Client().node_await())
     click.echo(resp)
 
 @node.command()
