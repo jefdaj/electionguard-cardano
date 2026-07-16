@@ -15,7 +15,7 @@ LOG = logging.getLogger(__name__)
 
 # TODO is there a better way to set it?
 IPFS_API_ADDR = os.environ.get('IPFS_API_ADDR', '/dns4/127.0.0.1/tcp/5001')
-LOG.debug(f'IPFS_API_ADDR: {IPFS_API_ADDR}')
+LOG.info(f'IPFS_API_ADDR: {IPFS_API_ADDR}')
 
 
 class RetryingIPFS:
@@ -111,8 +111,8 @@ async def ipfs_status():
     ipfs  = RetryingIPFS()
     peers = (await ipfs._client.swarm.peers()).get("Peers") or []
     bw    = await ipfs._client.stats.bw()
-    rate  = bw.get("RateIn", 0) + bw.get("RateOut", 0) # TODO units?
-    return {'peers': len(peers), 'rate': rate}
+    rate  = int(bw.get("RateIn", 0) + bw.get("RateOut", 0))
+    return {'n_peers': len(peers), 'bandwidth_Bs': rate}
 
 
 async def ipfs_wait_until_stable(

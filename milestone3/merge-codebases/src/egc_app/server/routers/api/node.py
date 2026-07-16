@@ -1,18 +1,27 @@
 from fastapi import APIRouter
+from egc.core.ogmios import ogmios_health
 from egc.core.ipfs import ipfs_wait_until_stable, ipfs_status
 from egc_app.server.schemas.node import NodeStatusOut
 
 router = APIRouter(prefix="/node", tags=["status"])
 
-@router.get("/status", response_model=NodeStatusOut)
+# TODO is /health more standard?
+@router.get("/status") # , response_model=NodeStatusOut)
 async def status():
-    # TODO status1 is cardano
-    status2 = await ipfs_status()
-    print(f'status2: {status2}')
-    return NodeStatusOut(
-        ipfs_peers = status2['peers'],
-        ipfs_bw_bs = int(status2['rate']),
-    )
+    try:
+        cstat = await ogmios_health()
+        cstat2 = {}
+        cstat2['connected'] = cstat['connectionStatus'] == 'connected'
+        cstat2['sync_percent'] = int(cstat['networkSynchronization'] * 100)
+    # print(f'cstat2: {cstat2}')
+    except:
+        cstat2 = {'connected': False} # TODO codify better
+    try:
+        istat = await ipfs_status()
+        istat['connected'] = True
+    except:
+        istat = {'connected': False}
+    return {'cardano': cstat2, 'ipfs': istat}
 
 @router.get("/await")
 async def await_():

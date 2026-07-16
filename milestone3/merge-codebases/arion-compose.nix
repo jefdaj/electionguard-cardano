@@ -112,8 +112,12 @@ let
     # service.useHostStore = true;
     service.stop_signal = "SIGINT";
     service.environment = 
-      let ipfsServiceName = "${project_name}-${nodeName role i}-ipfs-1";
+      let
+        ogmiosServiceName = "${project_name}-shared-ogmios-1";
+        ipfsServiceName   = "${project_name}-${nodeName role i}-ipfs-1";
       in {
+        OGMIOS_HOST = ogmiosServiceName;
+        OGMIOS_PORT = toString ogmiosPort;
         IPFS_API_ADDR = "/dns4/${ipfsServiceName}/tcp/5001"; # TODO load properly
       };
   };

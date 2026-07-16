@@ -6,6 +6,7 @@ import time
 import math
 # import re
 import ast
+import os
 
 from typing import Any, Dict, Optional, Callable
 from pycardano import *
@@ -27,13 +28,17 @@ LOVELACE_PER_ADA = 1_000_000
 COLLATERAL_ADA = 5
 COLLATERAL_LOVELACE = COLLATERAL_ADA * LOVELACE_PER_ADA
 
-OGMIOS_HOST = "localhost"
-OGMIOS_PORT = 1337
+OGMIOS_HOST = os.environ.get('OGMIOS_HOST', 'localhost')
+OGMIOS_PORT = int(os.environ.get('OGMIOS_PORT', '1337'))
+LOG.info(f'OGMIOS_HOST: {OGMIOS_HOST}')
+LOG.info(f'OGMIOS_PORT: {OGMIOS_PORT}')
+
 OGMIOS_CTX = OgmiosV6ChainContext(
     host=OGMIOS_HOST,
     port=OGMIOS_PORT,
     network=Network.TESTNET
 )
+LOG.info(f'OGMIOS_CTX: {OGMIOS_CTX}')
 
 OGMIOS_POLL_SEC    =   1 # TODO does this matter? what's reasonable?
 
