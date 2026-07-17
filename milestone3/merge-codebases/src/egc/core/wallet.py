@@ -23,7 +23,7 @@ import shutil
 
 
 # TODO load from config
-DEF_KEYS_DIR = Path(__file__).parent / '../../../keys'
+DEF_KEYS_DIR = (Path(__file__).parents[3] / 'keys').absolute()
 
 # Regular logger
 LOG = logging.getLogger(__name__)
