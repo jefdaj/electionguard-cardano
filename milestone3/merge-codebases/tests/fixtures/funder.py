@@ -18,7 +18,7 @@ def funder_addr(funder_wallet: Wallet) -> Address:
 
 @per_election_fixture
 def funder(funder_wallet: Wallet) -> ObserverNode:
-    node_ = ObserverNode(wallet=funder_wallet)
+    node_ = ObserverNode(wallet=funder_wallet, role_index=1)
     LOG.debug(f'funder: {node_}')
     try:
         yield node_
