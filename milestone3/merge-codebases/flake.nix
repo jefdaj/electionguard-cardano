@@ -3,6 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    aiken.url   = "github:aiken-lang/aiken/v1.1.21";
     arion.url = "github:jefdaj/arion/rm-obsolete-version-attribute";
     electionguard-python = {
       url = "github:jefdaj/electionguard-python/nix-lib-outputs";
@@ -25,7 +26,8 @@
     };
   };
 
-  outputs = { self, nixpkgs, arion, electionguard-python, uv2nix, pyproject-nix, pyproject-build-systems, ... }:
+  outputs = { self, nixpkgs, aiken, arion, electionguard-python,
+              uv2nix, pyproject-nix, pyproject-build-systems, ... }:
     let
       inherit (nixpkgs) lib;
       system = "x86_64-linux";
@@ -86,7 +88,7 @@
       pythonEnv = pythonSet.mkVirtualEnv "electionguard-cardano" workspace.deps.default;
 
       kupo = pkgs.callPackage ./nix/kupo.nix {};
-      otherDeps = [
+      runtimeDeps = [
         kupo
       ];
 
@@ -98,6 +100,14 @@
         python3   = python313;
         python313 = myPython313;
       });
+
+      devPkgList = ps: with ps; [
+        arion.packages.x86_64-linux.arion
+        file
+        jq
+        time
+        tree
+      ];
 
     in
     {
@@ -124,7 +134,7 @@
             pkgs.coreutils
             pkgs.bashInteractive
             pkgs.jq
-          ] ++ otherDeps;
+          ] ++ runtimeDeps;
           enableFakechroot = true;
           fakeRootCommands = ''
             mkdir /data; chown 1000:100 /data
@@ -145,36 +155,56 @@
 
       };
 
-      # dev shell with editable install
-      devShells.${system}.default =
-        let
-          editableOverlay = workspace.mkEditablePyprojectOverlay { root = "$PWD"; };
-          editablePythonSet = pythonSet.overrideScope editableOverlay;
-          venv = editablePythonSet.mkVirtualEnv "electionguard-cardano" workspace.deps.all;
-        in
-        pkgs.mkShell {
-          packages = with pkgs; [
-            arion.packages.${system}.default
-            # electionguard-python.packages.${system}.default
-            jq
-            uv
-            venv
-            # cacert # TODO remove?
-          ] ++ otherDeps;
-          env = {
-            UV_NO_SYNC = "1";
-            UV_PYTHON = "${venv}/bin/python";
-            UV_PYTHON_DOWNLOADS = "never";
-            PYTHONDONTWRITEBYTECODE = true;
+      devShells.${system} = rec {
+        default = offchain;
 
-            # TODO remove?
-            # SSL_CERT_FILE     = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
-            # NIX_SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
-          };
+        # only the aiken-related tools
+        onchain = pkgs.mkShell {
+          nativeBuildInputs = devPkgList pkgs ++ (with pkgs; [
+            aiken.packages.x86_64-linux.aiken
+          ]);
           shellHook = ''
-            unset PYTHONPATH
+            echo "running devShells.x86_64-linux.onchain shellHook"
+            cd onchain
+            echo "$(aiken --version)"
           '';
         };
 
+        # dev shell with editable install
+        offchain =
+          let
+            editableOverlay = workspace.mkEditablePyprojectOverlay { root = "$PWD"; };
+            editablePythonSet = pythonSet.overrideScope editableOverlay;
+            venv = editablePythonSet.mkVirtualEnv "electionguard-cardano" workspace.deps.all;
+          in
+          pkgs.mkShell {
+            packages = runtimeDeps ++ onchain.nativeBuildInputs ++ (with pkgs; [
+              # electionguard-python.packages.${system}.default
+              jq
+              uv
+              venv
+              # cacert # TODO remove?
+            ]);
+            env = {
+              UV_NO_SYNC = "1";
+              UV_PYTHON = "${venv}/bin/python";
+              UV_PYTHON_DOWNLOADS = "never";
+              PYTHONDONTWRITEBYTECODE = true;
+
+              # TODO remove?
+              # SSL_CERT_FILE     = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+              # NIX_SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+            };
+            shellHook = ''
+               echo "running devShells.x86_64-linux.offchain shellHook"
+               echo "$(aiken --version)"
+               echo "kupo $(kupo --version)"
+               echo "$(python --version)"
+               echo "pycardano $(python -c "import importlib.metadata as m; print(m.version('pycardano'))")"
+               unset PYTHONPATH
+            '';
+          };
+
+        };
     };
 }
