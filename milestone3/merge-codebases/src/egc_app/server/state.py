@@ -11,18 +11,15 @@ def get_state(request: Request):
 def setup_state(state, config):
     state.config = config
     state.wallet = None
-    # state.config['wallet_name'] = None
     reset_election_state(state)
 
 def reset_election_state(state):
     # Resets the parts of the state that depend on the current election.
     # Should NOT reset the wallet.
     state.node = ObserverNode(
-        role_index = 1, # TODO pass this in
+        role_index = 1, # TODO pass this in? or ignore/deprecate
         wallet = state.wallet,
     )
-    # state.config['election'] = None
-    # state.config['role'] = None
 
 def teardown_state(state):
     if getattr(state, 'node', None) is not None:
