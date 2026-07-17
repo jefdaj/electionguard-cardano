@@ -30,7 +30,7 @@ class ElectionNode:
         # May both be None in case of an observer.
         # All other roles should set them both from the beginning.
         script: Optional[ElectionScript] = None,
-        sub_cfg: Optional[SubscriberConfig] = None,
+        config: Optional[ElectionConfig] = None,
 
         # No need for keys_dir or key_name if you pass an existing wallet.
         # You can also omit them without passing wallet, in which case a new
@@ -46,7 +46,7 @@ class ElectionNode:
 
         # May be None in case of an Observer.
         self.script: Optional[Script] = script
-        self.sub_cfg: Optional[SubscriberConfig] = sub_cfg
+        self.config: Optional[ElectionConfig] = config
 
         # Always exists, but may not be used for anything in case of an Observer.
         self.publisher = ElectionPublisher(
@@ -62,14 +62,14 @@ class ElectionNode:
             self.subscriber = None
 
         else:
-            if self.sub_cfg is None:
-                LOG.debug('ElectionNode skipping subscriber init because sub_cfg is None')
+            if self.config is None:
+                LOG.debug('ElectionNode skipping subscriber init because config is None')
                 self.subscriber = None
             else:
-                self.subscribe(sub_cfg)
-            # sub_cfg = SubscriberConfig.from_election(self.election)
+                self.subscribe(config)
+            # config = ElectionConfig.from_election(self.election)
             # self.subscriber = ElectionSubscriber(
-            #     config      = sub_cfg,
+            #     config      = config,
             #     on_action   = lambda x: None,
             #     on_rollback = lambda x: None,
             # )
@@ -78,17 +78,17 @@ class ElectionNode:
 
         LOG.info(f'Started {self.channel_str()} node.')
 
-    def subscribe(self, sub_cfg: SubscriberConfig):
+    def subscribe(self, config: ElectionConfig):
         self.subscriber = ElectionSubscriber(
-            config      = sub_cfg,
+            config      = config,
             on_event    = lambda x: None,
             on_rollback = lambda x: None,
         )
         self.subscriber.start()
-        LOG.info(f'Subscribe to this election with:\n\n{pformat(sub_cfg)}\n')
+        LOG.info(f'Subscribe to this election with:\n\n{pformat(config)}\n')
         LOG.debug(
             f'Or for dev debugging:\n\n'
-            f'egc:election:{sub_cfg.policy_id}:{sub_cfg.since_slot}:{sub_cfg.since_block}\n'
+            f'egc:election:{config.policy_id}:{config.since_slot}:{config.since_block}\n'
         )
 
     # def _guard_script(self):

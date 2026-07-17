@@ -57,7 +57,7 @@ KUPO_MAX_CHECKPOINTS = 50
 
 
 @dataclass
-class SubscriberConfig:
+class ElectionConfig:
 
     policy_id:   str # For kupo --match
     since_slot:  int # For kupo --since
@@ -120,7 +120,7 @@ class Point:
         return f"{self.slot_no}.{self.header_hash}"
 
     @classmethod
-    def from_config(cls, data: SubscriberConfig) -> Self:
+    def from_config(cls, data: ElectionConfig) -> Self:
         return cls(data.since_slot, data.since_block)
 
     @classmethod
@@ -439,7 +439,7 @@ class ElectionSubscriber:
 
     def __init__(
             self,
-            config: SubscriberConfig,
+            config: ElectionConfig,
             on_event    = _make_example_callback('on_event'),
             on_rollback = _make_example_callback('on_rollback'),
         ):

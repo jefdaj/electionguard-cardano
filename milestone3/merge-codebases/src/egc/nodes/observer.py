@@ -181,12 +181,12 @@ class ObserverNode(ElectionNode):
         # if self.election is None:
         #     raise Exception('_init_subscriber_from_ctx should be called as part of init_election')
         # self._guard_election()
-        sub_cfg = SubscriberConfig(
+        config = ElectionConfig(
             policy_id   = ctx.script.policy_id,
             since_slot  = ctx.deployment.index_from_slot,
             since_block = ctx.deployment.index_from_block_hash,
         )
-        return self.subscribe(sub_cfg)
+        return self.subscribe(config)
 
     def deploy_election(
             self,

@@ -12,12 +12,12 @@ LOG = logging.getLogger(__name__)
 # their election steps in other test modules though.
 
 @per_election_fixture
-def sub_cfg(election: ElectionContext):
-    return SubscriberConfig.from_election(election)
+def config(election: ElectionContext):
+    return ElectionConfig.from_election(election)
 
 @per_election_fixture
-def subscriber(sub_cfg: SubscriberConfig):
-    sub = ElectionSubscriber(sub_cfg)
+def subscriber(config: ElectionConfig):
+    sub = ElectionSubscriber(config)
     sub.start()
     yield sub
     sub.stop()

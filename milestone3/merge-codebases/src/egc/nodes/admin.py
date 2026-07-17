@@ -17,7 +17,7 @@ class AdminNode(VerifierNode):
         self,
 
         # election: ElectionContext,
-        sub_cfg: SubscriberConfig,
+        config: ElectionConfig,
 
         # Takes a wallet rather than dir + name by default, because the
         # VerificationKeyHash needs to be known by the funder when creating the
@@ -31,7 +31,7 @@ class AdminNode(VerifierNode):
         super().__init__(
             role='admin',
             role_index=1,
-            sub_cfg=sub_cfg,
+            config=config,
             wallet=wallet
         )
 

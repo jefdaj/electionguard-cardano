@@ -28,8 +28,8 @@ class Client:
         r.raise_for_status()
         return r.json()
 
-    async def election_subscribe(self, sub_cfg: SubscriberConfig):
-        r = await self._c.put('/election', json=asdict(sub_cfg))
+    async def election_subscribe(self, config: ElectionConfig):
+        r = await self._c.put('/election', json=asdict(config))
         r.raise_for_status()
         return r.json()
 

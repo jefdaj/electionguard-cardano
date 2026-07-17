@@ -11,32 +11,32 @@ router = APIRouter(prefix="/election", tags=["election"])
 
 # TODO anything more needed to make clear POST election -> start_subscriber?
 @router.put("")
-async def start_subscriber(sub_cfg: SubscriberConfig, state=Depends(get_state)):
+async def start_subscriber(config: ElectionConfig, state=Depends(get_state)):
 
     # TODO proper auto-decode here
-    # policy_id = ScriptHash(bytes.fromhex(sub_cfg_dict['policy_id']))
-    # sub_cfg = SubscriberConfig(
+    # policy_id = ScriptHash(bytes.fromhex(config_dict['policy_id']))
+    # config = ElectionConfig(
     #     policy_id   = policy_id,
-    #     since_slot  = sub_cfg_dict['since_slot'],
-    #     since_block = sub_cfg_dict['since_block'],
+    #     since_slot  = config_dict['since_slot'],
+    #     since_block = config_dict['since_block'],
     # )
-    # sub_cfg = SubscriberConfig.from_qrcode_str(qrcode_str)
+    # config = ElectionConfig.from_qrcode_str(qrcode_str)
 
     # Reset election-specific state, leaving alone the config, wallet, etc
     reset_election_state(state)
 
     # TODO defaultdict or something to avoid this?
     # state.config['election'] = {}
-    state.config['election'] = asdict(sub_cfg)
+    state.config['election'] = asdict(config)
 
     # TODO integrate on_event with fastapi logging
-    # state.subscriber = ElectionSubscriber(sub_cfg, on_event=lambda e: None)
+    # state.subscriber = ElectionSubscriber(config, on_event=lambda e: None)
     # state.subscriber.start()
     state.node = ObserverNode(
         role_index = 1, # TODO pass this in
         wallet     = state.wallet,
     )
-    state.node.subscribe(sub_cfg)
+    state.node.subscribe(config)
 
     return 201
 
@@ -46,9 +46,9 @@ async def stream_events(request: Request, state=Depends(get_state)):
     if state.node is None:
         raise HTTPException(404)
 
-    # sub_cfg = state.subscriber.config
+    # config = state.subscriber.config
     # script_hash = ScriptHash(bytes.fromhex(policy_id))
-    # if not script_hash == sub_cfg.policy_id:
+    # if not script_hash == config.policy_id:
     #     raise HTTPException(409) # TODO proper idiom?
 
     async def gen():

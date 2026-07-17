@@ -2,7 +2,7 @@ import click
 import cloup
 from cloup.constraints import RequireExactly
 import asyncio
-from egc import SubscriberConfig, scan_qrcode, print_qrcode # TODO relative?
+from egc import ElectionConfig, scan_qrcode, print_qrcode # TODO relative?
 from egc_app.client import Client
 from egc_app.cli.utils import RoleAwareGroup
 
@@ -26,13 +26,13 @@ def subscribe(**kwargs):
 
     egc:election:<policy_id>:<since_slot>:<since_block>
     """
-    # print(f'sub_cfg_kwargs: {sub_cfg_kwargs}')
+    # print(f'config_kwargs: {config_kwargs}')
     # print(f'kwargs: {kwargs}')
     if kwargs['scan_qrcode']:
-        sub_cfg = scan_qrcode(decode_cls=SubscriberConfig)
+        config = scan_qrcode(decode_cls=ElectionConfig)
     else:
-        sub_cfg = SubscriberConfig.from_qr_str(kwargs['parse_str'])
-    asyncio.run(Client().election_subscribe(sub_cfg))
+        config = ElectionConfig.from_qr_str(kwargs['parse_str'])
+    asyncio.run(Client().election_subscribe(config))
 
 # TODO rename -> share?
 # TODO option to share json instead?
@@ -42,8 +42,8 @@ def qrcode(ctx):
     "Share subscribe config as a QR code."
     # TODO what should the error be if no election config yet?
     election = ctx.find_root().default_map.get("election")
-    sub_cfg = SubscriberConfig.from_dict(election)
-    print_qrcode(sub_cfg)
+    config = ElectionConfig.from_dict(election)
+    print_qrcode(config)
 
 # TODO error if ogmios unreachable? or separate status endpoint expected for that?
 # TODO elaborate filter to take structured queries?
