@@ -17,8 +17,8 @@ def funder_addr(funder_wallet: Wallet) -> Address:
     return funder_wallet.addr
 
 @per_election_fixture
-def funder(funder_wallet: Wallet) -> FunderNode:
-    node_ = FunderNode(wallet=funder_wallet)
+def funder(funder_wallet: Wallet) -> ObserverNode:
+    node_ = ObserverNode(wallet=funder_wallet)
     LOG.debug(f'funder: {node_}')
     try:
         yield node_
@@ -28,7 +28,7 @@ def funder(funder_wallet: Wallet) -> FunderNode:
 
 @per_election_fixture
 def init_tx_builder(
-        funder: FunderNode,
+        funder: ObserverNode,
         script: ElectionScript,
         admin_addr: Address,
         admin_vkh: VerificationKeyHash,

@@ -16,8 +16,8 @@ def test_pick_oneshot_utxo(oneshot_utxo: UTxO):
     assert isinstance(oneshot_utxo, UTxO)
 
 @pytest.mark.local
-def test_init_funder(funder: FunderNode):
-    assert isinstance(funder, FunderNode)
+def test_init_funder(funder: ObserverNode):
+    assert isinstance(funder, ObserverNode)
     assert isinstance(funder.publisher, ElectionPublisher)
 
     # TODO is there a good way to test these before init_election?

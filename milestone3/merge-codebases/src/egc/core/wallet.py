@@ -22,6 +22,7 @@ import logging
 import shutil
 
 
+# TODO load from config
 DEF_KEYS_DIR = Path(__file__).parent / '../../../keys'
 
 # Regular logger

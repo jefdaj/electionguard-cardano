@@ -41,7 +41,7 @@ def dummy_electioncontext(
 ### actual (on chain) election context ###
  
 @per_election_fixture
-def election(init_tx: Transaction, funder: FunderNode) -> ElectionContext:
+def election(init_tx: Transaction, funder: ObserverNode) -> ElectionContext:
     # init_tx ensures that this exists, and cleans up after it:
     ctx = funder.election
     LOG.debug(f'ctx: {ctx}')
@@ -49,7 +49,7 @@ def election(init_tx: Transaction, funder: FunderNode) -> ElectionContext:
 
 @per_election_fixture
 def init_tx(
-        funder: FunderNode,
+        funder: ObserverNode,
         script: ElectionScript,
         admin_addr: Address,
         admin_vkh: VerificationKeyHash,
