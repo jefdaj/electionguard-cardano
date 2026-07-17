@@ -19,7 +19,24 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-SCHEMA_VERSION = 2
+# Increment whenever you change the serialization.
+SCHEMA_VERSION = 3
+
+# TODO where should this live? or should it be fetched from Ogmios/Kupo?
+NETWORK_MAGIC = {
+    "mainnet": 764824073,
+    "preprod": 1,
+    "preview": 2,
+}
+
+PYCARDANO_NETWORK = {
+    764824073: Network.MAINNET,
+    1: Network.TESTNET,
+    2: Network.TESTNET,
+}
+
+DEFAULT_NETWORK_MAGIC = NETWORK_MAGIC['preview' if IS_TEST else 'mainnet']
+DEFAULT_PYCARDANO_NETWORK = PYCARDANO_NETWORK[DEFAULT_NETWORK_MAGIC]
 
 @dataclass(frozen=True, kw_only=True)
 class ElectionScript:
@@ -102,28 +119,28 @@ class ElectionDeployment:
     None of these fields affect the script hash.
     """
 
-    # TODO later, distinguish preview from preprod
-    network: Network # TODO default to preview for now
+	network_magic: int = field(default=DEFAULT_NETWORK_MAGIC)
 
     # Useful if you want to quickly check who deployed it.
     # Also an informal default refund address for BurnTestTokens; not enforced on chain.
+	# TODO for now, also include in subscriber info qrcode
     funder_address: Address
 
     # So far, only used for picking the default JSON save path.
-    deployment_date: datetime
+    # TODO remove? slot_no is probably better
+    # deployment_date: datetime
 
     # The script-independent parts of the subscriber config.
-    index_from_slot: int
-    index_from_block_hash: str
+    since_slot: int
+    since_block: str
 
     def to_dict(self) -> dict:
         LOG.debug('ElectionDeployment.to_dict')
         return {
-            "network":               self.network.name.lower(),  # "mainnet" / "testnet"
-            "funder_address":        str(self.funder_address),
-            "deployment_date":       self.deployment_date.isoformat(),
-            "index_from_slot":      self.index_from_slot,
-            "index_from_block_hash": self.index_from_block_hash,
+            "network_magic":  self.network_magic,
+            "funder_address": str(self.funder_address),
+            "since_slot":     self.since_slot,
+            "since_block":    self.since_block,
         }
 
 
@@ -131,11 +148,10 @@ class ElectionDeployment:
     def from_dict(cls, data: dict) -> Self:
         LOG.debug('ElectionDeployment.from_dict')
         return cls(
-            network               = Network[data["network"].upper()],
-            funder_address        = Address.from_primitive(data["funder_address"]),
-            deployment_date       = datetime.fromisoformat(data["deployment_date"]),
-            index_from_slot       = data["index_from_slot"],
-            index_from_block_hash = data["index_from_block_hash"],
+            network_magic  = int(data["network_magic"])
+            funder_address = Address.from_primitive(data["funder_address"]),
+            since_slot     = data["since_slot"],
+            since_block    = data["since_block"],
         )
 
 @dataclass(frozen=True, kw_only=True)
@@ -161,8 +177,10 @@ class ElectionContext:
     def address(self) -> Address:
         """Script address, derived from the spend script hash and network."""
         LOG.debug('Election.address')
-        # TODO can policy_id be used directly?
-        return Address(self.script.policy_id, network=self.deployment.network)
+        return Address(
+			self.script.policy_id,
+			network=PYCARDANO_NETWORK[self.deployment.network_magic],
+		)
 
     def to_dict(self) -> dict:
         LOG.debug('Election.to_dict')
