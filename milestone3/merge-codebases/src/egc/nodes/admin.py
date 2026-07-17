@@ -74,8 +74,10 @@ class AdminNode(VerifierNode):
 
         # See ElectionNode.post_public_records for more on this pattern:
         cont_value = Value.from_primitive(in_utxo.output.amount.to_primitive())
+        cont_addr = Address(self.script.policy_id, network=network.TESTNET) # TODO dynamic network
         cont_utxo = TransactionOutput(
-            address = self.election.address,
+            # address = self.election.address,
+            address = cont_addr,
             amount  = cont_value,
             datum   = cont_datum,
         )
@@ -84,7 +86,7 @@ class AdminNode(VerifierNode):
             TransactionBuilder(OGMIOS_CTX)
             .add_script_input(
                 in_utxo,
-                script=self.election.script.spend_script,
+                script=self.script.spend_script,
                 redeemer=cont_redeemer
             )
             .add_output(cont_utxo)
@@ -156,8 +158,10 @@ class AdminNode(VerifierNode):
 
         # See ElectionNode.post_public_records for more on this pattern:
         cont_value = Value.from_primitive(in_utxo.output.amount.to_primitive())
+        cont_addr = Address(self.script.policy_id, network=network.TESTNET) # TODO dynamic network
         cont_utxo = TransactionOutput(
-            address = self.election.address,
+            # address = self.election.address,
+            address = cont_addr,
             amount  = cont_value,
             datum   = cont_datum,
         )
@@ -166,7 +170,7 @@ class AdminNode(VerifierNode):
             TransactionBuilder(OGMIOS_CTX)
             .add_script_input(
                 in_utxo,
-                script=self.election.script.spend_script,
+                script=self.script.spend_script,
                 redeemer=cont_redeemer
             )
             .add_output(cont_utxo)
@@ -180,7 +184,7 @@ class AdminNode(VerifierNode):
         for (sub_id, sub_vkh) in subchannels.items():
             sub_str = channel_id_to_string(sub_id)
 
-            stt_assets = mint_channel_stt_assets(self.election.script.policy_id, 1, [sub_id])
+            stt_assets = mint_channel_stt_assets(self.script.policy_id, 1, [sub_id])
             LOG.debug(f'{sub_str} stt_assets: {pformat(stt_assets)}')
 
             mint_assets += stt_assets
@@ -196,8 +200,11 @@ class AdminNode(VerifierNode):
             ))
             LOG.debug(f'{sub_str} stt_datum: {pformat(stt_datum)}')
 
+            stt_addr = Address(self.script.policy_id, network=network.TESTNET) # TODO dynamic network
+
             stt_utxo = TransactionOutput(
-                address = self.election.address,
+                # address = self.election.address,
+                address = stt_addr,
                 amount  = stt_amt,
                 datum   = stt_datum,
             )
@@ -236,7 +243,7 @@ class AdminNode(VerifierNode):
         # TODO does this also get added to balance_and_sign...?
         mint_redeemer = Redeemer(data=AddSubChannels(channels=sub_ids))
         LOG.debug(f'mint_redeemer: {mint_redeemer}')
-        txb.add_minting_script(script=self.election.script.mint_script, redeemer=mint_redeemer)
+        txb.add_minting_script(script=self.script.mint_script, redeemer=mint_redeemer)
 
         # Add our own collateral for this contract interaction
         txb.collaterals.append(admin_collateral)
@@ -301,8 +308,10 @@ class AdminNode(VerifierNode):
 
         # See ElectionNode.post_public_records for more on this pattern:
         cont_value = Value.from_primitive(in_utxo.output.amount.to_primitive())
+        cont_addr = Address(self.script.policy_id, network=network.TESTNET) # TODO dynamic network
         cont_utxo = TransactionOutput(
-            address = self.election.address,
+            # address = self.election.address,
+            address = cont_addr,
             amount  = cont_value,
             datum   = cont_datum,
         )
@@ -312,7 +321,7 @@ class AdminNode(VerifierNode):
             TransactionBuilder(OGMIOS_CTX)
             .add_script_input(
                 in_utxo,
-                script=self.election.script.spend_script,
+                script=self.script.spend_script,
                 redeemer=cont_redeemer
             )
             .add_output(cont_utxo)
@@ -326,7 +335,7 @@ class AdminNode(VerifierNode):
             # sub_utxo  = kupo_match_to_pycardano_utxo(sub_st.utxo_dict)
             sub_utxo = self.subscriber.current_utxo(sub_id)
             LOG.debug(f'{sub_str} sub_utxo: {pformat(sub_utxo)}')
-            sub_assets = mint_channel_stt_assets(self.election.script.policy_id, -1, [sub_id])
+            sub_assets = mint_channel_stt_assets(self.script.policy_id, -1, [sub_id])
             LOG.debug(f'{sub_str} sub_assets: {pformat(sub_assets)}')
             burn_assets += sub_assets
 
@@ -337,7 +346,7 @@ class AdminNode(VerifierNode):
 
             txb.add_script_input(
                 sub_utxo,
-                script=self.election.script.spend_script, # deep copy here doesn't help
+                script=self.script.spend_script, # deep copy here doesn't help
                 redeemer=sub_redeemer,
             )
             tx_msgs.append(
@@ -349,7 +358,7 @@ class AdminNode(VerifierNode):
         txb.mint = burn_assets
         burn_redeemer = Redeemer(data=RmSubChannels(channels=subchannels))
         LOG.debug(f'burn_redeemer: {burn_redeemer}')
-        txb.add_minting_script(script=self.election.script.mint_script, redeemer=burn_redeemer)
+        txb.add_minting_script(script=self.script.mint_script, redeemer=burn_redeemer)
 
         # Add our own collateral for this contract interaction
         # TODO factor out, either to balance_and_sign or a new fn
@@ -387,7 +396,7 @@ class AdminNode(VerifierNode):
 
         LOG.debug('AdminNode.end_election')
 
-        assets = mint_channel_stt_assets(self.election.script.policy_id, -1, [ADMIN_CHANNEL_ID])
+        assets = mint_channel_stt_assets(self.script.policy_id, -1, [ADMIN_CHANNEL_ID])
         LOG.debug('assets: %s' % pformat(assets))
 
         # ensure own collateral
@@ -418,12 +427,12 @@ class AdminNode(VerifierNode):
         txb = (
             TransactionBuilder(OGMIOS_CTX, mint=assets)
             .add_minting_script(
-                script   = self.election.script.mint_script,
+                script   = self.script.mint_script,
                 redeemer = mint_redeemer,
             )
             .add_script_input(
                 in_utxo,
-                script   = self.election.script.spend_script,
+                script   = self.script.spend_script,
                 redeemer = spend_redeemer,
             )
             # TODO any explicit output needed here?
@@ -433,7 +442,8 @@ class AdminNode(VerifierNode):
         txb.required_signers = [self.publisher.wallet.vkh]
         LOG.debug('txb:\n%s\n' % pformat(txb))
 
-        funder_addr: Address = self.election.deployment.funder_address
+        # funder_addr: Address = self.election.deployment.funder_address
+        funder_addr: Address = self.subscriber.funder_addr
         LOG.debug(f'funder_addr: {funder_addr}')
 
         tx_signed = ogmios_retry(

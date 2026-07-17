@@ -239,8 +239,9 @@ class ElectionNode:
         # start with a copy of the in_utxo Value with the STT. The original
         # is left alone (not mutated) so we don't mess up PyCardano calculations.
         cont_value = Value.from_primitive(in_utxo.output.amount.to_primitive()) # deep copy
+        cont_addr = Address(self.script.policy_id, network=network.TESTNET) # TODO dynamic network
         cont_utxo = TransactionOutput(
-            address = self.election.address,
+            address = cont_addr,
             amount  = cont_value,
             datum   = out_datum,
         )
@@ -254,7 +255,7 @@ class ElectionNode:
             TransactionBuilder(OGMIOS_CTX)
             .add_script_input(
                 in_utxo,
-                script=self.election.script.spend_script,
+                script=self.script.spend_script,
                 redeemer=cont_redeemer
             )
             .add_output(cont_utxo)
@@ -280,9 +281,10 @@ class ElectionNode:
 
     def return_collateral(self):
         # TODO only auto return if collateral originally came from admin/funder
-        if self.election is None:
-            raise Exception('No election, so no funder_address.')
-        return_addr = self.election.deployment.funder_address
+        # if getattr(self, 'election', None) is None:
+        #     raise Exception('No election, so no funder_address.')
+        # TODO return collateral to the channel rather than a person?
+        return_addr = self.subscriber.funder_address # TODO write this
         return self.publisher.return_collateral(return_addr)
 
     def stop(self):
@@ -317,7 +319,7 @@ class ElectionNode:
             raise RuntimeError(msg)
 
         burn_assets = mint_channel_stt_assets(
-            self.election.script.policy_id,
+            self.script.policy_id,
             -1,
             channel_ids,
         )
@@ -325,7 +327,7 @@ class ElectionNode:
 
         burn_txb = (
             TransactionBuilder(OGMIOS_CTX, mint=burn_assets)
-            .add_minting_script(script=self.election.script.mint_script, redeemer=mint_redeemer)
+            .add_minting_script(script=self.script.mint_script, redeemer=mint_redeemer)
         )
 
         burn_txb.collaterals.append(funder_collateral)
@@ -337,7 +339,7 @@ class ElectionNode:
             spend_redeemer = Redeemer(data=BurnTestTokens())
             burn_txb = burn_txb.add_script_input(
                 utxo,
-                script=self.election.script.spend_script,
+                script=self.script.spend_script,
                 redeemer=spend_redeemer
             )
             tx_msgs.append(f'{ch_str} burned {ch_str} channel STT and recovered fee pool ADA.')
@@ -356,17 +358,17 @@ class ElectionNode:
             err = 'burn_test_tokens is only for test mode'
             LOG.error(err)
             raise RuntimeError(err)
-        if self.election is None:
-            raise Exception('init_election must be called before burn_test_tokens')
+        # if self.election is None:
+        #     raise Exception('init_election must be called before burn_test_tokens')
         if self.subscriber is None:
             raise Exception('init_subscriber must be called before burn_test_tokens')
         (tx_msgs, burn_txb) = self._build_burn_tx()
         burn_tx  = self.publisher.sign_and_submit_tx(burn_txb)
-        json_path = self.election_json_path()
+        # json_path = self.election_json_path()
         for msg in tx_msgs:
             LOG.info(msg)
         ch_str = self.channel_str()
-        LOG.info(f'{ch_str} burned all test tokens and recovered fee pool ADA from {json_path}')
+        # LOG.info(f'{ch_str} burned all test tokens and recovered fee pool ADA from {json_path}')
         return burn_tx
 
     def recover_all_collateral(self, keys_dir: Path) -> Transaction:

@@ -251,7 +251,7 @@ class ObserverNode(ElectionNode):
         # self.election = election_ctx
         self.script = election_ctx.script
         json_path = election_json_path(election_ctx)
-        election.to_json(json_path)
+        election_ctx.to_json(json_path)
         LOG.info(f'{self.channel_str()} deployed contract and saved details to {json_path}')
         for msg in tx_msgs:
             LOG.info(msg)

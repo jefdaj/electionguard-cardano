@@ -1,5 +1,6 @@
 import pytest
-from egc import *
+# from egc import *
+from egc import ElectionDeployment, ElectionContext
 import logging
 
 LOG = logging.getLogger(__name__)
@@ -20,6 +21,6 @@ def test_roundtrip_electioncontext(dummy_electioncontext: ElectionContext):
 
 @pytest.mark.testnet
 def test_init_election(election: ElectionContext):
-    # This is mainly for that the teardown works.
+    # This is mainly for testing that the teardown works.
     # TODO is there a better way to do that explicitly?
     assert isinstance(election, ElectionContext)
