@@ -22,7 +22,7 @@ import logging
 import shutil
 
 
-DEF_KEYS_DIR = Path(__file__).parent.parent.parent / 'keys'
+DEF_KEYS_DIR = Path(__file__).parent / '../../../keys'
 
 # Regular logger
 LOG = logging.getLogger(__name__)
