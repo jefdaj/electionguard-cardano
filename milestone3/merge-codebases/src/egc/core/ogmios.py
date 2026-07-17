@@ -65,6 +65,25 @@ def ogmios_health_sync() -> dict:
     return asyncio.run(ogmios_health())
 
 
+async def ogmios_wait_until_synced(timeout=600, interval=5):
+    end = asyncio.get_event_loop().time() + timeout
+    while True:
+        try:
+            health = await ogmios_health()
+            if health['connectionStatus'] == 'connected':
+                sync_percent = int(health['networkSynchronization'] * 100)
+                LOG.debug(f'cardano node is {sync_percent}% synced')
+                if sync_percent == 100:
+                    return
+        except Exception as e:
+            LOG.error(e)
+        finally:
+            await asyncio.sleep(interval)
+
+        if asyncio.get_event_loop().time() > end:
+            raise TimeoutError("IPFS did not stabilize in time")
+
+
 ### get balances in order to track fees ###
 
 def get_balance_ada(address: Address) -> float:

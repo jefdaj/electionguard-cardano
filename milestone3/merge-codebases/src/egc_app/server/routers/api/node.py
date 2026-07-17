@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from egc.core.ogmios import ogmios_health
+from egc.core.ogmios import ogmios_health, ogmios_wait_until_synced
 from egc.core.ipfs import ipfs_wait_until_stable, ipfs_status
 from egc_app.server.schemas.node import NodeStatusOut
 
@@ -25,6 +25,6 @@ async def status():
 
 @router.get("/await")
 async def await_():
-    # TODO wait for ogmios sync progress == 1.0 here
     await ipfs_wait_until_stable()
+    await ogmios_wait_until_synced()
     return
