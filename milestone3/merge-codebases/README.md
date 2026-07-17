@@ -35,7 +35,14 @@ arion logs -f
 arion down
 ```
 
-Monitor it:
+Run EGC scripts:
+
+```
+$ docker exec -it election-verifier1-egc-1 bash /scripts/verifier.sh
+node is ready
+```
+
+Monitor the network:
 
 ```
 $ ./watch-docker.sh

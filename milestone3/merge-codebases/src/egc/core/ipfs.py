@@ -120,7 +120,7 @@ async def ipfs_wait_until_stable(
     timeout=180,
     min_peers=3,
     rate_threshold=10_000, # bytes/sec (RateIn + RateOut)
-    required_stable_polls=5,
+    required_stable_polls=3,
     interval=5,
 ):
     ipfs = RetryingIPFS()
