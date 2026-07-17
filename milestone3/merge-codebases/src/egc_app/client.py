@@ -22,7 +22,9 @@ class Client:
         return r.json()
 
     async def node_await(self):
-        r = await self._c.get("/node/await")
+        # TODO what's a good timeout here?
+        # (the await call on the server will time out after 180 so far)
+        r = await self._c.get("/node/await", timeout=httpx.Timeout(600, read=None))
         r.raise_for_status()
         return r.json()
 

@@ -115,37 +115,40 @@ async def ipfs_status():
     return {'n_peers': len(peers), 'bandwidth_Bs': rate}
 
 
+# If you change ipfs-caps.json, these may also need adjustment...
 async def ipfs_wait_until_stable(
     timeout=180,
-    min_peers=1,
-    rate_threshold=1024,        # bytes/sec (RateIn + RateOut)
-    required_stable_polls=3,
+    min_peers=3,
+    rate_threshold=10_000, # bytes/sec (RateIn + RateOut)
+    required_stable_polls=5,
     interval=5,
 ):
     ipfs = RetryingIPFS()
     end = asyncio.get_event_loop().time() + timeout
     stable = 0
-    prev_peers = None
     while True:
         try:
-            peers = (await ipfs._client.swarm.peers()).get("Peers") or []
-            n = len(peers)
-            bw = await ipfs._client.stats.bw()
-            rate = bw.get("RateIn", 0) + bw.get("RateOut", 0)
+            # print(f'stable: {stable}')
+            cur_status = await ipfs_status()
+            # print(f'cur_status: {cur_status}')
+            n = cur_status['n_peers']
+            r = cur_status['bandwidth_Bs']
+            # print(f'n: {n}')
+            # print(f'r: {r}')
 
-            if n >= min_peers and n == prev_peers and rate < rate_threshold:
+            if n >= min_peers and r < rate_threshold:
                 stable += 1
                 if stable >= required_stable_polls:
                     return
             else:
                 stable = 0
-            prev_peers = n
         except (ClientConnectorError, ClientConnectorDNSError):
             stable = 0  # node not up yet; don't count toward stability
+        finally:
+            await asyncio.sleep(interval)
 
         if asyncio.get_event_loop().time() > end:
             raise TimeoutError("IPFS did not stabilize in time")
-        await asyncio.sleep(interval)
 
 
 def ipfs_wait_until_stable_sync(**kwargs):

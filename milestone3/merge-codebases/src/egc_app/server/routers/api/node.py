@@ -27,4 +27,4 @@ async def status():
 async def await_():
     # TODO wait for ogmios sync progress == 1.0 here
     await ipfs_wait_until_stable()
-    return 200 # TODO is this right?
+    return
