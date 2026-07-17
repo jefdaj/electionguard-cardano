@@ -103,7 +103,7 @@ class ElectionDeployment:
     """
 
     # TODO later, distinguish preview from preprod
-    network: Network
+    network: Network # TODO default to preview for now
 
     # Useful if you want to quickly check who deployed it.
     # Also an informal default refund address for BurnTestTokens; not enforced on chain.

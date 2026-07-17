@@ -11,6 +11,7 @@ def oneshot_utxo(ogmios: OgmiosV6ChainContext, funder_addr: Address) -> UTxO:
     '''Pick a oneshot UTxO from the election wallet.'''
     utxo = pick_oneshot_utxo(ogmios, funder_addr)
     LOG.debug(f'oneshot_utxo: {utxo}')
+    print(f'oneshot_utxo: {utxo}')
     return utxo
  
 @per_election_fixture

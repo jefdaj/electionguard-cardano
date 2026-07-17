@@ -59,3 +59,10 @@ def test_rollback(
     # There presumably wasn't a real rollback during this period,
     # so the new history should come out exactly the same.
     assert before == after
+
+@pytest.mark.testnet
+def test_admin_address(init_tx: Transaction, admin: AdminNode):
+    actual_addr = admin.publisher.wallet.addr
+    found_addr: Optional[Address] = admin.subscriber.admin_address()
+    assert isinstance(found_addr, Address)
+    assert found_addr == actual_addr

@@ -38,7 +38,8 @@ class ObserverNode(ElectionNode):
 
         # Observers don't have channels, so they don't officially have an index.
         # But it's still useful for distinguishing state dirs during tests.
-        role_index: int,
+        role: str = 'observer',
+        role_index: int = 1,
 
         # No election context is needed at init time; it's assumed you will
         # create or subscribe to one separately later.
@@ -58,7 +59,7 @@ class ObserverNode(ElectionNode):
         # it. And with no election, the ElectionNode class won't init a
         # subscriber yet either.
         super().__init__(
-            role='observer',
+            role=role,
             role_index=role_index,
             wallet=wallet,
             script=None,
@@ -186,19 +187,6 @@ class ObserverNode(ElectionNode):
             since_block = ctx.deployment.index_from_block_hash,
         )
         return self.subscribe(sub_cfg)
-
-    def subscribe(self, sub_cfg: SubscriberConfig):
-        self.subscriber = ElectionSubscriber(
-            config      = sub_cfg,
-            on_event    = lambda x: None,
-            on_rollback = lambda x: None,
-        )
-        self.subscriber.start()
-        LOG.info(f'Subscribe to this election with:\n\n{pformat(sub_cfg)}\n')
-        LOG.debug(
-            f'Or for dev debugging:\n\n'
-            f'egc:election:{sub_cfg.policy_id}:{sub_cfg.since_slot}:{sub_cfg.since_block}\n'
-        )
 
     def deploy_election(
             self,

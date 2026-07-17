@@ -64,16 +64,32 @@ class ElectionNode:
         else:
             if self.sub_cfg is None:
                 LOG.debug('ElectionNode skipping subscriber init because sub_cfg is None')
+                self.subscriber = None
+            else:
+                self.subscribe(sub_cfg)
             # sub_cfg = SubscriberConfig.from_election(self.election)
-            self.subscriber = ElectionSubscriber(
-                config      = sub_cfg,
-                on_action   = lambda x: None,
-                on_rollback = lambda x: None,
-            )
-            self.subscriber.start()
-            time.sleep(OGMIOS_POLL_SEC + 1) # TODO how long is actually needed?
+            # self.subscriber = ElectionSubscriber(
+            #     config      = sub_cfg,
+            #     on_action   = lambda x: None,
+            #     on_rollback = lambda x: None,
+            # )
+            # self.subscriber.start()
+            # time.sleep(OGMIOS_POLL_SEC + 1) # TODO how long is actually needed?
 
         LOG.info(f'Started {self.channel_str()} node.')
+
+    def subscribe(self, sub_cfg: SubscriberConfig):
+        self.subscriber = ElectionSubscriber(
+            config      = sub_cfg,
+            on_event    = lambda x: None,
+            on_rollback = lambda x: None,
+        )
+        self.subscriber.start()
+        LOG.info(f'Subscribe to this election with:\n\n{pformat(sub_cfg)}\n')
+        LOG.debug(
+            f'Or for dev debugging:\n\n'
+            f'egc:election:{sub_cfg.policy_id}:{sub_cfg.since_slot}:{sub_cfg.since_block}\n'
+        )
 
     # def _guard_script(self):
     #     if self.script is None:
@@ -284,7 +300,7 @@ class ElectionNode:
         # if getattr(self, 'election', None) is None:
         #     raise Exception('No election, so no funder_address.')
         # TODO return collateral to the channel rather than a person?
-        return_addr = self.subscriber.funder_address # TODO write this
+        return_addr = self.subscriber.admin_address()
         return self.publisher.return_collateral(return_addr)
 
     def stop(self):

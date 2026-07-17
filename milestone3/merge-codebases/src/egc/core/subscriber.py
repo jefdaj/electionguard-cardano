@@ -650,6 +650,17 @@ class ElectionSubscriber:
             return self._checkpoints[-1].header_hash
 
 
+    def admin_address(self) -> Optional[Address]:
+        try:
+            event = self.channel_history(ADMIN_CHANNEL_ID)[-1]
+            state = event.output_state if event.output_state else event.input_state
+            vkh = state.state.admin
+            addr = Address(payment_part=vkh, network=Network.TESTNET) # TODO dynamic network
+            return addr
+        except:
+            return None
+
+
     ## process managment interface ##
 
 

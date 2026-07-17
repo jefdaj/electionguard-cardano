@@ -2,22 +2,25 @@ import time
 from pathlib import Path
 from typing import List, Optional
 from ..core import *
-from .observer import ObserverNode
+# from .observer import ObserverNode
 from pycardano import *
 from dataclasses import replace
 import logging
 
 LOG = logging.getLogger(__name__)
 
-class VerifierNode(ObserverNode):
+# TODO ObserverNode, or just ElectionNode?
+class VerifierNode(ElectionNode):
 
     def __init__(
         self,
 
-        # For deriving the ChannelId
-        role_index: int,
+        # election: ElectionContext,
+        sub_cfg: SubscriberConfig,
 
-        election: ElectionContext,
+        # For deriving the ChannelId
+        role: str = 'verifier',
+        role_index: int = 1,
 
         # No need for keys_dir or key_name if you pass an existing wallet.
         # You can also omit them without passing wallet, in which case a new
@@ -30,9 +33,9 @@ class VerifierNode(ObserverNode):
     ):
         LOG.debug('VerifierNode.__init__')
         super().__init__(
-            role       = 'verifier',
+            role       = role,
             role_index = role_index,
-            election   = election,
+            sub_cfg    = sub_cfg,
             wallet     = wallet,
             keys_dir   = keys_dir,
             key_name   = key_name,
