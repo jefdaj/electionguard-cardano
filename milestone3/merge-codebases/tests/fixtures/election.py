@@ -22,8 +22,8 @@ def dummy_deployment(
         network               = Network.TESTNET,
         funder_address        = funder_wallet.addr,
         deployment_date       = datetime.now(),
-        index_from_slot       = tip['slot'],
-        index_from_block_hash = tip['block_hash'],
+        since_slot       = tip['slot'],
+        since_block = tip['block_hash'],
     )
     LOG.debug(f'dummy_deployment: {dd}')
     return dd

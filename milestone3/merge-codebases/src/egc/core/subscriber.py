@@ -59,16 +59,35 @@ KUPO_MAX_CHECKPOINTS = 50
 @dataclass
 class ElectionConfig:
 
-    policy_id:   str # For kupo --match
-    since_slot:  int # For kupo --since
-    since_block: str # For kupo --since
+    # TODO schema version here?
+
+    # the one-shot utxo script parameter
+    oneshot_hex: str
+
+    # which network was it deployed on?
+    network_magic: int
+
+    # for returning collateral
+    # May also be helpful to confirm it's a known treasury address when you're
+    # hearing about a new election?
+    # TODO should this only be the vkh, and Address is derived from that + network?
+    funder_addr: str
+
+    # TODO remove and re-derive from utxo above
+    # policy_id:   str # For kupo --match
+
+    # for kupo --since
+    since_slot:  int
+    since_block: str
 
     @classmethod
     def from_dict(cls, data: dict) -> Self:
         return cls(
-            data['policy_id'],
-            int(data['since_slot']),
-            data['since_block'],
+                data['oneshot_hex'],
+                data['network_magic'],
+                data['funder_addr'],
+            int(data['since_slot' ]),
+                data['since_block'],
         )
 
     # TODO is this right?
@@ -78,32 +97,37 @@ class ElectionConfig:
             json.loads(data)
         )
 
+    # TODO remove? reverse?
     @classmethod
     def from_election(cls, election: ElectionContext) -> Self:
         return cls(
-            str(election.script.policy_id),
-            election.deployment.index_from_slot,
-            election.deployment.index_from_block_hash,
+            election.script.oneshot_hex,
+            election.deployment.network_magic,
+            election.deployment.funder_address,
+            election.deployment.since_slot,
+            election.deployment.since_block,
         )
 
     @classmethod
     def from_qr_str(cls, txt: str) -> Self:
-        "egc:election:<policy_id>:<since_slot>:<since_block>, maybe with wrapping"
+        "egc:election:<onshot_hex>:<network_magic>:<funder_addr>:<since_slot>:<since_block>, maybe with wrapping"
         txt = ''.join(l.strip() for l in txt.splitlines())
         words = txt.split(':')
         prefix = words[:2]
         args   = words[2:]
         assert prefix == ['egc', 'election']
-        assert len(args) == 3
-        policy_id, since_slot, since_block = args
+        assert len(args) == 4
+        oneshot_hex, network_magic, funder_addr, since_slot, since_block = args
         since_slot = int(since_slot)
-        return cls(policy_id, since_slot, since_block)
+        return cls(oneshot_hex, network_magic, funder_addr, since_slot, since_block)
 
     def to_qr_str(self) -> str:
-        "egc:election:<policy_id>:<since_slot>:<since_block>" 
+        "egc:election:<oneshot_hex>:<network_magic>:<funder_addr>:<since_slot>:<since_block>"
         qr_str = ':'.join([
             'egc', 'election',
-            self.policy_id,
+            self.oneshot_hex,
+            self.network_magic,
+            self.funder_addr,
             str(self.since_slot),
             self.since_block
         ])

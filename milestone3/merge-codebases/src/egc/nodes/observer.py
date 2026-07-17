@@ -164,6 +164,7 @@ class ObserverNode(ElectionNode):
         collateral mid-election."""
         return self.publisher.send_ada(admin_address, COLLATERAL_LOVELACE)
 
+    # TODO merge into init_election? maybe if no script passed to it?
     def init_script(self):
         """Pick oneshot_utxo and parameterize script."""
         fund_addr = self.publisher.wallet.addr
@@ -182,9 +183,11 @@ class ObserverNode(ElectionNode):
         #     raise Exception('_init_subscriber_from_ctx should be called as part of init_election')
         # self._guard_election()
         config = ElectionConfig(
-            policy_id   = ctx.script.policy_id,
-            since_slot  = ctx.deployment.index_from_slot,
-            since_block = ctx.deployment.index_from_block_hash,
+            # policy_id   = ctx.script.policy_id,
+            oneshot_hex = ctx.script.oneshot_hex,
+            funder_addr = ctx.deployment.funder_address,
+            since_slot  = ctx.deployment.since_slot,
+            since_block = ctx.deployment.since_block,
         )
         return self.subscribe(config)
 
@@ -205,8 +208,8 @@ class ObserverNode(ElectionNode):
             network               = Network.TESTNET,
             funder_address        = self.publisher.wallet.addr,
             deployment_date       = datetime.now(), # TODO get now() before sign_and_submit_tx?
-            index_from_slot       = tip['slot'],
-            index_from_block_hash = tip['block_hash'],
+            since_slot       = tip['slot'],
+            since_block = tip['block_hash'],
         )
         LOG.debug('deployment: %s' % pformat(deployment))
 

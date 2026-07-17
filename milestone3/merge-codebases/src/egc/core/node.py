@@ -29,7 +29,7 @@ class ElectionNode:
 
         # May both be None in case of an observer.
         # All other roles should set them both from the beginning.
-        script: Optional[ElectionScript] = None,
+        # script: Optional[ElectionScript] = None,
         config: Optional[ElectionConfig] = None,
 
         # No need for keys_dir or key_name if you pass an existing wallet.
@@ -45,7 +45,7 @@ class ElectionNode:
         LOG.debug('ElectionNode.__init__')
 
         # May be None in case of an Observer.
-        self.script: Optional[Script] = script
+        # self.script: Optional[Script] = script
         self.config: Optional[ElectionConfig] = config
 
         # Always exists, but may not be used for anything in case of an Observer.
@@ -57,16 +57,17 @@ class ElectionNode:
             key_name   = key_name,
         )
 
-        if self.script is None:
-            LOG.debug('ElectionNode skipping subscriber init because script is None')
-            self.subscriber = None
+        # if self.script is None:
+        #     LOG.debug('ElectionNode skipping subscriber init because script is None')
+        #     self.subscriber = None
 
+        # else:
+        if self.config is None:
+            LOG.debug('ElectionNode skipping subscriber init because config is None')
+            self.subscriber = None
+            self.script = None
         else:
-            if self.config is None:
-                LOG.debug('ElectionNode skipping subscriber init because config is None')
-                self.subscriber = None
-            else:
-                self.subscribe(config)
+            self.subscribe(config)
             # config = ElectionConfig.from_election(self.election)
             # self.subscriber = ElectionSubscriber(
             #     config      = config,
@@ -84,6 +85,7 @@ class ElectionNode:
             on_event    = lambda x: None,
             on_rollback = lambda x: None,
         )
+        # TODO set self.script here
         self.subscriber.start()
         LOG.info(f'Subscribe to this election with:\n\n{pformat(config)}\n')
         LOG.debug(

@@ -49,7 +49,7 @@ class ElectionScript:
     # These are not duplicates of (reasonably accessible) info in the aiken_blueprint.
     # TODO Is there a less awkward method than utxo as cbor_hex that's still reliable?
     # TODO later, make a list of params including token prefix below
-    oneshot_utxo: UTxO
+    # oneshot_utxo: UTxO # TODO is this needed anymore?
     oneshot_hex: str
 
     # The final JSON blueprint. Includes title, contract version, CBOR fields, etc.
@@ -71,31 +71,46 @@ class ElectionScript:
     def to_dict(self) -> dict:
         LOG.debug('ElectionScript.to_dict')
         return {
-            "oneshot_utxo": self.oneshot_utxo.to_cbor_hex(),
+                # "oneshot_utxo": self.oneshot_utxo.to_cbor_hex(),
             "oneshot_hex": self.oneshot_hex,
             "aiken_blueprint": self.aiken_blueprint,
             "aiken_tracing": self.aiken_tracing,
         }
 
     # TODO is this a reasonable way to initially create it, with a round-trip to json?
+#     @classmethod
+#     def from_oneshot_utxo(cls, oneshot_utxo: UTxO) -> Self:
+#         oneshot_hex = utxo_to_ref_hex(oneshot_utxo)
+#         hex_params = [oneshot_hex]
+#         blueprint_dict = aiken_blueprint_apply_hex_params(PLUTUS_JSON_PATH, hex_params)
+#         cls_dict = {
+#             'schema_version': SCHEMA_VERSION,
+#             'oneshot_utxo': oneshot_utxo.to_cbor_hex(),
+#             'oneshot_hex': oneshot_hex,
+#             'aiken_blueprint': blueprint_dict,
+#             "aiken_tracing": IS_TEST, # TODO hardcode True for now to avoid having to get this?
+#         }
+#         return cls.from_dict(cls_dict)
+
     @classmethod
-    def from_oneshot_utxo(cls, oneshot_utxo: UTxO) -> Self:
-        oneshot_hex = utxo_to_ref_hex(oneshot_utxo)
-        hex_params = [oneshot_hex]
+    def from_config(cls, cfg: ElectionConfig) -> Self:
+        # oneshot_hex = utxo_to_ref_hex(oneshot_utxo)
+        hex_params = [cfg.oneshot_hex]
         blueprint_dict = aiken_blueprint_apply_hex_params(PLUTUS_JSON_PATH, hex_params)
         cls_dict = {
-            'schema_version': SCHEMA_VERSION,
-            'oneshot_utxo': oneshot_utxo.to_cbor_hex(),
+            # 'schema_version': SCHEMA_VERSION,
+            # 'oneshot_utxo': oneshot_utxo.to_cbor_hex(),
             'oneshot_hex': oneshot_hex,
             'aiken_blueprint': blueprint_dict,
             "aiken_tracing": IS_TEST, # TODO hardcode True for now to avoid having to get this?
         }
         return cls.from_dict(cls_dict)
 
+
     @classmethod
     def from_dict(cls, data: dict) -> Self:
         LOG.debug('ElectionScript.from_dict')
-        oneshot_utxo = UTxO.from_cbor(bytes.fromhex(data["oneshot_utxo"]))
+        # oneshot_utxo = UTxO.from_cbor(bytes.fromhex(data["oneshot_utxo"]))
         blueprint = data["aiken_blueprint"]
         mint_dict  = next(v for v in blueprint["validators"] if 'mint'  in v['title'])
         spend_dict = next(v for v in blueprint["validators"] if 'spend' in v['title'])
@@ -103,7 +118,7 @@ class ElectionScript:
         spend_script = PlutusV3Script(bytes.fromhex( spend_dict["compiledCode"] ))
         policy_id = plutus_script_hash(mint_script)
         return cls(
-            oneshot_utxo    = oneshot_utxo,
+                # oneshot_utxo    = oneshot_utxo,
             oneshot_hex     = data["oneshot_hex"],
             aiken_blueprint = blueprint,
             aiken_tracing   = data["aiken_tracing"],
@@ -134,6 +149,16 @@ class ElectionDeployment:
     since_slot: int
     since_block: str
 
+    @classmethod
+    def from_config(cls, cfg: ElectionConfig) -> Self:
+        cls_dict = {
+            'network_magic': cfg.network_magic,
+            'funder_addr':   cfg.funder_addr,
+            'since_slot':    cfg.since_slot,
+            'since_block':   cfg.since_block,
+        }
+        return cls.from_dict(cls_dict)
+
     def to_dict(self) -> dict:
         LOG.debug('ElectionDeployment.to_dict')
         return {
@@ -148,7 +173,7 @@ class ElectionDeployment:
     def from_dict(cls, data: dict) -> Self:
         LOG.debug('ElectionDeployment.from_dict')
         return cls(
-            network_magic  = int(data["network_magic"])
+            network_magic  = int(data["network_magic"]),
             funder_address = Address.from_primitive(data["funder_address"]),
             since_slot     = data["since_slot"],
             since_block    = data["since_block"],
@@ -189,6 +214,17 @@ class ElectionContext:
             "script":         self.script.to_dict(),
             "deployment":     self.deployment.to_dict(),
         }
+
+    @classmethod
+    def from_config(cls, cfg: ElectionConfig) -> Self:
+        script     = ElectionScript.from_config(cfg)
+        deployment = ElectionDeployment.from_config(cfg)
+        cls_dict = {
+            'schema_version': SCHEMA_VERSION, # TODO include in qrcodes?
+            'script':         script,
+            'deployment':     deployment,
+        }
+        return cls.from_dict(cls_dict)
 
     @classmethod
     def from_dict(cls, data: dict) -> Self:
