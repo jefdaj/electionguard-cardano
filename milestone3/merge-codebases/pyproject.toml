@@ -36,6 +36,9 @@ egc = "egc_app.cli:cli"
 
 [dependency-groups]
 dev = [
+    "pytest>=7.0",
+    "pytest-asyncio",
+    "pytest-mock",
 ]
 
 [tool.hatch.build.targets.sdist]
@@ -57,3 +60,33 @@ include = [
 [build-system]
 requires = ["hatchling", "editables"]
 build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+
+pythonpath = ["tests"]
+
+# Run tests in a particular non-alphabetical order.
+# I also run tests marked local before the ones marked testnet,
+# but that's controlled via CLI args in test.sh
+testpaths = [
+  "tests/setup",
+  "tests/unit",
+  "tests/integration",
+  "tests/demo"
+]
+
+markers = [
+  "local: marks tests as local (not requiring testnet) tests",
+  "testnet: marks tests as (slow) testnet tests",
+]
+
+# Keep the printed output clean but don't hide errors
+log_cli = false
+log_cli_level = "INFO"
+
+# Write all logs to a file.
+# See also tests/conftest.py for per-component log level tweaks.
+log_file = "pytest.log"
+log_file_level = "DEBUG"
+log_format = "%(asctime)s [%(levelname)s] %(name)s (%(filename)s:%(lineno)d): %(message)s"
+log_date_format = "%Y-%m-%d %H:%M:%S"
