@@ -41,33 +41,26 @@ def dummy_electioncontext(
 ### actual (on chain) election context ###
  
 @per_election_fixture
-def election(init_tx: Transaction, funder: ObserverNode) -> ElectionContext:
-    # init_tx ensures that this exists, and cleans up after it:
-    ctx = funder.election
-    LOG.debug(f'ctx: {ctx}')
-    return ctx
-
-@per_election_fixture
-def init_tx(
+def init_election_tuple(
         funder: ObserverNode,
         script: ElectionScript,
         admin_addr: Address,
         admin_vkh: VerificationKeyHash,
         keys_dir: Path,
         request, # exposes pytest info
-    ) -> Transaction:
+    ) -> tuple[Transaction, ElectionContext]:
 
-    """Yields an already submitted and confirmed InitElection transaction. All
-    other Transaction fixtures should depend on this one because it does the
-    cleanup step (BurnTestTokens) if needed, tries to recover collateral, and
-    logs total costs.
+    """Yields an already submitted and confirmed InitElection transaction, and
+    the resulting ElectionContext. All other Transaction fixtures should depend
+    on this one because it does the cleanup step (BurnTestTokens) if needed,
+    tries to recover collateral, and logs total costs.
     """
 
     name = request.node.name
     ada_before = get_balance_ada(funder.publisher.wallet.addr)
     LOG.debug(f'funder balance before {name} is {ada_before} ADA.')
 
-    init_tx = funder.init_election(
+    (init_tx, election_ctx) = funder.init_election(
         script     = script,
         admin_addr = admin_addr,
         admin_vkh  = admin_vkh,
@@ -76,7 +69,7 @@ def init_tx(
     funder.wait_for_confirmation(init_tx)
 
     # All other tests happen here
-    yield init_tx
+    yield (init_tx, election_ctx)
 
     try:
         channel_ids = funder.subscriber.current_channel_ids()
@@ -109,3 +102,13 @@ def init_tx(
         else:
             fn = LOG.info
         fn(f'funder paid {ada_diff} ADA total to run {name}')
+
+@per_election_fixture
+def init_tx(init_election_tuple: tuple[Transaction, ElectionContext]) -> Transaction:
+    (tx, _) = init_election_tuple
+    return tx
+
+@per_election_fixture
+def election(init_election_tuple: tuple[Transaction, ElectionContext]) -> ElectionContext:
+    (_, ctx) = init_election_tuple
+    return ctx

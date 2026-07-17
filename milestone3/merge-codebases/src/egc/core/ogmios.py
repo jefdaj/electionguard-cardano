@@ -8,6 +8,8 @@ import math
 import ast
 import os
 
+from collections import defaultdict
+
 from typing import Any, Dict, Optional, Callable
 from pycardano import *
 from ogmios.errors import ResponseError
@@ -427,6 +429,12 @@ def utxo_for_input(tx_in: TransactionInput) -> UTxO | None:
     return OGMIOS_CTX.utxo_by_tx_id(tx_id_hex, tx_in.index)
 
 
+def utxos_for_inputs(tx_inputs: list[TransactionInput]) -> dict[TransactionInput, UTxO]:
+    utxos = {i: utxo_for_input(i) for i in tx_inputs}
+    utxos = {i:u for i,u in utxos.items() if u is not None}
+    return utxos
+
+
 def wait_for_confirmation_generic() -> int:
     "Wait long enough that any pending TXs should have confirmed."
     prev = None
@@ -450,3 +458,15 @@ def is_utxo_unspent(utxo: UTxO) -> bool:
     address = str(utxo.output.address)
     current = OGMIOS_CTX.utxos(address)
     return any(u.input == utxo.input for u in current)
+
+
+def find_main_sender_address(tx):
+    # Mainly used to find the funder address from the init_election tx
+    # TODO does this need to start from kupo primitives rather than ogmios ones?
+    utxos = utxos_for_inputs(tx.transaction_body.inputs)
+    in_val = defaultdict(int)
+    for u in utxos.values():
+        in_val[str(u.output.address)] += u.output.amount.coin
+    out_addrs = {str(o.address) for o in tx.transaction_body.outputs}
+    common = [a for a in in_val if a in out_addrs]
+    return max(common, key=in_val.get) if common else None

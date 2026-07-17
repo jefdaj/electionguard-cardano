@@ -1,6 +1,5 @@
 import pytest
-# from egc import *
-from egc import ElectionDeployment, ElectionContext
+from egc import *
 import logging
 
 LOG = logging.getLogger(__name__)
@@ -24,3 +23,14 @@ def test_init_election(election: ElectionContext):
     # This is mainly for testing that the teardown works.
     # TODO is there a better way to do that explicitly?
     assert isinstance(election, ElectionContext)
+
+@pytest.mark.testnet
+def test_funder_addr(
+        funder: ObserverNode,
+        init_tx: Transaction,
+        election: ElectionContext,
+    ):
+    deploy_addr = election.deployment.funder_address
+    found_addr  = find_main_sender_address(init_tx)
+    assert deploy_addr == found_addr
+    # TODO assert actual_addr == funder.fund_addr

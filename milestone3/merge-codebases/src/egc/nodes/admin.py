@@ -373,6 +373,7 @@ class AdminNode(VerifierNode):
             cont_utxo,
         )
 
+        # TODO remove?
         for tx_in in tx_signed.transaction_body.inputs:
             utxo = utxo_for_input(tx_in)
             LOG.debug(f'Input UTXO found: {utxo}')

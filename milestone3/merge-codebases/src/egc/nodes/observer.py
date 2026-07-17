@@ -260,4 +260,4 @@ class ObserverNode(ElectionNode):
 
         # All the info we really need should be in self.election now;
         # the main reason to return init_tx is so the caller can wait for confirmation.
-        return init_tx
+        return (init_tx, election_ctx)
