@@ -28,7 +28,7 @@ from .ogmios import *
 from .plutus.types.channel import *
 from .plutus.types.action import *
 from .plutus.types.channel import *
-from .election import ElectionContext
+# from .election import ElectionContext
 from .utils import safe_deepdiff
 
 import logging
@@ -98,15 +98,15 @@ class ElectionConfig:
         )
 
     # TODO remove? reverse?
-    @classmethod
-    def from_election(cls, election: ElectionContext) -> Self:
-        return cls(
-            election.script.oneshot_hex,
-            election.deployment.network_magic,
-            election.deployment.funder_address,
-            election.deployment.since_slot,
-            election.deployment.since_block,
-        )
+    # @classmethod
+    # def from_election(cls, election: ElectionContext) -> Self:
+    #     return cls(
+    #         election.script.oneshot_hex,
+    #         election.deployment.network_magic,
+    #         election.deployment.funder_address,
+    #         election.deployment.since_slot,
+    #         election.deployment.since_block,
+    #     )
 
     @classmethod
     def from_qr_str(cls, txt: str) -> Self:

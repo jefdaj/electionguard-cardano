@@ -19,11 +19,10 @@ def dummy_deployment(
     ) -> ElectionDeployment:
     tip = query_network_tip_sync()
     dd = ElectionDeployment(
-        network               = Network.TESTNET,
-        funder_address        = funder_wallet.addr,
-        deployment_date       = datetime.now(),
-        since_slot       = tip['slot'],
-        since_block = tip['block_hash'],
+        funder_address = funder_wallet.addr,
+        since_slot     = tip['slot'],
+        since_block    = tip['block_hash'],
+        network_magic  = DEFAULT_NETWORK_MAGIC,
     )
     LOG.debug(f'dummy_deployment: {dd}')
     return dd

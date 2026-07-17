@@ -17,7 +17,8 @@ def oneshot_utxo(ogmios: OgmiosV6ChainContext, funder_addr: Address) -> UTxO:
 @per_election_fixture
 def script(oneshot_utxo: UTxO) -> ElectionScript:
     '''Parameterize the contract with the oneshot_utxo.'''
-    script = ElectionScript.from_oneshot_utxo(oneshot_utxo)
+    oneshot_hex = utxo_to_ref_hex(oneshot_utxo)
+    script = ElectionScript.from_oneshot_hex(oneshot_hex)
     LOG.debug(f'script: {script}')
     return script
 

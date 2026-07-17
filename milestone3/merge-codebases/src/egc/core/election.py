@@ -14,6 +14,7 @@ from pycardano import *
 
 from .config import IS_TEST
 from .plutus import *
+from .subscriber import ElectionConfig
 
 import logging
 
@@ -77,20 +78,18 @@ class ElectionScript:
             "aiken_tracing": self.aiken_tracing,
         }
 
-    # TODO is this a reasonable way to initially create it, with a round-trip to json?
-#     @classmethod
-#     def from_oneshot_utxo(cls, oneshot_utxo: UTxO) -> Self:
-#         oneshot_hex = utxo_to_ref_hex(oneshot_utxo)
-#         hex_params = [oneshot_hex]
-#         blueprint_dict = aiken_blueprint_apply_hex_params(PLUTUS_JSON_PATH, hex_params)
-#         cls_dict = {
-#             'schema_version': SCHEMA_VERSION,
-#             'oneshot_utxo': oneshot_utxo.to_cbor_hex(),
-#             'oneshot_hex': oneshot_hex,
-#             'aiken_blueprint': blueprint_dict,
-#             "aiken_tracing": IS_TEST, # TODO hardcode True for now to avoid having to get this?
-#         }
-#         return cls.from_dict(cls_dict)
+    @classmethod
+    def from_oneshot_hex(cls, oneshot_hex: str) -> Self:
+        hex_params = [oneshot_hex]
+        blueprint_dict = aiken_blueprint_apply_hex_params(PLUTUS_JSON_PATH, hex_params)
+        cls_dict = {
+            'schema_version': SCHEMA_VERSION,
+            # 'oneshot_utxo': oneshot_utxo.to_cbor_hex(),
+            'oneshot_hex': oneshot_hex,
+            'aiken_blueprint': blueprint_dict,
+            "aiken_tracing": IS_TEST, # TODO hardcode True for now to avoid having to get this?
+        }
+        return cls.from_dict(cls_dict)
 
     @classmethod
     def from_config(cls, cfg: ElectionConfig) -> Self:
@@ -134,11 +133,9 @@ class ElectionDeployment:
     None of these fields affect the script hash.
     """
 
-	network_magic: int = field(default=DEFAULT_NETWORK_MAGIC)
-
     # Useful if you want to quickly check who deployed it.
     # Also an informal default refund address for BurnTestTokens; not enforced on chain.
-	# TODO for now, also include in subscriber info qrcode
+    # TODO for now, also include in subscriber info qrcode
     funder_address: Address
 
     # So far, only used for picking the default JSON save path.
@@ -149,23 +146,25 @@ class ElectionDeployment:
     since_slot: int
     since_block: str
 
+    network_magic: int = field(default=DEFAULT_NETWORK_MAGIC)
+
     @classmethod
     def from_config(cls, cfg: ElectionConfig) -> Self:
         cls_dict = {
-            'network_magic': cfg.network_magic,
             'funder_addr':   cfg.funder_addr,
             'since_slot':    cfg.since_slot,
             'since_block':   cfg.since_block,
+            'network_magic': cfg.network_magic,
         }
         return cls.from_dict(cls_dict)
 
     def to_dict(self) -> dict:
         LOG.debug('ElectionDeployment.to_dict')
         return {
-            "network_magic":  self.network_magic,
             "funder_address": str(self.funder_address),
             "since_slot":     self.since_slot,
             "since_block":    self.since_block,
+            "network_magic":  self.network_magic,
         }
 
 
@@ -173,10 +172,10 @@ class ElectionDeployment:
     def from_dict(cls, data: dict) -> Self:
         LOG.debug('ElectionDeployment.from_dict')
         return cls(
-            network_magic  = int(data["network_magic"]),
             funder_address = Address.from_primitive(data["funder_address"]),
             since_slot     = data["since_slot"],
             since_block    = data["since_block"],
+            network_magic  = int(data["network_magic"]),
         )
 
 @dataclass(frozen=True, kw_only=True)
@@ -203,9 +202,9 @@ class ElectionContext:
         """Script address, derived from the spend script hash and network."""
         LOG.debug('Election.address')
         return Address(
-			self.script.policy_id,
-			network=PYCARDANO_NETWORK[self.deployment.network_magic],
-		)
+            self.script.policy_id,
+            network=PYCARDANO_NETWORK[self.deployment.network_magic],
+        )
 
     def to_dict(self) -> dict:
         LOG.debug('Election.to_dict')
