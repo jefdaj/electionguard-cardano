@@ -123,6 +123,7 @@
             pythonEnv
             pkgs.coreutils
             pkgs.bashInteractive
+            pkgs.jq
           ] ++ otherDeps;
           enableFakechroot = true;
           fakeRootCommands = ''

@@ -95,7 +95,7 @@ let
 
   ### services ###
 
-  egcService = egc_image: role: project_name: data_dir: i: {
+  egcService = egc_image: role: project_name: data_dir: scripts_dir: i: {
     service.image = egc_image;
     image.nixBuild = false;
     service.command = [
@@ -104,6 +104,7 @@ let
     ];
     service.volumes = [
       "${data_dir}/${nodeName role i}/egc:/data/private"
+      "${scripts_dir}:/scripts"
     ];
     service.networks = [
       (ogmiosNetworkName role i)
@@ -197,9 +198,9 @@ let
   mkServices = cfg:
     let
 
-      pairEgcAttrs = egc_image: role: project_name: data_dir: i: {
+      pairEgcAttrs = egc_image: role: project_name: data_dir: scripts_dir: i: {
         name = "${nodeName role i}-egc";
-        value = egcService egc_image role project_name data_dir i;
+        value = egcService egc_image role project_name data_dir scripts_dir i;
       };
 
       pairIpfsAttrs = role: data_dir: i: {
@@ -208,16 +209,18 @@ let
       };
 
       # Produce (egc, ipfs) pairs for 1..nVms
-      pairAttrsList = project_name: egc_image: data_dir: role: nVms:
+      pairAttrsList = project_name: egc_image: data_dir: scripts_dir: role: nVms:
         let
           range = pkgs.lib.range 1 nVms;
         in
         pkgs.lib.concatMap (i: [
-          (pairEgcAttrs egc_image role project_name data_dir i)
+          (pairEgcAttrs egc_image role project_name data_dir scripts_dir i)
           (pairIpfsAttrs role data_dir i)
         ]) range;
 
-      mkServicePairs = pairAttrsList cfg.arion.project_name cfg.arion.egc_image cfg.arion.data_dir;
+      mkServicePairs =
+        with cfg.arion;
+        pairAttrsList project_name egc_image data_dir scripts_dir;
 
     in {
       "shared-cardano".service = cardanoService;
