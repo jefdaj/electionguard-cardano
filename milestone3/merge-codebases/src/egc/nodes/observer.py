@@ -62,7 +62,6 @@ class ObserverNode(ElectionNode):
             role=role,
             role_index=role_index,
             wallet=wallet,
-            script=None,
         )
 
     def _build_init_tx(
