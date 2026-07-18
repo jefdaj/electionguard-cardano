@@ -105,7 +105,7 @@ class ElectionConfig:
         assert len(args) == 6
         schema_version, oneshot_hex, network_magic, funder_address, since_slot, since_block = args
         since_slot = int(since_slot)
-        funder_address = str(funder_addr)
+        funder_address = str(funder_address)
         return cls(oneshot_hex, network_magic, funder_address, since_slot, since_block, schema_version)
 
     def to_qr_str(self) -> str:

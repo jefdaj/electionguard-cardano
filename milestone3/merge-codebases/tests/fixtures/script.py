@@ -7,9 +7,9 @@ import logging
 LOG = logging.getLogger(__name__)
 
 @per_election_fixture
-def oneshot_utxo(ogmios: OgmiosV6ChainContext, funder_addr: Address) -> UTxO:
+def oneshot_utxo(ogmios: OgmiosV6ChainContext, funder_address: Address) -> UTxO:
     '''Pick a oneshot UTxO from the election wallet.'''
-    utxo = pick_oneshot_utxo(ogmios, funder_addr)
+    utxo = pick_oneshot_utxo(ogmios, funder_address)
     LOG.debug(f'oneshot_utxo: {utxo}')
     print(f'oneshot_utxo: {utxo}')
     return utxo

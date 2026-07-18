@@ -13,7 +13,7 @@ def funder_wallet() -> Wallet:
     return w
 
 @per_election_fixture
-def funder_addr(funder_wallet: Wallet) -> Address:
+def funder_address(funder_wallet: Wallet) -> Address:
     return funder_wallet.addr
 
 @per_election_fixture

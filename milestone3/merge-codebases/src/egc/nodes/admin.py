@@ -446,13 +446,13 @@ class AdminNode(VerifierNode):
 
         # TODO how to get back the Address?
         # TODO maybe pycardano can take a str here?
-        funder_addr: Address = Address.from_primitive(self.election.deployment.funder_address)
-        LOG.debug(f'funder_addr: {funder_addr}')
+        funder_address: Address = Address.from_primitive(self.election.deployment.funder_address)
+        LOG.debug(f'funder_address: {funder_address}')
 
         tx_signed = ogmios_retry(
             lambda: txb.build_and_sign(
                 [self.publisher.wallet.sk],
-                change_address = funder_addr,
+                change_address = funder_address,
             )
         )
         LOG.debug('tx_signed:\n%s\n' % pformat(tx_signed))
