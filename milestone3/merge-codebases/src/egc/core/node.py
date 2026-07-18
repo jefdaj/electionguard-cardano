@@ -365,8 +365,8 @@ class ElectionNode:
         WARNING: The on-chain code lets anyone do this, not just the funder.
         BurnTestTokens should be removed before production use.
         """
-        if not IS_TEST:
-            err = 'burn_test_tokens is only for test mode'
+        if not 'burntesttokens' in EGC_PLUTUS_MODE:
+            err = f"burn_test_tokens does not work in EGC_PLUTUS_MODE={EGC_PLUTUS_MODE}"
             LOG.error(err)
             raise RuntimeError(err)
         # if self.election is None:
@@ -383,8 +383,8 @@ class ElectionNode:
         return burn_tx
 
     def recover_all_collateral(self, keys_dir: Path) -> Transaction:
-        if not IS_TEST:
-            err = 'recover_all_collateral is only for test mode'
+        if EGC_WALLET_MODE != 'scripted':
+            err = f"recover_all_collateral requires EGC_WALLET_MODE=scripted, not '{EGC_WALLET_MODE}'"
             LOG.error(err)
             raise RuntimeError(err)
         ch_str = self.channel_str()

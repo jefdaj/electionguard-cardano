@@ -12,7 +12,7 @@ from pprint import pformat
 
 from pycardano import *
 
-from .config import IS_TEST
+from .env import EGC_PLUTUS_MODE, EGC_NETWORK_MODE
 from .plutus import *
 # from .subscriber import ElectionConfig
 
@@ -23,7 +23,6 @@ LOG = logging.getLogger(__name__)
 # Increment whenever you change the serialization.
 SCHEMA_VERSION = 3
 
-# TODO where should this live? or should it be fetched from Ogmios/Kupo?
 NETWORK_MAGIC = {
     "mainnet": 764824073,
     "preprod": 1,
@@ -36,7 +35,7 @@ PYCARDANO_NETWORK = {
     2: Network.TESTNET,
 }
 
-DEFAULT_NETWORK_MAGIC = NETWORK_MAGIC['preview' if IS_TEST else 'mainnet']
+DEFAULT_NETWORK_MAGIC     = NETWORK_MAGIC[EGC_NETWORK_MODE]
 DEFAULT_PYCARDANO_NETWORK = PYCARDANO_NETWORK[DEFAULT_NETWORK_MAGIC]
 
 
@@ -149,7 +148,7 @@ class ElectionScript:
     # Was the contract built with tracing?
     # Example usage with tracing:
     # ELECTION_PLUTUS_VARIANT=traced ./publish.py ...
-    aiken_tracing: bool = field(default=IS_TEST)
+    aiken_tracing: bool = field(default='traced' in EGC_PLUTUS_MODE)
 
     # Fields duplicated from the aiken_blueprint for convenience.
     policy_id:    ScriptHash
@@ -177,7 +176,7 @@ class ElectionScript:
             # 'schema_version':  SCHEMA_VERSION,
             'oneshot_hex':     oneshot_hex,
             'aiken_blueprint': blueprint_dict,
-            "aiken_tracing":   IS_TEST, # TODO hardcode True for now to avoid having to get this?
+            "aiken_tracing":   'traced' in EGC_PLUTUS_MODE,
         }
         return cls.from_dict(cls_dict)
 
@@ -191,7 +190,7 @@ class ElectionScript:
             # 'oneshot_utxo': oneshot_utxo.to_cbor_hex(),
             'oneshot_hex': cfg.oneshot_hex,
             'aiken_blueprint': blueprint_dict,
-            "aiken_tracing": IS_TEST, # TODO hardcode True for now to avoid having to get this?
+            "aiken_tracing": 'traced' in EGC_PLUTUS_MODE,
         }
         return cls.from_dict(cls_dict)
 

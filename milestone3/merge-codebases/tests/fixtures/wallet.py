@@ -31,7 +31,7 @@ def keys_dir() -> Path:
     try:
         yield path
     finally:
-        if not IS_TEST and not custom_keys_dir:
+        if EGC_WALLET_MODE != 'scripted' and not custom_keys_dir:
             shutil.rmtree(path, ignore_errors=True)
             LOG.info(f'Removed keys from {path}')
         else:

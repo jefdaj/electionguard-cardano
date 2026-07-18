@@ -145,10 +145,10 @@
             ./build.sh
           '';
 
+          # TODO the parameterized ones are filtered out of src, right?
           installPhase = ''
             mkdir -p $out
-            cp election-plutus.json        $out/
-            cp election-plutus-traced.json $out/
+            cp egc-plutus-*.json $out/
           '';
         };
 
@@ -177,7 +177,10 @@
                 User = "1000:100"; # TODO named egc user? 1000:1000?
                 Env = [
                   "PATH=/bin"
+                  "EGC_NETWORK_MODE=preview"
                   "EGC_PLUTUS_DIR=${plutusBlueprints}"
+                  "EGC_PLUTUS_MODE=burntesttokens-traced"
+                  "EGC_WALLET_MODE=scripted"
                 ];
                 Labels = {};
                 # ExposedPorts = { "8000/tcp" = {}; }; # TODO does this do anything?
@@ -222,8 +225,10 @@
               UV_PYTHON = "${venv}/bin/python";
               UV_PYTHON_DOWNLOADS = "never";
               PYTHONDONTWRITEBYTECODE = true;
-              EGC_MODE = "test";
-              EGC_PLUTUS_DIR = "${plutusBlueprints}"; # TODO leave unset for dev work?
+              EGC_PLUTUS_DIR   = "${plutusBlueprints}";
+              EGC_NETWORK_MODE = "preview";
+              EGC_PLUTUS_MODE  = "burntesttokens-traced";
+              EGC_WALLET_MODE  = "scripted";
 
               # TODO remove?
               # SSL_CERT_FILE     = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";

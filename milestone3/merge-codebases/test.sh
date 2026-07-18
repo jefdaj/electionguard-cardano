@@ -3,12 +3,9 @@
 # set -x
 # set -e
 
-# This tells it to use the traced plutus blueprint,
-# to leave generated keys in the tmpdir after tests,
-# and to log generated keys to <keys_dir>/test-keys.log.
-# Note that it doesn't control testnet vs mainnet,
-# and doesn't affect BurnTestTokens.
-export EGC_MODE=test
+export EGC_NETWORK_MODE='preview'
+export EGC_PLUTUS_MODE='burntesttokens-traced'
+export EGC_WALLET_MODE='scripted'
 
 EXTRA_ARGS="$@"
 

@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Optional, Self, Tuple
 from dataclasses import dataclass
 from pycardano import *
-from .config import IS_TEST
+from .env import EGC_WALLET_MODE
 import logging
 import shutil
 
@@ -30,7 +30,7 @@ LOG = logging.getLogger(__name__)
 
 # Separate logger for test keys
 KEYS_LOG = logging.getLogger('test-keys')
-if IS_TEST:
+if EGC_WALLET_MODE == 'scripted':
     log_path = (DEF_KEYS_DIR / 'test-keys.log').absolute()
     keys_fh = logging.FileHandler(log_path)
     keys_fh.setFormatter(
