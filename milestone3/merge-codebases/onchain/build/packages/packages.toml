@@ -5,5 +5,5 @@ source = "github"
 
 [[packages]]
 name = "aiken-lang/fuzz"
-version = "v2"
+version = "v2.2.0"
 source = "github"

@@ -102,6 +102,8 @@
       });
 
       devPkgList = ps: with ps; [
+        coreutils
+        bashInteractive
         arion.packages.x86_64-linux.arion
         file
         jq
@@ -118,8 +120,36 @@
 
       packages.${system} = {
 
-        # This is the Python library code + binaries.
         default = pythonEnv;
+
+        # This is the Python library code + binaries.
+        # TODO clean up all the misc extra files included here
+        inherit pythonEnv;
+
+        plutusBlueprints = pkgs.stdenv.mkDerivation {
+          pname = "egc-plutus-blueprints";
+          version = "0.5.1"; # should match aiken.toml
+          src = ./onchain;
+
+          nativeBuildInputs = (devPkgList pkgs) ++ [
+            aiken.packages.x86_64-linux.aiken
+          ];
+
+          patchPhase = ''
+            patchShebangs ./build.sh
+          '';
+
+          buildPhase = ''
+            export HOME=$TMPDIR
+            ./build.sh
+          '';
+
+          installPhase = ''
+            mkdir -p $out
+            cp election-plutus.json        $out/
+            cp election-plutus-traced.json $out/
+          '';
+        };
 
         dockerImage = pkgs.dockerTools.buildLayeredImage {
           name = "electionguard-cardano";
