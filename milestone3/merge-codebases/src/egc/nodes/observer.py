@@ -225,7 +225,7 @@ class ObserverNode(ElectionNode):
             admin_ada: int = 100,
             oneshot_utxo: UTxO = None,
             funder_wallet: Wallet = None,
-        ) -> Transaction:
+        ) -> tuple[Transaction, ElectionConfig]:
 
         LOG.debug('Observer.init_election')
 
@@ -277,4 +277,4 @@ class ObserverNode(ElectionNode):
 
         # All the info we really need should be in self.election now;
         # the main reason to return init_tx is so the caller can wait for confirmation.
-        return (init_tx, election_ctx)
+        return (init_tx, config)

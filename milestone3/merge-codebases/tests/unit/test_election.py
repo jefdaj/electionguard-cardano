@@ -19,7 +19,15 @@ def test_roundtrip_electioncontext(dummy_electioncontext: ElectionContext):
     assert dec2 == dummy_electioncontext
 
 @pytest.mark.testnet
-def test_init_election(election: ElectionContext):
+def test_init_tx(init_tx: Transaction):
     # This is mainly for testing that the teardown works.
     # TODO is there a better way to do that explicitly?
+    assert isinstance(init_tx, Transaction)
+
+@pytest.mark.testnet
+def test_election_config(config: ElectionConfig):
+    assert isinstance(config, ElectionConfig)
+
+@pytest.mark.testnet
+def test_election_context(election: ElectionContext):
     assert isinstance(election, ElectionContext)

@@ -44,11 +44,11 @@ def verifier1_wallet(keys_dir: Path) -> Wallet:
 
 @per_election_fixture
 def guardian1(
-        election: ElectionContext,
+        config: ElectionConfig,
         guardian1_wallet: Wallet,
     ) -> GuardianNode:
     node_ = GuardianNode(
-        election   = election,
+        config     = config,
         wallet     = guardian1_wallet,
         role_index = 1,
     )
@@ -61,11 +61,11 @@ def guardian1(
 
 @per_election_fixture
 def guardian2(
-        election: ElectionContext,
+        config: ElectionConfig,
         guardian2_wallet: Wallet,
     ) -> GuardianNode:
     node_ = GuardianNode(
-        election   = election,
+        config     = config,
         wallet     = guardian2_wallet,
         role_index = 2,
     )
@@ -78,11 +78,11 @@ def guardian2(
 
 @per_election_fixture
 def guardian3(
-        election: ElectionContext,
+        config: ElectionConfig,
         guardian3_wallet: Wallet,
     ) -> GuardianNode:
     node_ = GuardianNode(
-        election   = election,
+        config     = config,
         wallet     = guardian3_wallet,
         role_index = 3,
     )
@@ -95,11 +95,11 @@ def guardian3(
 
 @per_election_fixture
 def device1(
-        election: ElectionContext,
+        config: ElectionConfig,
         device1_wallet: Wallet,
     ) -> DeviceNode:
     node_ = DeviceNode(
-        election   = election,
+        config     = config,
         wallet     = device1_wallet,
         role_index = 1,
     )
@@ -112,11 +112,11 @@ def device1(
 
 @per_election_fixture
 def verifier1(
-        election: ElectionContext,
+        config: ElectionConfig,
         verifier1_wallet: Wallet,
     ) -> VerifierNode:
     node_ = VerifierNode(
-        election   = election,
+        config     = config,
         wallet     = verifier1_wallet,
         role_index = 1,
     )

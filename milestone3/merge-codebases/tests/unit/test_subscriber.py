@@ -12,10 +12,6 @@ LOG = logging.getLogger(__name__)
 # their election steps in other test modules though.
 
 @per_election_fixture
-def config(election: ElectionContext):
-    return ElectionConfig.from_election(election)
-
-@per_election_fixture
 def subscriber(config: ElectionConfig):
     sub = ElectionSubscriber(config)
     sub.start()
@@ -24,7 +20,7 @@ def subscriber(config: ElectionConfig):
 
 @pytest.mark.testnet
 def test_init_subscriber(
-        election: ElectionContext,
+        # election: ElectionContext,
         subscriber: ElectionSubscriber,
     ):
     assert isinstance(subscriber, ElectionSubscriber)
@@ -35,7 +31,7 @@ def test_init_subscriber(
 
 @pytest.mark.testnet
 def test_rollback(
-        election: ElectionContext,
+        # election: ElectionContext,
         subscriber: ElectionSubscriber,
     ):
 

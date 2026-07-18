@@ -48,7 +48,7 @@ def init_election_tuple(
         admin_vkh: VerificationKeyHash,
         keys_dir: Path,
         request, # exposes pytest info
-    ) -> tuple[Transaction, ElectionContext]:
+    ) -> tuple[Transaction, ElectionConfig]:
 
     """Yields an already submitted and confirmed InitElection transaction, and
     the resulting ElectionContext. All other Transaction fixtures should depend
@@ -62,7 +62,7 @@ def init_election_tuple(
 
     # oneshot_hex = utxo_to_ref_hex(oneshot_utxo)
 
-    (init_tx, election_ctx) = funder.init_election(
+    (init_tx, cfg) = funder.init_election(
         # script     = script,
         oneshot_utxo = oneshot_utxo,
         # admin_addr = admin_addr,
@@ -72,7 +72,7 @@ def init_election_tuple(
     funder.wait_for_confirmation(init_tx)
 
     # All other tests happen here
-    yield (init_tx, election_ctx) # TODO config here, not context
+    yield (init_tx, cfg) # TODO config here, not context
 
     try:
         channel_ids = funder.subscriber.current_channel_ids()
@@ -107,11 +107,15 @@ def init_election_tuple(
         fn(f'funder paid {ada_diff} ADA total to run {name}')
 
 @per_election_fixture
-def init_tx(init_election_tuple: tuple[Transaction, ElectionContext]) -> Transaction:
+def init_tx(init_election_tuple: tuple[Transaction, ElectionConfig]) -> Transaction:
     (tx, _) = init_election_tuple
     return tx
 
 @per_election_fixture
-def election(init_election_tuple: tuple[Transaction, ElectionContext]) -> ElectionContext:
-    (_, ctx) = init_election_tuple
-    return ctx
+def config(init_election_tuple: tuple[Transaction, ElectionConfig]) -> ElectionConfig:
+    (_, cfg) = init_election_tuple
+    return cfg
+
+@per_election_fixture
+def election(config: ElectionConfig):
+    return ElectionContext.from_config(config)
