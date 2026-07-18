@@ -118,4 +118,4 @@ def election_cfg(init_election_tuple: tuple[Transaction, ElectionConfig]) -> Ele
 
 @per_election_fixture
 def election_ctx(election_cfg: ElectionConfig):
-    return ElectionContext.from_config(config)
+    return ElectionContext.from_config(election_cfg)

@@ -22,7 +22,7 @@ def admin_addr(admin_wallet: Wallet) -> Address:
 
 @per_election_fixture
 def admin(admin_wallet: Wallet, election_cfg: ElectionConfig) -> AdminNode:
-    node_ = AdminNode(wallet=admin_wallet, config=election_cfg)
+    node_ = AdminNode(wallet=admin_wallet, election_cfg=election_cfg)
     LOG.debug(f'admin: {node_}')
     try:
         yield node_
