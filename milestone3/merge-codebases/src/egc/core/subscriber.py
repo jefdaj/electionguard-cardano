@@ -20,9 +20,10 @@ from dataclasses import dataclass
 from os import environ
 from pprint import pformat
 from requests.adapters import HTTPAdapter
-from typing import Any, Tuple, Optional, Self, Iterable
+from typing import Any, Tuple, Optional, Self, Iterable, assert_never
 from urllib3.util.retry import Retry
 from pydantic_core import to_jsonable_python
+from enum import Enum, auto
 
 from .ogmios import *
 from .plutus.types.channel import *
@@ -291,11 +292,58 @@ def kupo_match_to_pycardano_utxo(kupo_dict: dict) -> UTxO:
 
 
 # TODO where should this live?
-# @dataclass(frozen=True) # TODO remove?
-# class EgcPhase:
-#     """A more detailed phase that includes on-chain ElectionPhase + other info.
-#     It should be preferred over raw ElectionPhase for use in interfaces etc.
-#     """
+@dataclass(frozen=True)
+class EgcPhaseContext:
+    "Extra context needed to determine EgcPhase from (on-chain) ElectionPhase."
+
+    # TODO add key ceremony rounds: 1,2,3
+    # TODO add transition grace periods that finish when everyone announces they're ready
+
+    onchain_phase: Optional[ElectionPhase]
+
+    # Disambiguates whether a contract_phase of None means before or after election
+    deployed: bool
+
+
+# TODO where should this live?
+class EgcPhase(Enum):
+    """A more complete phase that includes on-chain ElectionPhase + other info.
+    It should be preferred over raw ElectionPhase for use in interfaces etc.
+    """
+
+    NOT_DEPLOYED      = auto()
+    CONFIG_ANNOUNCE   = auto()
+    CONFIG_ONBOARDING = auto()
+    CONFIG_CEREMONY   = auto()
+    CONFIG_FINALIZE   = auto()
+    VOTING            = auto()
+    RESULTS_TALLY     = auto()
+    RESULTS_DECRYPT   = auto()
+    VERIFY            = auto()
+    FINALIZE          = auto()
+    FINISHED          = auto()
+
+
+def resolve_egc_phase(ctx: EgcPhaseContext) -> EgcPhase:
+    if ctx.onchain_phase is None:
+        return EgcPhase.FINISHED if ctx.deployed else EgcPhase.NOT_DEPLOYED
+    match ctx.onchain_phase:
+        case ElectionConfigPhase(phase=p):
+            match p:
+                case ConfigAnnouncePhase():   return EgcPhase.CONFIG_ANNOUNCE
+                case ConfigOnboardingPhase(): return EgcPhase.CONFIG_ONBOARDING
+                case ConfigCeremonyPhase():   return EgcPhase.CONFIG_CEREMONY
+                case ConfigFinalizePhase():   return EgcPhase.CONFIG_FINALIZE
+                case _: assert_never(p)
+        case ElectionVotingPhase(): return EgcPhase.VOTING
+        case ElectionResultsPhase(phase=p):
+            match p:
+                case ResultsTallyPhase():   return EgcPhase.RESULTS_TALLY
+                case ResultsDecryptPhase(): return EgcPhase.RESULTS_DECRYPT
+                case _: assert_never(p)
+        case ElectionVerifyPhase():   return EgcPhase.VERIFY
+        case ElectionFinalizePhase(): return EgcPhase.FINALIZE
+        case _: assert_never(ctx.onchain_phase)
 
 
 # TODO where should this live?
