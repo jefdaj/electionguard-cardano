@@ -556,22 +556,42 @@ class ElectionSubscriber:
             return states
 
 
-    def current_phase(self) -> ElectionPhase | str:
+    # def current_phase(self) -> ElectionPhase | str:
+    #     log_call()
+    #     # Returns None if the election hasn't started yet
+    #     with self._history_lock:
+    #         try:
+    #             event = self.channel_history(ADMIN_CHANNEL_ID)[-1]
+    #             return deepcopy(event.output_state.state.phase)
+    #         except (KeyError, AttributeError):
+    #             if self._history:
+    #                 # None with history implies election ended
+    #                 # TODO codify this in a better way!
+    #                 return 'ElectionEnded'
+    #             else:
+    #                 # Otherwise, implies election hasn't started yet.
+    #                 # TODO codify this in a better way!
+    #                 return 'ElectionNotStarted'
+
+    def current_phase(self) -> EgcPhase:
         log_call()
-        # Returns None if the election hasn't started yet
         with self._history_lock:
             try:
-                event = self.channel_history(ADMIN_CHANNEL_ID)[-1]
-                return deepcopy(event.output_state.state.phase)
-            except (KeyError, AttributeError):
-                if self._history:
-                    # None with history implies election ended
-                    # TODO codify this in a better way!
-                    return 'ElectionEnded'
-                else:
-                    # Otherwise, implies election hasn't started yet.
-                    # TODO codify this in a better way!
-                    return 'ElectionNotStarted'
+                event = deepcopy(self.channel_history(ADMIN_CHANNEL_ID)[-1])
+            except:
+                event = None
+        try:
+            phase = event.output_state.state.phase
+        except:
+            phase = None
+        ctx = EgcPhaseContext(
+            onchain_phase = phase,
+            deployed      = bool(event is not None),
+        )
+        LOG.debug(f'ctx: {ctx}')
+        egc_phase = resolve_egc_phase(ctx)
+        LOG.debug(f'egc_phase: {egc_phase}')
+        return egc_phase
 
 
     def wait_for_phase(self, phase: ElectionPhase|str, timeout=OGMIOS_TIMEOUT_SEC):
@@ -1349,13 +1369,13 @@ class ElectionSubscriber:
 
     def _on_initelection(self, event: ChannelEvent):
         log_call()
-        if self.current_phase() != 'ElectionNotStarted':
+        if self.current_phase() != EgcPhase.NOT_DEPLOYED:
             i = event.channel_id
             with self._history_lock:
                 prev = self._history[i][-1]
             diff = safe_deepdiff(prev, event)
             LOG.error(f'diff:\n{pformat(diff)}')
-        assert self.current_phase() == 'ElectionNotStarted', 'InitElection should always happen first'
+        assert self.current_phase() == EgcPhase.NOT_DEPLOYED, 'InitElection should always happen first'
         assert event.channel_id == ADMIN_CHANNEL_ID # note this tx was published by the funder
         self._on_mint(event)
         return event

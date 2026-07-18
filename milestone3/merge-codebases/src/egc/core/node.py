@@ -103,7 +103,7 @@ class ElectionNode:
             channel_id = self.channel_id()
         return self.subscriber.current_state(channel_id)
 
-    def current_phase(self) -> Optional[ElectionPhase]:
+    def current_phase(self) -> EgcPhase:
         return self.subscriber.current_phase()
 
     def wait_for_confirmation(self, tx: Transaction):
