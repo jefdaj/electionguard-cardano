@@ -45,27 +45,18 @@ services:
       - ${OGMIOS_PORT:-1337}:1337
     networks:
       - default
-      # - ogmios # arion-generated containers can connect here
       # also talks to cardano-node via socket
 
   # In this test there's just one IPFS container.
   # I've tested already that a more realistic setup with a bunch of them also works.
-  # ipfs:
-  #   image: ipfs/kubo:v0.42.0
-  #   volumes:
-  #     - ./data/ipfs:/data/ipfs
-  #   environment:
-  #     - IPFS_TELEMETRY=off
-  #   ports:
-  #     - 4001:4001 # ipfs swarm
-  #     - 5001:5001 # ipfs api (and webui on /webui)
-  #   networks:
-  #     - egc-shared-net # TODO remove?
-
-# networks:
-  # Allows Arion-generated containers to talk to Ogmios,
-  # but does not allow host access to the Ogmios webui at 1337.
-  # TODO test this
-  # ogmios:
-  #   internal: true
-  #   name: egctest_ogmios
+  ipfs:
+    image: ipfs/kubo:v0.42.0
+    volumes:
+      - ./data/ipfs:/data/ipfs
+    environment:
+      - IPFS_TELEMETRY=off
+    ports:
+      - 4001:4001 # ipfs swarm
+      - 5001:5001 # ipfs api (and webui on /webui)
+    networks:
+      - default
