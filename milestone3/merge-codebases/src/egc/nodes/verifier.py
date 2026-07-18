@@ -16,7 +16,7 @@ class VerifierNode(ElectionNode):
         self,
 
         # election: ElectionContext,
-        config: ElectionConfig,
+        election_cfg: ElectionConfig,
 
         # For deriving the ChannelId
         role: str = 'verifier',
@@ -35,7 +35,7 @@ class VerifierNode(ElectionNode):
         super().__init__(
             role       = role,
             role_index = role_index,
-            config    = config,
+            election_cfg    = election_cfg,
             wallet     = wallet,
             keys_dir   = keys_dir,
             key_name   = key_name,

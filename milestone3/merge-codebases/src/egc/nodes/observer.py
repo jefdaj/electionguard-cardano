@@ -175,22 +175,6 @@ class ObserverNode(ElectionNode):
     def _guard_election(self):
         raise Exception('create or subscribe to an election first')
 
-#     def _init_subscriber_from_ctx(self, ctx: ElectionContext):
-#         """Delayed init for subscriber because we need to know the args for `kupo --since`."""
-#         LOG.debug('Observer._init_subscriber_from_ctx')
-#         # if self.election is None:
-#         #     raise Exception('_init_subscriber_from_ctx should be called as part of init_election')
-#         # self._guard_election()
-#         config = ElectionConfig(
-#             # policy_id   = ctx.script.policy_id,
-#             oneshot_hex = ctx.script.oneshot_hex,
-#             network_magic = ctx.deployment.network_magic,
-#             funder_addr = ctx.deployment.funder_address,
-#             since_slot  = ctx.deployment.since_slot,
-#             since_block = ctx.deployment.since_block,
-#         )
-#         return self.subscribe(config)
-
     def deploy_election(
             self,
             script: ElectionScript,
@@ -253,13 +237,13 @@ class ObserverNode(ElectionNode):
         )
         (init_tx, election_ctx) = self.deploy_election(script, init_txb)
 
-        config = ElectionConfig.from_election(election_ctx)
-        self.subscribe(config)
+        election_cfg = ElectionConfig.from_election(election_ctx)
+        self.subscribe(election_cfg)
 
-        LOG.info(f'Subscribe to this election with:\n\n{config.to_qr_str()}\n')
+        LOG.info(f'Subscribe to this election with:\n\n{election_cfg.to_qr_str()}\n')
         # LOG.debug(
         #     f'Or for dev debugging:\n\n'
-        #     f'egc:election:{config.policy_id}:{config.since_slot}:{config.since_block}\n'
+        #     f'egc:election:{election_cfg.policy_id}:{election_cfg.since_slot}:{election_cfg.since_block}\n'
         # )
 
         # TODO come up with a better default path here
@@ -277,4 +261,4 @@ class ObserverNode(ElectionNode):
 
         # All the info we really need should be in self.election now;
         # the main reason to return init_tx is so the caller can wait for confirmation.
-        return (init_tx, config)
+        return (init_tx, election_cfg)

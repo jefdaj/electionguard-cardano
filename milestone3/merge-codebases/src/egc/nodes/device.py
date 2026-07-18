@@ -17,7 +17,7 @@ class DeviceNode(VerifierNode):
         # For deriving the ChannelId
         role_index: int,
 
-        election: ElectionContext,
+        election_cfg: ElectionConfig,
 
         # No need for keys_dir or key_name if you pass an existing wallet.
         # You can also omit them without passing wallet, in which case a new
@@ -32,7 +32,7 @@ class DeviceNode(VerifierNode):
         super().__init__(
             role       = 'device',
             role_index = role_index,
-            election   = election,
+            election_cfg = election_cfg,
             wallet     = wallet,
             keys_dir   = keys_dir,
             key_name   = key_name,

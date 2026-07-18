@@ -30,7 +30,7 @@ class ElectionNode:
         # May both be None in case of an observer.
         # All other roles should set them both from the beginning.
         # script: Optional[ElectionScript] = None,
-        config: Optional[ElectionConfig] = None,
+        election_cfg: Optional[ElectionConfig] = None,
 
         # No need for keys_dir or key_name if you pass an existing wallet.
         # You can also omit them without passing wallet, in which case a new
@@ -46,7 +46,7 @@ class ElectionNode:
 
         # May be None in case of an Observer.
         # self.script: Optional[Script] = script
-        self.config: Optional[ElectionConfig] = config # TODO remove?
+        self.config: Optional[ElectionConfig] = election_cfg
 
         # Always exists, but may not be used for anything in case of an Observer.
         self.publisher = ElectionPublisher(
@@ -67,14 +67,7 @@ class ElectionNode:
             self.subscriber = None
             self.election = None
         else:
-            self.subscribe(config)
-            # config = ElectionConfig.from_election(self.election)
-            # self.subscriber = ElectionSubscriber(
-            #     config      = config,
-            #     on_action   = lambda x: None,
-            #     on_rollback = lambda x: None,
-            # )
-            # self.subscriber.start()
+            self.subscribe(self.config)
             # time.sleep(OGMIOS_POLL_SEC + 1) # TODO how long is actually needed?
 
         LOG.info(f'Started {self.channel_str()} node.')
