@@ -291,6 +291,14 @@ def kupo_match_to_pycardano_utxo(kupo_dict: dict) -> UTxO:
 
 
 # TODO where should this live?
+# @dataclass(frozen=True) # TODO remove?
+# class EgcPhase:
+#     """A more detailed phase that includes on-chain ElectionPhase + other info.
+#     It should be preferred over raw ElectionPhase for use in interfaces etc.
+#     """
+
+
+# TODO where should this live?
 def is_being_minted(channel_str: str, action: ElectionAction) -> bool:
     ch_id = coerce_channel_id(channel_str)
     match action:
@@ -518,12 +526,13 @@ class ElectionSubscriber:
                     return 'ElectionNotStarted'
 
 
-    def wait_for_phase(self, phase: Optional[ElectionPhase], timeout=OGMIOS_TIMEOUT_SEC):
+    def wait_for_phase(self, phase: ElectionPhase|str, timeout=OGMIOS_TIMEOUT_SEC):
         # Poll until the election reaches the specified phase (or None)
         # TODO disambiguate None before vs after election
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
             actual_phase = self.current_phase()
+            LOG.debug(f'actual_phase: {actual_phase}')
             if actual_phase == phase:
                 LOG.debug(f'Election reached phase: {phase}.')
                 return

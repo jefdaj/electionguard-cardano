@@ -822,7 +822,7 @@ def admin_tx9(
     tx = admin.end_election()
     LOG.debug(f'admin_tx9: {tx}')
     # TODO special case to allow wait_for_confirmation to work here too?
-    admin.wait_for_phase(None) # TODO explicit "ended" phase?
+    admin.wait_for_phase('ElectionEnded') # TODO update to EgcPhase
     return tx
 
 @pytest.mark.testnet
