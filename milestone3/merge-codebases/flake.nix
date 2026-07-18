@@ -112,9 +112,6 @@
     in
     {
 
-      # temporary for debugging
-      inherit workspace;
-
       # This is expected by arion-pkgs.nix
       # See https://github.com/hercules-ci/arion/issues/247
       pkgs = myPkgs;
@@ -122,10 +119,8 @@
       packages.${system} = {
 
         # This is the Python library code + binaries.
-        # TODO also needs cacert?
         default = pythonEnv;
 
-        # TODO also needs cacert?
         dockerImage = pkgs.dockerTools.buildLayeredImage {
           name = "electionguard-cardano";
           tag = "0.3.0";
@@ -183,7 +178,6 @@
               jq
               uv
               venv
-              # cacert # TODO remove?
             ]);
             env = {
               UV_NO_SYNC = "1";

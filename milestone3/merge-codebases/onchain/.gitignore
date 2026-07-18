@@ -1,11 +1,16 @@
 # Aiken compilation artifacts
 artifacts/
+
 # Aiken's project working directory
-build/
+# We DO commit these so it doesn't need network access during nix build:
+# build/
+
 # Aiken's default documentation export
 docs/
+
 # Nix
 result*
+
 # Parameterized validators
 # (we do still want to version control the non-parameterized ones)
 election-plutus-traced-*.json
