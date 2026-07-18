@@ -19,7 +19,7 @@ def dummy_deployment(
     ) -> ElectionDeployment:
     tip = query_network_tip_sync()
     dd = ElectionDeployment(
-        funder_address = funder_wallet.addr,
+        funder_address = str(funder_wallet.addr),
         since_slot     = tip['slot'],
         since_block    = tip['block_hash'],
         network_magic  = DEFAULT_NETWORK_MAGIC,

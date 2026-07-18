@@ -69,7 +69,7 @@ class ElectionConfig:
         return cls(
                 data['oneshot_hex'   ],
                 data['network_magic' ],
-                data['funder_address'],
+            str(data['funder_address']),
             int(data['since_slot'    ]),
                 data['since_block'   ],
                 data['schema_version'],
@@ -104,7 +104,7 @@ class ElectionConfig:
         assert len(args) == 6
         schema_version, oneshot_hex, network_magic, funder_address, since_slot, since_block = args
         since_slot = int(since_slot)
-        return cls(oneshot_hex, network_magic, funder_address, since_slot, since_block, schema_version)
+        return cls(oneshot_hex, network_magic, str(funder_address), since_slot, since_block, schema_version)
 
     def to_qr_str(self) -> str:
         "egc:election:<version>:<oneshot_hex>:<network_magic>:<funder_address>:<since_slot>:<since_block>"
