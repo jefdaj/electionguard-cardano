@@ -70,3 +70,8 @@ class Client:
         r = await self._c.get('/wallet/save')
         r.raise_for_status()
         return r.json()
+
+    async def phase_get(self):
+        r = await self._c.get('/phase')
+        r.raise_for_status()
+        return r.json()
