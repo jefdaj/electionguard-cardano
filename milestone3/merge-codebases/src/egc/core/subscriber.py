@@ -23,10 +23,11 @@ from requests.adapters import HTTPAdapter
 from typing import Any, Tuple, Optional, Self, Iterable, assert_never
 from urllib3.util.retry import Retry
 from pydantic_core import to_jsonable_python
-from enum import Enum, auto
+from enum import Enum
+from functools import total_ordering
 
 from .ogmios import *
-from .plutus.types.channel import *
+from .plutus.types.phase import *
 from .plutus.types.action import *
 from .plutus.types.channel import *
 from .election import ElectionConfig, ElectionContext
@@ -300,8 +301,8 @@ class EgcPhaseContext:
     # TODO add key ceremony rounds: 1,2,3
     # TODO add transition grace periods that finish when everyone announces they're ready
 
-    # Whether an election has been subscribed to yet.
-    subscribed: bool
+    # Whether the Kupo thread has started indexing yet.
+    indexed: bool
 
     # Disambiguates whether a contract_phase of None means before or after election.
     deployed: bool
@@ -310,27 +311,34 @@ class EgcPhaseContext:
 
 
 # TODO where should this live?
+@total_ordering
 class EgcPhase(Enum):
     """A more complete phase that includes on-chain ElectionPhase + other info.
     It should be preferred over raw ElectionPhase for use in interfaces etc.
     """
 
-    NOT_INDEXED       = auto()
-    NOT_DEPLOYED      = auto()
-    CONFIG_ANNOUNCE   = auto()
-    CONFIG_ONBOARDING = auto()
-    CONFIG_CEREMONY   = auto()
-    CONFIG_FINALIZE   = auto()
-    VOTING            = auto()
-    RESULTS_TALLY     = auto()
-    RESULTS_DECRYPT   = auto()
-    VERIFY            = auto()
-    FINALIZE          = auto()
-    FINISHED          = auto()
+    NOT_INDEXED       = 0 # no election subscribed to, or Kupo starting up
+    NOT_DEPLOYED      = 1 # init_election not run yet, or tx not confirmed
+    CONFIG_ANNOUNCE   = 2
+    CONFIG_ONBOARDING = 3
+    CONFIG_CEREMONY   = 4
+    CONFIG_FINALIZE   = 5
+    VOTING            = 6
+    RESULTS_TALLY     = 7
+    RESULTS_DECRYPT   = 8
+    VERIFY            = 9
+    FINALIZ9          = 10
+    FINISHED          = 11
+
+    def __lt__(self, other):
+        if not isinstance(other, EgcPhase):
+            return NotImplemented
+        return self.value < other.value
 
 
 def resolve_egc_phase(ctx: EgcPhaseContext) -> EgcPhase:
-    # TODO should there be any NOT_INDEXED case here?
+    if not ctx.indexed:
+        return EgcPhase.NOT_INDEXED
     if ctx.onchain_phase is None:
         return EgcPhase.FINISHED if ctx.deployed else EgcPhase.NOT_DEPLOYED
     match ctx.onchain_phase:
@@ -350,7 +358,6 @@ def resolve_egc_phase(ctx: EgcPhaseContext) -> EgcPhase:
         case ElectionVerifyPhase():   return EgcPhase.VERIFY
         case ElectionFinalizePhase(): return EgcPhase.FINALIZE
         case _: assert_never(ctx.onchain_phase)
-
 
 # TODO where should this live?
 def is_being_minted(channel_str: str, action: ElectionAction) -> bool:
@@ -601,15 +608,18 @@ class ElectionSubscriber:
         return egc_phase
 
 
-    def wait_for_phase(self, phase: ElectionPhase|str, timeout=OGMIOS_TIMEOUT_SEC):
-        # Poll until the election reaches the specified phase (or None)
-        # TODO disambiguate None before vs after election
+    def await_phase(self, phase: EgcPhase, timeout=OGMIOS_TIMEOUT_SEC):
+        "Poll until the election reaches the specified phase, or time out."
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
             actual_phase = self.current_phase()
             LOG.debug(f'actual_phase: {actual_phase}')
             if actual_phase == phase:
                 LOG.debug(f'Election reached phase: {phase}.')
+                return
+            if actual_phase > phase:
+                # TODO throw error here? maybe there should be options for either
+                # raise Exception(f'Awaited phase {phase} has already passed! Current phase is {actual_phase}.')
                 return
             time.sleep(OGMIOS_POLL_SEC)
         raise TimeoutError(f'Election did not reach phase within {timeout}s: {phase}.')

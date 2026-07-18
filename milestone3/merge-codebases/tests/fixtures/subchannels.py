@@ -53,6 +53,7 @@ def guardian1(
         role_index = 1,
     )
     LOG.debug(f'guardian1: {node_}')
+    node_.await_phase(EgcPhase.CONFIG_ANNOUNCE)
     try:
         yield node_
         node_.return_collateral()
@@ -70,6 +71,7 @@ def guardian2(
         role_index = 2,
     )
     LOG.debug(f'guardian2: {node_}')
+    node_.await_phase(EgcPhase.CONFIG_ANNOUNCE)
     try:
         yield node_
         node_.return_collateral()
@@ -87,6 +89,7 @@ def guardian3(
         role_index = 3,
     )
     LOG.debug(f'guardian3: {node_}')
+    node_.await_phase(EgcPhase.CONFIG_ANNOUNCE)
     try:
         yield node_
         node_.return_collateral()
@@ -104,6 +107,7 @@ def device1(
         role_index = 1,
     )
     LOG.debug(f'device1: {node_}')
+    node_.await_phase(EgcPhase.CONFIG_ANNOUNCE)
     try:
         yield node_
         node_.return_collateral()
@@ -121,6 +125,7 @@ def verifier1(
         role_index = 1,
     )
     LOG.debug(f'verifier1: {node_}')
+    node_.await_phase(EgcPhase.CONFIG_ANNOUNCE)
     try:
         yield node_
         node_.return_collateral()

@@ -11,6 +11,7 @@ def test_init_admin(admin: AdminNode):
     assert isinstance(admin.election, ElectionContext)
     assert isinstance(admin.publisher, ElectionPublisher)
     assert isinstance(admin.subscriber, ElectionSubscriber)
+    assert admin.current_phase() == EgcPhase.CONFIG_ANNOUNCE
 
 @pytest.mark.testnet
 def test_init_subchannel_nodes(
@@ -22,5 +23,6 @@ def test_init_subchannel_nodes(
         assert isinstance(n.election, ElectionContext), f'{s}.election not an ElectionContext'
         assert isinstance(n.publisher, ElectionPublisher), f'{s}.publisher not an ElectionPublisher'
         assert isinstance(n.subscriber, ElectionSubscriber), f'{s}.subscriber not an ElectionSubscriber'
+        assert n.current_phase() == EgcPhase.CONFIG_ANNOUNCE
     # TODO assert states?
     # TODO or, is this not a testnet test anymore?

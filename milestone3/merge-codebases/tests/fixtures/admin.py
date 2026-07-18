@@ -24,6 +24,7 @@ def admin_addr(admin_wallet: Wallet) -> Address:
 def admin(admin_wallet: Wallet, election_cfg: ElectionConfig) -> AdminNode:
     node_ = AdminNode(wallet=admin_wallet, election_cfg=election_cfg)
     LOG.debug(f'admin: {node_}')
+    node_.await_phase(EgcPhase.CONFIG_ANNOUNCE)
     try:
         yield node_
         node_.return_collateral()

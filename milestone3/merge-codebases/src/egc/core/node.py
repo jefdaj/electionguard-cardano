@@ -120,8 +120,8 @@ class ElectionNode:
         self.subscriber.wait_for_confirmation(tx_str)
         LOG.debug(f'{ch_str} subscriber confirmed tx {tx.id}')
 
-    def wait_for_phase(self, phase: Optional[ElectionPhase], timeout=OGMIOS_TIMEOUT_SEC):
-        self.subscriber.wait_for_phase(phase, timeout=timeout)
+    def await_phase(self, phase: Optional[ElectionPhase], timeout=OGMIOS_TIMEOUT_SEC):
+        self.subscriber.await_phase(phase, timeout=timeout)
 
     def balance_and_sign_state_transition_tx(
             self,
