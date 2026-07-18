@@ -19,6 +19,7 @@ def test_pick_oneshot_utxo(oneshot_utxo: UTxO):
 def test_init_funder(funder: ObserverNode):
     assert isinstance(funder, ObserverNode)
     assert isinstance(funder.publisher, ElectionPublisher)
+    assert funder.current_phase() == EgcPhase.NOT_INDEXED
 
     # TODO is there a good way to test these before init_election?
     # assert funder.election is None

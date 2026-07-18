@@ -121,6 +121,7 @@ def unique_id(*args, **kwargs) -> str:
     return uniq_id
 
 
+# TODO rename EgcEvent to match EgcPhase pattern?
 @dataclass
 class ElectionEvent:
     # The ChannelEvents above are for internal use; ElectionEvents are meant to
@@ -299,10 +300,13 @@ class EgcPhaseContext:
     # TODO add key ceremony rounds: 1,2,3
     # TODO add transition grace periods that finish when everyone announces they're ready
 
-    onchain_phase: Optional[ElectionPhase]
+    # Whether an election has been subscribed to yet.
+    subscribed: bool
 
-    # Disambiguates whether a contract_phase of None means before or after election
+    # Disambiguates whether a contract_phase of None means before or after election.
     deployed: bool
+
+    onchain_phase: Optional[ElectionPhase]
 
 
 # TODO where should this live?
@@ -311,6 +315,7 @@ class EgcPhase(Enum):
     It should be preferred over raw ElectionPhase for use in interfaces etc.
     """
 
+    NOT_INDEXED       = auto()
     NOT_DEPLOYED      = auto()
     CONFIG_ANNOUNCE   = auto()
     CONFIG_ONBOARDING = auto()
@@ -325,6 +330,7 @@ class EgcPhase(Enum):
 
 
 def resolve_egc_phase(ctx: EgcPhaseContext) -> EgcPhase:
+    # TODO should there be any NOT_INDEXED case here?
     if ctx.onchain_phase is None:
         return EgcPhase.FINISHED if ctx.deployed else EgcPhase.NOT_DEPLOYED
     match ctx.onchain_phase:
@@ -585,8 +591,9 @@ class ElectionSubscriber:
         except:
             phase = None
         ctx = EgcPhaseContext(
+            indexed = len(self._checkpoints) > 0,
+            deployed = bool(event is not None),
             onchain_phase = phase,
-            deployed      = bool(event is not None),
         )
         LOG.debug(f'ctx: {ctx}')
         egc_phase = resolve_egc_phase(ctx)

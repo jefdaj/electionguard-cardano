@@ -104,6 +104,8 @@ class ElectionNode:
         return self.subscriber.current_state(channel_id)
 
     def current_phase(self) -> EgcPhase:
+        if self.subscriber is None:
+            return EgcPhase.NOT_INDEXED
         return self.subscriber.current_phase()
 
     def wait_for_confirmation(self, tx: Transaction):
