@@ -3,7 +3,7 @@
     "project_name": "election",
     "data_dir": "./data",
     "scripts_dir": "./egc_scripts",
-    "egc_image": "electionguard-cardano:0.2.0"
+    "egc_image": "electionguard-cardano:0.3.0"
   },
   "election": {
     "guardians": {"count": 3, "quorum": 2},

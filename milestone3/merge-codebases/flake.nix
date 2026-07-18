@@ -128,7 +128,7 @@
         # TODO also needs cacert?
         dockerImage = pkgs.dockerTools.buildLayeredImage {
           name = "electionguard-cardano";
-          tag = "0.2.0";
+          tag = "0.3.0";
           contents = [
             pythonEnv
             pkgs.coreutils
