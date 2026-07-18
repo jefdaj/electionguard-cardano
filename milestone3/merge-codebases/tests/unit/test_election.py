@@ -25,9 +25,9 @@ def test_init_tx(init_tx: Transaction):
     assert isinstance(init_tx, Transaction)
 
 @pytest.mark.testnet
-def test_election_config(config: ElectionConfig):
-    assert isinstance(config, ElectionConfig)
+def test_election_config(election_cfg: ElectionConfig):
+    assert isinstance(election_cfg, ElectionConfig)
 
 @pytest.mark.testnet
-def test_election_context(election: ElectionContext):
-    assert isinstance(election, ElectionContext)
+def test_election_context(election_ctx: ElectionContext):
+    assert isinstance(election_ctx, ElectionContext)

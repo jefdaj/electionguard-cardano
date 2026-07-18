@@ -79,8 +79,8 @@ class ElectionNode:
 
         LOG.info(f'Started {self.channel_str()} node.')
 
-    def subscribe(self, config: ElectionConfig):
-        self.election = ElectionContext.from_config(config)
+    def subscribe(self, cfg: ElectionConfig):
+        self.election = ElectionContext.from_config(cfg)
         self.subscriber = ElectionSubscriber(
             election    = self.election,
             on_event    = lambda x: None,

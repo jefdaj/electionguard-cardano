@@ -21,10 +21,8 @@ def admin_addr(admin_wallet: Wallet) -> Address:
     return admin_wallet.addr
 
 @per_election_fixture
-def admin(admin_wallet: Wallet, config: ElectionConfig) -> AdminNode:
-    # TODO all other nodes should start from config now, not election context!
-    # TODO but maybe call it "election" later?
-    node_ = AdminNode(wallet=admin_wallet, config=ElectionConfig)
+def admin(admin_wallet: Wallet, election_cfg: ElectionConfig) -> AdminNode:
+    node_ = AdminNode(wallet=admin_wallet, config=election_cfg)
     LOG.debug(f'admin: {node_}')
     try:
         yield node_

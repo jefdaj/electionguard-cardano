@@ -68,7 +68,7 @@ class ElectionConfig:
     def from_dict(cls, data: dict) -> Self:
         return cls(
                 data['oneshot_hex'   ],
-                data['network_magic' ],
+            int(data['network_magic' ]),
             str(data['funder_address']),
             int(data['since_slot'    ]),
                 data['since_block'   ],
@@ -82,6 +82,7 @@ class ElectionConfig:
             json.loads(data)
         )
 
+    # TODO is this str typing thing right?
     @classmethod
     def from_election(cls, election: "ElectionContext") -> Self:
         return cls(
@@ -104,7 +105,8 @@ class ElectionConfig:
         assert len(args) == 6
         schema_version, oneshot_hex, network_magic, funder_address, since_slot, since_block = args
         since_slot = int(since_slot)
-        return cls(oneshot_hex, network_magic, str(funder_address), since_slot, since_block, schema_version)
+        funder_address = str(funder_addr)
+        return cls(oneshot_hex, network_magic, funder_address, since_slot, since_block, schema_version)
 
     def to_qr_str(self) -> str:
         "egc:election:<version>:<oneshot_hex>:<network_magic>:<funder_address>:<since_slot>:<since_block>"

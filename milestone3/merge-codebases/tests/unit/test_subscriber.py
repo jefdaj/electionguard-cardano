@@ -12,17 +12,14 @@ LOG = logging.getLogger(__name__)
 # their election steps in other test modules though.
 
 @per_election_fixture
-def subscriber(config: ElectionConfig):
-    sub = ElectionSubscriber(config)
+def subscriber(election_ctx: ElectionContext):
+    sub = ElectionSubscriber(election_ctx)
     sub.start()
     yield sub
     sub.stop()
 
 @pytest.mark.testnet
-def test_init_subscriber(
-        # election: ElectionContext,
-        subscriber: ElectionSubscriber,
-    ):
+def test_init_subscriber(subscriber: ElectionSubscriber):
     assert isinstance(subscriber, ElectionSubscriber)
     # assert subscriber.channel_ids() == [ADMIN_CHANNEL_ID]
     # admin_history = subscriber.channel_history(ADMIN_CHANNEL_ID)
@@ -30,10 +27,7 @@ def test_init_subscriber(
     # assert 0 in admin_history # TODO is it a dict tho?
 
 @pytest.mark.testnet
-def test_rollback(
-        # election: ElectionContext,
-        subscriber: ElectionSubscriber,
-    ):
+def test_rollback(subscriber: ElectionSubscriber):
 
     # This just simulates a single block rollback in a low effort way;
     # for production testing we probably need a local testnet?
