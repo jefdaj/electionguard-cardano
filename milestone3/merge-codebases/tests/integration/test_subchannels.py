@@ -110,7 +110,7 @@ def tx2(
     tx = admin.add_subchannels(
         subchannels = onboarding_info,
         subchannel_ada = 10,
-        done_onboarding = True, # TODO remove?
+        done_onboarding = True, # advance to ceremony phase
     )
     LOG.debug(f'tx2: {tx}')
     admin.wait_for_confirmation(tx)
@@ -125,7 +125,7 @@ def test_add_subchannel(
     assert_nodes_converge([
         (admin, s2),
         (guardian1, guardian1_s0),
-    ])
+    ], EgcPhase.CONFIG_CEREMONY)
 
 
 ## ----------- tx3: rm single subchannel -----------
@@ -161,4 +161,4 @@ def test_rm_subchannel(admin, s3, tx3, guardian1):
     assert_nodes_converge([
         (admin, s3),
         (guardian1, None)
-    ])
+    ], EgcPhase.CONFIG_CEREMONY)

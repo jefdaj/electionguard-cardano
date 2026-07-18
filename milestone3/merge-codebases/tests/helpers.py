@@ -86,7 +86,8 @@ def assert_no_collateral(nodes: list[ElectionNode]):
 
 
 def assert_nodes_converge(
-        expected: list[ Tuple[ElectionNode, Optional[ChannelState]] ],
+        expected_states: list[ Tuple[ElectionNode, Optional[ChannelState]] ],
+        expected_phase: EgcPhase = None,
         interval = 1,
         timeout = 60,
     ):
@@ -94,14 +95,14 @@ def assert_nodes_converge(
     for passing the args. What it actually does is:
 
     1. logs how many nodes have reached the expected channel states every 5 sec
-    2. once all of them reach those states, assert that their histories are also equal
+    2. once all of them reach those states, assert that their phases and histories are also as expected
 
     The two are combined because we always want both, and to avoid a fixed
     delay before the equal history check. A state of None means the channel is closed."""
 
-    n = len(expected) # both the number of nodes and number of states being checked
+    n = len(expected_states) # both the number of nodes and number of states being checked
 
-    for (node, state) in expected:
+    for (node, state) in expected_states:
         assert isinstance(node, ElectionNode)
         if state is not None:
             assert is_channelstate(state)
@@ -111,12 +112,12 @@ def assert_nodes_converge(
         n_nodes_correct_prev = 0
         n_nodes_correct = 0
 
-        for (node_to_test, _) in expected:
+        for (node_to_test, _) in expected_states:
             node_str = node_to_test.channel_str()
             n_states_correct = 0
 
             # How many states does this node have correct so far?
-            for (node_for_id, expected_state) in expected:
+            for (node_for_id, expected_state) in expected_states:
                 state_str = node_for_id.channel_str()
                 actual_state = node_to_test.current_state(node_for_id.channel_id())
                 try:
@@ -150,10 +151,14 @@ def assert_nodes_converge(
             n_nodes_correct_prev = n_nodes_correct
 
         if n_nodes_correct == n:
+            for (n, _) in expected_states:
+                p = n.current_phase()
+                assert p == expected_phase, f"Node {n} should have phase {expected_phase}, but has {p}."
+            LOG.debug(f"All nodes have the expected phase {expected_phase}.")
             try:
                 # This normally works the first time, but occasionally fails.
                 # Perhaps there's a same-but-spent update during?
-                assert_nodes_have_same_history([n for (n, _) in expected])
+                assert_nodes_have_same_history([n for (n, _) in expected_states])
                 break
             except AssertionError as e:
                 if waited >= timeout:

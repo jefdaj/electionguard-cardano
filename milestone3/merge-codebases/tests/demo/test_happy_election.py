@@ -53,7 +53,7 @@ def test_phase0_announce(
     ):
     assert_nodes_converge([
         (admin, admin_s0),
-    ])
+    ], EgcPhase.CONFIG_ANNOUNCE)
 
 
 ## =================================
@@ -165,7 +165,7 @@ def test_phase1_onboarding(
         (guardian3, guardian3_s0),
         (device1  , device1_s0  ),
         (verifier1, verifier1_s0),
-    ])
+    ], EgcPhase.CONFIG_CEREMONY)
     assert_collateral([
         admin,
         guardian1, guardian2, guardian3,
@@ -268,7 +268,7 @@ def test_phase2_ceremony_round1(
         (guardian3, guardian3_s1),
         (device1  , device1_s0  ),
         (verifier1, verifier1_s0),
-    ])
+    ], EgcPhase.CONFIG_CEREMONY)
 
 
 ## ----------- Round 2 -----------
@@ -325,7 +325,7 @@ def test_phase2_ceremony_round2(
         (guardian3, guardian3_s2),
         (device1  , device1_s0  ),
         (verifier1, verifier1_s0),
-    ])
+    ], EgcPhase.CONFIG_CEREMONY)
 
 
 ## ----------- Round 3 -----------
@@ -435,7 +435,7 @@ def test_phase2_ceremony_round3(
         (guardian3, guardian3_s3),
         (device1  , device1_s1  ),
         (verifier1, verifier1_s0),
-    ])
+    ], EgcPhase.VOTING)
 
 ## =================================
 ## 3. ElectionVotingPhase
@@ -515,7 +515,7 @@ def test_phase3_voting(
         (guardian3, guardian3_s3),
         (device1  , device1_s3  ),
         (verifier1, verifier1_s0),
-    ])
+    ], EgcPhase.RESULTS_TALLY)
 
 
 ## =================================
@@ -607,7 +607,7 @@ def test_phase4_tally(
         (guardian3, guardian3_s4),
         (device1  , device1_s3  ),
         (verifier1, verifier1_s0),
-    ])
+    ], EgcPhase.RESULTS_DECRYPT)
 
 
 ## =================================
@@ -663,7 +663,7 @@ def test_phase5_decrypt(
         (guardian3, guardian3_s4),
         (device1  , device1_s3  ),
         (verifier1, verifier1_s0),
-    ])
+    ], EgcPhase.VERIFY)
 
 
 ## =================================
@@ -772,7 +772,7 @@ def test_phase6_verify(
         (guardian3, guardian3_s5),
         (device1  , device1_s3  ),
         (verifier1, verifier1_s1),
-    ])
+    ], EgcPhase.FINALIZE)
 
 
 ## =================================
@@ -821,7 +821,7 @@ def admin_tx9(
     ) -> Transaction:
     tx = admin.end_election()
     LOG.debug(f'admin_tx9: {tx}')
-    # TODO special case to allow wait_for_confirmation to work here too?
+    # this can't wait_for_confirmation, because last tx isn't indexed:
     admin.await_phase(EgcPhase.FINISHED)
     return tx
 
@@ -842,4 +842,4 @@ def test_phase7_finalize(
         (guardian3, None),
         (device1  , None),
         (verifier1, None),
-    ])
+    ], EgcPhase.FINISHED)

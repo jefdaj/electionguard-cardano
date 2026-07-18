@@ -327,7 +327,7 @@ class EgcPhase(Enum):
     RESULTS_TALLY     = 7
     RESULTS_DECRYPT   = 8
     VERIFY            = 9
-    FINALIZ9          = 10
+    FINALIZE          = 10
     FINISHED          = 11
 
     def __lt__(self, other):
