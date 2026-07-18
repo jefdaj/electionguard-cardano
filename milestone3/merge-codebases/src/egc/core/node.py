@@ -88,11 +88,6 @@ class ElectionNode:
         )
         # TODO set self.script here
         self.subscriber.start()
-        # LOG.info(f'Subscribe to this election with:\n\n{pformat(config)}\n')
-        # LOG.debug(
-        #     f'Or for dev debugging:\n\n'
-        #     f'egc:election:{config.policy_id}:{config.since_slot}:{config.since_block}\n'
-        # )
 
     # def _guard_script(self):
     #     if self.script is None:

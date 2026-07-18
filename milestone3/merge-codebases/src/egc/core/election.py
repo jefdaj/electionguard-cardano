@@ -87,7 +87,7 @@ class ElectionConfig:
         return cls(
             election.script.oneshot_hex,
             election.deployment.network_magic,
-            election.deployment.funder_address,
+            str(election.deployment.funder_address),
             election.deployment.since_slot,
             election.deployment.since_block,
             election.schema_version,
@@ -110,10 +110,10 @@ class ElectionConfig:
         "egc:election:<version>:<oneshot_hex>:<network_magic>:<funder_address>:<since_slot>:<since_block>"
         qr_str = ':'.join([
             'egc', 'election',
-            self.schema_version, # TODO put last?
+            str(self.schema_version), # TODO put last?
             self.oneshot_hex,
-            self.network_magic,
-            self.funder_address,
+            str(self.network_magic),
+            str(self.funder_address),
             str(self.since_slot),
             self.since_block
         ])
@@ -161,9 +161,9 @@ class ElectionScript:
         LOG.debug('ElectionScript.to_dict')
         return {
                 # "oneshot_utxo": self.oneshot_utxo.to_cbor_hex(),
-            "oneshot_hex": self.oneshot_hex,
+            "oneshot_hex":     self.oneshot_hex,
             "aiken_blueprint": self.aiken_blueprint,
-            "aiken_tracing": self.aiken_tracing,
+            "aiken_tracing":   self.aiken_tracing,
         }
 
     # TODO is this just __init__?
@@ -172,11 +172,10 @@ class ElectionScript:
         hex_params = [oneshot_hex]
         blueprint_dict = aiken_blueprint_apply_hex_params(PLUTUS_JSON_PATH, hex_params)
         cls_dict = {
-            'schema_version': SCHEMA_VERSION,
-            # 'oneshot_utxo': oneshot_utxo.to_cbor_hex(),
-            'oneshot_hex': oneshot_hex,
+            # 'schema_version':  SCHEMA_VERSION,
+            'oneshot_hex':     oneshot_hex,
             'aiken_blueprint': blueprint_dict,
-            "aiken_tracing": IS_TEST, # TODO hardcode True for now to avoid having to get this?
+            "aiken_tracing":   IS_TEST, # TODO hardcode True for now to avoid having to get this?
         }
         return cls.from_dict(cls_dict)
 
@@ -240,20 +239,20 @@ class ElectionDeployment:
     @classmethod
     def from_config(cls, cfg: ElectionConfig) -> Self:
         cls_dict = {
-            'funder_address': cfg.funder_address,
-            'since_slot':     cfg.since_slot,
-            'since_block':    cfg.since_block,
-            'network_magic':  cfg.network_magic,
+            'funder_address': str(cfg.funder_address),
+            'since_slot':     int(cfg.since_slot    ),
+            'since_block':    str(cfg.since_block   ),
+            'network_magic':  int(cfg.network_magic ),
         }
         return cls.from_dict(cls_dict)
 
     def to_dict(self) -> dict:
         LOG.debug('ElectionDeployment.to_dict')
         return {
-            "funder_address": self.funder_address,
-            "since_slot":     self.since_slot,
-            "since_block":    self.since_block,
-            "network_magic":  self.network_magic,
+            "funder_address": str(self.funder_address),
+            "since_slot":     int(self.since_slot    ),
+            "since_block":    str(self.since_block   ),
+            "network_magic":  int(self.network_magic ),
         }
 
 
@@ -261,10 +260,10 @@ class ElectionDeployment:
     def from_dict(cls, data: dict) -> Self:
         LOG.debug('ElectionDeployment.from_dict')
         return cls(
-            funder_address = data["funder_address"],
-            since_slot     = data["since_slot"],
-            since_block    = data["since_block"],
-            network_magic  = int(data["network_magic"]),
+            funder_address = str(data["funder_address"]),
+            since_slot     = int(data["since_slot"    ]),
+            since_block    = str(data["since_block"   ]),
+            network_magic  = int(data["network_magic" ]),
         )
 
 # TODO rename something better?

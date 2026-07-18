@@ -256,6 +256,12 @@ class ObserverNode(ElectionNode):
         config = ElectionConfig.from_election(election_ctx)
         self.subscribe(config)
 
+        LOG.info(f'Subscribe to this election with:\n\n{config.to_qr_str()}\n')
+        # LOG.debug(
+        #     f'Or for dev debugging:\n\n'
+        #     f'egc:election:{config.policy_id}:{config.since_slot}:{config.since_block}\n'
+        # )
+
         # TODO come up with a better default path here
         # timestamp = election_ctx.deployment.deployment_date.strftime("%y%m%d%H%M%S")
         # json_path = f'election-{timestamp}.json'
