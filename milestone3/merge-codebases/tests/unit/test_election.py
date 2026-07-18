@@ -4,14 +4,14 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-@pytest.mark.testnet
+@pytest.mark.local
 def test_roundtrip_deployment(dummy_deployment: ElectionDeployment):
     tmp = dummy_deployment.to_dict()
     LOG.debug(f'dummy_deployment dict: {tmp}')
     dd2 = ElectionDeployment.from_dict(tmp)
     assert dd2 == dummy_deployment
 
-@pytest.mark.testnet
+@pytest.mark.local
 def test_roundtrip_electioncontext(dummy_electioncontext: ElectionContext):
     tmp = dummy_electioncontext.to_dict()
     LOG.debug(f'dummy_electioncontext dict: {tmp}')
