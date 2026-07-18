@@ -75,7 +75,7 @@ class AdminNode(VerifierNode):
 
         # See ElectionNode.post_public_records for more on this pattern:
         cont_value = Value.from_primitive(in_utxo.output.amount.to_primitive())
-        cont_addr = Address(self.election.script.policy_id, network=network.TESTNET) # TODO dynamic network
+        cont_addr = Address(self.election.script.policy_id, network=Network.TESTNET) # TODO dynamic network
         cont_utxo = TransactionOutput(
             # address = self.election.address,
             address = cont_addr,
@@ -159,7 +159,7 @@ class AdminNode(VerifierNode):
 
         # See ElectionNode.post_public_records for more on this pattern:
         cont_value = Value.from_primitive(in_utxo.output.amount.to_primitive())
-        cont_addr = Address(self.election.script.policy_id, network=network.TESTNET) # TODO dynamic network
+        cont_addr = Address(self.election.script.policy_id, network=Network.TESTNET) # TODO dynamic network
         cont_utxo = TransactionOutput(
             # address = self.election.address,
             address = cont_addr,
@@ -201,7 +201,7 @@ class AdminNode(VerifierNode):
             ))
             LOG.debug(f'{sub_str} stt_datum: {pformat(stt_datum)}')
 
-            stt_addr = Address(self.election.script.policy_id, network=network.TESTNET) # TODO dynamic network
+            stt_addr = Address(self.election.script.policy_id, network=Network.TESTNET) # TODO dynamic network
 
             stt_utxo = TransactionOutput(
                 # address = self.election.address,
@@ -309,7 +309,7 @@ class AdminNode(VerifierNode):
 
         # See ElectionNode.post_public_records for more on this pattern:
         cont_value = Value.from_primitive(in_utxo.output.amount.to_primitive())
-        cont_addr = Address(self.election.script.policy_id, network=network.TESTNET) # TODO dynamic network
+        cont_addr = Address(self.election.script.policy_id, network=Network.TESTNET) # TODO dynamic network
         cont_utxo = TransactionOutput(
             # address = self.election.address,
             address = cont_addr,

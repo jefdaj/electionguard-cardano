@@ -247,7 +247,7 @@ class ElectionNode:
         # start with a copy of the in_utxo Value with the STT. The original
         # is left alone (not mutated) so we don't mess up PyCardano calculations.
         cont_value = Value.from_primitive(in_utxo.output.amount.to_primitive()) # deep copy
-        cont_addr = Address(self.election.script.policy_id, network=network.TESTNET) # TODO dynamic network
+        cont_addr = Address(self.election.script.policy_id, network=Network.TESTNET) # TODO dynamic network
         cont_utxo = TransactionOutput(
             address = cont_addr,
             amount  = cont_value,
