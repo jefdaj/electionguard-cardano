@@ -46,7 +46,7 @@ class ElectionNode:
 
         # May be None in case of an Observer.
         # self.script: Optional[Script] = script
-        self.config: Optional[ElectionConfig] = config
+        self.config: Optional[ElectionConfig] = config # TODO remove?
 
         # Always exists, but may not be used for anything in case of an Observer.
         self.publisher = ElectionPublisher(
@@ -65,7 +65,7 @@ class ElectionNode:
         if self.config is None:
             LOG.debug('ElectionNode skipping subscriber init because config is None')
             self.subscriber = None
-            self.script = None
+            self.election = None
         else:
             self.subscribe(config)
             # config = ElectionConfig.from_election(self.election)
@@ -80,18 +80,19 @@ class ElectionNode:
         LOG.info(f'Started {self.channel_str()} node.')
 
     def subscribe(self, config: ElectionConfig):
+        self.election = ElectionContext.from_config(config)
         self.subscriber = ElectionSubscriber(
-            config      = config,
+            election    = self.election,
             on_event    = lambda x: None,
             on_rollback = lambda x: None,
         )
         # TODO set self.script here
         self.subscriber.start()
-        LOG.info(f'Subscribe to this election with:\n\n{pformat(config)}\n')
-        LOG.debug(
-            f'Or for dev debugging:\n\n'
-            f'egc:election:{config.policy_id}:{config.since_slot}:{config.since_block}\n'
-        )
+        # LOG.info(f'Subscribe to this election with:\n\n{pformat(config)}\n')
+        # LOG.debug(
+        #     f'Or for dev debugging:\n\n'
+        #     f'egc:election:{config.policy_id}:{config.since_slot}:{config.since_block}\n'
+        # )
 
     # def _guard_script(self):
     #     if self.script is None:
@@ -257,7 +258,7 @@ class ElectionNode:
         # start with a copy of the in_utxo Value with the STT. The original
         # is left alone (not mutated) so we don't mess up PyCardano calculations.
         cont_value = Value.from_primitive(in_utxo.output.amount.to_primitive()) # deep copy
-        cont_addr = Address(self.script.policy_id, network=network.TESTNET) # TODO dynamic network
+        cont_addr = Address(self.election.script.policy_id, network=network.TESTNET) # TODO dynamic network
         cont_utxo = TransactionOutput(
             address = cont_addr,
             amount  = cont_value,
@@ -273,7 +274,7 @@ class ElectionNode:
             TransactionBuilder(OGMIOS_CTX)
             .add_script_input(
                 in_utxo,
-                script=self.script.spend_script,
+                script=self.election.script.spend_script,
                 redeemer=cont_redeemer
             )
             .add_output(cont_utxo)
@@ -337,7 +338,7 @@ class ElectionNode:
             raise RuntimeError(msg)
 
         burn_assets = mint_channel_stt_assets(
-            self.script.policy_id,
+            self.election.script.policy_id,
             -1,
             channel_ids,
         )
@@ -345,7 +346,7 @@ class ElectionNode:
 
         burn_txb = (
             TransactionBuilder(OGMIOS_CTX, mint=burn_assets)
-            .add_minting_script(script=self.script.mint_script, redeemer=mint_redeemer)
+            .add_minting_script(script=self.election.script.mint_script, redeemer=mint_redeemer)
         )
 
         burn_txb.collaterals.append(funder_collateral)
@@ -357,7 +358,7 @@ class ElectionNode:
             spend_redeemer = Redeemer(data=BurnTestTokens())
             burn_txb = burn_txb.add_script_input(
                 utxo,
-                script=self.script.spend_script,
+                script=self.election.script.spend_script,
                 redeemer=spend_redeemer
             )
             tx_msgs.append(f'{ch_str} burned {ch_str} channel STT and recovered fee pool ADA.')

@@ -28,7 +28,7 @@ from .ogmios import *
 from .plutus.types.channel import *
 from .plutus.types.action import *
 from .plutus.types.channel import *
-# from .election import ElectionContext
+from .election import ElectionConfig, ElectionContext
 from .utils import safe_deepdiff
 
 import logging
@@ -56,84 +56,6 @@ KUPO_POLL_SEC = 1
 KUPO_MAX_CHECKPOINTS = 50
 
 
-@dataclass
-class ElectionConfig:
-
-    # TODO schema version here?
-
-    # the one-shot utxo script parameter
-    oneshot_hex: str
-
-    # which network was it deployed on?
-    network_magic: int
-
-    # for returning collateral
-    # May also be helpful to confirm it's a known treasury address when you're
-    # hearing about a new election?
-    # TODO should this only be the vkh, and Address is derived from that + network?
-    funder_addr: str
-
-    # TODO remove and re-derive from utxo above
-    # policy_id:   str # For kupo --match
-
-    # for kupo --since
-    since_slot:  int
-    since_block: str
-
-    @classmethod
-    def from_dict(cls, data: dict) -> Self:
-        return cls(
-                data['oneshot_hex'],
-                data['network_magic'],
-                data['funder_addr'],
-            int(data['since_slot' ]),
-                data['since_block'],
-        )
-
-    # TODO is this right?
-    @classmethod
-    def from_json(cls, data: str) -> Self:
-        return cls.from_dict(
-            json.loads(data)
-        )
-
-    # TODO remove? reverse?
-    # @classmethod
-    # def from_election(cls, election: ElectionContext) -> Self:
-    #     return cls(
-    #         election.script.oneshot_hex,
-    #         election.deployment.network_magic,
-    #         election.deployment.funder_address,
-    #         election.deployment.since_slot,
-    #         election.deployment.since_block,
-    #     )
-
-    @classmethod
-    def from_qr_str(cls, txt: str) -> Self:
-        "egc:election:<onshot_hex>:<network_magic>:<funder_addr>:<since_slot>:<since_block>, maybe with wrapping"
-        txt = ''.join(l.strip() for l in txt.splitlines())
-        words = txt.split(':')
-        prefix = words[:2]
-        args   = words[2:]
-        assert prefix == ['egc', 'election']
-        assert len(args) == 4
-        oneshot_hex, network_magic, funder_addr, since_slot, since_block = args
-        since_slot = int(since_slot)
-        return cls(oneshot_hex, network_magic, funder_addr, since_slot, since_block)
-
-    def to_qr_str(self) -> str:
-        "egc:election:<oneshot_hex>:<network_magic>:<funder_addr>:<since_slot>:<since_block>"
-        qr_str = ':'.join([
-            'egc', 'election',
-            self.oneshot_hex,
-            self.network_magic,
-            self.funder_addr,
-            str(self.since_slot),
-            self.since_block
-        ])
-        return qr_str
-
-
 # TODO also use this in subscriberconfig?
 @dataclass
 class Point:
@@ -143,6 +65,7 @@ class Point:
     def as_param(self) -> str:
         return f"{self.slot_no}.{self.header_hash}"
 
+    # TODO from context instead?
     @classmethod
     def from_config(cls, data: ElectionConfig) -> Self:
         return cls(data.since_slot, data.since_block)
@@ -463,14 +386,16 @@ class ElectionSubscriber:
 
     def __init__(
             self,
-            config: ElectionConfig,
+            # config: ElectionConfig,
+            election: ElectionContext,
             on_event    = _make_example_callback('on_event'),
             on_rollback = _make_example_callback('on_rollback'),
         ):
 
         log_call()
 
-        self.config = config
+        # self.config = config # TODO remove in favor of context?
+        self.election = election
 
         # Client callbacks, which default to printing events.
         self._on_election_event  = on_event
@@ -803,7 +728,7 @@ class ElectionSubscriber:
             LOG.warning(f'Kupo already running (pid={self._kupo_proc.pid})')
             return
 
-        since_arg = f'{self.config.since_slot}.{self.config.since_block}'
+        since_arg = f'{self.election.deployment.since_slot}.{self.election.deployment.since_block}'
 
         cmd = [
             'kupo',
@@ -818,7 +743,7 @@ class ElectionSubscriber:
         self._kupo_find_port()
 
         cmd += [
-            '--match', f'{self.config.policy_id}/*',
+            '--match', f'{self.election.script.policy_id}/*',
             '--host', KUPO_HOST,
             '--port', str(self._kupo_port),
             '--log-level', 'Warning'
@@ -864,7 +789,7 @@ class ElectionSubscriber:
 
     def _kupo_watch(self) -> None:
         log_call()
-        LOG.debug(f'Watcher thread started for policy_id={self.config.policy_id}')
+        LOG.debug(f'Watcher thread started for policy_id={self.election.script.policy_id}')
         while not self._kupo_stop.is_set():
             try:
 

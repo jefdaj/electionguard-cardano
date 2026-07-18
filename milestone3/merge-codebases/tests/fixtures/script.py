@@ -24,7 +24,6 @@ def script(oneshot_utxo: UTxO) -> ElectionScript:
 
 @per_election_fixture
 def script_addr(script: ElectionScript) -> Address:
-    # TODO configure network from cli later?
-    addr = Address(script.policy_id, network=Network.TESTNET)
+    addr = Address(script.policy_id, network=Network.TESTNET) # TODO dynamic network
     LOG.debug(f'addr: {addr}')
     return addr

@@ -14,7 +14,7 @@ from pycardano import *
 
 from .config import IS_TEST
 from .plutus import *
-from .subscriber import ElectionConfig
+# from .subscriber import ElectionConfig
 
 import logging
 
@@ -38,6 +38,91 @@ PYCARDANO_NETWORK = {
 
 DEFAULT_NETWORK_MAGIC = NETWORK_MAGIC['preview' if IS_TEST else 'mainnet']
 DEFAULT_PYCARDANO_NETWORK = PYCARDANO_NETWORK[DEFAULT_NETWORK_MAGIC]
+
+
+@dataclass
+class ElectionConfig:
+
+    # TODO schema version here?
+
+    # the one-shot utxo script parameter
+    oneshot_hex: str
+
+    # which network was it deployed on?
+    network_magic: int
+
+    # for returning collateral
+    # May also be helpful to confirm it's a known treasury address when you're
+    # hearing about a new election?
+    # TODO should this only be the vkh, and Address is derived from that + network?
+    funder_address: str
+
+    # TODO remove and re-derive from utxo above
+    # policy_id:   str # For kupo --match
+
+    # for kupo --since
+    since_slot:  int
+    since_block: str
+
+    @classmethod
+    def from_dict(cls, data: dict) -> Self:
+        return cls(
+                data['oneshot_hex'],
+                data['network_magic'],
+                data['funder_address'],
+            int(data['since_slot' ]),
+                data['since_block'],
+        )
+
+    # TODO is this right?
+    @classmethod
+    def from_json(cls, data: str) -> Self:
+        return cls.from_dict(
+            json.loads(data)
+        )
+
+    @classmethod
+    def from_election(cls, election: "ElectionContext") -> Self:
+        return cls(
+            election.script.oneshot_hex,
+            election.deployment.network_magic,
+            election.deployment.funder_address,
+            election.deployment.since_slot,
+            election.deployment.since_block,
+        )
+
+    @classmethod
+    def from_qr_str(cls, txt: str) -> Self:
+        "egc:election:<onshot_hex>:<network_magic>:<funder_address>:<since_slot>:<since_block>, maybe with wrapping"
+        txt = ''.join(l.strip() for l in txt.splitlines())
+        words = txt.split(':')
+        prefix = words[:2]
+        args   = words[2:]
+        assert prefix == ['egc', 'election']
+        assert len(args) == 4
+        oneshot_hex, network_magic, funder_address, since_slot, since_block = args
+        since_slot = int(since_slot)
+        return cls(oneshot_hex, network_magic, funder_address, since_slot, since_block)
+
+    def to_qr_str(self) -> str:
+        "egc:election:<oneshot_hex>:<network_magic>:<funder_address>:<since_slot>:<since_block>"
+        qr_str = ':'.join([
+            'egc', 'election',
+            self.oneshot_hex,
+            self.network_magic,
+            self.funder_address,
+            str(self.since_slot),
+            self.since_block
+        ])
+        return qr_str
+
+
+# TODO where should this live?
+def derive_script(oneshot_utxo: UTxO):
+    oneshot_hex = utxo_to_ref_hex(oneshot_utxo)
+    script = ElectionScript.from_oneshot_hex(oneshot_hex)
+    return script
+ 
 
 @dataclass(frozen=True, kw_only=True)
 class ElectionScript:
@@ -78,6 +163,7 @@ class ElectionScript:
             "aiken_tracing": self.aiken_tracing,
         }
 
+    # TODO is this just __init__?
     @classmethod
     def from_oneshot_hex(cls, oneshot_hex: str) -> Self:
         hex_params = [oneshot_hex]
@@ -99,7 +185,7 @@ class ElectionScript:
         cls_dict = {
             # 'schema_version': SCHEMA_VERSION,
             # 'oneshot_utxo': oneshot_utxo.to_cbor_hex(),
-            'oneshot_hex': oneshot_hex,
+            'oneshot_hex': cfg.oneshot_hex,
             'aiken_blueprint': blueprint_dict,
             "aiken_tracing": IS_TEST, # TODO hardcode True for now to avoid having to get this?
         }
@@ -136,7 +222,7 @@ class ElectionDeployment:
     # Useful if you want to quickly check who deployed it.
     # Also an informal default refund address for BurnTestTokens; not enforced on chain.
     # TODO for now, also include in subscriber info qrcode
-    funder_address: Address
+    funder_address: str # Address
 
     # So far, only used for picking the default JSON save path.
     # TODO remove? slot_no is probably better
@@ -151,10 +237,10 @@ class ElectionDeployment:
     @classmethod
     def from_config(cls, cfg: ElectionConfig) -> Self:
         cls_dict = {
-            'funder_addr':   cfg.funder_addr,
-            'since_slot':    cfg.since_slot,
-            'since_block':   cfg.since_block,
-            'network_magic': cfg.network_magic,
+            'funder_address': cfg.funder_address,
+            'since_slot':     cfg.since_slot,
+            'since_block':    cfg.since_block,
+            'network_magic':  cfg.network_magic,
         }
         return cls.from_dict(cls_dict)
 
@@ -172,12 +258,13 @@ class ElectionDeployment:
     def from_dict(cls, data: dict) -> Self:
         LOG.debug('ElectionDeployment.from_dict')
         return cls(
-            funder_address = Address.from_primitive(data["funder_address"]),
+            funder_address = data["funder_address"],
             since_slot     = data["since_slot"],
             since_block    = data["since_block"],
             network_magic  = int(data["network_magic"]),
         )
 
+# TODO rename something better?
 @dataclass(frozen=True, kw_only=True)
 class ElectionContext:
     """Immutable record of a deployed election contract.
@@ -218,12 +305,11 @@ class ElectionContext:
     def from_config(cls, cfg: ElectionConfig) -> Self:
         script     = ElectionScript.from_config(cfg)
         deployment = ElectionDeployment.from_config(cfg)
-        cls_dict = {
-            'schema_version': SCHEMA_VERSION, # TODO include in qrcodes?
-            'script':         script,
-            'deployment':     deployment,
-        }
-        return cls.from_dict(cls_dict)
+        return cls(
+            schema_version = SCHEMA_VERSION, # TODO get from qrcode
+            script         = script,
+            deployment     = deployment,
+        )
 
     @classmethod
     def from_dict(cls, data: dict) -> Self:

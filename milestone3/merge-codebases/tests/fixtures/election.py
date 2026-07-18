@@ -42,8 +42,9 @@ def dummy_electioncontext(
 @per_election_fixture
 def init_election_tuple(
         funder: ObserverNode,
-        script: ElectionScript,
-        admin_addr: Address,
+        # script: ElectionScript,
+        oneshot_utxo: UTxO,
+        # admin_addr: Address,
         admin_vkh: VerificationKeyHash,
         keys_dir: Path,
         request, # exposes pytest info
@@ -59,16 +60,19 @@ def init_election_tuple(
     ada_before = get_balance_ada(funder.publisher.wallet.addr)
     LOG.debug(f'funder balance before {name} is {ada_before} ADA.')
 
+    # oneshot_hex = utxo_to_ref_hex(oneshot_utxo)
+
     (init_tx, election_ctx) = funder.init_election(
-        script     = script,
-        admin_addr = admin_addr,
+        # script     = script,
+        oneshot_utxo = oneshot_utxo,
+        # admin_addr = admin_addr,
         admin_vkh  = admin_vkh,
         admin_ada  = 200, # TODO what's a good amount?
     )
     funder.wait_for_confirmation(init_tx)
 
     # All other tests happen here
-    yield (init_tx, election_ctx)
+    yield (init_tx, election_ctx) # TODO config here, not context
 
     try:
         channel_ids = funder.subscriber.current_channel_ids()

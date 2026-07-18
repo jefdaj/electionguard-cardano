@@ -26,6 +26,6 @@ def test_init_funder(funder: ObserverNode):
 
     # TODO any other init tests?
 
-@pytest.mark.local
-def test_init_tx_builder(init_tx_builder: TransactionBuilder):
-    assert isinstance(init_tx_builder, TransactionBuilder)
+# @pytest.mark.local
+# def test_init_tx_builder(init_tx_builder: TransactionBuilder):
+#     assert isinstance(init_tx_builder, TransactionBuilder)

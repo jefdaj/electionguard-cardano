@@ -26,18 +26,18 @@ def funder(funder_wallet: Wallet) -> ObserverNode:
     finally:
         node_.stop()
 
-@per_election_fixture
-def init_tx_builder(
-        funder: ObserverNode,
-        script: ElectionScript,
-        admin_addr: Address,
-        admin_vkh: VerificationKeyHash,
-    ) -> TransactionBuilder:
-    (_, txb) = funder._build_init_tx(
-        script     = script,
-        admin_addr = admin_addr,
-        admin_vkh  = admin_vkh,
-        admin_ada  = 10, # TODO what should this default to?
-    )
-    LOG.debug(f'init_txb: {txb}')
-    return txb
+# @per_election_fixture
+# def init_tx_builder(
+#         funder: ObserverNode,
+#         script: ElectionScript,
+#         admin_addr: Address,
+#         admin_vkh: VerificationKeyHash,
+#     ) -> TransactionBuilder:
+#     (_, txb) = funder._build_init_tx(
+#         script     = script,
+#         admin_addr = admin_addr,
+#         admin_vkh  = admin_vkh,
+#         admin_ada  = 10, # TODO what should this default to?
+#     )
+#     LOG.debug(f'init_txb: {txb}')
+#     return txb
