@@ -43,8 +43,6 @@ DEFAULT_PYCARDANO_NETWORK = PYCARDANO_NETWORK[DEFAULT_NETWORK_MAGIC]
 @dataclass
 class ElectionConfig:
 
-    # TODO schema version here?
-
     # the one-shot utxo script parameter
     oneshot_hex: str
 
@@ -64,14 +62,17 @@ class ElectionConfig:
     since_slot:  int
     since_block: str
 
+    schema_version: int = field(default=SCHEMA_VERSION)
+
     @classmethod
     def from_dict(cls, data: dict) -> Self:
         return cls(
-                data['oneshot_hex'],
-                data['network_magic'],
+                data['oneshot_hex'   ],
+                data['network_magic' ],
                 data['funder_address'],
-            int(data['since_slot' ]),
-                data['since_block'],
+            int(data['since_slot'    ]),
+                data['since_block'   ],
+                data['schema_version'],
         )
 
     # TODO is this right?
@@ -89,25 +90,27 @@ class ElectionConfig:
             election.deployment.funder_address,
             election.deployment.since_slot,
             election.deployment.since_block,
+            election.schema_version,
         )
 
     @classmethod
     def from_qr_str(cls, txt: str) -> Self:
-        "egc:election:<onshot_hex>:<network_magic>:<funder_address>:<since_slot>:<since_block>, maybe with wrapping"
+        "egc:election:<version>:<onshot_hex>:<network_magic>:<funder_address>:<since_slot>:<since_block>, maybe with wrapping"
         txt = ''.join(l.strip() for l in txt.splitlines())
         words = txt.split(':')
         prefix = words[:2]
         args   = words[2:]
         assert prefix == ['egc', 'election']
-        assert len(args) == 4
-        oneshot_hex, network_magic, funder_address, since_slot, since_block = args
+        assert len(args) == 6
+        schema_version, oneshot_hex, network_magic, funder_address, since_slot, since_block = args
         since_slot = int(since_slot)
-        return cls(oneshot_hex, network_magic, funder_address, since_slot, since_block)
+        return cls(oneshot_hex, network_magic, funder_address, since_slot, since_block, schema_version)
 
     def to_qr_str(self) -> str:
-        "egc:election:<oneshot_hex>:<network_magic>:<funder_address>:<since_slot>:<since_block>"
+        "egc:election:<version>:<oneshot_hex>:<network_magic>:<funder_address>:<since_slot>:<since_block>"
         qr_str = ':'.join([
             'egc', 'election',
+            self.schema_version, # TODO put last?
             self.oneshot_hex,
             self.network_magic,
             self.funder_address,
