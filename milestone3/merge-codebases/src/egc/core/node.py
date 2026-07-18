@@ -68,6 +68,7 @@ class ElectionNode:
             self.election = None
         else:
             self.subscribe(self.config)
+            # TODO wait for first event here?
             # time.sleep(OGMIOS_POLL_SEC + 1) # TODO how long is actually needed?
 
         LOG.info(f'Started {self.channel_str()} node.')
@@ -287,11 +288,14 @@ class ElectionNode:
         return tx_signed
 
     def return_collateral(self):
+        # TODO special case for the admin to return ALL collateral to funder here?
+        # TODO or everyone return it to funder individually?
         # TODO only auto return if collateral originally came from admin/funder
         # if getattr(self, 'election', None) is None:
         #     raise Exception('No election, so no funder_address.')
         # TODO return collateral to the channel rather than a person?
-        return_addr = self.subscriber.admin_address()
+        # return_addr = self.subscriber.admin_address()
+        return_addr = self.election.deployment.funder_address
         return self.publisher.return_collateral(return_addr)
 
     def stop(self):

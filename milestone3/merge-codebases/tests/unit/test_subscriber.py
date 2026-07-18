@@ -51,8 +51,20 @@ def test_rollback(subscriber: ElectionSubscriber):
     assert before == after
 
 @pytest.mark.testnet
-def test_admin_address(init_tx: Transaction, admin: AdminNode):
+def test_admin_address(init_tx: Transaction, admin: AdminNode, funder: ObserverNode):
     actual_addr = admin.publisher.wallet.addr
-    found_addr: Optional[Address] = admin.subscriber.admin_address()
-    assert isinstance(found_addr, Address)
-    assert found_addr == actual_addr
+
+    # TODO decide where the wait should actually go
+    n_tries = 0
+    while n_tries < 5:
+        admin_found_addr : Optional[Address] = admin.subscriber.admin_address()
+        if isinstance(admin_found_addr, Address):
+            break
+        else:
+            n_tries += 1
+            time.sleep(1)
+
+    funder_found_addr: Optional[Address] = funder.subscriber.admin_address()
+    assert isinstance(funder_found_addr, Address)
+    assert funder_found_addr == actual_addr
+    assert admin_found_addr == actual_addr

@@ -600,13 +600,16 @@ class ElectionSubscriber:
 
 
     def admin_address(self) -> Optional[Address]:
+        log_call()
         try:
-            event = self.channel_history(ADMIN_CHANNEL_ID)[-1]
-            state = event.output_state if event.output_state else event.input_state
-            vkh = state.state.admin
-            addr = Address(payment_part=vkh, network=Network.TESTNET) # TODO dynamic network
-            return addr
-        except:
+            with self._history_lock:
+                event = self.channel_history(ADMIN_CHANNEL_ID)[-1]
+                state = event.output_state if event.output_state else event.input_state
+                vkh   = VerificationKeyHash(state.state.admin)
+                addr  = Address(payment_part=vkh, network=Network.TESTNET) # TODO dynamic network
+                return addr
+        except Exception as e:
+            LOG.error(e)
             return None
 
 
@@ -769,7 +772,8 @@ class ElectionSubscriber:
 
         # prevents polling error during startup
         # TODO if this becomes a problem, wait for /health -> 200 OK instead
-        self.sleep(1)
+        # self.sleep(1)
+        # time.sleep(OGMIOS_POLL_SEC + 1) # TODO how long is actually needed?
 
 
     def _kupo_log(self) -> None:
