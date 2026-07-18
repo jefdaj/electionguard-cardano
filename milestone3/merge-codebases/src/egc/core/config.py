@@ -5,6 +5,7 @@ from pathlib import Path
 
 LOG = logging.getLogger(__name__)
 
+# TODO remove this silliness
 class ElectionMode(Enum):
     PROD = 'prod'
     TEST = 'test'
@@ -22,14 +23,14 @@ class ElectionMode(Enum):
 MODE = ElectionMode.current()
 IS_TEST = MODE is ElectionMode.TEST
 
-PLUTUS_JSON_PATH_PROD = (
-    Path(__file__).parents[3].absolute() /
-    'onchain/election-plutus.json'
-)
-PLUTUS_JSON_PATH_TEST = Path(
-    str(PLUTUS_JSON_PATH_PROD).replace('.json', '-traced.json')
+# TODO set in all the important entrypoints
+EGC_PLUTUS_DIR = os.environ.get(
+    "EGC_PLUTUS_DIR",
+    str(Path(__file__).parents[3].absolute() / 'onchain'),
 )
 
+PLUTUS_JSON_PATH_PROD = Path(EGC_PLUTUS_DIR) / 'election-plutus.json'
+PLUTUS_JSON_PATH_TEST = Path(str(PLUTUS_JSON_PATH_PROD).replace('.json', '-traced.json'))
 PLUTUS_JSON_PATH = PLUTUS_JSON_PATH_TEST if IS_TEST else PLUTUS_JSON_PATH_PROD
 
 if IS_TEST:

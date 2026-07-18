@@ -85,6 +85,7 @@
             pyprojectOverrides
           ]);
 
+      # TODO bundle plutusBlueprints with this too?
       pythonEnv = pythonSet.mkVirtualEnv "electionguard-cardano" workspace.deps.default;
 
       kupo = pkgs.callPackage ./nix/kupo.nix {};
@@ -151,32 +152,37 @@
           '';
         };
 
-        dockerImage = pkgs.dockerTools.buildLayeredImage {
-          name = "electionguard-cardano";
-          tag = "0.3.0";
-          contents = [
-            pythonEnv
-            pkgs.coreutils
-            pkgs.bashInteractive
-            pkgs.jq
-          ] ++ runtimeDeps;
-          enableFakechroot = true;
-          fakeRootCommands = ''
-            mkdir /data; chown 1000:100 /data
-            mkdir /tmp ; chmod 1777 /tmp
-          '';
-          config = {
-            # TODO log to stdout? also a logfile under /data?
-            Entrypoint = [ "${pythonEnv}/bin/egc" ];
-            Cmd = [ "node" "run" ];
-            User = "1000:100"; # TODO named egc user? 1000:1000?
-            Env = [
-              "PATH=/bin"
-            ];
-            Labels = {};
-            # ExposedPorts = { "8000/tcp" = {}; }; # TODO does this do anything?
-          };
-        };
+        dockerImage =
+          let inherit (self.packages.${system}) plutusBlueprints;
+          in
+            pkgs.dockerTools.buildLayeredImage {
+              name = "electionguard-cardano";
+              tag = "0.3.0";
+              contents = [
+                pythonEnv
+                pkgs.coreutils
+                pkgs.bashInteractive
+                pkgs.jq
+                plutusBlueprints
+              ] ++ runtimeDeps;
+              enableFakechroot = true;
+              fakeRootCommands = ''
+                mkdir /data; chown 1000:100 /data
+                mkdir /tmp ; chmod 1777 /tmp
+              '';
+              config = {
+                # TODO log to stdout? also a logfile under /data?
+                Entrypoint = [ "${pythonEnv}/bin/egc" ];
+                Cmd = [ "node" "run" ];
+                User = "1000:100"; # TODO named egc user? 1000:1000?
+                Env = [
+                  "PATH=/bin"
+                  "EGC_PLUTUS_DIR=${plutusBlueprints}"
+                ];
+                Labels = {};
+                # ExposedPorts = { "8000/tcp" = {}; }; # TODO does this do anything?
+              };
+            };
 
       };
 
@@ -201,6 +207,7 @@
             editableOverlay = workspace.mkEditablePyprojectOverlay { root = "$PWD"; };
             editablePythonSet = pythonSet.overrideScope editableOverlay;
             venv = editablePythonSet.mkVirtualEnv "electionguard-cardano" workspace.deps.all;
+            inherit (self.packages.${system}) plutusBlueprints;
           in
           pkgs.mkShell {
             packages = runtimeDeps ++ onchain.nativeBuildInputs ++ (with pkgs; [
@@ -208,12 +215,15 @@
               jq
               uv
               venv
+              plutusBlueprints
             ]);
             env = {
               UV_NO_SYNC = "1";
               UV_PYTHON = "${venv}/bin/python";
               UV_PYTHON_DOWNLOADS = "never";
               PYTHONDONTWRITEBYTECODE = true;
+              EGC_MODE = "test";
+              EGC_PLUTUS_DIR = "${plutusBlueprints}"; # TODO leave unset for dev work?
 
               # TODO remove?
               # SSL_CERT_FILE     = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
@@ -225,6 +235,7 @@
                echo "kupo $(kupo --version)"
                echo "$(python --version)"
                echo "pycardano $(python -c "import importlib.metadata as m; print(m.version('pycardano'))")"
+               env | grep ^EGC_
                unset PYTHONPATH
             '';
           };
