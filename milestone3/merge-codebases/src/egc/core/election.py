@@ -281,8 +281,8 @@ class ElectionContext:
     # Note that it's different from the contract version in the aiken_blueprint.
     schema_version: int = field(default=SCHEMA_VERSION)
 
-    script: ElectionScript
     deployment: ElectionDeployment
+    script: ElectionScript
 
     @property
     def address(self) -> Address:
@@ -297,18 +297,18 @@ class ElectionContext:
         LOG.debug('Election.to_dict')
         return {
             "schema_version": self.schema_version,
-            "script":         self.script.to_dict(),
             "deployment":     self.deployment.to_dict(),
+            "script":         self.script.to_dict(),
         }
 
     @classmethod
     def from_config(cls, cfg: ElectionConfig) -> Self:
-        script     = ElectionScript.from_config(cfg)
         deployment = ElectionDeployment.from_config(cfg)
+        script     = ElectionScript.from_config(cfg)
         return cls(
             schema_version = SCHEMA_VERSION, # TODO get from qrcode
-            script         = script,
             deployment     = deployment,
+            script         = script,
         )
 
     @classmethod
@@ -322,8 +322,8 @@ class ElectionContext:
             )
         return cls(
             schema_version = version,
-            script         = ElectionScript.from_dict(data["script"]),
             deployment     = ElectionDeployment.from_dict(data["deployment"]),
+            script         = ElectionScript.from_dict(data["script"]),
         )
 
     def to_json(self, path: str | Path) -> None:
