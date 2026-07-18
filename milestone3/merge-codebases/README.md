@@ -18,6 +18,17 @@ Things to merge:
       elaborate the server with a webui and keep the CLI for the scripting/test
       cases.
 
+Old tests
+---------
+
+These are in the process of being updated. Some work.
+
+```
+$ nix develop
+$ docker compose up -d
+$ ./test.sh -k roundtrip
+```
+
 Dev
 ---
 
