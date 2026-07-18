@@ -250,7 +250,7 @@ class ElectionDeployment:
     def to_dict(self) -> dict:
         LOG.debug('ElectionDeployment.to_dict')
         return {
-            "funder_address": str(self.funder_address),
+            "funder_address": self.funder_address,
             "since_slot":     self.since_slot,
             "since_block":    self.since_block,
             "network_magic":  self.network_magic,
