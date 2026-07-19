@@ -4,7 +4,7 @@ import pytest
 from dataclasses import replace
 from pycardano import *
 from egc import *
-from data.static_records import *
+# from data.static_records import *
 from helpers import *
 import logging
 import time

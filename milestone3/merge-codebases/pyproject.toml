@@ -65,6 +65,9 @@ build-backend = "hatchling.build"
 
 pythonpath = ["tests"]
 
+# Without this, import errors in all the nested conftest.py files...
+addopts = "--import-mode=importlib"
+
 # Run tests in a particular non-alphabetical order.
 # I also run tests marked local before the ones marked testnet,
 # but that's controlled via CLI args in test.sh

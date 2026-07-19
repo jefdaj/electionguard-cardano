@@ -1,1 +1,0 @@
-from .static_records import load_static_record_pair, load_static_record_pairs

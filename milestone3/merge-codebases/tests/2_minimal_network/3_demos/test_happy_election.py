@@ -3,7 +3,7 @@ from dataclasses import replace
 from pycardano import *
 from egc import *
 from helpers import *
-from data.static_records import *
+# from data.static_records import *
 import logging
 import time
 

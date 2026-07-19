@@ -1,9 +1,11 @@
 import pytest
 from pycardano import *
 from egc import *
-from data.static_records import *
 from helpers import global_fixture
 import logging
+
+from .static_records import *
+# from .static_records import STATIC_RECORDS, STATIC_PHASES, load_static_record_pair, load_static_record_pairs
 
 LOG = logging.getLogger(__name__)
 
