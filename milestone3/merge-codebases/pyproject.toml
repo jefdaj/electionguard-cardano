@@ -68,18 +68,16 @@ pythonpath = ["tests"]
 # Run tests in a particular non-alphabetical order.
 # I also run tests marked local before the ones marked testnet,
 # but that's controlled via CLI args in test.sh
-testpaths = [
-  "tests/setup",
-  "tests/unit",
-  "tests/1_fast_offline",
-  "tests/2_med_static_network",
-  "tests/3_random_networks",
-]
+# testpaths = [
+#   "tests/1_fast_offline",
+#   "tests/2_med_static_network",
+#   "tests/3_random_networks",
+# ]
 
-markers = [
-  "local: marks tests as local (not requiring testnet) tests",
-  "testnet: marks tests as (slow) testnet tests",
-]
+# markers = [
+# "local: marks tests as local (not requiring testnet) tests",
+# "testnet: marks tests as (slow) testnet tests",
+# ]
 
 # Keep the printed output clean but don't hide errors
 log_cli = false
