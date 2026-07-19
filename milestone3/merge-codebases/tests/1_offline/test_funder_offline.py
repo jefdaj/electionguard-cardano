@@ -10,9 +10,6 @@ def test_funder_wallet(funder_wallet: Wallet):
     assert isinstance(funder_wallet.addr, Address)
     assert isinstance(funder_wallet.vkh, VerificationKeyHash)
 
-def test_pick_oneshot_utxo(oneshot_utxo: UTxO):
-    assert isinstance(oneshot_utxo, UTxO)
-
 def test_init_funder(funder: ObserverNode):
     assert isinstance(funder, ObserverNode)
     assert isinstance(funder.publisher, ElectionPublisher)
