@@ -1,7 +1,6 @@
 import pytest
 from egc import *
 
-@pytest.mark.testnet
 def test_ogmios_ready(ogmios: OgmiosV6ChainContext):
     health = ogmios_health_sync()
     status = health.get("connectionStatus")
@@ -12,7 +11,6 @@ def test_ogmios_ready(ogmios: OgmiosV6ChainContext):
         raise RuntimeError(f"Ogmios not synced (networkSynchronization={sync}): {health}")
     assert health["network"] == "preview"
 
-@pytest.mark.testnet
 def test_query_network_tip(ogmios: OgmiosV6ChainContext):
     tip = query_network_tip_sync()
     assert isinstance(tip, dict)
