@@ -1,16 +1,17 @@
 import pytest
 import logging
 
+# TODO plugins need to be at the top level, but all other features are nestable?
 pytest_plugins = [
-    "1_fast_offline.fixtures.data",
-    "2_med_static_network.fixtures.admin",
-    "2_med_static_network.fixtures.assets",
-    "2_med_static_network.fixtures.election",
-    "2_med_static_network.fixtures.funder",
-    "2_med_static_network.fixtures.ogmios",
-    "2_med_static_network.fixtures.script",
-    "2_med_static_network.fixtures.wallet",
-    "2_med_static_network.fixtures.subchannels",
+    "1_offline.fixtures.data",
+    "2_minimal_network.fixtures.admin",
+    "2_minimal_network.fixtures.assets",
+    "2_minimal_network.fixtures.election",
+    "2_minimal_network.fixtures.funder",
+    "2_minimal_network.fixtures.ogmios",
+    "2_minimal_network.fixtures.script",
+    "2_minimal_network.fixtures.wallet",
+    "2_minimal_network.fixtures.subchannels",
 ]
 
 # Tell pytest to print diffs on assertions
