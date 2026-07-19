@@ -71,8 +71,9 @@ pythonpath = ["tests"]
 testpaths = [
   "tests/setup",
   "tests/unit",
-  "tests/integration",
-  "tests/demo"
+  "tests/1_fast_offline",
+  "tests/2_med_static_network",
+  "tests/3_random_networks",
 ]
 
 markers = [
