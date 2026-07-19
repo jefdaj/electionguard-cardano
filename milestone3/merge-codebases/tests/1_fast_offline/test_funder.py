@@ -4,18 +4,15 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-@pytest.mark.local
 def test_funder_wallet(funder_wallet: Wallet):
     assert isinstance(funder_wallet, Wallet)
     assert isinstance(funder_wallet.sk, SigningKey)
     assert isinstance(funder_wallet.addr, Address)
     assert isinstance(funder_wallet.vkh, VerificationKeyHash)
 
-@pytest.mark.local
 def test_pick_oneshot_utxo(oneshot_utxo: UTxO):
     assert isinstance(oneshot_utxo, UTxO)
 
-@pytest.mark.local
 def test_init_funder(funder: ObserverNode):
     assert isinstance(funder, ObserverNode)
     assert isinstance(funder.publisher, ElectionPublisher)
@@ -27,6 +24,5 @@ def test_init_funder(funder: ObserverNode):
 
     # TODO any other init tests?
 
-# @pytest.mark.local
 # def test_init_tx_builder(init_tx_builder: TransactionBuilder):
 #     assert isinstance(init_tx_builder, TransactionBuilder)

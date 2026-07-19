@@ -29,7 +29,6 @@ def tx0(init_tx: Transaction) -> Transaction:
     # tx0 is just the init_tx renamed for clarity.
     return init_tx
 
-@pytest.mark.testnet
 def test_tx0(admin, s0, tx0):
     assert_tx(admin, s0, tx0)
 
@@ -68,7 +67,6 @@ def tx1(
     admin.wait_for_confirmation(tx)
     return tx
 
-@pytest.mark.testnet
 def test_tx1(admin, s1, tx1):
     assert_tx(admin, s1, tx1)
 
@@ -116,7 +114,6 @@ def tx2(
     admin.wait_for_confirmation(tx)
     return tx
 
-@pytest.mark.testnet
 def test_add_subchannel(
         admin, s2, tx2,
         guardian1, guardian1_s0,
@@ -155,7 +152,6 @@ def tx3(
     admin.wait_for_confirmation(tx)
     return tx
 
-@pytest.mark.testnet
 def test_rm_subchannel(admin, s3, tx3, guardian1):
     assert_tx(admin, s3, tx3)
     assert_nodes_converge([

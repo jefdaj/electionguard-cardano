@@ -5,7 +5,6 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-@pytest.mark.testnet
 def test_init_admin(admin: AdminNode):
     assert isinstance(admin, AdminNode)
     assert isinstance(admin.election, ElectionContext)
@@ -13,7 +12,6 @@ def test_init_admin(admin: AdminNode):
     assert isinstance(admin.subscriber, ElectionSubscriber)
     assert admin.current_phase() == EgcPhase.CONFIG_ANNOUNCE
 
-@pytest.mark.testnet
 def test_init_subchannel_nodes(
         subchannel_nodes: list[ElectionNode],
     ):

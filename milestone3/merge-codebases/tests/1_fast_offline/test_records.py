@@ -8,7 +8,6 @@ from pprint import pprint
 
 LOG = logging.getLogger(__name__)
 
-@pytest.mark.local
 def test_roundtrip_static_records_to_str(
         static_records_list: list[PublicRecord],
     ):

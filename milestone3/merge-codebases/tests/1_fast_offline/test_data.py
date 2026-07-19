@@ -9,7 +9,6 @@ from pprint import pprint
 
 LOG = logging.getLogger(__name__)
 
-@pytest.mark.local
 def test_load_static_phases(
         static_phases: dict[int, ElectionPhase],
     ):
@@ -19,7 +18,6 @@ def test_load_static_phases(
         for (k, v) in static_phases.items()
     )
 
-@pytest.mark.local
 def test_load_static_transactions(
         static_transactions: dict[str, dict[int, Tuple[ElectionAction, list[PublicRecord]]]],
     ):
@@ -33,7 +31,6 @@ def test_load_static_transactions(
             for rec in recs:
                 assert isinstance(rec, PublicRecord)
 
-@pytest.mark.local
 def test_load_static_record_pairs(
         static_records_list: list[PublicRecord],
     ):

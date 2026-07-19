@@ -2,15 +2,15 @@ import pytest
 import logging
 
 pytest_plugins = [
-    "fixtures.admin",
-    "fixtures.assets",
-    "fixtures.election",
-    "fixtures.funder",
-    "fixtures.ogmios",
-    "fixtures.script",
-    "fixtures.wallet",
-    "fixtures.data",
-    "fixtures.subchannels",
+    "1_fast_offline.fixtures.data",
+    "2_med_static_network.fixtures.admin",
+    "2_med_static_network.fixtures.assets",
+    "2_med_static_network.fixtures.election",
+    "2_med_static_network.fixtures.funder",
+    "2_med_static_network.fixtures.ogmios",
+    "2_med_static_network.fixtures.script",
+    "2_med_static_network.fixtures.wallet",
+    "2_med_static_network.fixtures.subchannels",
 ]
 
 # Tell pytest to print diffs on assertions

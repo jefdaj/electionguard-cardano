@@ -39,7 +39,6 @@ def admin_tx0(init_tx: Transaction) -> Transaction:
     # It's published by the funder and creates the admin STT.
     return init_tx
 
-@pytest.mark.testnet
 def test_admin_tx0(
         admin: AdminNode,
         admin_s0: ChannelState,
@@ -47,7 +46,6 @@ def test_admin_tx0(
     ):
     assert_tx(admin, admin_s0, admin_tx0)
 
-@pytest.mark.testnet
 def test_phase0_announce(
         admin, admin_s0, admin_tx0,
     ):
@@ -89,7 +87,6 @@ def admin_tx1(
     admin.wait_for_confirmation(tx)
     return tx
 
-@pytest.mark.testnet
 def test_admin_tx1(admin, admin_s1, admin_tx1):
     assert_tx(admin, admin_s1, admin_tx1)
 
@@ -145,11 +142,9 @@ def admin_tx2(
     admin.wait_for_confirmation(tx)
     return tx
 
-@pytest.mark.testnet
 def test_admin_tx2(admin, admin_s2, admin_tx2):
     assert_tx(admin, admin_s2, admin_tx2)
 
-@pytest.mark.testnet
 def test_phase1_onboarding(
         admin    , admin_s2    , admin_tx2,
         guardian1, guardian1_s0,
@@ -240,19 +235,15 @@ def guardian2_tx1(admin_tx2, guardian2, static_transactions):
 def guardian3_tx1(admin_tx2, guardian3, static_transactions):
     return post_tx(static_transactions, guardian3, 1)
 
-@pytest.mark.testnet
 def test_guardian1_tx1(guardian1, guardian1_s1, guardian1_tx1):
     assert_tx(guardian1, guardian1_s1, guardian1_tx1)
 
-@pytest.mark.testnet
 def test_guardian2_tx1(guardian2, guardian2_s1, guardian2_tx1):
     assert_tx(guardian2, guardian2_s1, guardian2_tx1)
 
-@pytest.mark.testnet
 def test_guardian3_tx1(guardian3, guardian3_s1, guardian3_tx1):
     assert_tx(guardian3, guardian3_s1, guardian3_tx1)
 
-@pytest.mark.testnet
 def test_phase2_ceremony_round1(
         admin    , admin_s2    , admin_tx2    ,
         guardian1, guardian1_s1, guardian1_tx1,
@@ -297,19 +288,15 @@ def guardian2_tx2(guardian2_tx1, guardian2, static_transactions):
 def guardian3_tx2(guardian3_tx1, guardian3, static_transactions):
     return post_tx(static_transactions, guardian3, 2)
 
-@pytest.mark.testnet
 def test_guardian1_tx2(guardian1, guardian1_s2, guardian1_tx2):
     assert_tx(guardian1, guardian1_s2, guardian1_tx2)
 
-@pytest.mark.testnet
 def test_guardian2_tx2(guardian2, guardian2_s2, guardian2_tx2):
     assert_tx(guardian2, guardian2_s2, guardian2_tx2)
 
-@pytest.mark.testnet
 def test_guardian3_tx2(guardian3, guardian3_s2, guardian3_tx2):
     assert_tx(guardian3, guardian3_s2, guardian3_tx2)
 
-@pytest.mark.testnet
 def test_phase2_ceremony_round2(
         admin    , admin_s2    ,
         guardian1, guardian1_s2, guardian1_tx2,
@@ -354,15 +341,12 @@ def guardian2_tx3(guardian2_tx2, guardian2, static_transactions):
 def guardian3_tx3(guardian3_tx2, guardian3, static_transactions):
     return post_tx(static_transactions, guardian3, 3)
 
-@pytest.mark.testnet
 def test_guardian1_tx3(guardian1, guardian1_s3, guardian1_tx3):
     assert_tx(guardian1, guardian1_s3, guardian1_tx3)
 
-@pytest.mark.testnet
 def test_guardian2_tx3(guardian2, guardian2_s3, guardian2_tx3):
     assert_tx(guardian2, guardian2_s3, guardian2_tx3)
 
-@pytest.mark.testnet
 def test_guardian3_tx3(guardian3, guardian3_s3, guardian3_tx3):
     assert_tx(guardian3, guardian3_s3, guardian3_tx3)
 
@@ -374,7 +358,6 @@ def device1_s1(device1_s0, static_transactions) -> ChannelState:
 def device1_tx1(admin_tx2, device1, static_transactions):
     return post_tx(static_transactions, device1, 1)
 
-@pytest.mark.testnet
 def test_device1_tx1(device1, device1_s1, device1_tx1):
     assert_tx(device1, device1_s1, device1_tx1)
 
@@ -415,11 +398,9 @@ def admin_tx3(
     admin.wait_for_confirmation(tx)
     return tx
 
-@pytest.mark.testnet
 def test_admin_tx3(admin, admin_s3, admin_tx3):
     assert_tx(admin, admin_s3, admin_tx3)
 
-@pytest.mark.testnet
 def test_phase2_ceremony_round3(
         admin    , admin_s3    , admin_tx3,
         guardian1, guardian1_s3, guardian1_tx3,
@@ -457,11 +438,9 @@ def device1_tx2(device1_tx1, device1, static_transactions):
 def device1_tx3(device1_tx2, device1, static_transactions):
     return post_tx(static_transactions, device1, 3)
 
-@pytest.mark.testnet
 def test_device1_tx2(device1, device1_s2, device1_tx2):
     assert_tx(device1, device1_s2, device1_tx2)
 
-@pytest.mark.testnet
 def test_device1_tx3(device1, device1_s3, device1_tx3):
     assert_tx(device1, device1_s3, device1_tx3)
 
@@ -495,11 +474,9 @@ def admin_tx4(
     admin.wait_for_confirmation(tx)
     return tx
 
-@pytest.mark.testnet
 def test_admin_tx4(admin, admin_s4, admin_tx4):
     assert_tx(admin, admin_s4, admin_tx4)
 
-@pytest.mark.testnet
 def test_phase3_voting(
         admin    , admin_s4    , admin_tx4,
         guardian1, guardian1_s3,
@@ -551,7 +528,6 @@ def admin_tx5(
     admin.wait_for_confirmation(tx)
     return tx
 
-@pytest.mark.testnet
 def test_admin_tx5(admin, admin_s5, admin_tx5):
     assert_tx(admin, admin_s5, admin_tx5)
 
@@ -579,19 +555,15 @@ def guardian2_tx4(guardian2_tx3, admin_tx5, guardian2, static_transactions):
 def guardian3_tx4(guardian3_tx3, admin_tx5, guardian3, static_transactions):
     return post_tx(static_transactions, guardian3, 4)
 
-@pytest.mark.testnet
 def test_guardian1_tx4(guardian1, guardian1_s3, guardian1_tx4):
     assert_tx(guardian1, guardian1_s3, guardian1_tx4)
 
-@pytest.mark.testnet
 def test_guardian2_tx4(guardian2, guardian2_s3, guardian2_tx4):
     assert_tx(guardian2, guardian2_s3, guardian2_tx4)
 
-@pytest.mark.testnet
 def test_guardian3_tx4(guardian3, guardian3_s3, guardian3_tx4):
     assert_tx(guardian3, guardian3_s3, guardian3_tx4)
 
-@pytest.mark.testnet
 def test_phase4_tally(
         admin    , admin_s5    , admin_tx5,
         guardian1, guardian1_s4, guardian1_tx4,
@@ -643,11 +615,9 @@ def admin_tx6(
     admin.wait_for_confirmation(tx)
     return tx
 
-@pytest.mark.testnet
 def test_admin_tx6(admin, admin_s6, admin_tx6):
     assert_tx(admin, admin_s6, admin_tx6)
 
-@pytest.mark.testnet
 def test_phase5_decrypt(
         admin    , admin_s6    , admin_tx6,
         guardian1, guardian1_s4,
@@ -694,15 +664,12 @@ def guardian2_tx5(guardian2_tx4, guardian2, static_transactions):
 def guardian3_tx5(guardian3_tx4, guardian3, static_transactions):
     return post_tx(static_transactions, guardian3, 5)
 
-@pytest.mark.testnet
 def test_guardian1_tx5(guardian1, guardian1_s4, guardian1_tx5):
     assert_tx(guardian1, guardian1_s4, guardian1_tx5)
 
-@pytest.mark.testnet
 def test_guardian2_tx5(guardian2, guardian2_s4, guardian2_tx5):
     assert_tx(guardian2, guardian2_s4, guardian2_tx5)
 
-@pytest.mark.testnet
 def test_guardian3_tx5(guardian3, guardian3_s4, guardian3_tx5):
     assert_tx(guardian3, guardian3_s4, guardian3_tx5)
 
@@ -716,7 +683,6 @@ def verifier1_s1(verifier1_s0, static_transactions):
 def verifier1_tx1(verifier1, static_transactions):
     return post_tx(static_transactions, verifier1, 1)
 
-@pytest.mark.testnet
 def test_verifier1_tx1(verifier1, verifier1_s0, verifier1_tx1):
     assert_tx(verifier1, verifier1_s0, verifier1_tx1)
 
@@ -752,11 +718,9 @@ def admin_tx7(
     admin.wait_for_confirmation(tx)
     return tx
 
-@pytest.mark.testnet
 def test_admin_tx7(admin, admin_s7, admin_tx7):
     assert_tx(admin, admin_s7, admin_tx7)
 
-@pytest.mark.testnet
 def test_phase6_verify(
         admin    , admin_s7    , admin_tx7,
         guardian1, guardian1_s5, guardian1_tx5,
@@ -810,7 +774,6 @@ def admin_tx8(
     admin.wait_for_confirmation(tx)
     return tx
 
-@pytest.mark.testnet
 def test_admin_tx8(admin, admin_s8, admin_tx8):
     assert_tx(admin, admin_s8, admin_tx8)
 
@@ -825,11 +788,9 @@ def admin_tx9(
     admin.await_phase(EgcPhase.FINISHED)
     return tx
 
-@pytest.mark.testnet
 def test_admin_tx9(admin, admin_tx9):
     assert_tx(admin, None, admin_tx9)
 
-@pytest.mark.testnet
 def test_phase7_finalize(
         admin, admin_tx9,
         guardian1, guardian2, guardian3,

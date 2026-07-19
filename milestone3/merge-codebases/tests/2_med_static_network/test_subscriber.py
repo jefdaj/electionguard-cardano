@@ -18,7 +18,6 @@ def subscriber(election_ctx: ElectionContext):
     yield sub
     sub.stop()
 
-@pytest.mark.testnet
 def test_init_subscriber(subscriber: ElectionSubscriber):
     assert isinstance(subscriber, ElectionSubscriber)
     # assert subscriber.channel_ids() == [ADMIN_CHANNEL_ID]
@@ -26,7 +25,6 @@ def test_init_subscriber(subscriber: ElectionSubscriber):
     # assert len(admin_history) == 1
     # assert 0 in admin_history # TODO is it a dict tho?
 
-@pytest.mark.testnet
 def test_rollback(subscriber: ElectionSubscriber):
 
     # This just simulates a single block rollback in a low effort way;
@@ -50,7 +48,6 @@ def test_rollback(subscriber: ElectionSubscriber):
     # so the new history should come out exactly the same.
     assert before == after
 
-@pytest.mark.testnet
 def test_admin_address(init_tx: Transaction, admin: AdminNode, funder: ObserverNode):
     actual_addr = admin.publisher.wallet.addr
 
