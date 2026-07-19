@@ -7,8 +7,6 @@ import time
 
 LOG = logging.getLogger(__name__)
 
-# TODO duplicate these? import them from 1?
-
 @per_election_fixture
 def admin_wallet(keys_dir: Path) -> Wallet:
     w = Wallet.load_or_create(keys_dir=keys_dir, name='admin', verbose=False)
@@ -21,14 +19,3 @@ def admin_vkh(admin_wallet: Wallet) -> VerificationKeyHash:
 @per_election_fixture
 def admin_addr(admin_wallet: Wallet) -> Address:
     return admin_wallet.addr
-
-@per_election_fixture
-def admin(admin_wallet: Wallet, election_cfg: ElectionConfig) -> AdminNode:
-    node_ = AdminNode(wallet=admin_wallet, election_cfg=election_cfg)
-    LOG.debug(f'admin: {node_}')
-    node_.await_phase(EgcPhase.CONFIG_ANNOUNCE)
-    try:
-        yield node_
-        node_.return_collateral()
-    finally:
-        node_.stop()

@@ -6,5 +6,4 @@ from .fixtures import assets
 from .fixtures import election
 from .fixtures import ogmios
 from .fixtures import script
-from .fixtures import wallet
 from .fixtures import subchannels
