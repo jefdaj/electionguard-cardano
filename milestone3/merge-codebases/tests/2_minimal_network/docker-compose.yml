@@ -10,9 +10,9 @@ services:
       "--topology", "/config/topology.json"
     ]
     volumes:
-      - ../../milestone2/cardano-node-ogmios/config/network/${NETWORK:-preview}/cardano-node:/config
-      - ../../milestone2/cardano-node-ogmios/data/node-db:/data
-      - ../../milestone2/cardano-node-ogmios/data/node-ipc:/ipc
+      - ../../../../milestone2/cardano-node-ogmios/config/network/${NETWORK:-preview}/cardano-node:/config
+      - ../../../../milestone2/cardano-node-ogmios/data/node-db:/data
+      - ../../../../milestone2/cardano-node-ogmios/data/node-ipc:/ipc
     restart: on-failure
     logging:
       driver: "json-file"
@@ -38,8 +38,8 @@ services:
     ]
     volumes:
       # TODO make the same as the node one above?
-      - ../../milestone2/cardano-node-ogmios/config/network/${NETWORK:-preview}:/config
-      - ../../milestone2/cardano-node-ogmios/data/node-ipc:/ipc
+      - ../../../../milestone2/cardano-node-ogmios/config/network/${NETWORK:-preview}:/config
+      - ../../../../milestone2/cardano-node-ogmios/data/node-ipc:/ipc
     # TODO if containers can't access ogmios, try removing 127.0.0.1 here
     ports:
       - ${OGMIOS_PORT:-1337}:1337
@@ -51,8 +51,10 @@ services:
   # I've tested already that a more realistic setup with a bunch of them also works.
   ipfs:
     image: ipfs/kubo:v0.42.0
+    # Make IPFS data ephemeral:
     volumes:
-      - ./data/ipfs:/data/ipfs
+      - type: tmpfs
+        target: /data # TODO /data/ipfs?
     environment:
       - IPFS_TELEMETRY=off
     ports:

@@ -1,6 +1,8 @@
 import pytest
 from egc import *
 
+from .fixtures.ogmios import *
+
 def test_ogmios_ready(ogmios: OgmiosV6ChainContext):
     health = ogmios_health_sync()
     status = health.get("connectionStatus")

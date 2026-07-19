@@ -1,9 +1,12 @@
 import pytest
 
-# TODO careful about name collisions here?
-from .fixtures import admin
-from .fixtures import assets
-from .fixtures import election
-from .fixtures import ogmios
-from .fixtures import script
-from .fixtures import subchannels_online
+from .fixtures.network import *
+
+# TODO why doesn't this substitute for the one in test_network.py?
+from .fixtures.ogmios import *
+
+from .fixtures.admin import *
+from .fixtures.assets import *
+from .fixtures.election import *
+from .fixtures.script import *
+from .fixtures.subchannels_online import *

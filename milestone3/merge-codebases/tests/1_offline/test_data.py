@@ -1,7 +1,10 @@
 import json
 import pytest
 from egc import *
-from fixtures.data.static_records import *
+
+# TODO why is this needed?
+from fixtures.data import *
+
 import logging
 from pathlib import Path
 from typing import Tuple
@@ -31,6 +34,7 @@ def test_load_static_transactions(
             for rec in recs:
                 assert isinstance(rec, PublicRecord)
 
+# TODO why not just make the pairs a fixture?
 def test_load_static_record_pairs(
         static_records_list: list[PublicRecord],
     ):
