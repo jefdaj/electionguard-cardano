@@ -1,7 +1,7 @@
 { pkgs, lib, ... }:
 let
 
-  # Shared cardano node data (~15G) for all the dev codebases
+  # Shared cardano node data (~15G) for all the dev networks
   cardanoDir = "../../../../milestone2/cardano-node-ogmios";
   cardanoConfigDir = "${cardanoDir}/config";
   cardanoDataDir   = "${cardanoDir}/data";
@@ -22,6 +22,8 @@ let
       "${cardanoDataDir}/node-ipc:/ipc"
     ];
     restart = "on-failure";
+    stop_signal = "SIGINT";
+    stop_grace_period = "60s"; # default 10s kills it, forcing re-sync on next startup
   };
 
   ogmiosService = {
@@ -36,9 +38,9 @@ let
       "${cardanoDataDir}/node-ipc:/ipc"
       "${cardanoConfigDir}/network/${cardanoNetwork}:/config"
     ];
-    ports = [ "1337:1337" ];
+    ports = [ "1337:1337" ]; # required for host python code to query it?
     environment = {
-      NETWORK = "preview";
+      NETWORK = cardanoNetwork;
       OGMIOS_PORT = 1337;
     };
   };
@@ -53,13 +55,18 @@ let
     ];
     environment = {
       IPFS_IMPORT_CIDVERSION = "1";
-      IPFS_LOGGING           = "error";
+      IPFS_LOGGING           = "info";
       IPFS_TELEMETRY         = "off";
     };
+    ports = [
+      "4001:4001"           # ipfs swarm
+      "127.0.0.1:5001:5001" # api access
+    ];
   };
 
 in {
   config.project.name = "egc-minimal";
+  config.enableDefaultNetwork = true;
   config.services = {
     cardano.service = cardanoService;
     ogmios.service  = ogmiosService;

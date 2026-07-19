@@ -6,6 +6,8 @@ from egc import *
 
 # TODO alias for package scope to match the others
 
+# TODO what should this yield, if anything?
+# TODO how to force arion down on pytest exceptions, keyboardinturrupt etc?
 @pytest.fixture(scope='package')
 def arion_network(request):
     compose_dir = Path(request.fspath).parent # dir of the calling conftest
@@ -23,8 +25,8 @@ def ogmios(arion_network) -> OgmiosV6ChainContext:
     while True:
         try:
             health = ogmios_health_sync()
-            status = health.get("connectionStatus")
-            sync   = health.get("networkSynchronization")
+            status = health["connectionStatus"]
+            sync   = health["networkSynchronization"]
         except:
             status = None
             sync   = None
@@ -35,3 +37,9 @@ def ogmios(arion_network) -> OgmiosV6ChainContext:
         if time.monotonic()  >= deadline:
             raise TimeoutError(f'ogmios not ready after {OGMIOS_TIMEOUT_SEC}s.')
         time.sleep(OGMIOS_POLL_SEC)
+
+# TODO what should this return, if anything?
+@pytest.fixture(scope='package')
+def ipfs(arion_network):
+    ipfs_wait_until_stable_sync()
+    return
