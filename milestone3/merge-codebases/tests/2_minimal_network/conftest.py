@@ -4,7 +4,6 @@ import pytest
 from .fixtures import admin
 from .fixtures import assets
 from .fixtures import election
-from .fixtures import funder
 from .fixtures import ogmios
 from .fixtures import script
 from .fixtures import wallet
