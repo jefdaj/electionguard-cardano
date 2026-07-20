@@ -14,6 +14,10 @@ from egc import *
 STATIC_FILES_DIR = Path(__file__).absolute().parent / 'files'
 
 @global_fixture
+def static_files_dir():
+    return STATIC_FILES_DIR
+
+@global_fixture
 def static_phases():
     return STATIC_PHASES
 
@@ -37,26 +41,6 @@ def static_records_list(static_transactions) -> list[PublicRecord]:
             records += recs
     return records
 
-def load_static_record_pair(
-        record: PublicRecord
-    ) -> tuple[dict, PublicRecordMetadata]:
-    mdata = record.metadata
-    path = record_path(mdata, STATIC_FILES_DIR)
-    with open(path, 'r') as f:
-        obj = json.load(f)
-    return (obj, mdata)
-
-def load_static_record_pairs(
-        records: list[PublicRecord],
-    ) -> list[tuple[dict, PublicRecordMetadata]]:
-    LOG.debug('load_static_record_pairs')
-    pairs = []
-    for rec in records:
-        LOG.debug(f'rec: {rec}')
-        pair = load_static_record_pair(rec)
-        pairs.append(pair)
-    return pairs
-
-@global_fixture
-def static_record_pairs(static_records_list: list[PublicRecord]):
-    return load_static_record_pairs(static_records_list)
+# @global_fixture
+# def static_record_pairs(static_records_list: list[PublicRecord], static_files_dir):
+#     return load_static_record_pairs(static_records_list, static_files_dir)

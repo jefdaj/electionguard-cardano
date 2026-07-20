@@ -1,5 +1,6 @@
 import json
 import pytest
+from tests.helpers import load_static_record_pairs
 from egc import *
 
 import logging
@@ -31,11 +32,12 @@ def test_load_static_transactions(
             for rec in recs:
                 assert isinstance(rec, PublicRecord)
 
-def test_load_static_record_pairs(static_records_list, static_record_pairs):
+def test_load_static_record_pairs(static_records_list, static_files_dir):
+    pairs = load_static_record_pairs(static_records_list, static_files_dir)
     assert len(static_records_list) == 78
-    assert len(static_record_pairs) == 78
+    assert len(pairs) == 78
     cid_strs = set()
-    for (rec, (obj, mdata)) in zip(static_records_list, static_record_pairs):
+    for (rec, (obj, mdata)) in zip(static_records_list, pairs):
         cid_str = ipfs_cid_to_string(rec.ipfs_cid)
         cid_strs.add(cid_str)
         assert isinstance(rec, PublicRecord)

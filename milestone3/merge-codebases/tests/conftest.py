@@ -12,15 +12,15 @@ def pytest_configure(config):
     logging.getLogger('urllib3').setLevel(logging.INFO)
     logging.getLogger('ogmios').setLevel(logging.WARNING)
     logging.getLogger('asyncio').setLevel(logging.WARNING)
-    logging.getLogger('aiphttp').setLevel(logging.WARNING)
+    logging.getLogger('aiohttp').setLevel(logging.WARNING)
 
 pytest_plugins = [
 
 	# stage 1 fixtures
     # TODO separate the actually global ones?
-    "tests.fixtures.static_records",
     "tests.fixtures.admin",
     "tests.fixtures.funder",
+    "tests.fixtures.static_records",
     "tests.fixtures.subchannels_offline",
     "tests.fixtures.wallet",
 

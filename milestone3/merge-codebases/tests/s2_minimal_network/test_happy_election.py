@@ -77,8 +77,9 @@ def admin_tx1(
         admin: AdminNode,
         admin_tx0: Transaction,
         static_transactions,
+        static_files_dir,
     ) -> Transaction:
-    pairs = load_static_record_pairs(static_transactions['admin'][1][1])
+    pairs = load_static_record_pairs(static_transactions['admin'][1][1], static_files_dir)
     tx = admin.post_public_records(
         new_record_pairs = pairs,
         new_phase = ElectionConfigPhase(ConfigOnboardingPhase()),
@@ -197,13 +198,13 @@ def post_state(
     ))
 
 def post_tx(
-        static_transactions,
+        static_transactions, static_files_dir,
         node_: ElectionNode,
         tx_index: int, # index in static_transactions
     ) -> Transaction:
     ch_str = node_.channel_str()
     (_, recs) = static_transactions[ch_str][tx_index]
-    pairs = load_static_record_pairs(recs)
+    pairs = load_static_record_pairs(recs, static_files_dir)
     tx = node_.post_public_records(new_record_pairs=pairs)
     LOG.debug(f'{ch_str}_tx{tx_index}: {tx}')
     node_.wait_for_confirmation(tx)
@@ -212,28 +213,28 @@ def post_tx(
 ## ----------- Round 1 -----------
 
 @per_election_fixture
-def guardian1_s1(guardian1_s0, static_transactions) -> ChannelState:
-    return post_state(static_transactions, guardian1_s0, 'guardian', 1, 1)
+def guardian1_s1(guardian1_s0, static_transactions, static_files_dir) -> ChannelState:
+    return post_state(static_transactions, static_files_dir, guardian1_s0, 'guardian', 1, 1)
 
 @per_election_fixture
-def guardian2_s1(guardian2_s0, static_transactions) -> ChannelState:
-    return post_state(static_transactions, guardian2_s0, 'guardian', 2, 1)
+def guardian2_s1(guardian2_s0, static_transactions, static_files_dir) -> ChannelState:
+    return post_state(static_transactions, static_files_dir, guardian2_s0, 'guardian', 2, 1)
 
 @per_election_fixture
-def guardian3_s1(guardian3_s0, static_transactions) -> ChannelState:
-    return post_state(static_transactions, guardian3_s0, 'guardian', 3, 1)
+def guardian3_s1(guardian3_s0, static_transactions, static_files_dir) -> ChannelState:
+    return post_state(static_transactions, static_files_dir, guardian3_s0, 'guardian', 3, 1)
 
 @per_election_fixture
-def guardian1_tx1(admin_tx2, guardian1, static_transactions):
-    return post_tx(static_transactions, guardian1, 1)
+def guardian1_tx1(admin_tx2, guardian1, static_transactions, static_files_dir):
+    return post_tx(static_transactions, static_files_dir, guardian1, 1)
 
 @per_election_fixture
-def guardian2_tx1(admin_tx2, guardian2, static_transactions):
-    return post_tx(static_transactions, guardian2, 1)
+def guardian2_tx1(admin_tx2, guardian2, static_transactions, static_files_dir):
+    return post_tx(static_transactions, static_files_dir, guardian2, 1)
 
 @per_election_fixture
-def guardian3_tx1(admin_tx2, guardian3, static_transactions):
-    return post_tx(static_transactions, guardian3, 1)
+def guardian3_tx1(admin_tx2, guardian3, static_transactions, static_files_dir):
+    return post_tx(static_transactions, static_files_dir, guardian3, 1)
 
 def test_guardian1_tx1(guardian1, guardian1_s1, guardian1_tx1):
     assert_tx(guardian1, guardian1_s1, guardian1_tx1)
@@ -265,28 +266,28 @@ def test_phase2_ceremony_round1(
 ## ----------- Round 2 -----------
 
 @per_election_fixture
-def guardian1_s2(guardian1_s0, static_transactions) -> ChannelState:
-    return post_state(static_transactions, guardian1_s0, 'guardian', 1, 2)
+def guardian1_s2(guardian1_s0, static_transactions, static_files_dir) -> ChannelState:
+    return post_state(static_transactions, static_files_dir, guardian1_s0, 'guardian', 1, 2)
 
 @per_election_fixture
-def guardian2_s2(guardian2_s0, static_transactions) -> ChannelState:
-    return post_state(static_transactions, guardian2_s0, 'guardian', 2, 2)
+def guardian2_s2(guardian2_s0, static_transactions, static_files_dir) -> ChannelState:
+    return post_state(static_transactions, static_files_dir, guardian2_s0, 'guardian', 2, 2)
 
 @per_election_fixture
-def guardian3_s2(guardian3_s0, static_transactions) -> ChannelState:
-    return post_state(static_transactions, guardian3_s0, 'guardian', 3, 2)
+def guardian3_s2(guardian3_s0, static_transactions, static_files_dir) -> ChannelState:
+    return post_state(static_transactions, static_files_dir, guardian3_s0, 'guardian', 3, 2)
 
 @per_election_fixture
-def guardian1_tx2(guardian1_tx1, guardian1, static_transactions):
-    return post_tx(static_transactions, guardian1, 2)
+def guardian1_tx2(guardian1_tx1, guardian1, static_transactions, static_files_dir):
+    return post_tx(static_transactions, static_files_dir, guardian1, 2)
 
 @per_election_fixture
-def guardian2_tx2(guardian2_tx1, guardian2, static_transactions):
-    return post_tx(static_transactions, guardian2, 2)
+def guardian2_tx2(guardian2_tx1, guardian2, static_transactions, static_files_dir):
+    return post_tx(static_transactions, static_files_dir, guardian2, 2)
 
 @per_election_fixture
-def guardian3_tx2(guardian3_tx1, guardian3, static_transactions):
-    return post_tx(static_transactions, guardian3, 2)
+def guardian3_tx2(guardian3_tx1, guardian3, static_transactions, static_files_dir):
+    return post_tx(static_transactions, static_files_dir, guardian3, 2)
 
 def test_guardian1_tx2(guardian1, guardian1_s2, guardian1_tx2):
     assert_tx(guardian1, guardian1_s2, guardian1_tx2)
@@ -318,28 +319,28 @@ def test_phase2_ceremony_round2(
 ## ----------- Round 3 -----------
 
 @per_election_fixture
-def guardian1_s3(guardian1_s0, static_transactions) -> ChannelState:
-    return post_state(static_transactions, guardian1_s0, 'guardian', 1, 3)
+def guardian1_s3(guardian1_s0, static_transactions, static_files_dir) -> ChannelState:
+    return post_state(static_transactions, static_files_dir, guardian1_s0, 'guardian', 1, 3)
 
 @per_election_fixture
-def guardian2_s3(guardian2_s0, static_transactions) -> ChannelState:
-    return post_state(static_transactions, guardian2_s0, 'guardian', 2, 3)
+def guardian2_s3(guardian2_s0, static_transactions, static_files_dir) -> ChannelState:
+    return post_state(static_transactions, static_files_dir, guardian2_s0, 'guardian', 2, 3)
 
 @per_election_fixture
-def guardian3_s3(guardian3_s0, static_transactions) -> ChannelState:
-    return post_state(static_transactions, guardian3_s0, 'guardian', 3, 3)
+def guardian3_s3(guardian3_s0, static_transactions, static_files_dir) -> ChannelState:
+    return post_state(static_transactions, static_files_dir, guardian3_s0, 'guardian', 3, 3)
 
 @per_election_fixture
-def guardian1_tx3(guardian1_tx2, guardian1, static_transactions):
-    return post_tx(static_transactions, guardian1, 3)
+def guardian1_tx3(guardian1_tx2, guardian1, static_transactions, static_files_dir):
+    return post_tx(static_transactions, static_files_dir, guardian1, 3)
 
 @per_election_fixture
-def guardian2_tx3(guardian2_tx2, guardian2, static_transactions):
-    return post_tx(static_transactions, guardian2, 3)
+def guardian2_tx3(guardian2_tx2, guardian2, static_transactions, static_files_dir):
+    return post_tx(static_transactions, static_files_dir, guardian2, 3)
 
 @per_election_fixture
-def guardian3_tx3(guardian3_tx2, guardian3, static_transactions):
-    return post_tx(static_transactions, guardian3, 3)
+def guardian3_tx3(guardian3_tx2, guardian3, static_transactions, static_files_dir):
+    return post_tx(static_transactions, static_files_dir, guardian3, 3)
 
 def test_guardian1_tx3(guardian1, guardian1_s3, guardian1_tx3):
     assert_tx(guardian1, guardian1_s3, guardian1_tx3)
@@ -351,12 +352,12 @@ def test_guardian3_tx3(guardian3, guardian3_s3, guardian3_tx3):
     assert_tx(guardian3, guardian3_s3, guardian3_tx3)
 
 @per_election_fixture
-def device1_s1(device1_s0, static_transactions) -> ChannelState:
-    return post_state(static_transactions, device1_s0, 'device', 1, 1)
+def device1_s1(device1_s0, static_transactions, static_files_dir) -> ChannelState:
+    return post_state(static_transactions, static_files_dir, device1_s0, 'device', 1, 1)
 
 @per_election_fixture
-def device1_tx1(admin_tx2, device1, static_transactions):
-    return post_tx(static_transactions, device1, 1)
+def device1_tx1(admin_tx2, device1, static_transactions, static_files_dir):
+    return post_tx(static_transactions, static_files_dir, device1, 1)
 
 def test_device1_tx1(device1, device1_s1, device1_tx1):
     assert_tx(device1, device1_s1, device1_tx1)
@@ -387,9 +388,9 @@ def admin_tx3(
         guardian2_tx3: Transaction,
         guardian3_tx3: Transaction,
         device1_tx1: Transaction,
-        static_transactions,
+        static_transactions, static_files_dir,
     ) -> Transaction:
-    pairs = load_static_record_pairs(static_transactions['admin'][3][1])
+    pairs = load_static_record_pairs(static_transactions['admin'][3][1], static_files_dir)
     tx = admin.post_public_records(
         new_record_pairs = pairs,
         new_phase = ElectionVotingPhase(),
@@ -423,20 +424,20 @@ def test_phase2_ceremony_round3(
 ## =================================
 
 @per_election_fixture
-def device1_s2(device1_s1, static_transactions) -> ChannelState:
-    return post_state(static_transactions, device1_s1, 'device', 1, 2)
+def device1_s2(device1_s1, static_transactions, static_files_dir) -> ChannelState:
+    return post_state(static_transactions, static_files_dir, device1_s1, 'device', 1, 2)
 
 @per_election_fixture
-def device1_s3(device1_s2, static_transactions) -> ChannelState:
-    return post_state(static_transactions, device1_s2, 'device', 1, 3)
+def device1_s3(device1_s2, static_transactions, static_files_dir) -> ChannelState:
+    return post_state(static_transactions, static_files_dir, device1_s2, 'device', 1, 3)
 
 @per_election_fixture
-def device1_tx2(device1_tx1, device1, static_transactions):
-    return post_tx(static_transactions, device1, 2)
+def device1_tx2(device1_tx1, device1, static_transactions, static_files_dir):
+    return post_tx(static_transactions, static_files_dir, device1, 2)
 
 @per_election_fixture
-def device1_tx3(device1_tx2, device1, static_transactions):
-    return post_tx(static_transactions, device1, 3)
+def device1_tx3(device1_tx2, device1, static_transactions, static_files_dir):
+    return post_tx(static_transactions, static_files_dir, device1, 3)
 
 def test_device1_tx2(device1, device1_s2, device1_tx2):
     assert_tx(device1, device1_s2, device1_tx2)
@@ -517,9 +518,9 @@ def admin_s5(
 def admin_tx5(
         admin: AdminNode,
         admin_tx4: Transaction,
-        static_transactions,
+        static_transactions, static_files_dir,
     ) -> Transaction:
-    pairs = load_static_record_pairs(static_transactions['admin'][5][1])
+    pairs = load_static_record_pairs(static_transactions['admin'][5][1], static_files_dir)
     tx = admin.post_public_records(
         new_record_pairs = pairs,
         new_phase = ElectionResultsPhase(ResultsDecryptPhase()),
@@ -532,28 +533,28 @@ def test_admin_tx5(admin, admin_s5, admin_tx5):
     assert_tx(admin, admin_s5, admin_tx5)
 
 @per_election_fixture
-def guardian1_s4(guardian1_s3, static_transactions) -> ChannelState:
-    return post_state(static_transactions, guardian1_s3, 'guardian', 1, 4)
+def guardian1_s4(guardian1_s3, static_transactions, static_files_dir) -> ChannelState:
+    return post_state(static_transactions, static_files_dir, guardian1_s3, 'guardian', 1, 4)
 
 @per_election_fixture
-def guardian2_s4(guardian2_s3, static_transactions) -> ChannelState:
-    return post_state(static_transactions, guardian2_s3, 'guardian', 2, 4)
+def guardian2_s4(guardian2_s3, static_transactions, static_files_dir) -> ChannelState:
+    return post_state(static_transactions, static_files_dir, guardian2_s3, 'guardian', 2, 4)
 
 @per_election_fixture
-def guardian3_s4(guardian3_s3, static_transactions) -> ChannelState:
-    return post_state(static_transactions, guardian3_s3, 'guardian', 3, 4)
+def guardian3_s4(guardian3_s3, static_transactions, static_files_dir) -> ChannelState:
+    return post_state(static_transactions, static_files_dir, guardian3_s3, 'guardian', 3, 4)
 
 @per_election_fixture
-def guardian1_tx4(guardian1_tx3, admin_tx5, guardian1, static_transactions):
-    return post_tx(static_transactions, guardian1, 4)
+def guardian1_tx4(guardian1_tx3, admin_tx5, guardian1, static_transactions, static_files_dir):
+    return post_tx(static_transactions, static_files_dir, guardian1, 4)
 
 @per_election_fixture
-def guardian2_tx4(guardian2_tx3, admin_tx5, guardian2, static_transactions):
-    return post_tx(static_transactions, guardian2, 4)
+def guardian2_tx4(guardian2_tx3, admin_tx5, guardian2, static_transactions, static_files_dir):
+    return post_tx(static_transactions, static_files_dir, guardian2, 4)
 
 @per_election_fixture
-def guardian3_tx4(guardian3_tx3, admin_tx5, guardian3, static_transactions):
-    return post_tx(static_transactions, guardian3, 4)
+def guardian3_tx4(guardian3_tx3, admin_tx5, guardian3, static_transactions, static_files_dir):
+    return post_tx(static_transactions, static_files_dir, guardian3, 4)
 
 def test_guardian1_tx4(guardian1, guardian1_s3, guardian1_tx4):
     assert_tx(guardian1, guardian1_s3, guardian1_tx4)
@@ -604,9 +605,9 @@ def admin_s6(
 def admin_tx6(
         admin: AdminNode,
         admin_tx5: Transaction,
-        static_transactions,
+        static_transactions, static_files_dir,
     ) -> Transaction:
-    pairs = load_static_record_pairs(static_transactions['admin'][6][1])
+    pairs = load_static_record_pairs(static_transactions['admin'][6][1], static_files_dir)
     tx = admin.post_public_records(
         new_record_pairs = pairs,
         new_phase = ElectionVerifyPhase(),
@@ -641,28 +642,28 @@ def test_phase5_decrypt(
 ## =================================
 
 @per_election_fixture
-def guardian1_s5(guardian1_s4, static_transactions):
-    return post_state(static_transactions, guardian1_s4, 'guardian', 1, 5)
+def guardian1_s5(guardian1_s4, static_transactions, static_files_dir):
+    return post_state(static_transactions, static_files_dir, guardian1_s4, 'guardian', 1, 5)
 
 @per_election_fixture
-def guardian2_s5(guardian2_s4, static_transactions):
-    return post_state(static_transactions, guardian2_s4, 'guardian', 2, 5)
+def guardian2_s5(guardian2_s4, static_transactions, static_files_dir):
+    return post_state(static_transactions, static_files_dir, guardian2_s4, 'guardian', 2, 5)
 
 @per_election_fixture
-def guardian3_s5(guardian3_s4, static_transactions):
-    return post_state(static_transactions, guardian3_s4, 'guardian', 3, 5)
+def guardian3_s5(guardian3_s4, static_transactions, static_files_dir):
+    return post_state(static_transactions, static_files_dir, guardian3_s4, 'guardian', 3, 5)
 
 @per_election_fixture
-def guardian1_tx5(guardian1_tx4, guardian1, static_transactions):
-    return post_tx(static_transactions, guardian1, 5)
+def guardian1_tx5(guardian1_tx4, guardian1, static_transactions, static_files_dir):
+    return post_tx(static_transactions, static_files_dir, guardian1, 5)
 
 @per_election_fixture
-def guardian2_tx5(guardian2_tx4, guardian2, static_transactions):
-    return post_tx(static_transactions, guardian2, 5)
+def guardian2_tx5(guardian2_tx4, guardian2, static_transactions, static_files_dir):
+    return post_tx(static_transactions, static_files_dir, guardian2, 5)
 
 @per_election_fixture
-def guardian3_tx5(guardian3_tx4, guardian3, static_transactions):
-    return post_tx(static_transactions, guardian3, 5)
+def guardian3_tx5(guardian3_tx4, guardian3, static_transactions, static_files_dir):
+    return post_tx(static_transactions, static_files_dir, guardian3, 5)
 
 def test_guardian1_tx5(guardian1, guardian1_s4, guardian1_tx5):
     assert_tx(guardian1, guardian1_s4, guardian1_tx5)
@@ -676,12 +677,12 @@ def test_guardian3_tx5(guardian3, guardian3_s4, guardian3_tx5):
 # TODO should devices also post verifications?
 
 @per_election_fixture
-def verifier1_s1(verifier1_s0, static_transactions):
-    return post_state(static_transactions, verifier1_s0, 'verifier', 1, 1)
+def verifier1_s1(verifier1_s0, static_transactions, static_files_dir):
+    return post_state(static_transactions, static_files_dir, verifier1_s0, 'verifier', 1, 1)
 
 @per_election_fixture
-def verifier1_tx1(verifier1, static_transactions):
-    return post_tx(static_transactions, verifier1, 1)
+def verifier1_tx1(verifier1, static_transactions, static_files_dir):
+    return post_tx(static_transactions, static_files_dir, verifier1, 1)
 
 def test_verifier1_tx1(verifier1, verifier1_s0, verifier1_tx1):
     assert_tx(verifier1, verifier1_s0, verifier1_tx1)
@@ -707,9 +708,9 @@ def admin_s7(
 def admin_tx7(
         admin: AdminNode,
         admin_tx6: Transaction,
-        static_transactions,
+        static_transactions, static_files_dir,
     ) -> Transaction:
-    pairs = load_static_record_pairs(static_transactions['admin'][7][1])
+    pairs = load_static_record_pairs(static_transactions['admin'][7][1], static_files_dir)
     tx = admin.post_public_records(
         new_record_pairs = pairs,
         new_phase = ElectionFinalizePhase(),
