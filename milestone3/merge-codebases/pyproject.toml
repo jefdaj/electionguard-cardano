@@ -72,9 +72,13 @@ addopts = "--import-mode=importlib"
 # I also run tests marked local before the ones marked testnet,
 # but that's controlled via CLI args in test.sh
 # testpaths = [
-#   "tests/1_fast_offline",
-#   "tests/2_med_static_network",
-#   "tests/3_random_networks",
+  # "tests/1_offline/test_data.py",
+  # "tests/1_offline/test_records.py",
+  # "tests/1_offline/test_wallets.py",
+  # "tests/1_offline/test_funder_offline.py",
+  # "tests/2_minimal_network/test_assets.py",
+  # "tests/2_minimal_network/test_network.py",
+  # "tests/2_minimal_network/test_happy_election.py",
 # ]
 
 # markers = [

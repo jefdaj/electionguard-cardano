@@ -4,6 +4,9 @@ from egc import *
 from helpers import per_election_fixture
 import logging
 
+# TODO are the conftests not importing anything? why is this needed?
+from .network import *
+
 LOG = logging.getLogger(__name__)
 
 @per_election_fixture

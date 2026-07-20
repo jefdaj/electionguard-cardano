@@ -2,6 +2,9 @@ import pytest
 from egc import *
 import logging
 
+from .fixtures.network import *
+from .fixtures.script import *
+
 LOG = logging.getLogger(__name__)
 
 def test_admin_stt(script: ElectionScript, admin_assets: MultiAsset):

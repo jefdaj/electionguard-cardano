@@ -16,3 +16,7 @@ def pytest_configure(config):
     # TODO dial down the subscriber too, either here or at the source
 
 from .fixtures.data import *
+from .fixtures.admin import *
+from .fixtures.funder import *
+from .fixtures.subchannels_offline import *
+from .fixtures.wallet import *
