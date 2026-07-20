@@ -8,6 +8,10 @@ from pathlib import Path
 from typing import Tuple
 from pprint import pprint
 
+# These are technically offline tests, but I put them in the 2_minimal_networks
+# section because they're just verifying the static record handling that will
+# be used in the happy_subchannels and happy_election tests.
+
 LOG = logging.getLogger(__name__)
 
 def test_load_static_phases(
@@ -46,3 +50,14 @@ def test_load_static_record_pairs(static_records_list, static_files_dir):
     # There are 78 records, but the 5 verifications all have the same
     # CID because they agree exactly.
     assert len(cid_strs) == 74
+
+def test_roundtrip_static_records_to_str(
+        static_records_list: list[PublicRecord],
+    ):
+    for rec in static_records_list:
+        # PyCardano uses repr() for JSON, which is a little suprising in Python
+        # but reasonable for comparing with cardano-cli etc. So we round-trip
+        # to str instead.
+        tmp  = str(rec)
+        rec2 = eval(tmp)
+        assert rec2 == rec
