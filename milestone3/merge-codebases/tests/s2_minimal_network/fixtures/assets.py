@@ -1,7 +1,7 @@
 import pytest
 from pycardano import *
 from egc import *
-from helpers import per_election_fixture
+from tests.helpers import per_election_fixture
 from typing import List
 import logging
 

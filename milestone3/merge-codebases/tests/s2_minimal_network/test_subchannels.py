@@ -5,7 +5,7 @@ from dataclasses import replace
 from pycardano import *
 from egc import *
 # from data.static_records import *
-from helpers import *
+from tests.helpers import *
 import logging
 import time
 

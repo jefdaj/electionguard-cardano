@@ -1,6 +1,6 @@
 import pytest
 from egc import *
-from helpers import per_election_fixture
+from tests.helpers import per_election_fixture
 from pathlib import Path
 import os
 import tempfile

@@ -1,8 +1,9 @@
 import pytest
 import logging
 
-# Tell pytest to print diffs on assertions
-pytest.register_assert_rewrite("helpers") # TODO tests.helpers?
+# Modules that pytest should mess with by inserting assert introspection stuff.
+# Add any helper modules used in the tests here.
+pytest.register_assert_rewrite("tests.helpers")
 
 def pytest_configure(config):
     # These are all probably worth looking at again if/when we have mysterious
@@ -13,10 +14,24 @@ def pytest_configure(config):
     logging.getLogger('asyncio').setLevel(logging.WARNING)
     logging.getLogger('aiphttp').setLevel(logging.WARNING)
 
-    # TODO dial down the subscriber too, either here or at the source
+pytest_plugins = [
 
-from .fixtures.data import *
-from .fixtures.admin import *
-from .fixtures.funder import *
-from .fixtures.subchannels_offline import *
-from .fixtures.wallet import *
+	# stage 1 fixtures
+    # TODO separate the actually global ones?
+    "tests.fixtures.static_records",
+    "tests.fixtures.admin",
+    "tests.fixtures.funder",
+    "tests.fixtures.subchannels_offline",
+    "tests.fixtures.wallet",
+
+    # stage 2 fixtures
+    "tests.s2_minimal_network.fixtures.admin_minimal",
+    "tests.s2_minimal_network.fixtures.assets",
+    "tests.s2_minimal_network.fixtures.election",
+    "tests.s2_minimal_network.fixtures.network",
+    "tests.s2_minimal_network.fixtures.script",
+    "tests.s2_minimal_network.fixtures.subchannels_online",
+
+    # TODO stage 3 fixtures
+
+]

@@ -63,9 +63,10 @@ build-backend = "hatchling.build"
 
 [tool.pytest.ini_options]
 
-pythonpath = ["tests"]
+# Not sure this does anything, but nice to be explicit.
+pythonpath = ["."]
 
-# Without this, import errors in all the nested conftest.py files...
+# Without this, import errors in all the nested conftest.py files.
 addopts = "--import-mode=importlib"
 
 # Run tests in a particular non-alphabetical order.

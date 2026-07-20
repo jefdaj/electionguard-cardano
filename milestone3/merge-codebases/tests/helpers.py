@@ -14,6 +14,7 @@ LOG = logging.getLogger(__name__)
 # scoped.
 global_fixture       = pytest.fixture(scope='session')
 per_election_fixture = pytest.fixture(scope='module')
+per_network_fixture  = pytest.fixture(scope='package')
 
 
 # TODO where should this live?

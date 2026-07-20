@@ -2,7 +2,7 @@ import pytest
 from datetime import datetime
 from pycardano import *
 from egc import *
-from helpers import per_election_fixture
+from tests.helpers import per_election_fixture
 import logging
 import time
 

@@ -2,8 +2,6 @@ import pytest
 from egc import *
 import logging
 
-from .fixtures.network import *
-
 LOG = logging.getLogger(__name__)
 
 def test_roundtrip_deployment(dummy_deployment: ElectionDeployment):

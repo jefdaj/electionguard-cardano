@@ -2,9 +2,6 @@ import json
 import pytest
 from egc import *
 
-# TODO why is this needed?
-from fixtures.data import *
-
 import logging
 from pathlib import Path
 from typing import Tuple
@@ -34,25 +31,16 @@ def test_load_static_transactions(
             for rec in recs:
                 assert isinstance(rec, PublicRecord)
 
-# TODO why not just make the pairs a fixture?
-def test_load_static_record_pairs(
-        static_records_list: list[PublicRecord],
-    ):
-
-    pairs = load_static_record_pairs(static_records_list)
-
+def test_load_static_record_pairs(static_records_list, static_record_pairs):
     assert len(static_records_list) == 78
-    assert len(pairs) == 78
-
+    assert len(static_record_pairs) == 78
     cid_strs = set()
-
-    for (rec, (obj, mdata)) in zip(static_records_list, pairs):
+    for (rec, (obj, mdata)) in zip(static_records_list, static_record_pairs):
         cid_str = ipfs_cid_to_string(rec.ipfs_cid)
         cid_strs.add(cid_str)
         assert isinstance(rec, PublicRecord)
         assert isinstance(obj, dict)
         assert isinstance(mdata, PublicRecordMetadata)
-
     # There are 78 records, but the 5 verifications all have the same
     # CID because they agree exactly.
     assert len(cid_strs) == 74

@@ -1,9 +1,6 @@
 import pytest
 from egc import *
 
-# TODO why is this needed?
-from .fixtures.network import *
-
 def test_ipfs_stable(ipfs):
     status = ipfs_status_sync()
     assert status['n_peers'] >= 3

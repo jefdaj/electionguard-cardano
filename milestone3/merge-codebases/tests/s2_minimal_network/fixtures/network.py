@@ -2,13 +2,14 @@ import pytest
 import subprocess
 import time
 from pathlib import Path
+from tests.helpers import per_network_fixture
 from egc import *
 
 # TODO alias for package scope to match the others
 
 # TODO what should this yield, if anything?
 # TODO how to force arion down on pytest exceptions, keyboardinturrupt etc?
-@pytest.fixture(scope='package')
+@per_network_fixture
 def arion_network(request):
     compose_dir = Path(request.fspath).parent # dir of the calling conftest
     subprocess.run(["arion", "up", "-d"], cwd=compose_dir, check=True)
@@ -18,7 +19,7 @@ def arion_network(request):
     finally:
         subprocess.run(["arion", "down"], cwd=compose_dir, check=True)
 
-@pytest.fixture(scope='package')
+@per_network_fixture
 def ogmios(arion_network) -> OgmiosV6ChainContext:
     ctx = OGMIOS_CTX
     deadline = time.monotonic() + OGMIOS_TIMEOUT_SEC
@@ -39,7 +40,7 @@ def ogmios(arion_network) -> OgmiosV6ChainContext:
         time.sleep(OGMIOS_POLL_SEC)
 
 # TODO what should this return, if anything?
-@pytest.fixture(scope='package')
+@per_network_fixture
 def ipfs(arion_network):
     ipfs_wait_until_stable_sync()
     return
