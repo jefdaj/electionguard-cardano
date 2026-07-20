@@ -213,16 +213,16 @@ def post_tx(
 ## ----------- Round 1 -----------
 
 @per_election_fixture
-def guardian1_s1(guardian1_s0, static_transactions, static_files_dir) -> ChannelState:
-    return post_state(static_transactions, static_files_dir, guardian1_s0, 'guardian', 1, 1)
+def guardian1_s1(guardian1_s0, static_transactions) -> ChannelState:
+    return post_state(static_transactions, guardian1_s0, 'guardian', 1, 1)
 
 @per_election_fixture
-def guardian2_s1(guardian2_s0, static_transactions, static_files_dir) -> ChannelState:
-    return post_state(static_transactions, static_files_dir, guardian2_s0, 'guardian', 2, 1)
+def guardian2_s1(guardian2_s0, static_transactions) -> ChannelState:
+    return post_state(static_transactions, guardian2_s0, 'guardian', 2, 1)
 
 @per_election_fixture
-def guardian3_s1(guardian3_s0, static_transactions, static_files_dir) -> ChannelState:
-    return post_state(static_transactions, static_files_dir, guardian3_s0, 'guardian', 3, 1)
+def guardian3_s1(guardian3_s0, static_transactions) -> ChannelState:
+    return post_state(static_transactions, guardian3_s0, 'guardian', 3, 1)
 
 @per_election_fixture
 def guardian1_tx1(admin_tx2, guardian1, static_transactions, static_files_dir):
@@ -266,16 +266,16 @@ def test_phase2_ceremony_round1(
 ## ----------- Round 2 -----------
 
 @per_election_fixture
-def guardian1_s2(guardian1_s0, static_transactions, static_files_dir) -> ChannelState:
-    return post_state(static_transactions, static_files_dir, guardian1_s0, 'guardian', 1, 2)
+def guardian1_s2(guardian1_s0, static_transactions) -> ChannelState:
+    return post_state(static_transactions, guardian1_s0, 'guardian', 1, 2)
 
 @per_election_fixture
-def guardian2_s2(guardian2_s0, static_transactions, static_files_dir) -> ChannelState:
-    return post_state(static_transactions, static_files_dir, guardian2_s0, 'guardian', 2, 2)
+def guardian2_s2(guardian2_s0, static_transactions) -> ChannelState:
+    return post_state(static_transactions, guardian2_s0, 'guardian', 2, 2)
 
 @per_election_fixture
-def guardian3_s2(guardian3_s0, static_transactions, static_files_dir) -> ChannelState:
-    return post_state(static_transactions, static_files_dir, guardian3_s0, 'guardian', 3, 2)
+def guardian3_s2(guardian3_s0, static_transactions) -> ChannelState:
+    return post_state(static_transactions, guardian3_s0, 'guardian', 3, 2)
 
 @per_election_fixture
 def guardian1_tx2(guardian1_tx1, guardian1, static_transactions, static_files_dir):
@@ -319,16 +319,16 @@ def test_phase2_ceremony_round2(
 ## ----------- Round 3 -----------
 
 @per_election_fixture
-def guardian1_s3(guardian1_s0, static_transactions, static_files_dir) -> ChannelState:
-    return post_state(static_transactions, static_files_dir, guardian1_s0, 'guardian', 1, 3)
+def guardian1_s3(guardian1_s0, static_transactions) -> ChannelState:
+    return post_state(static_transactions, guardian1_s0, 'guardian', 1, 3)
 
 @per_election_fixture
-def guardian2_s3(guardian2_s0, static_transactions, static_files_dir) -> ChannelState:
-    return post_state(static_transactions, static_files_dir, guardian2_s0, 'guardian', 2, 3)
+def guardian2_s3(guardian2_s0, static_transactions) -> ChannelState:
+    return post_state(static_transactions, guardian2_s0, 'guardian', 2, 3)
 
 @per_election_fixture
-def guardian3_s3(guardian3_s0, static_transactions, static_files_dir) -> ChannelState:
-    return post_state(static_transactions, static_files_dir, guardian3_s0, 'guardian', 3, 3)
+def guardian3_s3(guardian3_s0, static_transactions) -> ChannelState:
+    return post_state(static_transactions, guardian3_s0, 'guardian', 3, 3)
 
 @per_election_fixture
 def guardian1_tx3(guardian1_tx2, guardian1, static_transactions, static_files_dir):
@@ -352,8 +352,8 @@ def test_guardian3_tx3(guardian3, guardian3_s3, guardian3_tx3):
     assert_tx(guardian3, guardian3_s3, guardian3_tx3)
 
 @per_election_fixture
-def device1_s1(device1_s0, static_transactions, static_files_dir) -> ChannelState:
-    return post_state(static_transactions, static_files_dir, device1_s0, 'device', 1, 1)
+def device1_s1(device1_s0, static_transactions) -> ChannelState:
+    return post_state(static_transactions, device1_s0, 'device', 1, 1)
 
 @per_election_fixture
 def device1_tx1(admin_tx2, device1, static_transactions, static_files_dir):
@@ -424,12 +424,12 @@ def test_phase2_ceremony_round3(
 ## =================================
 
 @per_election_fixture
-def device1_s2(device1_s1, static_transactions, static_files_dir) -> ChannelState:
-    return post_state(static_transactions, static_files_dir, device1_s1, 'device', 1, 2)
+def device1_s2(device1_s1, static_transactions) -> ChannelState:
+    return post_state(static_transactions, device1_s1, 'device', 1, 2)
 
 @per_election_fixture
-def device1_s3(device1_s2, static_transactions, static_files_dir) -> ChannelState:
-    return post_state(static_transactions, static_files_dir, device1_s2, 'device', 1, 3)
+def device1_s3(device1_s2, static_transactions) -> ChannelState:
+    return post_state(static_transactions, device1_s2, 'device', 1, 3)
 
 @per_election_fixture
 def device1_tx2(device1_tx1, device1, static_transactions, static_files_dir):
@@ -533,16 +533,16 @@ def test_admin_tx5(admin, admin_s5, admin_tx5):
     assert_tx(admin, admin_s5, admin_tx5)
 
 @per_election_fixture
-def guardian1_s4(guardian1_s3, static_transactions, static_files_dir) -> ChannelState:
-    return post_state(static_transactions, static_files_dir, guardian1_s3, 'guardian', 1, 4)
+def guardian1_s4(guardian1_s3, static_transactions) -> ChannelState:
+    return post_state(static_transactions, guardian1_s3, 'guardian', 1, 4)
 
 @per_election_fixture
-def guardian2_s4(guardian2_s3, static_transactions, static_files_dir) -> ChannelState:
-    return post_state(static_transactions, static_files_dir, guardian2_s3, 'guardian', 2, 4)
+def guardian2_s4(guardian2_s3, static_transactions) -> ChannelState:
+    return post_state(static_transactions, guardian2_s3, 'guardian', 2, 4)
 
 @per_election_fixture
-def guardian3_s4(guardian3_s3, static_transactions, static_files_dir) -> ChannelState:
-    return post_state(static_transactions, static_files_dir, guardian3_s3, 'guardian', 3, 4)
+def guardian3_s4(guardian3_s3, static_transactions) -> ChannelState:
+    return post_state(static_transactions, guardian3_s3, 'guardian', 3, 4)
 
 @per_election_fixture
 def guardian1_tx4(guardian1_tx3, admin_tx5, guardian1, static_transactions, static_files_dir):
@@ -642,16 +642,16 @@ def test_phase5_decrypt(
 ## =================================
 
 @per_election_fixture
-def guardian1_s5(guardian1_s4, static_transactions, static_files_dir):
-    return post_state(static_transactions, static_files_dir, guardian1_s4, 'guardian', 1, 5)
+def guardian1_s5(guardian1_s4, static_transactions):
+    return post_state(static_transactions, guardian1_s4, 'guardian', 1, 5)
 
 @per_election_fixture
-def guardian2_s5(guardian2_s4, static_transactions, static_files_dir):
-    return post_state(static_transactions, static_files_dir, guardian2_s4, 'guardian', 2, 5)
+def guardian2_s5(guardian2_s4, static_transactions):
+    return post_state(static_transactions, guardian2_s4, 'guardian', 2, 5)
 
 @per_election_fixture
-def guardian3_s5(guardian3_s4, static_transactions, static_files_dir):
-    return post_state(static_transactions, static_files_dir, guardian3_s4, 'guardian', 3, 5)
+def guardian3_s5(guardian3_s4, static_transactions):
+    return post_state(static_transactions, guardian3_s4, 'guardian', 3, 5)
 
 @per_election_fixture
 def guardian1_tx5(guardian1_tx4, guardian1, static_transactions, static_files_dir):
@@ -677,8 +677,8 @@ def test_guardian3_tx5(guardian3, guardian3_s4, guardian3_tx5):
 # TODO should devices also post verifications?
 
 @per_election_fixture
-def verifier1_s1(verifier1_s0, static_transactions, static_files_dir):
-    return post_state(static_transactions, static_files_dir, verifier1_s0, 'verifier', 1, 1)
+def verifier1_s1(verifier1_s0, static_transactions):
+    return post_state(static_transactions, verifier1_s0, 'verifier', 1, 1)
 
 @per_election_fixture
 def verifier1_tx1(verifier1, static_transactions, static_files_dir):
