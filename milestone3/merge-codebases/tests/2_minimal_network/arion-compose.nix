@@ -43,6 +43,8 @@ let
       NETWORK = cardanoNetwork;
       OGMIOS_PORT = 1337;
     };
+    stop_signal = "SIGINT";
+    stop_grace_period = "60s";
   };
 
   ipfsService = {
