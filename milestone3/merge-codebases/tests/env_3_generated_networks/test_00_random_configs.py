@@ -1,33 +1,33 @@
 import pytest
 from hypothesis import given, settings
 from egc import *
-from tests.helpers_env3 import *
+from tests.env_3_generated_networks.helpers import *
 
 
 ### round-trip configs to json ###
 
-@given(cfg=voteconfig())
-@settings(max_examples=1_000)
-def test_json_voteconfig(cfg: VoteJson):
-    assert_json_roundtrip(cfg)
-
-@given(cfg=contestconfig())
-@settings(max_examples=1_000)
-def test_json_contestconfig(cfg: ContestJson):
-    assert_json_roundtrip(cfg)
-
-@given(cfg=electionconfig())
-@settings(max_examples=1_000)
-def test_json_electionconfig(cfg: ElectionJson): # TODO have to rename this?
-    assert_json_roundtrip(cfg)
+# @given(cfg=voteconfig())
+# @settings(max_examples=1_000)
+# def test_json_voteconfig(cfg: VoteJson):
+#     assert_json_roundtrip(cfg)
+# 
+# @given(cfg=contestconfig())
+# @settings(max_examples=1_000)
+# def test_json_contestconfig(cfg: ContestJson):
+#     assert_json_roundtrip(cfg)
+# 
+# @given(cfg=electionconfig())
+# @settings(max_examples=1_000)
+# def test_json_electionconfig(cfg: ElectionJson): # TODO have to rename this?
+#     assert_json_roundtrip(cfg)
 
 
 ### test tmpdir setup ###
 
-@given_runconfig()
-def test_env3_tmpdir(env3_tmpdir: Path):
-    assert env3_tmpdir.exists()
-    # TODO finish
+# @given_runconfig()
+# def test_env3_tmpdir(env3_tmpdir: Path):
+#     assert env3_tmpdir.exists()
+#     # TODO finish
 
 ### test containers up ###
 

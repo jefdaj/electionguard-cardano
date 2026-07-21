@@ -1,5 +1,5 @@
 import pytest
-from tests.helpers_env3 import get_random_seed
+from tests.env_3_generated_networks.helpers import *
 
 @pytest.fixture(scope='session')
 def random_seed():
