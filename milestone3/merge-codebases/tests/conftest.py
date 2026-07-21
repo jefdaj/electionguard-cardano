@@ -25,23 +25,23 @@ pytest_plugins = [
 
     # stage 1 fixtures
     # TODO separate the actually global ones?
-    "tests.env_1_no_containers.fixtures.admin",
-    "tests.env_1_no_containers.fixtures.funder",
-    "tests.env_1_no_containers.fixtures.subchannels",
-    "tests.env_1_no_containers.fixtures.wallet",
+    "tests.env1_no_containers.fixtures.admin",
+    "tests.env1_no_containers.fixtures.funder",
+    "tests.env1_no_containers.fixtures.subchannels",
+    "tests.env1_no_containers.fixtures.wallet",
 
     # stage 2 fixtures
-    "tests.env_2_minimal_network.fixtures.admin",
-    "tests.env_2_minimal_network.fixtures.assets",
-    "tests.env_2_minimal_network.fixtures.election",
-    "tests.env_2_minimal_network.fixtures.network",
-    "tests.env_2_minimal_network.fixtures.script",
-    "tests.env_2_minimal_network.fixtures.static_records",
-    "tests.env_2_minimal_network.fixtures.subchannels",
+    "tests.env2_minimal_network.fixtures.admin",
+    "tests.env2_minimal_network.fixtures.assets",
+    "tests.env2_minimal_network.fixtures.election",
+    "tests.env2_minimal_network.fixtures.network",
+    "tests.env2_minimal_network.fixtures.script",
+    "tests.env2_minimal_network.fixtures.static_records",
+    "tests.env2_minimal_network.fixtures.subchannels",
 
     # stage 3 fixtures
-    "tests.env_3_generated_networks.fixtures.env3_network",
-    "tests.env_3_generated_networks.fixtures.env3_seed",
-    "tests.env_3_generated_networks.fixtures.env3_tmpdir",
+    "tests.env3_generated_networks.fixtures.env3_network",
+    "tests.env3_generated_networks.fixtures.env3_seed",
+    "tests.env3_generated_networks.fixtures.env3_tmpdir",
 
 ]

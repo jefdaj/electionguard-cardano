@@ -3,7 +3,7 @@ import os
 import subprocess
 import time
 from pathlib import Path
-from tests.env_3_generated_networks.helpers import *
+from tests.env3_generated_networks.helpers import *
 from egc import *
 
 

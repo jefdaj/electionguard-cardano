@@ -1,6 +1,6 @@
 from hypothesis import given, settings
 from hypothesis.strategies import composite
-from tests.env_3_generated_networks.helpers import *
+from tests.env3_generated_networks.helpers import *
 
 # Honest/clean election (no attacks)
 @composite

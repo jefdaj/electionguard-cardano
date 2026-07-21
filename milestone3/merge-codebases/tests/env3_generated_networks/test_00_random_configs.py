@@ -1,7 +1,7 @@
 import pytest
 from hypothesis import given, settings
 from egc import *
-from tests.env_3_generated_networks.helpers import *
+from tests.env3_generated_networks.helpers import *
 
 
 ### round-trip configs to json ###
