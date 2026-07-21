@@ -1,7 +1,7 @@
 {
   "arion": {
-    "project_name": "election",
-    "data_dir": "./data",
+    "project_name": "example",
+    "data_dir": "./data/example",
     "scripts_dir": "./egc_scripts",
     "egc_image": "electionguard-cardano:0.3.0"
   },

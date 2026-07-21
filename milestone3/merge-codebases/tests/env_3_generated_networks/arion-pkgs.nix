@@ -1,5 +1,5 @@
 let
-  flake = builtins.getFlake (toString ./.);
+  flake = builtins.getFlake (toString ../..);
   inherit (flake) pkgs;
 
 in pkgs // {

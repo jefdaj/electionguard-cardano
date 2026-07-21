@@ -5,10 +5,10 @@ let
 
   # Main per-election config.
   # Can be written manually or generated via pytest.
-  electionConfig = builtins.fromJSON (builtins.readFile (builtins.getEnv "ELECTION_JSON"));
+  electionConfig = builtins.fromJSON (builtins.readFile (builtins.getEnv "EGC_ELECTION_JSON"));
 
   # Shared cardano node data (~15G) for all the dev codebases
-  cardanoDir = "../../milestone2/cardano-node-ogmios";
+  cardanoDir = "../../../../milestone2/cardano-node-ogmios";
   cardanoConfigDir = "${cardanoDir}/config";
   cardanoDataDir   = "${cardanoDir}/data";
   cardanoNetwork   = "preview";
@@ -128,8 +128,8 @@ let
     service.restart = "always"; # TODO does this fix intermittent panics?
     service.volumes = [
       "${data_dir}/${nodeName role i}/ipfs:/data/ipfs"
-      "${./ipfs-init.sh}:/container-init.d/001-config.sh:ro"
-      "${./ipfs-caps.json}:/data/ipfs/libp2p-resource-limit-overrides.json:ro"
+      "${../../ipfs-init.sh}:/container-init.d/001-config.sh:ro"
+      "${../../ipfs-caps.json}:/data/ipfs/libp2p-resource-limit-overrides.json:ro"
     ];
     service.networks = [
       (ipfsNetworkName role i)
