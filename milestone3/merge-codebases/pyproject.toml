@@ -26,6 +26,7 @@ dependencies = [
     "cloup>=3.1.0",
     "electionguard==1.4.0",
     "pynacl>=1.6.2",
+    "hypothesis>=6.158.0",
 ]
 
 [tool.uv.sources]

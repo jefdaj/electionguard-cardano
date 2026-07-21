@@ -1,23 +1,24 @@
 import pytest
+from hypothesis import given, settings
 from egc import *
-from helpers_env3 import assert_json_roundtrip
+from tests.helpers_env3 import *
 
 
 ### round-trip configs to json ###
 
 @given(cfg=voteconfig())
 @settings(max_examples=1_000)
-def test_json_voteconfig(cfg: VoteConfig):
+def test_json_voteconfig(cfg: VoteJson):
     assert_json_roundtrip(cfg)
 
 @given(cfg=contestconfig())
 @settings(max_examples=1_000)
-def test_json_contestconfig(cfg: ContestConfig):
+def test_json_contestconfig(cfg: ContestJson):
     assert_json_roundtrip(cfg)
 
 @given(cfg=electionconfig())
 @settings(max_examples=1_000)
-def test_json_electionconfig(cfg: ElectionConfig): # TODO have to rename this?
+def test_json_electionconfig(cfg: ElectionJson): # TODO have to rename this?
     assert_json_roundtrip(cfg)
 
 
