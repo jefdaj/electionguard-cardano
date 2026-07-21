@@ -4,32 +4,28 @@
 # TODO factor out honest + attack election test_ files.
 # TODO start with those commented ^ and only focus on testing the network up + down harness
 
-import json
-import os
-
-from hypothesis import given, settings, assume
-from hypothesis.strategies import integers, composite, lists, sampled_from
-from hypothesis import note
-from typing import Callable, Dict, List
+from hypothesis import assume
+from hypothesis.strategies import integers, composite
 
 
 ### config classes ###
 
-class BindMountsConfig(dict):
+class BindMountsJson(dict):
     def __init__(self):
         super(BindMountsConfig, self).__init__()
         self["scripts"] = "/scripts"
-        self["mockchain"] = "/data/mockchain"
+        # self["mockchain"] = "/data/mockchain"
         self["private"] = "/data/private"
+        # TODO qrcodes
 
-class ArionConfig(dict):
+class ArionJson(dict):
     def __init__(self):
         super(ArionConfig, self).__init__()
-        self['project_name'] = 'test'
-        self['data_dir'] = 'data'
-        self['bind_mounts'] = BindMountsConfig()
+        self['project_name'] = 'test' # TODO change?
+        self['data_dir'] = 'data' # TODO change?
+        self['bind_mounts'] = BindMountsJson()
 
-class VoteConfig(dict):
+class VoteJson(dict):
     def __init__(self, n_cast: int, n_spoil: int):
         super(VoteConfig, self).__init__()
         assert n_cast  >= 0
@@ -37,7 +33,7 @@ class VoteConfig(dict):
         self['cast' ] = n_cast
         self['spoil'] = n_spoil
 
-class ContestConfig(dict):
+class ContestJson(dict):
     "One contest in the list under `votes`"
     # TODO less confusing names
     def __init__(self, question: str, answers: Dict[str, VoteConfig]):
@@ -45,7 +41,7 @@ class ContestConfig(dict):
         self['question'] = question
         self['answers' ] = answers
 
-class GuardiansConfig(dict):
+class GuardiansJson(dict):
     def __init__(self, count: int = 3, quorum: int = 2):
         super(GuardiansConfig, self).__init__()
         assert quorum > 0 # TODO require at least 2 for realistic use?
@@ -53,18 +49,18 @@ class GuardiansConfig(dict):
         self['count' ] = count
         self['quorum'] = quorum
 
-class DevicesConfig(dict):
+class DevicesJson(dict):
     def __init__(self, count: int = 4):
         super(DevicesConfig, self).__init__()
         assert count >= 1
         self['count'] = count
 
-class VerifiersConfig(dict):
+class VerifiersJson(dict):
     def __init__(self, count: int = 2):
         super(VerifiersConfig, self).__init__()
         self['count'] = count
 
-class ElectionConfig(dict):
+class ElectionJson(dict):
     def __init__(self,
         guardians_count  : int = 3,
         guardians_quorum : int = 2,
@@ -72,11 +68,11 @@ class ElectionConfig(dict):
         verifiers_count  : int = 2,
     ):
         super(ElectionConfig, self).__init__()
-        self['guardians'] = GuardiansConfig(guardians_count, guardians_quorum)
-        self['devices'  ] = DevicesConfig(devices_count)
-        self['verifiers'] = VerifiersConfig(verifiers_count)
+        self['guardians'] = GuardiansJson(guardians_count, guardians_quorum)
+        self['devices'  ] = DevicesJson(devices_count)
+        self['verifiers'] = VerifiersJson(verifiers_count)
 
-class RunConfig(dict):
+class RunJson(dict):
     def __init__(self, arion_cfg, election_cfg, votes_cfg, attack_cfg):
         super(RunConfig, self).__init__()
         self['arion'   ] = arion_cfg
@@ -88,19 +84,19 @@ class RunConfig(dict):
 ### arbitrary config generators ###
 
 def arionconfig():
-    cfg = ArionConfig()
+    cfg = ArionJson()
     return cfg
 
 @composite
 def voteconfig(draw):
     n_cast  = draw(integers(min_value=0, max_value=20))
     n_spoil = draw(integers(min_value=0, max_value=20))
-    return VoteConfig(n_cast, n_spoil)
+    return VoteJson(n_cast, n_spoil)
 
 # TODO why is this defined twice? that can't be the best way...
 @composite
 def contestconfig(draw):
-    return ContestConfig(
+    return ContestJson(
         question = 'Should pineapple be banned on pizza?',
         answers = {
             'Yes'    : draw(voteconfig()),
@@ -170,5 +166,5 @@ def electionconfig(draw):
     #     print(f'reject n_containers = {n_containers}')
     assume(n_containers < 50) # TODO tune this
 
-    cfg = ElectionConfig(**kwargs)
+    cfg = ElectionJson(**kwargs)
     return cfg

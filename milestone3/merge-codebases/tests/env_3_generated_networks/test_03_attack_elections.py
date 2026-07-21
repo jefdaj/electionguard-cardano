@@ -1,6 +1,17 @@
 # TODO import from runconfig.py
 # TODO and attacks.py?
 
+# @given(cfg=attackconfig())
+# @settings(max_examples=1_000)
+# def test_json_attackcfg(cfg: AttackConfig):
+#     assert_json_roundtrip(cfg)
+
+# @given(cfg=attackrun())
+# @settings(max_examples=1_000)
+# def test_json_attackrun(cfg: RunConfig):
+#     assert_json_roundtrip(cfg)
+
+
 # @composite
 # def attackconfig(draw, explicit_cfg=None):
 #     if explicit_cfg is not None:
