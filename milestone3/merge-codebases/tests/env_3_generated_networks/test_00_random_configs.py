@@ -24,6 +24,7 @@ def test_json_electionconfig(cfg: ElectionJson): # TODO have to rename this?
 
 ### test tmpdir setup ###
 
+@given_runconfig()
 def test_env3_tmpdir(env3_tmpdir: Path):
     assert env3_tmpdir.exists()
     # TODO finish

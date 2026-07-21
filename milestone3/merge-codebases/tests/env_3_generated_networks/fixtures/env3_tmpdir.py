@@ -12,7 +12,7 @@ def hash_config(cfg: RunJson, truncate=99) -> (int, str):
 
 
 # TODO better name? testdir, tmpdir both taken(!) by built-in fixtures
-def env3_tmpdir(request, env3_config: RunJson) -> Path:
+def setup_env3_tmpdir(request, env3_runconfig: RunJson) -> Path:
 
     repo_dir = Path(request.fspath).parents[3]
     test_dir = repo_dir / 'data' # / 'tests'

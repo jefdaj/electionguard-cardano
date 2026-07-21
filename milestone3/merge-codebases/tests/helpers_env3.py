@@ -39,7 +39,8 @@ def yad(decorators):
 # TODO is this a partial solution to https://github.com/HypothesisWorks/hypothesis/issues/114
 # TODO top level CLI arg for max_examples here?
 # TODO if no args needed, remove this def lambda
-def given_election(max_examples: int, attack_cfg_fn=lambda: {}):
+# def given_election(max_examples: int, attack_cfg_fn=lambda: {}):
+def given_env3_tmpdir(max_examples: int, attack_cfg_fn=lambda: {}):
     return yad([
         seed(get_random_seed()),
         settings(
@@ -50,6 +51,7 @@ def given_election(max_examples: int, attack_cfg_fn=lambda: {}):
         ),
         given(cfg=attack_cfg_fn()),
         # prerun_test_election,
+        setup_env3_tmpdir,
     ])
 
 def assert_json_roundtrip(cfg):
