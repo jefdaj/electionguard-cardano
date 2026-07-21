@@ -792,7 +792,6 @@ def yad(decorators):
 
 # Convert a test that takes a cfg to one which takes a pre-run election testdir
 # generated from that cfg.
-# TODO will this pass args and kwargs properly when chained via yad?
 def prerun_test_election(fn_from_testdir):
     def fn_from_cfg(cfg: RunConfig, *args, **kwargs):
         testdir: ElectionTestDir = run_test_election(cfg)
