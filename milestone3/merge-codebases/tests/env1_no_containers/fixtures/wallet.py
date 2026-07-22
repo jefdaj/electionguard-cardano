@@ -1,6 +1,6 @@
 import pytest
 from egc import *
-from tests.helpers import per_election_fixture
+# from ..lib import per_election_fixture
 from pathlib import Path
 import os
 import tempfile
@@ -9,7 +9,8 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-@per_election_fixture
+# @per_election_fixture
+@pytest.fixture(scope='module')
 def keys_dir() -> Path:
 
     # TODO document this

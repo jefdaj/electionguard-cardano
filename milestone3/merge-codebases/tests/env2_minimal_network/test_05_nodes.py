@@ -1,6 +1,6 @@
 import pytest
 from egc import *
-from tests.helpers import assert_nodes_converge
+from ..lib import assert_nodes_converge
 import logging
 
 LOG = logging.getLogger(__name__)

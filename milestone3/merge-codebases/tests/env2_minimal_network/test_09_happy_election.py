@@ -2,7 +2,7 @@ import pytest
 from dataclasses import replace
 from pycardano import *
 from egc import *
-from tests.helpers import *
+from ..lib import *
 # from data.static_records import *
 import logging
 import time
@@ -23,7 +23,7 @@ LOG = logging.getLogger(__name__)
 ## 0. ConfigAnnouncePhase
 ## =================================
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def admin_s0(admin_vkh: VerificationKeyHash) -> ChannelState:
     return AdminChannel(state=AdminChannelState(
         admin       = admin_vkh.payload,
@@ -33,7 +33,7 @@ def admin_s0(admin_vkh: VerificationKeyHash) -> ChannelState:
         seq         = 0,
     ))
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def admin_tx0(init_tx: Transaction) -> Transaction:
     # admin_tx0 is just the init_tx.
     # It's published by the funder and creates the admin STT.
@@ -58,7 +58,7 @@ def test_phase0_announce(
 ## 1. ConfigOnboardingPhase
 ## =================================
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def admin_s1(
         admin_s0: ChannelState,
         static_transactions,
@@ -72,7 +72,7 @@ def admin_s1(
         seq         = 1,
     ))
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def admin_tx1(
         admin: AdminNode,
         admin_tx0: Transaction,
@@ -94,14 +94,14 @@ def test_admin_tx1(admin, admin_s1, admin_tx1):
 # TODO remove? not sure if we always want to depend on them individually
 # From here on all 7 nodes can be started and should stay in sync.
 # We'll confirm that at the end of each phase.
-@per_election_fixture
+@pytest.fixture(scope='module')
 def all_nodes(
         admin: AdminNode,
         subchannel_nodes: list[ElectionNode],
     ) -> list[ElectionNode]:
     return [admin] + subchannel_nodes
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def onboarding_info(
         subchannel_nodes: list[ElectionNode],
     ) -> dict[ChannelId, VerificationKeyHash]:
@@ -111,7 +111,7 @@ def onboarding_info(
     }
     return info
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def admin_s2(
         admin_s1: ChannelState,
         subchannel_ids,
@@ -126,7 +126,7 @@ def admin_s2(
         seq         = 2,
     ))
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def admin_tx2(
         admin_tx1: Transaction,
         admin: AdminNode,
@@ -212,27 +212,27 @@ def post_tx(
 
 ## ----------- Round 1 -----------
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian1_s1(guardian1_s0, static_transactions) -> ChannelState:
     return post_state(static_transactions, guardian1_s0, 'guardian', 1, 1)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian2_s1(guardian2_s0, static_transactions) -> ChannelState:
     return post_state(static_transactions, guardian2_s0, 'guardian', 2, 1)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian3_s1(guardian3_s0, static_transactions) -> ChannelState:
     return post_state(static_transactions, guardian3_s0, 'guardian', 3, 1)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian1_tx1(admin_tx2, guardian1, static_transactions, static_files_dir):
     return post_tx(static_transactions, static_files_dir, guardian1, 1)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian2_tx1(admin_tx2, guardian2, static_transactions, static_files_dir):
     return post_tx(static_transactions, static_files_dir, guardian2, 1)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian3_tx1(admin_tx2, guardian3, static_transactions, static_files_dir):
     return post_tx(static_transactions, static_files_dir, guardian3, 1)
 
@@ -265,27 +265,27 @@ def test_phase2_ceremony_round1(
 
 ## ----------- Round 2 -----------
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian1_s2(guardian1_s0, static_transactions) -> ChannelState:
     return post_state(static_transactions, guardian1_s0, 'guardian', 1, 2)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian2_s2(guardian2_s0, static_transactions) -> ChannelState:
     return post_state(static_transactions, guardian2_s0, 'guardian', 2, 2)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian3_s2(guardian3_s0, static_transactions) -> ChannelState:
     return post_state(static_transactions, guardian3_s0, 'guardian', 3, 2)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian1_tx2(guardian1_tx1, guardian1, static_transactions, static_files_dir):
     return post_tx(static_transactions, static_files_dir, guardian1, 2)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian2_tx2(guardian2_tx1, guardian2, static_transactions, static_files_dir):
     return post_tx(static_transactions, static_files_dir, guardian2, 2)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian3_tx2(guardian3_tx1, guardian3, static_transactions, static_files_dir):
     return post_tx(static_transactions, static_files_dir, guardian3, 2)
 
@@ -318,27 +318,27 @@ def test_phase2_ceremony_round2(
 
 ## ----------- Round 3 -----------
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian1_s3(guardian1_s0, static_transactions) -> ChannelState:
     return post_state(static_transactions, guardian1_s0, 'guardian', 1, 3)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian2_s3(guardian2_s0, static_transactions) -> ChannelState:
     return post_state(static_transactions, guardian2_s0, 'guardian', 2, 3)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian3_s3(guardian3_s0, static_transactions) -> ChannelState:
     return post_state(static_transactions, guardian3_s0, 'guardian', 3, 3)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian1_tx3(guardian1_tx2, guardian1, static_transactions, static_files_dir):
     return post_tx(static_transactions, static_files_dir, guardian1, 3)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian2_tx3(guardian2_tx2, guardian2, static_transactions, static_files_dir):
     return post_tx(static_transactions, static_files_dir, guardian2, 3)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian3_tx3(guardian3_tx2, guardian3, static_transactions, static_files_dir):
     return post_tx(static_transactions, static_files_dir, guardian3, 3)
 
@@ -351,18 +351,18 @@ def test_guardian2_tx3(guardian2, guardian2_s3, guardian2_tx3):
 def test_guardian3_tx3(guardian3, guardian3_s3, guardian3_tx3):
     assert_tx(guardian3, guardian3_s3, guardian3_tx3)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def device1_s1(device1_s0, static_transactions) -> ChannelState:
     return post_state(static_transactions, device1_s0, 'device', 1, 1)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def device1_tx1(admin_tx2, device1, static_transactions, static_files_dir):
     return post_tx(static_transactions, static_files_dir, device1, 1)
 
 def test_device1_tx1(device1, device1_s1, device1_tx1):
     assert_tx(device1, device1_s1, device1_tx1)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def admin_s3(
         admin_s2: ChannelState,
         static_transactions,
@@ -380,7 +380,7 @@ def admin_s3(
 # voting config and advance to voting phase. Voting devices should probably
 # also be announced by this point, although not technically required.
 # TODO should there be a separate little phase for this step?
-@per_election_fixture
+@pytest.fixture(scope='module')
 def admin_tx3(
         admin: AdminNode,
         admin_tx2: Transaction,
@@ -423,19 +423,19 @@ def test_phase2_ceremony_round3(
 ## 3. ElectionVotingPhase
 ## =================================
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def device1_s2(device1_s1, static_transactions) -> ChannelState:
     return post_state(static_transactions, device1_s1, 'device', 1, 2)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def device1_s3(device1_s2, static_transactions) -> ChannelState:
     return post_state(static_transactions, device1_s2, 'device', 1, 3)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def device1_tx2(device1_tx1, device1, static_transactions, static_files_dir):
     return post_tx(static_transactions, static_files_dir, device1, 2)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def device1_tx3(device1_tx2, device1, static_transactions, static_files_dir):
     return post_tx(static_transactions, static_files_dir, device1, 3)
 
@@ -450,7 +450,7 @@ def test_device1_tx3(device1, device1_s3, device1_tx3):
 # devices post any last votes and their STTs are burned (channels removed). So
 # for now I'll keep it as an advance-only step.
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def admin_s4(
         admin_s3: ChannelState,
         static_phases,
@@ -463,7 +463,6 @@ def admin_s4(
         seq         = 4,
     ))
 
-@per_election_fixture
 def admin_tx4(
         admin: AdminNode,
         admin_tx3: Transaction,
@@ -500,7 +499,7 @@ def test_phase3_voting(
 ## 4. ResultsTallyPhase
 ## =================================
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def admin_s5(
         admin_s4: ChannelState,
         static_transactions,
@@ -514,7 +513,7 @@ def admin_s5(
         seq         = 5,
     ))
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def admin_tx5(
         admin: AdminNode,
         admin_tx4: Transaction,
@@ -532,27 +531,27 @@ def admin_tx5(
 def test_admin_tx5(admin, admin_s5, admin_tx5):
     assert_tx(admin, admin_s5, admin_tx5)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian1_s4(guardian1_s3, static_transactions) -> ChannelState:
     return post_state(static_transactions, guardian1_s3, 'guardian', 1, 4)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian2_s4(guardian2_s3, static_transactions) -> ChannelState:
     return post_state(static_transactions, guardian2_s3, 'guardian', 2, 4)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian3_s4(guardian3_s3, static_transactions) -> ChannelState:
     return post_state(static_transactions, guardian3_s3, 'guardian', 3, 4)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian1_tx4(guardian1_tx3, admin_tx5, guardian1, static_transactions, static_files_dir):
     return post_tx(static_transactions, static_files_dir, guardian1, 4)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian2_tx4(guardian2_tx3, admin_tx5, guardian2, static_transactions, static_files_dir):
     return post_tx(static_transactions, static_files_dir, guardian2, 4)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian3_tx4(guardian3_tx3, admin_tx5, guardian3, static_transactions, static_files_dir):
     return post_tx(static_transactions, static_files_dir, guardian3, 4)
 
@@ -587,7 +586,7 @@ def test_phase4_tally(
 ## 5. ResultsDecryptPhase
 ## =================================
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def admin_s6(
         admin_s5: ChannelState,
         static_transactions,
@@ -601,7 +600,7 @@ def admin_s6(
         seq         = 6,
     ))
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def admin_tx6(
         admin: AdminNode,
         admin_tx5: Transaction,
@@ -641,27 +640,27 @@ def test_phase5_decrypt(
 ## 6. ElectionVerifyPhase
 ## =================================
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian1_s5(guardian1_s4, static_transactions):
     return post_state(static_transactions, guardian1_s4, 'guardian', 1, 5)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian2_s5(guardian2_s4, static_transactions):
     return post_state(static_transactions, guardian2_s4, 'guardian', 2, 5)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian3_s5(guardian3_s4, static_transactions):
     return post_state(static_transactions, guardian3_s4, 'guardian', 3, 5)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian1_tx5(guardian1_tx4, guardian1, static_transactions, static_files_dir):
     return post_tx(static_transactions, static_files_dir, guardian1, 5)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian2_tx5(guardian2_tx4, guardian2, static_transactions, static_files_dir):
     return post_tx(static_transactions, static_files_dir, guardian2, 5)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian3_tx5(guardian3_tx4, guardian3, static_transactions, static_files_dir):
     return post_tx(static_transactions, static_files_dir, guardian3, 5)
 
@@ -676,18 +675,18 @@ def test_guardian3_tx5(guardian3, guardian3_s4, guardian3_tx5):
 
 # TODO should devices also post verifications?
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def verifier1_s1(verifier1_s0, static_transactions):
     return post_state(static_transactions, verifier1_s0, 'verifier', 1, 1)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def verifier1_tx1(verifier1, static_transactions, static_files_dir):
     return post_tx(static_transactions, static_files_dir, verifier1, 1)
 
 def test_verifier1_tx1(verifier1, verifier1_s0, verifier1_tx1):
     assert_tx(verifier1, verifier1_s0, verifier1_tx1)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def admin_s7(
         admin_s6: ChannelState,
         static_transactions,
@@ -704,7 +703,7 @@ def admin_s7(
 # Admin post summary (verification) of election and advance to finalize phase.
 # TODO should this come before, after, or same time as others post theirs?
 # TODO extra commit reveal step for verifications?
-@per_election_fixture
+@pytest.fixture(scope='module')
 def admin_tx7(
         admin: AdminNode,
         admin_tx6: Transaction,
@@ -746,7 +745,7 @@ def test_phase6_verify(
 ##    - EndElection
 ## =================================
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def admin_s8(
         admin_s7: ChannelState,
         subchannel_ids,
@@ -760,7 +759,7 @@ def admin_s8(
         seq         = 8,
     ))
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def admin_tx8(
         admin: AdminNode,
         onboarding_info: dict[ChannelId, VerificationKeyHash],
@@ -778,7 +777,7 @@ def admin_tx8(
 def test_admin_tx8(admin, admin_s8, admin_tx8):
     assert_tx(admin, admin_s8, admin_tx8)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def admin_tx9(
         admin: AdminNode,
         admin_tx8: Transaction,

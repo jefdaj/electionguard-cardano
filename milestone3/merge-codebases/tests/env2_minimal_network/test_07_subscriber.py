@@ -1,5 +1,4 @@
 import pytest
-from tests.helpers import per_election_fixture
 from egc import *
 import logging
 import time
@@ -11,7 +10,7 @@ LOG = logging.getLogger(__name__)
 # testing a 3rd. Most of the more detailed tests do have to be interleaved with
 # their election steps in other test modules though.
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def subscriber(election_ctx: ElectionContext):
     sub = ElectionSubscriber(election_ctx)
     sub.start()

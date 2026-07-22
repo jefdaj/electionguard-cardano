@@ -5,7 +5,7 @@ from dataclasses import replace
 from pycardano import *
 from egc import *
 # from data.static_records import *
-from tests.helpers import *
+from ..lib import *
 import logging
 import time
 
@@ -14,7 +14,7 @@ LOG = logging.getLogger(__name__)
 
 ## ----------- setup for adding single subchannel -------------
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def s0(admin_vkh: VerificationKeyHash) -> ChannelState:
     return AdminChannel(state=AdminChannelState(
         admin       = admin_vkh.payload,
@@ -24,7 +24,7 @@ def s0(admin_vkh: VerificationKeyHash) -> ChannelState:
         seq         = 0,
     ))
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def tx0(init_tx: Transaction) -> Transaction:
     # tx0 is just the init_tx renamed for clarity.
     return init_tx
@@ -32,7 +32,7 @@ def tx0(init_tx: Transaction) -> Transaction:
 def test_tx0(admin, s0, tx0):
     assert_tx(admin, s0, tx0)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def s1(
         s0: ChannelState,
         static_transactions, static_files_dir,
@@ -49,7 +49,7 @@ def s1(
         seq         = 1,
     ))
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def tx1(
         tx0: Transaction,
         admin: AdminNode,
@@ -73,7 +73,7 @@ def test_tx1(admin, s1, tx1):
 
 ## -------- tx2: add single subchannel --------
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def onboarding_info(
         guardian1: GuardianNode,
     ) -> dict[ChannelId, VerificationKeyHash]:
@@ -82,7 +82,7 @@ def onboarding_info(
     }
     return info
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def s2(
         s1: ChannelState,
         onboarding_info: dict[ChannelId, VerificationKeyHash],
@@ -97,7 +97,7 @@ def s2(
         seq         = 2, # does matter now
     ))
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def tx2(
         tx1: Transaction,
         admin: AdminNode,
@@ -127,7 +127,7 @@ def test_add_subchannel(
 
 ## ----------- tx3: rm single subchannel -----------
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def s3(
         s2: ChannelState,
     ) -> ChannelState:
@@ -139,7 +139,7 @@ def s3(
         seq         = 3,
     ))
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def tx3(
         tx2: Transaction,
         admin: AdminNode,

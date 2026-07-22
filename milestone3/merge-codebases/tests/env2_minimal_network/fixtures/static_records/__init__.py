@@ -1,7 +1,6 @@
+import pytest
 import json
 from pathlib import Path
-
-from tests.helpers import global_fixture
 
 from .generated import STATIC_PHASES
 from .generated import STATIC_TRANSACTIONS
@@ -13,27 +12,27 @@ from egc import *
 
 STATIC_FILES_DIR = Path(__file__).absolute().parent / 'files'
 
-@global_fixture
+@pytest.fixture(scope='session')
 def static_files_dir():
     return STATIC_FILES_DIR
 
-@global_fixture
+@pytest.fixture(scope='session')
 def static_phases():
     return STATIC_PHASES
 
-@global_fixture
+@pytest.fixture(scope='session')
 def static_transactions():
     return STATIC_TRANSACTIONS
 
-@global_fixture
+@pytest.fixture(scope='session')
 def subchannel_ids(static_transactions) -> list[ChannelId]:
     return static_transactions['admin'][2][0].channels
 
-@global_fixture
+@pytest.fixture(scope='session')
 def subchannel_strs(subchannel_ids: list[ChannelId]) -> list[str]:
     return [channel_id_to_string(i) for i in subchannel_ids]
 
-@global_fixture
+@pytest.fixture(scope='session')
 def static_records_list(static_transactions) -> list[PublicRecord]:
     records = []
     for tx_dict in static_transactions.values():
