@@ -2,7 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field, asdict
 from typing import Mapping
 import hashlib, json
-from hypothesis.strategies import composite, integers
+from hypothesis.strategies import composite, integers, text
 
 
 ### hashed test config ###
@@ -36,7 +36,8 @@ class HashedContestConfig:
 def hashed_contest_config(draw) -> HashedContestConfig:
     n = draw(integers(1, 5))
     answers = tuple(
-        (draw(text(min_size=1, max_size=8)), draw(voteconfig()))
+        # TODO what do these look like?
+        (draw(text(min_size=1, max_size=8)), draw(hashed_vote_config()))
         for _ in range(n)
     )
     return HashedContestConfig(question=draw(text(min_size=1)), answers=answers)
@@ -93,9 +94,10 @@ class HashedArionConfig:
     # TODO add private_dir below
     # TODO add egc_scripts below
 
-# @composite
-def hashed_arion_config(draw):
-    cfg = ArionConfig()
+def hashed_arion_config():
+    cfg = HashedArionConfig(
+        egc_image = "electionguard-cardano:0.3.0",
+    )
     return cfg
 
 

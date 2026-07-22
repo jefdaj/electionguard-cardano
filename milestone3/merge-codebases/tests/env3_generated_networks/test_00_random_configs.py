@@ -10,18 +10,33 @@ from .lib.test_config import *
 
 @given(cfg=hashed_vote_config())
 @settings(max_examples=1_000)
-def test_json_voteconfig(cfg: HashedVoteConfig):
+def test_json_roundtrip_vote_config(cfg: HashedVoteConfig):
     assert_json_roundtrip(cfg)
 
-# @given(cfg=contestconfig())
-# @settings(max_examples=1_000)
-# def test_json_contestconfig(cfg: ContestJson):
-#     assert_json_roundtrip(cfg)
-# 
-# @given(cfg=electionconfig())
-# @settings(max_examples=1_000)
-# def test_json_electionconfig(cfg: ElectionJson): # TODO have to rename this?
-#     assert_json_roundtrip(cfg)
+@given(cfg=hashed_contest_config())
+@settings(max_examples=1_000)
+def test_json_roundtrip_contest_config(cfg: HashedContestConfig):
+    assert_json_roundtrip(cfg)
+
+@given(cfg=hashed_guardians_config())
+@settings(max_examples=1_000)
+def test_json_roundtrip_guardians_config(cfg: HashedGuardiansConfig):
+    assert_json_roundtrip(cfg)
+
+def test_json_roundtrip_arion_config():
+    cfg = hashed_arion_config()
+    assert_json_roundtrip(cfg)
+
+@given(cfg=hashed_devices_config())
+@settings(max_examples=1_000)
+def test_json_roundtrip_devices_config(cfg: HashedDevicesConfig):
+    assert_json_roundtrip(cfg)
+
+@given(cfg=hashed_verifiers_config())
+@settings(max_examples=1_000)
+def test_json_roundtrip_verifiers_config(cfg: HashedVerifiersConfig):
+    assert_json_roundtrip(cfg)
+
 
 
 ### test tmpdir setup ###
