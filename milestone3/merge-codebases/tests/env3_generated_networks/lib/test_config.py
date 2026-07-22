@@ -181,7 +181,7 @@ class ResolvedTestConfig:
     "Final test config including the non-hashed parts."
 
     config:      HashedTestConfig
-    tmpdir:      Path
+    tmpdir:      str
     docker_name: str
 
     @classmethod
@@ -189,6 +189,6 @@ class ResolvedTestConfig:
         key = cfg.cache_key()
         return cls(
             config      = cfg,
-            tmpdir      = tmp_root / f'test{key}',
+            tmpdir      = str(tmp_root / f'test{key}'),
             docker_name = f'egc-test{key}',
         )

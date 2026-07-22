@@ -1,5 +1,6 @@
 import pytest
 from hypothesis import given, settings
+from pathlib import Path
 
 from egc import *
 from ..lib import *
@@ -50,8 +51,17 @@ def test_json_roundtrip_attacks_config(cfg: HashedAttacksConfig):
 
 @given(cfg=hashed_test_config())
 @settings(max_examples=1_000)
-def test_json_roundtrip_test_config(cfg: HashedTestConfig):
+def test_json_roundtrip_hashed_test_config(cfg: HashedTestConfig):
     assert_json_roundtrip(cfg)
+
+@given(cfg=hashed_test_config())
+@settings(max_examples=1_000)
+def test_json_roundtrip_resolved_test_config(cfg: HashedTestConfig):
+    resolved = ResolvedTestConfig.from_hashed_config(
+        cfg = cfg,
+        tmp_root = Path('/tmp'), # TODO actual tmp_root?
+        )
+    assert_json_roundtrip(resolved)
 
 
 
