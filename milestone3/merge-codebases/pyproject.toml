@@ -27,6 +27,7 @@ dependencies = [
     "electionguard==1.4.0",
     "pynacl>=1.6.2",
     "hypothesis>=6.158.0",
+    "cattrs>=26.1.0",
 ]
 
 [tool.uv.sources]
@@ -73,7 +74,10 @@ addopts = "--import-mode=importlib"
 # Run tests in a particular non-alphabetical order.
 # I also run tests marked local before the ones marked testnet,
 # but that's controlled via CLI args in test.sh
-# testpaths = [
+testpaths = [
+  "tests/env*",
+  "tests/lib",
+]
   # "tests/1_offline/test_data.py",
   # "tests/1_offline/test_records.py",
   # "tests/1_offline/test_wallets.py",

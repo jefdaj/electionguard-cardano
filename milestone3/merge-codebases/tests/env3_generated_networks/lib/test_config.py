@@ -2,7 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field, asdict
 from typing import Mapping
 import hashlib, json
-from hypothesis.strategies import composite
+from hypothesis.strategies import composite, integers
 
 
 ### hashed test config ###
