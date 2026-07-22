@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field, asdict
 from typing import Mapping
 import hashlib, json
+from hypothesis.strategies import composite
 
 
 ### hashed test config ###
@@ -12,7 +13,7 @@ class HashedVoteConfig:
     n_spoil: int
 
 @composite
-def voteconfig(draw) -> HashedVoteConfig:
+def hashed_vote_config(draw) -> HashedVoteConfig:
     return HashedVoteConfig(
         n_cast  = draw(integers(0, 3)), # TODO actual bounds?
         n_spoil = draw(integers(0, 3)), # TODO actual bounds?
@@ -32,7 +33,7 @@ class HashedContestConfig:
                 "answers": {k: asdict(v) for k, v in self.answers}}
 
 @composite
-def contest(draw) -> HashedContestConfig:
+def hashed_contest_config(draw) -> HashedContestConfig:
     n = draw(integers(1, 5))
     answers = tuple(
         (draw(text(min_size=1, max_size=8)), draw(voteconfig()))
@@ -87,12 +88,12 @@ def hashed_guardians_config(draw):
 
 @dataclass(frozen=True, slots=True)
 class HashedArionConfig:
-	"The parts of the Arion config that should affect the hash."
-	egc_image: str
-	# TODO add private_dir below
-	# TODO add egc_scripts below
+    "The parts of the Arion config that should affect the hash."
+    egc_image: str
+    # TODO add private_dir below
+    # TODO add egc_scripts below
 
-@composite
+# @composite
 def hashed_arion_config(draw):
     cfg = ArionConfig()
     return cfg
@@ -138,16 +139,16 @@ def hashed_nodes_config(draw):
 class HashedAttacksConfig:
     attacks: list[str]
 
-@composite
+# @composite
 def hashed_attacks_config(draw):
     return HashedAttacksConfig([]) # TODO write this
 
 
 @dataclass(frozen=True, slots=True)
 class HashedTestConfig:
-	arion:   HashedArionConfig
-	nodes:   HashedNodesConfig
-	votes:   HashedVotesConfig
+    arion:   HashedArionConfig
+    nodes:   HashedNodesConfig
+    votes:   HashedVotesConfig
     attacks: HashedAttacksConfig
 
     def canonical(self) -> str:

@@ -8,9 +8,9 @@ from .lib.test_config import *
 
 ### round-trip configs to json ###
 
-@given(cfg=voteconfig())
+@given(cfg=hashed_vote_config())
 @settings(max_examples=1_000)
-def test_json_voteconfig(cfg: VoteJson):
+def test_json_voteconfig(cfg: HashedVoteConfig):
     assert_json_roundtrip(cfg)
 
 # @given(cfg=contestconfig())
