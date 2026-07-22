@@ -10,6 +10,8 @@ from dataclasses import asdict
 import logging
 LOG = logging.getLogger(__name__)
 
+from . import example_data
+
 # TODO move some of this to env-specific helper/util libs
 
 # Aliases for convenience and documentation.

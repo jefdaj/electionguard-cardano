@@ -2,45 +2,73 @@ from __future__ import annotations
 from dataclasses import dataclass, field, asdict
 from typing import Mapping
 import hashlib, json
-from hypothesis.strategies import composite, integers, text
+from hypothesis import strategies as st
+# from hypothesis.strategies import composite, integers, text
+
+from ..lib.example_data import EXAMPLE_CONTESTS
+
 
 
 ### hashed test config ###
 
 @dataclass(frozen=True, slots=True)
 class HashedVotesConfig:
+    """Votes for a particular contest.
+    Note that the entire `votes` field in the config is populated by
+    HashedContestsConfig; this is only votes for one contest."""
+
     n_cast: int
     n_spoil: int
 
-@composite
+@st.composite
 def hashed_votes_config(draw) -> HashedVotesConfig:
     return HashedVotesConfig(
-        n_cast  = draw(integers(0, 3)), # TODO actual bounds?
-        n_spoil = draw(integers(0, 3)), # TODO actual bounds?
+        n_cast  = draw(st.integers(0, 3)), # TODO actual bounds?
+        n_spoil = draw(st.integers(0, 3)), # TODO actual bounds?
     )
 
 
-# TODO static list of actual example contests to draw from here
-
 @dataclass(frozen=True, slots=True)
-class HashedContestsConfig:
-    "One contest in the list under `votes`"
-    question: str
-    answers: tuple[tuple[str, HashedVotesConfig], ...]
+class HashedContestConfig:
+    "A single scripted contest with question and vote counts per answer."
+
+    question: str          # office/question
+    answers: tuple[
+        str,               # candidate/answer
+        HashedVotesConfig, # vote counts for that candidate/answer
+    ]
+
+    def from_example(cls, data: dict) -> Self:
+        return cls(question=data['office'], answers=tuple(data['candidates']))
 
     def to_json(self) -> dict:
         return {"question": self.question,
                 "answers": {k: asdict(v) for k, v in self.answers}}
 
-@composite
+@dataclass(frozen=True, slots=True)
+class HashedContestsConfig:
+    "A list of contests and the scripted vote counts for each one."
+
+    contests: tuple[HashedContestConfig, ...]
+
+    # def to_json(self) -> dict:
+    #     return {"question": self.question,
+    #             "answers": {k: asdict(v) for k, v in self.answers}}
+
+@st.composite
 def hashed_contests_config(draw) -> HashedContestsConfig:
-    n = draw(integers(1, 5))
-    answers = tuple(
-        # TODO what do these look like?
-        (draw(text(min_size=1, max_size=8)), draw(hashed_votes_config()))
-        for _ in range(n)
+    "A list of unique contests with scripted vote counts for each one."
+
+    n_contests = 1 # TODO draw for 1..some max
+    contests = st.lists(
+        st.sampled_from(EXAMPLE_CONTESTS),
+        min_size = 1,
+        max_size = n_contests,
+        unique   = True
     )
-    return HashedContestsConfig(question=draw(text(min_size=1)), answers=answers)
+    return HashedContestsConfig(
+        contests = contests.map(HashedContestConfig.from_example),
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,12 +79,12 @@ class HashedGuardiansConfig:
     def __post_init__(self):
         assert 0 < self.quorum <= self.count
 
-@composite
+@st.composite
 def hashed_guardians_config(draw):
-    count = draw(integers(2,5)) # TODO actual upper bound?
+    count = draw(st.integers(2,5)) # TODO actual upper bound?
     return HashedGuardiansConfig(
         count = count,
-        quorum = draw(integers(1, count)),
+        quorum = draw(st.integers(1, count)),
     )
 
 
@@ -94,9 +122,9 @@ class HashedArionConfig:
     # TODO add private_dir below
     # TODO add egc_scripts below
 
-@composite
+@st.composite
 def hashed_arion_config(draw):
-    _ = draw(integers(1,1)) # silence hypothesis warning
+    _ = draw(st.integers(1,1)) # silence hypothesis warning
     cfg = HashedArionConfig(
         egc_image = "electionguard-cardano:0.3.0",
     )
@@ -107,10 +135,10 @@ def hashed_arion_config(draw):
 class HashedDevicesConfig:
     count: int
 
-@composite
+@st.composite
 def hashed_devices_config(draw):
     return HashedDevicesConfig(
-        count = draw(integers(1, 3)), # TODO actual upper bound?
+        count = draw(st.integers(1, 3)), # TODO actual upper bound?
     )
 
 
@@ -118,10 +146,10 @@ def hashed_devices_config(draw):
 class HashedVerifiersConfig:
     count: int
 
-@composite
+@st.composite
 def hashed_verifiers_config(draw):
     return HashedVerifiersConfig(
-        count = draw(integers(1, 3)), # TODO actual upper bound?
+        count = draw(st.integers(1, 3)), # TODO actual upper bound?
     )
 
 # Used to be called "election", which was confusing
@@ -131,7 +159,7 @@ class HashedNodesConfig:
     devices:   HashedDevicesConfig
     verifiers: HashedVerifiersConfig
 
-@composite
+@st.composite
 def hashed_nodes_config(draw):
     return HashedNodesConfig(
         guardians = draw( hashed_guardians_config() ),
@@ -143,9 +171,9 @@ def hashed_nodes_config(draw):
 class HashedAttacksConfig:
     attacks: tuple[str, ...]
 
-@composite
+@st.composite
 def hashed_attacks_config(draw):
-    _ = draw(integers(1,1)) # silence hypothesis warning
+    _ = draw(st.integers(1,1)) # silence hypothesis warning
     return HashedAttacksConfig(attacks=()) # TODO write this
 
 
@@ -162,9 +190,11 @@ class HashedTestConfig:
                            separators=(",", ":"), default=str)
 
     def cache_key(self) -> str:
-        return hashlib.sha256(self.canonical().encode()).hexdigest()[:16]
+        # TODO any reason sha256 is better than md5 here?
+        # return hashlib.md5(self.canonical().encode()).hexdigest()[:5]
+        return hashlib.sha256(self.canonical().encode()).hexdigest()[:8]
 
-@composite
+@st.composite
 def hashed_test_config(draw) -> HashedTestConfig:
     return HashedTestConfig(
         arion    = draw( hashed_arion_config()    ),
