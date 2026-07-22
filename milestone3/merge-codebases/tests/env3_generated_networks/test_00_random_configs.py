@@ -23,8 +23,9 @@ def test_json_roundtrip_contests_config(cfg: HashedContestsConfig):
 def test_json_roundtrip_guardians_config(cfg: HashedGuardiansConfig):
     assert_json_roundtrip(cfg)
 
-def test_json_roundtrip_arion_config():
-    cfg = hashed_arion_config()
+@given(cfg=hashed_arion_config())
+@settings(max_examples=1)
+def test_json_roundtrip_arion_config(cfg: HashedArionConfig):
     assert_json_roundtrip(cfg)
 
 @given(cfg=hashed_devices_config())
@@ -42,9 +43,9 @@ def test_json_roundtrip_verifiers_config(cfg: HashedVerifiersConfig):
 def test_json_roundtrip_nodes_config(cfg: HashedNodesConfig):
     assert_json_roundtrip(cfg)
 
-# TODO how to properly round-trip an empty tuple here?
-def test_json_roundtrip_attacks_config():
-    cfg = hashed_attacks_config()
+@given(cfg=hashed_attacks_config())
+@settings(max_examples=1)
+def test_json_roundtrip_attacks_config(cfg: HashedAttacksConfig):
     assert_json_roundtrip(cfg)
 
 @given(cfg=hashed_test_config())

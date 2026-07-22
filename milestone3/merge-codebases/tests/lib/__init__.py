@@ -23,9 +23,11 @@ LOG = logging.getLogger(__name__)
 
 
 def assert_json_roundtrip(cfg):
+    # print(f'cfg: {cfg}')
     tmp  = json.dumps(asdict(cfg), sort_keys=True)
     # TODO is this an OK solution? seems roundabout but works...
     cfg2 = cattrs.Converter().structure(json.loads(tmp), type(cfg))
+    # print(f'cfg2: {cfg2}')
     assert cfg == cfg2
 
 

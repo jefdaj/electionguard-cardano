@@ -94,7 +94,9 @@ class HashedArionConfig:
     # TODO add private_dir below
     # TODO add egc_scripts below
 
-def hashed_arion_config():
+@composite
+def hashed_arion_config(draw):
+    _ = draw(integers(1,1)) # silence hypothesis warning
     cfg = HashedArionConfig(
         egc_image = "electionguard-cardano:0.3.0",
     )
@@ -141,16 +143,17 @@ def hashed_nodes_config(draw):
 class HashedAttacksConfig:
     attacks: tuple[str, ...]
 
-# @composite
-def hashed_attacks_config():
-    return HashedAttacksConfig([]) # TODO write this
+@composite
+def hashed_attacks_config(draw):
+    _ = draw(integers(1,1)) # silence hypothesis warning
+    return HashedAttacksConfig(attacks=()) # TODO write this
 
 
 @dataclass(frozen=True, slots=True)
 class HashedTestConfig:
     arion:   HashedArionConfig
     nodes:   HashedNodesConfig
-    votes:   HashedVotesConfig
+    votes:   HashedContestsConfig # TODO rename contests?
     attacks: HashedAttacksConfig
 
     def canonical(self) -> str:
@@ -164,7 +167,7 @@ class HashedTestConfig:
 @composite
 def hashed_test_config(draw) -> HashedTestConfig:
     return HashedTestConfig(
-        arion    =       hashed_arion_config(),
+        arion    = draw( hashed_arion_config()    ),
         nodes    = draw( hashed_nodes_config()    ),
         votes    = draw( hashed_contests_config() ), # TODO rename contests?
         attacks  = draw( hashed_attacks_config()  ),
