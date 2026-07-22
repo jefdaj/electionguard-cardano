@@ -11,52 +11,52 @@ from .lib.test_config import *
 
 @given(cfg=hashed_votes_config())
 @settings(max_examples=1_000)
-def test_json_roundtrip_vote_config(cfg: HashedVotesConfig):
+def test_roundtrip_vote_config(cfg: HashedVotesConfig):
     assert_json_roundtrip(cfg)
 
 @given(cfg=hashed_contests_config())
 @settings(max_examples=1_000)
-def test_json_roundtrip_contests_config(cfg: HashedContestsConfig):
+def test_roundtrip_contests_config(cfg: HashedContestsConfig):
     assert_json_roundtrip(cfg)
 
 @given(cfg=hashed_guardians_config())
 @settings(max_examples=1_000)
-def test_json_roundtrip_guardians_config(cfg: HashedGuardiansConfig):
+def test_roundtrip_guardians_config(cfg: HashedGuardiansConfig):
     assert_json_roundtrip(cfg)
 
 @given(cfg=hashed_arion_config())
 @settings(max_examples=1)
-def test_json_roundtrip_arion_config(cfg: HashedArionConfig):
+def test_roundtrip_arion_config(cfg: HashedArionConfig):
     assert_json_roundtrip(cfg)
 
 @given(cfg=hashed_devices_config())
 @settings(max_examples=1_000)
-def test_json_roundtrip_devices_config(cfg: HashedDevicesConfig):
+def test_roundtrip_devices_config(cfg: HashedDevicesConfig):
     assert_json_roundtrip(cfg)
 
 @given(cfg=hashed_verifiers_config())
 @settings(max_examples=1_000)
-def test_json_roundtrip_verifiers_config(cfg: HashedVerifiersConfig):
+def test_roundtrip_verifiers_config(cfg: HashedVerifiersConfig):
     assert_json_roundtrip(cfg)
 
 @given(cfg=hashed_nodes_config())
 @settings(max_examples=1_000)
-def test_json_roundtrip_nodes_config(cfg: HashedNodesConfig):
+def test_roundtrip_nodes_config(cfg: HashedNodesConfig):
     assert_json_roundtrip(cfg)
 
 @given(cfg=hashed_attacks_config())
 @settings(max_examples=1)
-def test_json_roundtrip_attacks_config(cfg: HashedAttacksConfig):
+def test_roundtrip_attacks_config(cfg: HashedAttacksConfig):
     assert_json_roundtrip(cfg)
 
 @given(cfg=hashed_test_config())
 @settings(max_examples=1_000)
-def test_json_roundtrip_hashed_test_config(cfg: HashedTestConfig):
+def test_roundtrip_hashed_test_config(cfg: HashedTestConfig):
     assert_json_roundtrip(cfg)
 
 @given(cfg=hashed_test_config())
 @settings(max_examples=1_000)
-def test_json_roundtrip_resolved_test_config(cfg: HashedTestConfig):
+def test_roundtrip_resolved_test_config(cfg: HashedTestConfig):
     resolved = ResolvedTestConfig.from_hashed_config(
         cfg = cfg,
         tmp_root = Path('/tmp'), # TODO actual tmp_root?
