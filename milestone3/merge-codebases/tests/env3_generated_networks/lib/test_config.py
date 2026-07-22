@@ -8,13 +8,13 @@ from hypothesis.strategies import composite, integers, text
 ### hashed test config ###
 
 @dataclass(frozen=True, slots=True)
-class HashedVoteConfig:
+class HashedVotesConfig:
     n_cast: int
     n_spoil: int
 
 @composite
-def hashed_vote_config(draw) -> HashedVoteConfig:
-    return HashedVoteConfig(
+def hashed_votes_config(draw) -> HashedVotesConfig:
+    return HashedVotesConfig(
         n_cast  = draw(integers(0, 3)), # TODO actual bounds?
         n_spoil = draw(integers(0, 3)), # TODO actual bounds?
     )
@@ -23,24 +23,24 @@ def hashed_vote_config(draw) -> HashedVoteConfig:
 # TODO static list of actual example contests to draw from here
 
 @dataclass(frozen=True, slots=True)
-class HashedContestConfig:
+class HashedContestsConfig:
     "One contest in the list under `votes`"
     question: str
-    answers: tuple[tuple[str, HashedVoteConfig], ...]
+    answers: tuple[tuple[str, HashedVotesConfig], ...]
 
     def to_json(self) -> dict:
         return {"question": self.question,
                 "answers": {k: asdict(v) for k, v in self.answers}}
 
 @composite
-def hashed_contest_config(draw) -> HashedContestConfig:
+def hashed_contests_config(draw) -> HashedContestsConfig:
     n = draw(integers(1, 5))
     answers = tuple(
         # TODO what do these look like?
-        (draw(text(min_size=1, max_size=8)), draw(hashed_vote_config()))
+        (draw(text(min_size=1, max_size=8)), draw(hashed_votes_config()))
         for _ in range(n)
     )
-    return HashedContestConfig(question=draw(text(min_size=1)), answers=answers)
+    return HashedContestsConfig(question=draw(text(min_size=1)), answers=answers)
 
 
 @dataclass(frozen=True, slots=True)
@@ -132,17 +132,17 @@ class HashedNodesConfig:
 @composite
 def hashed_nodes_config(draw):
     return HashedNodesConfig(
-        guardians = hashed_guardians_config(draw),
-        devices   = hashed_devices_config(draw),
-        verifiers = hashed_verifiers_config(draw),
+        guardians = draw( hashed_guardians_config() ),
+        devices   = draw( hashed_devices_config()   ),
+        verifiers = draw( hashed_verifiers_config() ),
     )
 
 @dataclass(frozen=True, slots=True)
 class HashedAttacksConfig:
-    attacks: list[str]
+    attacks: tuple[str, ...]
 
 # @composite
-def hashed_attacks_config(draw):
+def hashed_attacks_config():
     return HashedAttacksConfig([]) # TODO write this
 
 
@@ -164,10 +164,10 @@ class HashedTestConfig:
 @composite
 def hashed_test_config(draw) -> HashedTestConfig:
     return HashedTestConfig(
-        arion    = HashedArionConfig(),
-        election = hashed_election_config(draw),
-        votes    = hashed_votes_config(draw),
-        attacks  = hashed_attacks_config(draw),
+        arion    =       hashed_arion_config(),
+        nodes    = draw( hashed_nodes_config()    ),
+        votes    = draw( hashed_contests_config() ), # TODO rename contests?
+        attacks  = draw( hashed_attacks_config()  ),
     )
 
 

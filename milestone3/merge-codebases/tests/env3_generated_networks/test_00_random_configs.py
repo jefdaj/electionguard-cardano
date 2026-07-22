@@ -8,14 +8,14 @@ from .lib.test_config import *
 
 ### round-trip configs to json ###
 
-@given(cfg=hashed_vote_config())
+@given(cfg=hashed_votes_config())
 @settings(max_examples=1_000)
-def test_json_roundtrip_vote_config(cfg: HashedVoteConfig):
+def test_json_roundtrip_vote_config(cfg: HashedVotesConfig):
     assert_json_roundtrip(cfg)
 
-@given(cfg=hashed_contest_config())
+@given(cfg=hashed_contests_config())
 @settings(max_examples=1_000)
-def test_json_roundtrip_contest_config(cfg: HashedContestConfig):
+def test_json_roundtrip_contests_config(cfg: HashedContestsConfig):
     assert_json_roundtrip(cfg)
 
 @given(cfg=hashed_guardians_config())
@@ -35,6 +35,21 @@ def test_json_roundtrip_devices_config(cfg: HashedDevicesConfig):
 @given(cfg=hashed_verifiers_config())
 @settings(max_examples=1_000)
 def test_json_roundtrip_verifiers_config(cfg: HashedVerifiersConfig):
+    assert_json_roundtrip(cfg)
+
+@given(cfg=hashed_nodes_config())
+@settings(max_examples=1_000)
+def test_json_roundtrip_nodes_config(cfg: HashedNodesConfig):
+    assert_json_roundtrip(cfg)
+
+# TODO how to properly round-trip an empty tuple here?
+def test_json_roundtrip_attacks_config():
+    cfg = hashed_attacks_config()
+    assert_json_roundtrip(cfg)
+
+@given(cfg=hashed_test_config())
+@settings(max_examples=1_000)
+def test_json_roundtrip_test_config(cfg: HashedTestConfig):
     assert_json_roundtrip(cfg)
 
 
