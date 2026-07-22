@@ -2,7 +2,6 @@ import pytest
 from datetime import datetime
 from pycardano import *
 from egc import *
-from tests.helpers import per_election_fixture
 import logging
 import time
 
@@ -12,7 +11,7 @@ LOG = logging.getLogger(__name__)
 ### dummy election context ###
 
 # Mainly for testing serialization
-@per_election_fixture
+@pytest.fixture(scope='module')
 def dummy_deployment(
         ogmios: OgmiosV6ChainContext,
         funder_wallet: Wallet
@@ -27,7 +26,7 @@ def dummy_deployment(
     LOG.debug(f'dummy_deployment: {dd}')
     return dd
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def dummy_electioncontext(
         script: ElectionScript,
         dummy_deployment: ElectionDeployment,
@@ -39,7 +38,7 @@ def dummy_electioncontext(
 
 ### actual (on chain) election context ###
  
-@per_election_fixture
+@pytest.fixture(scope='module')
 def init_election_tuple(
         funder: ObserverNode,
         # script: ElectionScript,
@@ -106,16 +105,16 @@ def init_election_tuple(
             fn = LOG.info
         fn(f'funder paid {ada_diff} ADA total to run {name}')
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def init_tx(init_election_tuple: tuple[Transaction, ElectionConfig]) -> Transaction:
     (tx, _) = init_election_tuple
     return tx
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def election_cfg(init_election_tuple: tuple[Transaction, ElectionConfig]) -> ElectionConfig:
     (_, cfg) = init_election_tuple
     return cfg
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def election_ctx(election_cfg: ElectionConfig):
     return ElectionContext.from_config(election_cfg)

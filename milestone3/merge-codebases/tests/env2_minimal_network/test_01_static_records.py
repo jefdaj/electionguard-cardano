@@ -1,6 +1,6 @@
 import json
 import pytest
-from tests.helpers import load_static_record_pairs
+from .lib import load_static_record_pairs
 from egc import *
 
 import logging

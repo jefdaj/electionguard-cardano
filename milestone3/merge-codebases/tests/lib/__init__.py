@@ -2,19 +2,22 @@ import pytest
 from typing import List
 from pprint import pformat
 from egc import *
-import logging
 import time
 import typing
 
+import logging
 LOG = logging.getLogger(__name__)
+
+# TODO move some of this to env-specific helper/util libs
 
 # Aliases for convenience and documentation.
 # In our tests, the convention is that each package tests/integration/<package>
 # is a particular usage path through the contract. Most fixtures are package
 # scoped.
-global_fixture       = pytest.fixture(scope='session')
-per_election_fixture = pytest.fixture(scope='module')
-per_network_fixture  = pytest.fixture(scope='package')
+# TODO these might be more confusing than helpful, right?
+# global_fixture       = pytest.fixture(scope='session')
+# per_election_fixture = pytest.fixture(scope='module')
+# per_network_fixture  = pytest.fixture(scope='package')
 
 
 # TODO where should this live?
@@ -169,25 +172,3 @@ def assert_nodes_converge(
 
         time.sleep(interval)
         waited += interval
-
-def load_static_record_pair(
-        record: PublicRecord,
-        static_files_dir,
-    ) -> tuple[dict, PublicRecordMetadata]:
-    mdata = record.metadata
-    path = record_path(mdata, static_files_dir)
-    with open(path, 'r') as f:
-        obj = json.load(f)
-    return (obj, mdata)
-
-def load_static_record_pairs(
-        records: list[PublicRecord],
-        static_dir,
-    ) -> list[tuple[dict, PublicRecordMetadata]]:
-    LOG.debug('load_static_record_pairs')
-    pairs = []
-    for rec in records:
-        LOG.debug(f'rec: {rec}')
-        pair = load_static_record_pair(rec, static_dir)
-        pairs.append(pair)
-    return pairs

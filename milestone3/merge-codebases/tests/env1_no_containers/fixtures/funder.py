@@ -1,22 +1,21 @@
 import pytest
-from pycardano import *
-from egc import *
-from tests.helpers import global_fixture, per_election_fixture
-import logging
 
+import logging
 LOG = logging.getLogger(__name__)
 
-@global_fixture
+from egc import *
+
+@pytest.fixture(scope='session') # TODO module?
 def funder_wallet() -> Wallet:
     w = Wallet.load_or_create(name='dev', verbose=False) # leave default, global keys_dir
     LOG.debug(f'funder_wallet: {w}')
     return w
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def funder_address(funder_wallet: Wallet) -> Address:
     return funder_wallet.addr
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def funder(funder_wallet: Wallet) -> ObserverNode:
     node_ = ObserverNode(wallet=funder_wallet, role_index=1)
     LOG.debug(f'funder: {node_}')
@@ -26,7 +25,7 @@ def funder(funder_wallet: Wallet) -> ObserverNode:
     finally:
         node_.stop()
 
-# @per_election_fixture
+# @pytest.fixture(scope='module')
 # def init_tx_builder(
 #         funder: ObserverNode,
 #         script: ElectionScript,

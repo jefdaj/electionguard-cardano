@@ -1,39 +1,39 @@
 import pytest
-from pycardano import *
-from egc import *
-from tests.helpers import per_election_fixture, sub_s0
-import logging
 
+from egc import *
+from tests.lib import sub_s0
+
+import logging
 LOG = logging.getLogger(__name__)
 
 
 ## ------ subchannel wallets -------
 
-# @per_election_fixture
+# @pytest.fixture(scope='module')
 # def guardian1_wallet(keys_dir: Path) -> Wallet:
 #     w = Wallet.load_or_create(name='guardian1', keys_dir=keys_dir, verbose=False)
 #     LOG.debug(f'guardian1_wallet: {w}')
 #     return w
 # 
-# @per_election_fixture
+# @pytest.fixture(scope='module')
 # def guardian2_wallet(keys_dir: Path) -> Wallet:
 #     w = Wallet.load_or_create(name='guardian2', keys_dir=keys_dir, verbose=False)
 #     LOG.debug(f'guardian2_wallet: {w}')
 #     return w
 # 
-# @per_election_fixture
+# @pytest.fixture(scope='module')
 # def guardian3_wallet(keys_dir: Path) -> Wallet:
 #     w = Wallet.load_or_create(name='guardian3', keys_dir=keys_dir, verbose=False)
 #     LOG.debug(f'guardian3_wallet: {w}')
 #     return w
 # 
-# @per_election_fixture
+# @pytest.fixture(scope='module')
 # def device1_wallet(keys_dir: Path) -> Wallet:
 #     w = Wallet.load_or_create(name='device1', keys_dir=keys_dir, verbose=False)
 #     LOG.debug(f'device1_wallet: {w}')
 #     return w
 # 
-# @per_election_fixture
+# @pytest.fixture(scope='module')
 # def verifier1_wallet(keys_dir: Path) -> Wallet:
 #     w = Wallet.load_or_create(name='verifier1', keys_dir=keys_dir, verbose=False)
 #     LOG.debug(f'verifier1_wallet: {w}')
@@ -42,7 +42,7 @@ LOG = logging.getLogger(__name__)
 
 ## ------- subchannel nodes --------
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian1(
         election_cfg: ElectionConfig,
         guardian1_wallet: Wallet,
@@ -60,7 +60,7 @@ def guardian1(
     finally:
         node_.stop()
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian2(
         election_cfg: ElectionConfig,
         guardian2_wallet: Wallet,
@@ -78,7 +78,7 @@ def guardian2(
     finally:
         node_.stop()
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian3(
         election_cfg: ElectionConfig,
         guardian3_wallet: Wallet,
@@ -96,7 +96,7 @@ def guardian3(
     finally:
         node_.stop()
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def device1(
         election_cfg: ElectionConfig,
         device1_wallet: Wallet,
@@ -114,7 +114,7 @@ def device1(
     finally:
         node_.stop()
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def verifier1(
         election_cfg: ElectionConfig,
         verifier1_wallet: Wallet,
@@ -132,7 +132,7 @@ def verifier1(
     finally:
         node_.stop()
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def subchannel_nodes(
         guardian1: GuardianNode,
         guardian2: GuardianNode,
@@ -151,22 +151,22 @@ def subchannel_nodes(
 
 ## ------- subchannel initial states --------
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian1_s0(guardian1: GuardianNode) -> ChannelState:
     return sub_s0(guardian1.channel_id(), guardian1.publisher.wallet.vkh)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian2_s0(guardian2: GuardianNode) -> ChannelState:
     return sub_s0(guardian2.channel_id(), guardian2.publisher.wallet.vkh)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def guardian3_s0(guardian3: GuardianNode) -> ChannelState:
     return sub_s0(guardian3.channel_id(), guardian3.publisher.wallet.vkh)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def device1_s0(device1: DeviceNode) -> ChannelState:
     return sub_s0(device1.channel_id(), device1.publisher.wallet.vkh)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def verifier1_s0(verifier1: VerifierNode) -> ChannelState:
     return sub_s0(verifier1.channel_id(), verifier1.publisher.wallet.vkh)

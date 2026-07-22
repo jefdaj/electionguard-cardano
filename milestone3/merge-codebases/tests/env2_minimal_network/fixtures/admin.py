@@ -1,13 +1,12 @@
 import pytest
 from pycardano import *
 from egc import *
-from tests.helpers import per_election_fixture
 import logging
 import time
 
 LOG = logging.getLogger(__name__)
 
-@per_election_fixture
+@pytest.fixture(scope='module')
 def admin(admin_wallet: Wallet, election_cfg: ElectionConfig) -> AdminNode:
     node_ = AdminNode(wallet=admin_wallet, election_cfg=election_cfg)
     LOG.debug(f'admin: {node_}')
