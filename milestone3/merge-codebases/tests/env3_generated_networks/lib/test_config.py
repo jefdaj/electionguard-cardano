@@ -213,7 +213,7 @@ class HashedTestConfig:
     def cache_key(self) -> str:
         # TODO any reason sha256 is better than md5 here?
         # return hashlib.md5(self.canonical().encode()).hexdigest()[:5]
-        return hashlib.sha256(self.canonical().encode()).hexdigest()[:8]
+        return hashlib.sha256(self.canonical().encode()).hexdigest()[:5]
 
 @st.composite
 def hashed_test_config(draw) -> HashedTestConfig:
@@ -239,7 +239,7 @@ class ResolvedTestConfig:
         return tmp_root / f'test{self.cache_key}'
 
     def arion_project_name(self):
-        return f'egc-test-{self.cache_key}'
+        return f'egc-test{self.cache_key}'
 
     @classmethod
     def from_hashed_config(cls, cfg: HashedTestConfig) -> Self:
