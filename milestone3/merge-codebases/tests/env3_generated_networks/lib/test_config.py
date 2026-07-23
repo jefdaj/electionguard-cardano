@@ -98,15 +98,15 @@ def hashed_contests_config(draw) -> HashedContestsConfig:
 
 @dataclass(frozen=True, slots=True)
 class HashedAdminConfig:
-    egc_template: str = field(default='admin.sh')
+    script: str = field(default='admin.sh')
 
 @st.composite
-def hashed_admin_config(draw, egc_template: Optional[str] = None):
+def hashed_admin_config(draw, script: Optional[str] = None):
     # TODO remove?
     _ = draw(st.integers(1,1)) # stop hypothesis complaining about draw
     kwargs = {}
-    if egc_template is not None:
-        kwargs['egc_template'] = egc_template
+    if script is not None:
+        kwargs['script'] = script
     return HashedAdminConfig(**kwargs)
 
 
@@ -114,20 +114,20 @@ def hashed_admin_config(draw, egc_template: Optional[str] = None):
 class HashedGuardiansConfig:
     count: int = 3
     quorum: int = 2
-    egc_template: str = field(default='guardian.sh')
+    script: str = field(default='guardian.sh')
 
     def __post_init__(self):
         assert 0 < self.quorum <= self.count
 
 @st.composite
-def hashed_guardians_config(draw, egc_template: Optional[str] = None):
+def hashed_guardians_config(draw, script: Optional[str] = None):
     count = draw(st.integers(2,5)) # TODO actual upper bound?
     kwargs = {
         'count':  count,
         'quorum': draw(st.integers(1, count)),
     }
-    if egc_template is not None:
-        kwargs['egc_template'] = egc_template
+    if script is not None:
+        kwargs['script'] = script
     return HashedGuardiansConfig(**kwargs)
 
 
@@ -150,30 +150,30 @@ def hashed_arion_config(draw):
 @dataclass(frozen=True, slots=True)
 class HashedDevicesConfig:
     count: int
-    egc_template: str = field(default='device.sh')
+    script: str = field(default='device.sh')
 
 @st.composite
-def hashed_devices_config(draw, egc_template: Optional[str] = None):
+def hashed_devices_config(draw, script: Optional[str] = None):
     kwargs = {
         'count': draw(st.integers(1, 3)), # TODO actual upper bound?
     }
-    if egc_template is not None:
-        kwargs['egc_template'] = egc_template
+    if script is not None:
+        kwargs['script'] = script
     return HashedDevicesConfig(**kwargs)
 
 
 @dataclass(frozen=True, slots=True)
 class HashedVerifiersConfig:
     count: int
-    egc_template: str = field(default='verifier.sh')
+    script: str = field(default='verifier.sh')
 
 @st.composite
-def hashed_verifiers_config(draw, egc_template: Optional[str] = None):
+def hashed_verifiers_config(draw, script: Optional[str] = None):
     kwargs = {
         'count': draw(st.integers(1, 3)), # TODO actual upper bound?
     }
-    if egc_template is not None:
-        kwargs['egc_template'] = egc_template
+    if script is not None:
+        kwargs['script'] = script
     return HashedVerifiersConfig(**kwargs)
 
 # Used to be called "election", which was confusing
@@ -266,14 +266,15 @@ class ResolvedTestConfig:
             dirs += [f'data/{name}/{d}' for d in per_node_dirs]
         return sorted(list(dirs))
 
-    def egc_scripts(self) -> list[Path]:
-        # TODO one per node rather than one per node type?
-        return {
-            'admin':    self.admin.egc_template,
-            'guardian': self.guardians.egc_template,
-            'device':   self.devices.egc_template,
-            'verifier': self.verifiers.egc_template,
-        }
+    # TODO remove if not needed
+    # def egc_scripts(self) -> list[Path]:
+    #     # TODO one per node rather than one per node type?
+    #     return {
+    #         'admin':    self.config.nodes.admin.script,
+    #         'guardian': self.config.nodes.guardians.script,
+    #         'device':   self.config.nodes.devices.script,
+    #         'verifier': self.config.nodes.verifiers.script,
+    #     }
 
     @classmethod
     def from_hashed_config(cls, cfg: HashedTestConfig, tmp_root: Path) -> Self:
@@ -290,7 +291,7 @@ class ResolvedTestConfig:
         cfg['arion']['project_name'] = self.arion_project_name()
         # print(f'cfg: {cfg}')
         cfg['bind_dirs'] = [str(d) for d in self.bind_dirs()]
-        cfg['scripts'] = self.egc_scripts()
+        # cfg['scripts'] = self.egc_scripts()
         # print(f'cfg bind_dirs: {cfg['bind_dirs']}')
 
         # fix answers being converted to short lists rather than dicts,
