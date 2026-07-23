@@ -6,6 +6,7 @@ from pycardano import *
 from egc import *
 # from data.static_records import *
 from ..lib import *
+from .lib import *
 import logging
 import time
 
