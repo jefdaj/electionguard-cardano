@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field, asdict
 from typing import Mapping
 import hashlib, json
+from pathlib import Path
 from hypothesis import strategies as st
 from copy import deepcopy
 # from hypothesis.strategies import composite, integers, text
@@ -236,23 +237,26 @@ class ResolvedTestConfig:
 
     config: HashedTestConfig
     cache_key: str
+    tmp_root: Path
 
-    def tmpdir_path(self, tmp_root: Path):
-        return tmp_root / f'test{self.cache_key}'
+    def tmpdir_path(self):
+        return self.tmp_root / f'test{self.cache_key}'
 
     def arion_project_name(self):
         return f'egc-test{self.cache_key}'
 
     @classmethod
-    def from_hashed_config(cls, cfg: HashedTestConfig) -> Self:
+    def from_hashed_config(cls, cfg: HashedTestConfig, tmp_root: Path) -> Self:
         key = cfg.cache_key()
         return cls(
             config    = cfg,
             cache_key = key,
+            tmp_root  = Path(tmp_root),
         )
 
     def to_json(self) -> str:
         cfg = asdict(self.config)
+        cfg['tmpdir_path'] = str(self.tmpdir_path())
         cfg['arion']['project_name'] = self.arion_project_name()
 
         # fix answers being converted to short lists rather than dicts,

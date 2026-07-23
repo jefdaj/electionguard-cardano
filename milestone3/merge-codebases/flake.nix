@@ -226,6 +226,7 @@
               UV_PYTHON_DOWNLOADS = "never";
               PYTHONDONTWRITEBYTECODE = true;
               EGC_PLUTUS_DIR   = "${plutusBlueprints}";
+              EGC_CARDANO_DIR  = "../../milestone2/cardano-node-ogmios";
               EGC_NETWORK_MODE = "preview";
               EGC_PLUTUS_MODE  = "burntesttokens-traced";
               EGC_WALLET_MODE  = "scripted";
@@ -240,6 +241,7 @@
                echo "kupo $(kupo --version)"
                echo "$(python --version)"
                echo "pycardano $(python -c "import importlib.metadata as m; print(m.version('pycardano'))")"
+               export EGC_CARDANO_DIR="$(realpath "$EGC_CARDANO_DIR")"
                env | grep ^EGC_
                unset PYTHONPATH
             '';

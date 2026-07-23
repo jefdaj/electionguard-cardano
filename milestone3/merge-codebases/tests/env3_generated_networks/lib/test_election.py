@@ -3,13 +3,14 @@ import time
 from contextlib import contextmanager
 from pathlib import Path
 from .test_config import HashedTestConfig, ResolvedTestConfig
+from .network import with_arion_network
 
 @contextmanager
 def run_test_election(cfg: HashedTestConfig, tmp_root: Path) -> Path:
     "Run the election if needed, and return the tmpdir path."
 
-    resolved_cfg = ResolvedTestConfig.from_hashed_config(cfg)
-    tmpdir_path = resolved_cfg.tmpdir_path(tmp_root)
+    resolved_cfg = ResolvedTestConfig.from_hashed_config(cfg, tmp_root)
+    tmpdir_path = resolved_cfg.tmpdir_path()
     cfg_path  = tmpdir_path / 'test.json'
     lock_path = tmpdir_path / 'test.lock'
     log_path  = tmpdir_path / 'test.log'
