@@ -36,10 +36,10 @@ def init_test_tmpdir(cfg: ResolvedTestConfig):
                 cfg_path.write_text( cfg.to_json() )
 
             # init data dirs
-            # TODO get container list
-            # TODO get dir list
-            # TODO create dirs per container
-            # TODO chown them to user
+            log('init_test_tmpdir make bind dirs')
+            for relpath in cfg.bind_dirs():
+                d = tmpdir_path / relpath
+                d.mkdir(parents=True, exist_ok=True)
 
             log('init_test_tmpdir done')
 
