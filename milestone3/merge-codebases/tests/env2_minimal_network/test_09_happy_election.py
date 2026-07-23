@@ -464,6 +464,7 @@ def admin_s4(
         seq         = 4,
     ))
 
+@pytest.fixture(scope='module')
 def admin_tx4(
         admin: AdminNode,
         admin_tx3: Transaction,
