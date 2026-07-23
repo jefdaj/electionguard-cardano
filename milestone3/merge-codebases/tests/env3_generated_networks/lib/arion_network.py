@@ -6,12 +6,13 @@ from pathlib import Path
 from contextlib import contextmanager
 from egc import *
 from ..lib.test_config import ResolvedTestConfig
+# from ..lib.test_tmpdir import lock_test_tmpdir
 
 # TODO how to force arion down on pytest exceptions, keyboardinturrupt etc?
 # TODO no tmp_root, just resolved cfg which should include that
 # @pytest.fixture(scope='function') # TODO does it need to be narrow for the cfg to appear?
 @contextmanager
-def run_arion_network(arion_dir: Path, test_cfg: ResolvedTestConfig):
+def arion_network_up(arion_dir: Path, test_cfg: ResolvedTestConfig):
 
     arion_env = os.environ.copy()
     arion_env['EGC_TEST_JSON'] = test_cfg.tmpdir_path() / 'test.json'

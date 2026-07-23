@@ -5,6 +5,8 @@ import hashlib, json
 from pathlib import Path
 from hypothesis import strategies as st
 from copy import deepcopy
+from contextlib import contextmanager
+from itertools import chain
 # from hypothesis.strategies import composite, integers, text
 
 from tests.lib.example_data import EXAMPLE_CONTESTS
@@ -245,6 +247,26 @@ class ResolvedTestConfig:
     def arion_project_name(self):
         return f'egc-test{self.cache_key}'
 
+    def node_names(self):
+        names  = ['admin']
+        names += [f'guardian{n}' for n in range(1, self.config.nodes.guardians.count+1)]
+        names += [  f'device{n}' for n in range(1,   self.config.nodes.devices.count+1)]
+        names += [f'verifier{n}' for n in range(1, self.config.nodes.verifiers.count+1)]
+        return names
+
+    def bind_dirs(self):
+        "Dirs that should be created with user permissions before `arion up`."
+        per_node_dirs = [
+            'ipfs',
+            'egc',
+            # TODO what else?
+        ]
+        dirs = [
+            [self.tmpdir_path / 'data' / name]
+            for name in self.node_names()
+        ]
+        return sorted(list(chain.from_iterable(dirs)))
+
     @classmethod
     def from_hashed_config(cls, cfg: HashedTestConfig, tmp_root: Path) -> Self:
         key = cfg.cache_key()
@@ -258,6 +280,7 @@ class ResolvedTestConfig:
         cfg = asdict(self.config)
         cfg['tmpdir_path'] = str(self.tmpdir_path())
         cfg['arion']['project_name'] = self.arion_project_name()
+        cfg['bind_dirs'] = self.bind_dirs()
 
         # fix answers being converted to short lists rather than dicts,
         # and accidental nesting of contests in votes
@@ -273,3 +296,7 @@ class ResolvedTestConfig:
         cfg['attacks'] = cfg['attacks']['attacks']
 
         return fancy_dumps(cfg)
+
+@contextmanager
+def resolve_test_config(cfg: HashedTestConfig, tmp_root: Path) -> ResolvedTestConfig:
+    yield ResolvedTestConfig.from_hashed_config(cfg, tmp_root)

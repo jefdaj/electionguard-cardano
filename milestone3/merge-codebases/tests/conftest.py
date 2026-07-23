@@ -43,5 +43,6 @@ pytest_plugins = [
     "tests.env3_generated_networks.fixtures.random_seed",
     "tests.env3_generated_networks.fixtures.tmp_root",
     "tests.env3_generated_networks.fixtures.arion_dir",
+    # "tests.env3_generated_networks.fixtures.arion_network",
 
 ]
