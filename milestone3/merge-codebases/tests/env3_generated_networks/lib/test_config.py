@@ -3,9 +3,10 @@ from dataclasses import dataclass, field, asdict
 from typing import Mapping
 import hashlib, json
 from hypothesis import strategies as st
+from copy import deepcopy
 # from hypothesis.strategies import composite, integers, text
 
-from ..lib.example_data import EXAMPLE_CONTESTS
+from tests.lib.example_data import EXAMPLE_CONTESTS
 
 
 
@@ -32,18 +33,34 @@ def hashed_votes_config(draw) -> HashedVotesConfig:
 class HashedContestConfig:
     "A single scripted contest with question and vote counts per answer."
 
-    question: str          # office/question
+    question: str              # office/question
     answers: tuple[
-        str,               # candidate/answer
-        HashedVotesConfig, # vote counts for that candidate/answer
+        tuple[
+            str,               # candidate/answer
+            HashedVotesConfig, # vote counts for candidate/answer
+        ],
+        ...
     ]
-
-    def from_example(cls, data: dict) -> Self:
-        return cls(question=data['office'], answers=tuple(data['candidates']))
 
     def to_json(self) -> dict:
         return {"question": self.question,
                 "answers": {k: asdict(v) for k, v in self.answers}}
+
+
+@st.composite
+def hashed_contest_config(draw, example) -> HashedContestConfig:
+    "A single contest with scripted vote counts for each candidate/answer."
+    n_candidates = draw(st.integers(1, len(example['candidates'])))
+    example2 = deepcopy(example)
+    example2['candidates'] = example2['candidates'][:n_candidates]
+    return HashedContestConfig(
+        question = example['office'],
+        answers = tuple(
+            tuple([k, draw(hashed_votes_config())])
+            for k in example2['candidates']
+        )
+    )
+
 
 @dataclass(frozen=True, slots=True)
 class HashedContestsConfig:
@@ -59,16 +76,20 @@ class HashedContestsConfig:
 def hashed_contests_config(draw) -> HashedContestsConfig:
     "A list of unique contests with scripted vote counts for each one."
 
-    n_contests = 1 # TODO draw for 1..some max
-    contests = st.lists(
-        st.sampled_from(EXAMPLE_CONTESTS),
-        min_size = 1,
-        max_size = n_contests,
-        unique   = True
-    )
-    return HashedContestsConfig(
-        contests = contests.map(HashedContestConfig.from_example),
-    )
+    contest_idxs = draw(st.lists(
+        st.integers(0, len(EXAMPLE_CONTESTS)-1),
+        unique=True,
+        # max_size=len(EXAMPLE_CONTESTS),
+        min_size=1,
+        max_size=2, # TODO draw for max
+    ))
+    # print(f'contest_idxs: {contest_idxs}')
+    contests = [
+        draw( hashed_contest_config(EXAMPLE_CONTESTS[i]) )
+        for i in contest_idxs
+    ]
+    # print(f'contests: {contests}')
+    return HashedContestsConfig(contests=tuple(contests))
 
 
 @dataclass(frozen=True, slots=True)
