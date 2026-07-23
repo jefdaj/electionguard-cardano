@@ -108,11 +108,20 @@ async def ipfs_wait_until_ready(ipfs: RetryingIPFS, timeout=10):
 
 
 async def ipfs_status():
+    # TODO what should we throw if ipfs can't be contacted here?
     ipfs  = RetryingIPFS()
-    peers = (await ipfs._client.swarm.peers()).get("Peers") or []
-    bw    = await ipfs._client.stats.bw()
-    rate  = int(bw.get("RateIn", 0) + bw.get("RateOut", 0))
+    peers = (await ipfs._client.swarm.peers()).get('Peers') or []
+    LOG.debug(f'peers: {peers}')
+    bw   = await ipfs._client.stats.bw()
+    LOG.debug(f'bw: {bw}')
+    rate = int(bw.get("RateIn", 0) + bw.get("RateOut", 0))
     return {'n_peers': len(peers), 'bandwidth_Bs': rate}
+
+
+# TODO generalize this
+def ipfs_status_sync(**kwargs):
+    with asyncio.Runner() as runner:
+        return runner.run( ipfs_status(**kwargs) )
 
 
 # If you change ipfs-caps.json, these may also need adjustment...
