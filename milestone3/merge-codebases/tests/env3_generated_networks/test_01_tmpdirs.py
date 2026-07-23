@@ -14,7 +14,7 @@ from .lib  import *
     # database defaults on -> failing configs replay next run
 )
 @given(cfg=hashed_test_config())
-def test_generate_tmpdir(tmp_root: Path, cfg: HashedTestConfig):
-    with run_test_election(cfg, tmp_root) as test_tmpdir: # lockfile inside enforces serial
+def test_generate_tmpdir(env3_arion_dir: Path, tmp_root: Path, cfg: HashedTestConfig):
+    with run_test_election(cfg, env3_arion_dir, tmp_root) as test_tmpdir: # lockfile inside enforces serial
         # assert_verifiers_reject(testdir, [...])
         print(f'test_tmpdir: {test_tmpdir}')

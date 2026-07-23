@@ -3,10 +3,10 @@ import time
 from contextlib import contextmanager
 from pathlib import Path
 from .test_config import HashedTestConfig, ResolvedTestConfig
-from .network import with_arion_network
+from .network import run_arion_network
 
 @contextmanager
-def run_test_election(cfg: HashedTestConfig, tmp_root: Path) -> Path:
+def run_test_election(cfg: HashedTestConfig, arion_dir: Path, tmp_root: Path) -> Path:
     "Run the election if needed, and return the tmpdir path."
 
     resolved_cfg = ResolvedTestConfig.from_hashed_config(cfg, tmp_root)
@@ -37,7 +37,8 @@ def run_test_election(cfg: HashedTestConfig, tmp_root: Path) -> Path:
             # TODO or should that be something else that uses the contextmanager?
             # main(cfg, log)
 
-            yield tmpdir_path
+            with run_arion_network(arion_dir=arion_dir, test_cfg=resolved_cfg) as arion_network:
+                yield tmpdir_path
 
         finally:
             try:

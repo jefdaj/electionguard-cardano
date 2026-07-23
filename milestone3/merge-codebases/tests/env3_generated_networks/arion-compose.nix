@@ -48,9 +48,9 @@ let
     let
       counts = [
         { role = "admin";    n = 1; }
-        { role = "device";   n = cfg.election.devices.count; }
-        { role = "guardian"; n = cfg.election.guardians.count; }
-        { role = "verifier"; n = cfg.election.verifiers.count; }
+        { role = "device";   n = cfg.nodes.devices.count; }
+        { role = "guardian"; n = cfg.nodes.guardians.count; }
+        { role = "verifier"; n = cfg.nodes.verifiers.count; }
       ];
 
       # For each pair: ogmios-net and ipfs-net
@@ -105,7 +105,7 @@ let
     ];
     service.volumes = [
       "${data_dir}/${nodeName role i}/egc:/data/private"
-      "${scripts_dir}:/scripts"
+      # TODO single script instead of: "${scripts_dir}:/scripts"
     ];
     service.networks = [
       (ogmiosNetworkName role i)
@@ -221,16 +221,17 @@ let
 
       mkServicePairs =
         with cfg.arion;
-        pairAttrsList project_name egc_image data_dir scripts_dir;
+          let data_dir = "${cfg.tmpdir_path}/data";
+          in pairAttrsList project_name egc_image data_dir scripts_dir;
 
     in {
       "shared-cardano".service = cardanoService;
       "shared-ogmios".service = ogmiosService (listOgmiosNetworks cfg);
     } //
       builtins.listToAttrs (mkServicePairs "admin"    1) //
-      builtins.listToAttrs (mkServicePairs "device"   cfg.election.devices.count) //
-      builtins.listToAttrs (mkServicePairs "guardian" cfg.election.guardians.count) //
-      builtins.listToAttrs (mkServicePairs "verifier" cfg.election.verifiers.count);
+      builtins.listToAttrs (mkServicePairs "device"   cfg.nodes.devices.count) //
+      builtins.listToAttrs (mkServicePairs "guardian" cfg.nodes.guardians.count) //
+      builtins.listToAttrs (mkServicePairs "verifier" cfg.nodes.verifiers.count);
 
 
 in {
