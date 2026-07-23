@@ -256,6 +256,8 @@ class ResolvedTestConfig:
     def to_json(self) -> dict:
         return json.dumps(asdict(self), indent=2) # TODO sort_keys=True?
 
+    # TODO from_json using cattrs?
+
 
 # TODO remove? not sure if needed
 # @st.composite

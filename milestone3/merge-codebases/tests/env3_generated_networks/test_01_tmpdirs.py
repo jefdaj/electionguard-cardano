@@ -15,6 +15,6 @@ from .lib  import *
 )
 @given(cfg=hashed_test_config())
 def test_generate_tmpdir(tmp_root: Path, cfg: HashedTestConfig):
-    test_tmpdir = run_test_election(tmp_root, cfg) # lockfile inside enforces serial
-    # assert_verifiers_reject(testdir, [...])
-    print(f'test_tmpdir: {test_tmpdir}')
+    with run_test_election(cfg, tmp_root) as test_tmpdir: # lockfile inside enforces serial
+        # assert_verifiers_reject(testdir, [...])
+        print(f'test_tmpdir: {test_tmpdir}')

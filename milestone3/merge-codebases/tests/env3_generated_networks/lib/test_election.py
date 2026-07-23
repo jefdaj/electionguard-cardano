@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 import time
+from contextlib import contextmanager
 
 # from tests.lib import *
 # from .lib import *
@@ -17,6 +18,7 @@ from .test_config import HashedTestConfig, ResolvedTestConfig
 # 
 # 
 # TODO better name? testdir, tmpdir both taken(!) by built-in fixtures
+@contextmanager
 def run_test_election(cfg: HashedTestConfig, tmp_root: Path) -> Path:
     "Run the election if needed, and return the tmpdir path."
 
