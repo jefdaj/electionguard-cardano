@@ -231,15 +231,34 @@ def hashed_test_config(draw) -> HashedTestConfig:
 class ResolvedTestConfig:
     "Final test config including the non-hashed parts."
 
-    config:      HashedTestConfig
-    tmpdir:      str
-    docker_name: str
+    config: HashedTestConfig
+    cache_key: str
+
+    # tmpdir:      str
+    # docker_name: str
+
+    def tmpdir_path(self, tmp_root: Path):
+        return tmp_root / f'test{self.cache_key}'
+
+    def docker_name(self):
+        return f'egc-test-{self.cache_key}'
 
     @classmethod
-    def from_hashed_config(cls, cfg: HashedTestConfig, tmp_root: Path) -> Self:
+    def from_hashed_config(cls, cfg: HashedTestConfig) -> Self:
         key = cfg.cache_key()
         return cls(
-            config      = cfg,
-            tmpdir      = str(tmp_root / f'test{key}'),
-            docker_name = f'egc-test{key}',
+            config    = cfg,
+            cache_key = key,
+            # tmpdir      = str(tmp_root / f'test{key}'),
+            # docker_name = f'egc-test{key}',
         )
+
+    def to_json(self) -> dict:
+        return json.dumps(asdict(self), indent=2) # TODO sort_keys=True?
+
+
+# TODO remove? not sure if needed
+# @st.composite
+# def resolved_test_config(draw, tmp_root: Path) -> ResolvedTestConfig:
+#     cfg = draw( hashed_test_config() )
+#     return ResolvedTestConfig.from_hashed_config(cfg, tmp_root=tmp_root)
