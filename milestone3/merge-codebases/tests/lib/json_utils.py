@@ -2,7 +2,10 @@ import json
 
 import dataclasses
 
-def fancy_dumps(obj, indent=2, width=60, _level=0):
+def fancy_dumps(obj, indent=2, width=80, _level=0):
+    if hasattr(obj, 'to_dict'):
+        obj = obj.to_dict()
+
     if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
         obj = dataclasses.asdict(obj)          # recurses into nested dataclasses/tuples
     elif isinstance(obj, tuple):

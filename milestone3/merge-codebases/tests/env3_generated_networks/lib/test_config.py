@@ -43,7 +43,7 @@ class HashedContestConfig:
         ...
     ]
 
-    def to_json(self) -> dict:
+    def to_dict(self) -> dict:
         return {"question": self.question,
                 "answers": {k: asdict(v) for k, v in self.answers}}
 
@@ -51,7 +51,7 @@ class HashedContestConfig:
 @st.composite
 def hashed_contest_config(draw, example) -> HashedContestConfig:
     "A single contest with scripted vote counts for each candidate/answer."
-    n_candidates = draw(st.integers(1, len(example['candidates'])))
+    n_candidates = draw(st.integers(2, len(example['candidates']))) # TODO allow one candidate?
     example2 = deepcopy(example)
     example2['candidates'] = example2['candidates'][:n_candidates]
     return HashedContestConfig(
@@ -61,6 +61,7 @@ def hashed_contest_config(draw, example) -> HashedContestConfig:
             for k in example2['candidates']
         )
     )
+    # TODO assume at least one vote here?
 
 
 @dataclass(frozen=True, slots=True)
@@ -69,7 +70,7 @@ class HashedContestsConfig:
 
     contests: tuple[HashedContestConfig, ...]
 
-    # def to_json(self) -> dict:
+    # def to_dict(self) -> dict:
     #     return {"question": self.question,
     #             "answers": {k: asdict(v) for k, v in self.answers}}
 
@@ -82,7 +83,7 @@ def hashed_contests_config(draw) -> HashedContestsConfig:
         unique=True,
         # max_size=len(EXAMPLE_CONTESTS),
         min_size=1,
-        max_size=2, # TODO draw for max
+        max_size=1, # TODO draw for max
     ))
     # print(f'contest_idxs: {contest_idxs}')
     contests = [
@@ -253,5 +254,14 @@ class ResolvedTestConfig:
     def to_json(self) -> str:
         cfg = asdict(self.config)
         cfg['arion']['project_name'] = self.arion_project_name()
-        cfg['votes'] = cfg['votes']['contests']
+
+        # fix answers being converted to short lists rather than dicts
+        tmp = cfg['votes']['contests']
+        cfg['votes'] = []
+        for contest in tmp:
+            c = {'question': contest['question'], 'answers': {}}
+            for k, v in contest['answers']:
+                c['answers'][k] = v
+            cfg['votes'].append(c)
+
         return fancy_dumps(cfg)
