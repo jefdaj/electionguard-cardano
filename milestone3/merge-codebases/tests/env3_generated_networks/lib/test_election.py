@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import time
 
 # from tests.lib import *
 # from .lib import *
@@ -46,8 +47,10 @@ def run_test_election(cfg: HashedTestConfig, tmp_root: Path) -> Path:
     if tmpdir_path.exists():
         # if another instance is running, wait for it to finish
         # TODO proper way to do this?
-        while lock_path.exists():
+        while True:
             time.sleep(1)
+            if not lock_path.exists():
+                break
         yield tmpdir_path # TODO return?
 
     else:
@@ -66,8 +69,8 @@ def run_test_election(cfg: HashedTestConfig, tmp_root: Path) -> Path:
             # cfg['arion']['project_name'] = test_name
 
             # cfg_path = tmpdir / 'election.json' # TODO rename?
-            with open(cfg_path, 'w') as f:
-                json.dump(cfg, f, indent=2)
+            # with open(cfg_path, 'w') as f:
+            #     json.dump(cfg, f, indent=2)
 
             # with cfg_path.open('w') as f:
                 # json.dump(asdict(cfg), f, indent=2) # TODO sort_keys?
@@ -86,4 +89,8 @@ def run_test_election(cfg: HashedTestConfig, tmp_root: Path) -> Path:
             # TODO rm here? or do we want to keep + inspect the error files?
             # shutil.rmtree(tmpdir, ignore_errors=True)
             # raise
-            lock.close()
+            try:
+                lock.close()
+            except:
+                pass
+            lock.rm()

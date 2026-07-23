@@ -40,8 +40,7 @@ pytest_plugins = [
     "tests.env2_minimal_network.fixtures.subchannels",
 
     # stage 3 fixtures
-    # "tests.env3_generated_networks.fixtures.env3_network",
-    # "tests.env3_generated_networks.fixtures.env3_seed",
-    # "tests.env3_generated_networks.fixtures.env3_tmpdir",
+    "tests.env3_generated_networks.fixtures.random_seed",
+    "tests.env3_generated_networks.fixtures.tmp_root",
 
 ]
