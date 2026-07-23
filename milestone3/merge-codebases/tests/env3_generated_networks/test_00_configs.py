@@ -3,7 +3,8 @@ from hypothesis import given, settings
 from pathlib import Path
 
 from egc import *
-from ..lib import *
+# from ..lib import *
+from ..lib.json_utils import assert_json_roundtrip
 from .lib.test_config import *
 
 
