@@ -1,5 +1,6 @@
 import signal
 from contextlib import contextmanager
+# import ast, inspect, hashlib, textwrap
 
 class Terminated(Exception):
     pass
@@ -29,3 +30,9 @@ def raise_on_signals(*signums):
     finally:
         for s, prev in previous.items():
             signal.signal(s, prev)
+
+
+# def hash_ast(fn):
+# 	"Hash functions so they can be included in HashedTestConfig."
+#     tree = ast.parse(textwrap.dedent(inspect.getsource(fn)))
+#     return hashlib.sha256(ast.dump(tree).encode()).hexdigest()
