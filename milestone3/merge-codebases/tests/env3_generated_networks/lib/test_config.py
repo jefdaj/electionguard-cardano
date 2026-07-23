@@ -250,4 +250,7 @@ class ResolvedTestConfig:
         )
 
     def to_json(self) -> dict:
-        return json.dumps(asdict(self), indent=2) # TODO sort_keys=True?
+        cfg = asdict(self.config)
+        cfg['arion']['project_name'] = self.arion_project_name()
+        cfg['votes'] = cfg['votes']['contests']
+        return json.dumps(cfg, indent=2)
