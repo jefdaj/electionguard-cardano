@@ -26,7 +26,9 @@ def init_test_tmpdir(cfg: ResolvedTestConfig):
 
         log_path = tmpdir_path / 'test.log'
         with log_path.open('w') as log_handle: # TODO proper logging
-            log = lambda msg: log_handle.writelines([msg + '\n'])
+            def log(msg):
+                log_handle.writelines([msg + '\n'])
+                log_handle.flush()
             log('init_test_tmpdir start')
 
             # init config json

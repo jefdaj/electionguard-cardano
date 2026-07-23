@@ -11,7 +11,7 @@ from .lib  import *
 
 @seed(get_random_seed())
 @settings(
-    max_examples=1,
+    max_examples=3,
     deadline=None,
     phases=(Phase.explicit, Phase.reuse, Phase.generate, Phase.shrink),  # reuse+shrink back ON
     # database defaults on -> failing configs replay next run
@@ -37,7 +37,7 @@ def test_ogmios_synced(cfg: HashedTestConfig, tmp_root: Path, env3_arion_dir: Pa
 
 @seed(get_random_seed())
 @settings(
-    max_examples=1,
+    max_examples=3,
     deadline=None,
     phases=(Phase.explicit, Phase.reuse, Phase.generate, Phase.shrink),  # reuse+shrink back ON
     # database defaults on -> failing configs replay next run

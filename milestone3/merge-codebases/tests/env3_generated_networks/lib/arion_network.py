@@ -17,26 +17,36 @@ from tests.lib.proc_utils import raise_on_signals
 def arion_network_up(arion_dir: Path, test_cfg: ResolvedTestConfig):
 
     arion_env = os.environ.copy()
-    arion_env['EGC_TEST_JSON'] = test_cfg.tmpdir_path() / 'test.json'
+    tmpdir_path = test_cfg.tmpdir_path()
+    arion_env['EGC_TEST_JSON'] = tmpdir_path / 'test.json'
     assert 'EGC_CARDANO_DIR' in arion_env.keys() # set in flake.nix
 
-    def run_arion(args: list[str]):
-        return subprocess.run(
-            ["arion"] + args,
-            cwd   = arion_dir, # where to look for arion-{pkgs,compose}.nix
-            env   = arion_env, # with env vars loaded by arion-compose.nix
-            check = True
-        )
+    log_path = tmpdir_path / 'test.log'
+    with log_path.open('w') as log_handle: # TODO proper logging
+        def log(msg):
+            log_handle.writelines([msg + '\n'])
+            log_handle.flush()
+        log('arion_network_up start')
 
-    with raise_on_signals(signal.SIGTERM, signal.SIGINT):
-        run_arion(["down", "--remove-orphans", "--volumes"]) # in case of leftovers from prev run
-        run_arion(["up", "-d"])
-        time.sleep(20) # TODO how long is actually needed?
-        try:
-            yield test_cfg.arion_project_name() # TODO or parse arion cat /docker inspect? or None?
-        finally:
-            run_arion(["down", "--remove-orphans", "--volumes"])
-            time.sleep(5) # TODO remove?
+        def run_arion(args: list[str]):
+            return subprocess.run(
+                ["arion"] + args,
+                cwd   = arion_dir, # where to look for arion-{pkgs,compose}.nix
+                env   = arion_env, # with env vars loaded by arion-compose.nix
+                check = True
+            )
+
+        with raise_on_signals(signal.SIGTERM, signal.SIGINT):
+            run_arion(["down", "--remove-orphans", "--volumes"]) # in case of leftovers from prev run
+            run_arion(["up", "-d"])
+            time.sleep(20) # TODO how long is actually needed?
+            try:
+                log('arion_network_up yield')
+                yield test_cfg.arion_project_name() # TODO or parse arion cat /docker inspect? or None?
+            finally:
+                log('arion_network_up finally')
+                run_arion(["down", "--remove-orphans", "--volumes"])
+                time.sleep(5) # TODO remove?
 
 # @pytest.fixture(scope='function')
 # def env3_ogmios(env3_arion_network) -> OgmiosV6ChainContext:
