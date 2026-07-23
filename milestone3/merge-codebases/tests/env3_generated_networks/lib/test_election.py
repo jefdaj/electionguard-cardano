@@ -46,13 +46,11 @@ def run_test_election(cfg: HashedTestConfig, tmp_root: Path) -> Path:
     # lockfile = tmpdir / 'election.lock'
 
     # if exists(tmpdir):
-    if tmpdir_path.exists():
+    if cfg_path.exists():
         # if another instance is running, wait for it to finish
         # TODO proper way to do this?
-        while True:
+        while lock_path.exists():
             time.sleep(1)
-            if not lock_path.exists():
-                break
         yield tmpdir_path # TODO return?
 
     else:
@@ -85,7 +83,7 @@ def run_test_election(cfg: HashedTestConfig, tmp_root: Path) -> Path:
             # TODO where should this live?
             # main(cfg, log)
 
-            yield tmpdir
+            yield tmpdir_path
 
         finally:
             # TODO rm here? or do we want to keep + inspect the error files?
@@ -95,4 +93,4 @@ def run_test_election(cfg: HashedTestConfig, tmp_root: Path) -> Path:
                 lock.close()
             except:
                 pass
-            lock.rm()
+            lock_path.unlink(missing_ok=True)
