@@ -2,10 +2,12 @@ import pytest
 import subprocess
 import time
 import os
+import signal
 from pathlib import Path
 from contextlib import contextmanager
 from egc import *
 from ..lib.test_config import ResolvedTestConfig
+from tests.lib.proc_utils import raise_on_signals
 # from ..lib.test_tmpdir import lock_test_tmpdir
 
 # TODO how to force arion down on pytest exceptions, keyboardinturrupt etc?
@@ -26,13 +28,15 @@ def arion_network_up(arion_dir: Path, test_cfg: ResolvedTestConfig):
             check = True
         )
 
-    run_arion(["up", "-d"])
-    time.sleep(20) # TODO how long is actually needed?
-
-    try:
-        yield test_cfg.arion_project_name() # TODO or parse arion cat /docker inspect? or None?
-    finally:
-        run_arion(["down"])
+    with raise_on_signals(signal.SIGTERM, signal.SIGINT):
+        run_arion(["down", "--remove-orphans", "--volumes"]) # in case of leftovers from prev run
+        run_arion(["up", "-d"])
+        time.sleep(20) # TODO how long is actually needed?
+        try:
+            yield test_cfg.arion_project_name() # TODO or parse arion cat /docker inspect? or None?
+        finally:
+            run_arion(["down", "--remove-orphans", "--volumes"])
+            time.sleep(5) # TODO remove?
 
 # @pytest.fixture(scope='function')
 # def env3_ogmios(env3_arion_network) -> OgmiosV6ChainContext:

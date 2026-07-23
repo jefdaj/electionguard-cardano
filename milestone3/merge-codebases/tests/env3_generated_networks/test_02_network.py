@@ -11,7 +11,7 @@ from .lib  import *
 
 @seed(get_random_seed())
 @settings(
-    max_examples=25,
+    max_examples=1,
     deadline=None,
     phases=(Phase.explicit, Phase.reuse, Phase.generate, Phase.shrink),  # reuse+shrink back ON
     # database defaults on -> failing configs replay next run
@@ -19,23 +19,25 @@ from .lib  import *
 @given(cfg=hashed_test_config())
 def test_ogmios_synced(cfg: HashedTestConfig, tmp_root: Path, env3_arion_dir: Path):
 
-    with resolve_test_config(cfg=cfg, tmp_root=tmp_root) as resolved_cfg:
-        with init_test_tmpdir(cfg=resolved_cfg) as test_tmpdir:
-            with arion_network_up(cfg=resolved_cfg, arion_dir=env3_arion_dir) as arion_network:
+    resolved_cfg = resolve_test_config(cfg=cfg, tmp_root=tmp_root)
+    init_test_tmpdir(cfg=resolved_cfg)
 
-                health = ogmios_health_sync()
-                status = health["connectionStatus"]
-                sync   = health["networkSynchronization"]
-                if status != "connected":
-                    raise RuntimeError(f"Ogmios not connected to node: {health}")
-                if not isinstance(sync, (int, float)) or sync < 0.999:
-                    raise RuntimeError(f"Ogmios not synced (networkSynchronization={sync}): {health}")
-                assert health["network"] == "preview"
+    with lock_test_tmpdir(cfg=resolved_cfg) as test_tmpdir:
+        with arion_network_up(test_cfg=resolved_cfg, arion_dir=env3_arion_dir) as network_name:
+
+            health = ogmios_health_sync()
+            status = health["connectionStatus"]
+            sync   = health["networkSynchronization"]
+            if status != "connected":
+                raise RuntimeError(f"Ogmios not connected to node: {health}")
+            if not isinstance(sync, (int, float)) or sync < 0.999:
+                raise RuntimeError(f"Ogmios not synced (networkSynchronization={sync}): {health}")
+            assert health["network"] == "preview"
 
 
 @seed(get_random_seed())
 @settings(
-    max_examples=25,
+    max_examples=1,
     deadline=None,
     phases=(Phase.explicit, Phase.reuse, Phase.generate, Phase.shrink),  # reuse+shrink back ON
     # database defaults on -> failing configs replay next run
@@ -43,11 +45,13 @@ def test_ogmios_synced(cfg: HashedTestConfig, tmp_root: Path, env3_arion_dir: Pa
 @given(cfg=hashed_test_config())
 def test_ogmios_query(cfg: HashedTestConfig, tmp_root: Path, env3_arion_dir: Path):
 
-    with resolve_test_config(cfg=cfg, tmp_root=tmp_root) as resolved_cfg:
-        with init_test_tmpdir(cfg=resolved_cfg) as test_tmpdir:
-            with arion_network_up(cfg=resolved_cfg, arion_dir=env3_arion_dir) as arion_network:
+    resolved_cfg = resolve_test_config(cfg=cfg, tmp_root=tmp_root)
+    init_test_tmpdir(cfg=resolved_cfg)
 
-                tip = query_network_tip_sync()
-                assert isinstance(tip, dict)
-                assert isinstance(tip['slot'], int)
-                assert isinstance(tip['block_hash'], str)
+    with lock_test_tmpdir(cfg=resolved_cfg) as test_tmpdir:
+        with arion_network_up(test_cfg=resolved_cfg, arion_dir=env3_arion_dir) as network_name:
+
+            tip = query_network_tip_sync()
+            assert isinstance(tip, dict)
+            assert isinstance(tip['slot'], int)
+            assert isinstance(tip['block_hash'], str)

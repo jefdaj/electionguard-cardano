@@ -8,7 +8,6 @@ let
   testConfig = builtins.fromJSON (builtins.readFile (builtins.getEnv "EGC_TEST_JSON"));
 
   # Shared cardano node data (~15G) for all the dev codebases
-  # cardanoDir = "../../../../milestone2/cardano-node-ogmios";
   cardanoDir = builtins.getEnv "EGC_CARDANO_DIR";
   cardanoConfigDir = "${cardanoDir}/config";
   cardanoDataDir   = "${cardanoDir}/data";
@@ -170,6 +169,8 @@ let
     ];
     restart = "on-failure"; # TODO remove?
     networks = [ cardanoNetworkName ];
+    stop_signal = "SIGINT";
+    stop_grace_period = "60s"; # default 10s kills it, forcing re-sync on next startup
     # TODO how should this look in Arion?
     # logging = {
     #   driver = "json-file";
@@ -194,6 +195,8 @@ let
     ];
     ports = [ "127.0.0.1:${toString ogmiosPort}:1337" ];
     networks = [ cardanoNetworkName ] ++ perPairNetworks;
+    stop_signal = "SIGINT";
+    stop_grace_period = "60s"; # default 10s kills it, forcing re-sync on next startup
   };
 
   mkServices = cfg:

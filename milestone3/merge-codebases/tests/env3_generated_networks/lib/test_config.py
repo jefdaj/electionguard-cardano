@@ -5,7 +5,7 @@ import hashlib, json
 from pathlib import Path
 from hypothesis import strategies as st
 from copy import deepcopy
-from contextlib import contextmanager
+# from contextlib import contextmanager
 # from hypothesis.strategies import composite, integers, text
 
 from tests.lib.example_data import EXAMPLE_CONTESTS
@@ -295,9 +295,9 @@ class ResolvedTestConfig:
         # fix accidental nesting of attacks in attacks
         cfg['attacks'] = cfg['attacks']['attacks']
 
-        print(f'cfg: {cfg}')
+        # print(f'cfg: {cfg}')
         return fancy_dumps(cfg)
 
-@contextmanager
+# @contextmanager
 def resolve_test_config(cfg: HashedTestConfig, tmp_root: Path) -> ResolvedTestConfig:
-    yield ResolvedTestConfig.from_hashed_config(cfg, tmp_root)
+    return ResolvedTestConfig.from_hashed_config(cfg, tmp_root)

@@ -8,17 +8,20 @@ from egc import *
 
 # TODO what should this yield, if anything?
 # TODO how to force arion down on pytest exceptions, keyboardinturrupt etc?
-@pytest.fixture(scope='package')
+@pytest.fixture(scope='module')
 def arion_network(request):
     compose_dir = Path(request.fspath).parent # dir of the calling conftest
+    # in case of leftovers from a previous run:
+    subprocess.run(["arion", "down", "--remove-orphans", "--volumes"], cwd=compose_dir, check=True)
     subprocess.run(["arion", "up", "-d"], cwd=compose_dir, check=True)
     time.sleep(20) # TODO remove?
     try:
         yield compose_dir # TODO or parse arion cat /docker inspect? or None?
     finally:
-        subprocess.run(["arion", "down"], cwd=compose_dir, check=True)
+        subprocess.run(["arion", "down", "--remove-orphans", "--volumes"], cwd=compose_dir, check=False)
+        # time.sleep(5) # TODO remove?
 
-@pytest.fixture(scope='package')
+@pytest.fixture(scope='module')
 def ogmios(arion_network) -> OgmiosV6ChainContext:
     ctx = OGMIOS_CTX
     deadline = time.monotonic() + OGMIOS_TIMEOUT_SEC
@@ -39,7 +42,7 @@ def ogmios(arion_network) -> OgmiosV6ChainContext:
         time.sleep(OGMIOS_POLL_SEC)
 
 # TODO what should this return, if anything?
-@pytest.fixture(scope='package')
+@pytest.fixture(scope='module')
 def ipfs(arion_network):
     ipfs_wait_until_stable_sync()
     return
