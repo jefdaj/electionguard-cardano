@@ -255,7 +255,8 @@ class ResolvedTestConfig:
         cfg = asdict(self.config)
         cfg['arion']['project_name'] = self.arion_project_name()
 
-        # fix answers being converted to short lists rather than dicts
+        # fix answers being converted to short lists rather than dicts,
+        # and accidental nesting of contests in votes
         tmp = cfg['votes']['contests']
         cfg['votes'] = []
         for contest in tmp:
@@ -263,5 +264,8 @@ class ResolvedTestConfig:
             for k, v in contest['answers']:
                 c['answers'][k] = v
             cfg['votes'].append(c)
+
+        # fix accidental nesting of attacks in attacks
+        cfg['attacks'] = cfg['attacks']['attacks']
 
         return fancy_dumps(cfg)
