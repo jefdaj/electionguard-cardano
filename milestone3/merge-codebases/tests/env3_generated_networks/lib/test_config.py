@@ -6,7 +6,6 @@ from pathlib import Path
 from hypothesis import strategies as st
 from copy import deepcopy
 from contextlib import contextmanager
-from itertools import chain
 # from hypothesis.strategies import composite, integers, text
 
 from tests.lib.example_data import EXAMPLE_CONTESTS
@@ -241,8 +240,8 @@ class ResolvedTestConfig:
     cache_key: str
     tmp_root: Path
 
-    def tmpdir_path(self):
-        return self.tmp_root / f'test{self.cache_key}'
+    def tmpdir_path(self) -> Path:
+        return Path(self.tmp_root) / f'test{self.cache_key}'
 
     def arion_project_name(self):
         return f'egc-test{self.cache_key}'
@@ -254,18 +253,17 @@ class ResolvedTestConfig:
         names += [f'verifier{n}' for n in range(1, self.config.nodes.verifiers.count+1)]
         return names
 
-    def bind_dirs(self):
+    def bind_dirs(self) -> list[Path]:
         "Dirs that should be created with user permissions before `arion up`."
         per_node_dirs = [
             'ipfs',
             'egc',
             # TODO what else?
         ]
-        dirs = [
-            [self.tmpdir_path / 'data' / name]
-            for name in self.node_names()
-        ]
-        return sorted(list(chain.from_iterable(dirs)))
+        dirs = []
+        for name in self.node_names():
+            dirs += [f'data/{name}/{d}' for d in per_node_dirs]
+        return sorted(list(dirs))
 
     @classmethod
     def from_hashed_config(cls, cfg: HashedTestConfig, tmp_root: Path) -> Self:
@@ -273,14 +271,16 @@ class ResolvedTestConfig:
         return cls(
             config    = cfg,
             cache_key = key,
-            tmp_root  = Path(tmp_root),
+            tmp_root  = str(tmp_root),
         )
 
     def to_json(self) -> str:
         cfg = asdict(self.config)
         cfg['tmpdir_path'] = str(self.tmpdir_path())
         cfg['arion']['project_name'] = self.arion_project_name()
-        cfg['bind_dirs'] = self.bind_dirs()
+        # print(f'cfg: {cfg}')
+        cfg['bind_dirs'] = [str(d) for d in self.bind_dirs()]
+        # print(f'cfg bind_dirs: {cfg['bind_dirs']}')
 
         # fix answers being converted to short lists rather than dicts,
         # and accidental nesting of contests in votes
@@ -295,6 +295,7 @@ class ResolvedTestConfig:
         # fix accidental nesting of attacks in attacks
         cfg['attacks'] = cfg['attacks']['attacks']
 
+        print(f'cfg: {cfg}')
         return fancy_dumps(cfg)
 
 @contextmanager

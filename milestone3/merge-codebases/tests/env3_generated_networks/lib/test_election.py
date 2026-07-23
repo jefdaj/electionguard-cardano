@@ -5,8 +5,8 @@ from pathlib import Path
 from .test_config import HashedTestConfig, ResolvedTestConfig
 from .arion_network import arion_network_up
 
-@contextmanager
 # def run_test_election(cfg: HashedTestConfig, arion_dir: Path, tmp_root: Path) -> Path:
+@contextmanager
 def run_test_election(cfg: ResolvedTestConfig) -> Path:
     "Run the election if needed, and return the tmpdir path."
 
@@ -41,7 +41,7 @@ def run_test_election(cfg: ResolvedTestConfig) -> Path:
             # TODO or should that be something else that uses the contextmanager?
             # main(cfg, log)
 
-            with arion_network_up(arion_dir=arion_dir, test_cfg=resolved_cfg) as arion_network:
+            with arion_network_up(arion_dir=arion_dir, test_cfg=resolved_cfg) as network_prefix:
                 yield tmpdir_path
 
         finally:

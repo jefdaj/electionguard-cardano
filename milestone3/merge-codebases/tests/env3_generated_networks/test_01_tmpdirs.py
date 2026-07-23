@@ -4,7 +4,9 @@ from pathlib import Path
 
 from egc   import *
 from ..lib import *
-from .lib  import *
+from .lib.random_seed import get_random_seed
+from .lib.test_tmpdir import init_test_tmpdir
+from .lib.test_config import *
 
 @seed(get_random_seed())
 @settings(
@@ -19,5 +21,5 @@ def test_init_tmpdir(env3_arion_dir: Path, tmp_root: Path, cfg: HashedTestConfig
     #     print(f'test_tmpdir: {test_tmpdir}')
 
     with resolve_test_config(cfg=cfg, tmp_root=tmp_root) as resolved_cfg:
-        with init_test_tmpdir(cfg=resolved_cfg) as test_tmpdir:
-            print(f'test_tmpdir: {test_tmpdir}')
+        test_tmpdir = init_test_tmpdir(cfg=resolved_cfg)
+    print(f'test_tmpdir: {test_tmpdir}')
