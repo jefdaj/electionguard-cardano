@@ -11,6 +11,7 @@ import logging
 LOG = logging.getLogger(__name__)
 
 from . import example_data
+from . import json_utils
 
 # TODO move some of this to env-specific helper/util libs
 
@@ -24,6 +25,7 @@ from . import example_data
 # per_network_fixture  = pytest.fixture(scope='package')
 
 
+# TODO mv to json_utils
 def assert_json_roundtrip(cfg):
     # print(f'cfg: {cfg}')
     tmp  = json.dumps(asdict(cfg), sort_keys=True)

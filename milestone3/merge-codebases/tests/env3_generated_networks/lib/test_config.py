@@ -7,6 +7,7 @@ from copy import deepcopy
 # from hypothesis.strategies import composite, integers, text
 
 from tests.lib.example_data import EXAMPLE_CONTESTS
+from tests.lib.json_utils import fancy_dumps
 
 
 
@@ -249,8 +250,8 @@ class ResolvedTestConfig:
             cache_key = key,
         )
 
-    def to_json(self) -> dict:
+    def to_json(self) -> str:
         cfg = asdict(self.config)
         cfg['arion']['project_name'] = self.arion_project_name()
         cfg['votes'] = cfg['votes']['contests']
-        return json.dumps(cfg, indent=2)
+        return fancy_dumps(cfg)

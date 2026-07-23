@@ -49,6 +49,7 @@ def test_roundtrip_nodes_config(cfg: HashedNodesConfig):
 def test_roundtrip_attacks_config(cfg: HashedAttacksConfig):
     assert_json_roundtrip(cfg)
 
+# @example(cfg=example_test_config())
 @given(cfg=hashed_test_config())
 @settings(max_examples=1_000)
 def test_roundtrip_hashed_test_config(cfg: HashedTestConfig):
