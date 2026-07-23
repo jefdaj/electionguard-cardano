@@ -11,7 +11,7 @@ LOG = logging.getLogger(__name__)
 
 from . import example_data
 from . import json_utils
-from . import proc_utils
+from . import py_utils
 
 # TODO move some of this to env-specific helper/util libs
 

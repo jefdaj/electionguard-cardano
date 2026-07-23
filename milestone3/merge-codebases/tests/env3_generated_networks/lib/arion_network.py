@@ -7,7 +7,7 @@ from pathlib import Path
 from contextlib import contextmanager
 from egc import *
 from ..lib.test_config import ResolvedTestConfig
-from tests.lib.proc_utils import raise_on_signals
+from tests.lib.py_utils import raise_on_signals
 # from ..lib.test_tmpdir import lock_test_tmpdir
 
 # TODO how to force arion down on pytest exceptions, keyboardinturrupt etc?
