@@ -20,7 +20,7 @@ def await_node_ready_config(draw):
         'nodes.verifiers.script',
     ]
     for attr_path in attr_paths:
-        cfg = deep_replace(cfg, attr_path, 'await-node-ready.sh')
+        cfg = deep_replace(cfg, attr_path, 'node-await.sh')
     # print(f'cfg: {cfg}')
     return cfg
 
