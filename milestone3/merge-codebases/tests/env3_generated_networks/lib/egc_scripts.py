@@ -47,7 +47,7 @@ def write_egc_scripts(cfg: ResolvedTestConfig):
             out_text = template.render(
                 role = role,
                 template_name = template_name,
-                debug = True, # only a personal convention
+                debug = False, # only a personal convention
             )
             log(f'write_egc_scripts write {out_path}')
             out_path.write_text(out_text)
@@ -93,6 +93,8 @@ def run_egc_scripts(test_cfg: ResolvedTestConfig, arion_dir: Path, timeout=300):
         finally:
             log_handle.close()
         results[node_name] = p.returncode
-    return results
+    error_codes = {k:v for k,v in results.items() if v != 0}
+    assert len(error_codes) == 0, f'Script error codes: {error_codes}' # TODO plain assert for pytest?
+    return results # TODO remove?
 
 

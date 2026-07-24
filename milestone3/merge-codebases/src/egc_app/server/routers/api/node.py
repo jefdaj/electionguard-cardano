@@ -1,3 +1,4 @@
+import json
 from fastapi import APIRouter
 from egc.core.ogmios import ogmios_health, ogmios_wait_until_synced
 from egc.core.ipfs import ipfs_wait_until_stable, ipfs_status
@@ -21,7 +22,7 @@ async def status():
         istat['connected'] = True
     except:
         istat = {'connected': False}
-    return {'cardano': cstat2, 'ipfs': istat}
+    return json.dumps({'cardano': cstat2, 'ipfs': istat})
 
 @router.get("/await")
 async def await_():

@@ -17,13 +17,10 @@ from pathlib import Path
 from typing import Optional, Self, Tuple
 from dataclasses import dataclass
 from pycardano import *
-from .env import EGC_WALLET_MODE
+from .env import EGC_WALLET_MODE, EGC_WALLET_DIR
 import logging
 import shutil
 
-
-# TODO load from config
-DEF_KEYS_DIR = (Path(__file__).parents[3] / 'keys').absolute()
 
 # Regular logger
 LOG = logging.getLogger(__name__)
@@ -31,7 +28,7 @@ LOG = logging.getLogger(__name__)
 # Separate logger for test keys
 KEYS_LOG = logging.getLogger('test-keys')
 if EGC_WALLET_MODE == 'scripted':
-    log_path = (DEF_KEYS_DIR / 'test-keys.log').absolute()
+    log_path = (EGC_WALLET_DIR / 'test-keys.log').absolute()
     keys_fh = logging.FileHandler(log_path)
     keys_fh.setFormatter(
         logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -114,7 +111,7 @@ class Wallet:
     @classmethod
     def load_or_create(
         cls,
-        keys_dir: Path = DEF_KEYS_DIR,
+        keys_dir: Path = EGC_WALLET_DIR,
         name: str = 'wallet',
         description: str = 'Generated EGC wallet', # TODO no default?
         verbose: bool = True,
@@ -156,14 +153,14 @@ def addr_for_signing_key(sk: PaymentSigningKey) -> Address:
 def addr_for_vkh(vkh: VerificationKeyHash) -> Address:
     return Address(payment_part=vkh, network=Network.TESTNET)
 
-def load_wallet(sk_path: Optional[Path] = None, keys_dir=DEF_KEYS_DIR, name='default') -> Wallet:
+def load_wallet(sk_path: Optional[Path] = None, keys_dir=EGC_WALLET_DIR, name='default') -> Wallet:
     LOG.debug('load_wallet')
     if sk_path is None:
         keys_dir = Path(keys_dir)
         sk_path = keys_dir / f'{name}.sk'
     return Wallet.from_sk_path(sk_path)
 
-def load_wallet_by_address(address: Address, keys_dir=DEF_KEYS_DIR) -> Optional[Tuple[Path, Wallet]]:
+def load_wallet_by_address(address: Address, keys_dir=EGC_WALLET_DIR) -> Optional[Tuple[Path, Wallet]]:
     "Mainly to help return collateral in test fixtures."
     LOG.debug('load_wallet_for_address')
     keys_dir = Path(keys_dir)
@@ -180,7 +177,7 @@ def _set_sk_description(sk: PaymentSigningKey, desc: str) -> PaymentSigningKey:
     sk = PaymentSigningKey.from_json(json.dumps(sk_dict))
     return sk
 
-def create_wallet(keys_dir=DEF_KEYS_DIR, name='wallet', description='Generated EGC wallet', verbose=True, overwrite=False) -> Wallet:
+def create_wallet(keys_dir=EGC_WALLET_DIR, name='wallet', description='Generated EGC wallet', verbose=True, overwrite=False) -> Wallet:
     LOG.debug('create_wallet')
     keys_dir = Path(keys_dir)
     sk_path  = keys_dir / f'{name}.sk'

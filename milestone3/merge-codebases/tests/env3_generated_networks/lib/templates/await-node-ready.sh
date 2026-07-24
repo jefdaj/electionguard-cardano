@@ -1,17 +1,18 @@
 #!/bin/bash
 
 # role: {{role}}
-# debug: {{debug}}
 # template: {{template_name}}
+# debug: {{debug}}
 
-# TODO set self-identified node name first?
-# TODO env var for logfile? i guess during node run
-
-{% if debug %}
+{% if debug -%}
 set -x
-{% endif %}
+{%- endif %}
+
+# TODO set self-identified node name here?
 
 # Make sure Cardano node syncs to 100% and IPFS finds peers
 while true; do
-  egc node await && echo "node is ready" && break || sleep 5
+  egc node await && break || sleep 5
 done
+
+echo "node is ready:"; egc node status | jq

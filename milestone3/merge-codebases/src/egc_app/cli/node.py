@@ -17,6 +17,7 @@ def node() -> None:
 @click.option("--private-dir", type=click.STRING, required=True) # TODO click.PATH?
 def run(host, port, dev_mode, private_dir):
     "Run the EGC node (API server)."
+    print(locals())
     run_server(**locals())
 
 # TODO pick: egc node config (here)? or egc config node?
