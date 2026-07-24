@@ -23,8 +23,10 @@ def node_ready_config(draw):
         cfg = deep_replace(cfg, attr_path, 'node-ready.sh')
     return cfg
 
-# TODO remove tmp_root, arion_dir?
-@given_cached_tests(hashed_test_config, max_examples=1)
-# def test_node_ready(cfg: ResolvedTestConfig, tmp_root: Path, env3_arion_dir: Path):
+@given_cached_tests(hashed_test_config, max_examples=3)
 def test_node_ready(cfg: ResolvedTestConfig):
-    assert_node_logs_match(cfg=cfg, pattern='^node is ready')
+    assert_node_logs_match(cfg=cfg, pattern='^node is ready$')
+
+@given_cached_tests(hashed_test_config, max_examples=3)
+def test_cleanup_called(cfg: ResolvedTestConfig):
+    assert_node_logs_match(cfg=cfg, pattern='^cleaning up$')
