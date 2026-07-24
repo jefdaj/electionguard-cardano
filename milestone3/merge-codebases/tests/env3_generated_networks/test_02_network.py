@@ -33,11 +33,12 @@ def node_ready_config(draw):
 )
 @given(cfg=node_ready_config())
 def test_node_ready(cfg: HashedTestConfig, tmp_root: Path, env3_arion_dir: Path):
-    resolved_cfg = resolve_test_config(cfg=cfg, tmp_root=tmp_root)
-    with lock_test_tmpdir(cfg=resolved_cfg) as test_tmpdir:
+    rcfg = resolve_test_config(cfg=cfg, tmp_root=tmp_root)
+    with lock_test_tmpdir(cfg=rcfg) as test_tmpdir:
         log_path = test_tmpdir / 'test.log'
         if not log_path.exists():
-            init_test_tmpdir(cfg=resolved_cfg)
-            with arion_network_up(test_cfg=resolved_cfg, arion_dir=env3_arion_dir):
-                run_egc_scripts(test_cfg=resolved_cfg, arion_dir=env3_arion_dir)
-        assert_node_logs_match(test_cfg=resolved_cfg, pattern='^node is ready')
+            # the test hasn't been run already
+            init_test_tmpdir(cfg=rcfg)
+            with arion_network_up(cfg=rcfg, arion_dir=env3_arion_dir):
+                run_egc_scripts(cfg=rcfg, arion_dir=env3_arion_dir)
+        assert_node_logs_match(cfg=rcfg, pattern='^node is ready')
