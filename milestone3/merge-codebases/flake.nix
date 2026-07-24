@@ -168,12 +168,13 @@
               enableFakechroot = true;
               fakeRootCommands = ''
                 mkdir /data; chown 1000:100 /data
+                mkdir /data/private; chown 1000:100 /data/private
                 mkdir /tmp ; chmod 1777 /tmp
               '';
               config = {
                 # TODO log to stdout? also a logfile under /data?
                 Entrypoint = [ "${pythonEnv}/bin/egc" ];
-                Cmd = [ "node" "run" ];
+                Cmd = [ "node" "run" "--private-dir" "/data/private" ];
                 User = "1000:100"; # TODO named egc user? 1000:1000?
                 Env = [
                   "PATH=/bin"
@@ -181,6 +182,7 @@
                   "EGC_PLUTUS_DIR=${plutusBlueprints}"
                   "EGC_PLUTUS_MODE=burntesttokens-traced"
                   "EGC_WALLET_MODE=scripted"
+                  "EGC_WALLET_DIR=/data/private" # TODO /data/private/keys?
                 ];
                 Labels = {};
                 # ExposedPorts = { "8000/tcp" = {}; }; # TODO does this do anything?
@@ -226,9 +228,11 @@
               UV_PYTHON_DOWNLOADS = "never";
               PYTHONDONTWRITEBYTECODE = true;
               EGC_PLUTUS_DIR   = "${plutusBlueprints}";
+              EGC_CARDANO_DIR  = "../../milestone2/cardano-node-ogmios";
               EGC_NETWORK_MODE = "preview";
               EGC_PLUTUS_MODE  = "burntesttokens-traced";
               EGC_WALLET_MODE  = "scripted";
+              EGC_WALLET_DIR   = "keys"; # should be in .gitignore
 
               # TODO remove?
               # SSL_CERT_FILE     = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
@@ -240,6 +244,7 @@
                echo "kupo $(kupo --version)"
                echo "$(python --version)"
                echo "pycardano $(python -c "import importlib.metadata as m; print(m.version('pycardano'))")"
+               export EGC_CARDANO_DIR="$(realpath "$EGC_CARDANO_DIR")"
                env | grep ^EGC_
                unset PYTHONPATH
             '';

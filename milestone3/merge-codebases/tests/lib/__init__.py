@@ -4,7 +4,6 @@ from pprint import pformat
 from egc import *
 import time
 import typing
-import cattrs
 from dataclasses import asdict
 
 import logging
@@ -12,6 +11,7 @@ LOG = logging.getLogger(__name__)
 
 from . import example_data
 from . import json_utils
+from . import py_utils
 
 # TODO move some of this to env-specific helper/util libs
 
@@ -23,15 +23,6 @@ from . import json_utils
 # global_fixture       = pytest.fixture(scope='session')
 # per_election_fixture = pytest.fixture(scope='module')
 # per_network_fixture  = pytest.fixture(scope='package')
-
-
-# TODO mv to json_utils
-def assert_json_roundtrip(cfg):
-    # print(f'cfg: {cfg}')
-    tmp  = json.dumps(asdict(cfg), sort_keys=True)
-    # TODO is this an OK solution? seems roundabout but works...
-    cfg2 = cattrs.Converter().structure(json.loads(tmp), type(cfg))
-    assert cfg == cfg2
 
 
 # TODO where should this live?

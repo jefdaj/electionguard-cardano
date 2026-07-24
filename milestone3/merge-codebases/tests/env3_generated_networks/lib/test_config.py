@@ -1,9 +1,11 @@
 from __future__ import annotations
 from dataclasses import dataclass, field, asdict
-from typing import Mapping
+from typing import Mapping, Optional
 import hashlib, json
+from pathlib import Path
 from hypothesis import strategies as st
 from copy import deepcopy
+# from contextlib import contextmanager
 # from hypothesis.strategies import composite, integers, text
 
 from tests.lib.example_data import EXAMPLE_CONTESTS
@@ -95,48 +97,39 @@ def hashed_contests_config(draw) -> HashedContestsConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class HashedAdminConfig:
+    script: str = field(default='admin.sh')
+
+@st.composite
+def hashed_admin_config(draw, script: Optional[str] = None):
+    # TODO remove?
+    _ = draw(st.integers(1,1)) # stop hypothesis complaining about draw
+    kwargs = {}
+    if script is not None:
+        kwargs['script'] = script
+    return HashedAdminConfig(**kwargs)
+
+
+@dataclass(frozen=True, slots=True)
 class HashedGuardiansConfig:
     count: int = 3
     quorum: int = 2
+    script: str = field(default='guardian.sh')
 
     def __post_init__(self):
         assert 0 < self.quorum <= self.count
 
 @st.composite
-def hashed_guardians_config(draw):
+def hashed_guardians_config(draw, script: Optional[str] = None):
     count = draw(st.integers(2,5)) # TODO actual upper bound?
-    return HashedGuardiansConfig(
-        count = count,
-        quorum = draw(st.integers(1, count)),
-    )
+    kwargs = {
+        'count':  count,
+        'quorum': draw(st.integers(1, count)),
+    }
+    if script is not None:
+        kwargs['script'] = script
+    return HashedGuardiansConfig(**kwargs)
 
-
-# class BindMountsJson(dict):
-#     def __init__(self):
-#         super(BindMountsJson, self).__init__()
-#         self["scripts"] = "/scripts"
-#         # self["mockchain"] = "/data/mockchain"
-#         self["private"] = "/data/private"
-#         # TODO qrcodes
-
-# class HashedArionConfig(dict):
-#     def __init__(self):
-#         super(HashedArionConfig, self).__init__()
-# 
-#         # These are derived from the config and will contain the hash, so they
-#         # have to be loaded seperately to avoid a circular dependency:
-#         # self['project_name'] = 'test'
-#         # self['data_dir'] = 'data'
-# 
-#         # These are different from the old Python egc_scripts. They'll be one
-#         # Bash script per container, generated based on the config. Each will
-#         # be individually bind mounted into its container.
-#         # self['scripts_dir'] = './egc_scripts'
-# 
-#         # self["private_data"] = "/data/private"
-# 
-#         # TODO anything else that needs mounting besides private_data?
-#         # self['bind_mounts'] = BindMountsJson()
 
 @dataclass(frozen=True, slots=True)
 class HashedArionConfig:
@@ -157,27 +150,36 @@ def hashed_arion_config(draw):
 @dataclass(frozen=True, slots=True)
 class HashedDevicesConfig:
     count: int
+    script: str = field(default='device.sh')
 
 @st.composite
-def hashed_devices_config(draw):
-    return HashedDevicesConfig(
-        count = draw(st.integers(1, 3)), # TODO actual upper bound?
-    )
+def hashed_devices_config(draw, script: Optional[str] = None):
+    kwargs = {
+        'count': draw(st.integers(1, 3)), # TODO actual upper bound?
+    }
+    if script is not None:
+        kwargs['script'] = script
+    return HashedDevicesConfig(**kwargs)
 
 
 @dataclass(frozen=True, slots=True)
 class HashedVerifiersConfig:
     count: int
+    script: str = field(default='verifier.sh')
 
 @st.composite
-def hashed_verifiers_config(draw):
-    return HashedVerifiersConfig(
-        count = draw(st.integers(1, 3)), # TODO actual upper bound?
-    )
+def hashed_verifiers_config(draw, script: Optional[str] = None):
+    kwargs = {
+        'count': draw(st.integers(1, 3)), # TODO actual upper bound?
+    }
+    if script is not None:
+        kwargs['script'] = script
+    return HashedVerifiersConfig(**kwargs)
 
 # Used to be called "election", which was confusing
 @dataclass(frozen=True, slots=True)
 class HashedNodesConfig:
+    admin:     HashedAdminConfig
     guardians: HashedGuardiansConfig
     devices:   HashedDevicesConfig
     verifiers: HashedVerifiersConfig
@@ -185,6 +187,7 @@ class HashedNodesConfig:
 @st.composite
 def hashed_nodes_config(draw):
     return HashedNodesConfig(
+        admin     = draw( hashed_admin_config()     ),
         guardians = draw( hashed_guardians_config() ),
         devices   = draw( hashed_devices_config()   ),
         verifiers = draw( hashed_verifiers_config() ),
@@ -236,26 +239,63 @@ class ResolvedTestConfig:
 
     config: HashedTestConfig
     cache_key: str
+    tmp_root: Path
 
-    def tmpdir_path(self, tmp_root: Path):
-        return tmp_root / f'test{self.cache_key}'
+    def tmpdir_path(self) -> Path:
+        return Path(self.tmp_root) / f'test{self.cache_key}'
 
     def arion_project_name(self):
         return f'egc-test{self.cache_key}'
 
+    def node_names(self):
+        names  = ['admin']
+        names += [f'guardian{n}' for n in range(1, self.config.nodes.guardians.count+1)]
+        names += [  f'device{n}' for n in range(1,   self.config.nodes.devices.count+1)]
+        names += [f'verifier{n}' for n in range(1, self.config.nodes.verifiers.count+1)]
+        return names
+
+    def bind_dirs(self) -> list[Path]:
+        "Dirs that should be created with user permissions before `arion up`."
+        per_node_dirs = [
+            'ipfs',
+            'egc',
+            # TODO what else?
+        ]
+        dirs = []
+        for name in self.node_names():
+            dirs += [f'data/{name}/{d}' for d in per_node_dirs]
+        return sorted(list(dirs))
+
+    # TODO remove if not needed
+    # def egc_scripts(self) -> list[Path]:
+    #     # TODO one per node rather than one per node type?
+    #     return {
+    #         'admin':    self.config.nodes.admin.script,
+    #         'guardian': self.config.nodes.guardians.script,
+    #         'device':   self.config.nodes.devices.script,
+    #         'verifier': self.config.nodes.verifiers.script,
+    #     }
+
     @classmethod
-    def from_hashed_config(cls, cfg: HashedTestConfig) -> Self:
+    def from_hashed_config(cls, cfg: HashedTestConfig, tmp_root: Path) -> Self:
         key = cfg.cache_key()
         return cls(
             config    = cfg,
             cache_key = key,
+            tmp_root  = str(tmp_root),
         )
 
     def to_json(self) -> str:
         cfg = asdict(self.config)
+        cfg['tmpdir_path'] = str(self.tmpdir_path())
         cfg['arion']['project_name'] = self.arion_project_name()
+        # print(f'cfg: {cfg}')
+        cfg['bind_dirs'] = [str(d) for d in self.bind_dirs()]
+        # cfg['scripts'] = self.egc_scripts()
+        # print(f'cfg bind_dirs: {cfg['bind_dirs']}')
 
-        # fix answers being converted to short lists rather than dicts
+        # fix answers being converted to short lists rather than dicts,
+        # and accidental nesting of contests in votes
         tmp = cfg['votes']['contests']
         cfg['votes'] = []
         for contest in tmp:
@@ -264,4 +304,12 @@ class ResolvedTestConfig:
                 c['answers'][k] = v
             cfg['votes'].append(c)
 
+        # fix accidental nesting of attacks in attacks
+        cfg['attacks'] = cfg['attacks']['attacks']
+
+        # print(f'cfg: {cfg}')
         return fancy_dumps(cfg)
+
+# @contextmanager
+def resolve_test_config(cfg: HashedTestConfig, tmp_root: Path) -> ResolvedTestConfig:
+    return ResolvedTestConfig.from_hashed_config(cfg, tmp_root)

@@ -3,6 +3,7 @@ from dataclasses import replace
 from pycardano import *
 from egc import *
 from ..lib import *
+from .lib import *
 # from data.static_records import *
 import logging
 import time
@@ -463,6 +464,7 @@ def admin_s4(
         seq         = 4,
     ))
 
+@pytest.fixture(scope='module')
 def admin_tx4(
         admin: AdminNode,
         admin_tx3: Transaction,

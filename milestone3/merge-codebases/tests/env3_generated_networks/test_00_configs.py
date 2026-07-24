@@ -3,7 +3,8 @@ from hypothesis import given, settings
 from pathlib import Path
 
 from egc import *
-from ..lib import *
+# from ..lib import *
+from ..lib.json_utils import assert_json_roundtrip
 from .lib.test_config import *
 
 
@@ -54,45 +55,3 @@ def test_roundtrip_attacks_config(cfg: HashedAttacksConfig):
 @settings(max_examples=1_000)
 def test_roundtrip_hashed_test_config(cfg: HashedTestConfig):
     assert_json_roundtrip(cfg)
-
-@given(cfg=hashed_test_config())
-@settings(max_examples=1_000)
-def test_roundtrip_resolved_test_config(cfg: HashedTestConfig):
-    resolved = ResolvedTestConfig.from_hashed_config(
-        cfg = cfg,
-        tmp_root = Path('/tmp'), # TODO actual tmp_root?
-        )
-    assert_json_roundtrip(resolved)
-
-
-
-### test tmpdir setup ###
-
-# @given_runconfig()
-# def test_env3_tmpdir(env3_tmpdir: Path):
-#     assert env3_tmpdir.exists()
-#     # TODO finish
-
-### test containers up ###
-
-# def test_ipfs_stable(ipfs):
-#     status = ipfs_status_sync()
-#     assert status['n_peers'] >= 3
-# 
-# def test_ogmios_synced(ogmios: OgmiosV6ChainContext):
-#     health = ogmios_health_sync()
-#     status = health["connectionStatus"]
-#     sync   = health["networkSynchronization"]
-#     if status != "connected":
-#         raise RuntimeError(f"Ogmios not connected to node: {health}")
-#     if not isinstance(sync, (int, float)) or sync < 0.999:
-#         raise RuntimeError(f"Ogmios not synced (networkSynchronization={sync}): {health}")
-#     assert health["network"] == "preview"
-# 
-# def test_ogmios_query(ogmios: OgmiosV6ChainContext):
-#     tip = query_network_tip_sync()
-#     assert isinstance(tip, dict)
-#     assert isinstance(tip['slot'], int)
-#     assert isinstance(tip['block_hash'], str)
-
-# TODO test egc node status

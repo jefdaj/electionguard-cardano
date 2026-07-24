@@ -4,7 +4,7 @@ from pathlib import Path
 
 from egc   import *
 from ..lib import *
-from .lib  import *
+from .lib import *
 
 @seed(get_random_seed())
 @settings(
@@ -14,7 +14,7 @@ from .lib  import *
     # database defaults on -> failing configs replay next run
 )
 @given(cfg=hashed_test_config())
-def test_generate_tmpdir(tmp_root: Path, cfg: HashedTestConfig):
-    with run_test_election(cfg, tmp_root) as test_tmpdir: # lockfile inside enforces serial
-        # assert_verifiers_reject(testdir, [...])
-        print(f'test_tmpdir: {test_tmpdir}')
+def test_init_tmpdir(env3_arion_dir: Path, tmp_root: Path, cfg: HashedTestConfig):
+    resolved_cfg = resolve_test_config(cfg=cfg, tmp_root=tmp_root)
+    test_tmpdir = init_test_tmpdir(cfg=resolved_cfg)
+    print(f'test_tmpdir: {test_tmpdir}')

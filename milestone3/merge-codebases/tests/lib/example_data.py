@@ -1,10 +1,8 @@
-# For making the example contests usable in hypothesis.
-# def freeze(obj):
-#     if isinstance(obj, dict):
-#         return tuple(sorted((k, freeze(v)) for k, v in obj.items()))
-#     if isinstance(obj, list):
-#         return tuple(freeze(x) for x in obj)
-#     return obj
+### test config ###
+
+
+
+### contests ###
 
 # For sorting the example contests small -> large,
 # which is useful because pytest shrinks toward smaller list indices.
@@ -395,4 +393,3 @@ EXAMPLE_CONTESTS = [
 ]
 
 EXAMPLE_CONTESTS.sort(key=contest_size)
-# EXAMPLE_CONTESTS = tuple(EXAMPLE_CONTESTS)
