@@ -3,5 +3,6 @@
 {% block body %}
 {{ super() }}
 
-egc wallet create --name {{ node_name }}
+egc wallet create --description '{{ node_name }} wallet'
+egc wallet show | jq
 {% endblock %}
