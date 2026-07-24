@@ -98,15 +98,15 @@ def hashed_contests_config(draw) -> HashedContestsConfig:
 
 @dataclass(frozen=True, slots=True)
 class HashedAdminConfig:
-    script: str = field(default='admin.sh')
+    template: str = field(default='admin.sh')
 
 @st.composite
-def hashed_admin_config(draw, script: Optional[str] = None):
+def hashed_admin_config(draw, template: Optional[str] = None):
     # TODO remove?
     _ = draw(st.integers(1,1)) # stop hypothesis complaining about draw
     kwargs = {}
-    if script is not None:
-        kwargs['script'] = script
+    if template is not None:
+        kwargs['template'] = template
     return HashedAdminConfig(**kwargs)
 
 
@@ -114,20 +114,20 @@ def hashed_admin_config(draw, script: Optional[str] = None):
 class HashedGuardiansConfig:
     count: int = 3
     quorum: int = 2
-    script: str = field(default='guardian.sh')
+    template: str = field(default='guardian.sh')
 
     def __post_init__(self):
         assert 0 < self.quorum <= self.count
 
 @st.composite
-def hashed_guardians_config(draw, script: Optional[str] = None):
+def hashed_guardians_config(draw, template: Optional[str] = None):
     count = draw(st.integers(2,5)) # TODO actual upper bound?
     kwargs = {
         'count':  count,
         'quorum': draw(st.integers(1, count)),
     }
-    if script is not None:
-        kwargs['script'] = script
+    if template is not None:
+        kwargs['template'] = template
     return HashedGuardiansConfig(**kwargs)
 
 
@@ -150,30 +150,30 @@ def hashed_arion_config(draw):
 @dataclass(frozen=True, slots=True)
 class HashedDevicesConfig:
     count: int
-    script: str = field(default='device.sh')
+    template: str = field(default='device.sh')
 
 @st.composite
-def hashed_devices_config(draw, script: Optional[str] = None):
+def hashed_devices_config(draw, template: Optional[str] = None):
     kwargs = {
         'count': draw(st.integers(1, 3)), # TODO actual upper bound?
     }
-    if script is not None:
-        kwargs['script'] = script
+    if template is not None:
+        kwargs['template'] = template
     return HashedDevicesConfig(**kwargs)
 
 
 @dataclass(frozen=True, slots=True)
 class HashedVerifiersConfig:
     count: int
-    script: str = field(default='verifier.sh')
+    template: str = field(default='verifier.sh')
 
 @st.composite
-def hashed_verifiers_config(draw, script: Optional[str] = None):
+def hashed_verifiers_config(draw, template: Optional[str] = None):
     kwargs = {
         'count': draw(st.integers(1, 3)), # TODO actual upper bound?
     }
-    if script is not None:
-        kwargs['script'] = script
+    if template is not None:
+        kwargs['template'] = template
     return HashedVerifiersConfig(**kwargs)
 
 # Used to be called "election", which was confusing
@@ -265,16 +265,6 @@ class ResolvedTestConfig:
         for name in self.node_names():
             dirs += [f'data/{name}/{d}' for d in per_node_dirs]
         return sorted(list(dirs))
-
-    # TODO remove if not needed
-    # def egc_scripts(self) -> list[Path]:
-    #     # TODO one per node rather than one per node type?
-    #     return {
-    #         'admin':    self.config.nodes.admin.script,
-    #         'guardian': self.config.nodes.guardians.script,
-    #         'device':   self.config.nodes.devices.script,
-    #         'verifier': self.config.nodes.verifiers.script,
-    #     }
 
     @classmethod
     def from_hashed_config(cls, cfg: HashedTestConfig, tmp_root: Path) -> Self:

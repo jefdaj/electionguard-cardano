@@ -37,13 +37,13 @@ def write_egc_scripts(cfg: ResolvedTestConfig):
 
         # TODO one per index rather just one per role?
         node_cfgs = {
-            'admin':    cfg.config.nodes.admin, # .script,
-            'guardian': cfg.config.nodes.guardians, # .script,
-            'device':   cfg.config.nodes.devices, # .script,
-            'verifier': cfg.config.nodes.verifiers, # .script,
+            'admin':    cfg.config.nodes.admin,
+            'guardian': cfg.config.nodes.guardians,
+            'device':   cfg.config.nodes.devices,
+            'verifier': cfg.config.nodes.verifiers,
         }
         for (node_role, node_cfg) in node_cfgs.items():
-            template = JINJA_ENV.get_template(node_cfg.script) # TODO rename script -> template
+            template = JINJA_ENV.get_template(node_cfg.template)
             n_nodes = 1 if node_role == 'admin' else node_cfg.count
             for node_index in range(1, n_nodes+1):
                 node_name = 'admin' if node_role == 'admin' else f'{node_role}{node_index}'

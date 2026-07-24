@@ -14,10 +14,10 @@ from ..lib.py_utils import deep_replace
 def node_ready_config(draw):
     cfg = draw( hashed_test_config() )
     attr_paths = [
-        'nodes.admin.script',
-        'nodes.guardians.script',
-        'nodes.devices.script',
-        'nodes.verifiers.script',
+        'nodes.admin.template',
+        'nodes.guardians.template',
+        'nodes.devices.template',
+        'nodes.verifiers.template',
     ]
     for attr_path in attr_paths:
         cfg = deep_replace(cfg, attr_path, 'node-ready.sh')
