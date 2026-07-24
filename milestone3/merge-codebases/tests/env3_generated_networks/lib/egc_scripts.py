@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
+import subprocess
 from .test_config import ResolvedTestConfig
 from .arion_network import arion_subprocess_kwargs
 
@@ -72,7 +73,8 @@ def run_egc_scripts(test_cfg: ResolvedTestConfig, arion_dir: Path, timeout=300):
         log_path = tmpdir_path / 'data' / node_name / 'egc' / 'test.log'
         log_handle = log_path.open('w', buffering=1) # TODO 'a' mode?
         # stdbuf here is to force the log to flush line by line
-        cmd = ['exec', '-T', node_name, 'stdbuf', '-oL', '-eL', '/script.sh']
+        service_name = f'{node_name}-egc'
+        cmd = ['arion', 'exec', '-T', service_name, '--', 'stdbuf', '-oL', '-eL', '/script.sh']
         p = subprocess.Popen(
             cmd,
             stdout = log_handle,
@@ -80,7 +82,7 @@ def run_egc_scripts(test_cfg: ResolvedTestConfig, arion_dir: Path, timeout=300):
             text = True,
             **kwargs,
         )
-        procs[node_name] = (p, log)
+        procs[node_name] = (p, log_handle)
     results = {}
     for node_name, (p, log_handle) in procs.items():
         try:
