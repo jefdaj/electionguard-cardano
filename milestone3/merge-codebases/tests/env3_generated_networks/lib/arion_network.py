@@ -31,11 +31,13 @@ def run_arion(test_cfg: ResolvedTestConfig, arion_dir: Path, arion_args: list[st
     return subprocess.run(cmd, check = True, **kwargs)
 
 def run_arion_down(test_cfg: ResolvedTestConfig, arion_dir: Path):
+    # TODO --rmi local? all?
     run_arion(test_cfg, arion_dir, ['down', '--remove-orphans', '--volumes'])
 
 def run_arion_up(test_cfg: ResolvedTestConfig, arion_dir: Path):
     run_arion_down(test_cfg, arion_dir) # in case of messy prev run
     run_arion(test_cfg, arion_dir, ['up', '-d'])
+    time.sleep(3)
 
 
 # TODO how to force arion down on pytest exceptions, keyboardinturrupt etc?

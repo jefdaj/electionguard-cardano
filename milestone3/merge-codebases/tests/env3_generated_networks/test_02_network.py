@@ -27,7 +27,7 @@ def await_node_ready_config(draw):
 
 @seed(get_random_seed())
 @settings(
-    max_examples=1,
+    max_examples=5,
     deadline=None,
     phases=(Phase.explicit, Phase.reuse, Phase.generate, Phase.shrink),  # reuse+shrink back ON
     # database defaults on -> failing configs replay next run
@@ -36,6 +36,8 @@ def await_node_ready_config(draw):
 def test_node_await(cfg: HashedTestConfig, tmp_root: Path, env3_arion_dir: Path):
     resolved_cfg = resolve_test_config(cfg=cfg, tmp_root=tmp_root)
     init_test_tmpdir(cfg=resolved_cfg)
+    # TODO avoid clobbering previous file here!
+    # TODO and add a log assertion about node being ready
     with lock_test_tmpdir(cfg=resolved_cfg): # as test_tmpdir:
         with arion_network_up(test_cfg=resolved_cfg, arion_dir=env3_arion_dir): #  as network_name:
             run_egc_scripts(test_cfg=resolved_cfg, arion_dir=env3_arion_dir)
