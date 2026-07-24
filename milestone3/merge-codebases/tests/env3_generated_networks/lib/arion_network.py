@@ -3,6 +3,7 @@ import subprocess
 import time
 import os
 import signal
+import re
 from pathlib import Path
 from contextlib import contextmanager
 from egc import *
@@ -62,22 +63,18 @@ def arion_network_up(test_cfg: ResolvedTestConfig, arion_dir: Path):
                 log('arion_network_up finally')
                 run_arion_down(test_cfg, arion_dir)
 
-# @pytest.fixture(scope='function')
-# def env3_ogmios(env3_arion_network) -> OgmiosV6ChainContext:
-#     ctx = OGMIOS_CTX # TODO get from arion_network
-#     deadline = time.monotonic() + OGMIOS_TIMEOUT_SEC
-#     while True:
-#         try:
-#             health = ogmios_health_sync()
-#             status = health["connectionStatus"]
-#             sync   = health["networkSynchronization"]
-#         except:
-#             status = None
-#             sync   = None
-#         if status == "connected" and int(sync) == 1:
-#             LOG.debug('ogmios connected and synced')
-#             LOG.debug(f'ogmios: {ctx}')
-#             return ctx
-#         if time.monotonic()  >= deadline:
-#             raise TimeoutError(f'ogmios not ready after {OGMIOS_TIMEOUT_SEC}s.')
-#         time.sleep(OGMIOS_POLL_SEC)
+def assert_node_logs_match(test_cfg: ResolvedTestConfig, pattern: str):
+    "Assert at least one line in each node's test.log matches `pattern`."
+    rx = re.compile(pattern)
+    tmpdir_path = test_cfg.tmpdir_path()
+    log_paths = [
+        tmpdir_path / 'data' / name / 'egc' / 'test.log'
+        for name in test_cfg.node_names()
+    ]
+    for log_path in log_paths:
+        with log_path.open('r') as f:
+            lines = [l.rstrip('\n') for l in f.readlines()]
+        print(f'lines: {lines}')
+        print(f'rx: {rx}')
+        print(f'rx.pattern: {rx.pattern}')
+        assert any(rx.search(l) for l in lines), f"{p} had no line matching {rx.pattern!r}"

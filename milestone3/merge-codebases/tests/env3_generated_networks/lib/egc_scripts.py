@@ -1,4 +1,5 @@
 import os
+import time
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 import subprocess
@@ -70,9 +71,9 @@ def run_egc_scripts(test_cfg: ResolvedTestConfig, arion_dir: Path, timeout=300):
     simpler than the old run_many_in_containers, because it only needs to
     manage one long-running script per node."""
 
+    tmpdir_path = test_cfg.tmpdir_path()
     procs = {} # node_name -> (proc, log_path)
     node_names = test_cfg.node_names()
-    tmpdir_path = test_cfg.tmpdir_path()
     kwargs = arion_subprocess_kwargs(test_cfg, arion_dir)
     for node_name in node_names:
         log_path = tmpdir_path / 'data' / node_name / 'egc' / 'test.log'
@@ -100,6 +101,4 @@ def run_egc_scripts(test_cfg: ResolvedTestConfig, arion_dir: Path, timeout=300):
         results[node_name] = p.returncode
     error_codes = {k:v for k,v in results.items() if v != 0}
     assert len(error_codes) == 0, f'Script error codes: {error_codes}' # TODO plain assert for pytest?
-    return results # TODO remove?
-
-
+    return
