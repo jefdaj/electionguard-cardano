@@ -14,9 +14,6 @@ export EGC_NODE_INDEX={{node_index}}
 
 {% block cleanup %}
 cleanup() {
-  {% if debug_script %}
-  set -x
-  {% endif %}
   echo "cleaning up"
   # TODO if admin, burn test tokens if any
   # TODO return collateral
