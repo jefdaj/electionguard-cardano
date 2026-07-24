@@ -1,3 +1,4 @@
+import functools, inspect
 from typing import Callable
 from hypothesis import given, settings, seed, Phase
 from pathlib import Path
@@ -8,13 +9,20 @@ from .egc_scripts   import run_egc_scripts
 from .test_config   import resolve_test_config, HashedTestConfig, ResolvedTestConfig
 from .test_tmpdir   import init_test_tmpdir, lock_test_tmpdir
 
-# "yet another decorator"
-# https://stackoverflow.com/a/4122845
-def yad(decorators):
+# TODO move to py_utils
+def silent_yad(decorators):
+    """Based on 'yet another decorator': https://stackoverflow.com/a/4122845
+    But also adds this wrapped/sig stuff to prevent pytest "collection from a
+    different file" arrows cluttering test output."""
     def decorator(f):
+        wrapped = f
         for d in reversed(decorators):
-            f = d(f)
-        return f
+            wrapped = d(wrapped)
+        # capture real signature (outermost) before re-pointing
+        sig = inspect.signature(wrapped)
+        functools.wraps(f)(wrapped) # location: __wrapped__ -> f
+        wrapped.__signature__ = sig # fixtures: honor outer params
+        return wrapped
     return decorator
 
 def run_egc_scripts_cached(
@@ -46,7 +54,7 @@ def prerun_egc_scripts(final_test_fn_from_rcfg):
 #
 # TODO is this a partial solution to https://github.com/HypothesisWorks/hypothesis/issues/114
 def given_cached_tests(cfg_strategy, max_examples = 10):
-    return yad([
+    return silent_yad([
         seed(get_random_seed()),
         settings(
             max_examples = max_examples,
