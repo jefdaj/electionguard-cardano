@@ -53,14 +53,12 @@ def arion_network_up(test_cfg: ResolvedTestConfig, arion_dir: Path):
 
         with raise_on_signals(signal.SIGTERM, signal.SIGINT):
             run_arion_up(test_cfg, arion_dir)
-            time.sleep(20) # TODO how long is actually needed?
             try:
                 log('arion_network_up yield')
                 yield test_cfg.arion_project_name() # TODO or parse arion cat /docker inspect? or None?
             finally:
                 log('arion_network_up finally')
                 run_arion_down(test_cfg, arion_dir)
-                time.sleep(5) # TODO remove?
 
 # @pytest.fixture(scope='function')
 # def env3_ogmios(env3_arion_network) -> OgmiosV6ChainContext:
