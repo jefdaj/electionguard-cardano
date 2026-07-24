@@ -4,3 +4,4 @@ from .test_config import *
 from .test_election import run_test_election
 from .test_tmpdir import lock_test_tmpdir, init_test_tmpdir
 from .egc_scripts import run_egc_scripts
+from .decorators  import given_cached_tests
