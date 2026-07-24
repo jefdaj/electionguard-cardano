@@ -1,4 +1,5 @@
 from __future__ import annotations
+import sys
 from dataclasses import dataclass, field, asdict
 from typing import Mapping, Optional
 import hashlib, json
@@ -205,10 +206,11 @@ def hashed_attacks_config(draw):
 
 @dataclass(frozen=True, slots=True)
 class HashedTestConfig:
-    arion:   HashedArionConfig
-    nodes:   HashedNodesConfig
-    votes:   HashedContestsConfig # TODO rename contests?
-    attacks: HashedAttacksConfig
+    cfg_type: str # reminds which function generated it
+    arion:    HashedArionConfig
+    nodes:    HashedNodesConfig
+    votes:    HashedContestsConfig
+    attacks:  HashedAttacksConfig
 
     def canonical(self) -> str:
         # sort_keys canonicalizes DICT KEYS only; list/tuple order is untouched
@@ -222,7 +224,9 @@ class HashedTestConfig:
 
 @st.composite
 def hashed_test_config(draw) -> HashedTestConfig:
+    fn_name = sys._getframe().f_code.co_name,
     return HashedTestConfig(
+        cfg_type = fn_name,
         arion    = draw( hashed_arion_config()    ),
         nodes    = draw( hashed_nodes_config()    ),
         votes    = draw( hashed_contests_config() ), # TODO rename contests?
