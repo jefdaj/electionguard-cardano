@@ -1,4 +1,4 @@
-{% extends "node-await.sh" %}
+{% extends "base.sh" %}
 
 {% block body %}
 {{ super() }}
