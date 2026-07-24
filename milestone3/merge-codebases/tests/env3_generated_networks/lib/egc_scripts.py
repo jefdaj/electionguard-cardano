@@ -2,7 +2,9 @@ import os
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 from .test_config import ResolvedTestConfig
-# from .test_tmpdir import lock_test_tmpdir
+
+
+### write scripts ###
 
 TEMPLATES_DIR = Path(__file__).parent / 'templates'
 
@@ -51,3 +53,8 @@ def write_egc_scripts(cfg: ResolvedTestConfig):
         log('write_egc_scripts done')
 
     return tmpdir_path
+
+
+### run scripts ###
+
+# TODO write a simpler version of election.py::run_many_in_containers
