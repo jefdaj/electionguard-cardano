@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 # Make sure Cardano node syncs to 100% and IPFS finds peers
 while true; do
