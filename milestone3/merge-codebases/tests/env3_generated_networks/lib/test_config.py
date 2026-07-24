@@ -224,7 +224,8 @@ class HashedTestConfig:
 
 @st.composite
 def hashed_test_config(draw) -> HashedTestConfig:
-    fn_name = sys._getframe().f_code.co_name,
+    fn_name = sys._getframe().f_code.co_name
+    # assert isinstance(fn_name, str)
     return HashedTestConfig(
         cfg_type = fn_name,
         arion    = draw( hashed_arion_config()    ),

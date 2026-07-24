@@ -48,6 +48,9 @@ def fancy_loads(obj_type, obj_json_str):
 
 
 def assert_json_roundtrip(cfg):
+    # print(f'cfg: {cfg}')
     tmp_str = fancy_dumps(cfg)
+    # print(f'tmp_str: {tmp_str}')
     cfg2 = fancy_loads(type(cfg), tmp_str)
+    # print(f'cfg2: {cfg2}')
     assert cfg == cfg2
