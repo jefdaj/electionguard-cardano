@@ -36,7 +36,6 @@ if EGC_WALLET_MODE == 'scripted':
     KEYS_LOG.addHandler(keys_fh)
     KEYS_LOG.setLevel(logging.DEBUG)
     # TODO why isn't this logged during pytest?
-    LOG.warning(f'Running in test mode, so all keys will be logged to {log_path}')
     del keys_fh
     del log_path
 else:
@@ -179,6 +178,9 @@ def _set_sk_description(sk: PaymentSigningKey, desc: str) -> PaymentSigningKey:
 
 def create_wallet(keys_dir=EGC_WALLET_DIR, name='wallet', description='Generated EGC wallet', verbose=True, overwrite=False) -> Wallet:
     LOG.debug('create_wallet')
+    if EGC_WALLET_MODE == 'scripted':
+        log_path = (EGC_WALLET_DIR / 'test-keys.log').absolute()
+        LOG.warning(f'Running in test mode, so all keys will be logged to {log_path}')
     keys_dir = Path(keys_dir)
     sk_path  = keys_dir / f'{name}.sk'
     if sk_path.exists() and not overwrite:
