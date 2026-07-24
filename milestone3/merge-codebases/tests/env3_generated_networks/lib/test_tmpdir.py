@@ -12,7 +12,7 @@ def lock_test_tmpdir(cfg: ResolvedTestConfig):
     tmpdir_path.mkdir(parents=True, exist_ok=True)
     lock_path = tmpdir_path / 'test.lock'
     
-    with lock_path.open("w") as f:
+    with lock_path.open("a") as f:
         fcntl.flock(f, fcntl.LOCK_EX)   # blocks until acquired
         try:
             yield tmpdir_path

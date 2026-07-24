@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 from .test_config import ResolvedTestConfig
@@ -20,7 +21,7 @@ def write_egc_scripts(cfg: ResolvedTestConfig):
     # TODO any better way than assuming it's locked?
     # with lock_test_tmpdir(cfg) as lock:
 
-    with log_path.open('w') as log_handle: # TODO proper logging
+    with log_path.open('a') as log_handle: # TODO proper logging
         def log(msg):
             log_handle.writelines([msg + '\n'])
             log_handle.flush()
@@ -36,15 +37,16 @@ def write_egc_scripts(cfg: ResolvedTestConfig):
             'device':   cfg.config.nodes.devices.script,
             'verifier': cfg.config.nodes.verifiers.script,
         }
-        for (role, name) in template_names.items():
-            template = JINJA_ENV.get_template(name)
-            out_path = scripts_path / name
+        for (role, template_name) in template_names.items():
+            template = JINJA_ENV.get_template(template_name)
+            out_path = scripts_path / (role + '.sh')
             out_text = template.render(
                 role = role,
                 debug = True, # only a personal convention
             )
             log(f'write_egc_scripts write {out_path}')
             out_path.write_text(out_text)
+            os.chmod(out_path, 0o755)
 
         log('write_egc_scripts done')
 

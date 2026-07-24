@@ -1,5 +1,6 @@
 import signal
 from contextlib import contextmanager
+from dataclasses import replace
 # import ast, inspect, hashlib, textwrap
 
 class Terminated(Exception):
@@ -36,3 +37,13 @@ def raise_on_signals(*signums):
 # 	"Hash functions so they can be included in HashedTestConfig."
 #     tree = ast.parse(textwrap.dedent(inspect.getsource(fn)))
 #     return hashlib.sha256(ast.dump(tree).encode()).hexdigest()
+
+from dataclasses import replace, is_dataclass
+
+def deep_replace(obj, path, value):
+    "Usage: new = deep_replace(root, 'a.b.c', 42)"
+    key, _, rest = path.partition(".")
+    if rest:
+        value = deep_replace(getattr(obj, key), rest, value)
+    return replace(obj, **{key: value})
+

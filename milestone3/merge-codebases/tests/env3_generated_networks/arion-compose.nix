@@ -104,7 +104,7 @@ let
     ];
     service.volumes = [
       "${data_dir}/${nodeName role i}/egc:/data/private"
-      # TODO single script instead of: "${scripts_dir}:/scripts"
+      "${scripts_dir}/${role}.sh:/script.sh:ro"
     ];
     service.networks = [
       (ogmiosNetworkName role i)
@@ -224,8 +224,11 @@ let
 
       mkServicePairs =
         with cfg.arion;
-          let data_dir = "${cfg.tmpdir_path}/data";
-          in pairAttrsList project_name egc_image data_dir scripts_dir;
+        let
+          data_dir = "${cfg.tmpdir_path}/data";
+          scripts_dir = "${cfg.tmpdir_path}/egc_scripts";
+        in
+          pairAttrsList project_name egc_image data_dir scripts_dir;
 
     in {
       "shared-cardano".service = cardanoService;
