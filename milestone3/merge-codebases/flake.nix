@@ -110,6 +110,7 @@
         jq
         time
         tree
+        multitail
       ];
 
     in
