@@ -42,7 +42,7 @@ def run_arion_up(test_cfg: ResolvedTestConfig, arion_dir: Path):
 # TODO no tmp_root, just resolved cfg which should include that
 # @pytest.fixture(scope='function') # TODO does it need to be narrow for the cfg to appear?
 @contextmanager
-def arion_network_up(arion_dir: Path, test_cfg: ResolvedTestConfig):
+def arion_network_up(test_cfg: ResolvedTestConfig, arion_dir: Path):
     tmpdir_path = test_cfg.tmpdir_path()
     log_path = tmpdir_path / 'test.log'
     with log_path.open('w') as log_handle: # TODO proper logging

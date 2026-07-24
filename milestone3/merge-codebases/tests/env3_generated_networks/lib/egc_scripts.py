@@ -45,6 +45,7 @@ def write_egc_scripts(cfg: ResolvedTestConfig):
             out_path = scripts_path / (role + '.sh')
             out_text = template.render(
                 role = role,
+                template_name = template_name,
                 debug = True, # only a personal convention
             )
             log(f'write_egc_scripts write {out_path}')
@@ -64,12 +65,12 @@ def run_egc_scripts(test_cfg: ResolvedTestConfig, arion_dir: Path, timeout=300):
     manage one long-running script per node."""
 
     procs = {} # node_name -> (proc, log_path)
-    node_names = cfg.node_names()
+    node_names = test_cfg.node_names()
     tmpdir_path = test_cfg.tmpdir_path()
     kwargs = arion_subprocess_kwargs(test_cfg, arion_dir)
     for node_name in node_names:
-        log_path = tmpdir_path / 'data' / node_name / 'test.log'
-        log_handle = log_path.open('a', buffering=1)
+        log_path = tmpdir_path / 'data' / node_name / 'egc' / 'test.log'
+        log_handle = log_path.open('w', buffering=1) # TODO 'a' mode?
         # stdbuf here is to force the log to flush line by line
         cmd = ['exec', '-T', node_name, 'stdbuf', '-oL', '-eL', '/script.sh']
         p = subprocess.Popen(
