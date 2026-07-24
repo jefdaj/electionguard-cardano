@@ -27,7 +27,7 @@ def await_node_ready_config(draw):
 
 @seed(get_random_seed())
 @settings(
-    max_examples=1,
+    max_examples=5,
     deadline=None,
     phases=(Phase.explicit, Phase.reuse, Phase.generate, Phase.shrink),  # reuse+shrink back ON
     # database defaults on -> failing configs replay next run
