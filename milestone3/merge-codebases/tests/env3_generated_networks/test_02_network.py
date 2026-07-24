@@ -6,20 +6,11 @@ from ..lib import *
 from .lib  import *
 from ..lib.py_utils import deep_replace
 
-
-# These only test Cardano/Ogmios. Since there's an IPFS container per pair in
-# this env, it'll need to be tested separately. 
-
 @st.composite
 def node_ready_config(draw):
     cfg = draw( hashed_test_config() )
-    attr_paths = [
-        'nodes.admin.template',
-        'nodes.guardians.template',
-        'nodes.devices.template',
-        'nodes.verifiers.template',
-    ]
-    for attr_path in attr_paths:
+    for nodes in ['admin', 'guardians', 'devices', 'verifiers']:
+        attr_path = f'nodes.{nodes}.template'
         cfg = deep_replace(cfg, attr_path, 'node-ready.sh')
     return cfg
 
