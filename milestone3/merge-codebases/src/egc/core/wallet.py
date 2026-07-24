@@ -228,8 +228,8 @@ def create_wallet(keys_dir=EGC_WALLET_DIR, name='wallet', description='Generated
         '  vk   = %s\n'
         '  sk   = %s\n',
         name,
+        wallet.sk.description,
         wallet.addr,
-        wallet.sk.description, # TODO is this right?
         wallet.vkh.to_cbor_hex(),
         wallet.vk.to_json(),
         wallet.sk.to_json(),
