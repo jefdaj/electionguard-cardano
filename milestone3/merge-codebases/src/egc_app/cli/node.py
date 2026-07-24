@@ -41,8 +41,8 @@ def await_():
     Only waits for the IPFS (Kubo) node so far.
     """
     # TODO add Ogmios too
-    resp = asyncio.run(Client().node_await())
-    click.echo(resp)
+    asyncio.run(Client().node_await())
+    # click.echo(resp)
 
 @node.command()
 def stop():
