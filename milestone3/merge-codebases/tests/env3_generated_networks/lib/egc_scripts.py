@@ -35,23 +35,28 @@ def write_egc_scripts(cfg: ResolvedTestConfig):
         scripts_path.mkdir(parents=True, exist_ok=True)
 
         # TODO one per index rather just one per role?
-        template_names = {
-            'admin':    cfg.config.nodes.admin.script,
-            'guardian': cfg.config.nodes.guardians.script,
-            'device':   cfg.config.nodes.devices.script,
-            'verifier': cfg.config.nodes.verifiers.script,
+        node_cfgs = {
+            'admin':    cfg.config.nodes.admin, # .script,
+            'guardian': cfg.config.nodes.guardians, # .script,
+            'device':   cfg.config.nodes.devices, # .script,
+            'verifier': cfg.config.nodes.verifiers, # .script,
         }
-        for (role, template_name) in template_names.items():
-            template = JINJA_ENV.get_template(template_name)
-            out_path = scripts_path / (role + '.sh')
-            out_text = template.render(
-                role = role,
-                template_name = template_name,
-                debug = False, # only a personal convention
-            )
-            log(f'write_egc_scripts write {out_path}')
-            out_path.write_text(out_text)
-            os.chmod(out_path, 0o755)
+        for (node_role, node_cfg) in node_cfgs.items():
+            template = JINJA_ENV.get_template(node_cfg.script) # TODO rename script -> template
+            n_nodes = 1 if node_role == 'admin' else node_cfg.count
+            for node_index in range(1, n_nodes+1):
+                node_name = 'admin' if node_role == 'admin' else f'{node_role}{node_index}'
+                out_path = scripts_path / f'{node_name}.sh'
+                out_text = template.render(
+                    node_name    = node_name,
+                    node_role    = node_role,
+                    node_index   = node_index,
+                    # template_name = template_name,
+                    debug_script = True,
+                )
+                log(f'write_egc_scripts write {out_path}')
+                out_path.write_text(out_text)
+                os.chmod(out_path, 0o755)
 
         log('write_egc_scripts done')
 

@@ -3,7 +3,5 @@
 {% block body %}
 {{ super() }}
 
-# TODO subscribe to election
-# TODO await role
-# TODO await verify phase
+egc wallet create --name {{ node_name }}
 {% endblock %}

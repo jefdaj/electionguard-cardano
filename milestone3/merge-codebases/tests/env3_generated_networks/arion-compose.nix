@@ -104,7 +104,7 @@ let
     ];
     service.volumes = [
       "${data_dir}/${nodeName role i}/egc:/data/private"
-      "${scripts_dir}/${role}.sh:/script.sh:ro"
+      "${scripts_dir}/${nodeName role i}.sh:/script.sh:ro"
     ];
     service.networks = [
       (ogmiosNetworkName role i)

@@ -1,6 +1,11 @@
-#!/bin/bash
+{% extends "node-await.sh" %}
 
-# Make sure Cardano node syncs to 100% and IPFS finds peers
-while true; do
-  egc node await && echo "node is ready" && break || sleep 5
-done
+{% block body %}
+{{ super() }}
+
+# TODO subscribe to election
+# TODO request role
+# TODO await role
+# TODO announce device
+# TODO await voting
+{% endblock %}
