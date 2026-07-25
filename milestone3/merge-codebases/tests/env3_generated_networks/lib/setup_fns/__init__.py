@@ -9,9 +9,9 @@ from .write_qr_str       import write_qr_str
 
 def run_setup_fns(cfg: ResolvedTestConfig):
     "Pull fn names + args from cfg and run them."
-    for fn_call in cfg.pytest.setup_fns.fns:
+    for fn_call in cfg.config.pytest.setup_fns.fns:
         fn = globals()[fn_call.name]
         LOG.debug(f'run_setup_fns fn: {fn.__name__}')
-        kwargs = fancy_raw(fn_call.args) # TODO is this right?
+        kwargs = fn_call.to_dict(lambda x:x)['args'] # TODO how should this be done?
         LOG.debug(f'run_setup_fns kwargs: {kwargs}')
         fn(cfg=cfg, **kwargs)

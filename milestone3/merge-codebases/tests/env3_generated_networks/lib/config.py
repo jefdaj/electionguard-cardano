@@ -269,7 +269,7 @@ def setup_fns_config(draw):
     return SetupFnsConfig(fns=(
         FnCallConfig(
             name = 'render_egc_scripts',
-            args = (('default', 'subscribe.sh'),),
+            args = (('default', 'base.sh'),),
         ),
     ))
 
@@ -318,7 +318,7 @@ def hashed_test_config(draw) -> HashedTestConfig:
         setup_fns = SetupFnsConfig(fns=(
             FnCallConfig(
                 name = 'render_egc_scripts',
-                args = (('default', 'subscribe.sh'),),
+                args = (('default', 'base.sh'),),
             ),
         )),
         attack_fns = AttackFnsConfig(fns=()),

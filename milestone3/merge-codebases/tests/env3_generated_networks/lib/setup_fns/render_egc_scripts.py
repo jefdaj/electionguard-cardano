@@ -18,11 +18,11 @@ JINJA_ENV = Environment(
 
 def render_egc_scripts(
         cfg: ResolvedTestConfig,
-        default:   Optional[str] = 'base.sh',
-        admin:     Optional[str] = None,
-        guardians: Optional[str] = None,
-        devices:   Optional[str] = None,
-        verifiers: Optional[str] = None,
+        default:  Optional[str] = 'base.sh',
+        admin:    Optional[str] = None,
+        guardian: Optional[str] = None,
+        device:   Optional[str] = None,
+        verifier: Optional[str] = None,
     ):
     "Render egc scripts from their jinja2 templates."
 
@@ -35,9 +35,9 @@ def render_egc_scripts(
 
     node_counts = {
         'admin':    1,
-        'guardian': cfg.nodes.guardians.count,
-        'device':   cfg.nodes.devices.count,
-        'verifier': cfg.nodes.verifiers.count,
+        'guardian': cfg.config.nodes.guardians.count,
+        'device':   cfg.config.nodes.devices.count,
+        'verifier': cfg.config.nodes.verifiers.count,
     }
 
     tmpdir_path  = cfg.tmpdir_path()
@@ -55,7 +55,7 @@ def render_egc_scripts(
         scripts_path.mkdir(parents=True, exist_ok=True)
 
         # for (node_role, node_cfg) in cfg.nodes.items():
-        for (node_role, n_nodes) in node_counts:
+        for (node_role, n_nodes) in node_counts.items():
             template_name = template_names[node_role]
             template = JINJA_ENV.get_template(template_name)
             for node_index in range(1, n_nodes+1):
