@@ -165,6 +165,7 @@
                 pkgs.bashInteractive
                 pkgs.jq
                 plutusBlueprints
+                aiken.packages.x86_64-linux.aiken # to apply params
               ] ++ runtimeDeps;
               enableFakechroot = true;
               fakeRootCommands = ''
