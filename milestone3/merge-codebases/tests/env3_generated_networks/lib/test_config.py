@@ -261,6 +261,10 @@ class ResolvedTestConfig:
     def arion_project_name(self):
         return f'egc-test{self.cache_key}'
 
+    def egc_private_dir_path(self, node_name: str) -> Path:
+        assert node_name in self.node_names()
+        return self.tmpdir_path() / 'data' / node_name / 'egc'
+
     def node_names(self):
         names  = ['admin']
         names += [f'guardian{n}' for n in range(1, self.config.nodes.guardians.count+1)]

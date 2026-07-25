@@ -66,11 +66,12 @@ def write_egc_scripts(cfg: ResolvedTestConfig):
 
 ### run scripts ###
 
-def run_egc_scripts(cfg: ResolvedTestConfig, arion_dir: Path, timeout=300):
+def run_egc_scripts(cfg: ResolvedTestConfig, arion_dir: Path, setup_fn, timeout=300):
     """Exec /script.sh in each container and log to logfiles. This can be much
     simpler than the old run_many_in_containers, because it only needs to
     manage one long-running script per node."""
 
+    setup_fn(cfg)
     tmpdir_path = cfg.tmpdir_path()
     procs = {} # node_name -> (proc, log_path)
     node_names = cfg.node_names()

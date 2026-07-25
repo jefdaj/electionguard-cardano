@@ -1,4 +1,5 @@
-{% include "node-ready.sh" %}
+{% include "base.sh" %}
+# TODO swap for node-ready.sh ^
 
 echo "subscribe here"
 # egc election subscribe <TODO finish>
