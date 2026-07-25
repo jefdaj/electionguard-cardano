@@ -10,6 +10,9 @@ def fancy_dumps(obj, indent=2, width=80, _level=0) -> str:
     if hasattr(obj, 'to_dict'):
         # In case of types that need to control serialization more carefully.
         obj = obj.to_dict()
+        s = json.dumps(obj)
+        print(f'fancy_dumps s: {s}')
+        return s
 
     if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
         obj = dataclasses.asdict(obj)          # recurses into nested dataclasses/tuples
@@ -47,7 +50,26 @@ def fancy_dumps(obj, indent=2, width=80, _level=0) -> str:
 def fancy_loads(obj_type, obj_json_str):
     "Decode a structured type from a str."
     # TODO unify with the to/from raw pattern in electionguard?
-    return cattrs.Converter(forbid_extra_keys=True).structure(json.loads(obj_json_str), obj_type)
+    c = cattrs.Converter(forbid_extra_keys=True)
+
+    def has_to_dict(cls) -> bool:
+        return isinstance(cls, type) and callable(getattr(cls, "to_dict", None))
+
+    def has_from_dict(cls) -> bool:
+        return isinstance(cls, type) and callable(getattr(cls, "from_dict", None))
+
+    # factory receives the concrete type, returns the hook
+    c.register_unstructure_hook_factory(
+        has_to_dict,
+        lambda cls: lambda obj: obj.to_dict(),
+    )
+
+    c.register_structure_hook_factory(
+        has_from_dict,
+        lambda cls: lambda data, _: cls.from_dict(data),
+    )
+
+    return c.structure(json.loads(obj_json_str), obj_type)
 
 
 def assert_json_roundtrip(cfg):

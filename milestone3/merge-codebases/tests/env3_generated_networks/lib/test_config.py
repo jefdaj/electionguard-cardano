@@ -205,20 +205,23 @@ class HashedFnCallConfig:
         ...
     ]
 
-    @classmethod
-    def from_dict(cls, data: dict) -> Self:
-        return cls(
-            name = data['name'],
-            args = tuple(
-                tuple([k, v])
-                for k, v in data['args'].items()
-            )
-        )
+#     @classmethod
+#     def from_dict(cls, data: dict) -> Self:
+#         print(f'data: {data}')
+#         assert isinstance(data, dict)
+#         assert isinstance(data['args'], dict)
+#         args = []
+#         for k,v in data['args'].items():
+#             args.append((k, v))
+#         return cls(
+#             name = data['name'],
+#             args = tuple(args)
+#         )
 
     # TODO remove?
     def to_dict(self) -> dict:
         return {"name": self.name,
-                "args": {k: v for k, v in self.args}}
+                "args": {a[0]: a[1] for a in self.args}}
 
     def __post_init__(self):
         assert isinstance(self.args, tuple)
@@ -250,10 +253,14 @@ class HashedSetupFnsConfig:
 def hashed_setup_fns_config(draw):
     _ = draw(st.integers(1,1)) # silence hypothesis warning
     return HashedSetupFnsConfig(fns=(
-        HashedFnCallConfig.from_dict({
-            'name': 'render_egc_scripts',
-            'args': {'default': 'subscribe.sh'}
-        }),
+        # HashedFnCallConfig.from_dict({
+        #     'name': 'render_egc_scripts',
+        #     'args': {'default': 'subscribe.sh'}
+        # }),
+        HashedFnCallConfig(
+            name = 'render_egc_scripts',
+            args = (('default', 'subscribe.sh'),),
+        ),
     ))
 
 
@@ -299,10 +306,14 @@ def hashed_test_config(draw) -> HashedTestConfig:
     pytest_config = HashedPytestConfig(
         config_fns = HashedConfigFnsConfig(names=(fn_name,)),
         setup_fns = HashedSetupFnsConfig(fns=(
-            HashedFnCallConfig.from_dict({
-                'name': 'render_egc_scripts',
-                'args': {'default': 'subscribe.sh'}
-            }),
+            # HashedFnCallConfig.from_dict({
+            #     'name': 'render_egc_scripts',
+            #     'args': {'default': 'subscribe.sh'}
+            # }),
+            HashedFnCallConfig(
+                name = 'render_egc_scripts',
+                args = (('default', 'subscribe.sh'),),
+            ),
         )),
         attack_fns = HashedAttackFnsConfig(fns=()),
     )

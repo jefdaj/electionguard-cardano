@@ -19,6 +19,7 @@ JINJA_ENV = Environment(
 )
 
 def write_egc_scripts(cfg: ResolvedTestConfig):
+    # print(f'resolved cfg: {cfg}')
     tmpdir_path  = cfg.tmpdir_path()
     log_path     = cfg.log_path()
     scripts_path = tmpdir_path / 'egc_scripts'
@@ -35,6 +36,7 @@ def write_egc_scripts(cfg: ResolvedTestConfig):
         log(f'write_egc_scripts mkdir {scripts_path}')
         scripts_path.mkdir(parents=True, exist_ok=True)
 
+        # TODO rewrite in new style
         # TODO one per index rather just one per role?
         node_cfgs = {
             'admin':    cfg.config.nodes.admin,
