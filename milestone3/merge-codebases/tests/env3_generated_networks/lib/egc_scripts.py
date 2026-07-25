@@ -15,7 +15,7 @@ JINJA_ENV = Environment(
     loader = FileSystemLoader(TEMPLATES_DIR),
     trim_blocks = True,
     lstrip_blocks = True,
-    keep_trailing_newline = True,
+    keep_trailing_newline = False,
 )
 
 def write_egc_scripts(cfg: ResolvedTestConfig):

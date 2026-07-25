@@ -37,5 +37,5 @@ on_exit() {
 }
 trap on_exit EXIT INT TERM
 {% endblock %}
-{%- block body %}
+{% block body %}
 {% endblock %}
