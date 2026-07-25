@@ -4,7 +4,7 @@ import dataclasses
 from deepdiff import DeepDiff
 
 
-def raw_fancy_dumps(obj, indent=2, width=80, _level=0) -> str:
+def raw_fancy_dumps(obj, indent=2, width=70, _level=0) -> str:
     "Like json.dumps, but refrains from indenting things thta fit on one line."
 
     pad = " " * (indent * (_level + 1))
@@ -58,12 +58,16 @@ def make_converter():
 # TODO subclass instead?
 JSON_CONVERTER = make_converter()
 
+# TODO rename/refactor
+def fancy_raw(obj):
+    return JSON_CONVERTER.unstructure(obj)
+
 # TODO rename to avoid confusion with raw_fancy_dumps (which doesn't need exporting)
 def fancy_dumps(obj):
     "Encode a structured type as a str."
     # TODO unify with the to/from raw pattern in electionguard?
     h = JSON_CONVERTER.get_unstructure_hook(type(obj))
-    raw = JSON_CONVERTER.unstructure(obj)
+    raw = fancy_raw(obj)
     # return json.dumps(raw)
     return raw_fancy_dumps(raw)
 

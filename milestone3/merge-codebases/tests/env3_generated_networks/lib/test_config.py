@@ -10,7 +10,7 @@ from copy import deepcopy
 # from hypothesis.strategies import composite, integers, text
 
 from tests.lib.example_data import EXAMPLE_CONTESTS
-from tests.lib.json_utils import fancy_dumps
+from tests.lib.json_utils import fancy_dumps, fancy_raw
 
 
 
@@ -47,20 +47,20 @@ class HashedContestConfig:
     ]
 
     @classmethod
-    def from_dict(cls, data: dict, conv) -> Self:
+    def from_dict(cls, data: dict, structure) -> Self:
         assert isinstance(data, dict)
         assert isinstance(data['answers'], dict)
-        args = []
+        answers = []
         for k,v in data['answers'].items():
-            args.append((k, conv(v, HashedVotesConfig)))
+            answers.append((k, structure(v, HashedVotesConfig)))
         return cls(
             question = data['question'],
-            answers = tuple(args)
+            answers = tuple(answers)
         )
 
-    def to_dict(self, conv) -> dict:
+    def to_dict(self, unstructure) -> dict:
         return {"question": self.question,
-                "answers": {k: conv(v) for k, v in self.answers}}
+                "answers": {k: unstructure(v) for k, v in self.answers}}
 
 
 @st.composite
@@ -218,23 +218,23 @@ class HashedFnCallConfig:
     ]
 
     @classmethod
-    def from_dict(cls, data: dict, conv) -> Self:
+    def from_dict(cls, data: dict, structure) -> Self:
         assert isinstance(data, dict)
         assert isinstance(data['args'], dict)
         args = []
         for k,v in data['args'].items():
-            args.append((k, conv(v, str|int)))
+            args.append((k, structure(v, str|int)))
         return cls(
             name = data['name'],
             args = tuple(args)
         )
 
-    def to_dict(self, conv) -> dict:
+    def to_dict(self, unstructure) -> dict:
         # print(f'call cfg to_dict: {self}')
         args = {}
         for a in self.args:
             k, v = a
-            args[k] = conv(v)
+            args[k] = unstructure(v)
         return {"name": self.name, 'args': args}
 
     def __post_init__(self):
@@ -398,34 +398,21 @@ class ResolvedTestConfig:
         )
 
     def to_json(self) -> str:
-        cfg = asdict(self.config)
-        # cfg['pytest']['tmpdir'] = str(self.tmpdir_path())
+        cfg = fancy_raw(self.config)
+        # print(f'fancy raw cfg: {json.dumps(cfg, indent=2)}')
+
+        # add fields not part of cached config
+        cfg['pytest']['cache_key'] = self.cache_key
         cfg['arion']['project_name'] = self.arion_project_name()
-        # print(f'cfg: {cfg}')
-        # cfg['bind_dirs'] = [str(d) for d in self.bind_dirs()]
-        # cfg['scripts'] = self.egc_scripts()
-        # print(f'cfg bind_dirs: {cfg['bind_dirs']}')
 
-        # fix answers being converted to short lists rather than dicts,
-        # and accidental nesting of contests in votes
-        tmp = cfg['votes']['contests']
-        cfg['votes'] = []
-        for contest in tmp:
-            c = {'question': contest['question'], 'answers': {}}
-            for k, v in contest['answers']:
-                c['answers'][k] = v
-            cfg['votes'].append(c)
-
-        # fix accidental nesting of attacks in attacks
-        # TODO rewrite
-        # cfg['attacks'] = cfg['attacks']['attacks']
+        # fix extra nesting
         cfg['pytest']['config_fns'] = cfg['pytest']['config_fns']['names']
-        cfg['pytest']['setup_fns'] = cfg['pytest']['setup_fns']['fns']
+        cfg['pytest']['setup_fns' ] = cfg['pytest']['setup_fns' ]['fns']
         cfg['pytest']['attack_fns'] = cfg['pytest']['attack_fns']['fns']
+        cfg['votes'] = cfg['votes']['contests']
 
         # print(f'cfg: {cfg}')
         return fancy_dumps(cfg)
-        # return json.dumps(cfg)
 
 # @contextmanager
 def resolve_test_config(cfg: HashedTestConfig, tmp_root: Path) -> ResolvedTestConfig:
