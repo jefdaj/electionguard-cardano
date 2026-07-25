@@ -10,8 +10,8 @@ def lock_test_tmpdir(cfg: ResolvedTestConfig):
 
     tmpdir_path = cfg.tmpdir_path()
     tmpdir_path.mkdir(parents=True, exist_ok=True)
-    lock_path = tmpdir_path / 'test.lock'
-    
+
+    lock_path = cfg.test_lock_path()
     with lock_path.open("a") as f:
         fcntl.flock(f, fcntl.LOCK_EX)   # blocks until acquired
         try:
@@ -27,7 +27,7 @@ def init_test_tmpdir(cfg: ResolvedTestConfig):
     # TODO any better way than assuming this is already done?
     # with lock_test_tmpdir(cfg) as lock:
 
-    log_path = tmpdir_path / 'test.log'
+    log_path = cfg.test_log_path()
     with log_path.open('w') as log_handle: # TODO proper logging
         def log(msg):
             log_handle.writelines([msg + '\n'])
@@ -35,7 +35,7 @@ def init_test_tmpdir(cfg: ResolvedTestConfig):
         log('init_test_tmpdir start')
 
         # init config json
-        cfg_path = tmpdir_path / 'test.json'
+        cfg_path = cfg.test_cfg_path()
         if not cfg_path.exists():
             log('init_test_tmpdir write config')
             cfg_path.write_text( cfg.to_json() )

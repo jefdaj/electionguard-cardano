@@ -249,6 +249,15 @@ class ResolvedTestConfig:
     def tmpdir_path(self) -> Path:
         return Path(self.tmp_root) / f'test{self.cache_key}'
 
+    def test_cfg_path(self) -> Path:
+        return self.tmpdir_path() / 'test.json'
+
+    def test_lock_path(self) -> Path:
+        return self.tmpdir_path() / 'test.lock'
+
+    def test_log_path(self) -> Path:
+        return self.tmpdir_path() / 'test.log'
+
     def arion_project_name(self):
         return f'egc-test{self.cache_key}'
 

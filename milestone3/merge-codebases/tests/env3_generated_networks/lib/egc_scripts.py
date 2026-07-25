@@ -20,8 +20,8 @@ JINJA_ENV = Environment(
 
 def write_egc_scripts(cfg: ResolvedTestConfig):
     tmpdir_path  = cfg.tmpdir_path()
+    log_path     = cfg.test_log_path()
     scripts_path = tmpdir_path / 'egc_scripts'
-    log_path     = tmpdir_path / 'test.log'
 
     # TODO any better way than assuming it's locked?
     # with lock_test_tmpdir(cfg) as lock:
