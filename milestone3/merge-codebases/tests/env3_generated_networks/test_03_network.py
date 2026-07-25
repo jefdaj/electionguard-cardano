@@ -9,11 +9,23 @@ from ..lib.py_utils import deep_replace
 
 @st.composite
 def node_ready_config(draw):
+    fn_name  = sys._getframe().f_code.co_name
     cfg = draw( hashed_test_config() )
-    cfg = replace(cfg, cfg_type = sys._getframe().f_code.co_name)
-    for nodes in ['admin', 'guardians', 'devices', 'verifiers']:
-        attr_path = f'nodes.{nodes}.template'
-        cfg = deep_replace(cfg, attr_path, 'node-ready.sh')
+    cfg = deep_replace(
+        cfg,
+        'pytest.config_fns.names',
+        tuple(list(cfg.pytest.config_fns.names) + [fn_name])
+    )
+    cfg = deep_replace(
+        cfg,
+        'pytest.setup_fns',
+        SetupFnsConfig(fns=(
+            FnCallConfig(
+                name = 'render_egc_scripts',
+                args = (('default', 'node-ready.sh'),),
+            ),
+        )),
+    )
     return cfg
 
 @given_cached_tests(node_ready_config, max_examples=3)

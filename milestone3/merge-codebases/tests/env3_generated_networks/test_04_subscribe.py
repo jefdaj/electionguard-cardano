@@ -10,13 +10,29 @@ from ..lib.py_utils import deep_replace
 
 @st.composite
 def config_subscribe_str(draw):
-    cfg      = draw( hashed_test_config() )
     fn_name  = sys._getframe().f_code.co_name
-    cfg      = deep_replace(cfg, 'pytest.config_fns', cfg.pytest.config_fns + [fn_name])
-    n        = draw(integers(0, 1000)) # mod will be used to pick qr_str index
+    cfg = draw( hashed_test_config() )
+
+    # TODO util fn:
+    cfg = deep_replace(
+        cfg,
+        'pytest.config_fns.names',
+        tuple(list(cfg.pytest.config_fns.names) + [fn_name])
+    )
+
+    n = draw(integers(0, 1000)) # mod will be used to pick qr_str index
     sub_call = FnCallConfig(name='write_qr_str', args=(('drawn', n),))
-    cfg      = deep_replace(cfg, 'pytest.setup_fns', cfg.pytest.config_fns + [sub_call])
-    # TODO also need to set the default template -> subscribe.sh
+    cfg = deep_replace(
+        cfg,
+        'pytest.setup_fns',
+        SetupFnsConfig(fns=(
+            FnCallConfig(
+                name = 'render_egc_scripts',
+                args = (('default', 'subscribe.sh'),),
+            ),
+            sub_call,
+        )),
+    )
     return cfg
 
 @given_cached_tests(
