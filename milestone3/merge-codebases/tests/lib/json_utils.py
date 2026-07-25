@@ -23,9 +23,9 @@ def raw_fancy_dumps(obj, indent=2, width=80, _level=0) -> str:
     if isinstance(obj, list):
         if not obj:
             return "[]"
-        print(f'list obj: {obj}')
+        # print(f'list obj: {obj}')
         compact = json.dumps(obj, separators=(", ", ": ")) # TODO fails to fancy dump within this?
-        print(f'compact: {compact}')
+        # print(f'compact: {compact}')
         # raise Exception
         if len(compact) + len(pad) <= width:
             return compact
@@ -36,6 +36,10 @@ def raw_fancy_dumps(obj, indent=2, width=80, _level=0) -> str:
 
 def make_converter():
     c = cattrs.Converter(forbid_extra_keys=True)
+    c.register_structure_hook(
+        str | int,
+        lambda v, _: v if isinstance(v, (str, int)) else int(v),
+    )
     def has_to_dict(cls) -> bool:
         return isinstance(cls, type) and callable(getattr(cls, "to_dict", None))
     def has_from_dict(cls) -> bool:
@@ -43,11 +47,11 @@ def make_converter():
     # factory receives the concrete type, returns the hook
     c.register_unstructure_hook_factory(
         has_to_dict,
-        lambda cls: lambda obj: obj.to_dict(),
+        lambda cls: lambda obj: obj.to_dict(c.unstructure),
     )
     c.register_structure_hook_factory(
         has_from_dict,
-        lambda cls: lambda data, _: cls.from_dict(data),
+        lambda cls: lambda data, _: cls.from_dict(data, c.structure),
     )
     return c
 
@@ -58,8 +62,9 @@ JSON_CONVERTER = make_converter()
 def fancy_dumps(obj):
     "Encode a structured type as a str."
     # TODO unify with the to/from raw pattern in electionguard?
+    h = JSON_CONVERTER.get_unstructure_hook(type(obj))
     raw = JSON_CONVERTER.unstructure(obj)
-    # TODO later, this would be a nice place to add back the max 80 char thing
+    # return json.dumps(raw)
     return raw_fancy_dumps(raw)
 
 def fancy_loads(obj_type, obj_json_str):
@@ -70,8 +75,8 @@ def fancy_loads(obj_type, obj_json_str):
 
 
 def assert_json_roundtrip(cfg):
-    # tmp_str = fancy_dumps(cfg)
-    tmp_str = json.dumps(dataclasses.asdict(cfg))
+    tmp_str = fancy_dumps(cfg)
+    # tmp_str = json.dumps(dataclasses.asdict(cfg))
     cfg2 = fancy_loads(type(cfg), tmp_str)
     if cfg != cfg2:
         print(f'cfg: {cfg}')

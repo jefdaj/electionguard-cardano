@@ -46,9 +46,21 @@ class HashedContestConfig:
         ...
     ]
 
-    def to_dict(self) -> dict:
+    @classmethod
+    def from_dict(cls, data: dict, conv) -> Self:
+        assert isinstance(data, dict)
+        assert isinstance(data['answers'], dict)
+        args = []
+        for k,v in data['answers'].items():
+            args.append((k, conv(v, HashedVotesConfig)))
+        return cls(
+            question = data['question'],
+            answers = tuple(args)
+        )
+
+    def to_dict(self, conv) -> dict:
         return {"question": self.question,
-                "answers": {k: asdict(v) for k, v in self.answers}}
+                "answers": {k: conv(v) for k, v in self.answers}}
 
 
 @st.composite
@@ -201,29 +213,28 @@ class HashedFnCallConfig:
 
     name: str
     args: tuple[
-        tuple[str, str], # TODO str or int?
+        tuple[str, str|int],
         ...
     ]
 
-#     @classmethod
-#     def from_dict(cls, data: dict) -> Self:
-#         print(f'data: {data}')
-#         assert isinstance(data, dict)
-#         assert isinstance(data['args'], dict)
-#         args = []
-#         for k,v in data['args'].items():
-#             args.append((k, v))
-#         return cls(
-#             name = data['name'],
-#             args = tuple(args)
-#         )
+    @classmethod
+    def from_dict(cls, data: dict, conv) -> Self:
+        assert isinstance(data, dict)
+        assert isinstance(data['args'], dict)
+        args = []
+        for k,v in data['args'].items():
+            args.append((k, conv(v, str|int)))
+        return cls(
+            name = data['name'],
+            args = tuple(args)
+        )
 
-    # TODO remove?
-    def to_dict(self) -> dict:
-        print(f'call cfg to_dict: {self}')
-        print(f'call cfg args: {args}')
-        args = {a[0]: a[1] for a in self.args}
-        raise Exception
+    def to_dict(self, conv) -> dict:
+        # print(f'call cfg to_dict: {self}')
+        args = {}
+        for a in self.args:
+            k, v = a
+            args[k] = conv(v)
         return {"name": self.name, 'args': args}
 
     def __post_init__(self):
