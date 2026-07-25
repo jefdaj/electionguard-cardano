@@ -9,7 +9,7 @@ from ..lib.py_utils import deep_replace
 
 @st.composite
 def wallet_config(draw):
-    cfg = draw( hashed_test_config() )
+    cfg = draw( test_config() )
     cfg = replace(cfg, cfg_type = sys._getframe().f_code.co_name)
     for nodes in ['admin', 'guardians', 'devices', 'verifiers']:
         attr_path = f'nodes.{nodes}.template'

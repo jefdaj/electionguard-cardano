@@ -17,31 +17,31 @@ from tests.lib.json_utils import fancy_dumps, fancy_raw
 ### hashed test config ###
 
 @dataclass(frozen=True, slots=True)
-class HashedVotesConfig:
+class VotesConfig:
     """Votes for a particular contest.
     Note that the entire `votes` field in the config is populated by
-    HashedContestsConfig; this is only votes for one contest."""
+    ContestsConfig; this is only votes for one contest."""
 
     n_cast: int
     n_spoil: int
 
 @st.composite
-def hashed_votes_config(draw) -> HashedVotesConfig:
-    return HashedVotesConfig(
+def votes_config(draw) -> VotesConfig:
+    return VotesConfig(
         n_cast  = draw(st.integers(0, 3)), # TODO actual bounds?
         n_spoil = draw(st.integers(0, 3)), # TODO actual bounds?
     )
 
 
 @dataclass(frozen=True, slots=True)
-class HashedContestConfig:
+class ContestConfig:
     "A single scripted contest with question and vote counts per answer."
 
     question: str              # office/question
     answers: tuple[
         tuple[
             str,               # candidate/answer
-            HashedVotesConfig, # vote counts for candidate/answer
+            VotesConfig, # vote counts for candidate/answer
         ],
         ...
     ]
@@ -52,7 +52,7 @@ class HashedContestConfig:
         assert isinstance(data['answers'], dict)
         answers = []
         for k,v in data['answers'].items():
-            answers.append((k, structure(v, HashedVotesConfig)))
+            answers.append((k, structure(v, VotesConfig)))
         return cls(
             question = data['question'],
             answers = tuple(answers)
@@ -64,15 +64,15 @@ class HashedContestConfig:
 
 
 @st.composite
-def hashed_contest_config(draw, example) -> HashedContestConfig:
+def contest_config(draw, example) -> ContestConfig:
     "A single contest with scripted vote counts for each candidate/answer."
     n_candidates = draw(st.integers(2, len(example['candidates']))) # TODO allow one candidate?
     example2 = deepcopy(example)
     example2['candidates'] = example2['candidates'][:n_candidates]
-    return HashedContestConfig(
+    return ContestConfig(
         question = example['office'],
         answers = tuple(
-            tuple([k, draw(hashed_votes_config())])
+            tuple([k, draw(votes_config())])
             for k in example2['candidates']
         )
     )
@@ -80,17 +80,17 @@ def hashed_contest_config(draw, example) -> HashedContestConfig:
 
 
 @dataclass(frozen=True, slots=True)
-class HashedContestsConfig:
+class ContestsConfig:
     "A list of contests and the scripted vote counts for each one."
 
-    contests: tuple[HashedContestConfig, ...]
+    contests: tuple[ContestConfig, ...]
 
     # def to_dict(self) -> dict:
     #     return {"question": self.question,
     #             "answers": {k: asdict(v) for k, v in self.answers}}
 
 @st.composite
-def hashed_contests_config(draw) -> HashedContestsConfig:
+def contests_config(draw) -> ContestsConfig:
     "A list of unique contests with scripted vote counts for each one."
 
     contest_idxs = draw(st.lists(
@@ -102,29 +102,29 @@ def hashed_contests_config(draw) -> HashedContestsConfig:
     ))
     # print(f'contest_idxs: {contest_idxs}')
     contests = [
-        draw( hashed_contest_config(EXAMPLE_CONTESTS[i]) )
+        draw( contest_config(EXAMPLE_CONTESTS[i]) )
         for i in contest_idxs
     ]
     # print(f'contests: {contests}')
-    return HashedContestsConfig(contests=tuple(contests))
+    return ContestsConfig(contests=tuple(contests))
 
 
 # @dataclass(frozen=True, slots=True)
-# class HashedAdminConfig:
+# class AdminConfig:
 #     template: str = field(default='admin.sh')
 
 # @st.composite
-# def hashed_admin_config(draw, template: Optional[str] = None):
+# def admin_config(draw, template: Optional[str] = None):
 #     # TODO remove?
 #     _ = draw(st.integers(1,1)) # stop hypothesis complaining about draw
 #     kwargs = {}
 #     if template is not None:
 #         kwargs['template'] = template
-#     return HashedAdminConfig(**kwargs)
+#     return AdminConfig(**kwargs)
 
 
 @dataclass(frozen=True, slots=True)
-class HashedGuardiansConfig:
+class GuardiansConfig:
     count: int = 3
     quorum: int = 2
     # template: str = field(default='guardian.sh')
@@ -133,7 +133,7 @@ class HashedGuardiansConfig:
         assert 0 < self.quorum <= self.count
 
 @st.composite
-def hashed_guardians_config(draw):
+def guardians_config(draw):
     count = draw(st.integers(2,5)) # TODO actual upper bound?
     kwargs = {
         'count':  count,
@@ -141,74 +141,74 @@ def hashed_guardians_config(draw):
     }
     # if template is not None:
     #     kwargs['template'] = template
-    return HashedGuardiansConfig(**kwargs)
+    return GuardiansConfig(**kwargs)
 
 
 @dataclass(frozen=True, slots=True)
-class HashedArionConfig:
+class ArionConfig:
     "The parts of the Arion config that should affect the hash."
     egc_image: str
     # TODO add private_dir below
     # TODO add egc_scripts below
 
 @st.composite
-def hashed_arion_config(draw):
+def arion_config(draw):
     _ = draw(st.integers(1,1)) # silence hypothesis warning
-    cfg = HashedArionConfig(
+    cfg = ArionConfig(
         egc_image = "electionguard-cardano:0.3.0",
     )
     return cfg
 
 
 @dataclass(frozen=True, slots=True)
-class HashedDevicesConfig:
+class DevicesConfig:
     count: int
     # template: str = field(default='device.sh')
 
 @st.composite
-def hashed_devices_config(draw):
+def devices_config(draw):
     kwargs = {
         'count': draw(st.integers(1, 3)), # TODO actual upper bound?
     }
     # if template is not None:
     #     kwargs['template'] = template
-    return HashedDevicesConfig(**kwargs)
+    return DevicesConfig(**kwargs)
 
 
 @dataclass(frozen=True, slots=True)
-class HashedVerifiersConfig:
+class VerifiersConfig:
     count: int
     # template: str = field(default='verifier.sh')
 
 @st.composite
-def hashed_verifiers_config(draw):
+def verifiers_config(draw):
     kwargs = {
         'count': draw(st.integers(1, 3)), # TODO actual upper bound?
     }
     # if template is not None:
     # kwargs['template'] = template
-    return HashedVerifiersConfig(**kwargs)
+    return VerifiersConfig(**kwargs)
 
 # Used to be called "election", which was confusing
 @dataclass(frozen=True, slots=True)
-class HashedNodesConfig:
-    # admin:     HashedAdminConfig
-    guardians: HashedGuardiansConfig
-    devices:   HashedDevicesConfig
-    verifiers: HashedVerifiersConfig
+class NodesConfig:
+    # admin:     AdminConfig
+    guardians: GuardiansConfig
+    devices:   DevicesConfig
+    verifiers: VerifiersConfig
 
 @st.composite
-def hashed_nodes_config(draw):
-    return HashedNodesConfig(
-        # admin     = draw( hashed_admin_config()     ),
-        guardians = draw( hashed_guardians_config() ),
-        devices   = draw( hashed_devices_config()   ),
-        verifiers = draw( hashed_verifiers_config() ),
+def nodes_config(draw):
+    return NodesConfig(
+        # admin     = draw( admin_config()     ),
+        guardians = draw( guardians_config() ),
+        devices   = draw( devices_config()   ),
+        verifiers = draw( verifiers_config() ),
     )
 
 
 @dataclass(frozen=True, slots=True)
-class HashedFnCallConfig:
+class FnCallConfig:
     "A fn call with a name and (kw)args dict."
 
     name: str
@@ -245,7 +245,7 @@ class HashedFnCallConfig:
 
 
 @dataclass(frozen=True, slots=True)
-class HashedConfigFnsConfig:
+class ConfigFnsConfig:
     "This one only has names because the fns are strategies."
     names: tuple[str, ...]
 
@@ -258,20 +258,20 @@ class HashedConfigFnsConfig:
 
 
 @dataclass(frozen=True, slots=True)
-class HashedSetupFnsConfig:
-    fns: tuple[HashedFnCallConfig, ...]
+class SetupFnsConfig:
+    fns: tuple[FnCallConfig, ...]
     def __post_init__(self):
         assert isinstance(self.fns, tuple)
 
 @st.composite
-def hashed_setup_fns_config(draw):
+def setup_fns_config(draw):
     _ = draw(st.integers(1,1)) # silence hypothesis warning
-    return HashedSetupFnsConfig(fns=(
-        # HashedFnCallConfig.from_dict({
+    return SetupFnsConfig(fns=(
+        # FnCallConfig.from_dict({
         #     'name': 'render_egc_scripts',
         #     'args': {'default': 'subscribe.sh'}
         # }),
-        HashedFnCallConfig(
+        FnCallConfig(
             name = 'render_egc_scripts',
             args = (('default', 'subscribe.sh'),),
         ),
@@ -279,30 +279,30 @@ def hashed_setup_fns_config(draw):
 
 
 @dataclass(frozen=True, slots=True)
-class HashedAttackFnsConfig:
-    fns: tuple[HashedFnCallConfig, ...]
+class AttackFnsConfig:
+    fns: tuple[FnCallConfig, ...]
     def __post_init__(self):
         assert isinstance(self.fns, tuple)
 
 @st.composite
-def hashed_attack_fns_config(draw):
+def attack_fns_config(draw):
     _ = draw(st.integers(1,1)) # silence hypothesis warning
-    return HashedAttackFnsConfig(fns=())
+    return AttackFnsConfig(fns=())
 
 
 @dataclass(frozen=True, slots=True)
-class HashedPytestConfig:
-    config_fns: HashedConfigFnsConfig
-    setup_fns:  HashedSetupFnsConfig
-    attack_fns: HashedAttackFnsConfig
+class PytestConfig:
+    config_fns: ConfigFnsConfig
+    setup_fns:  SetupFnsConfig
+    attack_fns: AttackFnsConfig
 
 
 @dataclass(frozen=True, slots=True)
 class HashedTestConfig:
-    pytest: HashedPytestConfig
-    arion:  HashedArionConfig
-    nodes:  HashedNodesConfig
-    votes:  HashedContestsConfig
+    pytest: PytestConfig
+    arion:  ArionConfig
+    nodes:  NodesConfig
+    votes:  ContestsConfig
 
     def canonical(self) -> str:
         # sort_keys canonicalizes DICT KEYS only; list/tuple order is untouched
@@ -317,25 +317,25 @@ class HashedTestConfig:
 @st.composite
 def hashed_test_config(draw) -> HashedTestConfig:
     fn_name = sys._getframe().f_code.co_name # TODO util fn for this
-    pytest_config = HashedPytestConfig(
-        config_fns = HashedConfigFnsConfig(names=(fn_name,)),
-        setup_fns = HashedSetupFnsConfig(fns=(
-            # HashedFnCallConfig.from_dict({
+    pytest_config = PytestConfig(
+        config_fns = ConfigFnsConfig(names=(fn_name,)),
+        setup_fns = SetupFnsConfig(fns=(
+            # FnCallConfig.from_dict({
             #     'name': 'render_egc_scripts',
             #     'args': {'default': 'subscribe.sh'}
             # }),
-            HashedFnCallConfig(
+            FnCallConfig(
                 name = 'render_egc_scripts',
                 args = (('default', 'subscribe.sh'),),
             ),
         )),
-        attack_fns = HashedAttackFnsConfig(fns=()),
+        attack_fns = AttackFnsConfig(fns=()),
     )
     return HashedTestConfig(
         pytest = pytest_config,
-        arion  = draw( hashed_arion_config()    ),
-        nodes  = draw( hashed_nodes_config()    ),
-        votes  = draw( hashed_contests_config() ),
+        arion  = draw( arion_config()    ),
+        nodes  = draw( nodes_config()    ),
+        votes  = draw( contests_config() ),
     )
 
 
@@ -389,7 +389,7 @@ class ResolvedTestConfig:
         return sorted(list(dirs))
 
     @classmethod
-    def from_hashed_config(cls, cfg: HashedTestConfig, tmp_root: Path) -> Self:
+    def from_config(cls, cfg: HashedTestConfig, tmp_root: Path) -> Self:
         key = cfg.cache_key()
         return cls(
             config    = cfg,
@@ -416,4 +416,4 @@ class ResolvedTestConfig:
 
 # @contextmanager
 def resolve_test_config(cfg: HashedTestConfig, tmp_root: Path) -> ResolvedTestConfig:
-    return ResolvedTestConfig.from_hashed_config(cfg, tmp_root)
+    return ResolvedTestConfig.from_config(cfg, tmp_root)

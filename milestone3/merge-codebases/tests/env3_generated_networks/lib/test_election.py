@@ -10,7 +10,7 @@ from .arion_network import arion_network_up
 def run_test_election(cfg: ResolvedTestConfig) -> Path:
     "Run the election if needed, and return the tmpdir path."
 
-    # resolved_cfg = ResolvedTestConfig.from_hashed_config(cfg, tmp_root)
+    # resolved_cfg = ResolvedTestConfig.from_config(cfg, tmp_root)
     tmpdir_path = cfg.tmpdir_path()
     cfg_path  = cfg.cfg_path()
     lock_path = cfg.lock_path()

@@ -10,51 +10,51 @@ from .lib.test_config import *
 
 ### round-trip configs to json ###
 
-@given(cfg=hashed_votes_config())
+@given(cfg=votes_config())
 @settings(max_examples=1_000)
-def test_roundtrip_vote_config(cfg: HashedVotesConfig):
+def test_roundtrip_vote_config(cfg: VotesConfig):
     assert_json_roundtrip(cfg)
 
-@given(cfg=hashed_contests_config())
+@given(cfg=contests_config())
 @settings(max_examples=1_000)
-def test_roundtrip_contests_config(cfg: HashedContestsConfig):
+def test_roundtrip_contests_config(cfg: ContestsConfig):
     assert_json_roundtrip(cfg)
 
-@given(cfg=hashed_guardians_config())
+@given(cfg=guardians_config())
 @settings(max_examples=1_000)
-def test_roundtrip_guardians_config(cfg: HashedGuardiansConfig):
+def test_roundtrip_guardians_config(cfg: GuardiansConfig):
     assert_json_roundtrip(cfg)
 
 # TODO @example instead
-@given(cfg=hashed_arion_config())
+@given(cfg=arion_config())
 @settings(max_examples=1)
-def test_roundtrip_arion_config(cfg: HashedArionConfig):
+def test_roundtrip_arion_config(cfg: ArionConfig):
     assert_json_roundtrip(cfg)
 
-@given(cfg=hashed_devices_config())
+@given(cfg=devices_config())
 @settings(max_examples=1_000)
-def test_roundtrip_devices_config(cfg: HashedDevicesConfig):
+def test_roundtrip_devices_config(cfg: DevicesConfig):
     assert_json_roundtrip(cfg)
 
-@given(cfg=hashed_verifiers_config())
+@given(cfg=verifiers_config())
 @settings(max_examples=1_000)
-def test_roundtrip_verifiers_config(cfg: HashedVerifiersConfig):
+def test_roundtrip_verifiers_config(cfg: VerifiersConfig):
     assert_json_roundtrip(cfg)
 
-@given(cfg=hashed_nodes_config())
+@given(cfg=nodes_config())
 @settings(max_examples=1_000)
-def test_roundtrip_nodes_config(cfg: HashedNodesConfig):
+def test_roundtrip_nodes_config(cfg: NodesConfig):
     assert_json_roundtrip(cfg)
 
-@given(cfg=hashed_setup_fns_config())
+@given(cfg=setup_fns_config())
 @settings(max_examples=1)
-def test_roundtrip_setup_fns_config(cfg: HashedSetupFnsConfig):
+def test_roundtrip_setup_fns_config(cfg: SetupFnsConfig):
     assert_json_roundtrip(cfg)
 
 # TODO @example instead
-@given(cfg=hashed_attack_fns_config())
+@given(cfg=attack_fns_config())
 @settings(max_examples=1)
-def test_roundtrip_attack_fns_config(cfg: HashedAttackFnsConfig):
+def test_roundtrip_attack_fns_config(cfg: AttackFnsConfig):
     assert_json_roundtrip(cfg)
 
 # @example(cfg=example_test_config())
