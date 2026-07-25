@@ -357,9 +357,9 @@ class ResolvedTestConfig:
     def arion_project_name(self):
         return f'egc-test{self.cache_key}'
 
-    def egc_path(self, node_name: str) -> Path:
+    def private_path(self, node_name: str) -> Path:
         assert node_name in self.node_names()
-        return self.tmpdir_path() / 'data' / 'private' / node_name / 'egc'
+        return self.tmpdir_path() / 'data' / 'private' / node_name
 
     def qrcodes_path(self) -> Path:
         return self.tmpdir_path() / 'data' / 'qrcodes'
@@ -376,7 +376,7 @@ class ResolvedTestConfig:
         dirs = ['data/qrcodes']
         per_node_dirs = [ 'ipfs', 'egc']
         for name in self.node_names():
-            dirs += [f'data/{name}/{d}' for d in per_node_dirs]
+            dirs += [f'{self.private_path(name)}/{d}' for d in per_node_dirs]
         return sorted(list(dirs))
 
     @classmethod
