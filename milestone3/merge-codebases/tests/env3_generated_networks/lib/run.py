@@ -18,8 +18,8 @@ def run_egc_scripts_cached(
         env3_arion_dir: Path,
     ) -> ResolvedTestConfig:
     rcfg = resolve_test_config(cfg=cfg, tmp_root=tmp_root)
-    with lock_test_tmpdir(cfg=rcfg) as test_tmpdir:
-        log_path = test_tmpdir / 'script.log'
+    with lock_test_tmpdir(cfg=rcfg):
+        log_path = rcfg.log_path()
         if not log_path.exists():
             # the test hasn't been run already
             init_test_tmpdir(cfg=rcfg)
@@ -36,18 +36,17 @@ def prerun_egc_scripts(final_test_fn_from_rcfg):
     return fn_from_fixtures
 
 
-def run_egc_scripts(cfg: ResolvedTestConfig, arion_dir: Path, setup_fn, timeout=300):
+def run_egc_scripts(cfg: ResolvedTestConfig, arion_dir: Path, timeout=300):
     """Exec /script.sh in each container and log to logfiles. This can be much
     simpler than the old run_many_in_containers, because it only needs to
     manage one long-running script per node."""
 
-    setup_fn(cfg)
     tmpdir_path = cfg.tmpdir_path()
     procs = {} # node_name -> (proc, log_path)
     node_names = cfg.node_names()
     kwargs = arion_subprocess_kwargs(cfg, arion_dir)
     for node_name in node_names:
-        log_path = cfg.egc_path(node_name) / 'script.log'
+        log_path = cfg.private_path(node_name) / 'egc' / 'script.log'
         log_handle = log_path.open('w', buffering=1) # TODO 'a' mode?
         # stdbuf here is to force the log to flush line by line
         service_name = f'{node_name}-egc'

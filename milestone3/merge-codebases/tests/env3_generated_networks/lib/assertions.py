@@ -6,7 +6,7 @@ def assert_node_logs_match(cfg: ResolvedTestConfig, pattern: str):
     rx = re.compile(pattern)
     tmpdir_path = cfg.tmpdir_path()
     log_paths = [
-        cfg.egc_path() / 'script.log'
+        cfg.script_log_path(name)
         for name in cfg.node_names()
     ]
     for log_path in log_paths:

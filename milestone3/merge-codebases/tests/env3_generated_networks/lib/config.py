@@ -361,6 +361,9 @@ class ResolvedTestConfig:
         assert node_name in self.node_names()
         return self.tmpdir_path() / 'data' / 'private' / node_name
 
+    def script_log_path(self, node_name: str) -> Path:
+        return self.private_path(node_name) / 'egc' / 'script.log'
+
     def qrcodes_path(self) -> Path:
         return self.tmpdir_path() / 'data' / 'qrcodes'
 
