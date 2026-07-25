@@ -5,7 +5,7 @@ from pathlib import Path
 
 from .random_seed   import get_random_seed
 from .arion_network import arion_network_up
-from .egc_scripts   import run_egc_scripts
+from .run   import prerun_egc_scripts
 from .config import resolve_test_config, hashed_test_config, HashedTestConfig, ResolvedTestConfig
 from .tmpdir   import init_test_tmpdir, lock_test_tmpdir
 

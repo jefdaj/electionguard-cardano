@@ -8,27 +8,20 @@ from ..lib import *
 from .lib  import *
 from ..lib.py_utils import deep_replace
 
-# TODO wait, does this also need to be hashed??
-# TODO how to make these easier to debug?
 @st.composite
-def setup_old_qr_str(draw):
-    print('running setup_old_qr_str')
-    i = draw(st.integers(0, len(OLD_QR_STRS)))
-    return write_qr_str
-
-@st.composite
-def subscribe_old_qr_str_config(draw):
-    cfg = draw( hashed_test_config() )
-    cfg = replace(cfg, cfg_type = sys._getframe().f_code.co_name)
-    for nodes in ['admin', 'guardians', 'devices', 'verifiers']:
-        attr_path = f'nodes.{nodes}.template'
-        cfg = deep_replace(cfg, attr_path, 'subscribe.sh')
+def config_subscribe_str(draw):
+    cfg      = draw( hashed_test_config() )
+    fn_name  = sys._getframe().f_code.co_name
+    cfg      = deep_replace(cfg, 'pytest.config_fns', cfg.pytest.config_fns + [fn_name])
+    n        = draw(integers(0, 1000)) # mod will be used to pick qr_str index
+    sub_call = FnCallConfig(name='write_qr_str', args=(('drawn', n),))
+    cfg      = deep_replace(cfg, 'pytest.setup_fns', cfg.pytest.config_fns + [sub_call])
     return cfg
 
 @given_cached_tests(
-    cfg_strategy   = subscribe_old_qr_str_config,
-    setup_strategy = setup_old_qr_str,
-    max_examples   = 3,
+    cfg_strategy = config_subscribe_str,
+    max_examples = 3,
 )
 def test_subscribe_old_qr_str(cfg: ResolvedTestConfig):
+    # TODO catch elections that stalled or burned test tokens too
     assert_node_logs_match(cfg=cfg, pattern='^ElectionEvent.*ended election')
