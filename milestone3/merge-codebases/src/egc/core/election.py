@@ -97,6 +97,7 @@ class ElectionConfig:
     def from_qr_str(cls, txt: str) -> Self:
         "egc:election:<version>:<onshot_hex>:<network_magic>:<funder_address>:<since_slot>:<since_block>, maybe with wrapping"
         txt = ''.join(l.strip() for l in txt.splitlines())
+        print(f'from_qr_str txt: {txt}')
         words = txt.split(':')
         prefix = words[:2]
         args   = words[2:]

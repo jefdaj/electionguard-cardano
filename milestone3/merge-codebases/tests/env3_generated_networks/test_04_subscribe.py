@@ -11,31 +11,31 @@ from ..lib.py_utils import deep_replace
 # weird wrapping just adds to the test!
 OLD_QR_STRS = [
 
-  '''egc:election:3:d8799f5820dd0cae35b7b285c763543ac48f9a17334389705421
-  1abd51cc00591958467f2102ff:2:addr_test1vr93qqyu30r5c7snd4wp8wu243st2xz
-  8605yea78hgyg6uckjakk5:118279331:8bc5402b2f2db94ad2f6ae01506d141558cc4
-  32e60873549cb9242e1d40b7a13''',
+  # '''egc:election:3:d8799f5820dd0cae35b7b285c763543ac48f9a17334389705421
+  # 1abd51cc00591958467f2102ff:2:addr_test1vr93qqyu30r5c7snd4wp8wu243st2xz
+  # 8605yea78hgyg6uckjakk5:118279331:8bc5402b2f2db94ad2f6ae01506d141558cc4
+  # 32e60873549cb9242e1d40b7a13''',
 
-  '''egc:election:3:d8799f5820fa655ccdddf7e
-  eecc80dd21cb575d9a3e6d07a96188788cf09adfdbde6
-  7e565000ff:2:addr_test1vr93qqyu30r5c7snd4wp8wu243st2
-  xz8605yea78hgyg6uckjakk5:118279418:5f2d1e4137b870aad05562
-  cafc6ece00cd06d1dd6c968b1490bdaf3badbca430''',
+  # '''egc:election:3:d8799f5820fa655ccdddf7e
+  # eecc80dd21cb575d9a3e6d07a96188788cf09adfdbde6
+  # 7e565000ff:2:addr_test1vr93qqyu30r5c7snd4wp8wu243st2
+  # xz8605yea78hgyg6uckjakk5:118279418:5f2d1e4137b870aad05562
+  # cafc6ece00cd06d1dd6c968b1490bdaf3badbca430''',
 
-  '''egc:election:3:d8799f5820c1a3b60b14902823663a88602549d0
-  71558833fa93ad61fe2a01f424dff19f1c00ff:2
-  :addr_test1vr93qqyu30r5c7snd4wp8wu243st2xz8605yea78hgyg6uckjakk5:
-  118279549:d658626596b91538146078
-  d4fd69c332bc1b638fbfcadb47ed3237f2ee2b1d5b''',
+  # '''egc:election:3:d8799f5820c1a3b60b14902823663a88602549d0
+  # 71558833fa93ad61fe2a01f424dff19f1c00ff:2
+  # :addr_test1vr93qqyu30r5c7snd4wp8wu243st2xz8605yea78hgyg6uckjakk5:
+  # 118279549:d658626596b91538146078
+  # d4fd69c332bc1b638fbfcadb47ed3237f2ee2b1d5b''',
 
-  '''egc:
-  election:
-  3:
-  d8799f58207db31e039d39a82598e8b3d9c9b35f771a0789f974a0
-  e7ad85b7e2cfb6dd2d8600ff:2
-  :addr_test1vr93qqyu30r5c7snd4wp8wu243st2xz8605yea7
-  8hgyg6uckjakk5:118279709:69bac2384a55c72cb72123
-  87e77101608bb7ba2189beb22e35e0168003d05931''',
+  # '''egc:
+  # election:
+  # 3:
+  # d8799f58207db31e039d39a82598e8b3d9c9b35f771a0789f974a0
+  # e7ad85b7e2cfb6dd2d8600ff:2
+  # :addr_test1vr93qqyu30r5c7snd4wp8wu243st2xz8605yea7
+  # 8hgyg6uckjakk5:118279709:69bac2384a55c72cb72123
+  # 87e77101608bb7ba2189beb22e35e0168003d05931''',
 
   '''egc:election:3:d8799f582044868d8028d85581
   bc2f9f0d8887fe50fbc937a0abc1afb5ca2e8f8dcdba

@@ -31,7 +31,9 @@ def subscribe(**kwargs):
     if kwargs['scan_qrcode']:
         config = scan_qrcode(decode_cls=ElectionConfig)
     else:
+        print(f'parse_str: {kwargs['parse_str']}')
         config = ElectionConfig.from_qr_str(kwargs['parse_str'])
+        print(f'config: {config}')
     asyncio.run(Client().election_subscribe(config))
 
 # TODO rename -> share?

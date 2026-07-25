@@ -246,7 +246,7 @@
                echo "$(python --version)"
                echo "pycardano $(python -c "import importlib.metadata as m; print(m.version('pycardano'))")"
                export EGC_CARDANO_DIR="$(realpath "$EGC_CARDANO_DIR")"
-               env | grep ^EGC_
+               env | grep ^EGC_ | sort
                unset PYTHONPATH
             '';
           };

@@ -1,5 +1,6 @@
 import uvicorn
-from egc_app.server.app import create_app
+from egc_app.server.app     import create_app
+from egc_app.server.logging import setup_logging
 from copy import deepcopy
 from pathlib import Path
 
@@ -18,9 +19,11 @@ def run(dev_mode: bool, private_dir: str, **uvicorn_kwargs):
     node_cfg = deepcopy(uvicorn_kwargs)
     node_cfg['dev_mode'] = dev_mode
     node_cfg['private_dir'] = Path(private_dir).absolute()
+    setup_logging(log_file=node_cfg['private_dir'] / 'node.log')
     app_cfg['node'] = node_cfg
     app = create_app(app_cfg)
-    cfg = uvicorn.Config(app, **uvicorn_kwargs)
+    # None prevents uvicorn from overriding my log settings
+    cfg = uvicorn.Config(app, log_config=None, **uvicorn_kwargs)
     server = uvicorn.Server(cfg)
     server.run()
 
