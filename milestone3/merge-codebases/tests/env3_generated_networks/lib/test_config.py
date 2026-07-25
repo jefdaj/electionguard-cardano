@@ -115,20 +115,20 @@ def hashed_contests_config(draw) -> HashedContestsConfig:
 class HashedGuardiansConfig:
     count: int = 3
     quorum: int = 2
-    template: str = field(default='guardian.sh')
+    # template: str = field(default='guardian.sh')
 
     def __post_init__(self):
         assert 0 < self.quorum <= self.count
 
 @st.composite
-def hashed_guardians_config(draw, template: Optional[str] = None):
+def hashed_guardians_config(draw):
     count = draw(st.integers(2,5)) # TODO actual upper bound?
     kwargs = {
         'count':  count,
         'quorum': draw(st.integers(1, count)),
     }
-    if template is not None:
-        kwargs['template'] = template
+    # if template is not None:
+    #     kwargs['template'] = template
     return HashedGuardiansConfig(**kwargs)
 
 
@@ -385,7 +385,7 @@ class ResolvedTestConfig:
 
     def to_json(self) -> str:
         cfg = asdict(self.config)
-        cfg['tmpdir_path'] = str(self.tmpdir_path())
+        # cfg['pytest']['tmpdir'] = str(self.tmpdir_path())
         cfg['arion']['project_name'] = self.arion_project_name()
         # print(f'cfg: {cfg}')
         # cfg['bind_dirs'] = [str(d) for d in self.bind_dirs()]
