@@ -128,7 +128,7 @@ let
     service.image = "ipfs/kubo:v0.42.0"; 
     service.restart = "always"; # TODO does this fix intermittent panics?
     service.volumes = [
-      "${data_dir}/${nodeName role i}/ipfs:/data/ipfs"
+      "${data_dir}/private/${nodeName role i}/ipfs:/data/ipfs"
       "${../../ipfs-init.sh}:/container-init.d/001-config.sh:ro"
       "${../../ipfs-caps.json}:/data/ipfs/libp2p-resource-limit-overrides.json:ro"
     ];
@@ -226,8 +226,8 @@ let
       mkServicePairs =
         with cfg.arion;
         let
-          data_dir = "${cfg.tmpdir_path}/data";
-          scripts_dir = "${cfg.tmpdir_path}/egc_scripts";
+          data_dir = "${cfg.arion.tmpdir}/data";
+          scripts_dir = "${cfg.arion.tmpdir}/egc_scripts";
         in
           pairAttrsList project_name egc_image data_dir scripts_dir;
 

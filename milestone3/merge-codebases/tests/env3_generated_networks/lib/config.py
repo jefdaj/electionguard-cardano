@@ -395,6 +395,7 @@ class ResolvedTestConfig:
         # add fields not part of cached config
         cfg['pytest']['cache_key'] = self.cache_key
         cfg['arion']['project_name'] = self.arion_project_name()
+        cfg['arion']['tmpdir'] = self.tmpdir_path()
 
         # fix extra nesting
         cfg['pytest']['config_fns'] = cfg['pytest']['config_fns']['names']

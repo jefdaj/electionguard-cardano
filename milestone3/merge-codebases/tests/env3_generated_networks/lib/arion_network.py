@@ -14,10 +14,10 @@ def arion_subprocess_kwargs(cfg: ResolvedTestConfig, arion_dir: Path) -> dict:
     with generated compose files."""
     tmpdir_path = cfg.tmpdir_path()
     arion_env = os.environ.copy()
-    arion_env['EGC_TEST_JSON'] = tmpdir_path / 'test.json'
+    arion_env['EGC_TEST_JSON'] = str(tmpdir_path / 'test.json')
     assert 'EGC_CARDANO_DIR' in arion_env.keys() # set in flake.nix
     return {
-        'cwd': arion_dir,
+        'cwd': str(arion_dir),
         'env': arion_env,
     }
 
