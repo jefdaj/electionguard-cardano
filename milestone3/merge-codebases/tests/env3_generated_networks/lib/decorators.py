@@ -32,7 +32,7 @@ def run_egc_scripts_cached(
     ) -> ResolvedTestConfig:
     rcfg = resolve_test_config(cfg=cfg, tmp_root=tmp_root)
     with lock_test_tmpdir(cfg=rcfg) as test_tmpdir:
-        log_path = test_tmpdir / 'test.log'
+        log_path = test_tmpdir / 'script.log'
         if not log_path.exists():
             # the test hasn't been run already
             init_test_tmpdir(cfg=rcfg)

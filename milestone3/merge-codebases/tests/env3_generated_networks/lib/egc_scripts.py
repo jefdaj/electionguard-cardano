@@ -76,7 +76,7 @@ def run_egc_scripts(cfg: ResolvedTestConfig, arion_dir: Path, timeout=300):
     node_names = cfg.node_names()
     kwargs = arion_subprocess_kwargs(cfg, arion_dir)
     for node_name in node_names:
-        log_path = tmpdir_path / 'data' / node_name / 'egc' / 'test.log'
+        log_path = tmpdir_path / 'data' / node_name / 'egc' / 'script.log'
         log_handle = log_path.open('w', buffering=1) # TODO 'a' mode?
         # stdbuf here is to force the log to flush line by line
         service_name = f'{node_name}-egc'

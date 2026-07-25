@@ -27,7 +27,7 @@ def run_arion(cfg: ResolvedTestConfig, arion_dir: Path, arion_args: list[str]):
     "Run global arion commands like up and down."
     tmpdir_path = cfg.tmpdir_path()
     kwargs = arion_subprocess_kwargs(cfg, arion_dir)
-    # log_path = tmpdir_path / 'data' / node_name / 'test.log' # TODO script.log?
+    # log_path = tmpdir_path / 'data' / node_name / 'script.log'
     cmd = ["arion"] + arion_args
     return subprocess.run(cmd, check = True, **kwargs)
 
@@ -64,11 +64,11 @@ def arion_network_up(cfg: ResolvedTestConfig, arion_dir: Path):
                 run_arion_down(cfg, arion_dir)
 
 def assert_node_logs_match(cfg: ResolvedTestConfig, pattern: str):
-    "Assert at least one line in each node's test.log matches `pattern`."
+    "Assert at least one line in each node's script.log matches `pattern`."
     rx = re.compile(pattern)
     tmpdir_path = cfg.tmpdir_path()
     log_paths = [
-        tmpdir_path / 'data' / name / 'egc' / 'test.log'
+        tmpdir_path / 'data' / name / 'egc' / 'script.log'
         for name in cfg.node_names()
     ]
     for log_path in log_paths:
