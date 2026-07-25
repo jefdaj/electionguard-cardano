@@ -11,6 +11,7 @@ from ..lib.py_utils import deep_replace
 OLD_QR_STRS = [
 
     # TODO add back a max blocks to wait before calling an election done
+    # TODO and detect + show burns properly
 
     # init_election only
     # '''egc:election:3:d8799f5820be3f80b1c83cc2445fae4b2157a4bcf34f5a4b6d5e032f1deedb3
@@ -27,6 +28,12 @@ OLD_QR_STRS = [
     c172a90c9e800ff:2:addr_test1vr93qqyu30r5c7snd4wp8wu243st2xz8605yea78hgyg6uckjak
     k5:118296546:b23e0378ce52c791f9c449be3f1f44ab3a79be15adb309ccfb9751ab5f2f8392''',
 
+    # happy_election that failed at test_phase3_voting
+    # '''egc:election:3:d8799f58204cca2173550004a8dcec570207df48d1fff499a46c81179
+    # 26a77de7819d51dd900ff:2:addr_test1vr93qqyu30r5c7snd4wp8wu243st2xz8605yea78h
+    # gyg6uckjakk5:118299682:fd83f5ed90881b30542e7c868fc0eb1f79d79046723c10e5572c
+    # cd28b022a1bd''',
+
 ]
 
 # TODO wait, does this also need to be hashed??
@@ -37,7 +44,7 @@ def setup_old_qr_str(draw):
     i = draw(st.integers(0, len(OLD_QR_STRS)))
     qr_str = OLD_QR_STRS[i]
     def write_qr_str(cfg: ResolvedTestConfig):
-        print('runnin write_qr_str')
+        print('running write_qr_str')
         for node_name in cfg.node_names():
             private_dir = cfg.egc_private_dir_path(node_name)
             qr_path = private_dir / 'qr-str.txt'

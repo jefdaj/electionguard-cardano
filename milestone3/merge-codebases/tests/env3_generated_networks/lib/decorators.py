@@ -43,6 +43,7 @@ def run_egc_scripts_cached(
     return rcfg
 
 # TODO elaborate setup_fn out into a map of phase -> extra fn to run
+# TODO or, just use a simple shared dir honor system? think about if phases needed for anything else
 # TODO that sounds like a reasonable way to integrate the attacks too, right?
 def prerun_egc_scripts(final_test_fn_from_rcfg):
     "setup_fn can do things like save qrcodes in each node's data dir."
