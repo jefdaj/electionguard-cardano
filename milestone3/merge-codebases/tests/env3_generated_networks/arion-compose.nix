@@ -103,7 +103,8 @@ let
       "--private-dir" "/data/private"
     ];
     service.volumes = [
-      "${data_dir}/${nodeName role i}/egc:/data/private"
+      "${data_dir}/private/${nodeName role i}/egc:/data/private"
+      "${data_dir}/qrcodes:/data/qrcodes"
       "${scripts_dir}/${nodeName role i}.sh:/script.sh:ro"
     ];
     service.networks = [

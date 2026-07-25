@@ -367,7 +367,10 @@ class ResolvedTestConfig:
 
     def egc_path(self, node_name: str) -> Path:
         assert node_name in self.node_names()
-        return self.tmpdir_path() / 'data' / node_name / 'egc'
+        return self.tmpdir_path() / 'data' / 'private' / node_name / 'egc'
+
+    def qrcodes_path(self): -> Path:
+        return self.tmpdir_path() / 'data' / 'qrcodes'
 
     def node_names(self):
         names  = ['admin']
@@ -378,12 +381,8 @@ class ResolvedTestConfig:
 
     def bind_dirs(self) -> list[Path]:
         "Dirs that should be created with user permissions before `arion up`."
-        per_node_dirs = [
-            'ipfs',
-            'egc',
-            # TODO what else?
-        ]
-        dirs = []
+        dirs = ['data/qrcodes']
+        per_node_dirs = [ 'ipfs', 'egc']
         for name in self.node_names():
             dirs += [f'data/{name}/{d}' for d in per_node_dirs]
         return sorted(list(dirs))
