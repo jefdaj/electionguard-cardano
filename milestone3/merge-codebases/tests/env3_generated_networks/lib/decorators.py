@@ -55,11 +55,9 @@ def prerun_egc_scripts(final_test_fn_from_rcfg):
 # TODO can this be a regular fn that takes 2 args?
 @st.composite
 def no_setup(draw):
-    prinf('running no_setup')
     _ = draw(st.integers(0, 0)) # stop hypothesis complaining
     def noop(cfg):
-        prinf('running noop')
-        raise Exception
+        pass
     return noop
 
 # A somewhat mind bending hack to make hypothesis reuse cached test elections.
