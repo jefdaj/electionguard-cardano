@@ -1,11 +1,40 @@
-import time
-from pathlib import Path
 import subprocess
-from .config import ResolvedTestConfig
-from .arion_network import arion_subprocess_kwargs
+import time
+
+from .arion_network import arion_subprocess_kwargs, arion_network_up
+from .config        import resolve_test_config, hashed_test_config, HashedTestConfig, ResolvedTestConfig
+from .setup_fns     import run_setup_fns
+from .tmpdir        import init_test_tmpdir, lock_test_tmpdir
+from hypothesis     import given, settings, seed, Phase
+from hypothesis     import strategies as st
+from pathlib        import Path
+from pathlib        import Path
+from typing         import Callable
 
 
-### run scripts ###
+def run_egc_scripts_cached(
+        cfg: HashedTestConfig,
+        tmp_root: Path,
+        env3_arion_dir: Path,
+    ) -> ResolvedTestConfig:
+    rcfg = resolve_test_config(cfg=cfg, tmp_root=tmp_root)
+    with lock_test_tmpdir(cfg=rcfg) as test_tmpdir:
+        log_path = test_tmpdir / 'script.log'
+        if not log_path.exists():
+            # the test hasn't been run already
+            init_test_tmpdir(cfg=rcfg)
+            run_setup_fns(cfg=rcfg)
+            with arion_network_up(cfg=rcfg, arion_dir=env3_arion_dir):
+                run_egc_scripts(cfg=rcfg, arion_dir=env3_arion_dir)
+    return rcfg
+
+
+def prerun_egc_scripts(final_test_fn_from_rcfg):
+    def fn_from_fixtures(cfg: HashedTestConfig, tmp_root: Path, env3_arion_dir: Path):
+        rcfg = run_egc_scripts_cached(cfg, tmp_root, env3_arion_dir)
+        return final_test_fn_from_rcfg(rcfg)
+    return fn_from_fixtures
+
 
 def run_egc_scripts(cfg: ResolvedTestConfig, arion_dir: Path, setup_fn, timeout=300):
     """Exec /script.sh in each container and log to logfiles. This can be much

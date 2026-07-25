@@ -1,7 +1,5 @@
 import fcntl
 from contextlib import contextmanager
-
-from .egc_scripts import write_egc_scripts
 from .config import ResolvedTestConfig
 
 
@@ -45,9 +43,6 @@ def init_test_tmpdir(cfg: ResolvedTestConfig):
         for relpath in cfg.bind_dirs():
             d = tmpdir_path / relpath
             d.mkdir(parents=True, exist_ok=True)
-
-        # write scripts
-        write_egc_scripts(cfg=cfg)
 
         log('init_test_tmpdir done')
 
