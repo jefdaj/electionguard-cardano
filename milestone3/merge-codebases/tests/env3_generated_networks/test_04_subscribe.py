@@ -10,6 +10,8 @@ from ..lib.py_utils import deep_replace
 
 OLD_QR_STRS = [
 
+    # TODO add back a max blocks to wait before calling an election done
+
     # init_election only
     # '''egc:election:3:d8799f5820be3f80b1c83cc2445fae4b2157a4bcf34f5a4b6d5e032f1deedb3
     # f067dffdf6400ff:2:addr_test1vr93qqyu30r5c7snd4wp8wu243st2xz8605yea78hgyg6uckjak
@@ -55,7 +57,7 @@ def subscribe_old_qr_str_config(draw):
 @given_cached_tests(
     cfg_strategy   = subscribe_old_qr_str_config,
     setup_strategy = setup_old_qr_str,
-    max_examples   = 1,
+    max_examples   = 3,
 )
 def test_subscribe_old_qr_str(cfg: ResolvedTestConfig):
     assert_node_logs_match(cfg=cfg, pattern='^ElectionEvent.*ended election')
