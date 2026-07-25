@@ -1,6 +1,7 @@
 import json
 import cattrs
 import dataclasses
+from deepdiff import DeepDiff
 
 
 def fancy_dumps(obj, indent=2, width=80, _level=0) -> str:
@@ -32,7 +33,9 @@ def fancy_dumps(obj, indent=2, width=80, _level=0) -> str:
     if isinstance(obj, list):
         if not obj:
             return "[]"
+        # print(f'list obj: {obj}')
         compact = json.dumps(obj, separators=(", ", ": "))
+        # print(f'compact: {compact}')
         if len(compact) + len(pad) <= width:
             return compact
         items = [f'{pad}{fancy_dumps(v, indent, width, _level+1)}' for v in obj]
@@ -48,9 +51,12 @@ def fancy_loads(obj_type, obj_json_str):
 
 
 def assert_json_roundtrip(cfg):
-    # print(f'cfg: {cfg}')
+    print(f'cfg: {cfg}')
     tmp_str = fancy_dumps(cfg)
-    # print(f'tmp_str: {tmp_str}')
+    print(f'tmp_str: {tmp_str}')
     cfg2 = fancy_loads(type(cfg), tmp_str)
-    # print(f'cfg2: {cfg2}')
+    print(f'cfg2: {cfg2}')
+    if cfg != cfg2:
+        diff = DeepDiff(cfg, cfg2)
+        print(f'diff: {diff}')
     assert cfg == cfg2

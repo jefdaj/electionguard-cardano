@@ -45,9 +45,14 @@ def test_roundtrip_verifiers_config(cfg: HashedVerifiersConfig):
 def test_roundtrip_nodes_config(cfg: HashedNodesConfig):
     assert_json_roundtrip(cfg)
 
-@given(cfg=hashed_attacks_config())
+@given(cfg=hashed_setup_fns_config())
 @settings(max_examples=1)
-def test_roundtrip_attacks_config(cfg: HashedAttacksConfig):
+def test_roundtrip_setup_fns_config(cfg: HashedSetupFnsConfig):
+    assert_json_roundtrip(cfg)
+
+@given(cfg=hashed_attack_fns_config())
+@settings(max_examples=1)
+def test_roundtrip_attack_fns_config(cfg: HashedAttackFnsConfig):
     assert_json_roundtrip(cfg)
 
 # @example(cfg=example_test_config())
