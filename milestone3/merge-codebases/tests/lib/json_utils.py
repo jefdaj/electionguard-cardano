@@ -47,16 +47,16 @@ def fancy_dumps(obj, indent=2, width=80, _level=0) -> str:
 def fancy_loads(obj_type, obj_json_str):
     "Decode a structured type from a str."
     # TODO unify with the to/from raw pattern in electionguard?
-    return cattrs.Converter().structure(json.loads(obj_json_str), obj_type)
+    return cattrs.Converter(forbid_extra_keys=True).structure(json.loads(obj_json_str), obj_type)
 
 
 def assert_json_roundtrip(cfg):
-    print(f'cfg: {cfg}')
     tmp_str = fancy_dumps(cfg)
-    print(f'tmp_str: {tmp_str}')
     cfg2 = fancy_loads(type(cfg), tmp_str)
-    print(f'cfg2: {cfg2}')
     if cfg != cfg2:
+        print(f'cfg: {cfg}')
+        print(f'tmp_str: {tmp_str}')
+        print(f'cfg2: {cfg2}')
         diff = DeepDiff(cfg, cfg2)
         print(f'diff: {diff}')
     assert cfg == cfg2

@@ -25,6 +25,7 @@ def test_roundtrip_contests_config(cfg: HashedContestsConfig):
 def test_roundtrip_guardians_config(cfg: HashedGuardiansConfig):
     assert_json_roundtrip(cfg)
 
+# TODO @example instead
 @given(cfg=hashed_arion_config())
 @settings(max_examples=1)
 def test_roundtrip_arion_config(cfg: HashedArionConfig):
@@ -50,6 +51,7 @@ def test_roundtrip_nodes_config(cfg: HashedNodesConfig):
 def test_roundtrip_setup_fns_config(cfg: HashedSetupFnsConfig):
     assert_json_roundtrip(cfg)
 
+# TODO @example instead
 @given(cfg=hashed_attack_fns_config())
 @settings(max_examples=1)
 def test_roundtrip_attack_fns_config(cfg: HashedAttackFnsConfig):

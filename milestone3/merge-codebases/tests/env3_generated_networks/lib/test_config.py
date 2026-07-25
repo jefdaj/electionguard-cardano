@@ -220,6 +220,12 @@ class HashedFnCallConfig:
         return {"name": self.name,
                 "args": {k: v for k, v in self.args}}
 
+    def __post_init__(self):
+        assert isinstance(self.args, tuple)
+        for pair in self.args:
+            assert isinstance(pair, tuple)
+            assert len(pair) == 2
+
 
 @dataclass(frozen=True, slots=True)
 class HashedConfigFnsConfig:
@@ -230,10 +236,15 @@ class HashedConfigFnsConfig:
     # def to_dict(self):
     #     return list(self.names)
 
+    def __post_init__(self):
+        assert isinstance(self.names, tuple)
+
 
 @dataclass(frozen=True, slots=True)
 class HashedSetupFnsConfig:
     fns: tuple[HashedFnCallConfig, ...]
+    def __post_init__(self):
+        assert isinstance(self.fns, tuple)
 
 @st.composite
 def hashed_setup_fns_config(draw):
@@ -249,6 +260,8 @@ def hashed_setup_fns_config(draw):
 @dataclass(frozen=True, slots=True)
 class HashedAttackFnsConfig:
     fns: tuple[HashedFnCallConfig, ...]
+    def __post_init__(self):
+        assert isinstance(self.fns, tuple)
 
 @st.composite
 def hashed_attack_fns_config(draw):
@@ -284,14 +297,14 @@ class HashedTestConfig:
 def hashed_test_config(draw) -> HashedTestConfig:
     fn_name = sys._getframe().f_code.co_name # TODO util fn for this
     pytest_config = HashedPytestConfig(
-        config_fns = HashedConfigFnsConfig(names=(fn_name)),
+        config_fns = HashedConfigFnsConfig(names=(fn_name,)),
         setup_fns = HashedSetupFnsConfig(fns=(
             HashedFnCallConfig.from_dict({
                 'name': 'render_egc_scripts',
                 'args': {'default': 'subscribe.sh'}
             }),
         )),
-        attack_fns = HashedAttackFnsConfig(fns=[]),
+        attack_fns = HashedAttackFnsConfig(fns=()),
     )
     return HashedTestConfig(
         pytest = pytest_config,
