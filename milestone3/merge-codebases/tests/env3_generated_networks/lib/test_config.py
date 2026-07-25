@@ -249,19 +249,19 @@ class ResolvedTestConfig:
     def tmpdir_path(self) -> Path:
         return Path(self.tmp_root) / f'test{self.cache_key}'
 
-    def test_cfg_path(self) -> Path:
+    def cfg_path(self) -> Path:
         return self.tmpdir_path() / 'test.json'
 
-    def test_lock_path(self) -> Path:
+    def lock_path(self) -> Path:
         return self.tmpdir_path() / 'test.lock'
 
-    def test_log_path(self) -> Path:
+    def log_path(self) -> Path:
         return self.tmpdir_path() / 'test.log'
 
     def arion_project_name(self):
         return f'egc-test{self.cache_key}'
 
-    def egc_private_dir_path(self, node_name: str) -> Path:
+    def egc_path(self, node_name: str) -> Path:
         assert node_name in self.node_names()
         return self.tmpdir_path() / 'data' / node_name / 'egc'
 
@@ -298,7 +298,7 @@ class ResolvedTestConfig:
         cfg['tmpdir_path'] = str(self.tmpdir_path())
         cfg['arion']['project_name'] = self.arion_project_name()
         # print(f'cfg: {cfg}')
-        cfg['bind_dirs'] = [str(d) for d in self.bind_dirs()]
+        # cfg['bind_dirs'] = [str(d) for d in self.bind_dirs()]
         # cfg['scripts'] = self.egc_scripts()
         # print(f'cfg bind_dirs: {cfg['bind_dirs']}')
 

@@ -12,9 +12,9 @@ def run_test_election(cfg: ResolvedTestConfig) -> Path:
 
     # resolved_cfg = ResolvedTestConfig.from_hashed_config(cfg, tmp_root)
     tmpdir_path = cfg.tmpdir_path()
-    cfg_path  = cfg.test_cfg_path()
-    lock_path = cfg.test_lock_path()
-    log_path  = cfg.test_log_path()
+    cfg_path  = cfg.cfg_path()
+    lock_path = cfg.lock_path()
+    log_path  = cfg.log_path()
 
     # if cfg_path.exists():
     # If another instance is running, wait for it to finish first.

@@ -46,7 +46,7 @@ def setup_old_qr_str(draw):
     def write_qr_str(cfg: ResolvedTestConfig):
         print('running write_qr_str')
         for node_name in cfg.node_names():
-            private_dir = cfg.egc_private_dir_path(node_name)
+            private_dir = cfg.egc_path(node_name)
             qr_path = private_dir / 'qr-str.txt'
             qr_path.write_text(qr_str)
             assert qr_path.exists()
