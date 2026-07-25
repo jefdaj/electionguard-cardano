@@ -1,4 +1,4 @@
-{% extends "node-ready.sh" %}
+{% extends "base.sh" %}
 
 {% block body %}
 {{ super() }}
