@@ -96,7 +96,7 @@ EXAMPLE_CONTESTS = [
         ]
     },
     {
-        "office": "Ruler of Narnia",
+        "office": "King/Queen of Narnia",
         "note": "The Chronicles of Narnia by C.S. Lewis",
         "candidates": [
             "Aslan", "Peter Pevensie", "Susan Pevensie",
@@ -105,7 +105,7 @@ EXAMPLE_CONTESTS = [
         ]
     },
     {
-        "office": "Ruler of Olympus",
+        "office": "King of the Gods",
         "note": "Greek mythology",
         "candidates": [
             "Zeus", "Poseidon", "Hades", "Athena",
@@ -114,7 +114,7 @@ EXAMPLE_CONTESTS = [
         ]
     },
     {
-        "office": "Captain of the Starship Enterprise",
+        "office": "Captain of the Enterprise",
         "note": "Star Trek (The Original Series)",
         "candidates": [
             "James T. Kirk", "Spock", "Leonard McCoy",
@@ -359,7 +359,7 @@ EXAMPLE_CONTESTS = [
         ]
     },
     {
-        "office": "King of the Zulu Kingdom",
+        "office": "King of the Zulu Nation",
         "note": "Zulu Kingdom",
         "candidates": [
             "Shaka Zulu", "Dingane", "Cetshwayo",
@@ -367,7 +367,7 @@ EXAMPLE_CONTESTS = [
         ]
     },
     {
-        "office": "Emperor of Mali",
+        "office": "Mansa of Mali",
         "note": "Mali Empire",
         "candidates": [
             "Mansa Musa", "Sundiata Keita", "Sakura",
@@ -383,7 +383,7 @@ EXAMPLE_CONTESTS = [
         ]
     },
     {
-        "office": "Ruler of Babylon",
+        "office": "King of Babylon",
         "note": "Epic of Gilgamesh",
         "candidates": [
             "Hammurabi", "Nebuchadnezzar II", "Gilgamesh",
