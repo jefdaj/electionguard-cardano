@@ -4,21 +4,8 @@ import dataclasses
 from deepdiff import DeepDiff
 
 
-def fancy_dumps(obj, indent=2, width=80, _level=0) -> str:
+def raw_fancy_dumps(obj, indent=2, width=80, _level=0) -> str:
     "Like json.dumps, but refrains from indenting things thta fit on one line."
-
-    if hasattr(obj, 'to_dict'):
-        # In case of types that need to control serialization more carefully.
-        obj = obj.to_dict()
-        s = json.dumps(obj)
-        print(f'fancy_dumps s: {s}')
-        return s
-
-    if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
-        obj = dataclasses.asdict(obj)          # recurses into nested dataclasses/tuples
-
-    elif isinstance(obj, tuple):
-        obj = list(obj)
 
     pad = " " * (indent * (_level + 1))
     close_pad = " " * (indent * _level)
@@ -29,51 +16,62 @@ def fancy_dumps(obj, indent=2, width=80, _level=0) -> str:
         compact = json.dumps(obj, separators=(", ", ": "))
         if len(compact) + len(pad) <= width:
             return compact
-        items = [f'{pad}{json.dumps(k)}: {fancy_dumps(v, indent, width, _level+1)}'
+        items = [f'{pad}{json.dumps(k)}: {raw_fancy_dumps(v, indent, width, _level+1)}'
                  for k, v in obj.items()]
         return "{\n" + ",\n".join(items) + "\n" + close_pad + "}"
 
     if isinstance(obj, list):
         if not obj:
             return "[]"
-        # print(f'list obj: {obj}')
-        compact = json.dumps(obj, separators=(", ", ": "))
-        # print(f'compact: {compact}')
+        print(f'list obj: {obj}')
+        compact = json.dumps(obj, separators=(", ", ": ")) # TODO fails to fancy dump within this?
+        print(f'compact: {compact}')
+        # raise Exception
         if len(compact) + len(pad) <= width:
             return compact
-        items = [f'{pad}{fancy_dumps(v, indent, width, _level+1)}' for v in obj]
+        items = [f'{pad}{raw_fancy_dumps(v, indent, width, _level+1)}' for v in obj]
         return "[\n" + ",\n".join(items) + "\n" + close_pad + "]"
 
     return json.dumps(obj)
 
-
-def fancy_loads(obj_type, obj_json_str):
-    "Decode a structured type from a str."
-    # TODO unify with the to/from raw pattern in electionguard?
+def make_converter():
     c = cattrs.Converter(forbid_extra_keys=True)
-
     def has_to_dict(cls) -> bool:
         return isinstance(cls, type) and callable(getattr(cls, "to_dict", None))
-
     def has_from_dict(cls) -> bool:
         return isinstance(cls, type) and callable(getattr(cls, "from_dict", None))
-
     # factory receives the concrete type, returns the hook
     c.register_unstructure_hook_factory(
         has_to_dict,
         lambda cls: lambda obj: obj.to_dict(),
     )
-
     c.register_structure_hook_factory(
         has_from_dict,
         lambda cls: lambda data, _: cls.from_dict(data),
     )
+    return c
 
-    return c.structure(json.loads(obj_json_str), obj_type)
+# TODO subclass instead?
+JSON_CONVERTER = make_converter()
+
+# TODO rename to avoid confusion with raw_fancy_dumps (which doesn't need exporting)
+def fancy_dumps(obj):
+    "Encode a structured type as a str."
+    # TODO unify with the to/from raw pattern in electionguard?
+    raw = JSON_CONVERTER.unstructure(obj)
+    # TODO later, this would be a nice place to add back the max 80 char thing
+    return raw_fancy_dumps(raw)
+
+def fancy_loads(obj_type, obj_json_str):
+    "Decode a structured type from a str."
+    # TODO unify with the to/from raw pattern in electionguard?
+    raw = json.loads(obj_json_str)
+    return JSON_CONVERTER.structure(raw, obj_type)
 
 
 def assert_json_roundtrip(cfg):
-    tmp_str = fancy_dumps(cfg)
+    # tmp_str = fancy_dumps(cfg)
+    tmp_str = json.dumps(dataclasses.asdict(cfg))
     cfg2 = fancy_loads(type(cfg), tmp_str)
     if cfg != cfg2:
         print(f'cfg: {cfg}')

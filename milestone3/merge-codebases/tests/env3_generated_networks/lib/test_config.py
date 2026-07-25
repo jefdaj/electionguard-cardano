@@ -220,8 +220,11 @@ class HashedFnCallConfig:
 
     # TODO remove?
     def to_dict(self) -> dict:
-        return {"name": self.name,
-                "args": {a[0]: a[1] for a in self.args}}
+        print(f'call cfg to_dict: {self}')
+        print(f'call cfg args: {args}')
+        args = {a[0]: a[1] for a in self.args}
+        raise Exception
+        return {"name": self.name, 'args': args}
 
     def __post_init__(self):
         assert isinstance(self.args, tuple)
@@ -411,6 +414,7 @@ class ResolvedTestConfig:
 
         # print(f'cfg: {cfg}')
         return fancy_dumps(cfg)
+        # return json.dumps(cfg)
 
 # @contextmanager
 def resolve_test_config(cfg: HashedTestConfig, tmp_root: Path) -> ResolvedTestConfig:
