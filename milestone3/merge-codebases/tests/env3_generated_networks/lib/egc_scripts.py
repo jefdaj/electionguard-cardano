@@ -1,7 +1,7 @@
 import time
 from pathlib import Path
 import subprocess
-from .test_config import ResolvedTestConfig
+from .config import ResolvedTestConfig
 from .arion_network import arion_subprocess_kwargs
 
 

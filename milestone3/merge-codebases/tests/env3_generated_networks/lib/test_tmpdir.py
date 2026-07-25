@@ -2,7 +2,7 @@ import fcntl
 from contextlib import contextmanager
 
 from .egc_scripts import write_egc_scripts
-from .test_config import ResolvedTestConfig
+from .config import ResolvedTestConfig
 
 
 @contextmanager

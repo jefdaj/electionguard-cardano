@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
-from .test_config import ResolvedTestConfig
+from .config import ResolvedTestConfig
 import logging
 
 LOG = logging.getLogger(__name__)

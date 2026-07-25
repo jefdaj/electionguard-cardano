@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 from contextlib import contextmanager
 from egc import *
-from ..lib.test_config import ResolvedTestConfig
+from ..lib.config import ResolvedTestConfig
 from tests.lib.py_utils import raise_on_signals
 # from ..lib.test_tmpdir import lock_test_tmpdir
 

@@ -1,3 +1,5 @@
+from ..config import ResolvedTestConfig
+
 OLD_QR_STRS = [
 
     # TODO add back a max blocks to wait before calling an election done
@@ -26,13 +28,12 @@ OLD_QR_STRS = [
 
 ]
 
-def write_qr_str(cfg: ResolvedTestConfig, qr_str_index: int):
-    # TODO only write one, in data/shared
-    print('running write_qr_str')
-    qr_str = OLD_QR_STRS[qr_str_index]
+def write_qr_str(cfg: ResolvedTestConfig, drawn: int):
+    """Write a random election qr str in the qrcodes dir.
+    `drawn` as a generic int prevents having to export `OLD_QR_STRS`."""
+    qr_idx = drawn % len(OLD_QR_STRS)
+    qr_str = OLD_QR_STRS[qr_idx]
     for node_name in cfg.node_names():
-        private_dir = cfg.egc_path(node_name)
-        qr_path = private_dir / 'qr-str.txt'
+        qr_path = cfg.qrcodes_path() / 'election.txt'
         qr_path.write_text(qr_str)
         assert qr_path.exists()
-

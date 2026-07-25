@@ -267,10 +267,6 @@ class SetupFnsConfig:
 def setup_fns_config(draw):
     _ = draw(st.integers(1,1)) # silence hypothesis warning
     return SetupFnsConfig(fns=(
-        # FnCallConfig.from_dict({
-        #     'name': 'render_egc_scripts',
-        #     'args': {'default': 'subscribe.sh'}
-        # }),
         FnCallConfig(
             name = 'render_egc_scripts',
             args = (('default', 'subscribe.sh'),),
@@ -320,10 +316,6 @@ def hashed_test_config(draw) -> HashedTestConfig:
     pytest_config = PytestConfig(
         config_fns = ConfigFnsConfig(names=(fn_name,)),
         setup_fns = SetupFnsConfig(fns=(
-            # FnCallConfig.from_dict({
-            #     'name': 'render_egc_scripts',
-            #     'args': {'default': 'subscribe.sh'}
-            # }),
             FnCallConfig(
                 name = 'render_egc_scripts',
                 args = (('default', 'subscribe.sh'),),

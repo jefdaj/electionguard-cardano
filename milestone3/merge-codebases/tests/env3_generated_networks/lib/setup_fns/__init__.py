@@ -1,9 +1,11 @@
 from ..lib.json_utils import fancy_raw
-from .test_config import ResolvedTestConfig
-from .render_egc_scripts import render_egc_scripts
+from .config import ResolvedTestConfig
 import logging
 
 LOG = logging.getLogger(__name__)
+
+from .render_egc_scripts import render_egc_scripts
+from .write_qr_str       import write_qr_str
 
 def run_setup_fns(cfg: ResolvedTestConfig):
     "Pull fn names + args from cfg and run them."
