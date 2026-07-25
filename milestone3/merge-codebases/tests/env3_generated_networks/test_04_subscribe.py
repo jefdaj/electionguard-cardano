@@ -16,6 +16,7 @@ def config_subscribe_str(draw):
     n        = draw(integers(0, 1000)) # mod will be used to pick qr_str index
     sub_call = FnCallConfig(name='write_qr_str', args=(('drawn', n),))
     cfg      = deep_replace(cfg, 'pytest.setup_fns', cfg.pytest.config_fns + [sub_call])
+    # TODO also need to set the default template -> subscribe.sh
     return cfg
 
 @given_cached_tests(
