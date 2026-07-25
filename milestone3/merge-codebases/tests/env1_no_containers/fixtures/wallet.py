@@ -24,7 +24,7 @@ def keys_dir() -> Path:
         return  # never delete a user-supplied dir
 
     else:
-        path = Path(tempfile.mkdtemp(prefix="egc-test-keys-"))
+        path = Path(tempfile.mkdtemp(prefix="egc-wallets-"))
         LOG.debug(f'EGC_KEYS (temporary) = {path}')
 
     LOG.info(f'Keys will go in {path}')

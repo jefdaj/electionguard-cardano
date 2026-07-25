@@ -6,7 +6,7 @@ and then lots of temporary test wallets.
 When EGC_MODE=test, it will:
 
 - leave of generated keys in the tmpdir (normally /tmp/nix-shell.XXXXX)
-- log signing keys to <keys_dir>/test-keys.log
+- log signing keys to <keys_dir>/wallets.log
 """
 
 from __future__ import annotations
@@ -26,9 +26,9 @@ import shutil
 LOG = logging.getLogger(__name__)
 
 # Separate logger for test keys
-KEYS_LOG = logging.getLogger('test-keys')
+KEYS_LOG = logging.getLogger('test-wallets')
 if EGC_WALLET_MODE == 'scripted':
-    log_path = (EGC_WALLET_DIR / 'test-keys.log').absolute()
+    log_path = (EGC_WALLET_DIR / 'wallets.log').absolute()
     keys_fh = logging.FileHandler(log_path)
     keys_fh.setFormatter(
         logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -179,7 +179,7 @@ def _set_sk_description(sk: PaymentSigningKey, desc: str) -> PaymentSigningKey:
 def create_wallet(keys_dir=EGC_WALLET_DIR, name='wallet', description='Generated EGC wallet', verbose=True, overwrite=False) -> Wallet:
     LOG.debug('create_wallet')
     if EGC_WALLET_MODE == 'scripted':
-        log_path = (EGC_WALLET_DIR / 'test-keys.log').absolute()
+        log_path = (EGC_WALLET_DIR / 'wallets.log').absolute()
         LOG.warning(f'Running in test mode, so all keys will be logged to {log_path}')
     keys_dir = Path(keys_dir)
     sk_path  = keys_dir / f'{name}.sk'

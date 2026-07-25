@@ -25,7 +25,7 @@ EGC_NETWORK_MODE = os.environ.get('EGC_NETWORK_MODE', 'preview').lower()
 # Options are 'scripted' or 'manual'. If scripted, we log + sweep.
 EGC_WALLET_MODE = os.environ.get('EGC_WALLET_MODE', 'manual').lower()
 
-# The default place to save wallets, and log to test-keys.log if scripted
+# The default place to save wallets, and log to wallets.log if scripted
 # wallet mode.
 # TODO better default place for it?
 EGC_WALLET_DIR = Path(os.environ.get('EGC_WALLET_DIR', 'keys'))
