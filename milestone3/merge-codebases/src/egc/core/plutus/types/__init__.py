@@ -10,6 +10,7 @@ from .action import (
   BurnTestTokens,
   ElectionAction,
   decode_plutusdata_union, # TODO where should this live?
+  decode_action,
 )
 
 from .channel import (

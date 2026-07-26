@@ -68,19 +68,19 @@ ElectionAction = Union[
 ]
 
 
-### decode union types ###
-
-# TODO where should this live for now?
-# TODO and longer term, should you try to contribute it to pycardano? seems too simple...
-
-# TODO test on other union types too
 def decode_plutusdata_union(union_type, cbor_hex: str) -> PlutusData:
+    """Decode a top-level union. Apparently pycardano has this logic, but only
+    for nested types inside a larger PlutusData wrapper type. Maybe it's worth
+    opening an issue about exposing for union types directly?"""
+
     dispatch = {cls.CONSTR_ID: cls for cls in get_args(union_type)}
     raw = bytes.fromhex(cbor_hex)
     tag = cbor2.loads(raw)  # cbor2.CBORTag
 
     if 121 <= tag.tag <= 127:
         constr_id = tag.tag - 121
+    elif 1280 <= tag.tag <= 1400:
+        constr_id = tag.tag - 1280 + 7
     elif tag.tag == 102:
         constr_id = tag.value[0]  # [index, fields]
     else:
@@ -90,3 +90,7 @@ def decode_plutusdata_union(union_type, cbor_hex: str) -> PlutusData:
     if cls is None:
         raise ValueError(f"Unknown CONSTR_ID {constr_id} for ElectionAction")
     return cls.from_cbor(raw)
+
+
+def decode_action(redeemer_str):
+    return decode_plutusdata_union(ElectionAction, redeemer_str)

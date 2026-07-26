@@ -191,6 +191,10 @@ def election_events(event: ChannelEvent) -> list[ElectionEvent]:
         case EndElection():
             e = election_event(ti, sn, 'admin', 'end election', 'ended election')
             es.append(e)
+        case BurnTestTokens():
+            # can't assume it comes from a real channel here, because anyone can call this
+            e = election_event(ti, sn, 'someone', 'burn test tokens', 'ended election by burning test tokens')
+            es.append(e)
         case _:
             raise NotImplemented
 
@@ -1185,9 +1189,11 @@ class ElectionSubscriber:
 
                 # TODO what does it mean when this is not a plutus constructor?
                 # TODO is there a danger of mint redeemers when looking up directly too?
+                cbor_hex = in_match['spent_at']['redeemer']
                 try:
-                    action = decode_action(in_match['spent_at']['redeemer'])
+                    action = decode_action(cbor_hex)
                 except ValueError:
+                    LOG.error(f"failed to decode action from {cbor_hex}")
                     action = None
 
             else:
