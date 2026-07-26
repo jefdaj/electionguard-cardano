@@ -20,7 +20,7 @@ def config_subscribe_str(draw):
         tuple(list(cfg.pytest.config_fns.names) + [fn_name])
     )
 
-    n = draw(integers(0, 1000)) # mod will be used to pick qr_str index
+    n = draw(st.integers(0, 1000)) # mod will be used to pick qr_str index
     sub_call = FnCallConfig(name='write_qr_str', args=(('drawn', n),))
     cfg = deep_replace(
         cfg,

@@ -6,7 +6,7 @@ export EGC_NODE_ROLE={{node_role}}
 export EGC_NODE_INDEX={{node_index}}
 
 # makes it easier to load and save files
-cd /data/private
+cd /data
 
 set -Eeuo pipefail
 {% if debug_script %}
