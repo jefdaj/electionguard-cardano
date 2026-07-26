@@ -8,39 +8,42 @@ from ..lib import *
 from .lib  import *
 from ..lib.py_utils import deep_replace
 
-@st.composite
-def config_subscribe_qr(draw, variant='txt'):
-    fn_name  = sys._getframe().f_code.co_name
-    cfg = draw( hashed_test_config() )
+def config_subscribe_qr(variant='txt'):
+    # TODO is this overcomplicating how to call it?
+    fn_name = f'config_subscribe_qr_{variant}'
+    @st.composite
+    def draw_fn(draw):
+        cfg = draw( hashed_test_config() )
 
-    # TODO util fn:
-    cfg = deep_replace(
-        cfg,
-        'pytest.config_fns.names',
-        tuple(list(cfg.pytest.config_fns.names) + [fn_name])
-    )
+        # TODO util fn:
+        cfg = deep_replace(
+            cfg,
+            'pytest.config_fns.names',
+            tuple(list(cfg.pytest.config_fns.names) + [fn_name])
+        )
 
-    n = draw(st.integers(0, 1000)) # mod will be used to pick qr_str index
-    sub_call = FnCallConfig(name=f'write_qr_{variant}', args=(('drawn', n),))
-    cfg = deep_replace(
-        cfg,
-        'pytest.setup_fns',
-        SetupFnsConfig(fns=(
-            FnCallConfig(
-                name = 'render_egc_scripts',
-                args = (('default', f'subscribe-qr-{variant}.sh'),),
-            ),
-            sub_call,
-        )),
-    )
-    return cfg
+        n = draw(st.integers(0, 1000)) # mod will be used to pick qr_str index
+        sub_call = FnCallConfig(name=f'write_qr_{variant}', args=(('drawn', n),))
+        cfg = deep_replace(
+            cfg,
+            'pytest.setup_fns',
+            SetupFnsConfig(fns=(
+                FnCallConfig(
+                    name = 'render_egc_scripts',
+                    args = (('default', f'subscribe-qr-{variant}.sh'),),
+                ),
+                sub_call,
+            )),
+        )
+        return cfg
+    draw_fn.__name__ = fn_name
+    return draw_fn
 
 @given_cached_tests(
-    cfg_strategy = config_subscribe_qr('str'),
+    cfg_strategy = config_subscribe_qr('txt'),
     max_examples = 3,
 )
 def test_subscribe_old_qr_str(cfg: ResolvedTestConfig):
-    # TODO catch elections that stalled or burned test tokens too
     assert_node_logs_match(cfg=cfg, pattern='^ElectionEvent.*ended election')
 
 @given_cached_tests(
@@ -48,5 +51,4 @@ def test_subscribe_old_qr_str(cfg: ResolvedTestConfig):
     max_examples = 3,
 )
 def test_subscribe_old_qr_png(cfg: ResolvedTestConfig):
-    # TODO catch elections that stalled or burned test tokens too
     assert_node_logs_match(cfg=cfg, pattern='^ElectionEvent.*ended election')

@@ -5,7 +5,7 @@ import logging
 LOG = logging.getLogger(__name__)
 
 from .render_egc_scripts import render_egc_scripts
-from .write_qrcode       import write_qr_str, write_qr_png
+from .write_qrcode       import write_qr_txt, write_qr_png
 
 def run_setup_fns(cfg: ResolvedTestConfig):
     "Pull fn names + args from cfg and run them."
