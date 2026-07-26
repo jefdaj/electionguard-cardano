@@ -54,9 +54,13 @@ def is_linux_dark_mode() -> bool:
 def make_qr_code(obj: Any) -> qrcode.QRCode:
     # Should by followed by qr.make() or qr.make_image()
     # TODO also prefix with qrcode: ?
-    if not hasattr(obj, 'to_qr_str'):
-        raise Exception(f'{type(obj)} obj has no to_qr_str method')
-    qr_str = obj.to_qr_str()
+    if isinstance(obj, str):
+        qr_str = ''.join(l.strip() for l in obj.splitlines())
+        assert qr_str.startswith('egc:')
+    else:
+        if not hasattr(obj, 'to_qr_str'):
+            raise Exception(f'{type(obj)} obj has no to_qr_str method')
+        qr_str = obj.to_qr_str()
     qr = qrcode.QRCode()
     qr.add_data(qr_str)
     return qr
@@ -85,6 +89,7 @@ def print_qrcode(obj: Any) -> None:
     print()
 
 
+# TODO image in fn name
 def save_qrcode(obj: Any, path: Path):
     qr = make_qr_code(obj)
     img = qr.make_image()

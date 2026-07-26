@@ -9,7 +9,7 @@ from .lib  import *
 from ..lib.py_utils import deep_replace
 
 @st.composite
-def config_subscribe_str(draw):
+def config_subscribe_qr(draw, variant='txt'):
     fn_name  = sys._getframe().f_code.co_name
     cfg = draw( hashed_test_config() )
 
@@ -21,14 +21,14 @@ def config_subscribe_str(draw):
     )
 
     n = draw(st.integers(0, 1000)) # mod will be used to pick qr_str index
-    sub_call = FnCallConfig(name='write_qr_str', args=(('drawn', n),))
+    sub_call = FnCallConfig(name=f'write_qr_{variant}', args=(('drawn', n),))
     cfg = deep_replace(
         cfg,
         'pytest.setup_fns',
         SetupFnsConfig(fns=(
             FnCallConfig(
                 name = 'render_egc_scripts',
-                args = (('default', 'subscribe.sh'),),
+                args = (('default', f'subscribe-qr-{variant}.sh'),),
             ),
             sub_call,
         )),
@@ -36,9 +36,17 @@ def config_subscribe_str(draw):
     return cfg
 
 @given_cached_tests(
-    cfg_strategy = config_subscribe_str,
+    cfg_strategy = config_subscribe_qr('str'),
     max_examples = 3,
 )
 def test_subscribe_old_qr_str(cfg: ResolvedTestConfig):
+    # TODO catch elections that stalled or burned test tokens too
+    assert_node_logs_match(cfg=cfg, pattern='^ElectionEvent.*ended election')
+
+@given_cached_tests(
+    cfg_strategy = config_subscribe_qr('png'),
+    max_examples = 3,
+)
+def test_subscribe_old_qr_png(cfg: ResolvedTestConfig):
     # TODO catch elections that stalled or burned test tokens too
     assert_node_logs_match(cfg=cfg, pattern='^ElectionEvent.*ended election')
