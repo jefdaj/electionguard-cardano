@@ -2,8 +2,16 @@ import os
 import logging.config
 
 def setup_logging(log_file=None):
+
     if log_file is None:
         log_file = 'node.log'
+
+    logging.getLogger('websockets').setLevel(logging.WARNING)
+    logging.getLogger('urllib3').setLevel(logging.INFO)
+    logging.getLogger('ogmios').setLevel(logging.WARNING)
+    logging.getLogger('asyncio').setLevel(logging.WARNING)
+    logging.getLogger('aiohttp').setLevel(logging.WARNING)
+
     logging.config.dictConfig({
         "version": 1,
         "disable_existing_loggers": False,
