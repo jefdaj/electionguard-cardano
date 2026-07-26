@@ -1,7 +1,3 @@
-### test config ###
-
-
-
 ### contests ###
 
 # For sorting the example contests small -> large,
@@ -9,387 +5,569 @@
 contest_size = lambda c: (len(c['candidates']), len(c['office']))
 
 EXAMPLE_CONTESTS = [
-    {
-        "office": "President of the United States",
-        "note": "American Revolution",
-        "candidates": [
-            "George Washington", "Thomas Jefferson", "John Adams",
-            "Benjamin Franklin", "Alexander Hamilton", "James Madison",
-            "John Jay", "Samuel Adams", "Patrick Henry", "John Hancock"
-        ]
-    },
-    {
-        "office": "King of Denmark",
-        "note": "Hamlet by William Shakespeare",
-        "candidates": [
-            "Hamlet", "Claudius", "Polonius", "Laertes",
-            "Horatio", "Fortinbras", "Rosencrantz", "Guildenstern"
-        ]
-    },
-    {
-        "office": "Captain of the Hispaniola",
-        "note": "Treasure Island by Robert Louis Stevenson",
-        "candidates": [
-            "Long John Silver", "Billy Bones", "Captain Flint",
-            "Israel Hands", "Ben Gunn", "Captain Smollett",
-            "Blind Pew", "Jim Hawkins"
-        ]
-    },
-    {
-        "office": "King of Camelot",
-        "note": "Arthurian legend / Knights of the Round Table",
-        "candidates": [
-            "King Arthur", "Lancelot", "Sir Gawain", "Sir Galahad",
-            "Merlin", "Percival", "Mordred", "Sir Kay",
-            "Sir Bedivere", "Sir Tristan", "Sir Gareth"
-        ]
-    },
-    {
-        "office": "Ruler of Middle-earth",
-        "note": "The Lord of the Rings by J.R.R. Tolkien",
-        "candidates": [
-            "Aragorn", "Gandalf", "Frodo Baggins", "Samwise Gamgee",
-            "Legolas", "Gimli", "Boromir", "Galadriel",
-            "Elrond", "Theoden", "Faramir", "Denethor"
-        ]
-    },
-    {
-        "office": "Roman Emperor",
-        "note": "Late Roman Republic / Empire",
-        "candidates": [
-            "Julius Caesar", "Augustus", "Mark Antony", "Brutus",
-            "Cassius", "Pompey", "Nero", "Caligula",
-            "Marcus Aurelius", "Cicero", "Crassus"
-        ]
-    },
-    {
-        "office": "Headmaster of Hogwarts",
-        "note": "Harry Potter by J.K. Rowling",
-        "candidates": [
-            "Albus Dumbledore", "Minerva McGonagall", "Severus Snape",
-            "Rubeus Hagrid", "Horace Slughorn", "Filius Flitwick",
-            "Pomona Sprout", "Dolores Umbridge"
-        ]
-    },
-    {
-        "office": "Queen of Egypt",
-        "note": "Ancient Egyptian queens",
-        "candidates": [
-            "Cleopatra", "Nefertiti", "Hatshepsut", "Nefertari",
-            "Ankhesenamun"
-        ]
-    },
-    {
-        "office": "King of the Jungle",
-        "note": "The Lion King (Disney)",
-        "candidates": [
-            "Simba", "Mufasa", "Scar", "Rafiki",
-            "Zazu", "Nala", "Timon", "Pumbaa"
-        ]
-    },
-    {
-        "office": "Mayor of Gotham City",
-        "note": "Batman (DC Comics)",
-        "candidates": [
-            "Bruce Wayne", "Harvey Dent", "James Gordon",
-            "Oswald Cobblepot", "Selina Kyle", "Lucius Fox"
-        ]
-    },
-    {
-        "office": "King/Queen of Narnia",
-        "note": "The Chronicles of Narnia by C.S. Lewis",
-        "candidates": [
-            "Aslan", "Peter Pevensie", "Susan Pevensie",
-            "Edmund Pevensie", "Lucy Pevensie", "Caspian",
-            "Mr. Tumnus", "The White Witch", "Reepicheep"
-        ]
-    },
-    {
-        "office": "King of the Gods",
-        "note": "Greek mythology",
-        "candidates": [
-            "Zeus", "Poseidon", "Hades", "Athena",
-            "Apollo", "Ares", "Hermes", "Hephaestus",
-            "Aphrodite", "Artemis", "Demeter", "Hera"
-        ]
-    },
-    {
-        "office": "Captain of the Enterprise",
-        "note": "Star Trek (The Original Series)",
-        "candidates": [
-            "James T. Kirk", "Spock", "Leonard McCoy",
-            "Montgomery Scott", "Hikaru Sulu", "Nyota Uhura",
-            "Pavel Chekov"
-        ]
-    },
-    {
-        "office": "Sheriff of Nottingham",
-        "note": "Robin Hood legend",
-        "candidates": [
-            "Robin Hood", "Little John", "Friar Tuck",
-            "Will Scarlet", "Maid Marian", "Much the Miller's Son",
-            "Alan-a-Dale", "Guy of Gisbourne", "Prince John"
-        ]
-    },
-    {
-        "office": "President of the Galactic Republic",
-        "note": "Star Wars",
-        "candidates": [
-            "Luke Skywalker", "Leia Organa", "Han Solo",
-            "Obi-Wan Kenobi", "Yoda", "Mace Windu",
-            "Padmé Amidala", "Lando Calrissian", "Chewbacca"
-        ]
-    },
-    {
-        "office": "Emperor of China",
-        "note": "Romance of the Three Kingdoms",
-        "candidates": [
-            "Liu Bei", "Cao Cao", "Sun Quan", "Zhuge Liang",
-            "Guan Yu", "Zhang Fei", "Lü Bu", "Zhao Yun"
-        ]
-    },
-    {
-        "office": "Godfather of the Corleone Family",
-        "note": "The Godfather by Mario Puzo / Francis Ford Coppola films",
-        "candidates": [
-            "Vito Corleone", "Michael Corleone", "Sonny Corleone",
-            "Fredo Corleone", "Tom Hagen", "Peter Clemenza"
-        ]
-    },
-    {
-        "office": "Lord of Winterfell",
-        "note": "A Song of Ice and Fire / Game of Thrones by George R.R. Martin",
-        "candidates": [
-            "Eddard Stark", "Robb Stark", "Jon Snow",
-            "Sansa Stark", "Arya Stark", "Bran Stark",
-            "Theon Greyjoy", "Catelyn Stark"
-        ]
-    },
-    {
-        "office": "Prime Minister of Toad Hall",
-        "note": "The Wind in the Willows by Kenneth Grahame",
-        "candidates": [
-            "Mr. Toad", "Ratty (Water Rat)", "Mole",
-            "Badger", "Otter"
-        ]
-    },
-    {
-        "office": "Wizard of Oz",
-        "note": "The Wonderful Wizard of Oz by L. Frank Baum",
-        "candidates": [
-            "Dorothy Gale", "Scarecrow", "Tin Man",
-            "Cowardly Lion", "The Wizard", "Glinda the Good Witch",
-            "Wicked Witch of the West", "Toto"
-        ]
-    },
-    {
-        "office": "Leader of the Justice League",
-        "note": "Justice League (DC Comics)",
-        "candidates": [
-            "Superman", "Batman", "Wonder Woman", "The Flash",
-            "Aquaman", "Green Lantern", "Cyborg", "Martian Manhunter"
-        ]
-    },
-    {
-        "office": "Leader of the Avengers",
-        "note": "The Avengers (Marvel Comics / MCU)",
-        "candidates": [
-            "Iron Man", "Captain America", "Thor", "Hulk",
-            "Black Widow", "Hawkeye", "Black Panther",
-            "Doctor Strange", "Spider-Man", "Captain Marvel"
-        ]
-    },
-    {
-        "office": "Detective of Scotland Yard",
-        "note": "Sherlock Holmes by Arthur Conan Doyle",
-        "candidates": [
-            "Sherlock Holmes", "Dr. John Watson", "Inspector Lestrade",
-            "Mycroft Holmes", "Irene Adler", "Mrs. Hudson",
-            "Professor Moriarty"
-        ]
-    },
-    {
-        "office": "Norse All-Father",
-        "note": "Norse mythology",
-        "candidates": [
-            "Odin", "Thor", "Loki", "Freya",
-            "Baldr", "Heimdall", "Tyr", "Frigg", "Njord"
-        ]
-    },
-    {
-        "office": "King of France",
-        "note": "The Three Musketeers by Alexandre Dumas",
-        "candidates": [
-            "d'Artagnan", "Athos", "Porthos", "Aramis",
-            "Cardinal Richelieu", "Milady de Winter", "King Louis XIII"
-        ]
-    },
-    {
-        "office": "Queen of Hearts",
-        "note": "Alice's Adventures in Wonderland by Lewis Carroll",
-        "candidates": [
-            "Alice", "The Mad Hatter", "The White Rabbit",
-            "The Cheshire Cat", "The Queen of Hearts", "The King of Hearts",
-            "The March Hare", "The Caterpillar", "The Dormouse"
-        ]
-    },
-    {
-        "office": "Leader of the Exodus",
-        "note": "Book of Exodus (Hebrew Bible)",
-        "candidates": [
-            "Moses", "Aaron", "Miriam", "Ramesses",
-            "Joshua", "Zipporah"
-        ]
-    },
-    {
-        "office": "Emperor of Rome",
-        "note": "I, Claudius by Robert Graves / Julio-Claudian dynasty",
-        "candidates": [
-            "Claudius", "Augustus", "Tiberius", "Caligula",
-            "Livia", "Germanicus", "Agrippina"
-        ]
-    },
-    {
-        "office": "Leader of the French Revolution",
-        "note": "French Revolution",
-        "candidates": [
-            "Maximilien Robespierre", "Georges Danton",
-            "Jean-Paul Marat", "Napoleon Bonaparte",
-            "Lafayette", "Camille Desmoulins"
-        ]
-    },
-    {
-        "office": "Captain of the Pequod",
-        "note": "Moby-Dick by Herman Melville",
-        "candidates": [
-            "Captain Ahab", "Ishmael", "Queequeg",
-            "Starbuck", "Stubb", "Flask"
-        ]
-    },
-    {
-        "office": "President of Panem",
-        "note": "The Hunger Games by Suzanne Collins",
-        "candidates": [
-            "Katniss Everdeen", "Peeta Mellark", "Haymitch Abernathy",
-            "President Snow", "Gale Hawthorne", "Effie Trinket",
-            "Cinna", "Finnick Odair"
-        ]
-    },
-    {
-        "office": "Tsar of Russia",
-        "note": "Russian history",
-        "candidates": [
-            "Ivan the Terrible", "Peter the Great", "Catherine the Great",
-            "Nicholas II", "Rasputin", "Boris Godunov",
-            "Alexander Nevsky", "Anastasia"
-        ]
-    },
-    {
-        "office": "Emperor of the Mongols",
-        "note": "Mongol Empire",
-        "candidates": [
-            "Genghis Khan", "Kublai Khan", "Ogedei Khan",
-            "Marco Polo", "Subutai", "Jochi"
-        ]
-    },
-    {
-        "office": "Shogun of Japan",
-        "note": "Sengoku (Warring States) period Japan",
-        "candidates": [
-            "Oda Nobunaga", "Toyotomi Hideyoshi", "Tokugawa Ieyasu",
-            "Takeda Shingen", "Uesugi Kenshin", "Date Masamune",
-            "Miyamoto Musashi"
-        ]
-    },
-    {
-        "office": "Leader of the Pilgrimage to the West",
-        "note": "Journey to the West (classic Chinese novel)",
-        "candidates": [
-            "Sun Wukong (Monkey King)", "Tang Sanzang (Tripitaka)",
-            "Zhu Bajie (Pigsy)", "Sha Wujing (Sandy)",
-            "the Dragon Horse"
-        ]
-    },
-    {
-        "office": "Chief of the Lakota",
-        "note": "Lakota Sioux leaders",
-        "candidates": [
-            "Sitting Bull", "Crazy Horse", "Red Cloud",
-            "Spotted Tail", "Rain-in-the-Face"
-        ]
-    },
-    {
-        "office": "Emperor of the Aztecs",
-        "note": "Aztec Empire",
-        "candidates": [
-            "Montezuma II", "Cuauhtemoc", "Itzcoatl",
-            "Ahuitzotl", "Cuitlahuac"
-        ]
-    },
-    {
-        "office": "Sapa Inca",
-        "note": "Inca Empire",
-        "candidates": [
-            "Pachacuti", "Atahualpa", "Huayna Capac",
-            "Huascar", "Manco Inca", "Tupac Amaru"
-        ]
-    },
-    {
-        "office": "Liberator of South America",
-        "note": "South American wars of independence",
-        "candidates": [
-            "Simon Bolivar", "Jose de San Martin", "Bernardo O'Higgins",
-            "Antonio Jose de Sucre", "Francisco de Miranda"
-        ]
-    },
-    {
-        "office": "Pharaoh of Egypt",
-        "note": "New Kingdom of Ancient Egypt",
-        "candidates": [
-            "Tutankhamun", "Ramesses II", "Akhenaten",
-            "Hatshepsut", "Thutmose III", "Seti I"
-        ]
-    },
-    {
-        "office": "King of Persia",
-        "note": "Achaemenid Persian Empire",
-        "candidates": [
-            "Cyrus the Great", "Darius the Great", "Xerxes",
-            "Cambyses", "Artaxerxes"
-        ]
-    },
-    {
-        "office": "King of the Zulu Nation",
-        "note": "Zulu Kingdom",
-        "candidates": [
-            "Shaka Zulu", "Dingane", "Cetshwayo",
-            "Nandi", "Mpande"
-        ]
-    },
-    {
-        "office": "Mansa of Mali",
-        "note": "Mali Empire",
-        "candidates": [
-            "Mansa Musa", "Sundiata Keita", "Sakura",
-            "Mansa Sulayman"
-        ]
-    },
-    {
-        "office": "Trickster Chief",
-        "note": "West African / Akan folklore (Anansi tales)",
-        "candidates": [
-            "Anansi the Spider", "the Tortoise", "the Hare",
-            "the Lion", "the Elephant"
-        ]
-    },
-    {
-        "office": "King of Babylon",
-        "note": "Epic of Gilgamesh",
-        "candidates": [
-            "Hammurabi", "Nebuchadnezzar II", "Gilgamesh",
-            "Enkidu", "Sargon of Akkad"
-        ]
-    }
+  {
+    "office": "Pirate Captain of the Ship's Company",
+    "context": "Golden Age of Piracy — crews elected captains by vote",
+    "candidates": [
+      "Bartholomew Roberts (Black Bart)",
+      "Henry Every",
+      "Captain Charles Vane",
+      "Long John Silver",
+      "Anne Bonny"
+    ]
+  },
+  {
+    "office": "Archon of Athens",
+    "context": "Classical Athenian democracy",
+    "candidates": [
+      "Pericles",
+      "Cleisthenes",
+      "Themistocles",
+      "Aristides the Just",
+      "Solon"
+    ]
+  },
+  {
+    "office": "Consul of the Roman Republic",
+    "context": "Elected annually by the Centuriate Assembly",
+    "candidates": [
+      "Cicero",
+      "Cato the Younger",
+      "Gaius Marius",
+      "Scipio Africanus",
+      "Lucius Junius Brutus"
+    ]
+  },
+  {
+    "office": "Doge of Venice",
+    "context": "Elected by the Venetian aristocracy via an elaborate ballot",
+    "candidates": [
+      "Enrico Dandolo",
+      "Francesco Foscari",
+      "Sebastiano Venier",
+      "Marino Faliero"
+    ]
+  },
+  {
+    "office": "Pope",
+    "context": "Elected by the College of Cardinals",
+    "candidates": [
+      "Cardinal Giovanni de' Medici",
+      "Cardinal Roderic Borgia",
+      "Cardinal Karol Wojtyła",
+      "Cardinal Jorge Bergoglio"
+    ]
+  },
+  {
+    "office": "Lawspeaker of the Icelandic Althing",
+    "context": "Norse Commonwealth's early parliamentary assembly",
+    "candidates": [
+      "Þorgeir Ljósvetningagoði",
+      "Grímr Svertingsson",
+      "Skapti Þóroddsson",
+      "Snorri Sturluson"
+    ]
+  },
+  {
+    "office": "Mayor of Michel Delving (the Shire)",
+    "context": "Tolkien — the Shire elected its Mayor every seven years",
+    "candidates": [
+      "Will Whitfoot",
+      "Samwise Gamgee",
+      "Frodo Baggins",
+      "Meriadoc Brandybuck"
+    ]
+  },
+  {
+    "office": "President of the United Federation of Planets",
+    "context": "Star Trek — democratically elected office",
+    "candidates": [
+      "Jonathan Archer",
+      "Nanietta Bacco",
+      "Min Zife",
+      "Nan Bacco"
+    ]
+  },
+  {
+    "office": "Jury Foreman",
+    "context": "12 Angry Men — jurors elect a foreman",
+    "candidates": [
+      "Juror 1",
+      "Juror 8",
+      "Juror 3",
+      "Juror 4"
+    ]
+  },
+  {
+    "office": "Trade Union General Secretary",
+    "context": "Labour movement — elected by membership ballot",
+    "candidates": [
+      "Walter Reuther",
+      "Arthur Scargill",
+      "Lech Wałęsa",
+      "Mary Harris 'Mother' Jones"
+    ]
+  },
+  {
+    "office": "Iroquois Confederacy Sachem",
+    "context": "Haudenosaunee — sachems chosen by clan mothers/councils",
+    "candidates": [
+      "Hiawatha",
+      "Deganawidah (the Great Peacemaker)",
+      "Handsome Lake",
+      "Cornplanter"
+    ]
+  },
+  {
+    "office": "Landsgemeinde Councillor",
+    "context": "Open-air direct democracy in Appenzell/Glarus (Swiss Canton)",
+    "candidates": [
+      "Ulrich Zwingli",
+      "Niklaus von Flüe",
+      "Arnold Winkelried",
+      "Werner Stauffacher",
+      "Heidi's Grandfather (Alm-Öhi)"
+    ]
+  },
+  {
+    "office": "Tribune of the Plebs",
+    "context": "Roman Republic — elected to defend the plebeians",
+    "candidates": [
+      "Tiberius Gracchus",
+      "Gaius Gracchus",
+      "Publius Clodius Pulcher",
+      "Lucius Sicinius",
+      "Cola di Rienzo"
+    ]
+  },
+  {
+    "office": "Grand Master of the Knights Hospitaller",
+    "context": "Elected by the order's chapter",
+    "candidates": [
+      "Jean Parisot de Valette",
+      "Pierre d'Aubusson",
+      "Philippe Villiers de L'Isle-Adam",
+      "Fra' Angelo de Mojana"
+    ]
+  },
+  {
+    "office": "Speaker of the House of Commons",
+    "context": "Elected by fellow Members of Parliament",
+    "candidates": [
+    "Thomas More",
+      "William Lenthall",
+      "Betty Boothroyd",
+      "John Bercow"
+    ]
+  },
+  {
+    "office": "Ecclesia Delegate of the Free City",
+    "context": "Guild-and-commune assembly of a medieval free city",
+    "candidates": [
+      "Jacob van Artevelde",
+      "Étienne Marcel",
+      "Wat Tyler",
+      "Cola Pesce"
+    ]
+  },
+  {
+    "office": "Chief of the Comanche Council",
+    "context": "Plains council leadership chosen by consensus/vote of warriors",
+    "candidates": [
+      "Quanah Parker",
+      "Buffalo Hump",
+      "Ten Bears",
+      "Peta Nocona"
+    ]
+  },
+  {
+    "office": "Rebel Alliance Chief of State",
+    "context": "Star Wars — the New Republic Senate elects its leader",
+    "candidates": [
+      "Mon Mothma",
+      "Leia Organa",
+      "Bail Organa",
+      "Ponc Gavrisom"
+    ]
+  },
+  {
+    "office": "Prime Minister of the Time Lords",
+    "context": "Doctor Who — Gallifreyan High Council leadership",
+    "candidates": [
+      "The Doctor",
+      "Romana",
+      "Rassilon",
+      "Chancellor Flavia"
+    ]
+  },
+  {
+    "office": "Novgorod Veche Posadnik",
+    "context": "Medieval Novgorod Republic — mayor elected by the town assembly",
+    "candidates": [
+      "Marfa Boretskaya (Marfa the Mayoress)",
+      "Ostromir",
+      "Miroshka Nezdinich",
+      "Tverdislav Mikhalkovich"
+    ]
+  },
+  {
+    "office": "President of the Continental Congress",
+    "context": "Delegates of the American colonies elected a presiding officer",
+    "candidates": [
+      "John Hancock",
+      "Peyton Randolph",
+      "Henry Laurens",
+      "John Jay"
+    ]
+  },
+  {
+    "office": "Guildmaster of the Thieves' Guild",
+    "context": "Fantasy trope — guild leadership by member vote",
+    "candidates": [
+      "The Gray Mouser",
+      "Locke Lamora",
+      "Autolycus",
+      "Vetinari (pre-Patrician)"
+    ]
+  },
+  {
+    "office": "Soviet Deputy of the Petrograd Council",
+    "context": "1917 — workers' and soldiers' councils elected delegates",
+    "candidates": [
+      "Leon Trotsky",
+      "Nikolai Chkheidze",
+      "Alexander Kerensky",
+      "Matvei Skobelev"
+    ]
+  },
+  {
+    "office": "Kgotla Chief",
+    "context": "Traditional public assembly where the community deliberates (Botswana/Tswana Assembly)",
+    "candidates": [
+      "Khama III",
+      "Sechele I",
+      "Bathoen I",
+      "Seretse Khama"
+    ]
+  },
+  {
+    "office": "Prom King of Sunnydale High",
+    "context": "Teen pop-culture ballot (Buffy-verse)",
+    "candidates": [
+      "Buffy Summers",
+      "Cordelia Chase",
+      "Xander Harris",
+      "Angel"
+    ]
+  },
+  {
+    "office": "Holy Roman Emperor",
+    "context": "The seven Kurfürsten elected the Emperor (Elected by the Prince-Electors)",
+    "candidates": [
+      "Charles V of Habsburg",
+      "Frederick the Wise of Saxony",
+      "Francis I of France (candidate, 1519)",
+      "Henry VII of Luxembourg",
+      "Rudolf I of Habsburg"
+    ]
+  },
+  {
+    "office": "King of Poland",
+    "context": "Polish–Lithuanian Commonwealth nobles elected the monarch (Royal Elective Sejm)",
+    "candidates": [
+      "Henry of Valois",
+      "Stephen Báthory",
+      "Jan III Sobieski",
+      "Stanisław August Poniatowski",
+      "Augustus II the Strong"
+    ]
+  },
+  {
+    "office": "Doge of Genoa",
+    "context": "Genoese Republic — elected head of state",
+    "candidates": [
+      "Simone Boccanegra",
+      "Andrea Doria",
+      "Giano I di Campofregoso",
+      "Leonardo Montaldo"
+    ]
+  },
+  {
+    "office": "Gonfaloniere of Justice",
+    "context": "Chief magistrate of Florence, chosen by lot/vote of guilds",
+    "candidates": [
+      "Piero Soderini",
+      "Niccolò Machiavelli (as Secretary)",
+      "Salvestro de' Medici",
+      "Michele di Lando"
+    ]
+  },
+  {
+    "office": "Stadtholder of the Dutch Republic",
+    "context": "Provincial States appointed/elected the executive",
+    "candidates": [
+      "William the Silent",
+      "Johan de Witt (Grand Pensionary)",
+      "Maurice of Nassau",
+      "William III of Orange"
+    ]
+  },
+  {
+    "office": "Great Khan",
+    "context": "Mongol chiefs assembled to elect the Khan (Mongol Kurultai)",
+    "candidates": [
+    "Genghis Khan (Temüjin)",
+      "Ögedei Khan",
+      "Möngke Khan",
+      "Kublai Khan",
+      "Güyük Khan"
+    ]
+  },
+  {
+    "office": "Rashidun Caliph",
+    "context": "Early Islamic succession by council of companions (Shura Council)",
+    "candidates": [
+      "Abu Bakr",
+      "Umar ibn al-Khattab",
+      "Uthman ibn Affan",
+      "Ali ibn Abi Talib"
+    ]
+  },
+  {
+    "office": "President of the Roman Senate",
+    "context": "Senior senator recognized by censors' selection (Princeps Senatus)",
+    "candidates": [
+      "Fabius Maximus",
+      "Appius Claudius Caecus",
+      "Marcus Aemilius Scaurus",
+      "Quintus Fabius Maximus Rullianus"
+    ]
+  },
+  {
+    "office": "Ephor of Sparta",
+    "context": "Five overseers elected annually by the Spartan assembly",
+    "candidates": [
+      "Chilon of Sparta",
+      "Sthenelaidas",
+      "Antalcidas",
+      "Epitadeus"
+    ]
+  },
+  {
+    "office": "Landamman of the Swiss Confederation",
+    "context": "Cantonal chief magistrate chosen by assembly",
+    "candidates": [
+      "Werner Stauffacher",
+      "Hans Waldmann",
+      "Nikolaus Leuenberger",
+      "Aloys Reding"
+    ]
+  },
+  {
+    "office": "Doge-equivalent: Capitano del Popolo",
+    "context": "Elected communal official of Siena (Sienese Republic)",
+    "candidates": [
+      "Provenzano Salvani",
+      "Pandolfo Petrucci",
+      "Ambrogio Lorenzetti (as councillor)",
+      "Buonconte da Montefeltro"
+    ]
+  },
+  {
+    "office": "Speaker of the Frankish Thing / Placitum",
+    "context": "Germanic freemen's assembly settling law and leadership",
+    "candidates": [
+      "Clovis I",
+      "Arbogast",
+      "Chlothar II",
+      "Pepin of Herstal"
+    ]
+  },
+  {
+    "office": "Chairman of the Zaporozhian Cossack Rada",
+    "context": "Cossacks elected their Hetman by open assembly vote",
+    "candidates": [
+      "Bohdan Khmelnytsky",
+      "Petro Konashevych-Sahaidachny",
+      "Ivan Mazepa",
+      "Ivan Sirko"
+    ]
+  },
+  {
+    "office": "Consul of the Carthaginian Suffetes",
+    "context": "Carthage elected two suffetes annually",
+    "candidates": [
+      "Hanno the Great",
+      "Hamilcar Barca",
+      "Mago the Elder",
+      "Bomilcar"
+    ]
+  },
+  {
+    "office": "President of the Twelve Colonies",
+    "context": "Battlestar Galactica New series — democratic elections held aboard the fleet",
+    "candidates": [
+      "Laura Roslin",
+      "Gaius Baltar",
+      "Tom Zarek",
+      "Wallace Gray"
+    ]
+  },
+  {
+    "office": "President of the Panem District Council",
+    "context": "The Hunger Games — post-war democratic reforms",
+    "candidates": [
+      "Alma Coin",
+      "Plutarch Heavensbee",
+      "Paylor",
+      "Katniss Everdeen"
+    ]
+  },
+  {
+    "office": "Leader of the Mutant Council of Krakoa",
+    "context": "Marvel comics — the Quiet Council governed Krakoa",
+    "candidates": [
+      "Professor Charles Xavier",
+      "Magneto",
+      "Emma Frost",
+      "Storm"
+    ]
+  },
+  {
+    "office": "President of the United States",
+    "context": "Fictional US presidential elections (The West Wing)",
+    "candidates": [
+      "Josiah 'Jed' Bartlet",
+      "Matt Santos",
+      "Arnold Vinick",
+      "Robert Ritchie"
+    ]
+  },
+  {
+    "office": "Justice League Chairperson",
+    "context": "DC comics — the League votes on membership and leadership",
+    "candidates": [
+      "Superman",
+      "Wonder Woman",
+      "Batman",
+      "Martian Manhunter"
+    ]
+  },
+  {
+    "office": "President of the Galactic Senate",
+    "context": "Star Wars prequels — the Supreme Chancellor is elected",
+    "candidates": [
+      "Finis Valorum",
+      "Sheev Palpatine",
+      "Padmé Amidala (nominated)",
+      "Bail Organa"
+    ]
+  },
+  {
+    "office": "Mayor of Pawnee, Indiana",
+    "context": "Parks and Recreation — local elected office",
+    "candidates": [
+      "Leslie Knope",
+      "Bobby Newport",
+      "Paul Iaresco",
+      "Ron Swanson"
+    ]
+  },
+  {
+    "office": "President of the United States",
+    "context": "Satirical US political campaigns and elections (Veep)",
+    "candidates": [
+      "Selina Meyer",
+      "Jonah Ryan",
+      "Bill O'Brien",
+      "Tom James"
+    ]
+  },
+  {
+    "office": "Chief of the Avengers Council",
+    "context": "Marvel — team leadership decided by the roster",
+    "candidates": [
+      "Captain America (Steve Rogers)",
+      "Iron Man (Tony Stark)",
+      "Captain Marvel (Carol Danvers)",
+      "Black Panther (T'Challa)"
+    ]
+  },
+  {
+    "office": "President of the New Republic",
+    "context": "Star Wars — reconstituted democratic senate (The Mandalorian era)",
+    "candidates": [
+      "Mon Mothma",
+      "Leia Organa",
+      "Tai Kolma",
+      "Ransolm Casterfo"
+    ]
+  },
+  {
+    "office": "Head Girl / Head Boy of Malory Towers",
+    "context": "Enid Blyton — school leadership chosen by pupils/staff",
+    "candidates": [
+      "Darrell Rivers",
+      "Sally Hope",
+      "Alicia Johns",
+      "Gwendoline Mary Lacey"
+    ]
+  },
+  {
+    "office": "President of the Galactic Federation",
+    "context": "Animated sci-fi — democratic space government (Futurama)",
+    "candidates": [
+      "Richard Nixon's Head",
+      "John Jackson",
+      "Jack Johnson",
+      "Chris Travers"
+    ]
+  },
+  {
+    "office": "Prime Minister",
+    "context": "British political satire — Westminster leadership (Yes, Minister / The Thick of It)",
+    "candidates": [
+      "Jim Hacker",
+      "Tom Sargent",
+      "Nicola Murray",
+      "Peter Mannion"
+    ]
+  },
+  {
+    "office": "President of the United States",
+    "context": "American Revolution",
+    "candidates": [
+      "George Washington", "Thomas Jefferson", "John Adams",
+      "Benjamin Franklin", "Alexander Hamilton", "James Madison",
+      "John Jay", "Samuel Adams", "Patrick Henry", "John Hancock"
+    ]
+  },
+  {
+    "office": "Captain of the Hispaniola",
+    "context": "Treasure Island by Robert Louis Stevenson",
+    "candidates": [
+      "Long John Silver", "Billy Bones", "Captain Flint",
+      "Israel Hands", "Ben Gunn", "Captain Smollett",
+      "Blind Pew", "Jim Hawkins"
+    ]
+  },
+  {
+    "office": "Mayor of Gotham City",
+    "context": "Batman (DC Comics)",
+    "candidates": [
+      "Bruce Wayne", "Harvey Dent", "James Gordon",
+      "Oswald Cobblepot", "Selina Kyle", "Lucius Fox"
+    ]
+  },
+  {
+    "office": "Chief of the Lakota",
+    "context": "Lakota Sioux leaders",
+    "candidates": [
+      "Sitting Bull", "Crazy Horse", "Red Cloud",
+      "Spotted Tail", "Rain-in-the-Face"
+    ]
+  }
+
 ]
 
 EXAMPLE_CONTESTS.sort(key=contest_size)
