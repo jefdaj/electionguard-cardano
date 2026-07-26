@@ -18,6 +18,21 @@ Things to merge:
       elaborate the server with a webui and keep the CLI for the scripting/test
       cases.
 
+Develop client/server code with env2
+------------------------------------
+
+```
+# terminal 1
+$ nix develop
+$ python src/egc_app/cli/__init__.py node run --private-dir /tmp/whatever/
+```
+
+```
+# terminal 2
+$ nix develop
+$ python src/egc_app/cli/__init__.py <cli args>
+```
+
 Old tests
 ---------
 
