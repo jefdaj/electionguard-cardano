@@ -116,7 +116,7 @@ def build_multi_arg(name, direction, params) -> MultiIOArg:
 def _multi_read(mio: MultiIOArg, decode_cls=None):
     match mio.medium:
         case "cam":  return scan_qrcode(decode_cls=decode_cls)
-        case "png":  return decode_qr_str(mio.path.read_text(), decode_cls)
+        case "png":  return load_qrcode(mio.path, decode_cls)
         case "txt":  return decode_cls.from_qr_str(mio.path.read_text())
         case "json": return decode_cls.from_json(mio.path.read_text())
 

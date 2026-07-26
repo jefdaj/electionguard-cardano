@@ -90,6 +90,7 @@ def print_qrcode(obj: Any) -> None:
 
 
 # TODO image in fn name
+# TODO enforce a particular format? (png maybe)
 def save_qrcode(obj: Any, path: Path):
     qr = make_qr_code(obj)
     img = qr.make_image()
@@ -98,6 +99,12 @@ def save_qrcode(obj: Any, path: Path):
 
 def decode_qr_str(qr_str, decode_cls):
     return decode_cls.from_qr_str(qr_str)
+
+
+def load_qrcode(png_path: Path, decode_cls):
+    img = cv2.imread(png_path) # TODO str?
+    qr_str, _, _ = cv2.QRCodeDetector().detectAndDecode(img)
+    return decode_qr_str(qr_str, decode_cls)
 
 
 def scan_qrcode(decode_cls=None, video_device=0, timeout=0):
@@ -114,7 +121,7 @@ def scan_qrcode(decode_cls=None, video_device=0, timeout=0):
             if not ok:
                 time.sleep(0.1) # TODO remove?
                 continue
-            qr_str, pts, _ = det.detectAndDecode(frame)
+            qr_str, _, _ = det.detectAndDecode(frame)
             if qr_str:
                 if decode_cls is None:
                     return qr_str

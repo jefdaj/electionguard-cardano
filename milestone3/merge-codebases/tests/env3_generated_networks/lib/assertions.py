@@ -15,4 +15,4 @@ def assert_node_logs_match(cfg: ResolvedTestConfig, pattern: str):
         print(f'lines: {lines}')
         print(f'rx: {rx}')
         print(f'rx.pattern: {rx.pattern}')
-        assert any(rx.search(l) for l in lines), f"{p} had no line matching {rx.pattern!r}"
+        assert any(rx.search(l) for l in lines), f"{log_path} had no line matching {rx.pattern!r}"

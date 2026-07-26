@@ -1,3 +1,4 @@
+from egc import save_qrcode
 from ..config import ResolvedTestConfig
 
 OLD_QR_STRS = [
