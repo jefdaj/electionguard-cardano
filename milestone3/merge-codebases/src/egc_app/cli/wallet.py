@@ -26,7 +26,7 @@ def clear():
     asyncio.run(Client().wallet_clear())
 
 @wallet.command()
-@multi_load("wallet", Wallet, ["qr", "qr-image", "json"])
+@multi_load("wallet", Wallet, ["cam", "png", "txt", "json"])
 def load(wallet: Wallet):
     """Load wallet.
 
@@ -42,7 +42,7 @@ def load(wallet: Wallet):
 
 # @click.option('--sk-path', type=click.STRING, required=True)
 @wallet.command()
-@multi_save_arg("wallet", ["qr", "qr-image", "json"])
+@multi_save_arg("wallet", ["cam", "png", "txt", "json"])
 def save(wallet: MultiIOArg):
     """Save wallet, INCLUDING THE SIGNING KEY.
 

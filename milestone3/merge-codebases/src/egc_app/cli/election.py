@@ -4,37 +4,18 @@ from cloup.constraints import RequireExactly
 import asyncio
 from egc import ElectionConfig, scan_qrcode, print_qrcode # TODO relative?
 from egc_app.client import Client
-from egc_app.cli.utils import RoleAwareGroup
+from egc_app.cli.utils import *
 
 @click.group(cls=RoleAwareGroup)
 def election() -> None:
     "Create, share, stream, or end an election."
 
-# TODO clean up and factor out the qrcode parts
 @election.command()
-@cloup.option_group(
-    "Election input options",
-    cloup.option('--scan-qrcode', is_flag=True, required=False),
-    cloup.option('--parse-str', type=click.STRING, required=False),
-    RequireExactly(1),
-)
-def subscribe(**kwargs):
-    """Set which election the node is following.
-
-    For --parse-str, the input should be in the same format
-    you would get from the QR code. Line wraps are OK.
-
-    egc:election:<policy_id>:<since_slot>:<since_block>
-    """
-    # print(f'config_kwargs: {config_kwargs}')
-    # print(f'kwargs: {kwargs}')
-    if kwargs['scan_qrcode']:
-        config = scan_qrcode(decode_cls=ElectionConfig)
-    else:
-        # print(f'parse_str: {kwargs['parse_str']}')
-        config = ElectionConfig.from_qr_str(kwargs['parse_str'])
-        # print(f'config: {config}')
-    asyncio.run(Client().election_subscribe(config))
+@multi_load("election", ElectionConfig, ["cam", "png", "txt", "json"])
+def subscribe(election: ElectionConfig):
+    "Set which election the node is following."
+    # TODO should this reset a non-observer node back to observer?
+    asyncio.run(Client().election_subscribe(cfg))
 
 # TODO rename -> share?
 # TODO option to share json instead?

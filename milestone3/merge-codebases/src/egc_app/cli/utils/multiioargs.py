@@ -11,7 +11,7 @@ import cloup
 from cloup.constraints import mutually_exclusive, require_one
 
 Direction = Literal["in", "out"]
-Medium = Literal["qr", "qr-image", "json"]
+Medium = Literal["cam", "png", "txt", "json"]
 
 
 @dataclass
@@ -35,29 +35,35 @@ def _add_options(f, name, mediums, direction, required):
     # prefix = f"{name}-"
     help_text = {
         "in": {
-            "qr": "Scan QR code via the camera.",
-            "qr-image": "Load QR code from an image.",
-            "json": "Load from a JSON file."
+            "cam":  "Scan QR code via the camera.",
+            "png":  "Load QR code from a png file.",
+            "txt":  "Load QR text (`egc:...`) from a file.",
+            "json": "Load QR info from a JSON file.",
         },
         "out": {
-            "qr": "Show QR code on screen.",
-            "qr-image": "Save QR code as an image.",
-            "json": "Save to a JSON file."
+            "cam":  "Show QR code so you can take a pic of it.",
+            "png":  "Save QR code as a png file.",
+            "txt":  "Save QR text (`egc:...`) to a file.",
+            "json": "Save QR info to a JSON file.",
         },
     }[direction]
+    # TODO any point in both txt and json long term?
     cli_verbs = {
-        "in" : {"qr": "scan-qr", "qr-image": "load-qr", "json": "load-json"},
-        "out": {"qr": "show-qr", "qr-image": "save-qr", "json": "save-json"},
+        "in" : {"cam": "scan-qr", "png": "load-png", "json": "load-json", "txt": "load-txt"},
+        "out": {"cam": "show-qr", "png": "save-png", "json": "save-json", "txt": "save-txt"},
     }[direction]
     group = _make_group(name, direction, required)
 
     factories = {
-        "qr": lambda: group.option(
-            f"--{name}-{cli_verbs["qr"]}", is_flag=True,
-            help=help_text["qr"]),
-        "qr-image": lambda: group.option(
-            f"--{name}-{cli_verbs["qr-image"]}", type=click.Path(), metavar="PATH",
-            help=help_text["qr-image"]),
+        "cam": lambda: group.option(
+            f"--{name}-{cli_verbs["cam"]}", is_flag=True,
+            help=help_text["cam"]),
+        "png": lambda: group.option(
+            f"--{name}-{cli_verbs["png"]}", type=click.Path(), metavar="PATH",
+            help=help_text["png"]),
+        "txt": lambda: group.option(
+            f"--{name}-{cli_verbs["txt"]}", type=click.Path(), metavar="PATH",
+            help=help_text["txt"]),
         "json": lambda: group.option(
             f"--{name}-{cli_verbs["json"]}", type=click.Path(), metavar="PATH",
             help=help_text["json"]),
