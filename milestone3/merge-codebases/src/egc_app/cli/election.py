@@ -15,7 +15,7 @@ def election() -> None:
 def subscribe(election: ElectionConfig):
     "Set which election the node is following."
     # TODO should this reset a non-observer node back to observer?
-    asyncio.run(Client().election_subscribe(cfg))
+    asyncio.run(Client().election_subscribe(election))
 
 # TODO rename -> share?
 # TODO option to share json instead?

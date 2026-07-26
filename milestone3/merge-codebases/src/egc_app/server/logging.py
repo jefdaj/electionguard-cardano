@@ -24,10 +24,3 @@ def setup_logging(log_file=None):
             "uvicorn.access": {"handlers": ["file"], "level": "INFO", "propagate": False},
         },
     })
-
-# setup_logging()
-
-# app = create_app(app_cfg)
-# cfg = uvicorn.Config(app, log_config=None, **uvicorn_kwargs)  # don't let uvicorn override
-# server = uvicorn.Server(cfg)
-# server.run()

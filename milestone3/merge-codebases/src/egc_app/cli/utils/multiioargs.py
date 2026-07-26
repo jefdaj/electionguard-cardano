@@ -90,11 +90,17 @@ def build_multi_arg(name, direction, params) -> MultiIOArg:
     if len(chosen) != 1:
         raise click.UsageError(f"Exactly one {name} {direction}-source required.")
     medium, value = next(iter(chosen.items()))
-    medium = "qr" if ("show" in medium or "scan" in medium) else \
-                     ("json" if "json" in medium else "qr-image")
+    if "show" in medium or "scan" in medium:
+        medium = "cam"
+    elif "json" in medium:
+        medium = "json"
+    elif "txt" in medium:
+        medium = "txt"
+    else:
+        medium = "png"
     print(f'medium: {medium}')
     print(f'value: {value}')
-    path = None if medium == "qr" else Path(value)
+    path = None if medium == "cam" else Path(value)
     return MultiIOArg(name, direction, medium, path)
 
 
@@ -104,9 +110,10 @@ def build_multi_arg(name, direction, params) -> MultiIOArg:
 # multi_load_arg below.
 def _multi_read(mio: MultiIOArg, decode_cls=None):
     match mio.medium:
-        case "qr":       return scan_qrcode(decode_cls=decode_cls)
-        case "qr-image": return decode_qr_image(mio.path)  # TODO -> decode_cls?
-        case "json":     return decode_cls.from_json(mio.path.read_text())
+        case "cam":  return scan_qrcode(decode_cls=decode_cls)
+        case "png":  return decode_qr_str(mio.path.read_text(), decode_cls)
+        case "txt":  return decode_cls.from_qr_str(mio.path.read_text())
+        case "json": return decode_cls.from_json(mio.path.read_text())
 
 
 # This can't be automated the same way, so it becomes par of the interface.
@@ -116,7 +123,7 @@ def multi_save(mio: MultiIOArg, obj: Any, exist_ok=True) -> None:
     if mio.path is not None and mio.path.exists() and not exist_ok:
         raise click.UsageError(f"path already exists: {mio.path}")
     match mio.medium:
-        case "qr":       print_qrcode(obj)
+        case "cam":       print_qrcode(obj)
         case "qr-image": save_qrcode(obj, mio.path)
         case "json":     mio.path.write_text(obj.to_json())
 

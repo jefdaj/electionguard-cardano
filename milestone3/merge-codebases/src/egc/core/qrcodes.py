@@ -96,6 +96,10 @@ def save_qrcode(obj: Any, path: Path):
     img.save(path)
 
 
+def decode_qr_str(qr_str, decode_cls):
+    return decode_cls.from_qr_str(qr_str)
+
+
 def scan_qrcode(decode_cls=None, video_device=0, timeout=0):
     "Scan a QR Code and optionally decode it using from_qr_str."
     cap = cv2.VideoCapture(video_device)
@@ -115,7 +119,7 @@ def scan_qrcode(decode_cls=None, video_device=0, timeout=0):
                 if decode_cls is None:
                     return qr_str
                 else:
-                    return decode_cls.from_qr_str(qr_str)
+                    return decode_qr_str(qr_str, decode_cls)
             if timeout and time.time() - start > timeout:
                 raise TimeoutError
     finally:
