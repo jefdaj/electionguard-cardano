@@ -10,6 +10,11 @@ import click
 import cloup
 from cloup.constraints import mutually_exclusive, require_one
 
+import logging
+
+LOG = logging.getLogger(__name__)
+
+
 Direction = Literal["in", "out"]
 Medium = Literal["cam", "png", "txt", "json"]
 
@@ -77,16 +82,16 @@ def _add_options(f, name, mediums, direction, required):
 def build_multi_arg(name, direction, params) -> MultiIOArg:
     """Pop this group's params out of `params` (mutates) and build a MultiIOArg."""
     # TODO proper logging here
-    print(f'name: {name}')
-    print(f'direction: {direction}')
-    print(f'params: {params}')
+    LOG.debug(f'name: {name}')
+    LOG.debug(f'direction: {direction}')
+    LOG.debug(f'params: {params}')
     prefix = f"{name}_"
     chosen = {}
     for k in [k for k in params if k.startswith(prefix)]:
         v = params.pop(k)
         if v:
             chosen[k[len(prefix):].replace("_", "-")] = v
-    print(f'chosen: {chosen}')
+    LOG.debug(f'chosen: {chosen}')
     if len(chosen) != 1:
         raise click.UsageError(f"Exactly one {name} {direction}-source required.")
     medium, value = next(iter(chosen.items()))
@@ -98,8 +103,8 @@ def build_multi_arg(name, direction, params) -> MultiIOArg:
         medium = "txt"
     else:
         medium = "png"
-    print(f'medium: {medium}')
-    print(f'value: {value}')
+    LOG.debug(f'medium: {medium}')
+    LOG.debug(f'value: {value}')
     path = None if medium == "cam" else Path(value)
     return MultiIOArg(name, direction, medium, path)
 
@@ -119,7 +124,7 @@ def _multi_read(mio: MultiIOArg, decode_cls=None):
 # This can't be automated the same way, so it becomes par of the interface.
 # Use inside a command after multi_save_arg has built the MultiIOArg.
 def multi_save(mio: MultiIOArg, obj: Any, exist_ok=True) -> None:
-    print(f'mio: {mio}')
+    LOG.debug(f'mio: {mio}')
     if mio.path is not None and mio.path.exists() and not exist_ok:
         raise click.UsageError(f"path already exists: {mio.path}")
     match mio.medium:
