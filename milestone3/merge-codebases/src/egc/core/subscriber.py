@@ -218,8 +218,9 @@ def election_events(event: ChannelEvent) -> list[ElectionEvent]:
 # TODO replace or integrate with Exception classes
 @dataclass
 class ElectionError:
-    err_type: str
-    err_payload: dict
+    id: str
+    type: str
+    payload: dict
 
     def to_raw(self) -> str:
         return json.dumps(to_jsonable_python(self))
@@ -481,6 +482,7 @@ class ElectionSubscriber:
             election: ElectionContext,
             on_event = _make_example_callback('on_event'),
             on_error = _make_example_callback('on_error'),
+            timeout = 3600, # in slots, but also roughly seconds
         ):
 
         log_call()
@@ -519,6 +521,10 @@ class ElectionSubscriber:
         # A list of slots + block header hashes Kupo reports that it indexed so far.
         # Used in case of rollbacks, for the If-None-Match ETag/304 mechanism.
         self._checkpoints: list[Point] = []
+
+        # For detecting timeouts.
+        self._prev_event_slot: Optional[int] = None
+        self._timeout: int = timeout
 
 
     ## query interface ##
@@ -1007,6 +1013,17 @@ class ElectionSubscriber:
                 self._checkpoints.append(tip)
                 LOG.debug(f'Saved checkpoint {tip}')
                 self._checkpoints = self._checkpoints[-KUPO_MAX_CHECKPOINTS:]
+
+                # detect timeouts
+                # Currently this will always index up to the current tip first,
+                # then time out if it's been a long time since the election started
+                # AND a new block comes in.
+                # TODO should it time out before waiting for the new block?
+                if len(self._checkpoints) > 1:
+                    slots_since_event = tip.slot_no - self._prev_event_slot
+                    if slots_since_event > self._timeout_slots:
+                        self._handle_timeout(slots_since_event)
+
                 return True
 
 
@@ -1369,7 +1386,7 @@ class ElectionSubscriber:
 
             # Emit an event to the client warning about the rollback.
             # Note that they'll get one of these per checkpoint rolled back to; is that OK?
-            err = ElectionError(err_type='rollback', err_payload=prev)
+            err = election_error('rollback', prev)
             self._client_on_error(err)
 
             if prev is None:
@@ -1393,6 +1410,13 @@ class ElectionSubscriber:
 
         # 4. retry fetch, which may call this function again if needed
         return self._fetch_matches_by_sc()
+
+
+    def _handle_timeout(self, slots_since_event: int):
+        log_call()
+        err = election_error('timeout', slots_since_event)
+        self._client_on_error(err)
+        self.request_stop()
 
 
     ## handle events ##
