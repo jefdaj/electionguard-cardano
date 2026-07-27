@@ -44,11 +44,11 @@ def config_subscribe_qr(variant='txt'):
     max_examples = 3,
 )
 def test_subscribe_old_qr_str(cfg: ResolvedTestConfig):
-    assert_node_logs_match(cfg=cfg, pattern='^ElectionEvent.*ended election')
+    assert_node_logs_match(cfg=cfg, pattern='^[0-9]{9,}\\s.*ended election')
 
 @given_cached_tests(
     cfg_strategy = config_subscribe_qr('png'),
     max_examples = 3,
 )
 def test_subscribe_old_qr_png(cfg: ResolvedTestConfig):
-    assert_node_logs_match(cfg=cfg, pattern='^ElectionEvent.*ended election')
+    assert_node_logs_match(cfg=cfg, pattern='^[0-9]{9,}\\s.*ended election')

@@ -34,9 +34,11 @@ def qrcode(ctx):
 @cloup.option('--filter', type=click.STRING, required=False)
 def events(filter: str|None = None):
     """Stream election events to the terminal."""
+    # TODO we also want errors to come through on this channel, so should they be events?
     async def _run():
-        async for event in Client().election_events(filter):
-            click.echo(event)
+        async for e in Client().election_events(filter):
+            msg = f'{e.slot_no} {e.channel} {e.event_desc}'
+            click.echo(msg)
     asyncio.run(_run())
 
 # The reason this is for an observer is that you don't want to run it while

@@ -22,7 +22,6 @@ uckjakk5:118296546:b23e0378ce52c791f9c449be3f1f44ab3a79be15adb309ccfb9751ab5f
 2f8392''',
 
 # happy_election that failed at test_phase3_voting
-# TODO will this fail until a default slot timeout is added?
 '''egc:election:3:d8799f58204cca2173550004a8dcec570207df48d1fff499a46c8117926
 a77de7819d51dd900ff:2:addr_test1vr93qqyu30r5c7snd4wp8wu243st2xz8605yea78hgyg6
 uckjakk5:118299682:fd83f5ed90881b30542e7c868fc0eb1f79d79046723c10e5572ccd28b0
