@@ -73,12 +73,12 @@ class ElectionNode:
 
         LOG.info(f'Started {self.channel_str()} node.')
 
-    def subscribe(self, cfg: ElectionConfig):
+    def subscribe(self, cfg: ElectionConfig, on_event=lambda x: None, on_error=lambda x: None):
         self.election = ElectionContext.from_config(cfg)
         self.subscriber = ElectionSubscriber(
             election    = self.election,
-            on_event    = lambda x: None,
-            on_rollback = lambda x: None,
+            on_event    = on_event,
+            on_error    = on_error,
         )
         # TODO set self.script here
         self.subscriber.start()

@@ -2,7 +2,7 @@ from .env        import *
 from .ogmios     import *
 from .wallet     import *
 from .publisher  import ElectionPublisher
-from .subscriber import ElectionSubscriber, ElectionConfig, ChannelEvent, ElectionEvent, EgcPhase
+from .subscriber import ElectionSubscriber, ElectionConfig, ChannelEvent, ElectionEvent, ElectionError, EgcPhase
 from .plutus     import *
 from .election   import *
 from .node       import ElectionNode

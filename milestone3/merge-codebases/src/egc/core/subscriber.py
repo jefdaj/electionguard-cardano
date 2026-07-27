@@ -16,7 +16,7 @@ import qrcode
 
 from collections import defaultdict
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from os import environ
 from pprint import pformat
 from requests.adapters import HTTPAdapter
@@ -77,6 +77,10 @@ class Point:
         slot = int(headers["X-Most-Recent-Checkpoint"])
         hhash = headers["ETag"]
         return cls(slot, hhash)
+
+    # TODO remove?
+    def to_dict(self):
+        return asdict(self)
 
 
 # These don't quite correspond to UTXOs because we store the state from the
@@ -209,6 +213,20 @@ def election_events(event: ChannelEvent) -> list[ElectionEvent]:
             seen.add(e.id)
 
     return es2
+
+
+# TODO replace or integrate with Exception classes
+@dataclass
+class ElectionError:
+    err_type: str
+    err_payload: dict
+
+    def to_raw(self) -> str:
+        return json.dumps(to_jsonable_python(self))
+
+def election_error(*args):
+    ee_id = f'electionerror-{unique_id(*args)}'
+    return ElectionError(ee_id, *args)
 
 
 def event_txid(event: ChannelEvent):
@@ -461,8 +479,8 @@ class ElectionSubscriber:
             self,
             # config: ElectionConfig,
             election: ElectionContext,
-            on_event    = _make_example_callback('on_event'),
-            on_rollback = _make_example_callback('on_rollback'),
+            on_event = _make_example_callback('on_event'),
+            on_error = _make_example_callback('on_error'),
         ):
 
         log_call()
@@ -471,8 +489,8 @@ class ElectionSubscriber:
         self.election = election
 
         # Client callbacks, which default to printing events.
-        self._on_election_event  = on_event
-        self._client_on_rollback = on_rollback # TODO implement this
+        self._client_on_event = on_event
+        self._client_on_error = on_error
 
         # This is the main subscriber state; all the public methods read it,
         # and the internal callbacks mutate it.
@@ -945,7 +963,7 @@ class ElectionSubscriber:
 
             # 5. Emit final ElectionEvents to clients
             for event in election_events(event):
-                self._on_election_event(event)
+                self._client_on_event(event)
 
 
     def _kupo_api_url(self) -> str:
@@ -1345,9 +1363,14 @@ class ElectionSubscriber:
 
         with self._history_lock:
 
-            lost = self._checkpoints.pop()
-            prev = self._get_checkpoint()
+            lost: Optional[Point] = self._checkpoints.pop() # TODO can this never be None?
+            prev: Optional[Point] = self._get_checkpoint()
             LOG.warning(f'Rolling back {lost} -> {prev}')
+
+            # Emit an event to the client warning about the rollback.
+            # Note that they'll get one of these per checkpoint rolled back to; is that OK?
+            err = ElectionError(err_type='rollback', err_payload=prev)
+            self._client_on_error(err)
 
             if prev is None:
                 LOG.debug('No checkpoint to roll back to; dropping entire history.')
