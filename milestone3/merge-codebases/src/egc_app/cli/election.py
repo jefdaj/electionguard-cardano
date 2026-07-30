@@ -5,6 +5,7 @@ import asyncio
 from egc import ElectionConfig, scan_qrcode, print_qrcode # TODO relative?
 from egc_app.client import Client
 from egc_app.cli.utils import *
+from egc import *
 
 @click.group(cls=RoleAwareGroup)
 def election() -> None:
@@ -46,9 +47,8 @@ def events(filter: str|None = None):
 # TODO accept a qrcode (file or scan) as the admin addr
 # TODO accept a qrcode (file or scan) as the funder sk
 @election.command(roles=['observer'])
-@cloup.option('--funds-from', type=click.STRING, required=False)
-@cloup.option('--admin-addr', type=click.STRING, required=False)
-def init():
+@multi_load("funder", Wallet, ["json"])
+def init(funder: Wallet):
     """Create an election by minting an admin channel token.
 
     There are two main ways you might want to do this. Note that
@@ -66,7 +66,7 @@ def init():
 
     \b
       egc wallet create --name admin
-      egc election init [--funder-load-sk ./wallets/funder.sk]
+      egc election init --funder-load-json ./wallets/funder.sk
       egc channel await --role admin
 
     2. If you're the funder but not the admin, load your wallet and then run
@@ -74,14 +74,14 @@ def init():
     Example:
 
     \b
-      egc wallet load --wallet-load-sk ./wallets/funder.sk
-      egc election init --admin-load-addr ./wallets/admin.addr
+      egc wallet load --wallet-load-json ./wallets/funder.sk
+      egc election init --admin-load-json ./wallets/admin.addr
       egc election events
 
     Either way, this command will clear any previous election state and
     subscribe to the new election.
     """
-    raise NotImplementedError
+    click.echo(funder)
 
 @election.command(roles=['admin'])
 def end():
