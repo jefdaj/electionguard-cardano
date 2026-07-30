@@ -56,9 +56,3 @@ class ObserverNode(ElectionNode):
             role_index=role_index,
             wallet=wallet,
         )
-
-#     def channel_id(self) -> Optional[ChannelId]:
-#         return None
-# 
-#     def channel_str(self):
-#         return f'{self.role}{self.role_index}'
