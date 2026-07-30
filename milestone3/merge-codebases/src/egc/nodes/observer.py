@@ -23,17 +23,13 @@ def election_json_path(ctx: ElectionContext) -> Path:
 	return json_path
 
 
-
-
-
 class ObserverNode(ElectionNode):
-    """This is the initial and simplest type of ElectionNode.
-
-    Besides observing an election (subscribing + streaming events), it can also:
+    """Besides observing an election (subscribing + streaming events),
+    Observers can also:
     1. request an official role from the admin of an existing election
     2. create a new election, either designating an admin or becoming one
 
-    If only observing though, no need for a wallet.
+    If only observing though, they don't need a wallet.
     """
 
     def __init__(
@@ -42,7 +38,7 @@ class ObserverNode(ElectionNode):
         # Observers don't have channels, so they don't officially have an index.
         # But it's still useful for distinguishing state dirs during tests.
         role: str = 'observer',
-        role_index: int = 1,
+        role_index: int = 1, # TODO option to have other indexes for tests
 
         # No election context is needed at init time; it's assumed you will
         # create or subscribe to one separately later.
