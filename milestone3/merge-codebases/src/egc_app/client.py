@@ -31,7 +31,7 @@ class Client:
     async def election_subscribe(self, config: ElectionConfig):
         cfgdict = asdict(config)
         # print(f'cfgdict: {cfgdict}')
-        r = await self._c.put('/election/subscription', json=cfgdict)
+        r = await self._c.put('/election/subscribe', json=cfgdict)
         r.raise_for_status()
         return r.json()
 
