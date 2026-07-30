@@ -33,6 +33,7 @@ def load(wallet: Wallet):
     Note that .sk files can be loaded with the JSON option.
     """
     print(f'wallet: {wallet}')
+    # TODO figure out how to encode/decode the Wallet automatically
     sk_dict = json.loads(wallet.to_json())
     print(f'sk_dict from wallet: {sk_dict}')
     asyncio.run(Client().wallet_load_or_create(

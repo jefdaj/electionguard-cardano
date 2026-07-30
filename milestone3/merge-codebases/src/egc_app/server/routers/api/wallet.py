@@ -14,6 +14,7 @@ def _wallet_path(state) -> Path:
     sk_path = (wallet_dir / 'wallet').with_suffix('.sk')
     return sk_path
 
+# TODO get fastapi to encode/decode Wallet automatically here
 @router.put("")
 async def wallet_load_or_create(wallet_dict: dict, state=Depends(get_state)):
     description = wallet_dict['description']
