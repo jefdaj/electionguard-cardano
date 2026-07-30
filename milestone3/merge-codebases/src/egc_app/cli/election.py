@@ -51,26 +51,32 @@ def events(filter: str|None = None):
 def init():
     """Create an election by minting an admin channel token.
 
-    There are two main ways you might want to do this:
+    There are two main ways you might want to do this. Note that
+    only method 1a is implemented in the demo/mvp version, because
+    it makes it easier to test with a single dev wallet:
 
-    1. If you're the funder but not the admin, load your wallet and then run
+    1. If you're the admin and also the funder, you should generate your
+    admin wallet first. Then you can either:
+
+    \b
+    a. pass a separate funder wallet (sk path) here
+    b. fund the admin wallet from the faucet before continuing
+
+    Either way, you'll become the admin. Example:
+
+    \b
+      egc wallet create --name admin
+      egc election init [--funder-load-sk ./wallets/funder.sk]
+      egc channel await --role admin
+
+    2. If you're the funder but not the admin, load your wallet and then run
     this, passing a separate admin addr. You'll become an observer.
     Example:
 
     \b
-      egc wallet load --sk-path ./wallets/funder.sk
-      egc election init --admin-addr ./wallets/admin.addr
+      egc wallet load --wallet-load-sk ./wallets/funder.sk
+      egc election init --admin-load-addr ./wallets/admin.addr
       egc election events
-
-    2. If you're the admin and also sending funds, you should generate your
-    admin wallet first. Then you can either fund that wallet from the faucet
-    (https://docs.cardano.org/cardano-testnets/tools/faucet), or pass a
-    separate funder wallet sk here. You'll become the admin. Example:
-
-    \b
-      egc wallet create --name admin
-      egc election init [--funds-from ./wallets/funder.sk]
-      egc channel await --role admin
 
     Either way, this command will clear any previous election state and
     subscribe to the new election.
