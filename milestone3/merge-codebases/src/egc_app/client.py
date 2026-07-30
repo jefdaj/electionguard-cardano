@@ -51,6 +51,10 @@ class Client:
                      if event.event_type == 'end election':
                          return
 
+    async def election_init(self, config: ElectionConfig):
+        # TODO write this
+        # maybe it can start like wallet load, since it needs to send funder wallet info?
+
     async def wallet_load_or_create(self, description: str, sk_dict: dict | None = None):
         "Load a wallet from sk_dict, or create one if empty."
         description = description.replace(':', ';') # escape : for qr codes
