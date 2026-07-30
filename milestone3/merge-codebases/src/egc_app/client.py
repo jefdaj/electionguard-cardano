@@ -31,7 +31,7 @@ class Client:
     async def election_subscribe(self, config: ElectionConfig):
         cfgdict = asdict(config)
         # print(f'cfgdict: {cfgdict}')
-        r = await self._c.put('/election', json=cfgdict)
+        r = await self._c.put('/election/subscription', json=cfgdict)
         r.raise_for_status()
         return r.json()
 
@@ -54,6 +54,7 @@ class Client:
     async def election_init(self, config: ElectionConfig):
         # TODO write this
         # maybe it can start like wallet load, since it needs to send funder wallet info?
+        pass
 
     async def wallet_load_or_create(self, description: str, sk_dict: dict | None = None):
         "Load a wallet from sk_dict, or create one if empty."

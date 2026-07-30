@@ -6,38 +6,17 @@ from egc import *
 import asyncio
 import json
 from fastapi.responses import StreamingResponse
+
+from .subscription import router as subscription_router
+from .actions.router import router as actions_router
+
 import logging
 
 LOG = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/election", tags=["election"])
-
-@router.put("")
-async def start_subscriber(config: ElectionConfig, state=Depends(get_state)):
-
-    # Reset election-specific state, leaving alone the config, wallet, etc
-    reset_election_state(state)
-
-    state.config['election'] = asdict(config)
-
-    state.node = ObserverNode(
-        role_index = 1, # TODO pass this in
-        wallet     = state.wallet,
-    )
-
-    def log_event(event: ChannelEvent) -> None:
-        LOG.debug(f'election event:\n{event.to_raw()}')
-
-    def log_error(err: ElectionError) -> None:
-        LOG.error(f'election error:\n{err.to_raw()}')
-
-    state.node.subscribe(
-        config,
-        on_event = log_event,
-        on_error = log_error,
-    )
-
-    return 201
+router.include_router(subscription_router)
+router.include_router(actions_router)
 
 @router.get("/events") # TODO response model?
 async def stream_events(request: Request, state=Depends(get_state)):

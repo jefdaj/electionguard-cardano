@@ -21,7 +21,7 @@ def config_init_election(draw):
             FnCallConfig(
                 name = 'render_egc_scripts',
                 args = (
-                    ('default', 'subscribe-qr-png.sh'), # admin creates qrcode now # TODO others wait for it
+                    ('default', 'subscribe-qr-png.sh'), # admin creates qrcode now
                     ('admin', 'init-election.sh'),
                 ),
             ),

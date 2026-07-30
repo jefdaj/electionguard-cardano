@@ -6,6 +6,8 @@ from egc_app.server.schemas.node import NodeStatusOut
 
 router = APIRouter(prefix="/node", tags=["status"])
 
+# TODO GET /node -> ?
+
 # TODO is /health more standard?
 @router.get("/status") # , response_model=NodeStatusOut)
 async def status():
