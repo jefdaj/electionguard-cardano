@@ -6,7 +6,6 @@ from dataclasses import replace
 from egc import *
 from ..lib import *
 from .lib  import *
-from ..lib.py_utils import deep_replace
 
 def config_subscribe_qr(variant='txt'):
     # TODO is this overcomplicating how to call it?

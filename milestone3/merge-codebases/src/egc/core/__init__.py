@@ -6,7 +6,7 @@ from .subscriber import ElectionSubscriber, ElectionConfig, ChannelEvent, Electi
 from .plutus     import *
 from .election   import *
 from .node       import ElectionNode
-from .utils      import safe_deepdiff
+from .utils      import *
 from .records    import *
 from .ipfs       import *
 from .qrcodes    import *

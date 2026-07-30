@@ -3,7 +3,6 @@ from hypothesis import strategies as st
 from egc import *
 from ..lib import *
 from .lib  import *
-from ..lib.py_utils import deep_replace
 
 @st.composite
 def config_init_election(draw):

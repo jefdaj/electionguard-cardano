@@ -5,7 +5,6 @@ from dataclasses import replace
 from egc import *
 from ..lib import *
 from .lib  import *
-from ..lib.py_utils import deep_replace
 
 @st.composite
 def node_ready_config(draw):
