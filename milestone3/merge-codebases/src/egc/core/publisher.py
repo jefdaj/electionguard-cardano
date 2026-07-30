@@ -79,7 +79,7 @@ class ElectionPublisher:
     # TODO clarify: channel_id won't exist for observers, but channel_str will?
     def channel_id(self) -> Optional[ChannelId]:
         LOG.debug('ElectionPublisher.channel_id')
-        if self.role == 'observer':
+        if self.role in ['observer', 'funder']:
             return None
         if self.role == 'admin':
             channel_str = self.role
@@ -89,7 +89,7 @@ class ElectionPublisher:
 
     def channel_str(self):
         "Like channel_id, but informal for logs. Includes observer as valid."
-        if self.role == 'observer':
+        if self.role in ['observer', 'funder']:
             return f'{self.role}{self.role_index}'
         else:
             return channel_id_to_string(self.channel_id())

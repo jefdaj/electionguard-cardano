@@ -16,8 +16,8 @@ def funder_address(funder_wallet: Wallet) -> Address:
     return funder_wallet.addr
 
 @pytest.fixture(scope='module')
-def funder(funder_wallet: Wallet) -> ObserverNode:
-    node_ = ObserverNode(wallet=funder_wallet, role_index=1)
+def funder(funder_wallet: Wallet) -> FunderNode:
+    node_ = FunderNode(wallet=funder_wallet)
     LOG.debug(f'funder: {node_}')
     try:
         yield node_
@@ -27,7 +27,7 @@ def funder(funder_wallet: Wallet) -> ObserverNode:
 
 # @pytest.fixture(scope='module')
 # def init_tx_builder(
-#         funder: ObserverNode,
+#         funder: FunderNode,
 #         script: ElectionScript,
 #         admin_addr: Address,
 #         admin_vkh: VerificationKeyHash,

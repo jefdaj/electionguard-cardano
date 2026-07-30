@@ -85,6 +85,7 @@ def _build_default_map(config_path: str | None, role: str) -> dict:
 
 # TODO remove 'any'?
 # TODO enum type
+# TODO funder?
 CLI_ROLES = ('any', 'admin', 'guardian', 'device', 'verifier', 'observer')
 
 class RoleAwareGroup(cloup.Group):

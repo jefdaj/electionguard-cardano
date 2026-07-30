@@ -3,3 +3,4 @@ from .verifier import VerifierNode
 from .admin    import AdminNode
 from .guardian import GuardianNode
 from .device   import DeviceNode
+from .funder   import FunderNode

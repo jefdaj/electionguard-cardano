@@ -10,8 +10,8 @@ def test_funder_wallet(funder_wallet: Wallet):
     assert isinstance(funder_wallet.addr, Address)
     assert isinstance(funder_wallet.vkh, VerificationKeyHash)
 
-def test_init_funder(funder: ObserverNode):
-    assert isinstance(funder, ObserverNode)
+def test_init_funder(funder: FunderNode):
+    assert isinstance(funder, FunderNode)
     assert isinstance(funder.publisher, ElectionPublisher)
     assert funder.current_phase() == EgcPhase.NOT_INDEXED
 
