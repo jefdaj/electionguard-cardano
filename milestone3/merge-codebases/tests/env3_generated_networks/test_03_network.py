@@ -31,3 +31,4 @@ def node_ready_config(draw):
 @given_cached_tests(node_ready_config, max_examples=3)
 def test_node_ready(cfg: ResolvedTestConfig):
     assert_node_logs_match(cfg=cfg, pattern='^node is ready$')
+    assert_node_logs_do_not_match(cfg=cfg, pattern='^arion: FatalError')

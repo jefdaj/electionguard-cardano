@@ -33,6 +33,5 @@ def config_init_election(draw):
     cfg_strategy = config_init_election,
     max_examples = 1,
 )
-def test_subscribe_old_qr_str(cfg: ResolvedTestConfig):
-    # assert_node_logs_match(cfg=cfg, pattern='^[0-9]{9,}\\s.*ended election')
-    pass # TODO write
+def test_init_election(cfg: ResolvedTestConfig):
+    assert_node_logs_do_not_match(cfg=cfg, pattern='^arion: FatalError')

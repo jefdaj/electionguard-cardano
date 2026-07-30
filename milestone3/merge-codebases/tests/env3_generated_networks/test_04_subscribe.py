@@ -45,6 +45,7 @@ def config_subscribe_qr(variant='txt'):
 )
 def test_subscribe_old_qr_str(cfg: ResolvedTestConfig):
     assert_node_logs_match(cfg=cfg, pattern='^[0-9]{9,}\\s.*ended election')
+    assert_node_logs_do_not_match(cfg=cfg, pattern='^arion: FatalError')
 
 @given_cached_tests(
     cfg_strategy = config_subscribe_qr('png'),
@@ -52,3 +53,4 @@ def test_subscribe_old_qr_str(cfg: ResolvedTestConfig):
 )
 def test_subscribe_old_qr_png(cfg: ResolvedTestConfig):
     assert_node_logs_match(cfg=cfg, pattern='^[0-9]{9,}\\s.*ended election')
+    assert_node_logs_do_not_match(cfg=cfg, pattern='^arion: FatalError')

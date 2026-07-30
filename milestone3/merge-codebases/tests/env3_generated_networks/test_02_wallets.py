@@ -31,3 +31,4 @@ def wallet_config(draw):
 @given_cached_tests(wallet_config, max_examples=1)
 def test_create_wallet(cfg: ResolvedTestConfig):
     assert_node_logs_match(cfg=cfg, pattern='^\\s*"addr": "addr_test1')
+    assert_node_logs_do_not_match(cfg=cfg, pattern='^arion: FatalError')

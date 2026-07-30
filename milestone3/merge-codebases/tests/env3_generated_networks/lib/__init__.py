@@ -4,4 +4,4 @@ from .config import *
 from .tmpdir import lock_test_tmpdir, init_test_tmpdir
 from .run import run_egc_scripts
 from .strategies import given_cached_tests
-from .assertions import assert_node_logs_match
+from .assertions import *

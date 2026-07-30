@@ -7,3 +7,4 @@ from .lib  import *
 @given_cached_tests(hashed_test_config, max_examples=3)
 def test_cleanup_called(cfg: ResolvedTestConfig):
     assert_node_logs_match(cfg=cfg, pattern='^cleaning up$')
+    assert_node_logs_do_not_match(cfg=cfg, pattern='^arion: FatalError')
