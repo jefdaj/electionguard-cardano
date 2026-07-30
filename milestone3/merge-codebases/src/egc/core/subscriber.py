@@ -1019,7 +1019,7 @@ class ElectionSubscriber:
                 # then time out if it's been a long time since the election started
                 # AND a new block comes in.
                 # TODO should it time out before waiting for the new block?
-                if len(self._checkpoints) > 1:
+                if self._prev_event_slot is not None and len(self._checkpoints) > 1:
                     slots_since_event = tip.slot_no - self._prev_event_slot
                     if slots_since_event > self._timeout_slots:
                         self._handle_timeout(slots_since_event)
