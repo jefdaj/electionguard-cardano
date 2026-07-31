@@ -7,6 +7,7 @@ import asyncio
 import json
 from fastapi.responses import StreamingResponse
 from egc_app import schemas
+from starlette.status import HTTP_504_GATEWAY_TIMEOUT
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -48,22 +49,29 @@ async def create_election(data: schemas.ElectionCreate, state=Depends(get_state)
         # TODO create one automatically?
         raise HTTPException(status_code=409, detail="Load or create a wallet first.")
 
-    admin_addr = state.wallet.addr
-    admin_vkh  = state.wallet.vkh
-
     # create temporary funder node
     funder_wallet = Wallet.from_signing_key(data.funder_sk)
     tmp_funder_node = FunderNode(wallet=funder_wallet)
 
     # create the election
     (tx, election_cfg) = tmp_funder_node.init_election(
-        admin_vkh = admin_vkh,
+        admin_vkh = data.admin_vkh,
+        admin_ada = data.admin_ada
         subscribe = False,
         context_backup_json = _context_backup_json_path(state),
     )
-    tmp_funder_node.wait_for_confirmation(tx)
 
+    # TODO wait to subscribe until after tx confirms?
     _subscribe_to_config(state, election_cfg)
+
+    # TODO actually, could we skip the wait?
+    try:
+        tmp_funder_node.wait_for_confirmation(tx) # TODO make this async?
+    except (asyncio.TimeoutError, TimeoutError):
+        raise HTTPException(
+            status_code = HTTP_504_GATEWAY_TIMEOUT,
+            default = f"TX failed to confirm: {tx}",
+        )
 
     return Response(status_code=201)
 
