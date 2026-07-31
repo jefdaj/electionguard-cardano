@@ -36,6 +36,20 @@ class Client:
         r.raise_for_status()
         return r.json()
 
+    async def election_create(
+            self,
+            funder_sk: SigningKey,
+            admin_vkh: VerificationKeyHash,
+            admin_ada: int = 100,
+        ):
+        data = schemas.ElectionCreate(
+            funder_sk = funder_sk,
+            admin_vkh = admin_vkh,
+            admin_ada = admin_ada,
+        )
+        r = await self._c.post('/election/create', json=data.model_dump())
+        r.raise_for_status()
+
     async def election_events(self, filter: str|None = None):
         url = "/election/events"
         async with self._c.stream("GET", url, timeout=httpx.Timeout(5.0, read=None)) as r:

@@ -47,11 +47,10 @@ def events(filter: str|None = None):
 
 # The reason this is for an observer is that you don't want to run it while
 # having an official role in another election. And you start as an observer.
-# TODO accept a qrcode (file or scan) as the admin addr
-# TODO accept a qrcode (file or scan) as the funder sk
 @election.command(roles=['observer'])
+@click.option('--admin-ada', type=click.INT, default=100)
 @multi_load("funder", Wallet, ["json"])
-def create(funder: Wallet):
+def create(funder: Wallet, admin_ada: int):
     """Create an election by minting an admin channel token.
 
     There are two main ways you might want to do this. Note that
@@ -84,7 +83,12 @@ def create(funder: Wallet):
     Either way, this command will clear any previous election state and
     subscribe to the new election.
     """
-    click.echo(funder)
+    # click.echo(funder)
+    asyncio.run(Client().election_create(
+        funder_sk = funder.sk,
+        # TODO admin_vkh
+        admin_ada = admin_ada,
+    ))
 
 @election.command(roles=['admin'])
 def end():
