@@ -113,8 +113,14 @@ class ElectionNode:
             return EgcPhase.NOT_INDEXED
         return self.subscriber.current_phase()
 
-    def wait_for_confirmation(self, tx: Transaction):
+    def wait_for_confirmation(
+            self,
+            tx: Transaction,
+            subscriber_too: bool = True # set False to return collateral after election
+        ):
         # TODO how to handle cases not indexed by STT cleanly? (collateral etc)
+
+        assert isinstance(tx, Transaction)
 
         ch_str = self.channel_str()
         tx_str = str(tx.id)
@@ -122,8 +128,9 @@ class ElectionNode:
         self.publisher.wait_for_confirmation(tx)
         LOG.debug(f'{ch_str} publisher confirmed tx {tx.id}')
 
-        self.subscriber.wait_for_confirmation(tx_str)
-        LOG.debug(f'{ch_str} subscriber confirmed tx {tx.id}')
+        if subscriber_too:
+            self.subscriber.wait_for_confirmation(tx_str)
+            LOG.debug(f'{ch_str} subscriber confirmed tx {tx.id}')
 
     def await_phase(self, phase: Optional[ElectionPhase], timeout=OGMIOS_TIMEOUT_SEC):
         self.subscriber.await_phase(phase, timeout=timeout)
@@ -371,7 +378,7 @@ class ElectionNode:
     def burn_test_tokens(self):
         """Clean up test tokens.
 
-        WARNING: The on-chain code lets anyone do this, not just the funder.
+        WARNING: The on-chain code lets anyone do this, not just the admin or funder.
         BurnTestTokens should be removed before production use.
         """
         if not 'burntesttokens' in EGC_PLUTUS_MODE:

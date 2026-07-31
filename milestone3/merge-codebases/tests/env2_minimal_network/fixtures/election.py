@@ -78,11 +78,10 @@ def init_election_tuple(
         if len(channel_ids) == 0:
             LOG.debug('skip burn_tx because STTs already gone')
         else:
-            # Can't use the node-level wait_for_confirmation here,
-            # because the subscriber won't pick up the last TX.
-            # TODO fix! should detect STT burn without output match/state.
+            # Can't use subscriber to wait here because it shuts down after burn.
             burn_tx = funder.burn_test_tokens()
-            funder.publisher.wait_for_confirmation(burn_tx)
+            funder.wait_for_confirmation(burn_tx, subscriber_too=False)
+            wait_for_confirmation_generic() # TODO fold into regular wait_for_confirmation?
 
     except Exception as e:
         LOG.error(e, exc_info=True)

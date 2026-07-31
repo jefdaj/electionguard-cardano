@@ -692,6 +692,8 @@ class ElectionSubscriber:
 
     # TODO wait_for_n_confirmations?
     def wait_for_confirmation(self, txid: str, timeout=OGMIOS_TIMEOUT_SEC):
+        if self.is_done():
+            raise Exception('Subscriber already done.')
         # Poll until _history contains txid
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:

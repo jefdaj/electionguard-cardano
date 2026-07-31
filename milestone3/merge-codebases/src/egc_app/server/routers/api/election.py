@@ -80,8 +80,10 @@ def create_election(data: schemas.ElectionCreate, state=Depends(get_state)):
 def burn_test_tokens(state=Depends(get_state)):
     # The wait here is necessary because whoever burns the tokens needs to get
     # this TX confirmed before returning their collateral.
+    # Can't use subscriber to wait here because it shuts down after burn.
     burn_tx = state.node.burn_test_tokens()
-    state.node.wait_for_confirmation(burn_tx)
+    state.node.wait_for_confirmation(burn_tx, subscriber_too=False)
+    wait_for_confirmation_generic() # TODO fold into regular wait_for_confirmation?
 
 @router.get("/events")
 async def stream_events(request: Request, state=Depends(get_state)):
