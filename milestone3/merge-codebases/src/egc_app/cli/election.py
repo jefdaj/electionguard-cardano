@@ -4,6 +4,7 @@ from cloup.constraints import RequireExactly
 import asyncio
 from egc import ElectionConfig, scan_qrcode, print_qrcode # TODO relative?
 from egc_app.client import Client
+from egc_app import schemas
 from egc_app.cli.utils import *
 from egc import *
 
@@ -16,7 +17,9 @@ def election() -> None:
 def subscribe(election: ElectionConfig):
     "Set which election the node is following."
     # TODO should this reset a non-observer node back to observer?
-    asyncio.run(Client().election_subscribe(election))
+    asyncio.run(Client().election_subscribe(
+        schemas.ElectionSubscribe(config=election)
+    ))
 
 # TODO rename -> share?
 # TODO option to share json instead?

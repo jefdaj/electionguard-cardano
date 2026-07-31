@@ -15,7 +15,6 @@ def _wallet_path(state) -> Path:
     sk_path = (wallet_dir / 'wallet').with_suffix('.sk')
     return sk_path
 
-# TODO get fastapi to encode/decode Wallet automatically here
 @router.put("")
 async def wallet_load_or_create(data: schemas.WalletLoadOrCreate, state=Depends(get_state)):
     sk_path = _wallet_path(state)
@@ -24,7 +23,7 @@ async def wallet_load_or_create(data: schemas.WalletLoadOrCreate, state=Depends(
         state.wallet = Wallet.from_signing_key(data.sk_or_desc)
         state.wallet.save(sk_path)
     else:
-        # got description; generate the wallet
+        # got description; generate wallet
         assert isinstance(data.sk_or_desc, str)
         state.wallet = create_wallet(
             keys_dir    = sk_path.absolute().parent,
