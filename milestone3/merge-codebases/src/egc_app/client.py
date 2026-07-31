@@ -29,9 +29,8 @@ class Client:
         r.raise_for_status()
         return r.json()
 
-    async def election_subscribe(self, data: schemas.ElectionSubscribe):
-        # cfgdict = asdict(config)
-        # print(f'cfgdict: {cfgdict}')
+    async def election_subscribe(self, election_cfg: ElectionConfig):
+        data = schemas.ElectionSubscribe(config=election_cfg)
         r = await self._c.put('/election/subscribe', json=data.model_dump())
         r.raise_for_status()
         return r.json()

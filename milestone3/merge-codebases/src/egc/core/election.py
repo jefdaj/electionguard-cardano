@@ -39,6 +39,7 @@ DEFAULT_NETWORK_MAGIC     = NETWORK_MAGIC[EGC_NETWORK_MODE]
 DEFAULT_PYCARDANO_NETWORK = PYCARDANO_NETWORK[DEFAULT_NETWORK_MAGIC]
 
 
+# TODO frozen?
 @dataclass
 class ElectionConfig:
 
@@ -104,7 +105,9 @@ class ElectionConfig:
         assert prefix == ['egc', 'election']
         assert len(args) == 6
         schema_version, oneshot_hex, network_magic, funder_address, since_slot, since_block = args
-        since_slot = int(since_slot)
+        schema_version = int(schema_version)
+        network_magic  = int(network_magic)
+        since_slot     = int(since_slot)
         funder_address = str(funder_address)
         return cls(oneshot_hex, network_magic, funder_address, since_slot, since_block, schema_version)
 

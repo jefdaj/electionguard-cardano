@@ -17,20 +17,18 @@ def election() -> None:
 def subscribe(election: ElectionConfig):
     "Set which election the node is following."
     # TODO should this reset a non-observer node back to observer?
-    asyncio.run(Client().election_subscribe(
-        schemas.ElectionSubscribe(config=election)
-    ))
+    click.echo(f'election: {election} {type(election)}')
+    asyncio.run(Client().election_subscribe(election_cfg=election))
 
-# TODO rename -> share?
-# TODO option to share json instead?
 @election.command()
+@multi_save_arg("election", ["cam", "png", "txt", "json"])
 @click.pass_context
-def qrcode(ctx):
-    "Share subscribe config as a QR code."
+def share(ctx, election: MultiIOArg):
+    "Share info needed to subscribe to the election."
     # TODO what should the error be if no election config yet?
-    election = ctx.find_root().default_map.get("election")
-    config = ElectionConfig.from_dict(election)
-    print_qrcode(config)
+    election_dict = ctx.find_root().default_map.get("election")
+    election_config = ElectionConfig.from_dict(election_dict)
+    multi_save(election, election_config, exist_ok=False)
 
 # TODO error if ogmios unreachable? or separate status endpoint expected for that?
 # TODO elaborate filter to take structured queries?

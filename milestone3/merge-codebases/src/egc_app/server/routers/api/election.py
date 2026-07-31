@@ -33,7 +33,7 @@ def _subscribe_to_election_config(state, election_config: ElectionConfig):
 
 @router.put("/subscribe")
 async def start_subscriber(data: schemas.ElectionSubscribe, state=Depends(get_state)):
-    _subscribe_to_config(state, data.config)
+    _subscribe_to_election_config(state, data.config)
     return Response(status_code=201)
 
 
@@ -62,7 +62,7 @@ async def create_election(data: schemas.ElectionCreate, state=Depends(get_state)
     )
 
     # TODO wait to subscribe until after tx confirms?
-    _subscribe_to_config(state, election_cfg)
+    _subscribe_to_election_config(state, election_cfg)
 
     # TODO actually, could we skip the wait?
     try:

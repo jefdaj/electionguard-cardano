@@ -128,9 +128,9 @@ def multi_save(mio: MultiIOArg, obj: Any, exist_ok=True) -> None:
     if mio.path is not None and mio.path.exists() and not exist_ok:
         raise click.UsageError(f"path already exists: {mio.path}")
     match mio.medium:
-        case "cam":      print_qrcode(obj)
-        case "qr-image": save_qrcode(obj, mio.path)
-        case "json":     mio.path.write_text(obj.to_json())
+        case "cam":  print_qrcode(obj)
+        case "png":  save_qrcode(obj, mio.path)
+        case "json": mio.path.write_text(obj.to_json())
 
 
 # ---- public decorators ---------------------------------------------------
