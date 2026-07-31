@@ -14,5 +14,4 @@ egc node await
 egc election create --funder-load-json private/funder.sk --admin-ada 200
 egc election share --election-save-png qrcodes/election.png
 # TODO await admin channel
-egc election events
 {% endblock %}
