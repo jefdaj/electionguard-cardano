@@ -302,7 +302,7 @@ class ElectionNode:
         #     raise Exception('No election, so no funder_address.')
         # TODO return collateral to the channel rather than a person?
         # return_addr = self.subscriber.admin_address()
-        return_addr = self.election.deployment.funder_address
+        return_addr = Address.from_primitive(self.election.deployment.funder_address)
         return self.publisher.return_collateral(return_addr)
 
     def stop(self):
@@ -316,7 +316,7 @@ class ElectionNode:
         # Without this set, the FunderNode risks the entire dev wallet when
         # deploying a contract.
         self.publisher.create_own_collateral()
-        funder_collateral = self.publisher.wait_for_collateral()
+        col = self.publisher.wait_for_collateral()
 
         # Messages to log if/when the TX succeeds
         ch_str = self.channel_str()
@@ -348,7 +348,7 @@ class ElectionNode:
             .add_minting_script(script=self.election.script.mint_script, redeemer=mint_redeemer)
         )
 
-        burn_txb.collaterals.append(funder_collateral)
+        burn_txb.collaterals.append(col)
 
         for channel_id in channel_ids:
             ch_str = channel_id_to_string(channel_id)
@@ -378,10 +378,12 @@ class ElectionNode:
             raise RuntimeError(err)
         # if self.election is None:
         #     raise Exception('init_election must be called before burn_test_tokens')
+        funder_addr = Address.from_primitive(self.election.deployment.funder_address)
+        LOG.debug(f'funder_addr: {funder_addr}')
         if self.subscriber is None:
             raise Exception('init_subscriber must be called before burn_test_tokens')
         (tx_msgs, burn_txb) = self._build_burn_tx()
-        burn_tx  = self.publisher.sign_and_submit_tx(burn_txb)
+        burn_tx  = self.publisher.sign_and_submit_tx(burn_txb, change_addr=funder_addr)
         # json_path = self.election_json_path()
         for msg in tx_msgs:
             LOG.info(msg)

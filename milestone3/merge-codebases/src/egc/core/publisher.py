@@ -100,7 +100,7 @@ class ElectionPublisher:
         if self.wallet is None:
             raise Exception('create a wallet first')
 
-    def sign_and_submit_tx(self, txb: TransactionBuilder):
+    def sign_and_submit_tx(self, txb: TransactionBuilder, change_addr: Optional[Address] = None):
         LOG.debug('ElectionPublisher.sign_and_submit')
 
         self._guard_wallet()
@@ -115,9 +115,12 @@ class ElectionPublisher:
                 if isinstance(u.output.amount, Value) else u.output.amount)
             )
 
+        if change_addr is None:
+            change_addr = self.wallet.addr
+
         tx_signed = txb.build_and_sign(
             [self.wallet.sk],
-            change_address=self.wallet.addr
+            change_address=change_addr
         )
 
         return self.submit_tx(tx_signed)

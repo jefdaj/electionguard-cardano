@@ -358,6 +358,7 @@ class ResolvedTestConfig:
         return f'egc-test{self.cache_key}'
 
     def private_path(self, node_name: str) -> Path:
+        # TODO prevent shooting self in foot by forgetting to append 'egc'?
         assert node_name in self.node_names()
         return self.tmpdir_path() / 'data' / 'private' / node_name
 

@@ -2,8 +2,8 @@
 
 {% block cleanup %}
 cleanup() {
-  egc election burntesttokens || true # TODO true not needed?
-  egc collateral return || true
+  egc election burntesttokens
+  egc collateral return
 }
 {% endblock %}
 
