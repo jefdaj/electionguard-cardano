@@ -1,4 +1,7 @@
-from pydantic import BaseModel
+from typing import Annotated, Any
+from pydantic import BaseModel, GetCoreSchemaHandler
+from pydantic_core import core_schema
+from pycardano import VerificationKeyHash
 from egc import ElectionConfig
 from .wallet import SigningKeyType
 

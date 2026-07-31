@@ -56,7 +56,7 @@ async def create_election(data: schemas.ElectionCreate, state=Depends(get_state)
     # create the election
     (tx, election_cfg) = tmp_funder_node.init_election(
         admin_vkh = data.admin_vkh,
-        admin_ada = data.admin_ada
+        admin_ada = data.admin_ada,
         subscribe = False,
         context_backup_json = _context_backup_json_path(state),
     )

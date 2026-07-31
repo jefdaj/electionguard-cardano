@@ -86,8 +86,8 @@ def create(funder: Wallet, admin_ada: int):
     # click.echo(funder)
     asyncio.run(Client().election_create(
         funder_sk = funder.sk,
-        # TODO admin_vkh
         admin_ada = admin_ada,
+        # TODO admin_vkh
     ))
 
 @election.command(roles=['admin'])
