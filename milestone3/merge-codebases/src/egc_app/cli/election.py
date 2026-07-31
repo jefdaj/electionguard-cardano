@@ -103,4 +103,4 @@ def burntesttokens():
     Anyone can call this, not just the admin or funder.
     It helps clean up after broken tests.
     """
-    raise NotImplementedError
+    asyncio.run(Client().election_burntesttokens())

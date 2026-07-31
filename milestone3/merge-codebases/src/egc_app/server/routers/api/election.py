@@ -76,6 +76,13 @@ async def create_election(data: schemas.ElectionCreate, state=Depends(get_state)
     return Response(status_code=201)
 
 
+@router.get("/burntesttokens")
+async def burn_test_tokens(state=Depends(get_state)):
+    # The wait here is necessary because whoever burns the tokens needs to get
+    # this TX confirmed before returning their collateral.
+    burn_tx = state.node.burn_test_tokens()
+    state.node.wait_for_confirmation(burn_tx)
+
 @router.get("/events")
 async def stream_events(request: Request, state=Depends(get_state)):
     if state.node is None:
