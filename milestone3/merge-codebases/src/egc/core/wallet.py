@@ -169,7 +169,7 @@ def load_wallet_by_address(address: Address, keys_dir=EGC_WALLET_DIR) -> Optiona
             return (sk_path, w)
     return None
 
-def _set_sk_description(sk: PaymentSigningKey, desc: str) -> PaymentSigningKey:
+def set_sk_description(sk: PaymentSigningKey, desc: str) -> PaymentSigningKey:
     # roundabout way to set description, which doesn't have a setter
     sk_dict = json.loads(sk.to_json())
     sk_dict['description'] = desc
@@ -191,7 +191,7 @@ def create_wallet(keys_dir=EGC_WALLET_DIR, name='wallet', description='Generated
         shutil.rmtree(sk_path, ignore_errors=True)
     keys_dir.mkdir(parents=True, exist_ok=True)
     signing_key = PaymentSigningKey.generate()
-    signing_key = _set_sk_description(signing_key, description)
+    signing_key = set_sk_description(signing_key, description)
     # this has issues with existing files, and description not setting:
     # signing_key.save(str(sk_path))
     # so we save it manually instead:

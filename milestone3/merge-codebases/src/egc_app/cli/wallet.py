@@ -2,6 +2,7 @@ import click
 import json
 from egc_app.client import Client
 from egc_app.cli.utils import *
+from egc_app.schemas.wallet import WalletLoadOrCreate
 from egc import *
 
 @click.group(cls=RoleAwareGroup)
@@ -12,7 +13,11 @@ def wallet() -> None:
 @wallet.command()
 def create(description):
     "Generate wallet."
-    asyncio.run(Client().wallet_load_or_create(description, sk_dict=None))
+    # asyncio.run(Client().wallet_load_or_create(description, sk_dict=None))
+    description = description.replace(':', ';') # escape for possible qr str
+    asyncio.run(Client().wallet_load_or_create(
+        WalletLoadOrCreate(wallet_or_desc=description)
+    )
 
 @wallet.command()
 def show():
@@ -32,13 +37,11 @@ def load(wallet: Wallet):
 
     Note that .sk files can be loaded with the JSON option.
     """
-    print(f'wallet: {wallet}')
-    # TODO figure out how to encode/decode the Wallet automatically
-    sk_dict = json.loads(wallet.to_json())
-    print(f'sk_dict from wallet: {sk_dict}')
+    # print(f'wallet: {wallet}')
+    # sk_dict = json.loads(wallet.to_json())
+    # print(f'sk_dict from wallet: {sk_dict}')
     asyncio.run(Client().wallet_load_or_create(
-        description = sk_dict['description'],
-        sk_dict = sk_dict,
+        WalletLoadOrCreate(wallet_or_desc=wallet)
     ))
 
 # @click.option('--sk-path', type=click.STRING, required=True)

@@ -16,11 +16,12 @@ def _wallet_path(state) -> Path:
 
 # TODO get fastapi to encode/decode Wallet automatically here
 @router.put("")
-async def wallet_load_or_create(wallet_dict: dict, state=Depends(get_state)):
-    description = wallet_dict['description']
+# async def wallet_load_or_create(wallet_dict: dict, state=Depends(get_state)):
+async def wallet_load_or_create(payload: WalletLoadOrCreate, state=Depends(get_state)):
+    # description = wallet_dict['description']
     sk_dict = wallet_dict['sk_dict']
     sk_path = _wallet_path(state)
-    if sk_dict is None:
+    if payload.wallet is None:
         # TODO capture verbose msg here and return to cli?
         state.wallet = create_wallet(
             keys_dir    = sk_path.absolute().parent,
@@ -30,7 +31,7 @@ async def wallet_load_or_create(wallet_dict: dict, state=Depends(get_state)):
             overwrite   = True,
         )
     else:
-        state.wallet = Wallet.from_json(json.dumps(sk_dict))
+        # state.wallet = Wallet.from_json(json.dumps(sk_dict))
         sk_path.absolute().parent.mkdir(parents=True, exist_ok=True)
         state.wallet.save(sk_path)
     return 201

@@ -2,6 +2,7 @@ import httpx
 from dataclasses import asdict
 from pathlib import Path
 from egc import *
+from . import schemas
 
 class Client:
     def __init__(self, base_url="http://localhost:8000/api", transport=None):
@@ -56,10 +57,13 @@ class Client:
         # maybe it can start like wallet load, since it needs to send funder wallet info?
         pass
 
-    async def wallet_load_or_create(self, description: str, sk_dict: dict | None = None):
+    # async def wallet_load_or_create(self, description: str, sk_dict: dict | None = None):
+    async def wallet_load_or_create(self, load_or_create: WalletLoadOrCreate):
         "Load a wallet from sk_dict, or create one if empty."
-        description = description.replace(':', ';') # escape : for qr codes
-        r = await self._c.put('/wallet', json={'description': description, 'sk_dict': sk_dict})
+        # description = description.replace(':', ';') # escape : for qr codes
+        # r = await self._c.put('/wallet', json={'description': description, 'sk_dict': sk_dict})
+        # TODO optional description when loading?
+        r = await self._c.put('/wallet', json=load_or_create.model_dump())
         r.raise_for_status()
         return r.json() # TODO remove?
 
