@@ -37,7 +37,7 @@ class FunderNode(ObserverNode):
         # funded dev wallet.
         wallet: Wallet,
     ):
-        LOG.debug('Observer.__init__')
+        LOG.debug('Funder.__init__')
         # No election here because it doesn't exist yet. And with no election,
         # the ElectionNode class won't init a subscriber yet either.
         super().__init__(
@@ -55,7 +55,7 @@ class FunderNode(ObserverNode):
             admin_ada: int
         ) -> Tuple[List[str], TransactionBuilder]:
         "Build an InitElection transaction."
-        LOG.debug('Observer._build_init_tx')
+        LOG.debug('Funder._build_init_tx')
 
         ch_str = self.channel_str()
         tx_msgs = []
@@ -158,9 +158,9 @@ class FunderNode(ObserverNode):
             self,
             script: ElectionScript,
             init_txb: TransactionBuilder
-        ) -> (Transaction, ElectionContext):
+        ) -> tuple[Transaction, ElectionContext]:
 
-        LOG.debug('Observer.deploy_election')
+        LOG.debug('Funder.deploy_election')
 
         tip = query_network_tip_sync()
         LOG.debug('tip before init_tx submitted: %s' % pformat(tip))
@@ -186,11 +186,13 @@ class FunderNode(ObserverNode):
             # admin_addr: Address = None, # TODO remove?
             admin_vkh: VerificationKeyHash = None,
             admin_ada: int = 100,
-            oneshot_utxo: UTxO = None,
-            funder_wallet: Wallet = None,
+            oneshot_utxo: UTxO = None, # Leave off to auto-pick from funder wallet
+            # funder_wallet: Wallet = None,
+            subscribe = True, # set False only when the FunderNode is temporary
+            context_backup_json: Optional[Path] = None,
         ) -> tuple[Transaction, ElectionConfig]:
 
-        LOG.debug('Observer.init_election')
+        LOG.debug('Funder.init_election')
 
         if admin_vkh is None:
             admin_vkh = self.publisher.wallet.vkh
@@ -198,13 +200,17 @@ class FunderNode(ObserverNode):
         # for sending collateral
         admin_addr = addr_for_vkh(admin_vkh) # TODO dynamic network
 
-        if oneshot_utxo is not None:
-            assert funder_wallet is None, "passed both oneshot_utxo and funder_wallet"
-        else:
-            if funder_wallet is None:
-                funder_wallet = self.publisher.wallet
-            oneshot_utxo = pick_oneshot_utxo(OGMIOS_CTX, funder_wallet.addr)
-        
+        # TODO remove if always calling from FunderNode
+        # if oneshot_utxo is not None:
+        #     assert funder_wallet is None, "passed both oneshot_utxo and funder_wallet"
+        # else:
+        #     if funder_wallet is None:
+        #         funder_wallet = self.publisher.wallet
+        #     oneshot_utxo = pick_oneshot_utxo(OGMIOS_CTX, funder_wallet.addr)
+
+        funder_wallet = self.publisher.wallet
+        oneshot_utxo = pick_oneshot_utxo(OGMIOS_CTX, funder_wallet.addr)
+
         script = derive_script(oneshot_utxo)
 
         (tx_msgs, init_txb) = self._build_init_tx(
@@ -214,30 +220,20 @@ class FunderNode(ObserverNode):
             admin_vkh    = admin_vkh,
             admin_ada    = admin_ada
         )
-        (init_tx, election_ctx) = self.deploy_election(script, init_txb)
-
-        election_cfg = ElectionConfig.from_election(election_ctx)
-        self.subscribe(election_cfg)
-
-        LOG.info(f'Subscribe to this election with:\n\n{election_cfg.to_qr_str()}\n')
-        # LOG.debug(
-        #     f'Or for dev debugging:\n\n'
-        #     f'egc:election:{election_cfg.policy_id}:{election_cfg.since_slot}:{election_cfg.since_block}\n'
-        # )
-
-        # TODO come up with a better default path here
-        # timestamp = election_ctx.deployment.deployment_date.strftime("%y%m%d%H%M%S")
-        # json_path = f'election-{timestamp}.json'
-        # self.election = election_ctx
-        # self.script = election_ctx.script # TODO remove?
-        json_path = election_json_path(election_ctx)
-        election_ctx.to_json(json_path)
-        LOG.info(f'{self.channel_str()} deployed contract and saved details to {json_path}')
         for msg in tx_msgs:
             LOG.info(msg)
 
-        # self._init_subscriber_from_ctx(election_ctx)
+        (init_tx, election_ctx) = self.deploy_election(script, init_txb)
+        LOG.info(f'{self.channel_str()} deployed contract')
 
-        # All the info we really need should be in self.election now;
-        # the main reason to return init_tx is so the caller can wait for confirmation.
+        if context_backup_json is not None:
+            election_ctx.to_json(context_backup_json)
+            LOG.info(f'{self.channel_str()} saved contract details to {context_backup_json}')
+
+        election_cfg = ElectionConfig.from_election_context(election_ctx)
+        if subscribe:
+            self.subscribe(election_cfg)
+
+        LOG.info(f'Subscribe to this election with:\n\n{election_cfg.to_qr_str()}\n')
+
         return (init_tx, election_cfg)

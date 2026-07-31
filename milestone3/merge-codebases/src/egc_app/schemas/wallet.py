@@ -3,6 +3,7 @@ from pydantic import BaseModel, GetCoreSchemaHandler
 from pydantic_core import core_schema
 from pycardano import SigningKey
 
+# TODO move to a util file?
 class _SigningKeyPydantic:
     @classmethod
     def __get_pydantic_core_schema__(

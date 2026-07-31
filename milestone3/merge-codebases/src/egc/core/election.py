@@ -83,7 +83,7 @@ class ElectionConfig:
 
     # TODO is this str typing thing right?
     @classmethod
-    def from_election(cls, election: "ElectionContext") -> Self:
+    def from_election_context(cls, election: "ElectionContext") -> Self:
         return cls(
             election.script.oneshot_hex,
             election.deployment.network_magic,

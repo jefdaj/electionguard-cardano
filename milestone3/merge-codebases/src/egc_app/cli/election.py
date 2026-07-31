@@ -68,7 +68,7 @@ def create(funder: Wallet):
     Either way, you'll become the admin. Example:
 
     \b
-      egc wallet create --name admin
+      egc wallet create --description admin
       egc election create --funder-load-json ./wallets/funder.sk
       egc channel await --role admin
 
