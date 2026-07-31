@@ -110,7 +110,10 @@ async def ipfs_wait_until_ready(ipfs: RetryingIPFS, timeout=10):
 async def ipfs_status():
     # TODO what should we throw if ipfs can't be contacted here?
     ipfs  = RetryingIPFS()
-    peers = (await ipfs._client.swarm.peers()).get('Peers') or []
+    try:
+        peers = (await ipfs._client.swarm.peers()).get('Peers')
+    except:
+        peers = []
     LOG.debug(f'peers: {peers}')
     bw   = await ipfs._client.stats.bw()
     LOG.debug(f'bw: {bw}')
