@@ -234,7 +234,7 @@
               EGC_NETWORK_MODE = "preview";
               EGC_PLUTUS_MODE  = "burntesttokens-traced";
               EGC_WALLET_MODE  = "scripted";
-              EGC_WALLET_DIR   = "keys"; # should be in .gitignore
+              EGC_WALLET_DIR   = "./keys"; # should be in .gitignore
 
               # TODO remove?
               # SSL_CERT_FILE     = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
@@ -247,6 +247,7 @@
                echo "$(python --version)"
                echo "pycardano $(python -c "import importlib.metadata as m; print(m.version('pycardano'))")"
                export EGC_CARDANO_DIR="$(realpath "$EGC_CARDANO_DIR")"
+               export EGC_WALLET_DIR="$(realpath "./keys")"
                env | grep ^EGC_ | sort
                unset PYTHONPATH
             '';

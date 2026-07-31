@@ -2,10 +2,12 @@
 
 {% block body %}
 {{ super() }}
-egc wallet create --description 'admin wallet (created as observer)'
-egc wallet show
+egc wallet create --description admin
 
-# TODO init election (separate funder key)
+egc election create --funder-load-json private/funder.sk --admin-ada 200
+
+# TODO write share()
+egc election share --election-save-png qrcodes/election.png
 
 # TODO await admin channel
 

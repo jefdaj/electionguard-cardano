@@ -17,6 +17,7 @@ def config_init_election(draw):
         cfg,
         'pytest.setup_fns',
         SetupFnsConfig(fns=(
+            FnCallConfig(name = 'install_funder_sk', args = ()),
             FnCallConfig(
                 name = 'render_egc_scripts',
                 args = (
