@@ -27,13 +27,12 @@ class Client:
         # (the await call on the server will time out after 180 so far)
         r = await self._c.get("/node/await", timeout=httpx.Timeout(600, read=None))
         r.raise_for_status()
-        return r.json()
+        # return r.json()
 
     async def election_subscribe(self, election_cfg: ElectionConfig):
         data = schemas.ElectionSubscribe(config=election_cfg)
         r = await self._c.put('/election/subscribe', json=data.model_dump())
         r.raise_for_status()
-        return r.json()
 
     async def election_create(
             self,
