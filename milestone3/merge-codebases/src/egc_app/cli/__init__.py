@@ -10,6 +10,7 @@ from egc_app.cli import ballot
 from egc_app.cli import batch
 from egc_app.cli import ceremony
 from egc_app.cli import channel
+from egc_app.cli import collateral
 from egc_app.cli import config
 from egc_app.cli import election
 from egc_app.cli import manifest
@@ -42,6 +43,7 @@ cli.add_command(ballot.ballot)
 cli.add_command(batch.batch)
 cli.add_command(ceremony.ceremony)
 cli.add_command(channel.channel)
+cli.add_command(collateral.collateral)
 cli.add_command(config.config)
 cli.add_command(election.election)
 cli.add_command(manifest.manifest)
