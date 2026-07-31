@@ -7,7 +7,11 @@ from . import schemas
 class Client:
     def __init__(self, base_url="http://localhost:8000/api", transport=None):
         # transport lets you point at a unix socket or ASGI app in tests
-        self._c = httpx.AsyncClient(base_url=base_url, transport=transport)
+        self._c = httpx.AsyncClient(
+            base_url=base_url,
+            transport=transport,
+            timeout = httpx.Timeout(30, read=600), # TODO what should these actually be?
+        )
 
     async def aclose(self):
         await self._c.aclose()
@@ -25,7 +29,7 @@ class Client:
     async def node_await(self):
         # TODO what's a good timeout here?
         # (the await call on the server will time out after 180 so far)
-        r = await self._c.get("/node/await", timeout=httpx.Timeout(600, read=None))
+        r = await self._c.get("/node/await")
         r.raise_for_status()
         # return r.json()
 
@@ -45,16 +49,12 @@ class Client:
             admin_vkh = admin_vkh,
             admin_ada = admin_ada,
         )
-        r = await self._c.post(
-            '/election/create',
-            json    = data.model_dump(),
-            timeout = httpx.Timeout(600, read=None)
-        )
+        r = await self._c.post('/election/create', json = data.model_dump())
         r.raise_for_status()
 
     async def election_events(self, filter: str|None = None):
         url = "/election/events"
-        async with self._c.stream("GET", url, timeout=httpx.Timeout(5.0, read=None)) as r:
+        async with self._c.stream("GET", url) as r:
             r.raise_for_status()
             async for line in r.aiter_lines():
                  if line.startswith("data:"): # SSE event
