@@ -32,7 +32,7 @@ def _subscribe_to_election_config(state, election_config: ElectionConfig):
     state.config['election'] = asdict(election_config)
 
 @router.put("/subscribe")
-async def start_subscriber(data: schemas.ElectionSubscribe, state=Depends(get_state)):
+def start_subscriber(data: schemas.ElectionSubscribe, state=Depends(get_state)):
     _subscribe_to_election_config(state, data.config)
     return Response(status_code=201)
 
@@ -43,7 +43,7 @@ def _context_backup_json_path(state):
     return backup_path
 
 @router.post("/create")
-async def create_election(data: schemas.ElectionCreate, state=Depends(get_state)):
+def create_election(data: schemas.ElectionCreate, state=Depends(get_state)):
 
     if state.wallet is None:
         # TODO create one automatically?
@@ -77,7 +77,7 @@ async def create_election(data: schemas.ElectionCreate, state=Depends(get_state)
 
 
 @router.get("/burntesttokens")
-async def burn_test_tokens(state=Depends(get_state)):
+def burn_test_tokens(state=Depends(get_state)):
     # The wait here is necessary because whoever burns the tokens needs to get
     # this TX confirmed before returning their collateral.
     burn_tx = state.node.burn_test_tokens()

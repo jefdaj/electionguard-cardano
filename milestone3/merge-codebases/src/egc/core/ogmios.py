@@ -435,22 +435,23 @@ def utxos_for_inputs(tx_inputs: list[TransactionInput]) -> dict[TransactionInput
     return utxos
 
 
-def wait_for_confirmation_generic() -> int:
-    "Wait long enough that any pending TXs should have confirmed."
-    prev = None
-    count = 0
-    while count < 3:
-        time.sleep(OGMIOS_POLL_SEC)
-        tip = query_network_tip_sync()['block_hash']
-        if tip == prev:
-            continue
-        elif prev is None:
-            prev = tip
-        else:
-            count += 1
-            LOG.debug(f'waited {count} blocks')
-            prev = tip
-    return
+# TODO remove? or is it still useful?
+# def wait_for_confirmation_generic() -> int:
+#    "Wait long enough that any pending TXs should have confirmed."
+#    prev = None
+#    count = 0
+#    while count < 3:
+#        time.sleep(OGMIOS_POLL_SEC)
+#        tip = query_network_tip_sync()['block_hash']
+#        if tip == prev:
+#            continue
+#        elif prev is None:
+#            prev = tip
+#        else:
+#            count += 1
+#            LOG.debug(f'waited {count} blocks')
+#            prev = tip
+#    return
 
 
 def is_utxo_unspent(utxo: UTxO) -> bool:
