@@ -42,7 +42,7 @@ def _context_backup_json_path(state):
     backup_path = (private_dir / 'election-context').with_suffix('.json')
     return backup_path
 
-@router.get("/create")
+@router.post("/create")
 async def create_election(data: schemas.ElectionCreate, state=Depends(get_state)):
 
     if state.wallet is None:

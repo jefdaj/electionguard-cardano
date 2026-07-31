@@ -82,7 +82,10 @@ def create(funder: Wallet, admin_ada: int):
     """
     # get admin_vkh from server
     wallet_resp = asyncio.run(Client().wallet_show())
-    admin_vkh = VerificationKeyHash.from_primitive(wallet_resp['vkh'])
+    try:
+        admin_vkh = VerificationKeyHash.from_primitive(wallet_resp['vkh'])
+    except KeyError:
+        raise Exception('Load or create a wallet first.')
     # create election, and subscribe to it
     asyncio.run(Client().election_create(
         funder_sk = funder.sk,
