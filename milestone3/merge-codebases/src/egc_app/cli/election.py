@@ -48,7 +48,7 @@ def events(filter: str|None = None):
 # TODO accept a qrcode (file or scan) as the funder sk
 @election.command(roles=['observer'])
 @multi_load("funder", Wallet, ["json"])
-def init(funder: Wallet):
+def create(funder: Wallet):
     """Create an election by minting an admin channel token.
 
     There are two main ways you might want to do this. Note that
@@ -66,7 +66,7 @@ def init(funder: Wallet):
 
     \b
       egc wallet create --name admin
-      egc election init --funder-load-json ./wallets/funder.sk
+      egc election create --funder-load-json ./wallets/funder.sk
       egc channel await --role admin
 
     2. If you're the funder but not the admin, load your wallet and then run
@@ -75,7 +75,7 @@ def init(funder: Wallet):
 
     \b
       egc wallet load --wallet-load-json ./wallets/funder.sk
-      egc election init --admin-load-json ./wallets/admin.addr
+      egc election create --admin-load-json ./wallets/admin.addr
       egc election events
 
     Either way, this command will clear any previous election state and

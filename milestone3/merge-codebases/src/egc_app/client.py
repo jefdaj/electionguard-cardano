@@ -52,10 +52,10 @@ class Client:
                      if event.event_type == 'end election':
                          return
 
-    async def election_init(self, data: ElectionConfig):
-        # TODO write this
-        # maybe it can start like wallet load, since it needs to send funder wallet info?
-        pass
+    # async def election_create(self, data: schemas.ElectionCreate):
+    #     # TODO write this
+    #     # maybe it can start like wallet load, since it needs to send funder wallet info?
+    #     pass
 
     async def wallet_load_or_create(self, data: schemas.WalletLoadOrCreate):
         "Load a wallet from sk_dict, or create one if empty."

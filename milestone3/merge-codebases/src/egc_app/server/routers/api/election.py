@@ -6,7 +6,7 @@ from egc import *
 import asyncio
 import json
 from fastapi.responses import StreamingResponse
-from egc_app.schemas.election import *
+from egc_app import schemas
 
 import logging
 

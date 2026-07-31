@@ -134,7 +134,9 @@ class Wallet:
         return self.sk.to_json(*args, **kwargs)
 
     def save(self, sk_path: Path) -> None:
-        Path(sk_path).write_text(self.to_json())
+        sk_path = Path(sk_path)
+        sk_path.absolute().parent.mkdir(parents=True, exist_ok=True)
+        sk_path.write_text(self.to_json())
 
     # TODO __str__ here?
     def __repr__(self) -> str:

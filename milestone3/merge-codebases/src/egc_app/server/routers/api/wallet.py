@@ -1,6 +1,7 @@
 import json
 from fastapi import APIRouter, Depends
 from egc_app.server.state import get_state
+from egc_app import schemas
 import shutil
 from egc import *
 
@@ -16,24 +17,22 @@ def _wallet_path(state) -> Path:
 
 # TODO get fastapi to encode/decode Wallet automatically here
 @router.put("")
-# async def wallet_load_or_create(wallet_dict: dict, state=Depends(get_state)):
-async def wallet_load_or_create(payload: WalletLoadOrCreate, state=Depends(get_state)):
-    # description = wallet_dict['description']
-    sk_dict = wallet_dict['sk_dict']
+async def wallet_load_or_create(data: schemas.WalletLoadOrCreate, state=Depends(get_state)):
     sk_path = _wallet_path(state)
-    if payload.wallet is None:
-        # TODO capture verbose msg here and return to cli?
+    if isinstance(data.sk_or_desc, SigningKey):
+        # got sk; derive wallet
+        state.wallet = Wallet.from_signing_key(data.sk_or_desc)
+        state.wallet.save(sk_path)
+    else:
+        # got description; generate the wallet
+        assert isinstance(data.sk_or_desc, str)
         state.wallet = create_wallet(
             keys_dir    = sk_path.absolute().parent,
             name        = 'wallet', # only one stored on the server at a time
-            description = description,
+            description = data.sk_or_desc,
             verbose     = True, # TODO False
-            overwrite   = True,
+            overwrite   = True, # TODO 409 if no ?force=true or similar included too
         )
-    else:
-        # state.wallet = Wallet.from_json(json.dumps(sk_dict))
-        sk_path.absolute().parent.mkdir(parents=True, exist_ok=True)
-        state.wallet.save(sk_path)
     return 201
 
 @router.get("")

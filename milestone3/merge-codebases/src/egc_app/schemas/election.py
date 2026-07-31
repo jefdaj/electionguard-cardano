@@ -3,3 +3,6 @@ from egc import ElectionConfig
 
 class ElectionSubscribe(BaseModel):
     config: ElectionConfig
+
+# class ElectionCreate(BaseModel):
+# 

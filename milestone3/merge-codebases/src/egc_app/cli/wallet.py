@@ -16,8 +16,8 @@ def create(description):
     # asyncio.run(Client().wallet_load_or_create(description, sk_dict=None))
     description = description.replace(':', ';') # escape for possible qr str
     asyncio.run(Client().wallet_load_or_create(
-        WalletLoadOrCreate(wallet_or_desc=description)
-    )
+        WalletLoadOrCreate(sk_or_desc=description)
+    ))
 
 @wallet.command()
 def show():
@@ -41,7 +41,7 @@ def load(wallet: Wallet):
     # sk_dict = json.loads(wallet.to_json())
     # print(f'sk_dict from wallet: {sk_dict}')
     asyncio.run(Client().wallet_load_or_create(
-        WalletLoadOrCreate(wallet_or_desc=wallet)
+        WalletLoadOrCreate(sk_or_desc=wallet.sk)
     ))
 
 # @click.option('--sk-path', type=click.STRING, required=True)
