@@ -5,6 +5,6 @@ from dataclasses import asdict
 
 router = APIRouter(prefix="/collateral")
 
-@router.get("/return")
+@router.post("/return")
 async def return_collateral(state=Depends(get_state)):
     state.node.return_collateral()
