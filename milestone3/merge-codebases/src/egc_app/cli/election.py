@@ -17,7 +17,6 @@ def election() -> None:
 def subscribe(election: ElectionConfig):
     "Set which election the node is following."
     # TODO should this reset a non-observer node back to observer?
-    click.echo(f'election: {election} {type(election)}')
     asyncio.run(Client().election_subscribe(election_cfg=election))
 
 @election.command()
