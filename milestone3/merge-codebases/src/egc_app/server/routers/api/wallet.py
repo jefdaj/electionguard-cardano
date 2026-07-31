@@ -32,6 +32,7 @@ async def wallet_load_or_create(data: schemas.WalletLoadOrCreate, state=Depends(
             verbose     = True, # TODO False
             overwrite   = True, # TODO 409 if no ?force=true or similar included too
         )
+    state.node.publisher.wallet = state.wallet
     return Response(status_code=201)
 
 @router.get("")

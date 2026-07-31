@@ -1,5 +1,6 @@
 import asyncio
 import click
+from typing import Optional
 from egc_app.client import Client
 from egc_app.cli.utils import RoleAwareGroup
 
@@ -16,5 +17,6 @@ def await_():
     raise NotImplementedError
 
 @collateral.command(name='return') # TODO roles?
-def return_():
-    asyncio.run(Client().collateral_return())
+@click.option('--return-addr', type=click.STRING, required=False)
+def return_(return_addr: Optional[str]):
+    asyncio.run(Client().collateral_return(return_addr=return_addr))

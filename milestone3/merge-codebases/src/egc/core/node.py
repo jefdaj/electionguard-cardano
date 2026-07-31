@@ -294,7 +294,7 @@ class ElectionNode:
 
         return tx_signed
 
-    def return_collateral(self):
+    def return_collateral(self, return_addr: Optional[str] = None):
         # TODO special case for the admin to return ALL collateral to funder here?
         # TODO or everyone return it to funder individually?
         # TODO only auto return if collateral originally came from admin/funder
@@ -302,8 +302,10 @@ class ElectionNode:
         #     raise Exception('No election, so no funder_address.')
         # TODO return collateral to the channel rather than a person?
         # return_addr = self.subscriber.admin_address()
-        return_addr = Address.from_primitive(self.election.deployment.funder_address)
-        return self.publisher.return_collateral(return_addr)
+        if return_addr is None:
+            return_addr = self.election.deployment.funder_address
+        return_addr = Address.from_primitive(return_addr)
+        return self.publisher.return_collateral(return_addr=return_addr)
 
     def stop(self):
         if self.subscriber is not None:

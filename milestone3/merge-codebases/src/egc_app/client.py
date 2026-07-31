@@ -99,6 +99,7 @@ class Client:
         r.raise_for_status()
         return r.json()
 
-    async def collateral_return(self):
-        r = await self._c.post('/collateral/return') # TODO .delete?
+    async def collateral_return(self, return_addr: Optional[str] = None):
+        data = schemas.CollateralReturn(return_addr=return_addr)
+        r = await self._c.post('/collateral/return', json=data.model_dump())
         r.raise_for_status()
