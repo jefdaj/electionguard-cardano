@@ -2,7 +2,7 @@ import json
 from fastapi import APIRouter
 from egc.core.ogmios import ogmios_health, ogmios_wait_until_synced
 from egc.core.ipfs import ipfs_wait_until_stable, ipfs_status
-from egc_app.server.schemas.node import NodeStatusOut
+from egc_app.schemas.node import NodeStatusOut
 
 router = APIRouter(prefix="/node", tags=["status"])
 
