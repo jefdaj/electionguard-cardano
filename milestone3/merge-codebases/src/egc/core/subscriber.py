@@ -751,13 +751,14 @@ class ElectionSubscriber:
             except Exception as e:
                 LOG.error(f'Error in watcher: {e}', exc_info=True)
 
-        def handle_sigint(sig, frame):
-            LOG.debug('_handle_sigint')
-            LOG.debug(f'Signal {sig} recieved, shutting down...')
-            self.stop()
-
-        signal.signal(signal.SIGINT , handle_sigint)
-        signal.signal(signal.SIGTERM, handle_sigint)
+        # TODO hook this up to fastapi lifecycle instead when running in server?
+        if threading.current_thread() is threading.main_thread():
+            def handle_sigint(sig, frame):
+                LOG.debug('_handle_sigint')
+                LOG.debug(f'Signal {sig} recieved, shutting down...')
+                self.stop()
+            signal.signal(signal.SIGINT , handle_sigint)
+            signal.signal(signal.SIGTERM, handle_sigint)
 
         self._kupo_thread = threading.Thread(
             target=_start_and_watch,

@@ -45,7 +45,11 @@ class Client:
             admin_vkh = admin_vkh,
             admin_ada = admin_ada,
         )
-        r = await self._c.post('/election/create', json=data.model_dump())
+        r = await self._c.post(
+            '/election/create',
+            json    = data.model_dump(),
+            timeout = httpx.Timeout(600, read=None)
+        )
         r.raise_for_status()
 
     async def election_events(self, filter: str|None = None):
