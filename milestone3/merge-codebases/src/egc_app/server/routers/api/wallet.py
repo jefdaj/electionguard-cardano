@@ -1,5 +1,5 @@
 import json
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from egc_app.server.state import get_state
 from egc_app import schemas
 import shutil
@@ -32,7 +32,7 @@ async def wallet_load_or_create(data: schemas.WalletLoadOrCreate, state=Depends(
             verbose     = True, # TODO False
             overwrite   = True, # TODO 409 if no ?force=true or similar included too
         )
-    return 201
+    return Response(status_code=201)
 
 @router.get("")
 async def wallet_show(state=Depends(get_state)):

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Response
 from fastapi import HTTPException
 from dataclasses import asdict
 from egc_app.server.state import get_state, reset_election_state
@@ -9,33 +9,45 @@ from fastapi.responses import StreamingResponse
 from egc_app import schemas
 
 import logging
-
 LOG = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/election", tags=["election"])
 
-def log_event(event: ChannelEvent) -> None:
+
+def _log_event(event: ChannelEvent) -> None:
     LOG.debug(f'election event:\n{event.to_raw()}')
 
-def log_error(err: ElectionError) -> None:
+def _log_error(err: ElectionError) -> None:
     LOG.error(f'election error:\n{err.to_raw()}')
+
+def _subscribe_to_election_config(state, election_config: ElectionConfig):
+    "Shared logic used by start_subscriber and create_election."
+    reset_election_state(state)
+    state.node.subscribe(
+        election_config,
+        on_event = _log_event,
+        on_error = _log_error,
+    )
+    state.config['election'] = asdict(election_config)
 
 @router.put("/subscribe")
 async def start_subscriber(data: schemas.ElectionSubscribe, state=Depends(get_state)):
-    reset_election_state(state)
-    state.node.subscribe(
-        data.config,
-        on_event = log_event,
-        on_error = log_error,
-    )
-    state.config['election'] = asdict(data.config)
-    return 201
+    _subscribe_to_config(state, data.config)
+    return Response(status_code=201)
+
+
+def _context_backup_json_path(state):
+    private_dir = state.config['node']['private_dir']
+    backup_path = (private_dir / 'election-context').with_suffix('.json')
+    return backup_path
 
 @router.get("/create")
 async def create_election(data: schemas.ElectionCreate, state=Depends(get_state)):
 
-    # TODO just do this automatically?
-    assert state.wallet is not None, "Load/create a wallet first." # TODO return... 409?
+    if state.wallet is None:
+        # TODO create one automatically?
+        raise HTTPException(status_code=409, detail="Load or create a wallet first.")
+
     admin_addr = state.wallet.addr
     admin_vkh  = state.wallet.vkh
 
@@ -44,12 +56,19 @@ async def create_election(data: schemas.ElectionCreate, state=Depends(get_state)
     tmp_funder_node = FunderNode(wallet=funder_wallet)
 
     # create the election
-    (tx, ctx) = funder_node.???
+    (tx, election_cfg) = tmp_funder_node.init_election(
+        admin_vkh = admin_vkh,
+        subscribe = False,
+        context_backup_json = _context_backup_json_path(state),
+    )
+    tmp_funder_node.wait_for_confirmation(tx)
 
-    # TODO then once election starts successfully, subscribe to it
-    # start_subscriber(data=schemas.ElectionSubscribe(config=...
+    _subscribe_to_config(state, election_cfg)
 
-@router.get("/events") # TODO response model?
+    return Response(status_code=201)
+
+
+@router.get("/events")
 async def stream_events(request: Request, state=Depends(get_state)):
     if state.node is None:
         raise HTTPException(404)
