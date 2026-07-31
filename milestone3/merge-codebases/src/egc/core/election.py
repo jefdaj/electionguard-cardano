@@ -3,7 +3,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from functools import cached_property
 from pathlib import Path
@@ -74,6 +74,10 @@ class ElectionConfig:
                 data['since_block'   ],
                 data['schema_version'],
         )
+
+    # TODO separate into dict, raw?
+    def to_json(self) -> str:
+        return json.dumps(asdict(self), indent=2)
 
     # TODO is this right?
     @classmethod

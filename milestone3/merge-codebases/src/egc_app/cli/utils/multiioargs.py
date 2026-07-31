@@ -43,13 +43,13 @@ def _add_options(f, name, mediums, direction, required):
             "cam":  "Scan QR code via the camera.",
             "png":  "Load QR code from a png file.",
             "txt":  "Load QR text (`egc:...`) from a file.",
-            "json": "Load QR info from a JSON file.", # TODO not necessarily QR
+            "json": "Load from a JSON file.", # TODO be clear this isn't a QR type
         },
         "out": {
             "cam":  "Show QR code so you can take a pic of it.",
             "png":  "Save QR code as a png file.",
             "txt":  "Save QR text (`egc:...`) to a file.",
-            "json": "Save QR info to a JSON file.",
+            "json": "Save to a JSON file.", # TODO be clear this isn't a QR type
         },
     }[direction]
     # TODO any point in both txt and json long term?
