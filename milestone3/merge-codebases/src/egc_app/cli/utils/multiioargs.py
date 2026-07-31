@@ -130,7 +130,9 @@ def multi_save(mio: MultiIOArg, obj: Any, exist_ok=True) -> None:
     match mio.medium:
         case "cam":  print_qrcode(obj)
         case "png":  save_qrcode(obj, mio.path)
+        case "txt":  mio.path.write_text(obj.to_qr_str())
         case "json": mio.path.write_text(obj.to_json())
+        case _: raise NotImplementedError
 
 
 # ---- public decorators ---------------------------------------------------
