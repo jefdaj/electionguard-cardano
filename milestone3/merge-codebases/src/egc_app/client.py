@@ -52,20 +52,16 @@ class Client:
                      if event.event_type == 'end election':
                          return
 
-    async def election_init(self, config: ElectionConfig):
+    async def election_init(self, data: ElectionConfig):
         # TODO write this
         # maybe it can start like wallet load, since it needs to send funder wallet info?
         pass
 
-    # async def wallet_load_or_create(self, description: str, sk_dict: dict | None = None):
-    async def wallet_load_or_create(self, load_or_create: WalletLoadOrCreate):
+    async def wallet_load_or_create(self, data: schemas.WalletLoadOrCreate):
         "Load a wallet from sk_dict, or create one if empty."
-        # description = description.replace(':', ';') # escape : for qr codes
-        # r = await self._c.put('/wallet', json={'description': description, 'sk_dict': sk_dict})
-        # TODO optional description when loading?
-        r = await self._c.put('/wallet', json=load_or_create.model_dump())
+        r = await self._c.put('/wallet', json=data.model_dump())
         r.raise_for_status()
-        return r.json() # TODO remove?
+        # return r.json() # TODO remove?
 
     async def wallet_show(self):
         r = await self._c.get('/wallet')
