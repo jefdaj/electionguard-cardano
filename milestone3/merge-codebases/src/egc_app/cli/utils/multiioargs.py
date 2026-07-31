@@ -43,7 +43,7 @@ def _add_options(f, name, mediums, direction, required):
             "cam":  "Scan QR code via the camera.",
             "png":  "Load QR code from a png file.",
             "txt":  "Load QR text (`egc:...`) from a file.",
-            "json": "Load QR info from a JSON file.",
+            "json": "Load QR info from a JSON file.", # TODO not necessarily QR
         },
         "out": {
             "cam":  "Show QR code so you can take a pic of it.",

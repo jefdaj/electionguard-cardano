@@ -69,6 +69,7 @@ class Wallet:
             addr=addr_for_signing_key(sk),
         )
 
+    # TODO is this actually from_raw?
     @classmethod
     def from_json(cls, data: str) -> Self:
         return cls.from_signing_key(SigningKey.from_json(data))

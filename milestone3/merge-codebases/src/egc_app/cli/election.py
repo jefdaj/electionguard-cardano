@@ -83,11 +83,14 @@ def create(funder: Wallet, admin_ada: int):
     Either way, this command will clear any previous election state and
     subscribe to the new election.
     """
-    # click.echo(funder)
+    # get admin_vkh from server
+    wallet_resp = asyncio.run(Client().wallet_show())
+    admin_vkh = VerificationKeyHash.from_primitive(wallet_resp['vkh'])
+    # create election, and subscribe to it
     asyncio.run(Client().election_create(
         funder_sk = funder.sk,
+        admin_vkh = admin_vkh,
         admin_ada = admin_ada,
-        # TODO admin_vkh
     ))
 
 @election.command(roles=['admin'])
