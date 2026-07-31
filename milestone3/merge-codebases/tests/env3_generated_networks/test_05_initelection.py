@@ -31,7 +31,8 @@ def config_init_election(draw):
 
 @given_cached_tests(
     cfg_strategy = config_init_election,
-    max_examples = 1,
+    max_examples = 3,
 )
 def test_init_election(cfg: ResolvedTestConfig):
+    # assert_node_logs_match(cfg=cfg, pattern='^[0-9]{9,}\\s.*ended election') # TODO separate nodes here?
     assert_node_logs_do_not_match(cfg=cfg, pattern='^arion: FatalError')
