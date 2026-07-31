@@ -15,4 +15,4 @@ def await_():
 
 @collateral.command(name='return') # TODO roles?
 def return_():
-    raise NotImplementedError
+    asyncio.run(Client().collateral_return())

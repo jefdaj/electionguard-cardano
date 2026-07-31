@@ -94,3 +94,7 @@ class Client:
         r = await self._c.get('/phase')
         r.raise_for_status()
         return r.json()
+
+    async def collateral_return(self):
+        r = await self._c.post('/collateral/return') # TODO .delete?
+        r.raise_for_status()
