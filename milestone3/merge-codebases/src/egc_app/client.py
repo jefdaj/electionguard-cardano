@@ -57,6 +57,7 @@ class Client:
     #     # maybe it can start like wallet load, since it needs to send funder wallet info?
     #     pass
 
+    # TODO two different fns here and they create the WalletLoadOrCreate?
     async def wallet_load_or_create(self, data: schemas.WalletLoadOrCreate):
         "Load a wallet from sk_dict, or create one if empty."
         r = await self._c.put('/wallet', json=data.model_dump())
