@@ -6,6 +6,7 @@ import hashlib, json
 from pathlib import Path
 from hypothesis import strategies as st
 from copy import deepcopy
+from egc import deep_replace
 # from contextlib import contextmanager
 # from hypothesis.strategies import composite, integers, text
 
@@ -310,8 +311,10 @@ class HashedTestConfig:
         # return hashlib.md5(self.canonical().encode()).hexdigest()[:5]
         return hashlib.sha256(self.canonical().encode()).hexdigest()[:5]
 
+# This follows a different naming convention because it's the first that will
+# be used by name in the config files.
 @st.composite
-def hashed_test_config(draw) -> HashedTestConfig:
+def config_test_base(draw) -> HashedTestConfig:
     fn_name = sys._getframe().f_code.co_name # TODO util fn for this
     pytest_config = PytestConfig(
         config_fns = ConfigFnsConfig(names=(fn_name,)),
@@ -329,6 +332,26 @@ def hashed_test_config(draw) -> HashedTestConfig:
         nodes  = draw( nodes_config()    ),
         votes  = draw( contests_config() ),
     )
+
+
+### config editing functions ###
+
+def append_config_fn_name(cfg: HashedTestConfig) -> HashedTestConfig:
+    "Append the *caller*'s name to the list of config_fns."
+    caller = sys._getframe().f_back.f_code.co_name
+    return deep_replace(
+        cfg,
+        'pytest.config_fns.names',
+        tuple(list(cfg.pytest.config_fns.names) + [caller])
+    )
+
+def replace_setup_fns(cfg: HashedTestConfig, fns: list[FnCallConfig]) -> HashedTestConfig:
+    return deep_replace(
+        cfg,
+        'pytest.setup_fns',
+        SetupFnsConfig(fns=tuple(fns))
+    )
+
 
 
 ### resolved test config ###

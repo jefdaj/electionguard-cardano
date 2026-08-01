@@ -2,7 +2,7 @@ import subprocess
 import time
 
 from .arion_network import arion_subprocess_kwargs, arion_network_up
-from .config        import resolve_test_config, hashed_test_config, HashedTestConfig, ResolvedTestConfig
+from .config        import resolve_test_config, HashedTestConfig, ResolvedTestConfig
 from .setup_fns     import run_setup_fns
 from .tmpdir        import init_test_tmpdir, lock_test_tmpdir
 from hypothesis     import given, settings, seed, Phase

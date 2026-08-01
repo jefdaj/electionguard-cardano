@@ -6,27 +6,21 @@ from .lib  import *
 
 @st.composite
 def config_init_election(draw):
-    cfg = draw( hashed_test_config() )
-    fn_name = sys._getframe().f_code.co_name
-    cfg = deep_replace(
-        cfg,
-        'pytest.config_fns.names',
-        tuple(list(cfg.pytest.config_fns.names) + [fn_name])
-    )
-    cfg = deep_replace(
-        cfg,
-        'pytest.setup_fns',
-        SetupFnsConfig(fns=(
-            FnCallConfig(name = 'install_funder_sk', args = ()),
-            FnCallConfig(
-                name = 'render_egc_scripts',
-                args = (
-                    ('default', 'subscribe-qr-png.sh'), # admin creates qrcode now
-                    ('admin', 'init-election.sh'),
-                ),
+    cfg = draw( config_test_base() )
+    cfg = append_config_fn_name(cfg)
+    cfg = replace_setup_fns(cfg, [
+        FnCallConfig(
+            name = 'render_egc_scripts',
+            args = (
+                ('default', 'subscribe-qr-png.sh'), # admin creates qrcode now
+                ('admin', 'init-election.sh'),
             ),
-        )),
-    )
+        ),
+        FnCallConfig(
+            name = 'install_funder_sk',
+            args = ()
+        ),
+    ])
     return cfg
 
 @given_cached_tests(

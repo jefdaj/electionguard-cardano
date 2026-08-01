@@ -7,27 +7,18 @@ from ..lib import *
 from .lib  import *
 
 @st.composite
-def node_ready_config(draw):
-    fn_name  = sys._getframe().f_code.co_name
-    cfg = draw( hashed_test_config() )
-    cfg = deep_replace(
-        cfg,
-        'pytest.config_fns.names',
-        tuple(list(cfg.pytest.config_fns.names) + [fn_name])
-    )
-    cfg = deep_replace(
-        cfg,
-        'pytest.setup_fns',
-        SetupFnsConfig(fns=(
-            FnCallConfig(
-                name = 'render_egc_scripts',
-                args = (('default', 'node-ready.sh'),),
-            ),
-        )),
-    )
+def config_node_ready(draw):
+    cfg = draw( config_test_base() )
+    cfg = append_config_fn_name(cfg)
+    cfg = replace_setup_fns(cfg, [
+        FnCallConfig(
+            name = 'render_egc_scripts',
+            args = (('default', 'node-ready.sh'),),
+        ),
+    ])
     return cfg
 
-@given_cached_tests(node_ready_config, max_examples=3)
+@given_cached_tests(config_node_ready, max_examples=3)
 def test_node_ready(cfg: ResolvedTestConfig):
     assert_node_logs_match(cfg=cfg, pattern='^node is ready$')
     assert_node_logs_do_not_match(cfg=cfg, pattern='^arion: FatalError')

@@ -58,7 +58,7 @@ def test_roundtrip_attack_fns_config(cfg: AttackFnsConfig):
     assert_json_roundtrip(cfg)
 
 # @example(cfg=example_test_config())
-@given(cfg=hashed_test_config())
+@given(cfg=config_test_base())
 @settings(max_examples=1_000)
-def test_roundtrip_hashed_test_config(cfg: HashedTestConfig):
+def test_roundtrip_config_test_base(cfg: HashedTestConfig):
     assert_json_roundtrip(cfg)
