@@ -103,3 +103,10 @@ class Client:
         data = schemas.CollateralReturn(return_addr=return_addr)
         r = await self._c.post('/collateral/return', json=data.model_dump())
         r.raise_for_status()
+
+    async def channel_await(self, role: str):
+        data = schemas.ChannelAwait(role=role)
+        r = await self._c.get('/channel/await', json=data.model_dump())
+        r.raise_for_status()
+        # TODO how to decode ChannelAwaitOut here?
+        click.echo(r.json()['channel_str'])

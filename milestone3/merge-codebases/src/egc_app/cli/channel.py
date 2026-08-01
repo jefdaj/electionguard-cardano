@@ -7,7 +7,7 @@ def channel() -> None:
 
 @click.option('--role', type=click.STRING, required=True)
 @channel.command(roles=['observer'])
-def request(role):
+def request(role: str):
     """Save a subchannel request.
 
     Subchannel requests are communicated to the admin offchain.
@@ -29,11 +29,13 @@ def remove():
     raise NotImplementedError
 
 @channel.command(name='await')
-def await_():
+@click.option('--role', type=click.STRING, required=True)
+def await_(role: str):
     """Wait for your channel to appear.
 
     This should normally be done by an observer. You can also use it once you
     have a role, but then it's more like an assert statement. The admin can
     also use this to wait for their channel from the funder.
     """
-    raise NotImplementedError
+    # TODO check role is valid before awaiting
+    asyncio.run(Client().channel_await(role=role))
