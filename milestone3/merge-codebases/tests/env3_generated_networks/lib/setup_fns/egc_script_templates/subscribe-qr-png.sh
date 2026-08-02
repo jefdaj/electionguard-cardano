@@ -1,8 +1,8 @@
 {% include "node-ready.sh" %}
 
 await_file() {
-  export path="$1"
-  timeout 300 bash -c 'until [ -e "$path" ]; do sleep 1; done'
+  timeout 300 bash -c 'until [ -e "$1" ]; do sleep 1; done' _ "$1"
+  sleep 3 # TODO how long is needed?
 }
 
 # subscribe to an old election test
