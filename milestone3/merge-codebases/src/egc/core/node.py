@@ -135,6 +135,10 @@ class ElectionNode:
     def await_phase(self, phase: Optional[ElectionPhase], timeout=OGMIOS_TIMEOUT_SEC):
         self.subscriber.await_phase(phase, timeout=timeout)
 
+    def await_channel(self, role: str, timeout=OGMIOS_TIMEOUT_SEC):
+        vkh = self.publisher.wallet.vkh
+        return self.subscriber.await_channel(vhk, role, timeout)
+
     def balance_and_sign_state_transition_tx(
             self,
             txb: TransactionBuilder,

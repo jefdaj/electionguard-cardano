@@ -13,6 +13,7 @@ import threading
 import time
 import hashlib
 import qrcode
+import re
 
 from collections import defaultdict
 from copy import deepcopy
@@ -532,14 +533,12 @@ class ElectionSubscriber:
 
     def all_channel_ids(self) -> list[ChannelId]:
         # Includes historical channels that have already been closed.
-        # TODO return copies from all public methods
         log_call()
         with self._history_lock:
             return sorted(list(self._history.keys()))
 
 
     def current_channel_ids(self) -> list[ChannelId]:
-        # TODO return copies from all public methods
         log_call()
         return [
             i for i in self.all_channel_ids()
@@ -596,23 +595,6 @@ class ElectionSubscriber:
                 states[ch_id] = self.current_state(ch_id)
             return states
 
-
-    # def current_phase(self) -> ElectionPhase | str:
-    #     log_call()
-    #     # Returns None if the election hasn't started yet
-    #     with self._history_lock:
-    #         try:
-    #             event = self.channel_history(ADMIN_CHANNEL_ID)[-1]
-    #             return deepcopy(event.output_state.state.phase)
-    #         except (KeyError, AttributeError):
-    #             if self._history:
-    #                 # None with history implies election ended
-    #                 # TODO codify this in a better way!
-    #                 return 'ElectionEnded'
-    #             else:
-    #                 # Otherwise, implies election hasn't started yet.
-    #                 # TODO codify this in a better way!
-    #                 return 'ElectionNotStarted'
 
     def current_phase(self) -> EgcPhase:
         log_call()
@@ -720,6 +702,23 @@ class ElectionSubscriber:
         raise TimeoutError(f'txid {txid} not confirmed in _history within {timeout}s.')
 
 
+    def await_channel(self, vkh: VerificationKeyHash, role: str, timeout=OGMIOS_TIMEOUT_SEC) -> str:
+        if self.is_done():
+            raise Exception('Subscriber already done.')
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            for ch_id in self.current_channel_ids():
+                ch_str = channel_id_to_string(ch_id)
+                actual_role = re.sub(r"\d+$", "", ch_str)
+                if role == actual_role:
+                    actual_vkh = self.channel_vkh(ch_id)
+                    if vkh == actual_vkh:
+                        LOG.debug(f'Channel {ch_str} gives {vkh} role {role}.')
+                        return ch_str
+            time.sleep(OGMIOS_POLL_SEC)
+        raise TimeoutError(f'Channel for {vkh} with role {txid} did not appear within {timeout}s.')
+
+
     def all_records(self) -> list[PublicRecord]:
         # All records in _history, sorted by slot_no
         records = []
@@ -751,6 +750,18 @@ class ElectionSubscriber:
         except Exception as e:
             LOG.error(e)
             return None
+
+
+    # TODO rename?
+    def channel_vkh(self, channel_id: ChannelId) -> VerificationKeyHash:
+        with self._history_lock:
+            event = self.channel_history(channel_id)[-1]
+        state = event.output_state if event.output_state else event.input_state
+        if channel_id == ADMIN_CHANNEL_ID:
+            vkh = VerificationKeyHash(state.state.admin)
+        else:
+            vkh = VerificationKeyHash(state.state.publisher)
+        return vkh
 
 
     ## process managment interface ##
