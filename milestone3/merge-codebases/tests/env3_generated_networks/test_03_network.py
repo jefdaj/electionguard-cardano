@@ -20,5 +20,5 @@ def config_node_ready(draw):
 
 @given_cached_tests(config_node_ready, max_examples=3)
 def test_node_ready(cfg: ResolvedTestConfig):
-    assert_script_logs_match(cfg, '.*', '^node is ready$')
-    assert_script_logs_do_not_match(cfg, '.*', '^arion: FatalError')
+    assert_script_logs_match(cfg, '.*', ['^node is ready$'])
+    assert_script_logs_do_not_match(cfg, '.*', ['^arion: FatalError'])
