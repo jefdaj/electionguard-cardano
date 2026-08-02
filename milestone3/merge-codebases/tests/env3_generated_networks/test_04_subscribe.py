@@ -18,7 +18,7 @@ def config_subscribe_qr(fmt='txt'):
                 args = (('default', f'subscribe-qr-{fmt}.sh'),),
             ),
             FnCallConfig(
-                name = f'write_qr_{fmt}',
+                name = f'install_qr_{fmt}',
                 args = (('drawn', draw(st.integers(0, 1000))),)
             )
         ])
