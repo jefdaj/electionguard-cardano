@@ -13,6 +13,10 @@ from pycardano import PlutusData
 
 type ChannelId = bytes
 
+_ROLE_RE = re.compile(
+    '^(admin|guardian|device|verifier)$'
+)
+
 _CHANNEL_ID_RE = re.compile(
     r'^(admin|(guardian|device|verifier)([1-9]\d?|100))$'
 )
@@ -25,6 +29,14 @@ CHANNEL_ID_LIST_FIELDS = frozenset({'channels', 'subchannels'})
 
 # Mirrors the Aiken-side limit (and existing Python validator).
 MAX_CHANNELS = 100
+
+
+def is_valid_role(role: str) -> bool:
+    return bool(_ROLE_RE.match(role))
+
+
+def is_valid_channel_str(ch_str: str) -> bool:
+    return bool(_CHANNEL_ID_RE.match(ch_str))
 
 
 def _invalid_channel_id_msg(s: str) -> str:

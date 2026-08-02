@@ -25,6 +25,8 @@ from .channel import (
     publisher_address,
     channel_id_to_string,
     coerce_channel_id,
+    is_valid_role,
+    is_valid_channel_str,
 )
 
 from .ipfs_cid import (

@@ -106,7 +106,7 @@ class Client:
 
     async def channel_await(self, role: str):
         data = schemas.ChannelAwait(role=role)
-        r = await self._c.get('/channel/await', json=data.model_dump())
-        r.raise_for_status()
-        # TODO how to decode ChannelAwaitOut here?
-        click.echo(r.json()['channel_str'])
+        resp = await self._c.get('/channel/await', json=data.model_dump())
+        resp.raise_for_status()
+        out = schemas.ChannelAwaitOut.model_valiate(resp)
+        click.echo(out.channel_str)

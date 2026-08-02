@@ -1,5 +1,6 @@
 import click
 from egc_app.cli.utils import RoleAwareGroup
+from egc_app import schemas
 
 @click.group(cls=RoleAwareGroup)
 def channel() -> None:
@@ -37,5 +38,4 @@ def await_(role: str):
     have a role, but then it's more like an assert statement. The admin can
     also use this to wait for their channel from the funder.
     """
-    # TODO check role is valid before awaiting
     asyncio.run(Client().channel_await(role=role))
