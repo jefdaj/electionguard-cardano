@@ -79,7 +79,7 @@ ea34e5''',
 
 ]
 
-def write_qr_txt(cfg: ResolvedTestConfig, drawn: int):
+def install_qr_txt(cfg: ResolvedTestConfig, drawn: int):
     """Write a random election qr str in the qrcodes dir.
     `drawn` as a generic int prevents having to export `OLD_QR_STRS`."""
     qr_idx = drawn % len(OLD_QR_STRS)
@@ -87,7 +87,7 @@ def write_qr_txt(cfg: ResolvedTestConfig, drawn: int):
     qr_path = cfg.qrcodes_path() / 'election.txt'
     qr_path.write_text(qr_str)
 
-def write_qr_png(cfg: ResolvedTestConfig, drawn: int):
+def install_qr_png(cfg: ResolvedTestConfig, drawn: int):
     """Write a random election qrcode png in the qrcodes dir.
     `drawn` as a generic int prevents having to export `OLD_QR_STRS`."""
     qr_idx = drawn % len(OLD_QR_STRS)

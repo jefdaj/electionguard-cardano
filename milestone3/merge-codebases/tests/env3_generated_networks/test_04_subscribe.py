@@ -7,36 +7,50 @@ from egc import *
 from ..lib import *
 from .lib  import *
 
-def config_subscribe_qr(fmt='txt'):
-    @st.composite
-    def draw_fn(draw):
-        cfg = draw( config_test_base() )
-        cfg = append_config_fn_name(cfg)
-        cfg = replace_setup_fns(cfg, [
-            FnCallConfig(
-                name = 'render_egc_scripts',
-                args = (('default', f'subscribe-qr-{fmt}.sh'),),
-            ),
-            FnCallConfig(
-                name = f'install_qr_{fmt}',
-                args = (('drawn', draw(st.integers(0, 1000))),)
-            )
-        ])
-        return cfg
-    fn_name = sys._getframe().f_code.co_name
-    draw_fn.__name__ = fn_name
-    return draw_fn
+
+@st.composite
+def config_subscribe_qr_txt(draw):
+    cfg = draw( config_test_base() )
+    cfg = append_config_fn_name(cfg)
+    cfg = replace_setup_fns(cfg, [
+        FnCallConfig(
+            name = 'render_egc_scripts',
+            args = (('default', f'subscribe-qr-txt.sh'),),
+        ),
+        FnCallConfig(
+            name = f'install_qr_txt',
+            args = (('drawn', draw(st.integers(0, 1000))),)
+        )
+    ])
+    return cfg
 
 @given_cached_tests(
-    cfg_strategy = config_subscribe_qr('txt'),
+    cfg_strategy = config_subscribe_qr_txt,
     max_examples = 3,
 )
-def test_subscribe_qr_str(cfg: ResolvedTestConfig):
+def test_subscribe_qr_txt(cfg: ResolvedTestConfig):
     assert_script_logs_match(cfg, '.*', ['^[0-9]{9,}\\s.*ended election'])
     assert_script_logs_do_not_match(cfg, '.*', ['^Traceback', '^arion: FatalError'])
 
+
+@st.composite
+def config_subscribe_qr_png(draw):
+    cfg = draw( config_test_base() )
+    cfg = append_config_fn_name(cfg)
+    cfg = replace_setup_fns(cfg, [
+        FnCallConfig(
+            name = 'render_egc_scripts',
+            args = (('default', f'subscribe-qr-png.sh'),),
+        ),
+        FnCallConfig(
+            name = f'install_qr_png',
+            args = (('drawn', draw(st.integers(0, 1000))),)
+        )
+    ])
+    return cfg
+
 @given_cached_tests(
-    cfg_strategy = config_subscribe_qr('png'),
+    cfg_strategy = config_subscribe_qr_png,
     max_examples = 3,
 )
 def test_subscribe_qr_png(cfg: ResolvedTestConfig):
