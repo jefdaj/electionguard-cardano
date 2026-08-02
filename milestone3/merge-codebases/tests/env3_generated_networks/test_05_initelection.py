@@ -29,6 +29,9 @@ def config_init_election(draw):
 )
 def test_init_election(cfg: ResolvedTestConfig):
     assert_script_logs_match(cfg, 'admin', [
+        'CH_STR=admin$',
+        'egc collateral await$',
+        'egc election burntesttokens$',
         'egc collateral return$',
         'exit 0$'
     ])

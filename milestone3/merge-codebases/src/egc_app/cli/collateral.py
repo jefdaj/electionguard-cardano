@@ -14,7 +14,7 @@ def create():
 
 @collateral.command(name='await') # TODO roles?
 def await_():
-    raise NotImplementedError
+    asyncio.run(Client().collateral_await())
 
 @collateral.command(name='return') # TODO roles?
 @click.option('--return-addr', type=click.STRING, required=False)

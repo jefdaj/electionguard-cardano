@@ -139,6 +139,11 @@ class ElectionNode:
         vkh = self.publisher.wallet.vkh
         return self.subscriber.await_channel(vkh, role, timeout)
 
+    def await_collateral(self, timeout=OGMIOS_TIMEOUT_SEC):
+        utxo = self.publisher.await_collateral()
+        assert utxo is not None
+        return
+
     def balance_and_sign_state_transition_tx(
             self,
             txb: TransactionBuilder,

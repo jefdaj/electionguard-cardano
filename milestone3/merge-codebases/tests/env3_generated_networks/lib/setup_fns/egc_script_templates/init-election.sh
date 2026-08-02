@@ -18,5 +18,5 @@ egc election share --election-save-png qrcodes/election.png
 CH_STR=$(egc channel await --role admin)
 [[ "$CH_STR" == "admin" ]] || { echo "failed to acquire admin channel" >&2; exit 1; }
 
-# TODO egc collateral await
+egc collateral await
 {% endblock %}

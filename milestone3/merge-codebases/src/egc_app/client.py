@@ -104,6 +104,10 @@ class Client:
         r = await self._c.post('/collateral/return', json=data.model_dump())
         r.raise_for_status()
 
+    async def collateral_await(self) -> str:
+        r = await self._c.get('/collateral/await')
+        r.raise_for_status()
+
     async def channel_await(self, role: str) -> str:
         data = schemas.ChannelAwait(role=role)
         resp = await self._c.get('/channel/await', params=data.model_dump(mode='json', exclude_none=True))

@@ -246,14 +246,13 @@ class ElectionPublisher:
             )
         return utxo
 
-    # TODO await_collateral
-    def await_collateral(self) -> UTxO:
+    def await_collateral(self, timeout=OGMIOS_TIMEOUT_SEC) -> UTxO:
         """Poll for a collateral UTXO at `address` until one appears or
-        OGMIOS_TIMEOUT_SEC elapses. Used right after a funding tx to bridge
+        `timeout` seconds go by. Used right after a funding tx to bridge
         the gap between submission and the publisher's address being
         re-indexed."""
         self._guard_wallet()
-        deadline = time.monotonic() + OGMIOS_TIMEOUT_SEC
+        deadline = time.monotonic() + timeout
         while True:
             utxo = self.find_collateral_utxo()
             if utxo is not None:
@@ -265,7 +264,7 @@ class ElectionPublisher:
             if time.monotonic() >= deadline:
                 raise TimeoutError(
                     f"Collateral UTXO did not appear at {self.wallet.addr} within "
-                    f"{OGMIOS_TIMEOUT_SEC}s"
+                    f"{timeout}s"
                 )
             time.sleep(OGMIOS_POLL_SEC)
 
