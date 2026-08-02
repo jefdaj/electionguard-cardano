@@ -32,13 +32,13 @@ def config_subscribe_qr(fmt='txt'):
     max_examples = 3,
 )
 def test_subscribe_qr_str(cfg: ResolvedTestConfig):
-    assert_node_logs_match(cfg, '.*', '^[0-9]{9,}\\s.*ended election')
-    assert_node_logs_do_not_match(cfg, '.*', '^arion: FatalError')
+    assert_script_logs_match(cfg, '.*', '^[0-9]{9,}\\s.*ended election')
+    assert_script_logs_do_not_match(cfg, '.*', '^arion: FatalError')
 
 @given_cached_tests(
     cfg_strategy = config_subscribe_qr('png'),
     max_examples = 3,
 )
 def test_subscribe_qr_png(cfg: ResolvedTestConfig):
-    assert_node_logs_match(cfg, '.*', '^[0-9]{9,}\\s.*ended election')
-    assert_node_logs_do_not_match(cfg, '.*', '^arion: FatalError')
+    assert_script_logs_match(cfg, '.*', '^[0-9]{9,}\\s.*ended election')
+    assert_script_logs_do_not_match(cfg, '.*', '^arion: FatalError')
