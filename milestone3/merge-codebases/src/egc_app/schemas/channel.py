@@ -1,6 +1,6 @@
 from pydantic import BaseModel, field_validator
 from typing import Annotated, Optional
-from egc import is_valid_role
+from egc import is_valid_role, is_valid_channel_str
 
 class ChannelAwait(BaseModel):
     role: str

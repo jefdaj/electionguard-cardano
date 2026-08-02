@@ -15,6 +15,6 @@ async def channel_await(params: Annotated[schemas.ChannelAwait, Query()], state=
         raise HTTPException(status_code=409, detail="Load or create a wallet first.")
     try:
         ch_str = state.node.await_channel(params.role)
-        return schemas.ChannelAwaitOut(ch_str)
+        return schemas.ChannelAwaitOut(channel_str=ch_str)
     except (TimeoutError, asyncio.TimeoutError):
         raise HTTPException(status_code=504, detail="Timed out waiting for channel")

@@ -137,7 +137,7 @@ class ElectionNode:
 
     def await_channel(self, role: str, timeout=OGMIOS_TIMEOUT_SEC):
         vkh = self.publisher.wallet.vkh
-        return self.subscriber.await_channel(vhk, role, timeout)
+        return self.subscriber.await_channel(vkh, role, timeout)
 
     def balance_and_sign_state_transition_tx(
             self,

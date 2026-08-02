@@ -40,4 +40,5 @@ def await_(role: str):
     have a role, but then it's more like an assert statement. The admin can
     also use this to wait for their channel from the funder.
     """
-    asyncio.run(Client().channel_await(role=role))
+    ch_str = asyncio.run(Client().channel_await(role=role))
+    click.echo(ch_str)

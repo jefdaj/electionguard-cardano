@@ -104,9 +104,9 @@ class Client:
         r = await self._c.post('/collateral/return', json=data.model_dump())
         r.raise_for_status()
 
-    async def channel_await(self, role: str):
+    async def channel_await(self, role: str) -> str:
         data = schemas.ChannelAwait(role=role)
-        resp = await self._c.get('/channel/await', params=data.model_dump())
+        resp = await self._c.get('/channel/await', params=data.model_dump(mode='json', exclude_none=True))
         resp.raise_for_status()
-        out = schemas.ChannelAwaitOut.model_valiate(resp)
-        click.echo(out.channel_str)
+        out = schemas.ChannelAwaitOut.model_validate(resp.json())
+        return out.channel_str

@@ -11,8 +11,12 @@ cleanup() {
 {{ super() }}
 egc wallet create --description admin
 egc node await
+
 egc election create --funder-load-json private/funder.sk --admin-ada 200
 egc election share --election-save-png qrcodes/election.png
-egc channel await --role admin
+
+CH_STR=$(egc channel await --role admin)
+[[ "$CH_STR" == "admin" ]] || { echo "failed to acquire admin channel" >&2; exit 1; }
+
 # TODO egc collateral await
 {% endblock %}
