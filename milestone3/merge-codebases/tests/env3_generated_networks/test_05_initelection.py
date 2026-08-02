@@ -28,5 +28,7 @@ def config_init_election(draw):
     max_examples = 3,
 )
 def test_init_election(cfg: ResolvedTestConfig):
-    # assert_node_logs_match(cfg=cfg, pattern='^[0-9]{9,}\\s.*ended election') # TODO separate nodes here?
+    assert_node_logs_match(cfg, 'admin', 'egc collateral return$')
+    assert_node_logs_match(cfg, 'admin', 'exit 0$')
+    assert_node_logs_match(cfg, '(?!admin)', '^[0-9]{9,}\\s.*ended election')
     assert_node_logs_do_not_match(cfg, '.*', '^arion: FatalError')
