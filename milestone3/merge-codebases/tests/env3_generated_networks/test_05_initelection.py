@@ -28,6 +28,15 @@ def config_init_election(draw):
     max_examples = 3,
 )
 def test_init_election(cfg: ResolvedTestConfig):
-    assert_script_logs_match(cfg, 'admin', ['egc collateral return$', 'exit 0$'])
+    assert_script_logs_match(cfg, 'admin', [
+        'egc collateral return$',
+        'exit 0$'
+    ])
+    assert_node_logs_match(cfg, 'admin', [
+        'minted admin channel STT',
+        'deployed contract',
+        'saved contract details',
+        'Subscribe to this election with',
+    ])
     assert_script_logs_match(cfg, '(?!admin)', ['^[0-9]{9,}\\s.*ended election'])
-    assert_script_logs_do_not_match(cfg, '.*', ['^arion: FatalError'])
+    assert_script_logs_do_not_match(cfg, '.*', ['^Traceback', '^arion: FatalError'])
