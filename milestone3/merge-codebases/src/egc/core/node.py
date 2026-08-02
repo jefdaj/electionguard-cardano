@@ -113,7 +113,7 @@ class ElectionNode:
             return EgcPhase.NOT_INDEXED
         return self.subscriber.current_phase()
 
-    def wait_for_confirmation(
+    def await_tx_confirmed(
             self,
             tx: Transaction,
             subscriber_too: bool = True # set False to return collateral after election
@@ -125,11 +125,11 @@ class ElectionNode:
         ch_str = self.channel_str()
         tx_str = str(tx.id)
 
-        self.publisher.wait_for_confirmation(tx)
+        self.publisher.await_tx_confirmed(tx)
         LOG.debug(f'{ch_str} publisher confirmed tx {tx.id}')
 
         if subscriber_too:
-            self.subscriber.wait_for_confirmation(tx_str)
+            self.subscriber.await_tx_confirmed(tx_str)
             LOG.debug(f'{ch_str} subscriber confirmed tx {tx.id}')
 
     def await_phase(self, phase: Optional[ElectionPhase], timeout=OGMIOS_TIMEOUT_SEC):
@@ -213,7 +213,7 @@ class ElectionNode:
 
         tx_msgs = []
 
-        pub_col_utxo = self.publisher.wait_for_collateral()
+        pub_col_utxo = self.publisher.await_collateral()
         LOG.debug('pub_col_utxo: %s' % pformat(pub_col_utxo))
 
         # (in_utxo, in_datum) = self.state()
@@ -325,7 +325,7 @@ class ElectionNode:
         # Without this set, the FunderNode risks the entire dev wallet when
         # deploying a contract.
         self.publisher.create_own_collateral()
-        col = self.publisher.wait_for_collateral()
+        col = self.publisher.await_collateral()
 
         # Messages to log if/when the TX succeeds
         ch_str = self.channel_str()

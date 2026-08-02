@@ -150,12 +150,12 @@ class ElectionPublisher:
 
 
     # TODO get this working for the case where the utxo is confirmed + consumed between polls
-    def wait_for_confirmation(
+    def await_tx_confirmed(
             self,
             tx: Transaction,
             output_indices=(0,), # TODO remove if we always use 0?
         ):
-        LOG.debug('ElectionPublisher.wait_for_confirmation')
+        LOG.debug('ElectionPublisher.await_tx_confirmed')
         if tx is None:
             LOG.debug('tx is None; not waiting for confirmation.')
             return
@@ -246,8 +246,8 @@ class ElectionPublisher:
             )
         return utxo
 
-    # TODO unify with wait_for_confirmation?
-    def wait_for_collateral(self) -> UTxO:
+    # TODO await_collateral
+    def await_collateral(self) -> UTxO:
         """Poll for a collateral UTXO at `address` until one appears or
         OGMIOS_TIMEOUT_SEC elapses. Used right after a funding tx to bridge
         the gap between submission and the publisher's address being

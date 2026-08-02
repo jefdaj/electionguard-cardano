@@ -81,7 +81,7 @@ def assert_collateral(nodes: list[ElectionNode]):
     for node in nodes:
         try:
             name = node.channel_str()
-            utxo = node.publisher.wait_for_collateral()
+            utxo = node.publisher.await_collateral()
             LOG.info(f'{name} has the expected collateral utxo.')
         except TimeoutError:
             LOG.error(f'{name} is missing the expected collateral utxo.')

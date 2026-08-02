@@ -68,7 +68,7 @@ def init_election_tuple(
         admin_vkh  = admin_vkh,
         admin_ada  = 200, # TODO what's a good amount?
     )
-    funder.wait_for_confirmation(init_tx)
+    funder.await_tx_confirmed(init_tx)
 
     # All other tests happen here
     yield (init_tx, cfg) # TODO config here, not context
@@ -80,8 +80,8 @@ def init_election_tuple(
         else:
             # Can't use subscriber to wait here because it shuts down after burn.
             burn_tx = funder.burn_test_tokens()
-            funder.wait_for_confirmation(burn_tx, subscriber_too=False)
-            wait_for_confirmation_generic() # TODO fold into regular wait_for_confirmation?
+            funder.await_tx_confirmed(burn_tx, subscriber_too=False)
+            await_blocks() # TODO fold into regular await_tx_confirmed?
 
     except Exception as e:
         LOG.error(e, exc_info=True)
@@ -90,10 +90,10 @@ def init_election_tuple(
     finally:
         last_tx = funder.recover_all_collateral(keys_dir)
 
-        # Can't use the node-level wait_for_confirmation here,
+        # Can't use the node-level await_tx_confirmed here,
         # because the subscriber won't pick up the unrelated TX.
         # TODO rename to make that requirement clearer?
-        funder.publisher.wait_for_confirmation(last_tx)
+        funder.publisher.await_tx_confirmed(last_tx)
 
         ada_after = get_balance_ada(funder.publisher.wallet.addr)
         LOG.debug(f'funder balance after {name} is {ada_after} ADA.')

@@ -46,7 +46,7 @@ class AdminNode(VerifierNode):
         tx_msgs = []
 
         # ensure own collateral
-        admin_collateral = self.publisher.wait_for_collateral()
+        admin_collateral = self.publisher.await_collateral()
         LOG.debug('admin_collateral: %s' % pformat(admin_collateral))
 
         # (in_utxo, in_datum) = self.state()
@@ -125,7 +125,7 @@ class AdminNode(VerifierNode):
         tx_msgs = []
 
         # ensure own collateral
-        admin_collateral = self.publisher.wait_for_collateral()
+        admin_collateral = self.publisher.await_collateral()
         LOG.debug('admin_collateral: %s' % pformat(admin_collateral))
 
         # (in_utxo, in_datum) = self.state()
@@ -277,7 +277,7 @@ class AdminNode(VerifierNode):
 
         # ensure own collateral
         # TODO factor out
-        admin_collateral = self.publisher.wait_for_collateral()
+        admin_collateral = self.publisher.await_collateral()
         LOG.debug('admin_collateral: %s' % pformat(admin_collateral))
 
         # TODO start state transition edit section
@@ -403,7 +403,7 @@ class AdminNode(VerifierNode):
 
         # ensure own collateral
         # TODO factor out
-        admin_collateral = self.publisher.wait_for_collateral()
+        admin_collateral = self.publisher.await_collateral()
         LOG.debug('admin_collateral: %s' % pformat(admin_collateral))
 
         in_utxo  = self.current_utxo()

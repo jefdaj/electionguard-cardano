@@ -654,6 +654,7 @@ class ElectionSubscriber:
 
 
     # TODO accept optional channel_id?
+    # TODO underscore this?
     def all_events(self) -> list[ChannelEvent]:
         # All events in _history, sorted by (slot_no, ch_str)
         events: dict[int, list[ChannelEvent]] = {}
@@ -678,6 +679,21 @@ class ElectionSubscriber:
         return es
 
 
+    def first_matching_event(
+            self,
+            pred_fn: Callable[[ElectionEvent], bool],
+            timeout=OGMIOS_TIMEOUT_SEC # TODO slower?
+        ) -> ElectionEvent:
+        "Poll until a matching ElectionEvent appears and return it, or time out."
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            for e in self.all_election_events(): # TODO is this a lot of computation?
+                if pred_fn(e):
+                    return e
+            time.sleep(timeout)
+        raise TimeoutError(f'No matching ElectionEvent within {timeout}s.')
+
+
     # TODO n_confirmations
     def is_confirmed(self, txid: str) -> bool:
         # Does _history contain this txid?
@@ -691,7 +707,7 @@ class ElectionSubscriber:
 
 
     # TODO wait_for_n_confirmations?
-    def wait_for_confirmation(self, txid: str, timeout=OGMIOS_TIMEOUT_SEC):
+    def await_tx_confirmed(self, txid: str, timeout=OGMIOS_TIMEOUT_SEC):
         if self.is_done():
             raise Exception('Subscriber already done.')
         # Poll until _history contains txid

@@ -435,13 +435,13 @@ def utxos_for_inputs(tx_inputs: list[TransactionInput]) -> dict[TransactionInput
     return utxos
 
 
-def wait_for_confirmation_generic(n_confirmations: int = 1):
+def await_blocks(n_blocks: int = 1):
     """Wait long enough that any pending TXs should have confirmed.
     Mainly used when returning collateral after an election,
-    because we can't use the subscriber at that point."""
+    because the subscriber has been wound down already."""
     prev = None
     count = 0
-    while count < n_confirmations:
+    while count < n_blocks:
         time.sleep(OGMIOS_POLL_SEC)
         tip = query_network_tip_sync()['block_hash']
         if tip == prev:

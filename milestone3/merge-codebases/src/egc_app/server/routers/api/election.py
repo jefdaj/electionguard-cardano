@@ -66,7 +66,7 @@ def create_election(data: schemas.ElectionCreate, state=Depends(get_state)):
 
     # TODO actually, could we skip the wait?
     try:
-        state.node.wait_for_confirmation(tx) # TODO make this async?
+        state.node.await_tx_confirmed(tx) # TODO make this async?
     except (asyncio.TimeoutError, TimeoutError):
         raise HTTPException(
             status_code = HTTP_504_GATEWAY_TIMEOUT,
@@ -82,8 +82,8 @@ def burn_test_tokens(state=Depends(get_state)):
     # this TX confirmed before returning their collateral.
     # Can't use subscriber to wait here because it shuts down after burn.
     burn_tx = state.node.burn_test_tokens()
-    state.node.wait_for_confirmation(burn_tx, subscriber_too=False)
-    wait_for_confirmation_generic() # TODO fold into regular wait_for_confirmation?
+    state.node.await_tx_confirmed(burn_tx, subscriber_too=False)
+    await_blocks() # TODO fold into regular await_tx_confirmed?
 
 @router.get("/events")
 async def stream_events(request: Request, state=Depends(get_state)):

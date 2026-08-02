@@ -86,7 +86,7 @@ def admin_tx1(
         new_phase = ElectionConfigPhase(ConfigOnboardingPhase()),
     )
     LOG.debug(f'admin_tx1: {tx}')
-    admin.wait_for_confirmation(tx)
+    admin.await_tx_confirmed(tx)
     return tx
 
 def test_admin_tx1(admin, admin_s1, admin_tx1):
@@ -141,7 +141,7 @@ def admin_tx2(
         done_onboarding = True, # advance to ConfigCeremonyPhase
     )
     LOG.debug(f'admin_tx2: {tx}')
-    admin.wait_for_confirmation(tx)
+    admin.await_tx_confirmed(tx)
     return tx
 
 def test_admin_tx2(admin, admin_s2, admin_tx2):
@@ -208,7 +208,7 @@ def post_tx(
     pairs = load_static_record_pairs(recs, static_files_dir)
     tx = node_.post_public_records(new_record_pairs=pairs)
     LOG.debug(f'{ch_str}_tx{tx_index}: {tx}')
-    node_.wait_for_confirmation(tx)
+    node_.await_tx_confirmed(tx)
     return tx
 
 ## ----------- Round 1 -----------
@@ -397,7 +397,7 @@ def admin_tx3(
         new_phase = ElectionVotingPhase(),
     )
     LOG.debug(f'admin_tx3: {tx}')
-    admin.wait_for_confirmation(tx)
+    admin.await_tx_confirmed(tx)
     return tx
 
 def test_admin_tx3(admin, admin_s3, admin_tx3):
@@ -473,7 +473,7 @@ def admin_tx4(
         ElectionResultsPhase(ResultsTallyPhase())
     )
     LOG.debug(f'admin_tx4: {tx}')
-    admin.wait_for_confirmation(tx)
+    admin.await_tx_confirmed(tx)
     return tx
 
 def test_admin_tx4(admin, admin_s4, admin_tx4):
@@ -527,7 +527,7 @@ def admin_tx5(
         new_phase = ElectionResultsPhase(ResultsDecryptPhase()),
     )
     LOG.debug(f'admin_tx5: {tx}')
-    admin.wait_for_confirmation(tx)
+    admin.await_tx_confirmed(tx)
     return tx
 
 def test_admin_tx5(admin, admin_s5, admin_tx5):
@@ -614,7 +614,7 @@ def admin_tx6(
         new_phase = ElectionVerifyPhase(),
     )
     LOG.debug(f'admin_tx6: {tx}')
-    admin.wait_for_confirmation(tx)
+    admin.await_tx_confirmed(tx)
     return tx
 
 def test_admin_tx6(admin, admin_s6, admin_tx6):
@@ -717,7 +717,7 @@ def admin_tx7(
         new_phase = ElectionFinalizePhase(),
     )
     LOG.debug(f'admin_tx7: {tx}')
-    admin.wait_for_confirmation(tx)
+    admin.await_tx_confirmed(tx)
     return tx
 
 def test_admin_tx7(admin, admin_s7, admin_tx7):
@@ -773,7 +773,7 @@ def admin_tx8(
     ch_strs = [channel_id_to_string(k) for k in sub_ids]
     tx = admin.rm_subchannels(subchannels = sub_ids)
     LOG.debug(f'admin_tx8: {tx}')
-    admin.wait_for_confirmation(tx)
+    admin.await_tx_confirmed(tx)
     return tx
 
 def test_admin_tx8(admin, admin_s8, admin_tx8):
@@ -786,7 +786,7 @@ def admin_tx9(
     ) -> Transaction:
     tx = admin.end_election()
     LOG.debug(f'admin_tx9: {tx}')
-    # this can't wait_for_confirmation, because last tx isn't indexed:
+    # this can't await_tx_confirmed, because last tx isn't indexed:
     admin.await_phase(EgcPhase.FINISHED)
     return tx
 

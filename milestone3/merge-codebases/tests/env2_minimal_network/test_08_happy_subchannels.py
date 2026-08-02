@@ -65,7 +65,7 @@ def tx1(
         new_phase = static_phases[1],
     )
     LOG.debug(f'tx1: {tx}')
-    admin.wait_for_confirmation(tx)
+    admin.await_tx_confirmed(tx)
     return tx
 
 def test_tx1(admin, s1, tx1):
@@ -112,7 +112,7 @@ def tx2(
         done_onboarding = True, # advance to ceremony phase
     )
     LOG.debug(f'tx2: {tx}')
-    admin.wait_for_confirmation(tx)
+    admin.await_tx_confirmed(tx)
     return tx
 
 def test_add_subchannel(
@@ -150,7 +150,7 @@ def tx3(
     ch_strs = [channel_id_to_string(k) for k in sub_ids]
     tx = admin.rm_subchannels(subchannels = sub_ids)
     LOG.debug(f'tx3: {tx}')
-    admin.wait_for_confirmation(tx)
+    admin.await_tx_confirmed(tx)
     return tx
 
 def test_rm_subchannel(admin, s3, tx3, guardian1):
