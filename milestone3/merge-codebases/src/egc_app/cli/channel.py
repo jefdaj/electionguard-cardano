@@ -1,6 +1,8 @@
+import asyncio
 import click
 from egc_app.cli.utils import RoleAwareGroup
 from egc_app import schemas
+from egc_app.client import Client
 
 @click.group(cls=RoleAwareGroup)
 def channel() -> None:

@@ -5,7 +5,7 @@ from egc import is_valid_role
 class ChannelAwait(BaseModel):
     role: str
 
-    @field_validator('role'):
+    @field_validator('role')
     def check_role(cls, v: str) -> str:
         assert is_valid_role(v)
         return v
@@ -13,7 +13,7 @@ class ChannelAwait(BaseModel):
 class ChannelAwaitOut(BaseModel):
     channel_str: str
 
-    @field_validator('channel_str'):
+    @field_validator('channel_str')
     def check_role(cls, v: str) -> str:
         assert is_valid_channel_str(v)
         return v

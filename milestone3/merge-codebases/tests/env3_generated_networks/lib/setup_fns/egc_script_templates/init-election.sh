@@ -14,5 +14,5 @@ egc node await
 egc election create --funder-load-json private/funder.sk --admin-ada 200
 egc election share --election-save-png qrcodes/election.png
 egc channel await --role admin
-egc collateral await
+# TODO egc collateral await
 {% endblock %}
