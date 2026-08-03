@@ -7,7 +7,7 @@ from egc_app.cli.utils import *
 ### main CLI ###
 
 from egc_app.cli import ballot
-from egc_app.cli import batch
+from egc_app.cli import records
 from egc_app.cli import ceremony
 from egc_app.cli import channel
 from egc_app.cli import collateral
@@ -40,7 +40,7 @@ def cli(ctx, config, role):
         click.echo(ctx.get_help())
 
 cli.add_command(ballot.ballot)
-cli.add_command(batch.batch)
+cli.add_command(records.records)
 cli.add_command(ceremony.ceremony)
 cli.add_command(channel.channel)
 cli.add_command(collateral.collateral)
