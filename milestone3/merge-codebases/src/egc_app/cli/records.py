@@ -23,14 +23,13 @@ def list_():
     raise NotImplementedError
 
 @records.command(roles=['admin', 'guardian', 'device'])
-@click.option('--min-size', type=click.INT, required=False)
-@click.option('--advance-phase', type=click.STRING, required=False)
+@click.option('--min-size', help='Min batch size for privacy.', type=click.INT, required=False)
+@click.option('--advance-phase', help='Admin only: also advance the election phase.', type=click.STRING, required=False)
 @ints_arg()
 def post(ints: list[int], min_size: int, advance_phase: str):
     """Post current records.
-    Defaults to as many as will fit in one TX, but you can optionally specify
-    indices. You can also specify a min batch size (for privacy), and the admin
-    can also optionally advance the phase at the same time.
+    Defaults to as many as will fit in one transaction, but you can optionally
+    specify indices.
     """
     click.echo(ints)
     # TODO what happens when they don't fit in one tx?
