@@ -16,6 +16,9 @@ class AdminNode(VerifierNode):
     def __init__(
         self,
 
+        # Where to keep records_to_post, records_fetched, and other files as needed.
+        private_dir: Path,
+
         # election: ElectionContext,
         election_cfg: ElectionConfig,
 
@@ -31,6 +34,7 @@ class AdminNode(VerifierNode):
         super().__init__(
             role='admin',
             role_index=1,
+            private_dir=private_dir,
             election_cfg=election_cfg,
             wallet=wallet
         )

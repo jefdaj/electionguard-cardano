@@ -2,7 +2,7 @@
 import time
 from dataclasses import replace
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Any
 from pycardano import *
 
 from .ogmios     import *
@@ -27,6 +27,9 @@ class ElectionNode:
         role: str,
         role_index: int,
 
+        # Where to keep records_to_post, records_fetched, and other files as needed.
+        private_dir: Path,
+
         # May both be None in case of an observer.
         # All other roles should set them both from the beginning.
         # script: Optional[ElectionScript] = None,
@@ -43,6 +46,10 @@ class ElectionNode:
         # TODO mk_ipfs or similar?
     ):
         LOG.debug('ElectionNode.__init__')
+
+        self.private_dir = Path(private_dir) # TODO absolute()?
+        self.records_to_post_dir = self.private_dir / 'records_to_post'
+        self.records_fetched_dir = self.private_dir / 'records_fetched'
 
         # May be None in case of an Observer.
         # self.script: Optional[Script] = script
@@ -192,6 +199,42 @@ class ElectionNode:
 
         return tx_signed
 
+
+    ### batching ###
+
+    def batch_add(self, content: Any, metdata: PublicRecordMetadata):
+        raise NotImplementedError
+        # TODO find/create records_to_post dir
+        # TODO find path within the dir
+        # TODO write to path
+
+    # TODO better name?
+    def batch_list(self):
+        raise NotImplementedError
+        # TODO find/create records_to_post dir
+        # TODO find and sort files in it
+        # TODO convert each path to metadata
+        # TODO enumerate
+
+    def batch_assemble(
+            self,
+            min_size: int = 1,
+        ):
+        raise NotImplementedError
+
+    # TODO better name?
+    def batch_post(
+            self,
+            min_size: int = 1,
+            advance_phase: Optional[str] = None,
+        ):
+        raise NotImplementedError
+        # TODO find/create records_to_post dir
+
+
+    ### contract operations ###
+
+    # TODO underscore this in favor of batch_post
     def post_public_records(
             self,
             new_record_pairs: List[tuple[dict, PublicRecordMetadata]],

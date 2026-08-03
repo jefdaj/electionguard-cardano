@@ -17,6 +17,9 @@ class DeviceNode(VerifierNode):
         # For deriving the ChannelId
         role_index: int,
 
+        # Where to keep records_to_post, records_fetched, and other files as needed.
+        private_dir: Path,
+
         election_cfg: ElectionConfig,
 
         # No need for keys_dir or key_name if you pass an existing wallet.
@@ -32,6 +35,7 @@ class DeviceNode(VerifierNode):
         super().__init__(
             role       = 'device',
             role_index = role_index,
+            private_dir = private_dir,
             election_cfg = election_cfg,
             wallet     = wallet,
             keys_dir   = keys_dir,

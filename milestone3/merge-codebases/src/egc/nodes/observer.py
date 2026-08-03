@@ -34,6 +34,9 @@ class ObserverNode(ElectionNode):
         role: str = 'observer',
         role_index: int = 1, # TODO option to have other indexes for tests
 
+        # Where to keep records_to_post, records_fetched, and other files as needed.
+        private_dir: Path,
+
         # No election context is needed at init time; it's assumed you will
         # create or subscribe to one separately later.
 
@@ -54,5 +57,6 @@ class ObserverNode(ElectionNode):
         super().__init__(
             role=role,
             role_index=role_index,
+            private_dir=private_dir,
             wallet=wallet,
         )
