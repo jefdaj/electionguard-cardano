@@ -8,7 +8,10 @@ def records() -> None:
     Posting only one record to the blockchain at a time is inefficient (and bad
     for privacy!), so by default any command that creates a record just adds it
     to the current batch. Then you use the commands here to list, drop, or post
-    them in batches.
+    them together.
+
+    In general you can batch anything that should be posted by the same node
+    during the same phase of the election. (Edge cases TBD)
     """
 
 @records.command(roles=['admin', 'guardian', 'device'])
