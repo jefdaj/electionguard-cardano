@@ -1,31 +1,38 @@
 import click
-# from egc_app.cli.utils import RoleAwareGroup, ints_arg
 from .utils import RoleAwareGroup, ints_arg
 
 @click.group(cls=RoleAwareGroup)
 def records() -> None:
-    "Control batching of records into transactions."
+    """Post batches of records.
+
+    Posting only one record to the blockchain at a time is inefficient (and bad
+    for privacy!), so by default any command that creates a record just adds it
+    to the current batch. Then you use the commands here to list, drop, or post
+    them in batches.
+    """
 
 @records.command(roles=['admin', 'guardian', 'device'])
 def list():
-    "Enumerate the current records."
+    "Enumerate current records."
     raise NotImplementedError
 
 @records.command(roles=['admin', 'guardian', 'device'])
 @ints_arg()
 def post(ints):
-    "Post the current records."
+    "Post current records."
     click.echo(ints)
     # TODO what happens when they don't fit in one tx?
     # TODO optional phase advance
-    # raise NotImplementedError
+    raise NotImplementedError
 
 @records.command(roles=['admin', 'guardian', 'device'])
-def drop():
-    """Drop current records without posting.
+@ints_arg()
+def drop(ints):
+    """Delete current records without posting.
 
     This is probably most useful when manually testing commands in the CLI.
     You might also want to discard records if they fail verification,
     but in that case you should raise an error too.
     """
+    click.echo(ints)
     raise NotImplementedError
