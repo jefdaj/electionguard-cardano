@@ -86,6 +86,7 @@ def _build_default_map(config_path: str | None, role: str) -> dict:
 # TODO remove 'any'?
 # TODO enum type
 # TODO funder?
+# TODO move to core?
 CLI_ROLES = ('any', 'admin', 'guardian', 'device', 'verifier', 'observer')
 
 class RoleAwareGroup(cloup.Group):
@@ -127,7 +128,7 @@ class RoleAwareGroup(cloup.Group):
     def list_commands(self, ctx: click.Context) -> list[str]:
         visible = []
 
-        for name, cmd in sorted(self.commands.items()):
+        for name, cmd in list(self.commands.items()):
             if isinstance(cmd, click.Group):
                 if self._has_visible_descendant(ctx, cmd):
                     visible.append(name)
