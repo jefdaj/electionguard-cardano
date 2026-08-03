@@ -11,12 +11,15 @@ def records() -> None:
     as a group.
 
     In general you can batch anything that should be posted by the same node
-    during the same phase of the election. (Edge cases TBD)
+    during the same phase of the election; edge cases TBD.
     """
 
-@records.command(roles=['admin', 'guardian', 'device'])
-def list():
-    "Enumerate current records."
+@records.command(name='list', roles=['admin', 'guardian', 'device'])
+def list_():
+    """Enumerate current records.
+    This gives indices for use in the post and drop commands.
+    """
+    # TODO and estimates how many will fit in a tx?
     raise NotImplementedError
 
 @records.command(roles=['admin', 'guardian', 'device'])
