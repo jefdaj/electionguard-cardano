@@ -24,10 +24,10 @@ class IntsType(click.ParamType):
 
 INTS = IntsType()
 
-def ints_arg(name="values", dest="ints"):
+def ints_arg(name="indices", dest="ints", required=False):
     """Decorator: positional arg(s) -> sorted list[int] passed as `dest`."""
     def decorator(f):
-        @click.argument(name, nargs=-1, type=INTS)
+        @click.argument(name, nargs=-1, type=INTS, required=required)
         @click.pass_context
         def wrapper(ctx, *args, **kwargs):
             parsed = kwargs.pop(name)

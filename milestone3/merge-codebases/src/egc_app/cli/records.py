@@ -5,10 +5,10 @@ from .utils import RoleAwareGroup, ints_arg
 def records() -> None:
     """Post batches of records.
 
-    Posting only one record to the blockchain at a time is inefficient (and bad
-    for privacy!), so by default any command that creates a record just adds it
-    to the current batch. Then you use the commands here to list, drop, or post
-    them together.
+    Posting only one record to the blockchain at a time is inefficient--and bad
+    for privacy! So any command that creates a record adds it to the current
+    batch instead. Then you use the commands here to list, drop, or post them
+    as a group.
 
     In general you can batch anything that should be posted by the same node
     during the same phase of the election. (Edge cases TBD)
@@ -22,16 +22,20 @@ def list():
 @records.command(roles=['admin', 'guardian', 'device'])
 @ints_arg()
 def post(ints):
-    "Post current records."
+    """Post current records.
+    Defaults to all records, but you can optionally specify them by number.
+    The admin can also optionally advance the phase at the same time.
+    """
     click.echo(ints)
     # TODO what happens when they don't fit in one tx?
     # TODO optional phase advance
     raise NotImplementedError
 
 @records.command(roles=['admin', 'guardian', 'device'])
-@ints_arg()
+@ints_arg(required=True)
 def drop(ints):
     """Delete current records without posting.
+    Requires explicit indices for which ones to drop.
 
     This is probably most useful when manually testing commands in the CLI.
     You might also want to discard records if they fail verification,
