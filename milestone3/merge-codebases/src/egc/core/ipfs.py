@@ -132,7 +132,7 @@ def ipfs_status_sync(**kwargs):
 
 # If you change ipfs-caps.json, these may also need adjustment...
 async def ipfs_wait_until_stable(
-    timeout=180,
+    timeout=300,
     min_peers=3,
     rate_threshold=10_000, # bytes/sec (RateIn + RateOut)
     required_stable_polls=3,
@@ -145,7 +145,7 @@ async def ipfs_wait_until_stable(
         try:
             # print(f'stable: {stable}')
             cur_status = await ipfs_status()
-            # print(f'cur_status: {cur_status}')
+            LOG.info(f'ipfs_wait_until_stable cur_status: {cur_status}')
             n = cur_status['n_peers']
             r = cur_status['bandwidth_Bs']
             # print(f'n: {n}')
