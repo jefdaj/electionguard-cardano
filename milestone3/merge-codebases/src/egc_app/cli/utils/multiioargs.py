@@ -31,7 +31,7 @@ class MultiIOArg:
 # ---- option construction -------------------------------------------------
 
 def _make_group(name, direction, required):
-    title = f"{name} input" if direction == "in" else f"{name} output"
+    title = f"{name.capitalize()} input" if direction == "in" else f"{name} output"
     return cloup.OptionGroup(
         title, constraint=require_one if required else mutually_exclusive
     )
