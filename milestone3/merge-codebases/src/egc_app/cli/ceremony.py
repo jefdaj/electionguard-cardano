@@ -2,12 +2,7 @@ import click
 from egc_app.cli.utils import RoleAwareGroup
 from pathlib import Path
 from egc_app.cli.utils import *
-
-import cloup
-from cloup import option, option_group
-from cloup.constraints import (
-    require_all, mutually_exclusive, If, RequireAtLeast, accept_none
-)
+from electionguard import CeremonyDetails
 
 
 @click.group(cls=RoleAwareGroup)
@@ -15,44 +10,26 @@ def ceremony() -> None:
     "Perform the guardian key ceremony."
 
 @ceremony.command(roles=['admin'])
-@cloup.option_group(
-    "Inline ceremony input",
-    cloup.option(
-        "--guardian-count",
-        prompt="Number of guardians",
-        help="The number of guardians that will participate in the key ceremony and tally.",
-        type=click.INT,
-    ),
-    cloup.option(
-        "--guardian-quorum",
-        prompt="Quorum",
-        help="The minimum number of guardians required to show up to the tally.",
-        type=click.INT,
-    ),
-    constraint = require_all,
-)
-@multi_load("ceremony", dict, ["json"])
-@cloup.constraint(
-    mutually_exclusive & RequireAtLeast(1),
-    ["guardian_count", "ceremony_load_json"], # representative params from each source
-)
+@multi_load('ceremony', CeremonyDetails, ['json'])
 def create(
-    guardian_count: int,
-    guardian_quorum: int,
-    config_path: Path
+    ceremony: CeremonyDetails,
 ):
     """Announce key ceremony parameters.
-    This is provisional based on the electionguard_gui key_ceremony_service.py;
+    This is provisional based on the electionguard_gui key_ceremony_service.py.
     I'm not sure whether it's the right approach yet.
-
-    You can either set all the options inline, or load them all from a JSON config file.
+    The json input is mainly for scripted testing; later there should be
+    explicit inline options for each part of the config.
     """
     # raise NotImplementedError
     print(locals())
     return
 
-    details = CeremonyDetails(guardian_count, guardian_quorum)
-    to_public_record(egsync_api, 'admin_1', 'ceremony_details', details)
+    # The decoded type should already be CeremonyDetails now
+    # details = CeremonyDetails(guardian_count, guardian_quorum)
+
+    # TODO just have to save in the proper spot?
+    # TODO convert back to json, send -> server, then it does this:
+    # to_public_record(egsync_api, 'admin_1', 'ceremony_details', details)
 
 
 # TODO remove unless different from create

@@ -7,6 +7,8 @@ from typing import Any, Literal
 import json as _json
 import time
 
+from electionguard import serialize as eg_serialize
+
 import click
 import cloup
 from cloup.constraints import mutually_exclusive, require_one
@@ -114,12 +116,22 @@ def build_multi_arg(name, direction, params) -> MultiIOArg:
 
 # This could be part of the interface, but can normally be automated via
 # multi_load_arg below.
+# TODO clean up/unify my json and dict handling with electionguard's way
 def _multi_read(mio: MultiIOArg, decode_cls=None):
     match mio.medium:
         case "cam":  return scan_qrcode(decode_cls=decode_cls)
         case "png":  return load_qrcode(mio.path, decode_cls)
         case "txt":  return decode_cls.from_qr_str(mio.path.read_text())
-        case "json": return decode_cls.from_json(mio.path.read_text())
+        case "json":
+            txt = mio.path.read_text()
+            try:
+                # If it's a native ElectgionGuard type,
+                # deserialize the official way.
+                # TODO will this attempt to deserialize even if not?
+                return eg_serialize.from_raw(decode_cls, txt)
+            except:
+                # Otherwise, assume it's one of our from_json types.
+                return decode_cls.from_json(txt)
 
 
 # This can't be automated the same way, so it becomes par of the interface.
