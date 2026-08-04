@@ -2,6 +2,7 @@
 
 {% block cleanup %}
 cleanup() {
+  echo "cleaning up"
   egc election burntesttokens || true
   egc collateral return
 }

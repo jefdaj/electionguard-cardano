@@ -18,7 +18,7 @@ def config_wallet(draw):
     ])
     return cfg
 
-@given_cached_tests(config_wallet, max_examples=1)
+@given_cached_tests(config_wallet(), max_examples=1)
 def test_create_wallet(cfg: ResolvedTestConfig):
     assert_script_logs_match(cfg, '.*', ['^\\s*"addr": "addr_test1'])
     assert_script_logs_do_not_match(cfg, '.*', ['^Traceback', '^arion: FatalError'])

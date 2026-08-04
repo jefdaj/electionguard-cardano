@@ -48,6 +48,6 @@ def given_cached_tests(
             # database defaults on -> failing configs replay next run
             # TODO derandomize  = False,?
         ),
-        given(cfg = cfg_strategy()),
+        given(cfg = cfg_strategy),
         prerun_egc_scripts,
     ])

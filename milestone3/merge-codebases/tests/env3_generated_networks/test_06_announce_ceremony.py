@@ -27,8 +27,13 @@ def config_announce_ceremony(draw):
     ])
     return cfg
 
+ANNOUNCE_CEREMONY_CONFIGS = [f() for f in [
+    config_announce_ceremony,
+]]
+
+
 @given_cached_tests(
-    cfg_strategy = config_announce_ceremony,
+    cfg_strategy = st.one_of(ANNOUNCE_CEREMONY_CONFIGS),
     max_examples = 1,
 )
 def test_announce_ceremony(cfg: ResolvedTestConfig):

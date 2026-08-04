@@ -25,7 +25,7 @@ def config_subscribe_qr_txt(draw):
     return cfg
 
 @given_cached_tests(
-    cfg_strategy = config_subscribe_qr_txt,
+    cfg_strategy = config_subscribe_qr_txt(),
     max_examples = 3,
 )
 def test_subscribe_qr_txt(cfg: ResolvedTestConfig):
@@ -50,7 +50,7 @@ def config_subscribe_qr_png(draw):
     return cfg
 
 @given_cached_tests(
-    cfg_strategy = config_subscribe_qr_png,
+    cfg_strategy = config_subscribe_qr_png(),
     max_examples = 3,
 )
 def test_subscribe_qr_png(cfg: ResolvedTestConfig):
