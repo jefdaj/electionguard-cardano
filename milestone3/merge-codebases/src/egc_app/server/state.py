@@ -17,6 +17,7 @@ def reset_election_state(state):
     # Resets the parts of the state that depend on the current election.
     # Should NOT reset the wallet.
     state.node = ObserverNode(
+        private_dir = state.config['node']['private_dir'],
         role_index = 1, # TODO pass this in? or ignore/deprecate
         wallet = state.wallet,
     )

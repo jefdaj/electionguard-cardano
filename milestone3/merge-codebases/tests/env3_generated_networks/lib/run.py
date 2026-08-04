@@ -14,10 +14,10 @@ from typing         import Callable
 
 def run_egc_scripts_cached(
         cfg: HashedTestConfig,
-        tmp_root: Path,
+        env3_tmp_root: Path,
         env3_arion_dir: Path,
     ) -> ResolvedTestConfig:
-    rcfg = resolve_test_config(cfg=cfg, tmp_root=tmp_root)
+    rcfg = resolve_test_config(cfg=cfg, tmp_root=env3_tmp_root)
     with lock_test_tmpdir(cfg=rcfg):
         log_path = rcfg.log_path()
         if not log_path.exists():
@@ -30,8 +30,8 @@ def run_egc_scripts_cached(
 
 
 def prerun_egc_scripts(final_test_fn_from_rcfg):
-    def fn_from_fixtures(cfg: HashedTestConfig, tmp_root: Path, env3_arion_dir: Path):
-        rcfg = run_egc_scripts_cached(cfg, tmp_root, env3_arion_dir)
+    def fn_from_fixtures(cfg: HashedTestConfig, env3_tmp_root: Path, env3_arion_dir: Path):
+        rcfg = run_egc_scripts_cached(cfg, env3_tmp_root, env3_arion_dir)
         return final_test_fn_from_rcfg(rcfg)
     return fn_from_fixtures
 

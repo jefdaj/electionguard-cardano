@@ -14,11 +14,11 @@ class GuardianNode(VerifierNode):
     def __init__(
         self,
 
-        # For deriving the ChannelId
-        role_index: int,
-
         # Where to keep records_to_post, records_fetched, and other files as needed.
         private_dir: Path,
+
+        # For deriving the ChannelId
+        role_index: int,
 
         # election: ElectionContext,
         election_cfg: ElectionConfig,
@@ -34,9 +34,9 @@ class GuardianNode(VerifierNode):
     ):
         LOG.debug('GuardianNode.__init__')
         super().__init__(
+            private_dir = private_dir,
             role       = 'guardian',
             role_index = role_index,
-            private_dir = private_dir,
             election_cfg = election_cfg,
             wallet     = wallet,
             keys_dir   = keys_dir,

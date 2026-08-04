@@ -15,15 +15,15 @@ class VerifierNode(ElectionNode):
     def __init__(
         self,
 
+        # Where to keep records_to_post, records_fetched, and other files as needed.
+        private_dir: Path,
+
         # election: ElectionContext,
         election_cfg: ElectionConfig,
 
         # For deriving the ChannelId
         role: str = 'verifier',
         role_index: int = 1,
-
-        # Where to keep records_to_post, records_fetched, and other files as needed.
-        private_dir: Path,
 
         # No need for keys_dir or key_name if you pass an existing wallet.
         # You can also omit them without passing wallet, in which case a new
@@ -36,9 +36,9 @@ class VerifierNode(ElectionNode):
     ):
         LOG.debug('VerifierNode.__init__')
         super().__init__(
+            private_dir = private_dir,
             role       = role,
             role_index = role_index,
-            private_dir = private_dir,
             election_cfg    = election_cfg,
             wallet     = wallet,
             keys_dir   = keys_dir,

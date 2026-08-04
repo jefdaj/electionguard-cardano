@@ -32,9 +32,9 @@ class AdminNode(VerifierNode):
     ):
         LOG.debug('Admin.__init__')
         super().__init__(
+            private_dir=private_dir,
             role='admin',
             role_index=1,
-            private_dir=private_dir,
             election_cfg=election_cfg,
             wallet=wallet
         )

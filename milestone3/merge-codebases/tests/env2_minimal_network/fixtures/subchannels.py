@@ -46,8 +46,10 @@ LOG = logging.getLogger(__name__)
 def guardian1(
         election_cfg: ElectionConfig,
         guardian1_wallet: Wallet,
+        env2_tmp_root: Path,
     ) -> GuardianNode:
     node_ = GuardianNode(
+        private_dir = env2_tmp_root,
         election_cfg = election_cfg,
         wallet     = guardian1_wallet,
         role_index = 1,
@@ -64,8 +66,10 @@ def guardian1(
 def guardian2(
         election_cfg: ElectionConfig,
         guardian2_wallet: Wallet,
+        env2_tmp_root: Path,
     ) -> GuardianNode:
     node_ = GuardianNode(
+        private_dir = env2_tmp_root,
         election_cfg = election_cfg,
         wallet     = guardian2_wallet,
         role_index = 2,
@@ -82,8 +86,10 @@ def guardian2(
 def guardian3(
         election_cfg: ElectionConfig,
         guardian3_wallet: Wallet,
+        env2_tmp_root: Path,
     ) -> GuardianNode:
     node_ = GuardianNode(
+        private_dir = env2_tmp_root,
         election_cfg = election_cfg,
         wallet     = guardian3_wallet,
         role_index = 3,
@@ -100,8 +106,10 @@ def guardian3(
 def device1(
         election_cfg: ElectionConfig,
         device1_wallet: Wallet,
+        env2_tmp_root: Path,
     ) -> DeviceNode:
     node_ = DeviceNode(
+        private_dir = env2_tmp_root,
         election_cfg = election_cfg,
         wallet     = device1_wallet,
         role_index = 1,
@@ -118,8 +126,10 @@ def device1(
 def verifier1(
         election_cfg: ElectionConfig,
         verifier1_wallet: Wallet,
+        env2_tmp_root: Path,
     ) -> VerifierNode:
     node_ = VerifierNode(
+        private_dir = env2_tmp_root,
         election_cfg = election_cfg,
         wallet     = verifier1_wallet,
         role_index = 1,

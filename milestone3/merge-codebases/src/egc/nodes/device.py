@@ -14,11 +14,11 @@ class DeviceNode(VerifierNode):
     def __init__(
         self,
 
-        # For deriving the ChannelId
-        role_index: int,
-
         # Where to keep records_to_post, records_fetched, and other files as needed.
         private_dir: Path,
+
+        # For deriving the ChannelId
+        role_index: int,
 
         election_cfg: ElectionConfig,
 
@@ -33,9 +33,9 @@ class DeviceNode(VerifierNode):
     ):
         LOG.debug('DeviceNode.__init__')
         super().__init__(
+            private_dir = private_dir,
             role       = 'device',
             role_index = role_index,
-            private_dir = private_dir,
             election_cfg = election_cfg,
             wallet     = wallet,
             keys_dir   = keys_dir,

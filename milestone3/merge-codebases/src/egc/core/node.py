@@ -22,13 +22,13 @@ class ElectionNode:
     def __init__(
         self,
 
+        # Where to keep records_to_post, records_fetched, and other files as needed.
+        private_dir: Path,
+
         # For deriving the ChannelId and naming state dirs.
         # Observers still get these to simplify tests, but they never go on chain.
         role: str,
         role_index: int,
-
-        # Where to keep records_to_post, records_fetched, and other files as needed.
-        private_dir: Path,
 
         # May both be None in case of an observer.
         # All other roles should set them both from the beginning.

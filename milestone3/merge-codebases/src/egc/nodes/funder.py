@@ -33,20 +33,21 @@ class FunderNode(ObserverNode):
 
     def __init__(
         self,
-        # For now, we assume a funder starts with an already generated and
-        # funded dev wallet.
-        wallet: Wallet,
 
         # Where to keep records_to_post, records_fetched, and other files as needed.
         private_dir: Path,
+
+        # For now, we assume a funder starts with an already generated and
+        # funded dev wallet.
+        wallet: Wallet,
     ):
         LOG.debug('Funder.__init__')
         # No election here because it doesn't exist yet. And with no election,
         # the ElectionNode class won't init a subscriber yet either.
         super().__init__(
+            private_dir=private_dir,
             role='funder',
             role_index=1,
-            private_dir=private_dir,
             wallet=wallet,
         )
 

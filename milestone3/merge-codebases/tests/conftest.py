@@ -25,12 +25,14 @@ pytest_plugins = [
 
     # stage 1 fixtures
     # TODO separate the actually global ones?
+    "tests.env1_no_containers.fixtures.tmp_root",
     "tests.env1_no_containers.fixtures.admin",
     "tests.env1_no_containers.fixtures.funder",
     "tests.env1_no_containers.fixtures.subchannels",
     "tests.env1_no_containers.fixtures.wallet",
 
     # stage 2 fixtures
+    "tests.env2_minimal_network.fixtures.tmp_root",
     "tests.env2_minimal_network.fixtures.admin",
     "tests.env2_minimal_network.fixtures.assets",
     "tests.env2_minimal_network.fixtures.election",
