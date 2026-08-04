@@ -115,9 +115,12 @@ async def ipfs_status():
     except:
         peers = []
     LOG.debug(f'peers: {peers}')
-    bw   = await ipfs._client.stats.bw()
-    LOG.debug(f'bw: {bw}')
-    rate = int(bw.get("RateIn", 0) + bw.get("RateOut", 0))
+    try:
+        bw   = await ipfs._client.stats.bw()
+        LOG.debug(f'bw: {bw}')
+        rate = int(bw.get("RateIn", 0) + bw.get("RateOut", 0))
+    except:
+        rate = 0
     return {'n_peers': len(peers), 'bandwidth_Bs': rate}
 
 

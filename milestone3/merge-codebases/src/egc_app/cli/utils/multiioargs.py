@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 import json as _json
+import time
 
 import click
 import cloup
@@ -143,7 +144,21 @@ def multi_load(name, decode_cls, mediums, *, required=True):
         @functools.wraps(fn)
         def wrapper(**params):
             pio = build_multi_arg(name, "in", params)      # pops name_* keys
-            params[name] = _multi_read(pio, decode_cls=decode_cls)
+
+            # TODO why does this sometimes fail? is it a race condition or something else?
+            n_attempts = 0
+            while True:
+                n_attempts += 1
+                try:
+                    params[name] = _multi_read(pio, decode_cls=decode_cls)
+                    LOG.debug(f'read {name} after {n_attempts} attempts')
+                    break
+                except Exception as e:
+                    LOG.error(e)
+                    if n_attempts > 3:
+                        raise
+                    time.sleep(1)
+
             return fn(**params)
         return _add_options(wrapper, name, mediums, "in", required)
     return decorator
