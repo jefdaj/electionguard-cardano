@@ -2,6 +2,7 @@ from .plutus import *
 import logging
 from typing import Any
 from pathlib import Path
+from electionguard import serialize as eg_serialize
 
 
 LOG = logging.getLogger(__name__)
@@ -156,12 +157,18 @@ def record_path(metadata: PublicRecordMetadata, pub_dir: Path) -> Path:
 
 
 # TODO better type for obj?
-def save_record(record: PublicRecord, obj: Any, pub_dir: Path) -> Path:
+# TODO should just need metadata, not a whole record, right?
+def save_record(metadata: PublicRecordMetadata, obj: Any, pub_dir: Path) -> Path:
     "Save a PublicRecord in the public records dir and return its path."
-    fpath = record_path(record.metadata, pub_dir=pub_dir)
-    with open(fpath, 'w') as f:
-        json.dump(obj, f)
-    info(f'Saved {record} -> {fpath}')
+    fpath = record_path(metadata, pub_dir=pub_dir)
+    fpath.parent.mkdir(parents=True, exist_ok=True)
+
+    # TODO use my fancy_dumps or similar here?
+    # with open(fpath, 'w') as f:
+        # json.dump(obj, f)
+    fpath.write_text( eg_serialize.to_raw(obj) )
+
+    LOG.info(f'Saved {record} -> {fpath}')
     return fpath
 
 

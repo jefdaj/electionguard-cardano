@@ -114,3 +114,11 @@ class Client:
         resp.raise_for_status()
         out = schemas.ChannelAwaitOut.model_validate(resp.json())
         return out.channel_str
+
+    async def ceremony_create(self, details: CeremonyDetails):
+        data = schemas.CeremonyCreate(
+            number_of_guardians = details.number_of_guardians,
+            quorum = details.quorum,
+        )
+        resp = await self._c.post('/ceremony/create', json=data.model_dump())
+        resp.raise_for_status()

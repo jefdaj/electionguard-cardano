@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from . import config, node, election, wallet, phase, collateral, channel
+from . import config, node, election, wallet, phase, collateral, channel, ceremony
 
 router = APIRouter(prefix="/api")
 router.include_router(config.router)
@@ -9,3 +9,4 @@ router.include_router(wallet.router)
 router.include_router(phase.router)
 router.include_router(collateral.router)
 router.include_router(channel.router)
+router.include_router(ceremony.router)
