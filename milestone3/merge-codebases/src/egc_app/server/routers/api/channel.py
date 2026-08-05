@@ -9,6 +9,8 @@ import re
 import logging
 from egc import *
 
+# TODO is there any good way to make the node auto-swap without calling channel await explicitly?
+
 LOG = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/channel")

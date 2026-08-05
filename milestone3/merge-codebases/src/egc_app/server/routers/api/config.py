@@ -26,4 +26,11 @@ async def config(state=Depends(get_state)):
         cfg['election'] = state.node.subscriber.config
     except AttributeError:
         pass
+
+    try:
+        cfg['node']['role' ] = state.node.publisher.role
+        cfg['node']['index'] = state.node.publisher.role_index
+    except:
+        pass
+
     return cfg
