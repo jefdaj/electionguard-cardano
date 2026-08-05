@@ -8,6 +8,7 @@ from typing import Union
 from .ballot_id  import BallotIdMixin
 from .channel_id import ChannelIdMixin
 from .ipfs_cid   import IpfsCidMixin
+from .int_field  import IntFieldMixin
 
 @dataclass
 class Manifest(PlutusData):
@@ -18,18 +19,18 @@ class CeremonyDetails(PlutusData):
     CONSTR_ID = 1
 
 @dataclass
-class GuardianPubkey(PlutusData):
+class GuardianPubkey(IntFieldMixin, PlutusData):
     CONSTR_ID = 2
     guardian_number: int
 
 @dataclass
-class GuardianBackup(PlutusData):
+class GuardianBackup(IntFieldMixin, PlutusData):
     CONSTR_ID = 3
     guardian_number: int
     backup_order: int
 
 @dataclass
-class GuardianVerification(PlutusData):
+class GuardianVerification(IntFieldMixin, PlutusData):
     CONSTR_ID = 4
     guardian_number: int
     backup_order: int
@@ -47,7 +48,7 @@ class Constants(PlutusData):
     CONSTR_ID = 7
 
 @dataclass
-class Device(PlutusData):
+class Device(IntFieldMixin, PlutusData):
     CONSTR_ID = 8
     device_number: int
 
@@ -71,12 +72,12 @@ class CiphertextTally(PlutusData):
     CONSTR_ID = 12
 
 @dataclass
-class TallyShare(PlutusData):
+class TallyShare(IntFieldMixin, PlutusData):
     CONSTR_ID = 13
     guardian_number: int
 
 @dataclass
-class SpoiledShare(BallotIdMixin, PlutusData):
+class SpoiledShare(IntFieldMixin, BallotIdMixin, PlutusData):
     CONSTR_ID = 14
     spoiled_id: bytes # TODO same ballot- prefix, right?
     guardian_number: int

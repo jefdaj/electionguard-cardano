@@ -116,7 +116,7 @@ PUBLIC_RECORD_TYPES = {
 def record_path(metadata: r.PublicRecordMetadata, pub_dir: Path) -> Path:
     "Find the path of a record in the public records dir by metadata."
     LOG.debug(f'metadata: {metadata}')
-    if isinstance(metadata, PublicRecord):
+    if isinstance(metadata, r.PublicRecord):
         LOG.warning(f'Passed PublicRecord rather than PublicRecordMetadata: {metadata}')
         metadata = metadata.metadata
     if not isinstance(pub_dir, Path):
