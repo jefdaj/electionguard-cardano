@@ -5,8 +5,20 @@ from egc_app.server.state import get_state
 from egc_app import schemas
 from copy import deepcopy
 from dataclasses import asdict
+import re
+import logging
+from egc import *
+
+LOG = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/channel")
+
+CHANNEL_TYPES = {
+    'admin':    AdminNode,
+    'guardian': GuardianNode,
+    'device':   DeviceNode,
+    'verifier': VerifierNode,
+}
 
 # TODO sync rather than async?
 @router.get("/await")
@@ -14,7 +26,36 @@ async def channel_await(params: Annotated[schemas.ChannelAwait, Query()], state=
     if state.wallet is None:
         raise HTTPException(status_code=409, detail="Load or create a wallet first.")
     try:
-        ch_str = state.node.await_channel(params.role)
+        ch_str = state.node.await_channel(params.role) # TODO get index here rather than str?
+        LOG.info(f'Authorized by admin to post on {ch_str} channel.')
+
+        actual_role = re.sub(r"\d+$", "", ch_str)
+        assert actual_role == params.role, f'role mismatch: expected {params.role}, got {actual_role}'
+
+        LOG.info(f'node: {state.node.__dict__}')
+
+        # swap for a new node type
+        # TODO factor out into a util fn?
+        old_cls = type(state.node)
+        new_cls = CHANNEL_TYPES[actual_role]
+        LOG.info(f'new_cls: {new_cls}')
+
+        kwargs = {}
+        private_dir = state.node.private_dir,
+        if isinstance(private_dir, tuple): # TODO why is it a tuple?
+            private_dir = private_dir[0]
+        kwargs['private_dir'] = private_dir
+        if actual_role != 'admin':
+            index = int(re.sub(r"^[a-z]*", "", ch_str))
+            kwargs['role_index'] = index
+        kwargs['wallet'] = state.wallet
+        kwargs['election_cfg'] = state.node.election_cfg
+        LOG.info(f'kwargs: {kwargs}')
+
+        LOG.info(f'Swapping out node: {old_cls} -> {new_cls}.')
+        state.node = new_cls(**kwargs)
+
         return schemas.ChannelAwaitOut(channel_str=ch_str)
+
     except (TimeoutError, asyncio.TimeoutError):
         raise HTTPException(status_code=504, detail="Timed out waiting for channel")

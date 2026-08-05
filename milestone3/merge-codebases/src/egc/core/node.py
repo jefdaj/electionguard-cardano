@@ -53,7 +53,7 @@ class ElectionNode:
 
         # May be None in case of an Observer.
         # self.script: Optional[Script] = script
-        self.config: Optional[ElectionConfig] = election_cfg
+        self.election_cfg: Optional[ElectionConfig] = election_cfg
 
         # Always exists, but may not be used for anything in case of an Observer.
         self.publisher = ElectionPublisher(
@@ -69,12 +69,12 @@ class ElectionNode:
         #     self.subscriber = None
 
         # else:
-        if self.config is None:
+        if self.election_cfg is None:
             LOG.debug('ElectionNode skipping subscriber init because config is None')
             self.subscriber = None
-            self.election = None
+            self.election = None # TODO rename election_ctx to avoid confusion?
         else:
-            self.subscribe(self.config)
+            self.subscribe(self.election_cfg)
             # TODO wait for first event here?
             # time.sleep(OGMIOS_POLL_SEC + 1) # TODO how long is actually needed?
 
@@ -82,11 +82,12 @@ class ElectionNode:
 
     def subscribe(
             self,
-            cfg: ElectionConfig,
+            election_cfg: ElectionConfig,
             on_event=lambda x: None,
             on_error=lambda x: None,
         ):
-        self.election = ElectionContext.from_config(cfg)
+        self.election_cfg = election_cfg
+        self.election = ElectionContext.from_config(election_cfg)
         self.subscriber = ElectionSubscriber(
             election = self.election,
             on_event = on_event,

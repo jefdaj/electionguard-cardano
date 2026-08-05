@@ -143,7 +143,7 @@ class RoleAwareGroup(cloup.Group):
     def resolve_command(self, ctx: click.Context, args: list[str]):
         cmd_name, cmd, remaining = super().resolve_command(ctx, args)
         if cmd is not None and not isinstance(cmd, click.Group) and not self._allowed(ctx, cmd):
-            raise click.ClickException("Permission denied")
+            raise click.ClickException('Command not available from current role')
         return cmd_name, cmd, remaining
 
     def command(self, *args, roles=None, **kwargs):
