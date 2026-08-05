@@ -39,7 +39,7 @@ def start_subscriber(data: schemas.ElectionSubscribe, state=Depends(get_state)):
 
 def _context_backup_json_path(state):
     private_dir = state.config['node']['private_dir']
-    backup_path = (private_dir / 'election-context').with_suffix('.json')
+    backup_path = (private_dir / 'context').with_suffix('.json')
     return backup_path
 
 @router.post("/create")
