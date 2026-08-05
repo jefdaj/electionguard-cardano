@@ -37,18 +37,20 @@ ANNOUNCE_CEREMONY_CONFIGS = [f() for f in [
     max_examples = 1,
 )
 def test_announce_ceremony(cfg: ResolvedTestConfig):
+    assert_script_logs_do_not_match(cfg, '.*', [
+        'Traceback',
+        'arion: FatalError'
+    ])
     assert_script_logs_match(cfg, 'admin', [
         'CH_STR=admin$',
         'egc collateral await$',
-        'egc election burntesttokens$',
-        'egc collateral return$',
-        'exit 0$'
+        '^private.*ceremony\\.json$',
     ])
     assert_node_logs_match(cfg, 'admin', [
-        'minted admin channel STT',
-        'deployed contract',
-        'saved contract details',
-        'Subscribe to this election with',
+        'GET /api/channel/await\\?role=admin',
+        'GET /api/collateral/await',
+        'POST /api/ceremony/create',
     ])
-    assert_script_logs_match(cfg, '(?!admin)', ['^[0-9]{9,}\\s.*ended election'])
-    assert_script_logs_do_not_match(cfg, '.*', ['^Traceback', '^arion: FatalError'])
+    assert_script_logs_match(cfg, '(?!admin)', [
+        '^[0-9]{9,}\\s.*ended election'
+    ])

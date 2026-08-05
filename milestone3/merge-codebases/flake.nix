@@ -91,6 +91,7 @@
       kupo = pkgs.callPackage ./nix/kupo.nix {};
       runtimeDeps = [
         kupo
+        # TODO some of the other pkgs go here instead?
       ];
 
       # This is an actual output; see note below.
@@ -162,6 +163,7 @@
               contents = [
                 pythonEnv
                 pkgs.coreutils
+                pkgs.findutils
                 pkgs.bashInteractive
                 pkgs.jq
                 plutusBlueprints
