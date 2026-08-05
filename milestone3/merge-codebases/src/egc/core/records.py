@@ -151,7 +151,7 @@ def save_record(metadata: r.PublicRecordMetadata, obj: Any, pub_dir: Path) -> Pa
         # json.dump(obj, f)
     fpath.write_text( eg.serialize.to_raw(obj) )
 
-    LOG.info(f'Saved {record} -> {fpath}')
+    LOG.info(f'Saved {metadata} -> {fpath}')
     return fpath
 
 
@@ -197,11 +197,11 @@ _REVERSE = sorted(
 )
 
 
-def path_metadata(path: Path, pub_dir: Path) -> r.PublicRecordMetadata:
+def path_metadata(abs_path: Path, pub_dir: Path) -> r.PublicRecordMetadata:
     "Inverse of record_path: decode a json file path back to metadata."
-    LOG.debug(f'path: {path}')
+    LOG.debug(f'abs_path: {abs_path}')
     LOG.debug(f'pub_dir: {pub_dir}')
-    rel = Path(path).relative_to(Path(pub_dir)).with_suffix('')
+    rel = Path(abs_path).relative_to(Path(pub_dir)).with_suffix('')
     LOG.debug(f'rel: {rel}')
     rel_str = rel.as_posix()
     LOG.debug(f'rel_str: {rel_str}')
@@ -214,10 +214,10 @@ def path_metadata(path: Path, pub_dir: Path) -> r.PublicRecordMetadata:
         m = rx.match(fname)
         if not m:
             raise ValueError(
-                f'Path matches {key!r} but not filename pattern: {path}'
+                f'Path matches {key!r} but not filename pattern: {abs_path}'
             )
         return m_type(**m.groupdict())  # mixin coerces/validates
-    raise ValueError(f'No record type matches path: {path}')
+    raise ValueError(f'No record type matches path: {abs_path}')
 
 
 

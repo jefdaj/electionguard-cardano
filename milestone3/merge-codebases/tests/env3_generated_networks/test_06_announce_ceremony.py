@@ -39,7 +39,8 @@ ANNOUNCE_CEREMONY_CONFIGS = [f() for f in [
 def test_announce_ceremony(cfg: ResolvedTestConfig):
     assert_script_logs_do_not_match(cfg, '.*', [
         'Traceback',
-        'arion: FatalError'
+        'arion: FatalError',
+        'Command not available from current role',
     ])
     assert_script_logs_match(cfg, 'admin', [
         'CH_STR=admin$',

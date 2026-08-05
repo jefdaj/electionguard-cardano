@@ -6,7 +6,6 @@ router = APIRouter(prefix="/records")
 
 @router.get("")
 async def records_list(state=Depends(get_state)):
-    paths = state.node.batch_list()
-    paths = [str(p) for p in paths]
-    data = schemas.RecordsListOut(records=paths)
+    metas = state.node.batch_list() # should be sorted already
+    data = schemas.RecordsListOut(records=metas)
     return data

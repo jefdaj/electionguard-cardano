@@ -1,7 +1,9 @@
 {% include "node-ready.sh" %}
 
 await_file() {
-  timeout 600 bash -c 'until [ -e "$1" ]; do sleep 1; sync; done' _ "$1"
+  timeout 600 bash -c 'until [ -e "$1" ]; do sleep 1; done' _ "$1"
+  sync    # TODO does this help?
+  sleep 3 # TODO does this help?
 }
 
 # subscribe to an old election test

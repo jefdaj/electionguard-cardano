@@ -11,15 +11,17 @@ from pathlib import Path
 from typing import Literal
 import functools
 import json as _json # json conflicts with payload_io
+import logging
 
+LOG = logging.getLogger(__name__)
 
 
 ### config parsing ###
 
 
-def get_cli_config(config):
-    if config:
-        with open(config, "r", encoding="utf-8") as f:
+def get_cli_config(cfg_path):
+    if cfg_path:
+        with open(cfg_path, "r", encoding="utf-8") as f:
             return _json.load(f)
     else:
         return {}
@@ -69,13 +71,21 @@ def _peek_arg(args: list[str], flag: str) -> str | None:
 
 
 def _build_default_map(config_path: str | None, role: str) -> dict:
+    # TODO also a base default set?
     from_cli  = get_cli_config(config_path)
+    LOG.debug(f'from_cli: {from_cli}')
     from_env  = get_env_config()
+    LOG.debug(f'from_env: {from_env}')
     from_node = get_node_config()
+    LOG.debug(f'from_node: {from_node}')
     dm = deep_merge(
-        deep_merge(from_cli, from_node),
-        deep_merge(from_env, {"node":{"role": role}}),
+        deep_merge(
+            deep_merge({"node":{"role": role}}, from_node),
+            from_env,
+        ),
+        from_cli,
     )
+    LOG.debug(f'final default map: {dm}')
     return dm
 
 

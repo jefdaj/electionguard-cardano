@@ -1,5 +1,5 @@
 import functools, inspect
-from hypothesis import given, settings, seed, Phase
+from hypothesis import given, settings, seed, Phase, HealthCheck
 from hypothesis import strategies as st
 from pathlib import Path
 
@@ -43,8 +43,9 @@ def given_cached_tests(
         seed(get_random_seed()),
         settings(
             max_examples = max_examples,
+            phases = (Phase.explicit, Phase.reuse, Phase.generate), # TODO put back Phase.shrink?
             deadline = None, # TODO set a long one?
-            phases = (Phase.explicit, Phase.reuse, Phase.generate, Phase.shrink),
+            suppress_health_check=[HealthCheck.too_slow], # allow long tests
             # database defaults on -> failing configs replay next run
             # TODO derandomize  = False,?
         ),

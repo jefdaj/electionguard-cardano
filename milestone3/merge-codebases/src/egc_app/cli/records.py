@@ -23,11 +23,9 @@ def list_():
     """
     # TODO and estimates how many will fit in a tx?
     data = asyncio.run(Client().records_list())
-    print('index\trec_path')
-    for (index, rec_path) in enumerate(data.records, start=1):
-        print(f'{index}\t{rec_path}')
-    # click.echo(data.records)
-    
+    print('index\tmetadata')
+    for (index, metadata) in enumerate(data.records, start=1):
+        print(f'{index}\t{metadata}')
 
 @records.command(roles=['admin', 'guardian', 'device'])
 @click.option('--min-size', help='Min batch size for privacy.', type=click.INT, required=False)
