@@ -3,6 +3,7 @@ from .plutus.types import record as r
 
 import electionguard as eg
 
+import re
 import logging
 from typing import Any
 from pathlib import Path
@@ -154,7 +155,70 @@ def save_record(metadata: r.PublicRecordMetadata, obj: Any, pub_dir: Path) -> Pa
     return fpath
 
 
-# TODO any way to type this reasonably?
-# TODO is this needed yet?
-# def load_record(record: PublicRecord, root_dir: Path) -> Optional[Any]:
-#     pass
+_FSTR_FIELD = re.compile(r'\{(\w+)\}')
+
+# Optional: tighten groups only for intra-fstring disambiguation
+# (multiple adjacent fields in one fstring). Not needed for uniqueness
+# across types.
+_FIELD_PATTERNS = {
+    'ballot_id':       r'ballot-[0-9a-fA-F-]{36}',
+    'spoiled_id':      r'ballot-[0-9a-fA-F-]{36}',
+    'guardian_number': r'\d+',
+}
+
+
+def _fstr_to_regex(fstr: str) -> re.Pattern:
+    """Turn 'guardian_{guardian_number}' into a regex with named groups."""
+    parts, last = [], 0
+    for m in _FSTR_FIELD.finditer(fstr):
+        parts.append(re.escape(fstr[last:m.start()]))
+        field = m.group(1)
+        parts.append(f'(?P<{field}>{_FIELD_PATTERNS.get(field, ".+?")})')
+        last = m.end()
+    parts.append(re.escape(fstr[last:]))
+    return re.compile('^' + ''.join(parts) + '$')
+
+
+def _key(dname: str, fstr: str) -> str:
+    """Unique lookup key: folder + literal filename prefix up to '{'."""
+    return f'{dname}/{fstr.split("{", 1)[0]}'
+
+
+# Build once. Map unique (folder + literal prefix) -> (type, regex).
+# Sort by key length descending so longer, more-specific prefixes win
+# when one prefix is a substring-prefix of another sharing the folder.
+_REVERSE = sorted(
+    (
+        (_key(dname, fstr), m_type, _fstr_to_regex(fstr))
+        for m_type, (_dtype, dname, fstr) in PUBLIC_RECORD_TYPES.items()
+    ),
+    key=lambda t: len(t[0]),
+    reverse=True,
+)
+
+
+def path_metadata(path: Path, pub_dir: Path) -> r.PublicRecordMetadata:
+    "Inverse of record_path: decode a json file path back to metadata."
+    LOG.debug(f'path: {path}')
+    LOG.debug(f'pub_dir: {pub_dir}')
+    rel = Path(path).relative_to(Path(pub_dir)).with_suffix('')
+    LOG.debug(f'rel: {rel}')
+    rel_str = rel.as_posix()
+    LOG.debug(f'rel_str: {rel_str}')
+    fname = rel.name  # filename only, folder stripped
+    LOG.debug(f'fname: {fname}')
+
+    for key, m_type, rx in _REVERSE:
+        if not rel_str.startswith(key):
+            continue
+        m = rx.match(fname)
+        if not m:
+            raise ValueError(
+                f'Path matches {key!r} but not filename pattern: {path}'
+            )
+        return m_type(**m.groupdict())  # mixin coerces/validates
+    raise ValueError(f'No record type matches path: {path}')
+
+
+
+# TODO load a record given the metadata (used by ipfs fetch)
