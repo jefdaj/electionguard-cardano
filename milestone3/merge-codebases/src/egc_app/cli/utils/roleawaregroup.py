@@ -107,7 +107,8 @@ class RoleAwareGroup(cloup.Group):
         return super().make_context(info_name, args, parent=parent, **kwargs)
 
     def _role(self, ctx: click.Context) -> str:
-        return (ctx.find_root().default_map or {}).get("role", "observer")
+        default_map = ctx.find_root().default_map or {}
+        return default_map.get("node", {}).get("role", "observer")
 
     def _allowed(self, ctx: click.Context, cmd: click.Command) -> bool:
         role = self._role(ctx)
