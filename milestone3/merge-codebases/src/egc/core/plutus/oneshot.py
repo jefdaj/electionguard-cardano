@@ -13,7 +13,7 @@ from .config import PLUTUS_JSON_PATH
 
 LOG = logging.getLogger(__name__)
 
-from pycardano import * # PlutusData, PlutusV3Script, ScriptHash, UTxO, Address, Network
+from pycardano import PlutusData, PlutusV3Script, ScriptHash, UTxO, Address, Network
 
 
 

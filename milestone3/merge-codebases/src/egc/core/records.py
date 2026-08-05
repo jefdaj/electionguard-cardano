@@ -1,136 +1,118 @@
-from .plutus import *
+# from .plutus import *
+from .plutus.types import record as r
+
+import electionguard as eg
+
 import logging
 from typing import Any
 from pathlib import Path
-from electionguard import serialize as eg_serialize
 
 
 LOG = logging.getLogger(__name__)
 
 
-# metadata type : (dir relname, basename fmtargs ptn)
-# TODO put back electionguard types when needed
-# TODO any use for the old "record type strings"? remove if not
+# plutus metadata type : (decode to type, dir relname, basename fmtargs ptn)
+# "decode to type" is usually an eg type, but there are a few exceptions
 PUBLIC_RECORD_TYPES = {
-    Manifest: (
-        # 'manifest'
-        # Manifest,
+    r.Manifest: (
+        eg.Manifest,
         '1_config/1_announce',
         '1_manifest'
     ),
-    CeremonyDetails: (
-        # 'ceremony_details'
-        # CeremonyDetails,
+    r.CeremonyDetails: (
+        eg.CeremonyDetails,
         '1_config/1_announce',
         '2_ceremony'
     ),
-    GuardianPubkey: (
-        # 'guardian_pubkey'
-        # ElectionPublicKey,
+    r.GuardianPubkey: (
+        eg.ElectionPublicKey,
         '1_config/2_ceremony/1_pubkeys',
         'guardian_{guardian_number}'
     ),
-    GuardianBackup: (
-        # 'guardian_backup'
-        # ElectionPartialKeyBackup,
+    r.GuardianBackup: (
+        eg.ElectionPartialKeyBackup,
         '1_config/2_ceremony/2_backups',
         'guardian_{guardian_number}_backup_{backup_order}'
     ),
-    GuardianVerification: (
-        # 'guardian_verification'
-        # ElectionPartialKeyVerification,
+    r.GuardianVerification: (
+        eg.ElectionPartialKeyVerification,
         '1_config/2_ceremony/3_verifications',
         'guardian_{guardian_number}_backup_{backup_order}'
     ),
-    JointKey: (
-        # 'joint_key'
-        # ElectionJointKey,
+    r.JointKey: (
+        eg.ElectionJointKey,
         '1_config/3_election',
         'joint_key'
     ),
-    Constants: (
-        # 'constants'
-        # ElectionConstants,
+    r.Constants: (
+        eg.ElectionConstants,
         '1_config/3_election',
         'constants'
     ),
-    Context: (
-        # 'context'
-        # CiphertextElectionContext,
+    r.Context: (
+        eg.CiphertextElectionContext,
         '1_config/3_election',
         'context'
     ),
-    Device: (
-        # 'device'
-        # EncryptionDevice,
+    r.Device: (
+        eg.EncryptionDevice,
         '1_config/4_devices',
         'device_{device_number}'
     ),
-    BallotSubmitted: (
-        # 'ballot_submitted'
-        # CiphertextBallot, # TODO SubmittedBallot with state set to UNKNOWN?
+    r.BallotSubmitted: (
+        eg.CiphertextBallot, # TODO SubmittedBallot with state set to UNKNOWN?
         '2_ballots/1_submitted',
         '{ballot_id}'
     ),
-    CastNotice: (
-        # 'cast_notice'
-        # CastNotice,
+    r.CastNotice: (
+        r.CastNotice,
         '2_ballots/2_cast',
         '{ballot_id}'
     ),
-    BallotSpoiled: (
-        # 'ballot_spoiled'
-
+    r.BallotSpoiled: (
         # This seems correct to me even though it doesn't match the
         # electionguard-python implementation: we *do* want to publish all
         # the nonces at this step, right? So people can decrypt immediately
         # rather than waiting for the guardians.
-        # CiphertextBallot,
-
+        eg.CiphertextBallot,
         '2_ballots/3_spoiled',
         '{ballot_id}'
     ),
-    CiphertextTally: (
-        # 'ciphertext_tally'
-        # PublishedCiphertextTally, # TODO CiphertextTally? (the non-"published" version)
+    r.CiphertextTally: (
+        eg.PublishedCiphertextTally, # TODO CiphertextTally? (the non-"published" version)
         '3_results',
         '1_tally'
     ),
-    TallyShare: (
-        # 'tally_share'
-        # DecryptionShare,
+    r.TallyShare: (
+        eg.DecryptionShare,
         '3_results/2_decrypt/1_shares/1_tally',
         'tally_guardian_{guardian_number}'
     ),
-    SpoiledShare: (
-        # 'spoiled_share'
-        # DecryptionShare,
+    r.SpoiledShare: (
+        eg.DecryptionShare,
         '3_results/2_decrypt/1_shares/2_spoiled',
         '{spoiled_id}_guardian_{guardian_number}'
     ),
     # TODO rename tally_result?
-    PlaintextTally: (
-        # 'plaintext_tally'
-        # PlaintextTally,
+    r.PlaintextTally: (
+        eg.PlaintextTally,
         '3_results/2_decrypt/2_combined',
         '1_tally'
     ),
-    SpoiledResult: (
-        # 'spoiled_result'
-        # PlaintextTally,
+    r.SpoiledResult: (
+        eg.PlaintextTally,
         '3_results/2_decrypt/2_combined/2_spoiled',
         '{ballot_id}'
     ),
-    Summary: (
-        # 'summary'
-        # dict,
+    r.Summary: (
+        dict,
         '4_verify',
         '{verifier_id}'
     ),
 }
 
 
-def record_path(metadata: PublicRecordMetadata, pub_dir: Path) -> Path:
+def record_path(metadata: r.PublicRecordMetadata, pub_dir: Path) -> Path:
     "Find the path of a record in the public records dir by metadata."
     LOG.debug(f'metadata: {metadata}')
     if isinstance(metadata, PublicRecord):
@@ -140,7 +122,7 @@ def record_path(metadata: PublicRecordMetadata, pub_dir: Path) -> Path:
         pub_dir = Path(pub_dir)
     m_type = type(metadata)
     LOG.debug(f'm_type: {m_type}')
-    (dname, fstr) = PUBLIC_RECORD_TYPES[m_type]
+    (_egtype, dname, fstr) = PUBLIC_RECORD_TYPES[m_type]
     LOG.debug(f'dname: {dname}')
     LOG.debug(f'fstr: {fstr}')
     var_strs = {}
@@ -158,7 +140,7 @@ def record_path(metadata: PublicRecordMetadata, pub_dir: Path) -> Path:
 
 # TODO better type for obj?
 # TODO should just need metadata, not a whole record, right?
-def save_record(metadata: PublicRecordMetadata, obj: Any, pub_dir: Path) -> Path:
+def save_record(metadata: r.PublicRecordMetadata, obj: Any, pub_dir: Path) -> Path:
     "Save a PublicRecord in the public records dir and return its path."
     fpath = record_path(metadata, pub_dir=pub_dir)
     fpath.parent.mkdir(parents=True, exist_ok=True)
@@ -166,7 +148,7 @@ def save_record(metadata: PublicRecordMetadata, obj: Any, pub_dir: Path) -> Path
     # TODO use my fancy_dumps or similar here?
     # with open(fpath, 'w') as f:
         # json.dump(obj, f)
-    fpath.write_text( eg_serialize.to_raw(obj) )
+    fpath.write_text( eg.serialize.to_raw(obj) )
 
     LOG.info(f'Saved {record} -> {fpath}')
     return fpath
