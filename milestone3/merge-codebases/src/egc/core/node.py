@@ -210,12 +210,12 @@ class ElectionNode:
         # TODO write to path
 
     # TODO better name?
-    def batch_list(self):
-        raise NotImplementedError
+    def batch_list(self) -> list[PublicRecordMetadata]:
         # TODO find/create records_to_post dir
         # TODO find and sort files in it
         # TODO convert each path to metadata
-        # TODO enumerate
+        paths = sorted(list(self.records_to_post_dir.rglob('*.json')))
+        return paths
 
     def batch_assemble(
             self,

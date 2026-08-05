@@ -122,3 +122,9 @@ class Client:
         )
         resp = await self._c.post('/ceremony/create', json=data.model_dump())
         resp.raise_for_status()
+
+    async def records_list(self) -> list[PublicRecordMetadata]:
+        resp = await self._c.get("/records") # TODO /list?
+        resp.raise_for_status()
+        recs = schemas.RecordsListOut.model_validate(resp.json())
+        return recs

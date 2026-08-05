@@ -1,5 +1,6 @@
 import click
 from .utils import RoleAwareGroup, ints_arg
+from egc_app.client import Client
 
 @click.group(cls=RoleAwareGroup)
 def records() -> None:
@@ -20,7 +21,9 @@ def list_():
     This gives indices for use in the post and drop commands.
     """
     # TODO and estimates how many will fit in a tx?
-    raise NotImplementedError
+    pairs = asyncio.run(Client().records_list())
+    click.echo(pairs)
+    
 
 @records.command(roles=['admin', 'guardian', 'device'])
 @click.option('--min-size', help='Min batch size for privacy.', type=click.INT, required=False)
