@@ -52,7 +52,8 @@ def create_election(data: schemas.ElectionCreate, state=Depends(get_state)):
     # create temporary funder node
     funder_wallet = Wallet.from_signing_key(data.funder_sk)
     tmp_funder_node = FunderNode(
-        private_dir = state.node.private_dir,
+        # private_dir = state.node.private_dir,
+        private_dir = state.config['node']['private_dir'],
         wallet = funder_wallet,
     )
 

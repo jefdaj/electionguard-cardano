@@ -32,7 +32,7 @@ async def channel_await(params: Annotated[schemas.ChannelAwait, Query()], state=
         actual_role = re.sub(r"\d+$", "", ch_str)
         assert actual_role == params.role, f'role mismatch: expected {params.role}, got {actual_role}'
 
-        LOG.info(f'node: {state.node.__dict__}')
+        # LOG.debug(f'node: {state.node.__dict__}')
 
         # swap for a new node type
         # TODO factor out into a util fn?
@@ -40,20 +40,26 @@ async def channel_await(params: Annotated[schemas.ChannelAwait, Query()], state=
         new_cls = CHANNEL_TYPES[actual_role]
         LOG.info(f'new_cls: {new_cls}')
 
-        kwargs = {}
-        private_dir = state.node.private_dir,
-        if isinstance(private_dir, tuple): # TODO why is it a tuple?
-            private_dir = private_dir[0]
-        kwargs['private_dir'] = private_dir
-        if actual_role != 'admin':
-            index = int(re.sub(r"^[a-z]*", "", ch_str))
-            kwargs['role_index'] = index
-        kwargs['wallet'] = state.wallet
-        kwargs['election_cfg'] = state.node.election_cfg
-        LOG.info(f'kwargs: {kwargs}')
+        if new_cls == old_cls:
+            LOG.info(f'Node is already an {new_cls.__name__}. No need to swap it out for the new role.')
+        else:
+            LOG.info(f'Node is an {old_cls.__name__}. Need to swap it out for an {new_cls.__name__}.')
 
-        LOG.info(f'Swapping out node: {old_cls} -> {new_cls}.')
-        state.node = new_cls(**kwargs)
+            kwargs = {}
+            # private_dir = state.node.private_dir,
+            private_dir = state.config['node']['private_dir']
+            # if isinstance(private_dir, tuple): # TODO why is it a tuple?
+            #     private_dir = private_dir[0]
+            kwargs['private_dir'] = private_dir
+            if actual_role != 'admin':
+                index = int(re.sub(r"^[a-z]*", "", ch_str))
+                kwargs['role_index'] = index
+            kwargs['wallet'] = state.wallet
+            kwargs['election_cfg'] = state.node.election_cfg
+            LOG.info(f'kwargs: {kwargs}')
+
+            LOG.info(f'Swapping out node: {old_cls} -> {new_cls}.')
+            state.node = new_cls(**kwargs)
 
         return schemas.ChannelAwaitOut(channel_str=ch_str)
 
