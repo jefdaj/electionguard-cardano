@@ -74,10 +74,8 @@ def _build_default_map(config_path: str | None, role: str) -> dict:
     from_node = get_node_config()
     dm = deep_merge(
         deep_merge(from_cli, from_node),
-        from_env,
-        # deep_merge(from_env, {"role": role}),
+        deep_merge(from_env, {"node":{"role": role}}),
     )
-    dm["role"] = role  # CLI/env always wins
     return dm
 
 
