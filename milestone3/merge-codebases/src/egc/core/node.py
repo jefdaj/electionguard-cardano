@@ -211,11 +211,9 @@ class ElectionNode:
 
     # TODO better name?
     def batch_list(self) -> list[PublicRecordMetadata]:
-        # TODO find/create records_to_post dir
-        # TODO find and sort files in it
-        # TODO convert each path to metadata
         paths = sorted(list(self.records_to_post_dir.rglob('*.json')))
-        return paths
+        paths = [p.relative_to(self.records_to_post_dir) for p in paths]
+        return paths # TODO convert to metadata and return that instead
 
     def batch_assemble(
             self,

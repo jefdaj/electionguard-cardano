@@ -1,3 +1,4 @@
+import asyncio
 import click
 from .utils import RoleAwareGroup, ints_arg
 from egc_app.client import Client
@@ -21,8 +22,11 @@ def list_():
     This gives indices for use in the post and drop commands.
     """
     # TODO and estimates how many will fit in a tx?
-    pairs = asyncio.run(Client().records_list())
-    click.echo(pairs)
+    data = asyncio.run(Client().records_list())
+    print('index\trec_path')
+    for (index, rec_path) in enumerate(data.records, start=1):
+        print(f'{index}\t{rec_path}')
+    # click.echo(data.records)
     
 
 @records.command(roles=['admin', 'guardian', 'device'])
