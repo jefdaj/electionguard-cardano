@@ -13,9 +13,9 @@ def ceremony() -> None:
     "Perform the guardian key ceremony."
 
 @ceremony.command(roles=['admin'])
-@multi_load('details', CeremonyDetails, ['json'])
+@multi_load('ceremony', CeremonyDetails, ['json'])
 def create(
-    details: CeremonyDetails,
+    ceremony: CeremonyDetails,
 ):
     """Announce key ceremony details.
     This is provisional based on the electionguard_gui key_ceremony_service.py.
@@ -23,7 +23,7 @@ def create(
     The json input is mainly for scripted testing; later there should be
     explicit inline options for each part of the config.
     """
-    asyncio.run(Client().ceremony_create(details=details))
+    asyncio.run(Client().ceremony_create(ceremony=ceremony))
     # TODO any need to raise_for_status here?
 
     # The decoded type should already be CeremonyDetails now

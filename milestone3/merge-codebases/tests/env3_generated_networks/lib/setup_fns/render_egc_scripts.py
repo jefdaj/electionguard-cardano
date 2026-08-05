@@ -35,7 +35,7 @@ def render_egc_scripts(
 
     node_counts = {
         'admin':    1,
-        'guardian': cfg.config.nodes.guardians.count,
+        'guardian': cfg.config.nodes.guardians.number_of_guardians,
         'device':   cfg.config.nodes.devices.count,
         'verifier': cfg.config.nodes.verifiers.count,
     }

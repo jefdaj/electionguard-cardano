@@ -126,19 +126,19 @@ def contests_config(draw) -> ContestsConfig:
 
 @dataclass(frozen=True, slots=True)
 class GuardiansConfig:
-    count: int = 3
+    number_of_guardians: int = 3
     quorum: int = 2
     # template: str = field(default='guardian.sh')
 
     def __post_init__(self):
-        assert 0 < self.quorum <= self.count
+        assert 0 < self.quorum <= self.number_of_guardians
 
 @st.composite
 def guardians_config(draw):
-    count = draw(st.integers(2,5)) # TODO actual upper bound?
+    number_of_guardians = draw(st.integers(2,5)) # TODO actual upper bound?
     kwargs = {
-        'count':  count,
-        'quorum': draw(st.integers(1, count)),
+        'number_of_guardians':  number_of_guardians,
+        'quorum': draw(st.integers(1, number_of_guardians)),
     }
     # if template is not None:
     #     kwargs['template'] = template
@@ -396,7 +396,7 @@ class ResolvedTestConfig:
 
     def node_names(self):
         names  = ['admin']
-        names += [f'guardian{n}' for n in range(1, self.config.nodes.guardians.count+1)]
+        names += [f'guardian{n}' for n in range(1, self.config.nodes.guardians.number_of_guardians+1)]
         names += [  f'device{n}' for n in range(1,   self.config.nodes.devices.count+1)]
         names += [f'verifier{n}' for n in range(1, self.config.nodes.verifiers.count+1)]
         return names

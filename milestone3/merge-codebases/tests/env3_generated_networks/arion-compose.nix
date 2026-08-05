@@ -48,7 +48,7 @@ let
       counts = [
         { role = "admin";    n = 1; }
         { role = "device";   n = cfg.nodes.devices.count; }
-        { role = "guardian"; n = cfg.nodes.guardians.count; }
+        { role = "guardian"; n = cfg.nodes.guardians.number_of_guardians; }
         { role = "verifier"; n = cfg.nodes.verifiers.count; }
       ];
 
@@ -237,7 +237,7 @@ let
     } //
       builtins.listToAttrs (mkServicePairs "admin"    1) //
       builtins.listToAttrs (mkServicePairs "device"   cfg.nodes.devices.count) //
-      builtins.listToAttrs (mkServicePairs "guardian" cfg.nodes.guardians.count) //
+      builtins.listToAttrs (mkServicePairs "guardian" cfg.nodes.guardians.number_of_guardians) //
       builtins.listToAttrs (mkServicePairs "verifier" cfg.nodes.verifiers.count);
 
 

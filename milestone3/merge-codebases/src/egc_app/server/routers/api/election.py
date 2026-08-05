@@ -51,7 +51,10 @@ def create_election(data: schemas.ElectionCreate, state=Depends(get_state)):
 
     # create temporary funder node
     funder_wallet = Wallet.from_signing_key(data.funder_sk)
-    tmp_funder_node = FunderNode(wallet=funder_wallet)
+    tmp_funder_node = FunderNode(
+        private_dir = state.node.private_dir,
+        wallet = funder_wallet,
+    )
 
     # create the election
     (tx, election_cfg) = tmp_funder_node.init_election(

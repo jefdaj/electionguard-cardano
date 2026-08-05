@@ -13,7 +13,7 @@ def config_announce_ceremony(draw):
             name = 'render_egc_scripts',
             args = (
                 ('default', 'subscribe-qr-png.sh'), # admin creates qrcode now
-                ('admin', 'announce-ceremony.sh'), # TODO write this
+                ('admin', 'announce-ceremony.sh'),
             ),
         ),
         FnCallConfig(
