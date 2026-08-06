@@ -4,13 +4,11 @@ from egc import *
 from ..lib import *
 from .lib  import *
 
-from .test_02_wallets import config_wallet
-from .test_03_network import NODE_READY_CONFIGS
+from .test_02_wallets import WALLET_CONFIGS
 
 CLEANUP_CONFIGS = [f() for f in [
     config_test_base,
-    config_wallet,
-]] + NODE_READY_CONFIGS
+]] + WALLET_CONFIGS
 
 # TODO rename the base config?
 @given_cached_tests(st.one_of(CLEANUP_CONFIGS), max_examples=3)

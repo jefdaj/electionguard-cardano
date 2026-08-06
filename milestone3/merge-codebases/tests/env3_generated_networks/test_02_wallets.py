@@ -6,6 +6,8 @@ from egc import *
 from ..lib import *
 from .lib  import *
 
+from .test_03_network import NODE_READY_CONFIGS
+
 @st.composite
 def config_wallet(draw):
     cfg = draw( config_test_base() )
@@ -18,7 +20,11 @@ def config_wallet(draw):
     ])
     return cfg
 
-@given_cached_tests(config_wallet(), max_examples=1)
+WALLET_CONFIGS = [f() for f in [
+    config_wallet,
+]] + NODE_READY_CONFIGS
+
+@given_cached_tests(st.one_of(WALLET_CONFIGS), max_examples=3)
 def test_create_wallet(cfg: ResolvedTestConfig):
     assert_script_logs_do_not_match(cfg, '.*', ['^Traceback', '^arion: FatalError'])
     assert_script_logs_match(cfg, '.*', [

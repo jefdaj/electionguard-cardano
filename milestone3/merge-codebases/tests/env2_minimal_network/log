@@ -1,1 +1,0 @@
-/nix/store/nky38qvg9d93ipcl50xvrh5ghdzq48q0-electionguard-cardano/bin/python3.13: can't open file '/home/jefdaj/myrepos/electionguard-cardano/milestone3/merge-codebases/tests/env2_minimal_network/src/egc_app/cli/__init__.py': [Errno 2] No such file or directory
