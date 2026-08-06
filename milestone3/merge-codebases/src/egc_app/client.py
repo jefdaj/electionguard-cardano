@@ -147,6 +147,7 @@ class Client:
         data = schemas.RecordsPost(
             indexes_to_post = indexes,
             min_size        = min_size,
+            max_size        = max_size,
             advance_phase   = advance_phase,
         )
         resp = await self._c.post('/records/post', json=data.model_dump())

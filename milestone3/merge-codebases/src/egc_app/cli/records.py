@@ -28,8 +28,8 @@ def list_():
         print(f'{index}\t{metadata}')
 
 @records.command(roles=['admin', 'guardian', 'device'])
-@click.option('--min-size', help='Min batch size for privacy.', type=click.INT, required=False)
-@click.option('--max-size', help='Max batch size for valid TX.', type=click.INT, required=False)
+@click.option('--min-size', help='Min batch size for privacy.' , type=click.INT, default=1)
+@click.option('--max-size', help='Max batch size for valid TX.', type=click.INT, default=10)
 @click.option('--advance-phase', help='Admin only: also advance the election phase.', type=click.STRING, required=False)
 @indexes_arg(required=False)
 def post(indexes: list[int], min_size: int, max_size: int, advance_phase: str):
@@ -44,18 +44,16 @@ def post(indexes: list[int], min_size: int, max_size: int, advance_phase: str):
     long voters are prepared to wait to challenge their submitted ballots, etc.
 
     Max size is a minimal placeholder too; future versions should
-    calculate/simulate to determine max TX size.
+    calculate/simulate to determine how many records will actually fit in a TX.
     """
     # TODO return code to indicate whether all records fit or not? or print something? or use list?
-    click.echo(indexes)
     # TODO parse phase
     asyncio.run(Client().records_post(
         indexes,
         min_size = min_size,
         max_size = max_size,
-        advance_phase = advance_phase
+        advance_phase = advance_phase,
     ))
-    raise NotImplementedError
 
 
 @records.command(roles=['admin', 'guardian', 'device'])
