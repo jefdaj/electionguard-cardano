@@ -1,6 +1,6 @@
 import asyncio
 import click
-from .utils import RoleAwareGroup, ints_arg
+from .utils import RoleAwareGroup, indexes_arg
 from egc_app.client import Client
 
 @click.group(cls=RoleAwareGroup)
@@ -19,7 +19,7 @@ def records() -> None:
 @records.command(name='list', roles=['admin', 'guardian', 'device'])
 def list_():
     """Enumerate current records.
-    This gives indices for use in the post and drop commands.
+    This gives indexes for use in the post and drop commands.
     """
     # TODO and estimates how many will fit in a tx?
     data = asyncio.run(Client().records_list())
@@ -30,26 +30,28 @@ def list_():
 @records.command(roles=['admin', 'guardian', 'device'])
 @click.option('--min-size', help='Min batch size for privacy.', type=click.INT, required=False)
 @click.option('--advance-phase', help='Admin only: also advance the election phase.', type=click.STRING, required=False)
-@ints_arg()
-def post(ints: list[int], min_size: int, advance_phase: str):
+@indexes_arg()
+def post(indexes: list[int], min_size: int, advance_phase: str):
     """Post current records.
     Defaults to as many as will fit in one transaction, but you can optionally
-    specify indices.
+    specify indexes.
     """
-    click.echo(ints)
+    click.echo(indexes)
     # TODO what happens when they don't fit in one tx?
     # TODO parse phase
+    # asyncio.run(Client().records_post(  ))
     raise NotImplementedError
 
+
 @records.command(roles=['admin', 'guardian', 'device'])
-@ints_arg(required=True)
-def drop(ints):
+@indexes_arg(required=True)
+def drop(indexes):
     """Delete current records without posting.
-    Requires explicit indices for which ones to drop.
+    Requires explicit indexes for which ones to drop.
 
     This is probably most useful when manually testing commands in the CLI.
     You might also want to discard records if they fail verification,
     but in that case you should raise an error too.
     """
-    click.echo(ints)
+    click.echo(indexes)
     raise NotImplementedError

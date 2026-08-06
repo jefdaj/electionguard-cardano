@@ -13,8 +13,8 @@ def parse_ints(s: str) -> set[int]:
             result.add(int(tok))
     return result
 
-class IntsType(click.ParamType):
-    name = "ints"
+class IndexesType(click.ParamType):
+    name = "indexes"
 
     def convert(self, value, param, ctx):
         try:
@@ -22,12 +22,12 @@ class IntsType(click.ParamType):
         except ValueError:
             self.fail(f"{value!r} is not a valid ints str", param, ctx)
 
-INTS = IntsType()
+INDEXES = IndexesType()
 
-def ints_arg(name="indices", dest="ints", required=False):
+def indexes_arg(name="indexes", dest="indexes", required=False):
     """Decorator: positional arg(s) -> sorted list[int] passed as `dest`."""
     def decorator(f):
-        @click.argument(name, nargs=-1, type=INTS, required=required)
+        @click.argument(name, nargs=-1, type=INDEXES, required=required)
         @click.pass_context
         def wrapper(ctx, *args, **kwargs):
             parsed = kwargs.pop(name)
