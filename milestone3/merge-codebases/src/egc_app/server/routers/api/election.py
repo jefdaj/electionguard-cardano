@@ -24,6 +24,7 @@ def _log_error(err: ElectionError) -> None:
 def _subscribe_to_election_config(state, election_config: ElectionConfig):
     "Shared logic used by start_subscriber and create_election."
     reset_election_state(state)
+    # TODO how to get the errors into the event stream??
     state.node.subscribe(
         election_config,
         on_event = _log_event,
@@ -94,6 +95,7 @@ async def stream_events(request: Request, state=Depends(get_state)):
     if state.node is None:
         raise HTTPException(404)
 
+    # TODO this needs to handle rollbacks
     async def gen():
         sent = 0
         while True:

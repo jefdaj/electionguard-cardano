@@ -527,6 +527,12 @@ class ElectionSubscriber:
         self._latest_event_slot: Optional[int] = None
         self._timeout_slots: int = timeout_slots
 
+        # When polling for all_election_events, clients can miss error
+        # callbacks. This is a partial solution: store important errors (so
+        # far only timeouts) and raise them after streaming.
+        # TODO is there a less convoluted way way?
+        self._fatal_error: Optional[ElectionEvent] = None
+
 
     ## query interface ##
 
@@ -658,6 +664,8 @@ class ElectionSubscriber:
         es = []
         for ch_evt in self.all_events():
             es += election_events(ch_evt)
+        if self._fatal_error is not None:
+            es.append(self._fatal_error)
         return es
 
 
@@ -1055,7 +1063,7 @@ class ElectionSubscriber:
                 if self._latest_event_slot is not None and len(self._checkpoints) > 1:
                     slots_since_event = tip.slot_no - self._latest_event_slot
                     if slots_since_event > self._timeout_slots:
-                        self._handle_timeout(slots_since_event)
+                        self._handle_timeout(tip.slot_no, self._latest_event_slot)
 
                 return True
 
@@ -1445,11 +1453,24 @@ class ElectionSubscriber:
         return self._fetch_matches_by_sc()
 
 
-    def _handle_timeout(self, slots_since_event: int):
+    def _handle_timeout(self, current_slot: int, latest_event_slot: int):
         log_call()
-        err = election_error('timeout', slots_since_event)
-        self._client_on_error(err)
+        slots_since_event = current_slot - self._latest_event_slot
+        err = election_error('timeout', {'slot_since_last_event': slots_since_event})
+
+        # TODO clean this up
+        hours = int(slots_since_event / 3600)
+        self._fatal_error = election_event(
+            'NA',
+            current_slot,
+            'subscriber',
+            'timed out',
+            f'timed out because there has been no activity for {slots_since_event} slots (~{hours} hours)'
+        )
+
         self.request_stop()
+        # self._client_on_event(self._fatal_error) # TODO remove?
+        self._client_on_error(err)
 
 
     ## handle events ##

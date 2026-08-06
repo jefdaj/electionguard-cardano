@@ -54,5 +54,11 @@ def config_subscribe_qr_png(draw):
     max_examples = 10,
 )
 def test_subscribe_qr_png(cfg: ResolvedTestConfig):
-    assert_script_logs_match(cfg, '.*', ['^[0-9]{9,}\\s.*ended election'])
+    assert_script_logs_match(cfg, '.*', [
+
+        # some of the test qr_strs point to elections that never finished
+        # TODO separate timeout test
+        '^[0-9]{9,}\\s.*(ended election|subscriber timed out)'
+
+    ])
     assert_script_logs_do_not_match(cfg, '.*', ['^Traceback', '^arion: FatalError'])

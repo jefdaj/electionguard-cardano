@@ -63,9 +63,7 @@ class Client:
                      event = ElectionEvent.from_dict(event_dict)
                      if (not filter) or (filter.lower() in str(event).lower()):
                         yield event
-                     if event.event_type == 'burn test tokens':
-                         return
-                     if event.event_type == 'end election':
+                     if event.event_type in ['end election', 'burn test tokens', 'timed out']:
                          return
 
     async def election_burntesttokens(self):
