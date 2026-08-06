@@ -1,7 +1,7 @@
 from pydantic import BaseModel, field_validator
 from egc import PublicRecordMetadata, decode_metadata
 
-from typing import Annotated, Any
+from typing import Annotated, Any, Optional
 from pydantic import BaseModel, GetCoreSchemaHandler
 from pydantic_core import core_schema
 
@@ -32,3 +32,9 @@ class RecordsListOut(BaseModel):
 
 class RecordsDrop(BaseModel):
     indexes_to_drop: list[int]
+
+
+class RecordsPost(BaseModel):
+    indexes_to_post: list[int] # auto-select if empty
+    min_size:        int
+    advance_phase:   Optional[str] # TODO parse?

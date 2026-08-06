@@ -136,3 +136,17 @@ class Client:
             json=data.model_dump()
         )
         resp.raise_for_status()
+
+    async def records_post(
+            self,
+            indexes: list[int],
+            min_size: int = 1,
+            advance_phase: Optional[str] = None
+        ):
+        data = schemas.RecordsPost(
+            indexes_to_post = indexes,
+            min_size        = min_size,
+            advance_phase   = advance_phase,
+        )
+        resp = await self._c.post('/records/post', json=data.model_dump())
+        resp.raise_for_status()

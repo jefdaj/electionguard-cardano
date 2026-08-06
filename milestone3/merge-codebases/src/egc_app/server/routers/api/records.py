@@ -28,3 +28,7 @@ async def records_drop(data: schemas.RecordsDrop, state=Depends(get_state)):
         path = paths[i]
         LOG.info(f'delete record {i+1}: {path}') # display as 1-indexed
         path.unlink(missing_ok=False)
+
+@router.post("/post")
+async def records_post(data: schemas.RecordsPost, state=Depends(get_state)):
+    raise NotImplementedError
