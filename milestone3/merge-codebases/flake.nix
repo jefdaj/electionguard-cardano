@@ -68,6 +68,16 @@
           gitignore-parser = addBuildSystem {"setuptools" = []; } prev.gitignore-parser;
           varint           = addBuildSystem {"setuptools" = []; } prev.varint;
           python-baseconv  = addBuildSystem {"setuptools" = []; } prev.python-baseconv;
+
+          # native zbar dependency for pyzbar
+          pyzbar = prev.pyzbar.overrideAttrs (old: {
+            postInstall = (old.postInstall or "") + ''
+              substituteInPlace $out/${final.python.sitePackages}/pyzbar/zbar_library.py \
+                --replace-fail "find_library('zbar')" \
+                               '"${pkgs.zbar.lib}/lib/libzbar.so"'
+            '';
+          });
+
         };
 
       pythonSet =
@@ -92,6 +102,7 @@
       runtimeDeps = [
         kupo
         # TODO some of the other pkgs go here instead?
+        # pkgs.zbar # TODO is this needed for pyzbar?
       ];
 
       # This is an actual output; see note below.
