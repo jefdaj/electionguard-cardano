@@ -483,7 +483,7 @@ class ElectionSubscriber:
             election: ElectionContext,
             on_event = _make_example_callback('on_event'),
             on_error = _make_example_callback('on_error'),
-            timeout = 3600, # in slots, but also roughly seconds
+            timeout_slots = 60 * 60 * 24, # in slots, but also roughly seconds TODO cli option for this
         ):
 
         log_call()
@@ -524,8 +524,8 @@ class ElectionSubscriber:
         self._checkpoints: list[Point] = []
 
         # For detecting timeouts.
-        self._prev_event_slot: Optional[int] = None
-        self._timeout: int = timeout
+        self._latest_event_slot: Optional[int] = None
+        self._timeout_slots: int = timeout_slots
 
 
     ## query interface ##
@@ -1030,6 +1030,7 @@ class ElectionSubscriber:
         # This returns whether a checkpoint was added, but that info isn't
         # currently used to decide anything.
         log_call()
+        LOG.debug(f'headers: {headers}')
         try:
             tip = Point.from_kupo_headers(headers)
         except KeyError:
@@ -1037,7 +1038,9 @@ class ElectionSubscriber:
             LOG.debug(f"Wait for Kupo to send slot + block hash.")
             return False
         with self._history_lock:
+            # LOG.debug(f'checkpoints: {self._checkpoints}')
             if len(self._checkpoints) > 0 and tip == self._checkpoints[-1]:
+                # LOG.debug('no new checkpoints')
                 return False
             else:
                 self._checkpoints.append(tip)
@@ -1049,8 +1052,8 @@ class ElectionSubscriber:
                 # then time out if it's been a long time since the election started
                 # AND a new block comes in.
                 # TODO should it time out before waiting for the new block?
-                if self._prev_event_slot is not None and len(self._checkpoints) > 1:
-                    slots_since_event = tip.slot_no - self._prev_event_slot
+                if self._latest_event_slot is not None and len(self._checkpoints) > 1:
+                    slots_since_event = tip.slot_no - self._latest_event_slot
                     if slots_since_event > self._timeout_slots:
                         self._handle_timeout(slots_since_event)
 
@@ -1454,6 +1457,7 @@ class ElectionSubscriber:
 
     def _on_action(self, event: ChannelEvent):
         log_call()
+        self._latest_event_slot = event.slot_no
         LOG.debug(f'dispatching event:\n{pformat(event)}')
         match event.action:
             case InitElection():             return self._on_initelection(event)
