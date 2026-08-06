@@ -5,11 +5,14 @@ import qrcode
 import subprocess
 from typing import Any
 import sys
-import cv2
+import cv2 # TODO remove
 import time
 from pprint import pprint
 from pathlib import Path
 import logging
+from pyzbar import pyzbar
+from pyzbar.pyzbar import ZBarSymbol
+from PIL import Image
 
 LOG = logging.getLogger(__name__)
 
@@ -110,33 +113,75 @@ def decode_qr_str(qr_str, decode_cls):
     return decode_cls.from_qr_str(qr_str)
 
 
+# TODO remove? works most of the time but occasionally fails to decode
+# def load_qrcode(png_path: Path, decode_cls):
+#     img = cv2.imread(png_path) # TODO str?
+#     qr_str, _, _ = cv2.QRCodeDetector().detectAndDecode(img)
+#     LOG.info(f'qr_str: {qr_str}')
+#     return decode_qr_str(qr_str, decode_cls)
+
+
 def load_qrcode(png_path: Path, decode_cls):
-    img = cv2.imread(png_path) # TODO str?
-    qr_str, _, _ = cv2.QRCodeDetector().detectAndDecode(img)
-    LOG.info(f'qr_str: {qr_str}')
+    # alternate version without cv2:
+    # results = pyzbar.decode(Image.open(png_path), symbols=[ZBarSymbol.QRCODE])
+    img = cv2.imread(str(png_path), cv2.IMREAD_GRAYSCALE)
+    results = pyzbar.decode(img, symbols=[ZBarSymbol.QRCODE])
+    qr_str = results[0].data.decode() if results else ""
+    LOG.info(f"qr_str: {qr_str}")
     return decode_qr_str(qr_str, decode_cls)
 
 
-def scan_qrcode(decode_cls=None, video_device=0, timeout=0):
+# TODO remove? works, but presumably fails on some qrcodes because uses cv2
+# def scan_qrcode(decode_cls=None, video_device=0, timeout=0):
+#     "Scan a QR Code and optionally decode it using from_qr_str."
+#     cap = cv2.VideoCapture(video_device)
+#     if not cap.isOpened():
+#         raise Exception(f"Cannot open video device {video_device!r}")
+#     cap.set(cv2.CAP_PROP_AUTOFOCUS, 1) # enable autofocus
+#     det = cv2.QRCodeDetector()
+#     start = time.time()
+#     try:
+#         while True:
+#             ok, frame = cap.read()
+#             if not ok:
+#                 time.sleep(0.1) # TODO remove?
+#                 continue
+#             qr_str, _, _ = det.detectAndDecode(frame)
+#             if qr_str:
+#                 if decode_cls is None:
+#                     return qr_str
+#                 else:
+#                     return decode_qr_str(qr_str, decode_cls)
+#             if timeout and time.time() - start > timeout:
+#                 raise TimeoutError
+#     finally:
+#         cap.release()
+
+def scan_qrcode(decode_cls=None, video_device=0, timeout=0, frame_skip=5):
     "Scan a QR Code and optionally decode it using from_qr_str."
     cap = cv2.VideoCapture(video_device)
     if not cap.isOpened():
         raise Exception(f"Cannot open video device {video_device!r}")
-    cap.set(cv2.CAP_PROP_AUTOFOCUS, 1) # enable autofocus
-    det = cv2.QRCodeDetector()
+    cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)  # enable autofocus
     start = time.time()
+    i = 0
     try:
         while True:
             ok, frame = cap.read()
             if not ok:
-                time.sleep(0.1) # TODO remove?
+                time.sleep(0.1)
                 continue
-            qr_str, _, _ = det.detectAndDecode(frame)
-            if qr_str:
-                if decode_cls is None:
-                    return qr_str
-                else:
+
+            i += 1
+            if i % frame_skip == 0:  # only decode every Nth frame
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                results = pyzbar.decode(gray, symbols=[ZBarSymbol.QRCODE])
+                if results:
+                    qr_str = results[0].data.decode()
+                    if decode_cls is None:
+                        return qr_str
                     return decode_qr_str(qr_str, decode_cls)
+
             if timeout and time.time() - start > timeout:
                 raise TimeoutError
     finally:
