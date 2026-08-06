@@ -81,7 +81,7 @@ def _build_default_map(config_path: str | None, role: str) -> dict:
     LOG.debug(f'from_env: {from_env}')
     from_node = get_node_config()
     LOG.debug(f'from_node: {from_node}')
-    from_cli = {"node":{"role": role}}
+    from_cli = {} if role == 'any' else {"node":{"role": role}}
     LOG.debug(f'from_cli: {from_cli}')
     dm = deep_merge_all(
         from_node,
@@ -114,13 +114,13 @@ class RoleAwareGroup(cloup.Group):
         # see the correct role before the callback ever runs.
         if parent is None:
             config_path = _peek_arg(args, "--config")
-            role = _peek_arg(args, "--role") or os.environ.get("CLI_ROLE", "observer")
+            role = _peek_arg(args, "--role") or os.environ.get("CLI_ROLE", "any")
             kwargs.setdefault("default_map", _build_default_map(config_path, role))
         return super().make_context(info_name, args, parent=parent, **kwargs)
 
     def _role(self, ctx: click.Context) -> str:
         default_map = ctx.find_root().default_map or {}
-        return default_map.get("node", {}).get("role", "observer")
+        return default_map.get("node", {}).get("role", "any")
 
     def _allowed(self, ctx: click.Context, cmd: click.Command) -> bool:
         role = self._role(ctx)

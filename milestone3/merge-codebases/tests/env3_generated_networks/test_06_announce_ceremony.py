@@ -51,7 +51,10 @@ def test_announce_ceremony(cfg: ResolvedTestConfig):
         'GET /api/channel/await\\?role=admin',
         'GET /api/collateral/await',
         'POST /api/ceremony/create',
+        'POST /api/records/post.*201$',
+        'admin posted PublicRecord.*metadata=CeremonyDetails',
     ])
     assert_script_logs_match(cfg, '(?!admin)', [
-        '^[0-9]{9,}\\s.*ended election'
+        'admin posted CeremonyDetails',
+        '^[0-9]{9,}\\s.*ended election',
     ])
