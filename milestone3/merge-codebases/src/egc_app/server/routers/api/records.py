@@ -29,12 +29,16 @@ async def records_drop(data: schemas.RecordsDrop, state=Depends(get_state)):
         LOG.info(f'delete record {i+1}: {path}') # display as 1-indexed
         path.unlink(missing_ok=False)
 
-@router.post("/post")
-async def records_post(data: schemas.RecordsPost, state=Depends(get_state)):
+@router.post("/post", status_code=201)
+def records_post(data: schemas.RecordsPost, state=Depends(get_state)):
     pairs = state.node.batch_assemble(
         indexes = data.indexes_to_post,
         min_size = data.min_size,
         max_size = data.max_size,
     )
     LOG.info(f'pairs: {pairs}')
-    # TODO finish
+    tx = state.node.post_public_records(
+        new_record_pairs = pairs,
+        new_phase = None, # TODO parse str -> ElectionPhase and add here
+    )
+    state.node.await_tx_confirmed(tx)

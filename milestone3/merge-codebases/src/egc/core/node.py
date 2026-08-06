@@ -245,18 +245,6 @@ class ElectionNode:
             pairs.append(pair)
         return pairs
 
-    # TODO better name?
-    def batch_post(
-            self,
-            indexes: list[int],
-            min_size: int,
-            max_size: int,
-            advance_phase: Optional[str] = None,
-        ):
-        batch = self.batch_assemble(indexes, min_size, max_size)
-        raise NotImplementedError
-        # TODO find/create records_to_post dir
-
 
     ### contract operations ###
 
