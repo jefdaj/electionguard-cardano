@@ -203,13 +203,6 @@ class ElectionNode:
 
     ### batching ###
 
-    # TODO remove?
-    def batch_add(self, content: Any, metdata: PublicRecordMetadata):
-        raise NotImplementedError
-        # TODO find/create records_to_post dir
-        # TODO find path within the dir
-        # TODO write to path
-
     # TODO underscore this?
     def batch_list_paths(self) -> list[Path]:
         pub_dir = self.records_to_post_dir
@@ -223,19 +216,44 @@ class ElectionNode:
         metas = [path_metadata(p, pub_dir) for p in paths]
         return metas
 
-    def batch_assemble(
-            self,
-            min_size: int = 1,
-            max_size: int = 10,
-        ):
-        raise NotImplementedError
+    def batch_assemble(self, indexes: list[int], min_size: int, max_size: int) -> list[tuple[dict, PublicRecordMetadata]]:
+        """This is where the min privacy and max TX size logic will go.
+        For now it just needs to load json dicts (untyped) and pair them with
+        their metadata.
+        """
+        LOG.info(f'batch_assemble locals: {locals()}')
+        paths = self.batch_list_paths()
+        LOG.info(f'paths: {paths}')
+        if indexes:
+            paths = [paths[i] for i in indexes]
+            LOG.info(f'paths matching indexes: {paths}')
+        if len(paths) < min_size:
+            raise Exception(f'Failed to assemble batch. Have {len(paths)} records but min_size is {min_size}.')
+        paths = paths[:max_size] # TODO off by one?
+        assert len(paths) <= max_size
+        LOG.info(f'paths after size cutoff: {paths}')
+        pairs = []
+        pub_dir = self.records_to_post_dir
+        for path in paths:
+            LOG.info(f'path: {path}')
+            meta = path_metadata(path, pub_dir)
+            LOG.info(f'meta: {meta}')
+            with path.open('r') as f:
+                data = json.load(f)
+            pair = (data, meta)
+            LOG.info(f'pair: {pair}')
+            pairs.append(pair)
+        return pairs
 
     # TODO better name?
     def batch_post(
             self,
-            min_size: int = 1,
+            indexes: list[int],
+            min_size: int,
+            max_size: int,
             advance_phase: Optional[str] = None,
         ):
+        batch = self.batch_assemble(indexes, min_size, max_size)
         raise NotImplementedError
         # TODO find/create records_to_post dir
 
@@ -245,7 +263,7 @@ class ElectionNode:
     # TODO underscore this in favor of batch_post
     def post_public_records(
             self,
-            new_record_pairs: List[tuple[dict, PublicRecordMetadata]],
+            new_record_pairs: list[tuple[dict, PublicRecordMetadata]],
             new_phase: Optional[ElectionPhase] = None,
         ) -> Transaction:
 

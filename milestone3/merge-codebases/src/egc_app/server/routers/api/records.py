@@ -31,4 +31,10 @@ async def records_drop(data: schemas.RecordsDrop, state=Depends(get_state)):
 
 @router.post("/post")
 async def records_post(data: schemas.RecordsPost, state=Depends(get_state)):
-    raise NotImplementedError
+    pairs = state.node.batch_assemble(
+        indexes = data.indexes_to_post,
+        min_size = data.min_size,
+        max_size = data.max_size,
+    )
+    LOG.info(f'pairs: {pairs}')
+    # TODO finish
