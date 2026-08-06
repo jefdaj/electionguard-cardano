@@ -226,6 +226,7 @@ class ElectionNode:
     def batch_assemble(
             self,
             min_size: int = 1,
+            max_size: int = 10,
         ):
         raise NotImplementedError
 

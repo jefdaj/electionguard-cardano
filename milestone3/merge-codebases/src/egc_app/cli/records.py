@@ -29,25 +29,30 @@ def list_():
 
 @records.command(roles=['admin', 'guardian', 'device'])
 @click.option('--min-size', help='Min batch size for privacy.', type=click.INT, required=False)
+@click.option('--max-size', help='Max batch size for valid TX.', type=click.INT, required=False)
 @click.option('--advance-phase', help='Admin only: also advance the election phase.', type=click.STRING, required=False)
 @indexes_arg(required=False)
-def post(indexes: list[int], min_size: int, advance_phase: str):
+def post(indexes: list[int], min_size: int, max_size: int, advance_phase: str):
     """Post current records.
     You can optionally specify indexes/ranges.
     By default it posts as many as fit in a single transaction, starting from index 1.
     The advance phase option is only applied if you're the admin and all records fit.
 
-    Min size is a basic placeholder for privacy settings; future versions
+    Min size is a minimal placeholder for privacy settings; future versions
     should have more robust options to allow tuning batches based on number of
     voters expected to use a machine, number of variations in the ballot, how
     long voters are prepared to wait to challenge their submitted ballots, etc.
+
+    Max size is a minimal placeholder too; future versions should
+    calculate/simulate to determine max TX size.
     """
     # TODO return code to indicate whether all records fit or not? or print something? or use list?
     click.echo(indexes)
     # TODO parse phase
     asyncio.run(Client().records_post(
         indexes,
-        min_size      = min_size,
+        min_size = min_size,
+        max_size = max_size,
         advance_phase = advance_phase
     ))
     raise NotImplementedError

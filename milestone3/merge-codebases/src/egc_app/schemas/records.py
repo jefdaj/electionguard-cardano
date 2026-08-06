@@ -37,4 +37,5 @@ class RecordsDrop(BaseModel):
 class RecordsPost(BaseModel):
     indexes_to_post: list[int] # auto-select if empty
     min_size:        int
+    max_size:        int
     advance_phase:   Optional[str] # TODO parse?

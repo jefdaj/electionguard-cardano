@@ -141,6 +141,7 @@ class Client:
             self,
             indexes: list[int],
             min_size: int = 1,
+            max_size: int = 10, # TODO tune for traced contract first
             advance_phase: Optional[str] = None
         ):
         data = schemas.RecordsPost(
