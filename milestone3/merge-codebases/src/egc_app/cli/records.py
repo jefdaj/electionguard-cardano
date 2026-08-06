@@ -33,8 +33,15 @@ def list_():
 @indexes_arg()
 def post(indexes: list[int], min_size: int, advance_phase: str):
     """Post current records.
-    Defaults to as many as will fit in one transaction, but you can optionally
-    specify indexes.
+    You can optionally specify indexes/ranges.
+    By default it posts as many as fit in a single transaction, starting from index 1.
+    The advance phase option is only applied if you're the admin and all records fit.
+
+    Min size is a basic placeholder for privacy settings; future versions
+    should have more robust options to allow tuning batches based on number of
+    voters expected to use a machine, number of variations in the ballot, how
+    long voters should be prepared to wait to challenge their submitted
+    ballots, etc.
     """
     click.echo(indexes)
     # TODO what happens when they don't fit in one tx?
@@ -45,13 +52,10 @@ def post(indexes: list[int], min_size: int, advance_phase: str):
 
 @records.command(roles=['admin', 'guardian', 'device'])
 @indexes_arg(required=True)
-def drop(indexes):
+def drop(indexes: list[int]):
     """Delete current records without posting.
-    Requires explicit indexes for which ones to drop.
-
-    This is probably most useful when manually testing commands in the CLI.
-    You might also want to discard records if they fail verification,
-    but in that case you should raise an error too.
+    Mainly for testing.
+    Requires explicit indexes/ranges.
     """
     click.echo(indexes)
     raise NotImplementedError
