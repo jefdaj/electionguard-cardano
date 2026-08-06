@@ -9,6 +9,9 @@ import cv2
 import time
 from pprint import pprint
 from pathlib import Path
+import logging
+
+LOG = logging.getLogger(__name__)
 
 
 def is_linux_dark_mode() -> bool:
@@ -61,7 +64,13 @@ def make_qr_code(obj: Any) -> qrcode.QRCode:
         if not hasattr(obj, 'to_qr_str'):
             raise Exception(f'{type(obj)} obj has no to_qr_str method')
         qr_str = obj.to_qr_str()
-    qr = qrcode.QRCode()
+    qr = qrcode.QRCode(
+        version = None,
+        error_correction = qrcode.constants.ERROR_CORRECT_H,
+        box_size = 10, # TODO what's this?
+        border = 4, # TODO does this help? supposedly fixes some opencv issues
+        # TODO if this isn't enough, consider swapping out cv2 -> pyzbar
+    )
     qr.add_data(qr_str)
     return qr
 
@@ -69,7 +78,7 @@ def make_qr_code(obj: Any) -> qrcode.QRCode:
 def print_qrcode(obj: Any) -> None:
     "Print a QR code with wrapped text below."
     qr = make_qr_code(obj)
-    qr.make()
+    qr.make(fit=True)
     # save to a buffer so we can get width
     buf = io.StringIO()
     qr.print_ascii(out=buf, invert=is_linux_dark_mode())
@@ -93,7 +102,7 @@ def print_qrcode(obj: Any) -> None:
 # TODO enforce a particular format? (png maybe)
 def save_qrcode(obj: Any, path: Path):
     qr = make_qr_code(obj)
-    img = qr.make_image()
+    img = qr.make_image(fit=True)
     img.save(path)
 
 
@@ -104,6 +113,7 @@ def decode_qr_str(qr_str, decode_cls):
 def load_qrcode(png_path: Path, decode_cls):
     img = cv2.imread(png_path) # TODO str?
     qr_str, _, _ = cv2.QRCodeDetector().detectAndDecode(img)
+    LOG.info(f'qr_str: {qr_str}')
     return decode_qr_str(qr_str, decode_cls)
 
 

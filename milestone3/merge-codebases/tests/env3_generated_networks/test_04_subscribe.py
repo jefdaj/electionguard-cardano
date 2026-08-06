@@ -51,7 +51,7 @@ def config_subscribe_qr_png(draw):
 
 @given_cached_tests(
     cfg_strategy = config_subscribe_qr_png(),
-    max_examples = 3,
+    max_examples = 10,
 )
 def test_subscribe_qr_png(cfg: ResolvedTestConfig):
     assert_script_logs_match(cfg, '.*', ['^[0-9]{9,}\\s.*ended election'])
