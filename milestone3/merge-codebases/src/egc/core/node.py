@@ -17,6 +17,46 @@ import logging
 LOG = logging.getLogger(__name__)
 
 
+# TODO should this operate on ElectionEvents? channel seems better so far
+# TODO async?
+# TODO handle state changes on rollbacks
+def make_fetch_fn(fetched_dir: Path, to_post_dir: Path, own_ch_id: Optional[ChannelId]):
+    LOG.info('make_fetch_fn')
+    def fetch_new_records(event: ChannelEvent):
+        LOG.info('fetch_new_records')
+        """Fetch any new_records that have just been published.
+        If we posted them, also remove the obsolete records_to_post.
+        """
+        LOG.info('\n' + pformat(event) + '\n')
+        if getattr(event, 'output_state', None) is None:
+            return
+        ch_str = channel_id_to_string(event.channel_id)
+        new_records = event.output_state.state.new_records
+        for r in new_records:
+            LOG.info(f'{ch_str} posted {r.metadata}')
+
+        # fetch new records
+        # TODO any need for long term retry logic here?
+        fetched_paths = ipfs_fetch_records_to_file_sync(new_records, fetched_dir)
+        for (i, p) in enumerate(fetched_paths):
+            LOG.info(f'fetched {new_records[i].metadata} -> {p}')
+        assert len(new_records) == len(fetched_paths)
+
+        # rm records to post
+        if own_ch_id != event.channel_id:
+            LOG.info('we did not post these records')
+            return
+        LOG.info(f'we posted these records; removing the to_post versions')
+        for fetched_path in fetched_paths:
+            rel_path = fetched_path.relative_to(fetched_dir)
+            to_post_path = to_post_dir / rel_path
+            if to_post_path.exists():
+                LOG.info(f'rm {to_post_path}')
+                to_post_path.unlink(missing_ok=False)
+
+    return fetch_new_records
+
+
 class ElectionNode:
 
     def __init__(
@@ -85,13 +125,22 @@ class ElectionNode:
             election_cfg: ElectionConfig,
             on_event=lambda x: None,
             on_error=lambda x: None,
+            on_channel_event=lambda x: None,
         ):
         self.election_cfg = election_cfg
         self.election = ElectionContext.from_config(election_cfg)
+
+        fetch_fn = make_fetch_fn(
+            self.records_fetched_dir,
+            self.records_to_post_dir,
+            self.channel_id(),
+        )
+
         self.subscriber = ElectionSubscriber(
             election = self.election,
             on_event = on_event,
             on_error = on_error,
+            on_channel_event = fetch_fn,
         )
         # TODO set self.script here
         self.subscriber.start()

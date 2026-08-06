@@ -22,6 +22,7 @@ from .channel import (
     SubChannel,
     SubChannelState,
     channel_id_from_state,
+    publisher_vkh,
     publisher_address,
     channel_id_to_string,
     coerce_channel_id,

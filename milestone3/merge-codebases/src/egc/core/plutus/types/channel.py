@@ -74,13 +74,17 @@ def channel_id_from_state(state: ChannelState) -> ChannelId:
     else:
         return state.state.channel_id
 
-def publisher_address(state: ChannelState, network=Network.TESTNET) -> Address:
-    "Mainly to help return collateral in test fixtures."
-    # TODO later, don't assume testnet
+def publisher_vkh(state: ChannelState, network=Network.TESTNET) -> VerificationKeyHash:
+    # TODO don't assume testnet
     if isinstance(state, AdminChannel):
         vkh_bytes = state.state.admin
     else:
         vkh_bytes = state.state.publisher
     vkh = VerificationKeyHash(vkh_bytes)
+    return vkh
+
+def publisher_address(state: ChannelState, network=Network.TESTNET) -> Address:
+    "Mainly to help return collateral in test fixtures."
+    vkh = publisher_vkh(state, network)
     addr = Address(payment_part=vkh, network=network)
     return addr

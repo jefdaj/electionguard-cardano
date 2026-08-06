@@ -47,14 +47,19 @@ def test_announce_ceremony(cfg: ResolvedTestConfig):
         'egc collateral await$',
         '^private.*ceremony\\.json$',
     ])
+    assert_node_logs_match(cfg, '.*', [
+        'fetched CeremonyDetails() ->',
+    ])
     assert_node_logs_match(cfg, 'admin', [
         'GET /api/channel/await\\?role=admin',
         'GET /api/collateral/await',
         'POST /api/ceremony/create',
         'POST /api/records/post.*201$',
         'admin posted PublicRecord.*metadata=CeremonyDetails',
+        'we posted these records',
     ])
     assert_script_logs_match(cfg, '(?!admin)', [
         'admin posted CeremonyDetails',
+        'we did not post these records',
         '^[0-9]{9,}\\s.*ended election',
     ])

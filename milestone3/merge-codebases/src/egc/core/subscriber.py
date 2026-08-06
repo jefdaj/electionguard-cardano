@@ -483,6 +483,7 @@ class ElectionSubscriber:
             election: ElectionContext,
             on_event = _make_example_callback('on_event'),
             on_error = _make_example_callback('on_error'),
+            on_channel_event = _make_example_callback('on_channel_event'),
             timeout_slots = 60 * 60 * 24, # in slots, but also roughly seconds TODO cli option for this
         ):
 
@@ -492,8 +493,9 @@ class ElectionSubscriber:
         self.election = election
 
         # Client callbacks, which default to printing events.
-        self._client_on_event = on_event
-        self._client_on_error = on_error
+        self._client_on_event         = on_event
+        self._client_on_error         = on_error
+        self._client_on_channel_event = on_channel_event
 
         # This is the main subscriber state; all the public methods read it,
         # and the internal callbacks mutate it.
@@ -1004,6 +1006,7 @@ class ElectionSubscriber:
             # 4. Update internal state and do some double checking + cleanup for
             #    particular action types.
             event = self._on_action(event)
+            self._client_on_channel_event(event)
 
             # 5. Emit final ElectionEvents to clients
             for event in election_events(event):
