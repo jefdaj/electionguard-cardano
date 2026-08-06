@@ -210,10 +210,16 @@ class ElectionNode:
         # TODO find path within the dir
         # TODO write to path
 
+    # TODO underscore this?
+    def batch_list_paths(self) -> list[Path]:
+        pub_dir = self.records_to_post_dir
+        paths = sorted(list(pub_dir.rglob('*.json')))
+        return paths
+
     # TODO better name?
     def batch_list(self) -> list[PublicRecordMetadata]:
         pub_dir = self.records_to_post_dir
-        paths = sorted(list(pub_dir.rglob('*.json')))
+        paths = self.batch_list_paths()
         metas = [path_metadata(p, pub_dir) for p in paths]
         return metas
 

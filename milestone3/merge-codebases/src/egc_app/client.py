@@ -129,5 +129,10 @@ class Client:
 
     async def records_drop(self, indexes: list[int]):
         data = schemas.RecordsDrop(indexes_to_drop=indexes)
-        resp = await self._c.delete('/records', json=data.model_dump())
+        # resp = await self._c.delete('/records', json=data.model_dump())
+        resp = await self._c.request(
+            'DELETE',
+            '/records',
+            json=data.model_dump()
+        )
         resp.raise_for_status()
