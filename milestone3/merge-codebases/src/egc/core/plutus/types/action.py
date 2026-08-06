@@ -68,6 +68,7 @@ ElectionAction = Union[
 ]
 
 
+# TODO move since now it's also used with PublicRecordMetadata
 def decode_plutusdata_union(union_type, cbor_hex: str) -> PlutusData:
     """Decode a top-level union. Apparently pycardano has this logic, but only
     for nested types inside a larger PlutusData wrapper type. Maybe it's worth

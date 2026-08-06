@@ -164,6 +164,8 @@ _FIELD_PATTERNS = {
     'ballot_id':       r'ballot-[0-9a-fA-F-]{36}',
     'spoiled_id':      r'ballot-[0-9a-fA-F-]{36}',
     'guardian_number': r'\d+',
+    'backup_order': r'\d+',
+    'device_number': r'\d+',
 }
 
 
@@ -181,12 +183,15 @@ def _fstr_to_regex(fstr: str) -> re.Pattern:
 
 def _key(dname: str, fstr: str) -> str:
     """Unique lookup key: folder + literal filename prefix up to '{'."""
-    return f'{dname}/{fstr.split("{", 1)[0]}'
+    s = f'{dname}/{fstr.split("{", 1)[0]}'
+    LOG.debug(f'_key: {s}')
+    return s
 
 
 # Build once. Map unique (folder + literal prefix) -> (type, regex).
 # Sort by key length descending so longer, more-specific prefixes win
 # when one prefix is a substring-prefix of another sharing the folder.
+# TODO simplify since current layout has no duplicates
 _REVERSE = sorted(
     (
         (_key(dname, fstr), m_type, _fstr_to_regex(fstr))
@@ -195,6 +200,7 @@ _REVERSE = sorted(
     key=lambda t: len(t[0]),
     reverse=True,
 )
+LOG.debug(f'_REVERSE: {_REVERSE}')
 
 
 def path_metadata(abs_path: Path, pub_dir: Path) -> r.PublicRecordMetadata:
@@ -212,10 +218,15 @@ def path_metadata(abs_path: Path, pub_dir: Path) -> r.PublicRecordMetadata:
         if not rel_str.startswith(key):
             continue
         m = rx.match(fname)
+        if bool(m):
+            LOG.debug(f'{fname} matches {rx} for type {m_type}')
+        else:
+            LOG.debug(f'{fname} does not match {rx} for type {m_type}')
         if not m:
             raise ValueError(
                 f'Path matches {key!r} but not filename pattern: {abs_path}'
             )
+        LOG.debug(f'm.groupdict: {m.groupdict()}')
         return m_type(**m.groupdict())  # mixin coerces/validates
     raise ValueError(f'No record type matches path: {abs_path}')
 

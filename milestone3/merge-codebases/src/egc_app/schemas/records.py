@@ -1,7 +1,30 @@
 from pydantic import BaseModel, field_validator
-from typing import Annotated, Optional
-from egc import PublicRecordMetadata
+from egc import PublicRecordMetadata, decode_metadata
+
+from typing import Annotated, Any
+from pydantic import BaseModel, GetCoreSchemaHandler
+from pydantic_core import core_schema
+
+# TODO move to a util file?
+class _PublicRecordMetadataPydantic:
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source: Any, handler: GetCoreSchemaHandler
+    ) -> core_schema.CoreSchema:
+        def validate(v: Any) -> PublicRecordMetadata:
+            if isinstance(v, PublicRecordMetadata):
+                return v
+            return decode_metadata(v)
+
+        return core_schema.no_info_plain_validator_function(
+            validate,
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                lambda k: k.to_cbor_hex(), return_schema=core_schema.str_schema()
+            ),
+        )
+
+PublicRecordMetadataType = Annotated[PublicRecordMetadata, _PublicRecordMetadataPydantic]
+
 
 class RecordsListOut(BaseModel):
-    records: list[PublicRecordMetadata] # if too many issues, send path and convert in cli
-    # records: list[str]
+    records: list[PublicRecordMetadataType]

@@ -55,6 +55,7 @@ from .record import (
   SpoiledResult,
   Summary,
   PublicRecordMetadata,
+  decode_metadata,
   PublicRecord,
 )
 

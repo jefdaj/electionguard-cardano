@@ -5,6 +5,7 @@ from pycardano import PlutusData
 from pydantic.v1 import validator
 from typing import Union
 
+from .action     import decode_plutusdata_union # TODO move to a util module
 from .ballot_id  import BallotIdMixin
 from .channel_id import ChannelIdMixin
 from .ipfs_cid   import IpfsCidMixin
@@ -116,6 +117,9 @@ PublicRecordMetadata = Union[
     SpoiledResult,
     Summary,
 ]
+
+def decode_metadata(metadata_str):
+    return decode_plutusdata_union(PublicRecordMetadata, metadata_str)
 
 @dataclass(repr=False)
 class PublicRecord(IpfsCidMixin, PlutusData):

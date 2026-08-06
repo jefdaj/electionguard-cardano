@@ -203,6 +203,7 @@ class ElectionNode:
 
     ### batching ###
 
+    # TODO remove?
     def batch_add(self, content: Any, metdata: PublicRecordMetadata):
         raise NotImplementedError
         # TODO find/create records_to_post dir
