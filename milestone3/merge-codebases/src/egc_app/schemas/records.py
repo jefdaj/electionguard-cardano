@@ -28,3 +28,7 @@ PublicRecordMetadataType = Annotated[PublicRecordMetadata, _PublicRecordMetadata
 
 class RecordsListOut(BaseModel):
     records: list[PublicRecordMetadataType]
+
+
+class RecordsDrop(BaseModel):
+    indexes_to_drop: list[int]

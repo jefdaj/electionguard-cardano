@@ -43,6 +43,7 @@ def post(indexes: list[int], min_size: int, advance_phase: str):
     long voters should be prepared to wait to challenge their submitted
     ballots, etc.
     """
+    # TODO return code to indicate whether all records fit or not? or print something? or use list?
     click.echo(indexes)
     # TODO what happens when they don't fit in one tx?
     # TODO parse phase
@@ -57,5 +58,4 @@ def drop(indexes: list[int]):
     Mainly for testing.
     Requires explicit indexes/ranges.
     """
-    click.echo(indexes)
-    raise NotImplementedError
+    asyncio.run(Client().records_drop(indexes))
