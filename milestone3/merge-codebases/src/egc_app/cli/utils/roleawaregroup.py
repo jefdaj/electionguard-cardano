@@ -60,6 +60,10 @@ def deep_merge(base: dict, override: dict) -> dict:
             result[key] = value
     return result
 
+def deep_merge_all(*dicts: dict) -> dict:
+    "Merge dicts left-to-right; later dicts override earlier ones."
+    return functools.reduce(deep_merge, dicts, {})
+
 def _peek_arg(args: list[str], flag: str) -> str | None:
     """Read --flag VALUE or --flag=VALUE from raw args without consuming them."""
     for i, arg in enumerate(args):
@@ -71,18 +75,18 @@ def _peek_arg(args: list[str], flag: str) -> str | None:
 
 
 def _build_default_map(config_path: str | None, role: str) -> dict:
-    # TODO also a base default set?
-    from_cli  = get_cli_config(config_path)
-    LOG.debug(f'from_cli: {from_cli}')
+    from_cfg  = get_cli_config(config_path)
+    LOG.debug(f'from_cfg: {from_cfg}')
     from_env  = get_env_config()
     LOG.debug(f'from_env: {from_env}')
     from_node = get_node_config()
     LOG.debug(f'from_node: {from_node}')
-    dm = deep_merge(
-        deep_merge(
-            deep_merge({"node":{"role": role}}, from_node),
-            from_env,
-        ),
+    from_cli = {"node":{"role": role}}
+    LOG.debug(f'from_cli: {from_cli}')
+    dm = deep_merge_all(
+        from_node,
+        from_cfg,
+        from_env,
         from_cli,
     )
     LOG.debug(f'final default map: {dm}')
