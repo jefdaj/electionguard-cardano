@@ -139,8 +139,8 @@ class IPFSService:
         self.records_to_post_dir = records_to_post_dir
         self.records_fetched_dir = records_fetched_dir
 
-        self.records_to_post_dir.mkdir(parents=True, exist_ok=True)
-        self.records_fetched_dir.mkdir(parents=True, exist_ok=True)
+        # self.records_to_post_dir.mkdir(parents=True, exist_ok=True)
+        # self.records_fetched_dir.mkdir(parents=True, exist_ok=True)
 
         self.maddr = maddr
         self.fresh_workers = fresh_workers
