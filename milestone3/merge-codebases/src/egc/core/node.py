@@ -20,39 +20,40 @@ LOG = logging.getLogger(__name__)
 # TODO should this operate on ElectionEvents? channel seems better so far
 # TODO async?
 # TODO handle state changes on rollbacks
-def make_fetch_fn(fetched_dir: Path, to_post_dir: Path, own_ch_id: Optional[ChannelId]):
+# def make_fetch_fn(fetched_dir: Path, to_post_dir: Path, own_ch_id: Optional[ChannelId]):
+def make_fetch_fn(ipfs: IPFSService, own_ch_id: Optional[ChannelId]):
     LOG.info('make_fetch_fn')
     def fetch_new_records(event: ChannelEvent):
         LOG.info('fetch_new_records')
-        """Fetch any new_records that have just been published.
-        If we posted them, also remove the obsolete records_to_post.
-        """
         LOG.info('\n' + pformat(event) + '\n')
         if getattr(event, 'output_state', None) is None:
             return
-        ch_str = channel_id_to_string(event.channel_id)
+        # ch_str = channel_id_to_string(event.channel_id)
         new_records = event.output_state.state.new_records
         for r in new_records:
-            LOG.info(f'{ch_str} posted {r.metadata}')
+            LOG.info(f'{event.channel_id} posted {r.metadata}')
+            ipfs.fetch_record_soon(r)
+
+        # TODO all this goes in IPFSService now?
 
         # fetch new records
         # TODO any need for long term retry logic here?
-        fetched_paths = ipfs_fetch_records_to_file_sync(new_records, fetched_dir)
-        for (i, p) in enumerate(fetched_paths):
-            LOG.info(f'fetched {new_records[i].metadata} -> {p}')
-        assert len(new_records) == len(fetched_paths)
+        # fetched_paths = ipfs_fetch_records_to_file_sync(new_records, fetched_dir)
+        # for (i, p) in enumerate(fetched_paths):
+        #     LOG.info(f'fetched {new_records[i].metadata} -> {p}')
+        # assert len(new_records) == len(fetched_paths)
 
         # rm records to post
-        if own_ch_id != event.channel_id:
-            LOG.info('we did not post these records')
-            return
-        LOG.info(f'we posted these records; removing the to_post versions')
-        for fetched_path in fetched_paths:
-            rel_path = fetched_path.relative_to(fetched_dir)
-            to_post_path = to_post_dir / rel_path
-            if to_post_path.exists():
-                LOG.info(f'rm {to_post_path}')
-                to_post_path.unlink(missing_ok=False)
+        # if own_ch_id != event.channel_id:
+        #     LOG.info('we did not post these records')
+        #     return
+        # LOG.info(f'we posted these records; removing the to_post versions')
+        # for fetched_path in fetched_paths:
+        #     rel_path = fetched_path.relative_to(fetched_dir)
+        #     to_post_path = to_post_dir / rel_path
+        #     if to_post_path.exists():
+        #         LOG.info(f'rm {to_post_path}')
+        #         to_post_path.unlink(missing_ok=False)
 
     return fetch_new_records
 
@@ -89,7 +90,7 @@ class ElectionNode:
 
         self.private_dir = Path(private_dir) # TODO absolute()?
         self.records_to_post_dir = self.private_dir / 'records_to_post'
-        self.records_fetched_dir = self.private_dir / 'records_fetched'
+        self.records_fetched_dir = self.private_dir / 'records_fetched' # TODO not needed here anymore?
 
         # May be None in case of an Observer.
         # self.script: Optional[Script] = script
@@ -103,6 +104,13 @@ class ElectionNode:
             keys_dir   = keys_dir,
             key_name   = key_name,
         )
+
+        self.ipfs = IPFSService(
+            records_to_post_dir = self.records_to_post_dir,
+            records_fetched_dir = self.records_fetched_dir,
+            # channel_id = self.channel_id,
+        )
+        self.ipfs.start()
 
         # if self.script is None:
         #     LOG.debug('ElectionNode skipping subscriber init because script is None')
@@ -131,8 +139,9 @@ class ElectionNode:
         self.election = ElectionContext.from_config(election_cfg)
 
         fetch_fn = make_fetch_fn(
-            self.records_fetched_dir,
-            self.records_to_post_dir,
+            # self.records_fetched_dir,
+            # self.records_to_post_dir,
+            self.ipfs,
             self.channel_id(),
         )
 
@@ -310,20 +319,19 @@ class ElectionNode:
 
         ch_str = self.channel_str()
 
-        new_objs  = [p[0] for p in new_record_pairs]
-        new_metas = [p[1] for p in new_record_pairs]
-        LOG.debug('new_objs: %s' % pformat(new_objs))
-        LOG.debug('new_metas: %s' % pformat(new_metas))
+        # new_objs  = [p[0] for p in new_record_pairs]
+        # new_metas = [p[1] for p in new_record_pairs]
+        # LOG.debug('new_objs: %s' % pformat(new_objs))
+        # LOG.debug('new_metas: %s' % pformat(new_metas))
+        # new_cids: list[bytes] = ipfs_publish_objs_sync(new_objs)
+        # LOG.debug('new_cids: %s' % pformat(new_cids))
+        # assert len(new_cids) == len(new_metas)
+        # new_records = [
+        #     PublicRecord(ipfs_cid=c, metadata=m)
+        #     for (c, m) in zip(new_cids, new_metas)
+        # ]
 
-        new_cids: list[bytes] = ipfs_publish_objs_sync(new_objs)
-        LOG.debug('new_cids: %s' % pformat(new_cids))
-
-        assert len(new_cids) == len(new_metas)
-
-        new_records = [
-            PublicRecord(ipfs_cid=c, metadata=m)
-            for (c, m) in zip(new_cids, new_metas)
-        ]
+        new_records: list[PublicRecord] = self.ipfs.publish_and_make_records(new_record_pairs)
         LOG.debug('new_records: %s' % pformat(new_records))
 
         tx_msgs = []

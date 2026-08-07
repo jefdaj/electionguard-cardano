@@ -2,7 +2,8 @@ import pytest
 from egc import *
 
 def test_ipfs_stable(ipfs):
-    status = ipfs_status_sync()
+    # the fixture includes .wait_until_stable(); this confirms after
+    status = ipfs.status_sync()
     assert status['n_peers'] >= 3
 
 def test_ogmios_synced(ogmios: OgmiosV6ChainContext):

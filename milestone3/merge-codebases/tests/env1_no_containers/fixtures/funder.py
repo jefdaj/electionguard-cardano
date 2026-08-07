@@ -19,6 +19,7 @@ def funder_address(funder_wallet: Wallet) -> Address:
 def funder(funder_wallet: Wallet, env1_tmp_root: Path) -> FunderNode:
     node_ = FunderNode(wallet=funder_wallet, private_dir=env1_tmp_root)
     LOG.debug(f'funder: {node_}')
+    # node_.ipfs.wait_until_stable_sync()
     try:
         yield node_
         # no need to return collateral to self

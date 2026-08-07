@@ -41,8 +41,12 @@ def ogmios(arion_network) -> OgmiosV6ChainContext:
             raise TimeoutError(f'ogmios not ready after {OGMIOS_TIMEOUT_SEC}s.')
         time.sleep(OGMIOS_POLL_SEC)
 
-# TODO what should this return, if anything?
 @pytest.fixture(scope='module')
-def ipfs(arion_network):
-    ipfs_wait_until_stable_sync()
-    return
+def ipfs(arion_network, env2_tmp_root: Path):
+    ipfs_ = IPFSService(
+        records_to_post_dir = env2_tmp_root / 'records_to_post',
+        records_fetched_dir = env2_tmp_root / 'records_fetched',
+    )
+    ipfs_.start()
+    ipfs_.wait_until_stable_sync()
+    return ipfs_
