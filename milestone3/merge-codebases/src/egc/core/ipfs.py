@@ -101,6 +101,9 @@ class PendingStore:
             LOG.debug(f'records_due: {records_due}')
         return records_due
 
+    def count(self):
+        return len(self._db.keys())
+
 
 class IPFSService:
     """The service: owns the event loop, both lanes, and the store.
@@ -205,6 +208,7 @@ class IPFSService:
         for (data, metadata) in pairs:
             record = self.publish_and_make_record(data, metadata)
             LOG.info(f'newly published record: {record}')
+            records.append(record)
         return records
 
     def call(self, method, *a, **k):
@@ -321,6 +325,9 @@ class IPFSService:
 
     def status_sync(self):
         return self._run_sync(self.status())
+
+    def count_pending_records(self):
+        return self.store.count()
 
     async def wait_until_stable(
         self,

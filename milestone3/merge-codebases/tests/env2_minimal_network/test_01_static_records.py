@@ -61,3 +61,14 @@ def test_roundtrip_static_records_to_str(
         tmp  = str(rec)
         rec2 = eval(tmp)
         assert rec2 == rec
+
+def test_publish_static_records(static_records_list, published_static_records):
+    assert len(published_static_records) == len(static_records_list)
+    for r in published_static_records:
+        assert isinstance(r, PublicRecord)
+
+# def test_fetch_static_records(ipfs, published_static_records):
+#     for r in published_static_records:
+#         ipfs.fetch_record_soon(r)
+#     time.sleep(10) # TODO how long is needed?
+#     # TODO find in records_fetched_dir and count files
