@@ -10,16 +10,7 @@ def test_funder_wallet(funder_wallet: Wallet):
     assert isinstance(funder_wallet.addr, Address)
     assert isinstance(funder_wallet.vkh, VerificationKeyHash)
 
-def test_init_funder(funder: FunderNode):
-    assert isinstance(funder, FunderNode)
-    assert isinstance(funder.publisher, ElectionPublisher)
-    assert funder.current_phase() == EgcPhase.NOT_INDEXED
-
-    # TODO is there a good way to test these before init_election?
-    # assert funder.election is None
-    # assert funder.subscriber is None
-
-    # TODO any other init tests?
-
-# def test_init_tx_builder(init_tx_builder: TransactionBuilder):
-#     assert isinstance(init_tx_builder, TransactionBuilder)
+def test_init_funder(env1_funder: FunderNode):
+    assert isinstance(env1_funder, FunderNode)
+    assert isinstance(env1_funder.publisher, ElectionPublisher)
+    assert env1_funder.current_phase() == EgcPhase.NOT_INDEXED

@@ -33,6 +33,7 @@ pytest_plugins = [
 
     # stage 2 fixtures
     "tests.env2_minimal_network.fixtures.tmp_root",
+    "tests.env2_minimal_network.fixtures.funder",
     "tests.env2_minimal_network.fixtures.admin",
     "tests.env2_minimal_network.fixtures.assets",
     "tests.env2_minimal_network.fixtures.election",

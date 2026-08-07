@@ -319,18 +319,6 @@ class ElectionNode:
 
         ch_str = self.channel_str()
 
-        # new_objs  = [p[0] for p in new_record_pairs]
-        # new_metas = [p[1] for p in new_record_pairs]
-        # LOG.debug('new_objs: %s' % pformat(new_objs))
-        # LOG.debug('new_metas: %s' % pformat(new_metas))
-        # new_cids: list[bytes] = ipfs_publish_objs_sync(new_objs)
-        # LOG.debug('new_cids: %s' % pformat(new_cids))
-        # assert len(new_cids) == len(new_metas)
-        # new_records = [
-        #     PublicRecord(ipfs_cid=c, metadata=m)
-        #     for (c, m) in zip(new_cids, new_metas)
-        # ]
-
         new_records: list[PublicRecord] = self.ipfs.publish_and_make_records(new_record_pairs)
         LOG.debug('new_records: %s' % pformat(new_records))
 

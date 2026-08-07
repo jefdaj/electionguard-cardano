@@ -327,7 +327,7 @@ class IPFSService:
             peers = []
         try:
             bw   = await self.ipfs._client.stats.bw()
-            LOG.debug(f'bw: {bw}')
+            # LOG.debug(f'bw: {bw}')
             rate = int(bw.get("RateIn", 0) + bw.get("RateOut", 0))
             connected = True
         except Exception as e:

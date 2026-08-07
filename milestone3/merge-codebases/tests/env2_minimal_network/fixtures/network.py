@@ -44,8 +44,8 @@ def ogmios(arion_network) -> OgmiosV6ChainContext:
 @pytest.fixture(scope='module')
 def ipfs(arion_network, env2_tmp_root: Path):
     ipfs_ = IPFSService(
-        records_to_post_dir = env2_tmp_root / 'records_to_post',
-        records_fetched_dir = env2_tmp_root / 'records_fetched',
+        records_to_post_dir = env2_tmp_root / 'ipfs_fixture' / 'records_to_post',
+        records_fetched_dir = env2_tmp_root / 'ipfs_fixture' / 'records_fetched',
     )
     ipfs_.start()
     ipfs_.wait_until_stable_sync()

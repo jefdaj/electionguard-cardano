@@ -40,7 +40,7 @@ def dummy_electioncontext(
  
 @pytest.fixture(scope='module')
 def init_election_tuple(
-        funder: ObserverNode,
+        env2_funder: ObserverNode,
         # script: ElectionScript,
         oneshot_utxo: UTxO,
         # admin_addr: Address,
@@ -56,31 +56,31 @@ def init_election_tuple(
     """
 
     name = request.node.name
-    ada_before = get_balance_ada(funder.publisher.wallet.addr)
-    LOG.debug(f'funder balance before {name} is {ada_before} ADA.')
+    ada_before = get_balance_ada(env2_funder.publisher.wallet.addr)
+    LOG.debug(f'env2_funder balance before {name} is {ada_before} ADA.')
 
     # oneshot_hex = utxo_to_ref_hex(oneshot_utxo)
 
-    (init_tx, cfg) = funder.init_election(
+    (init_tx, cfg) = env2_funder.init_election(
         # script     = script,
         oneshot_utxo = oneshot_utxo,
         # admin_addr = admin_addr,
         admin_vkh  = admin_vkh,
         admin_ada  = 200, # TODO what's a good amount?
     )
-    funder.await_tx_confirmed(init_tx)
+    env2_funder.await_tx_confirmed(init_tx)
 
     # All other tests happen here
     yield (init_tx, cfg) # TODO config here, not context
 
     try:
-        channel_ids = funder.subscriber.current_channel_ids()
+        channel_ids = env2_funder.subscriber.current_channel_ids()
         if len(channel_ids) == 0:
             LOG.debug('skip burn_tx because STTs already gone')
         else:
             # Can't use subscriber to wait here because it shuts down after burn.
-            burn_tx = funder.burn_test_tokens()
-            funder.await_tx_confirmed(burn_tx, subscriber_too=False)
+            burn_tx = env2_funder.burn_test_tokens()
+            env2_funder.await_tx_confirmed(burn_tx, subscriber_too=False)
             await_blocks() # TODO fold into regular await_tx_confirmed?
 
     except Exception as e:
@@ -88,21 +88,21 @@ def init_election_tuple(
         # raise
 
     finally:
-        last_tx = funder.recover_all_collateral(keys_dir)
+        last_tx = env2_funder.recover_all_collateral(keys_dir)
 
         # Can't use the node-level await_tx_confirmed here,
         # because the subscriber won't pick up the unrelated TX.
         # TODO rename to make that requirement clearer?
-        funder.publisher.await_tx_confirmed(last_tx)
+        env2_funder.publisher.await_tx_confirmed(last_tx)
 
-        ada_after = get_balance_ada(funder.publisher.wallet.addr)
-        LOG.debug(f'funder balance after {name} is {ada_after} ADA.')
+        ada_after = get_balance_ada(env2_funder.publisher.wallet.addr)
+        LOG.debug(f'env2_funder balance after {name} is {ada_after} ADA.')
         ada_diff = round(ada_before - ada_after, ndigits=2)
         if ada_diff > 50:
             fn = LOG.error
         else:
             fn = LOG.info
-        fn(f'funder paid {ada_diff} ADA total to run {name}')
+        fn(f'env2_funder paid {ada_diff} ADA total to run {name}')
 
 @pytest.fixture(scope='module')
 def init_tx(init_election_tuple: tuple[Transaction, ElectionConfig]) -> Transaction:

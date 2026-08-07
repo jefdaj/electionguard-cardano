@@ -16,9 +16,9 @@ def funder_address(funder_wallet: Wallet) -> Address:
     return funder_wallet.addr
 
 @pytest.fixture(scope='module')
-def funder(funder_wallet: Wallet, env1_tmp_root: Path) -> FunderNode:
+def env1_funder(funder_wallet: Wallet, env1_tmp_root: Path) -> FunderNode:
     node_ = FunderNode(wallet=funder_wallet, private_dir=env1_tmp_root)
-    LOG.debug(f'funder: {node_}')
+    LOG.debug(f'env1_funder: {node_}')
     # node_.ipfs.wait_until_stable_sync()
     try:
         yield node_

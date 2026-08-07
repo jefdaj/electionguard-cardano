@@ -24,3 +24,7 @@ def load_static_record_pairs(
         pair = load_static_record_pair(rec, static_dir)
         pairs.append(pair)
     return pairs
+
+def fixture_private_dir(root, req):
+    "For giving each fixture and individual private_dir for ipfs etc."
+    return root / req.node.path.stem / req.fixturename

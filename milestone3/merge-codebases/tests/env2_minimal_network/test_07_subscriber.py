@@ -47,7 +47,7 @@ def test_rollback(subscriber: ElectionSubscriber):
     # so the new history should come out exactly the same.
     assert before == after
 
-def test_admin_address(init_tx: Transaction, admin: AdminNode, funder: ObserverNode):
+def test_admin_address(init_tx: Transaction, admin: AdminNode, env2_funder: ObserverNode):
     actual_addr = admin.publisher.wallet.addr
 
     # TODO decide where the wait should actually go
@@ -60,7 +60,7 @@ def test_admin_address(init_tx: Transaction, admin: AdminNode, funder: ObserverN
             n_tries += 1
             time.sleep(1)
 
-    funder_found_addr: Optional[Address] = funder.subscriber.admin_address()
+    funder_found_addr: Optional[Address] = env2_funder.subscriber.admin_address()
     assert isinstance(funder_found_addr, Address)
     assert funder_found_addr == actual_addr
     assert admin_found_addr == actual_addr

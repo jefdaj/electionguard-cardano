@@ -2,6 +2,7 @@ import pytest
 
 from egc import *
 from tests.lib import sub_s0
+from ..lib import fixture_private_dir
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -47,14 +48,16 @@ def guardian1(
         election_cfg: ElectionConfig,
         guardian1_wallet: Wallet,
         env2_tmp_root: Path,
+        request,
     ) -> GuardianNode:
     node_ = GuardianNode(
-        private_dir = env2_tmp_root,
+        private_dir = fixture_private_dir(env2_tmp_root, request),
         election_cfg = election_cfg,
         wallet     = guardian1_wallet,
         role_index = 1,
     )
     LOG.debug(f'guardian1: {node_}')
+    node_.ipfs.wait_until_stable_sync()
     node_.await_phase(EgcPhase.CONFIG_ANNOUNCE)
     try:
         yield node_
@@ -67,14 +70,16 @@ def guardian2(
         election_cfg: ElectionConfig,
         guardian2_wallet: Wallet,
         env2_tmp_root: Path,
+        request,
     ) -> GuardianNode:
     node_ = GuardianNode(
-        private_dir = env2_tmp_root,
+        private_dir = fixture_private_dir(env2_tmp_root, request),
         election_cfg = election_cfg,
         wallet     = guardian2_wallet,
         role_index = 2,
     )
     LOG.debug(f'guardian2: {node_}')
+    node_.ipfs.wait_until_stable_sync()
     node_.await_phase(EgcPhase.CONFIG_ANNOUNCE)
     try:
         yield node_
@@ -87,14 +92,16 @@ def guardian3(
         election_cfg: ElectionConfig,
         guardian3_wallet: Wallet,
         env2_tmp_root: Path,
+        request,
     ) -> GuardianNode:
     node_ = GuardianNode(
-        private_dir = env2_tmp_root,
+        private_dir = fixture_private_dir(env2_tmp_root, request),
         election_cfg = election_cfg,
         wallet     = guardian3_wallet,
         role_index = 3,
     )
     LOG.debug(f'guardian3: {node_}')
+    node_.ipfs.wait_until_stable_sync()
     node_.await_phase(EgcPhase.CONFIG_ANNOUNCE)
     try:
         yield node_
@@ -107,14 +114,16 @@ def device1(
         election_cfg: ElectionConfig,
         device1_wallet: Wallet,
         env2_tmp_root: Path,
+        request,
     ) -> DeviceNode:
     node_ = DeviceNode(
-        private_dir = env2_tmp_root,
+        private_dir = fixture_private_dir(env2_tmp_root, request),
         election_cfg = election_cfg,
         wallet     = device1_wallet,
         role_index = 1,
     )
     LOG.debug(f'device1: {node_}')
+    node_.ipfs.wait_until_stable_sync()
     node_.await_phase(EgcPhase.CONFIG_ANNOUNCE)
     try:
         yield node_
@@ -127,14 +136,16 @@ def verifier1(
         election_cfg: ElectionConfig,
         verifier1_wallet: Wallet,
         env2_tmp_root: Path,
+        request,
     ) -> VerifierNode:
     node_ = VerifierNode(
-        private_dir = env2_tmp_root,
+        private_dir = fixture_private_dir(env2_tmp_root, request),
         election_cfg = election_cfg,
         wallet     = verifier1_wallet,
         role_index = 1,
     )
     LOG.debug(f'verifier1: {node_}')
+    node_.ipfs.wait_until_stable_sync()
     node_.await_phase(EgcPhase.CONFIG_ANNOUNCE)
     try:
         yield node_
