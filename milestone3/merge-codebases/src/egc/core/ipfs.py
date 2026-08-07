@@ -68,37 +68,49 @@ class RetryingIPFS:
         return getattr(self._client, name)
 
 
+def record_key(record) -> str:
+    "Work around record `unhashable type` issues."
+    # TODO add a method to the dataclass instead?
+    # TODO use entire record including cid for key?
+    return str(record.metadata)
+
+
 class PendingStore:
     """Claude tried to add a SQLite db here. I rewrote it as a dict but left
     the class in case we want persistent storage later.
     """
 
     def __init__(self):
-        self._db = {} # record -> (attempts, next attempt)
+        self._db = {} # metadata str -> (record, attempts, next attempt)
 
     def add(self, record):
-        if record in self._db.keys():
+        key = record_key(record)
+        if key in self._db.keys():
             LOG.info(f'add {record} ignoring duplicate')
         else:
             LOG.info(f'add {record}')
-            self._db[record] = (0, 0)
+            self._db[key] = (record, 0, 0)
 
     def remove(self, record):
+        key = record_key(record)
         LOG.info(f'remove {record}')
-        del self._db[record]
+        del self._db[key]
 
     def mark_attempt(self, record, attempts, next_attempt):
+        key = record_key(record)
         LOG.info(f'mark_attempt record:{record} attempts:{attempts} next_attempt:{next_attempt}')
-        self._db[record] = (attempts, next_attempt)
+        self._db[key] = (record, attempts, next_attempt)
 
     def due(self, now):
         # LOG.debug(f'due now:{now}')
-        records_due = sorted([
-            (r, a) for (r, (a, n)) in self._db.items()
-            if n <= now
-        ])
+        records_due = [
+            (record, attempts)
+            for (record, attempts, next_attempt) in self._db.values()
+            if next_attempt <= now
+        ]
         if records_due:
             LOG.debug(f'records_due: {records_due}')
+        random.shuffle(records_due) # TODO is this a good strategy? or should they be sorted?
         return records_due
 
     def count(self):
@@ -223,18 +235,17 @@ class IPFSService:
 
     async def _try_fetch(self, record: PublicRecord, timeout):
         "The one fetch primitive both lanes share."
-        if record in self._inflight: # never fetch same CID twice at once
+        key = record_key(record)
+        if key in self._inflight: # never fetch same CID twice at once
             return False
-        self._inflight.add(record)
+        self._inflight.add(key)
         try:
-            # await asyncio.wait_for(
-            #     self.ipfs.get(cid, dstdir=self.dest_dir), timeout=timeout)
-            # TODO self.call_async here?
+            cid_str = ipfs_cid_to_string(record.ipfs_cid)
             data = await asyncio.wait_for(
-                self.ipfs.cat(record.ipfs_cid),
-                timeout = timeout,
+                self.call_async('cat', cid_str),
+                timeout = timeout, # TODO can timeout be passed to cat directly?
             )
-            self._save_fetched_data(data, record)
+            await self._save_fetched_data(data, record)
             # TODO remove identical records_to_post version if any here
             self.store.remove(record) # success => no longer pending
             LOG.info("fetched %s", record)
@@ -245,28 +256,28 @@ class IPFSService:
             LOG.error("fetch error %s: %s", record, e)
             return False # keep it pending, retry later
         finally:
-            self._inflight.discard(record)
+            self._inflight.discard(key)
 
     async def _fresh_worker(self):
         "Fresh lane: prompt, short timeout, one shot each."
         while True:
             record, _ = await self._fresh_q.get()
             try:
-                ok = await self._try_fetch(cid, own_post, self.fresh_timeout)
+                ok = await self._try_fetch(record, self.fresh_timeout)
                 if not ok:
-                    self._schedule_retry(cid, own_post, attempts=1) # demote to slow lane
+                    self._schedule_retry(record, attempts=1) # demote to slow lane
             finally:
                 self._fresh_q.task_done()
 
     def _schedule_retry(self, record, attempts):
-        "Jitter to prevent all test nodes from retrying at once."
+        "Jitter to prevent all test nodes retrying at once."
         cap = min(self.base_delay * self.backoff ** (attempts - 1), self.max_delay)
         delay = random.uniform(0, cap) # full jitter
         self.store.mark_attempt(record, attempts, time.time() + delay)
 
     async def _sweeper(self, jitter=True):
         """Retry lane: patient, bounded, forever, on a slow cadence.
-        Jitter to prevent all test nodes from sweeping at once.
+        Jitter to prevent all test nodes sweeping at once.
         """
         while True:
             interval = self.sweep_interval
@@ -275,10 +286,15 @@ class IPFSService:
             await asyncio.sleep(interval)
             now = time.time()
             for record, attempts in self.store.due(now):
-                if record in self._inflight:
+                key = record_key(record)
+                if key in self._inflight:
                     continue
                 await self._retry_sem.acquire()
-                self._loop.create_task(self._retry_one(record, attempts))
+                task = self._loop.create_task(self._retry_one(record, attempts))
+                # TODO does the callback work?
+                task.add_done_callback(
+                    lambda t: t.exception() and LOG.error(t.exception())
+                )
 
     async def _retry_one(self, record, attempts):
         try:
@@ -347,7 +363,7 @@ class IPFSService:
         while True:
             try:
                 cur_status = await self.status()
-                LOG.debug(f'wait_until_stable cur_status: {cur_status}')
+                LOG.debug(f'wait_until_stable {cur_status}')
                 n = cur_status['n_peers']
                 r = cur_status['bandwidth_Bs']
                 if n >= min_peers and r < rate_threshold:
@@ -371,13 +387,13 @@ class IPFSService:
         proper file. Returns the save path, although that isn't used so far.
         """
         # Get destination path
-        save_path = str(record_path(
+        save_path = record_path(
             record.metadata,
             pub_dir = self.records_fetched_dir
-        ))
+        )
         LOG.debug(f'save_path: {save_path}')
         # Get CID
-        cid_str = self.ipfs.ipfs_cid_to_string(record.ipfs_cid)
+        cid_str = ipfs_cid_to_string(record.ipfs_cid)
         LOG.debug(f'cid_str: {cid_str}')
         # Ensure parent dir exists
         save_path.parent.mkdir(parents=True, exist_ok=True)
