@@ -200,7 +200,7 @@ class IPFSService:
     def publish_and_make_record(self, data: dict, metadata: PublicRecordMetadata) -> PublicRecord:
         "Publish data to IPFS and return a new record, ready to post onchain."
         # TODO any reason this should be async? seems like it should be reliably fast
-        added_file = self.call('add_json', data)
+        added_file = self.call(self.ipfs, 'add_json', data)
         cid_str = added_file['Hash']
         LOG.debug(f'cid_str: {cid_str}')
         cid_bytes = coerce_ipfs_cid(cid_str)
@@ -223,15 +223,15 @@ class IPFSService:
             records.append(record)
         return records
 
-    def call(self, method, *a, **k):
-        "Call any method of self.ipfs sync. Should work from FastAPI sync handlers."
+    def call(self, obj, method, *a, **k):
+        "Call any method (normally self.ipfs or part of it) sync. Should work from FastAPI sync handlers."
         return asyncio.run_coroutine_threadsafe(
-            getattr(self.ipfs, method)(*a, **k), self._loop).result()
+            getattr(obj, method)(*a, **k), self._loop).result()
 
-    async def call_async(self, method, *a, **k):
-        "Call any method of self.ipfs async. Should work from FastAPI async handlers."
+    async def call_async(self, obj, method, *a, **k):
+        "Call any method (normally self.ipfs or part of it) async. Should work from FastAPI async handlers."
         return await asyncio.wrap_future(asyncio.run_coroutine_threadsafe(
-            getattr(self.ipfs, method)(*a, **k), self._loop))
+            getattr(obj, method)(*a, **k), self._loop))
 
     async def _try_fetch(self, record: PublicRecord, timeout):
         "The one fetch primitive both lanes share."
@@ -242,7 +242,7 @@ class IPFSService:
         try:
             cid_str = ipfs_cid_to_string(record.ipfs_cid)
             data = await asyncio.wait_for(
-                self.call_async('cat', cid_str),
+                self.call_async(self.ipfs, 'cat', cid_str),
                 timeout = timeout, # TODO can timeout be passed to cat directly?
             )
             await self._save_fetched_data(data, record)
@@ -304,29 +304,17 @@ class IPFSService:
         finally:
             self._retry_sem.release()
 
-    async def wait_until_ready(self, timeout=10):
-        "Wait until the IPFS node has started and answers an API call."
-        end = asyncio.get_event_loop().time() + timeout
-        while True:
-            try:
-                await self.ipfs._client.version()
-                return
-            except (ClientConnectorError, ClientConnectorDNSError):
-                if asyncio.get_event_loop().time() > end:
-                    raise
-                await asyncio.sleep(1)
-
     async def status(self):
         connected = False
         try:
-            peers = await self.ipfs._client.swarm.peers()
+            peers = await self.call_async(self.ipfs._client.swarm, 'peers')
             peers = peers.get('Peers')
             connected = True
         except Exception as e:
             LOG.error(e)
             peers = []
         try:
-            bw   = await self.ipfs._client.stats.bw()
+            bw = await self.call_async(self.ipfs._client.stats, 'bw')
             # LOG.debug(f'bw: {bw}')
             rate = int(bw.get("RateIn", 0) + bw.get("RateOut", 0))
             connected = True
@@ -359,7 +347,6 @@ class IPFSService:
         """
         end = asyncio.get_event_loop().time() + timeout
         stable = 0
-        await self.wait_until_ready() # included in overall timeout
         while True:
             try:
                 cur_status = await self.status()
