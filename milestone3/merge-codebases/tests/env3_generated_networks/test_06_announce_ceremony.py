@@ -48,7 +48,7 @@ def test_announce_ceremony(cfg: ResolvedTestConfig):
         '^private.*ceremony\\.json$',
     ])
     assert_node_logs_match(cfg, '.*', [
-        'fetched CeremonyDetails() ->',
+        'fetched.*CeremonyDetails',
     ])
     assert_node_logs_match(cfg, 'admin', [
         'GET /api/channel/await\\?role=admin',
