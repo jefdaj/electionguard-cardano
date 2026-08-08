@@ -39,7 +39,12 @@ class EgcContest:
 
     @classmethod
     def from_cfg_dict(cls, data: dict):
-        raise NotImplementedError
+        print(f'data: {data}')
+        return cls(
+            type     = EgcContestType(data['type']),
+            question = data['question'],
+            answers  = data['answers'],
+        )
 
     def contest_id(self) -> str:
         return f'{self.type.value}-{sanitize_key(self.question)}'

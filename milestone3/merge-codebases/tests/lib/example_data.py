@@ -2,7 +2,7 @@
 
 # For sorting the example contests small -> large,
 # which is useful because pytest shrinks toward smaller list indices.
-contest_size = lambda c: (len(c['candidates']), len(c['office']))
+contest_size = lambda c: (len(c['answers']), len(c['question']))
 
 # TODO add referendum examples too
 
