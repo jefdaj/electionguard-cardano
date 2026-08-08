@@ -6,6 +6,7 @@ import tempfile
 import threading
 import time
 import hashlib
+import shutil
 
 from aiohttp import ClientConnectorError, ClientConnectorDNSError
 from aioipfs import AsyncIPFS
@@ -417,11 +418,11 @@ class IPFSService:
         fd, tmp_path = tempfile.mkstemp(suffix=".json.part")
         os.close(fd) # we'll reopen it with aiofiles next
         try:
-            # Write tmpfile, then atomically move into place
+            # Write tmpfile, then move into place atomically...ish?
             async with aiofiles.open(tmp_path, "wb") as f:
                 await f.write(data)
                 await f.flush()
-            os.replace(tmp_path, save_path)
+            shutil.move(tmp_path, save_path)
             return save_path
         finally:
             # Clean up tmpfile if anything went wrong before replace
