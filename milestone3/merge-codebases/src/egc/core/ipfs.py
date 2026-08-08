@@ -185,9 +185,14 @@ class IPFSService:
         self._loop.call_soon_threadsafe(self._loop.stop)
 
     def _run_sync(self, coro, timeout: float | None = None):
-        """Call an async method from a sync context (a DIFFERENT thread)."""
+        "Call an async method from a sync context (a DIFFERENT thread). All calls should go through one of these?"
         fut = asyncio.run_coroutine_threadsafe(coro, self._loop)
         return fut.result(timeout) # blocks, re-raises exceptions here
+
+    async def _run_async(self, coro, timeout=None):
+        "Call an async method from for example FastAPI. All calls should go through one of these?"
+        fut = asyncio.run_coroutine_threadsafe(coro, self._loop)
+        return await asyncio.wait_for(asyncio.wrap_future(fut), timeout)
 
     def _accept(self, record):
         self.store.add(record)                # persist first
@@ -200,7 +205,8 @@ class IPFSService:
     def publish_and_make_record(self, data: dict, metadata: PublicRecordMetadata) -> PublicRecord:
         "Publish data to IPFS and return a new record, ready to post onchain."
         # TODO any reason this should be async? seems like it should be reliably fast
-        added_file = self.call(self.ipfs, 'add_json', data)
+        # added_file = self.call(self.ipfs, 'add_json', data)
+        added_file = self._run_sync(self.ipfs.add_json(data))
         cid_str = added_file['Hash']
         LOG.debug(f'cid_str: {cid_str}')
         cid_bytes = coerce_ipfs_cid(cid_str)
@@ -223,15 +229,17 @@ class IPFSService:
             records.append(record)
         return records
 
-    def call(self, obj, method, *a, **k):
-        "Call any method (normally self.ipfs or part of it) sync. Should work from FastAPI sync handlers."
-        return asyncio.run_coroutine_threadsafe(
-            getattr(obj, method)(*a, **k), self._loop).result()
+    # def call(self, obj, method, *a, **k):
+    #     "Call any method (normally self.ipfs or part of it) sync. Should work from FastAPI sync handlers."
+    #     # TODO is this redundant with _run_sync?
+    #     return asyncio.run_coroutine_threadsafe(
+    #         getattr(obj, method)(*a, **k), self._loop).result()
 
-    async def call_async(self, obj, method, *a, **k):
-        "Call any method (normally self.ipfs or part of it) async. Should work from FastAPI async handlers."
-        return await asyncio.wrap_future(asyncio.run_coroutine_threadsafe(
-            getattr(obj, method)(*a, **k), self._loop))
+    # async def call_async(self, obj, method, *a, **k):
+    #     "Call any method (normally self.ipfs or part of it) async. Should work from FastAPI async handlers."
+    #     # TODO is this redundant with _run_async?
+    #     return await asyncio.wrap_future(asyncio.run_coroutine_threadsafe(
+    #         getattr(obj, method)(*a, **k), self._loop))
 
     async def _try_fetch(self, record: PublicRecord, timeout):
         "The one fetch primitive both lanes share."
@@ -241,10 +249,11 @@ class IPFSService:
         self._inflight.add(key)
         try:
             cid_str = ipfs_cid_to_string(record.ipfs_cid)
-            data = await asyncio.wait_for(
-                self.call_async(self.ipfs, 'cat', cid_str),
-                timeout = timeout, # TODO can timeout be passed to cat directly?
-            )
+            # data = await asyncio.wait_for(
+            #     self.call_async(self.ipfs, 'cat', cid_str),
+            #     timeout = timeout, # TODO can timeout be passed to cat directly?
+            # )
+            data = await self._run_async(self.ipfs.cat(cid_str), timeout=timeout)
             await self._save_fetched_data(data, record)
             # TODO remove identical records_to_post version if any here
             self.store.remove(record) # success => no longer pending
@@ -304,17 +313,17 @@ class IPFSService:
         finally:
             self._retry_sem.release()
 
-    async def status(self):
+    async def _status(self):
         connected = False
         try:
-            peers = await self.call_async(self.ipfs._client.swarm, 'peers')
+            peers = await self.ipfs._client.swarm.peers()
             peers = peers.get('Peers')
             connected = True
         except Exception as e:
             LOG.error(e)
             peers = []
         try:
-            bw = await self.call_async(self.ipfs._client.stats, 'bw')
+            bw = await self.ipfs._client.stats.bw()
             # LOG.debug(f'bw: {bw}')
             rate = int(bw.get("RateIn", 0) + bw.get("RateOut", 0))
             connected = True
@@ -327,8 +336,11 @@ class IPFSService:
             'bandwidth_Bs': rate
         }
 
+    async def status(self):
+        return await self._run_async(self._status()) # TODO timeout?
+
     def status_sync(self):
-        return self._run_sync(self.status())
+        return self._run_sync(self._status())
 
     def count_pending_records(self):
         return self.store.count()

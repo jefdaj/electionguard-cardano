@@ -20,8 +20,8 @@ async def status(state=Depends(get_state)):
     except:
         cstat2 = {'connected': False} # TODO codify better
     try:
-        istat = await state.node.ipfs.ipfs_status()
-        istat['connected'] = True
+        istat = await state.node.ipfs.status()
+        # istat['connected'] = True
     except:
         istat = {'connected': False}
     return json.dumps({'cardano': cstat2, 'ipfs': istat})

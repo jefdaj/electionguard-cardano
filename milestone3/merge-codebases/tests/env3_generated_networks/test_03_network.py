@@ -33,4 +33,8 @@ NODE_READY_CONFIGS = [f() for f in [
 @given_cached_tests(st.one_of(NODE_READY_CONFIGS), max_examples=10)
 def test_node_ready(cfg: ResolvedTestConfig):
     assert_script_logs_match(cfg, '.*', ['^node is ready$'])
-    assert_script_logs_do_not_match(cfg, '.*', ['^Traceback', '^arion: FatalError'])
+    assert_script_logs_do_not_match(cfg, '.*', [
+        '^Traceback',
+        '^arion: FatalError',
+        '"connected": false',
+    ])
