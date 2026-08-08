@@ -1,5 +1,4 @@
 {% extends "base.sh" %}
-
 {% block body %}
 {{ super() }}
 egc wallet create --description '{{ node_name }} wallet'

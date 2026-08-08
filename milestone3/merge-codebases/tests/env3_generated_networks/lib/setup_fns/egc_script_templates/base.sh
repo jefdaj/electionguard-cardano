@@ -14,15 +14,9 @@ PS4='+ $(date "+%H:%M:%S") '
 set -x
 {% endif %}
 {% endblock %}
-
 {% block cleanup %}
-cleanup() {
-  echo "cleaning up"
-  # TODO if admin, burn test tokens if any
-  # TODO return collateral
-}
+cleanup() { echo "cleaning up"; }
 {% endblock %}
-
 {% block onexit %}
 # run cleanup before exiting
 export -f cleanup
