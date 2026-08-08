@@ -27,7 +27,7 @@ def sanitize_key(unsanitized: str) -> str:
     s = re.sub(r"[^\w\_.]", "", s) # keep alnum, _, -, .
     s = s.lower()                  # lowercase
     if len(s) == 0:
-        raise Exception(f'failed to sanitize_key: "{unsanitized}" -> "{s}"')
+        raise Exception(f'failed to sanitize_key: "{unsanitized}"')
     return s
 
 
@@ -98,8 +98,6 @@ class EgcContest:
             "votes_allowed":         1,
             "name":                  self.question,
             "ballot_selections":     self.ballot_selections(),
-            "ballot_title": None,
-            "ballot_subtitle": None,
         }
         return contest_dict
 
@@ -121,7 +119,6 @@ class EgcManifest:
 
         candidates = []
         for contest in self.contests:
-            print(f'contest: {contest}')
             candidates += [c for c in contest.candidates() if not c in candidates]
 
         contests = [
@@ -134,8 +131,8 @@ class EgcManifest:
             'election_scope_id': 'electionguard-cardano-test-manifest',
             'spec_version': '1.0', # TODO is this right?
             'type': 'other',
-            'start_date': now,
-            'end_date': now + datetime.timedelta(days=2, hours=12), # TODO does it matter?
+            'start_date': str(now),
+            'end_date': str(now + datetime.timedelta(days=2, hours=12)),
             'geopolitical_units': [{
                 "object_id": county_id,
                 "name": "ElectionGuard + Cardano Test County",
@@ -159,6 +156,8 @@ class EgcManifest:
                 "party_ids": None,
                 "image_uri": None
             }],
+            "ballot_title": None,
+            "ballot_subtitle": None,
             "name": {
                 "text": [
                     {

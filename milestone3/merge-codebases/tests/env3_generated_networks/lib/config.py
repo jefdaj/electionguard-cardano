@@ -38,6 +38,7 @@ def votes_config(draw) -> VotesConfig:
 class ContestConfig:
     "A single scripted contest with question and vote counts per answer."
 
+    # TODO type, starting with office and referendum
     question: str              # office/question
     answers: tuple[
         tuple[
@@ -67,14 +68,14 @@ class ContestConfig:
 @st.composite
 def contest_config(draw, example) -> ContestConfig:
     "A single contest with scripted vote counts for each candidate/answer."
-    n_candidates = draw(st.integers(2, len(example['candidates']))) # TODO allow one candidate?
+    n_answers = draw(st.integers(2, len(example['answers']))) # TODO allow one candidate?
     example2 = deepcopy(example)
-    example2['candidates'] = example2['candidates'][:n_candidates]
+    example2['answers'] = example2['answers'][:n_answers]
     return ContestConfig(
-        question = example['office'],
+        question = example['question'],
         answers = tuple(
             tuple([k, draw(votes_config())])
-            for k in example2['candidates']
+            for k in example2['answers']
         )
     )
     # TODO assume at least one vote here?

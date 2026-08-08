@@ -4,11 +4,14 @@
 # which is useful because pytest shrinks toward smaller list indices.
 contest_size = lambda c: (len(c['candidates']), len(c['office']))
 
+# TODO add referendum examples too
+
 EXAMPLE_CONTESTS = [
   {
-    "office": "Pirate Captain of the Ship's Company",
+    "type": "office",
+    "question": "Pirate Captain of the Ship's Company",
     "context": "Golden Age of Piracy — crews elected captains by vote",
-    "candidates": [
+    "answers": [
       "Bartholomew Roberts (Black Bart)",
       "Henry Every",
       "Captain Charles Vane",
@@ -17,9 +20,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Archon of Athens",
+    "type": "office",
+    "question": "Archon of Athens",
     "context": "Classical Athenian democracy",
-    "candidates": [
+    "answers": [
       "Pericles",
       "Cleisthenes",
       "Themistocles",
@@ -28,9 +32,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Consul of the Roman Republic",
+    "type": "office",
+    "question": "Consul of the Roman Republic",
     "context": "Elected annually by the Centuriate Assembly",
-    "candidates": [
+    "answers": [
       "Cicero",
       "Cato the Younger",
       "Gaius Marius",
@@ -39,9 +44,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Doge of Venice",
+    "type": "office",
+    "question": "Doge of Venice",
     "context": "Elected by the Venetian aristocracy via an elaborate ballot",
-    "candidates": [
+    "answers": [
       "Enrico Dandolo",
       "Francesco Foscari",
       "Sebastiano Venier",
@@ -49,9 +55,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Pope",
+    "type": "office",
+    "question": "Pope",
     "context": "Elected by the College of Cardinals",
-    "candidates": [
+    "answers": [
       "Cardinal Giovanni de' Medici",
       "Cardinal Roderic Borgia",
       "Cardinal Karol Wojtyła",
@@ -59,9 +66,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Lawspeaker of the Icelandic Althing",
+    "type": "office",
+    "question": "Lawspeaker of the Icelandic Althing",
     "context": "Norse Commonwealth's early parliamentary assembly",
-    "candidates": [
+    "answers": [
       "Þorgeir Ljósvetningagoði",
       "Grímr Svertingsson",
       "Skapti Þóroddsson",
@@ -69,9 +77,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Mayor of Michel Delving (the Shire)",
+    "type": "office",
+    "question": "Mayor of Michel Delving (the Shire)",
     "context": "Tolkien — the Shire elected its Mayor every seven years",
-    "candidates": [
+    "answers": [
       "Will Whitfoot",
       "Samwise Gamgee",
       "Frodo Baggins",
@@ -79,9 +88,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "President of the United Federation of Planets",
+    "type": "office",
+    "question": "President of the United Federation of Planets",
     "context": "Star Trek — democratically elected office",
-    "candidates": [
+    "answers": [
       "Jonathan Archer",
       "Nanietta Bacco",
       "Min Zife",
@@ -89,9 +99,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Jury Foreman",
+    "type": "office",
+    "question": "Jury Foreman",
     "context": "12 Angry Men — jurors elect a foreman",
-    "candidates": [
+    "answers": [
       "Juror 1",
       "Juror 8",
       "Juror 3",
@@ -99,9 +110,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Trade Union General Secretary",
+    "type": "office",
+    "question": "Trade Union General Secretary",
     "context": "Labour movement — elected by membership ballot",
-    "candidates": [
+    "answers": [
       "Walter Reuther",
       "Arthur Scargill",
       "Lech Wałęsa",
@@ -109,9 +121,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Iroquois Confederacy Sachem",
+    "type": "office",
+    "question": "Iroquois Confederacy Sachem",
     "context": "Haudenosaunee — sachems chosen by clan mothers/councils",
-    "candidates": [
+    "answers": [
       "Hiawatha",
       "Deganawidah (the Great Peacemaker)",
       "Handsome Lake",
@@ -119,9 +132,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Landsgemeinde Councillor",
+    "type": "office",
+    "question": "Landsgemeinde Councillor",
     "context": "Open-air direct democracy in Appenzell/Glarus (Swiss Canton)",
-    "candidates": [
+    "answers": [
       "Ulrich Zwingli",
       "Niklaus von Flüe",
       "Arnold Winkelried",
@@ -130,9 +144,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Tribune of the Plebs",
+    "type": "office",
+    "question": "Tribune of the Plebs",
     "context": "Roman Republic — elected to defend the plebeians",
-    "candidates": [
+    "answers": [
       "Tiberius Gracchus",
       "Gaius Gracchus",
       "Publius Clodius Pulcher",
@@ -141,9 +156,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Grand Master of the Knights Hospitaller",
+    "type": "office",
+    "question": "Grand Master of the Knights Hospitaller",
     "context": "Elected by the order's chapter",
-    "candidates": [
+    "answers": [
       "Jean Parisot de Valette",
       "Pierre d'Aubusson",
       "Philippe Villiers de L'Isle-Adam",
@@ -151,9 +167,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Speaker of the House of Commons",
+    "type": "office",
+    "question": "Speaker of the House of Commons",
     "context": "Elected by fellow Members of Parliament",
-    "candidates": [
+    "answers": [
     "Thomas More",
       "William Lenthall",
       "Betty Boothroyd",
@@ -161,9 +178,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Ecclesia Delegate of the Free City",
+    "type": "office",
+    "question": "Ecclesia Delegate of the Free City",
     "context": "Guild-and-commune assembly of a medieval free city",
-    "candidates": [
+    "answers": [
       "Jacob van Artevelde",
       "Étienne Marcel",
       "Wat Tyler",
@@ -171,9 +189,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Chief of the Comanche Council",
+    "type": "office",
+    "question": "Chief of the Comanche Council",
     "context": "Plains council leadership chosen by consensus/vote of warriors",
-    "candidates": [
+    "answers": [
       "Quanah Parker",
       "Buffalo Hump",
       "Ten Bears",
@@ -181,9 +200,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Rebel Alliance Chief of State",
+    "type": "office",
+    "question": "Rebel Alliance Chief of State",
     "context": "Star Wars — the New Republic Senate elects its leader",
-    "candidates": [
+    "answers": [
       "Mon Mothma",
       "Leia Organa",
       "Bail Organa",
@@ -191,9 +211,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Prime Minister of the Time Lords",
+    "type": "office",
+    "question": "Prime Minister of the Time Lords",
     "context": "Doctor Who — Gallifreyan High Council leadership",
-    "candidates": [
+    "answers": [
       "The Doctor",
       "Romana",
       "Rassilon",
@@ -201,9 +222,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Novgorod Veche Posadnik",
+    "type": "office",
+    "question": "Novgorod Veche Posadnik",
     "context": "Medieval Novgorod Republic — mayor elected by the town assembly",
-    "candidates": [
+    "answers": [
       "Marfa Boretskaya (Marfa the Mayoress)",
       "Ostromir",
       "Miroshka Nezdinich",
@@ -211,9 +233,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "President of the Continental Congress",
+    "type": "office",
+    "question": "President of the Continental Congress",
     "context": "Delegates of the American colonies elected a presiding officer",
-    "candidates": [
+    "answers": [
       "John Hancock",
       "Peyton Randolph",
       "Henry Laurens",
@@ -221,9 +244,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Guildmaster of the Thieves' Guild",
+    "type": "office",
+    "question": "Guildmaster of the Thieves' Guild",
     "context": "Fantasy trope — guild leadership by member vote",
-    "candidates": [
+    "answers": [
       "The Gray Mouser",
       "Locke Lamora",
       "Autolycus",
@@ -231,9 +255,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Soviet Deputy of the Petrograd Council",
+    "type": "office",
+    "question": "Soviet Deputy of the Petrograd Council",
     "context": "1917 — workers' and soldiers' councils elected delegates",
-    "candidates": [
+    "answers": [
       "Leon Trotsky",
       "Nikolai Chkheidze",
       "Alexander Kerensky",
@@ -241,9 +266,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Kgotla Chief",
+    "type": "office",
+    "question": "Kgotla Chief",
     "context": "Traditional public assembly where the community deliberates (Botswana/Tswana Assembly)",
-    "candidates": [
+    "answers": [
       "Khama III",
       "Sechele I",
       "Bathoen I",
@@ -251,9 +277,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Prom King of Sunnydale High",
+    "type": "office",
+    "question": "Prom King of Sunnydale High",
     "context": "Teen pop-culture ballot (Buffy-verse)",
-    "candidates": [
+    "answers": [
       "Buffy Summers",
       "Cordelia Chase",
       "Xander Harris",
@@ -261,9 +288,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Holy Roman Emperor",
+    "type": "office",
+    "question": "Holy Roman Emperor",
     "context": "The seven Kurfürsten elected the Emperor (Elected by the Prince-Electors)",
-    "candidates": [
+    "answers": [
       "Charles V of Habsburg",
       "Frederick the Wise of Saxony",
       "Francis I of France (candidate, 1519)",
@@ -272,9 +300,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "King of Poland",
+    "type": "office",
+    "question": "King of Poland",
     "context": "Polish–Lithuanian Commonwealth nobles elected the monarch (Royal Elective Sejm)",
-    "candidates": [
+    "answers": [
       "Henry of Valois",
       "Stephen Báthory",
       "Jan III Sobieski",
@@ -283,9 +312,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Doge of Genoa",
+    "type": "office",
+    "question": "Doge of Genoa",
     "context": "Genoese Republic — elected head of state",
-    "candidates": [
+    "answers": [
       "Simone Boccanegra",
       "Andrea Doria",
       "Giano I di Campofregoso",
@@ -293,9 +323,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Gonfaloniere of Justice",
+    "type": "office",
+    "question": "Gonfaloniere of Justice",
     "context": "Chief magistrate of Florence, chosen by lot/vote of guilds",
-    "candidates": [
+    "answers": [
       "Piero Soderini",
       "Niccolò Machiavelli (as Secretary)",
       "Salvestro de' Medici",
@@ -303,9 +334,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Stadtholder of the Dutch Republic",
+    "type": "office",
+    "question": "Stadtholder of the Dutch Republic",
     "context": "Provincial States appointed/elected the executive",
-    "candidates": [
+    "answers": [
       "William the Silent",
       "Johan de Witt (Grand Pensionary)",
       "Maurice of Nassau",
@@ -313,9 +345,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Great Khan",
+    "type": "office",
+    "question": "Great Khan",
     "context": "Mongol chiefs assembled to elect the Khan (Mongol Kurultai)",
-    "candidates": [
+    "answers": [
     "Genghis Khan (Temüjin)",
       "Ögedei Khan",
       "Möngke Khan",
@@ -324,9 +357,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Rashidun Caliph",
+    "type": "office",
+    "question": "Rashidun Caliph",
     "context": "Early Islamic succession by council of companions (Shura Council)",
-    "candidates": [
+    "answers": [
       "Abu Bakr",
       "Umar ibn al-Khattab",
       "Uthman ibn Affan",
@@ -334,9 +368,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "President of the Roman Senate",
+    "type": "office",
+    "question": "President of the Roman Senate",
     "context": "Senior senator recognized by censors' selection (Princeps Senatus)",
-    "candidates": [
+    "answers": [
       "Fabius Maximus",
       "Appius Claudius Caecus",
       "Marcus Aemilius Scaurus",
@@ -344,9 +379,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Ephor of Sparta",
+    "type": "office",
+    "question": "Ephor of Sparta",
     "context": "Five overseers elected annually by the Spartan assembly",
-    "candidates": [
+    "answers": [
       "Chilon of Sparta",
       "Sthenelaidas",
       "Antalcidas",
@@ -354,9 +390,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Landamman of the Swiss Confederation",
+    "type": "office",
+    "question": "Landamman of the Swiss Confederation",
     "context": "Cantonal chief magistrate chosen by assembly",
-    "candidates": [
+    "answers": [
       "Werner Stauffacher",
       "Hans Waldmann",
       "Nikolaus Leuenberger",
@@ -364,9 +401,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Doge-equivalent: Capitano del Popolo",
+    "type": "office",
+    "question": "Doge-equivalent: Capitano del Popolo",
     "context": "Elected communal official of Siena (Sienese Republic)",
-    "candidates": [
+    "answers": [
       "Provenzano Salvani",
       "Pandolfo Petrucci",
       "Ambrogio Lorenzetti (as councillor)",
@@ -374,9 +412,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Speaker of the Frankish Thing / Placitum",
+    "type": "office",
+    "question": "Speaker of the Frankish Thing / Placitum",
     "context": "Germanic freemen's assembly settling law and leadership",
-    "candidates": [
+    "answers": [
       "Clovis I",
       "Arbogast",
       "Chlothar II",
@@ -384,9 +423,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Chairman of the Zaporozhian Cossack Rada",
+    "type": "office",
+    "question": "Chairman of the Zaporozhian Cossack Rada",
     "context": "Cossacks elected their Hetman by open assembly vote",
-    "candidates": [
+    "answers": [
       "Bohdan Khmelnytsky",
       "Petro Konashevych-Sahaidachny",
       "Ivan Mazepa",
@@ -394,9 +434,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Consul of the Carthaginian Suffetes",
+    "type": "office",
+    "question": "Consul of the Carthaginian Suffetes",
     "context": "Carthage elected two suffetes annually",
-    "candidates": [
+    "answers": [
       "Hanno the Great",
       "Hamilcar Barca",
       "Mago the Elder",
@@ -404,9 +445,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "President of the Twelve Colonies",
+    "type": "office",
+    "question": "President of the Twelve Colonies",
     "context": "Battlestar Galactica New series — democratic elections held aboard the fleet",
-    "candidates": [
+    "answers": [
       "Laura Roslin",
       "Gaius Baltar",
       "Tom Zarek",
@@ -414,9 +456,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "President of the Panem District Council",
+    "type": "office",
+    "question": "President of the Panem District Council",
     "context": "The Hunger Games — post-war democratic reforms",
-    "candidates": [
+    "answers": [
       "Alma Coin",
       "Plutarch Heavensbee",
       "Paylor",
@@ -424,9 +467,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Leader of the Mutant Council of Krakoa",
+    "type": "office",
+    "question": "Leader of the Mutant Council of Krakoa",
     "context": "Marvel comics — the Quiet Council governed Krakoa",
-    "candidates": [
+    "answers": [
       "Professor Charles Xavier",
       "Magneto",
       "Emma Frost",
@@ -434,9 +478,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "President of the United States",
+    "type": "office",
+    "question": "President of the United States",
     "context": "Fictional US presidential elections (The West Wing)",
-    "candidates": [
+    "answers": [
       "Josiah 'Jed' Bartlet",
       "Matt Santos",
       "Arnold Vinick",
@@ -444,9 +489,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Justice League Chairperson",
+    "type": "office",
+    "question": "Justice League Chairperson",
     "context": "DC comics — the League votes on membership and leadership",
-    "candidates": [
+    "answers": [
       "Superman",
       "Wonder Woman",
       "Batman",
@@ -454,9 +500,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "President of the Galactic Senate",
+    "type": "office",
+    "question": "President of the Galactic Senate",
     "context": "Star Wars prequels — the Supreme Chancellor is elected",
-    "candidates": [
+    "answers": [
       "Finis Valorum",
       "Sheev Palpatine",
       "Padmé Amidala (nominated)",
@@ -464,9 +511,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Mayor of Pawnee, Indiana",
+    "type": "office",
+    "question": "Mayor of Pawnee, Indiana",
     "context": "Parks and Recreation — local elected office",
-    "candidates": [
+    "answers": [
       "Leslie Knope",
       "Bobby Newport",
       "Paul Iaresco",
@@ -474,9 +522,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "President of the United States",
+    "type": "office",
+    "question": "President of the United States",
     "context": "Satirical US political campaigns and elections (Veep)",
-    "candidates": [
+    "answers": [
       "Selina Meyer",
       "Jonah Ryan",
       "Bill O'Brien",
@@ -484,9 +533,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Chief of the Avengers Council",
+    "type": "office",
+    "question": "Chief of the Avengers Council",
     "context": "Marvel — team leadership decided by the roster",
-    "candidates": [
+    "answers": [
       "Captain America (Steve Rogers)",
       "Iron Man (Tony Stark)",
       "Captain Marvel (Carol Danvers)",
@@ -494,9 +544,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "President of the New Republic",
+    "type": "office",
+    "question": "President of the New Republic",
     "context": "Star Wars — reconstituted democratic senate (The Mandalorian era)",
-    "candidates": [
+    "answers": [
       "Mon Mothma",
       "Leia Organa",
       "Tai Kolma",
@@ -504,9 +555,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Head Girl / Head Boy of Malory Towers",
+    "type": "office",
+    "question": "Head Girl / Head Boy of Malory Towers",
     "context": "Enid Blyton — school leadership chosen by pupils/staff",
-    "candidates": [
+    "answers": [
       "Darrell Rivers",
       "Sally Hope",
       "Alicia Johns",
@@ -514,9 +566,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "President of the Galactic Federation",
+    "type": "office",
+    "question": "President of the Galactic Federation",
     "context": "Animated sci-fi — democratic space government (Futurama)",
-    "candidates": [
+    "answers": [
       "Richard Nixon's Head",
       "John Jackson",
       "Jack Johnson",
@@ -524,9 +577,10 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "Prime Minister",
+    "type": "office",
+    "question": "Prime Minister",
     "context": "British political satire — Westminster leadership (Yes, Minister / The Thick of It)",
-    "candidates": [
+    "answers": [
       "Jim Hacker",
       "Tom Sargent",
       "Nicola Murray",
@@ -534,35 +588,39 @@ EXAMPLE_CONTESTS = [
     ]
   },
   {
-    "office": "President of the United States",
+    "type": "office",
+    "question": "President of the United States",
     "context": "American Revolution",
-    "candidates": [
+    "answers": [
       "George Washington", "Thomas Jefferson", "John Adams",
       "Benjamin Franklin", "Alexander Hamilton", "James Madison",
       "John Jay", "Samuel Adams", "Patrick Henry", "John Hancock"
     ]
   },
   {
-    "office": "Captain of the Hispaniola",
+    "type": "office",
+    "question": "Captain of the Hispaniola",
     "context": "Treasure Island by Robert Louis Stevenson",
-    "candidates": [
+    "answers": [
       "Long John Silver", "Billy Bones", "Captain Flint",
       "Israel Hands", "Ben Gunn", "Captain Smollett",
       "Blind Pew", "Jim Hawkins"
     ]
   },
   {
-    "office": "Mayor of Gotham City",
+    "type": "office",
+    "question": "Mayor of Gotham City",
     "context": "Batman (DC Comics)",
-    "candidates": [
+    "answers": [
       "Bruce Wayne", "Harvey Dent", "James Gordon",
       "Oswald Cobblepot", "Selina Kyle", "Lucius Fox"
     ]
   },
   {
-    "office": "Chief of the Lakota",
+    "type": "office",
+    "question": "Chief of the Lakota",
     "context": "Lakota Sioux leaders",
-    "candidates": [
+    "answers": [
       "Sitting Bull", "Crazy Horse", "Red Cloud",
       "Spotted Tail", "Rain-in-the-Face"
     ]
