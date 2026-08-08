@@ -1,8 +1,8 @@
 {
   "System": {
-    "ConnsInbound": 100,
-    "ConnsOutbound": 160,
-    "Conns": 320,
-    "FD": 640
+    "ConnsInbound": 50,
+    "ConnsOutbound": 80,
+    "Conns": 160,
+    "FD": 320
   }
 }

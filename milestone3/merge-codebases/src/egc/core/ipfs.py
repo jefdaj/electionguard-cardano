@@ -371,7 +371,7 @@ class IPFSService:
         self,
         timeout=300,
         min_peers=3,
-        rate_threshold=100_000, # bytes/sec (RateIn + RateOut)
+        rate_threshold=50_000, # bytes/sec (RateIn + RateOut)
         required_stable_polls=3,
         interval=5,
     ):

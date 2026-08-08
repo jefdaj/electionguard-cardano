@@ -5,7 +5,7 @@ egc ceremony create --ceremony-load-json private/ceremony.json
 find private/records_* -type f
 egc records list
 egc records post
-# TODO need any delay here?
+sleep 3 # time to fetch
 find private/records_* -type f
 egc records list
 {% endblock %}
