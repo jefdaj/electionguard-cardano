@@ -102,14 +102,13 @@ class PendingStore:
         self._db[key] = (record, attempts, next_attempt)
 
     def due(self, now):
-        # LOG.debug(f'due now:{now}')
         records_due = [
             (record, attempts)
             for (record, attempts, next_attempt) in self._db.values()
             if next_attempt <= now
         ]
         if records_due:
-            LOG.debug(f'records_due: {records_due}')
+            LOG.debug(f'records_due: {len(records_due)}')
         random.shuffle(records_due) # TODO is this a good strategy? or should they be sorted?
         return records_due
 
@@ -122,6 +121,7 @@ class IPFSService:
     Each ElectionNode should have one of these and use it for all IPFS calls.
     """
 
+    # TODO tune these defaults based on test data
     def __init__(self,
         records_to_post_dir: Path,
         records_fetched_dir: Path,
@@ -138,9 +138,6 @@ class IPFSService:
 
         self.records_to_post_dir = records_to_post_dir
         self.records_fetched_dir = records_fetched_dir
-
-        # self.records_to_post_dir.mkdir(parents=True, exist_ok=True)
-        # self.records_fetched_dir.mkdir(parents=True, exist_ok=True)
 
         self.maddr = maddr
         self.fresh_workers = fresh_workers
@@ -204,8 +201,6 @@ class IPFSService:
 
     def publish_and_make_record(self, data: dict, metadata: PublicRecordMetadata) -> PublicRecord:
         "Publish data to IPFS and return a new record, ready to post onchain."
-        # TODO any reason this should be async? seems like it should be reliably fast
-        # added_file = self.call(self.ipfs, 'add_json', data)
         added_file = self._run_sync(self.ipfs.add_json(data))
         cid_str = added_file['Hash']
         LOG.debug(f'cid_str: {cid_str}')
@@ -229,19 +224,7 @@ class IPFSService:
             records.append(record)
         return records
 
-    # def call(self, obj, method, *a, **k):
-    #     "Call any method (normally self.ipfs or part of it) sync. Should work from FastAPI sync handlers."
-    #     # TODO is this redundant with _run_sync?
-    #     return asyncio.run_coroutine_threadsafe(
-    #         getattr(obj, method)(*a, **k), self._loop).result()
-
-    # async def call_async(self, obj, method, *a, **k):
-    #     "Call any method (normally self.ipfs or part of it) async. Should work from FastAPI async handlers."
-    #     # TODO is this redundant with _run_async?
-    #     return await asyncio.wrap_future(asyncio.run_coroutine_threadsafe(
-    #         getattr(obj, method)(*a, **k), self._loop))
-
-    async def _try_fetch(self, record: PublicRecord, timeout):
+    async def _attempt_fetch(self, record: PublicRecord, timeout):
         "The one fetch primitive both lanes share."
         key = record_key(record)
         if key in self._inflight: # never fetch same CID twice at once
@@ -249,13 +232,8 @@ class IPFSService:
         self._inflight.add(key)
         try:
             cid_str = ipfs_cid_to_string(record.ipfs_cid)
-            # data = await asyncio.wait_for(
-            #     self.call_async(self.ipfs, 'cat', cid_str),
-            #     timeout = timeout, # TODO can timeout be passed to cat directly?
-            # )
             data = await self._run_async(self.ipfs.cat(cid_str), timeout=timeout)
             await self._save_fetched_data(data, record)
-            # TODO remove identical records_to_post version if any here
             self.store.remove(record) # success => no longer pending
             LOG.info("fetched %s", record)
             return True
@@ -272,7 +250,7 @@ class IPFSService:
         while True:
             record, _ = await self._fresh_q.get()
             try:
-                ok = await self._try_fetch(record, self.fresh_timeout)
+                ok = await self._attempt_fetch(record, self.fresh_timeout)
                 if not ok:
                     self._schedule_retry(record, attempts=1) # demote to slow lane
             finally:
@@ -307,7 +285,7 @@ class IPFSService:
 
     async def _retry_one(self, record, attempts):
         try:
-            ok = await self._try_fetch(record, self.retry_timeout)
+            ok = await self._attempt_fetch(record, self.retry_timeout)
             if not ok:
                 self._schedule_retry(record, attempts + 1) # cap keeps it periodic
         finally:
@@ -324,7 +302,6 @@ class IPFSService:
             peers = []
         try:
             bw = await self.ipfs._client.stats.bw()
-            # LOG.debug(f'bw: {bw}')
             rate = int(bw.get("RateIn", 0) + bw.get("RateOut", 0))
             connected = True
         except Exception as e:
@@ -385,33 +362,25 @@ class IPFSService:
         """Given a record and bytes matching its CID, write the bytes to the
         proper file. Returns the save path, although that isn't used so far.
         """
-        # Get destination path
         save_path = record_path(
             record.metadata,
             pub_dir = self.records_fetched_dir
         )
         LOG.debug(f'save_path: {save_path}')
-        # Get CID
         cid_str = ipfs_cid_to_string(record.ipfs_cid)
         LOG.debug(f'cid_str: {cid_str}')
-        # Ensure parent dir exists
         save_path.parent.mkdir(parents=True, exist_ok=True)
-        # Create a temp file
-        fd, tmp_path = tempfile.mkstemp(
-            # dir=dir_name,
-            # prefix=".tmp_",
-            suffix=".json.part"
-        )
+        fd, tmp_path = tempfile.mkstemp(suffix=".json.part")
         os.close(fd) # we'll reopen it with aiofiles next
         try:
-            # Write temp file, then atomically move into place
+            # Write tmpfile, then atomically move into place
             async with aiofiles.open(tmp_path, "wb") as f:
                 await f.write(data)
                 await f.flush()
             os.replace(tmp_path, save_path)
             return save_path
         finally:
-            # Clean up temp file if anything went wrong before replace
+            # Clean up tmpfile if anything went wrong before replace
             if os.path.exists(tmp_path):
                 try:
                     os.remove(tmp_path)
