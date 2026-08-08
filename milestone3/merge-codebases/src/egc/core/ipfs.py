@@ -5,6 +5,7 @@ import random
 import tempfile
 import threading
 import time
+import hashlib
 
 from aiohttp import ClientConnectorError, ClientConnectorDNSError
 from aioipfs import AsyncIPFS
@@ -114,6 +115,48 @@ class PendingStore:
 
     def count(self):
         return len(self._db.keys())
+
+
+
+class PostFetchMismatchError(Exception):
+    "One or more fetched paths have different content than their to-post equivalents."
+
+    def __init__(self, mismatches: list[Path]):
+        self.mismatches = mismatches
+        super().__init__(f"{len(mismatches)} mismatch(es): {mismatches}")
+
+
+def _hash(path: Path, chunk=64*1024) -> str:
+    # TODO any subtle serialization issues here?
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        for block in iter(lambda: f.read(chunk), b""):
+            h.update(block)
+    return h.hexdigest()
+
+
+def remove_fetched_from_to_post(records_to_post: Path, records_fetched: Path) -> list[Path]:
+    """Delete files in records_to_post that also exist in records_fetched with
+    identical content. After processing everything, raise PostFetchMismatchError
+    if any shared relative path had differing content. Returns removed rel paths."""
+    removed, mismatches = [], []
+    for post_file in records_to_post.rglob("*"):
+        if not post_file.is_file():
+            continue
+        rel = post_file.relative_to(records_to_post)
+        fetched_file = records_fetched / rel
+        if not fetched_file.is_file():
+            continue
+
+        if (post_file.stat().st_size == fetched_file.stat().st_size
+                and _hash(post_file) == _hash(fetched_file)):
+            post_file.unlink()
+            removed.append(rel)
+        else:
+            mismatches.append(rel)
+    if mismatches:
+        raise PostFetchMismatchError(mismatches)
+    return removed
 
 
 class IPFSService:
@@ -235,6 +278,7 @@ class IPFSService:
             data = await self._run_async(self.ipfs.cat(cid_str), timeout=timeout)
             await self._save_fetched_data(data, record)
             self.store.remove(record) # success => no longer pending
+            remove_fetched_from_to_post(self.records_to_post_dir, self.records_fetched_dir)
             LOG.info("fetched %s", record)
             return True
         except asyncio.TimeoutError:
