@@ -39,6 +39,9 @@ class AdminNode(VerifierNode):
             wallet=wallet
         )
 
+    def create_manifest(self):
+        raise NotImplementedError
+
     def advance_phase(
             self,
             new_phase: ElectionPhase,

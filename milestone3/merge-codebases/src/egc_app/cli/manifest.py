@@ -9,6 +9,21 @@ def manifest() -> None:
 def create():
     raise NotImplementedError
 
+
+@manifest.command(roles=['admin'])
+@multi_load('manifest', ???, ['json'])
+def create(
+    manifest: ???,
+):
+    '''Build a minimal valid manifest.
+    For now it handles two types of contests:
+    \b
+        - office with candidates
+        - referendum (yes/no)
+    '''
+    asyncio.run(Client().manifest_create(manifest=manifest))
+
+
 @manifest.command(roles=['admin'])
 def announce():
     raise NotImplementedError
