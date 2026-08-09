@@ -130,6 +130,12 @@ class EgcManifest:
     def from_json(cls, data: str):
         return cls.from_dict(json.loads(data))
 
+    def to_eg(self) -> eg.Manifest:
+        eg_json_str = json.dumps( self.to_eg_dict() )
+        eg_manifest = eg.serialize.from_raw(eg.Manifest, eg_json_str)
+        assert eg_manifest.is_valid()
+        return eg_manifest
+
     def to_eg_dict(self) -> dict:
 
         now = datetime.datetime.now(datetime.UTC)

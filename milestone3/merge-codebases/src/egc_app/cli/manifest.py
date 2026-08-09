@@ -1,11 +1,12 @@
 import click
 from egc_app.cli.utils import RoleAwareGroup, multi_load
 from egc import EgcManifest
+import electionguard as eg
 
 
 @click.group(cls=RoleAwareGroup)
 def manifest() -> None:
-    "Create and announce an election manifest."
+    "Build election manifests."
 
 
 @manifest.command(roles=['admin'])
@@ -19,4 +20,7 @@ def create(manifest: EgcManifest):
         2. referendum (yes/no)
     '''
     click.echo(manifest)
+    # TODO do on server:
+    eg_manifest = manifest.to_eg()
+    click.echo(eg_manifest)
     # asyncio.run(Client().manifest_create(manifest=manifest))
