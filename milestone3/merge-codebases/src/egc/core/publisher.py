@@ -202,7 +202,11 @@ class ElectionPublisher:
         )
         return signed
 
-    def find_collateral_utxo(self, from_wallet: Optional[Wallet] = None) -> UTxO | None:
+    def find_collateral_utxo(
+            self,
+            from_wallet: Optional[Wallet] = None,
+            timeout = OGMIOS_TIMEOUT_SEC,
+        ) -> UTxO | None:
         """Return a collateral-eligible UTXO, or None.
 
         "Collateral-eligible" means: exactly COLLATERAL_LOVELACE lovelace,
@@ -215,7 +219,9 @@ class ElectionPublisher:
             wallet = self.wallet
         else:
             wallet = from_wallet
-        utxos = OGMIOS_CTX.utxos(wallet.addr)
+        def list_utxos():
+            return OGMIOS_CTX.utxos(wallet.addr)
+        utxos = ogmios_retry(list_utxos, timeout=timeout)
         for utxo in utxos:
             amt = utxo.output.amount
             if amt.coin != COLLATERAL_LOVELACE:
