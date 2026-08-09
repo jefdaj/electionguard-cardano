@@ -15,8 +15,8 @@ def show():
     Examples:
 
     \b
-        MY_PORT=$(egc config show | jq '.node.port' -r)
-        MY_PRIV_DIR="$(egc config show | jq '.node.private_dir' -r)"
+        MY_PORT=$(egc config show | jq -r '.node.port')
+        MY_PRIV_DIR="$(egc config show | jq -r '.node.private_dir')"
     """
     cfg = asyncio.run(Client().config())
     click.echo(json.dumps(cfg))

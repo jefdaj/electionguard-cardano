@@ -34,10 +34,10 @@ def show():
     """Print your current ceremony details as JSON.
     Use jq to access fields if needed.
     For example:
-    MY_N_GUARDIANS=$(egc ceremony show | jq '.number_of_guardians' -r)
+    MY_N_GUARDIANS=$(egc ceremony show | jq -r '.number_of_guardians')
     """
     # TODO encode/decode schema?
-    ceremony = asyncio.run(Client().ceremony_show())
+    ceremony = asyncio.run(Client().ceremony())
     click.echo(json.dumps(ceremony))
 
 @ceremony.command(roles=['guardian'])
