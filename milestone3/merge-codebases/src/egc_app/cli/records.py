@@ -67,7 +67,7 @@ def drop(indexes: list[int]):
 
 
 @records.command(name='await')
-@click.option('--timeout', type=click.INT, default=30)
+@click.option('--timeout', type=click.INT, default=300)
 def await_(timeout: int):
     "Wait until all posted records (so far) have been fetched."
     asyncio.run(Client().records_await(timeout=timeout))

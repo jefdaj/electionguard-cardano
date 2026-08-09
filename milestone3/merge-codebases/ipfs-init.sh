@@ -10,6 +10,7 @@ ipfs config --json Gateway.NoFetch true
 
 # Announce only roots ("pinned" strategy or "roots"), and less often.
 # TODO does this matter in our case?
+# TODO add_json also pins, right?
 ipfs config Provide.Strategy pinned
 
 # HARD caps on total connections — this is the real lever
@@ -18,8 +19,8 @@ ipfs config --json Swarm.ResourceMgr.Enabled true
 
 # Much tighter connection budget
 # Note that these must be lower than the hard caps above.
-ipfs config --json Swarm.ConnMgr.LowWater 4
-ipfs config --json Swarm.ConnMgr.HighWater 8
+ipfs config --json Swarm.ConnMgr.LowWater 15
+ipfs config --json Swarm.ConnMgr.HighWater 30
 ipfs config Swarm.ConnMgr.GracePeriod 5s
 
 # Kill relay serving (you don't need to relay others' traffic)
@@ -29,9 +30,11 @@ ipfs config --json Swarm.RelayClient.Enabled true      # keep so YOU stay reacha
 
 # Reduce NAT probing chatter
 # ipfs config AutoNAT.ServiceMode disabled
+ipfs config AutoNAT.ServiceMode enabled # TODO does this help?
 
 # Local mDNS off (irrelevant over internet, saves noise)
 # ipfs config --json Discovery.MDNS.Enabled false
+ipfs config --json Discovery.MDNS.Enabled true # TODO does this help?
 
 # Cap resource-manager scaling explicitly. The RM auto-scales to your RAM, which on a big host = huge limits. Pin them:
 # (Claude recommended 512)
@@ -44,6 +47,8 @@ ipfs config --json Routing.AcceleratedDHTClient false
 # Stop advertising a relay & stop NAT port mapping storms
 # ipfs config --json Swarm.RelayService.Enabled false
 # ipfs config --json Swarm.DisableNatPortMap true
+ipfs config --json Swarm.RelayService.Enabled true # TODO does this help?
+ipfs config --json Swarm.DisableNatPortMap false # TODO does this help?
 
 # QUIC opens lots of UDP flows -> conntrack blowup on cheap routers.
 # Test with TCP only to confirm that's the cause:

@@ -173,11 +173,11 @@ class IPFSService:
         fresh_workers=4,
         fresh_timeout=10,    # short: withheld CIDs fail fast
         retry_timeout=30,    # patient: give real files a chance
-        retry_concurrency=2, # bounded => can't hog the node
-        sweep_interval=5,    # how often the sweeper wakes
-        base_delay=3,        # first retry backoff
+        retry_concurrency=4, # bounded => can't hog the node
+        sweep_interval=1,    # how often the sweeper wakes
+        base_delay=1,        # first retry backoff
         max_delay=600,       # retry-forever settles to every 10 min
-        backoff=2.0
+        backoff=1.5
     ):
 
         self.records_to_post_dir = records_to_post_dir
@@ -370,7 +370,7 @@ class IPFSService:
     async def wait_until_stable(
         self,
         timeout=300,
-        min_peers=3,
+        min_peers=10,
         rate_threshold=50_000, # bytes/sec (RateIn + RateOut)
         required_stable_polls=3,
         interval=5,
