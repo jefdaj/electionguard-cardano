@@ -231,5 +231,32 @@ def path_metadata(abs_path: Path, pub_dir: Path) -> r.PublicRecordMetadata:
     raise ValueError(f'No record type matches path: {abs_path}')
 
 
+# TODO load_record_data?
+def load_record(metadata: r.PublicRecordMetadata, pub_dir: Path):
+    "Given PublicRecordMetadata, load the corresponding record object."
+    mtype = type(metadata)
+    LOG.debug(f'mtype: {mtype}')
+    (decode_cls, _, _) = PUBLIC_RECORD_TYPES[mtype]
+    LOG.debug(f'decode_cls: {decode_cls}')
+    path = record_path(metadata, pub_dir)
+    LOG.debug(f'path: {path}')
+    if not path.exists():
+        raise Exception(f'No such record: {metadata} ({path})')
 
-# TODO load a record given the metadata (used by ipfs fetch)
+    # TODO factor out a util fn for this
+    # TODO unify with the static record round-trip tests?
+    txt = path.read_text()
+    try:
+        data = eg.serialize.from_raw(decode_cls, txt)
+        LOG.debug('decoded with electionguard.serialize')
+    except:
+        if hasattr(decode_cls, "from_json"):
+            data = decode_cls.from_json(txt)
+            LOG.debug(f'decoded with {decode_cls}.from_json')
+        else:
+            data = json.reads(txt)
+            LOG.debug('decoded with json.reads')
+
+    LOG.debug(f'data: {data}')
+    assert type(data) == decode_cls
+    return data
