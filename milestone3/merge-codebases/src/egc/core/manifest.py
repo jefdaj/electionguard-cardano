@@ -79,7 +79,7 @@ class EgcContest:
                         "party_id":    None,
                         "image_uri":   None,
                         "is_write_in": None,
-                        "text": { "text": [{"value": answer_text, "language": "en"}] },
+                        "name": { "text": [{"value": answer_text, "language": "en"}] },
                     }
                     candidates.append(answer_dict)
 
@@ -90,7 +90,7 @@ class EgcContest:
                         "party_id":    None,
                         "image_uri":   None,
                         "is_write_in": None,
-                        "text": { "text": [{"value": candidate_name, "language": "en"}] },
+                        "name": { "text": [{"value": candidate_name, "language": "en"}] },
                     }
                     candidates.append(answer_dict)
 
