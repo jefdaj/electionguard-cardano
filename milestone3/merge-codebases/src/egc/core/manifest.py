@@ -1,7 +1,7 @@
 import datetime
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from typing import Optional
 import electionguard as eg
 from enum import Enum, unique
@@ -47,6 +47,13 @@ class EgcContest:
             question = data['question'],
             answers  = data['answers'],
         )
+
+    def to_dict(self):
+        return {
+            'type': self.type.value,
+            'question': self.question,
+            'answers': self.answers,
+        }
 
     @classmethod
     def from_json(cls, data: str):
@@ -129,6 +136,11 @@ class EgcManifest:
     @classmethod
     def from_json(cls, data: str):
         return cls.from_dict(json.loads(data))
+
+    def to_dict(self):
+        return {
+            'contests': [c.to_dict() for c in self.contests]
+        }
 
     def to_eg(self) -> eg.Manifest:
         eg_json_str = json.dumps( self.to_eg_dict() )

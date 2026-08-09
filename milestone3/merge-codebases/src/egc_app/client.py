@@ -153,9 +153,8 @@ class Client:
         resp = await self._c.post('/records/post', json=data.model_dump())
         resp.raise_for_status()
 
-    # async def manifest_create(self, manifest: ???):
-        # data = schemas.ManifestCreate(
-        #     ???
-        # )
-        # resp = await self._c.post('/manifest/create', json=data.model_dump())
-        # resp.raise_for_status()
+    async def manifest_create(self, manifest: EgcManifest):
+        manifest_dict = manifest.to_dict()
+        LOG.info(f'manifest dict: {manifest_dict}')
+        resp = await self._c.post('/manifest', json=manifest_dict)
+        resp.raise_for_status()
