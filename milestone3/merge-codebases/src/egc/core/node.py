@@ -423,11 +423,10 @@ class ElectionNode:
         return tx_signed
 
     def return_collateral(self, return_addr: Optional[str] = None):
-        # TODO special case for the admin to return ALL collateral to funder here?
-        # TODO or everyone return it to funder individually?
         # TODO only auto return if collateral originally came from admin/funder
-        # if getattr(self, 'election', None) is None:
-        #     raise Exception('No election, so no funder_address.')
+        if self.election is None:
+            LOG.info('No election, so no need to return collateral.')
+            return
         # TODO return collateral to the channel rather than a person?
         # return_addr = self.subscriber.admin_address()
         if return_addr is None:
