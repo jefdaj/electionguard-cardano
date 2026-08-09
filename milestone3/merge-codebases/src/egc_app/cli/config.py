@@ -14,7 +14,8 @@ def role(ctx):
     "Get current election role."
     # The CLI calls the node API for the current config *every* time
     # it's invoked, so now we can just pull role out of the context:
-    role = ctx.find_root().default_map.get("role")
+    # TODO is this any different from a Client.config() call version?
+    role = ctx.find_root().default_map.get("node").get("role")
     click.echo(role)
 
 # only needed for root_ctx in the merge below:
