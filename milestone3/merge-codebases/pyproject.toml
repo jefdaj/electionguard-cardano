@@ -29,6 +29,7 @@ dependencies = [
     "hypothesis>=6.158.0",
     "cattrs>=26.1.0",
     "pyzbar>=0.1.9",
+    "unidecode>=1.4.0",
 ]
 
 [tool.uv.sources]

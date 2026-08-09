@@ -45,6 +45,7 @@ def make_converter():
     def has_from_dict(cls) -> bool:
         return isinstance(cls, type) and callable(getattr(cls, "from_dict", None))
     # factory receives the concrete type, returns the hook
+    # TODO name the method for this something else! it's confusing that it takes an arg
     c.register_unstructure_hook_factory(
         has_to_dict,
         lambda cls: lambda obj: obj.to_dict(c.unstructure),

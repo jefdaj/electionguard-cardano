@@ -17,7 +17,7 @@ LOG = logging.getLogger(__name__)
 @settings(max_examples = 1_000)
 def test_roundtrip_manifest_to_json(contests: list[dict]):
     egc_manifest = EgcManifest(
-        contests = [EgcContest.from_cfg_dict(c) for c in contests]
+        contests = [EgcContest.from_dict(c) for c in contests]
     )
     assert_json_roundtrip(egc_manifest)
 
@@ -28,9 +28,10 @@ def test_roundtrip_manifest_to_json(contests: list[dict]):
 @settings(max_examples = 1_000)
 def test_validate_manifest_json(contests: list[dict]):
     egc_manifest = EgcManifest(
-        contests = [EgcContest.from_cfg_dict(c) for c in contests]
+        contests = [EgcContest.from_dict(c) for c in contests]
     )
-    eg_json_str = json.dumps( egc_manifest.to_eg_dict() )
-    eg_manifest = eg.serialize.from_raw(eg.Manifest, eg_json_str)
+    eg_manifest = egc_manifest.to_eg()
+    # eg_json_str = json.dumps( egc_manifest.to_eg_dict() )
+    # eg_manifest = eg.serialize.from_raw(eg.Manifest, eg_json_str)
     assert isinstance(eg_manifest, eg.Manifest)
     assert eg_manifest.is_valid()

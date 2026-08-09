@@ -1,6 +1,7 @@
 import datetime
 import json
 import re
+from unidecode import unidecode
 from dataclasses import dataclass, asdict
 from typing import Optional
 import electionguard as eg
@@ -25,6 +26,7 @@ class EgcContestType(Enum):
 
 def sanitize_key(unsanitized: str) -> str:
     s = unsanitized.strip()
+    s = unidecode(s) # simplify unicode chars
     s = re.sub(r"\s+", "-", s)     # whitespace -> underscore
     s = re.sub(r"[^\w\_.]", "", s) # keep alnum, _, -, .
     s = s.lower()                  # lowercase
@@ -125,7 +127,8 @@ class EgcManifest:
     contests: list[EgcContest]
 
     @classmethod
-    def from_dict(cls, data: dict):
+    def from_dict(cls, data: dict, _conv=None):
+        # TODO name the one with conv something less confusing
         return cls(
             contests = [
                 EgcContest.from_dict(c)
@@ -137,7 +140,8 @@ class EgcManifest:
     def from_json(cls, data: str):
         return cls.from_dict(json.loads(data))
 
-    def to_dict(self):
+    def to_dict(self, _conv=None):
+        # TODO name the one with conv something less confusing
         return {
             'contests': [c.to_dict() for c in self.contests]
         }
