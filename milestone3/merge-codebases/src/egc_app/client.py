@@ -17,26 +17,25 @@ class Client:
         await self._c.aclose()
 
     async def config(self):
-        r = await self._c.get("/config")
-        r.raise_for_status()
-        return r.json()
+        resp = await self._c.get("/config")
+        resp.raise_for_status()
+        return resp.json()
 
     async def node_status(self):
-        r = await self._c.get("/node/status")
-        r.raise_for_status()
-        return r.json()
+        resp = await self._c.get("/node/status")
+        resp.raise_for_status()
+        return resp.json()
 
     async def node_await(self):
         # TODO what's a good timeout here?
         # (the await call on the server will time out after 180 so far)
-        r = await self._c.get("/node/await")
-        r.raise_for_status()
-        # return r.json()
+        resp = await self._c.get("/node/await")
+        resp.raise_for_status()
 
     async def election_subscribe(self, election_cfg: ElectionConfig):
         data = schemas.ElectionSubscribe(config=election_cfg)
-        r = await self._c.put('/election/subscribe', json=data.model_dump())
-        r.raise_for_status()
+        resp = await self._c.put('/election/subscribe', json=data.model_dump())
+        resp.raise_for_status()
 
     async def election_create(
             self,
@@ -49,14 +48,13 @@ class Client:
             admin_vkh = admin_vkh,
             admin_ada = admin_ada,
         )
-        r = await self._c.post('/election/create', json = data.model_dump())
-        r.raise_for_status()
+        resp = await self._c.post('/election/create', json = data.model_dump())
+        resp.raise_for_status()
 
     async def election_events(self, filter: str|None = None):
-        url = "/election/events"
-        async with self._c.stream("GET", url) as r:
-            r.raise_for_status()
-            async for line in r.aiter_lines():
+        async with self._c.stream("GET", "/election/events") as resp:
+            resp.raise_for_status()
+            async for line in resp.aiter_lines():
                  if line.startswith("data:"): # SSE event
                      line = line[5:].strip()
                      event_dict = json.loads(line)
@@ -67,44 +65,44 @@ class Client:
                          return
 
     async def election_burntesttokens(self):
-        r = await self._c.post('/election/burntesttokens')
-        r.raise_for_status()
+        resp = await self._c.post('/election/burntesttokens')
+        resp.raise_for_status()
 
     # TODO two different fns here and they create the WalletLoadOrCreate?
     async def wallet_load_or_create(self, data: schemas.WalletLoadOrCreate):
         "Load a wallet from sk_dict, or create one if empty."
-        r = await self._c.put('/wallet', json=data.model_dump())
-        r.raise_for_status()
-        # return r.json() # TODO remove?
+        resp = await self._c.put('/wallet', json=data.model_dump())
+        resp.raise_for_status()
 
     async def wallet_show(self):
-        r = await self._c.get('/wallet')
-        r.raise_for_status()
-        return r.json()
+        resp = await self._c.get('/wallet')
+        resp.raise_for_status()
+        return resp.json()
 
     async def wallet_clear(self):
-        r = await self._c.delete('/wallet')
-        r.raise_for_status()
-        return r.json()
+        resp = await self._c.delete('/wallet')
+        resp.raise_for_status()
+        return resp.json()
 
     async def wallet_save(self):
-        r = await self._c.get('/wallet/save')
-        r.raise_for_status()
-        return r.json()
+        # Differs from wallet show in that this includes the (private) signing key.
+        resp = await self._c.get('/wallet/save')
+        resp.raise_for_status()
+        return resp.json()
 
     async def phase_get(self):
-        r = await self._c.get('/phase')
-        r.raise_for_status()
-        return r.json()
+        resp = await self._c.get('/phase')
+        resp.raise_for_status()
+        return resp.json()
 
     async def collateral_return(self, return_addr: Optional[str] = None):
         data = schemas.CollateralReturn(return_addr=return_addr)
-        r = await self._c.post('/collateral/return', json=data.model_dump())
-        r.raise_for_status()
+        resp = await self._c.post('/collateral/return', json=data.model_dump())
+        resp.raise_for_status()
 
     async def collateral_await(self) -> str:
-        r = await self._c.get('/collateral/await')
-        r.raise_for_status()
+        resp = await self._c.get('/collateral/await')
+        resp.raise_for_status()
 
     async def channel_await(self, role: str) -> str:
         data = schemas.ChannelAwait(role=role)
@@ -129,7 +127,6 @@ class Client:
 
     async def records_drop(self, indexes: list[int]):
         data = schemas.RecordsDrop(indexes_to_drop=indexes)
-        # resp = await self._c.delete('/records', json=data.model_dump())
         resp = await self._c.request(
             'DELETE',
             '/records',
@@ -154,12 +151,12 @@ class Client:
         resp.raise_for_status()
 
     async def records_await(self, timeout: int) -> str:
-        data = schemas.RecordsAwait(timeout=timeout)
+        data = schemas.RecordsAwait(timeout=timeout) # TODO same params for all `await` cmds?
         resp = await self._c.get('/records/await', params=data.model_dump(mode='json', exclude_none=True))
         resp.raise_for_status()
 
     async def manifest_create(self, manifest: EgcManifest):
         manifest_dict = manifest.to_dict()
-        LOG.info(f'manifest dict: {manifest_dict}')
+        LOG.debug(f'manifest dict: {manifest_dict}')
         resp = await self._c.post('/manifest', json=manifest_dict)
         resp.raise_for_status()
