@@ -117,7 +117,7 @@ class Client:
         return resp.json()
 
     async def ceremony_create(self, ceremony: CeremonyDetails):
-        data = schemas.CeremonyCreate(
+        data = schemas.CeremonyDetails(
             number_of_guardians = ceremony.number_of_guardians,
             quorum = ceremony.quorum,
         )
