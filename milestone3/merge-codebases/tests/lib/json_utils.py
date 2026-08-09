@@ -5,7 +5,7 @@ from deepdiff import DeepDiff
 
 
 def raw_fancy_dumps(obj, indent=2, width=70, _level=0) -> str:
-    "Like json.dumps, but refrains from indenting things thta fit on one line."
+    "Like json.dumps, but refrains from indenting things that fit on one line."
 
     pad = " " * (indent * (_level + 1))
     close_pad = " " * (indent * _level)

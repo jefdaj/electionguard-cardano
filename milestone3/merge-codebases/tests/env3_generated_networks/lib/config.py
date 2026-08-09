@@ -6,7 +6,7 @@ import hashlib, json
 from pathlib import Path
 from hypothesis import strategies as st
 from copy import deepcopy
-from egc import deep_replace
+from egc import deep_replace, EgcContestType
 # from contextlib import contextmanager
 # from hypothesis.strategies import composite, integers, text
 
@@ -39,6 +39,7 @@ class ContestConfig:
     "A single scripted contest with question and vote counts per answer."
 
     # TODO type, starting with office and referendum
+    type: EgcContestType
     question: str              # office/question
     answers: tuple[
         tuple[
@@ -56,12 +57,14 @@ class ContestConfig:
         for k,v in data['answers'].items():
             answers.append((k, structure(v, VotesConfig)))
         return cls(
+            type = EgcContestType(data['type']),
             question = data['question'],
             answers = tuple(answers)
         )
 
     def to_dict(self, unstructure) -> dict:
-        return {"question": self.question,
+        return {"type": self.type.value,
+                "question": self.question,
                 "answers": {k: unstructure(v) for k, v in self.answers}}
 
 
@@ -72,6 +75,7 @@ def contest_config(draw, example) -> ContestConfig:
     example2 = deepcopy(example)
     example2['answers'] = example2['answers'][:n_answers]
     return ContestConfig(
+        type = EgcContestType(example['type']),
         question = example['question'],
         answers = tuple(
             tuple([k, draw(votes_config())])

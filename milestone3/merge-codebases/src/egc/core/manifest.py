@@ -1,4 +1,5 @@
 import datetime
+import json
 import re
 from dataclasses import dataclass
 from typing import Optional
@@ -14,6 +15,7 @@ corresponding ElectionGuard type.
 
 # TODO include policy id somewhere
 # TODO later, use end date to determine when subscribers should time out
+
 
 @unique
 class EgcContestType(Enum):
@@ -37,14 +39,18 @@ class EgcContest:
     question: str
     answers: Optional[ list[str] ] = None # none for referendum
 
+    # TODO from_cfg_dict?
     @classmethod
-    def from_cfg_dict(cls, data: dict):
-        print(f'data: {data}')
+    def from_dict(cls, data: dict):
         return cls(
             type     = EgcContestType(data['type']),
             question = data['question'],
             answers  = data['answers'],
         )
+
+    @classmethod
+    def from_json(cls, data: str):
+        return cls.from_dict(json.loads(data))
 
     def contest_id(self) -> str:
         return f'{self.type.value}-{sanitize_key(self.question)}'
@@ -112,10 +118,18 @@ class EgcManifest:
     contests: list[EgcContest]
 
     @classmethod
-    def from_cfg_dict(cls, data: dict):
-        raise NotImplementedError
+    def from_dict(cls, data: dict):
+        return cls(
+            contests = [
+                EgcContest.from_dict(c)
+                for c in data['contests']
+            ]
+        )
 
-    # TODO validate
+    @classmethod
+    def from_json(cls, data: str):
+        return cls.from_dict(json.loads(data))
+
     def to_eg_dict(self) -> dict:
 
         now = datetime.datetime.now(datetime.UTC)
@@ -124,7 +138,10 @@ class EgcManifest:
 
         candidates = []
         for contest in self.contests:
-            candidates += [c for c in contest.candidates() if not c in candidates]
+            candidates += [
+                c for c in contest.candidates()
+                if not c in candidates
+            ]
 
         contests = [
             contest.to_eg_dict(sequence_order=n)
