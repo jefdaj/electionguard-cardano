@@ -19,11 +19,12 @@ def create(description):
         WalletLoadOrCreate(sk_or_desc=description)
     ))
 
+# TODO what to show if no wallet? currently "{}"
 @wallet.command()
 def show():
     "Show wallet, except the signing key."
     resp = asyncio.run(Client().wallet_show())
-    click.echo(json.dumps(resp, indent=2))
+    click.echo(json.dumps(resp))
 
 @wallet.command()
 def clear():
@@ -33,7 +34,7 @@ def clear():
 @wallet.command()
 @multi_load("wallet", Wallet, ["cam", "png", "txt", "json"])
 def load(wallet: Wallet):
-    """Load wallet.
+    """Load wallet, including the signing key.
 
     Note that .sk files can be loaded with the JSON option.
     """
