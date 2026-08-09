@@ -64,3 +64,10 @@ def drop(indexes: list[int]):
     Requires explicit indexes/ranges.
     """
     asyncio.run(Client().records_drop(indexes))
+
+
+@records.command(name='await')
+@click.option('--timeout', type=click.INT, default=30)
+def await_(timeout: int):
+    "Wait until all posted records (so far) have been fetched."
+    asyncio.run(Client().records_await(timeout=timeout))

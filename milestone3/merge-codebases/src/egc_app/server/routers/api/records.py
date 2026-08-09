@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from egc_app.server.state import get_state
 from egc_app import schemas
+from typing import Annotated
 import logging
 import shutil
+import time
 
 LOG = logging.getLogger(__name__)
 
@@ -42,3 +44,8 @@ def records_post(data: schemas.RecordsPost, state=Depends(get_state)):
         new_phase = None, # TODO parse str -> ElectionPhase and add here
     )
     state.node.await_tx_confirmed(tx)
+
+@router.get("/await", status_code=200)
+async def records_await(params: Annotated[schemas.RecordsAwait, Query()], state=Depends(get_state)):
+    state.node.await_records(timeout=params.timeout)
+    # TODO do I have to return anything?

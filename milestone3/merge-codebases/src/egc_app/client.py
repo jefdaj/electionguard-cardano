@@ -153,6 +153,11 @@ class Client:
         resp = await self._c.post('/records/post', json=data.model_dump())
         resp.raise_for_status()
 
+    async def records_await(self, timeout: int) -> str:
+        data = schemas.RecordsAwait(timeout=timeout)
+        resp = await self._c.get('/records/await', params=data.model_dump(mode='json', exclude_none=True))
+        resp.raise_for_status()
+
     async def manifest_create(self, manifest: EgcManifest):
         manifest_dict = manifest.to_dict()
         LOG.info(f'manifest dict: {manifest_dict}')

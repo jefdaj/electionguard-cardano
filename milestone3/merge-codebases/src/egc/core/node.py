@@ -210,6 +210,16 @@ class ElectionNode:
         assert utxo is not None
         return
 
+    def await_records(self, timeout=OGMIOS_TIMEOUT_SEC):
+        deadline = time.monotonic() + timeout
+        while True:
+            n = self.ipfs.count_pending_records()
+            if n == 0:
+                return
+            if time.monotonic() > deadline:
+                raise TimeoutError(f'Failed to fetch {n} records within {timeout}s.')
+            time.sleep(1)
+
     def balance_and_sign_state_transition_tx(
             self,
             txb: TransactionBuilder,

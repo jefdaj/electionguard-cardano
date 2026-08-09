@@ -39,3 +39,7 @@ class RecordsPost(BaseModel):
     min_size:        int
     max_size:        int
     advance_phase:   Optional[str] # TODO parse?
+
+
+class RecordsAwait(BaseModel):
+    timeout: int
