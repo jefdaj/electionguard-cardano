@@ -3,7 +3,7 @@
 cleanup() {
   echo "cleaning up"
   egc collateral return || true
-  egc records await
+  # egc records await || true # TODO need a different version with this?
 }
 {% endblock %}
 {% block body %}

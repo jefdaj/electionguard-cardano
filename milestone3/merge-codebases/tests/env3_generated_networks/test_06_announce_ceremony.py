@@ -4,6 +4,8 @@ from egc import *
 from ..lib import *
 from .lib  import *
 
+from .test_07_build_manifest import BUILD_MANIFEST_CONFIGS
+
 @st.composite
 def config_announce_ceremony(draw):
     cfg = draw( config_test_base() )
@@ -29,7 +31,7 @@ def config_announce_ceremony(draw):
 
 ANNOUNCE_CEREMONY_CONFIGS = [f() for f in [
     config_announce_ceremony,
-]]
+]] + BUILD_MANIFEST_CONFIGS
 
 
 @given_cached_tests(
