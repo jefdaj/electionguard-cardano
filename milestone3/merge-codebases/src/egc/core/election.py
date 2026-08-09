@@ -298,14 +298,14 @@ class ElectionContext:
     @property
     def address(self) -> Address:
         """Script address, derived from the spend script hash and network."""
-        LOG.debug('Election.address')
+        LOG.debug('ElectionContext.address')
         return Address(
             self.script.policy_id,
             network=PYCARDANO_NETWORK[self.deployment.network_magic],
         )
 
     def to_dict(self) -> dict:
-        LOG.debug('Election.to_dict')
+        LOG.debug('ElectionContext.to_dict')
         return {
             "schema_version": self.schema_version,
             "deployment":     self.deployment.to_dict(),
@@ -324,7 +324,7 @@ class ElectionContext:
 
     @classmethod
     def from_dict(cls, data: dict) -> Self:
-        LOG.debug('Election.from_dict')
+        LOG.debug('ElectionContext.from_dict')
         version = data.get("schema_version")
         if version != SCHEMA_VERSION:
             raise ValueError(
@@ -338,13 +338,20 @@ class ElectionContext:
         )
 
     def to_json(self, path: str | Path) -> None:
-        LOG.debug('Election.to_json')
+        LOG.debug('ElectionContext.to_json')
         Path(path).write_text(json.dumps(self.to_dict(), indent=2))
         LOG.debug(f'saved ElectionContext to {path}')
 
     @classmethod
-    def from_json(cls, path: str | Path) -> Self:
-        LOG.debug('Election.from_json')
-        obj = cls.from_dict(json.loads(Path(path).read_text()))
+    def from_file(cls, path: str | Path) -> Self:
+        LOG.debug('ElectionContext.from_path')
+        txt = path.read_text()
+        data = cls.from_json(txt)
         LOG.debug(f'loaded ElectionContext from {path}')
+        return data
+
+    @classmethod
+    def from_json(cls, data: str) -> Self:
+        LOG.debug('ElectionContext.from_json')
+        obj = cls.from_dict(json.loads(data))
         return obj
