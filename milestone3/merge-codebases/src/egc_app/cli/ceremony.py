@@ -29,11 +29,16 @@ def create(
     # The decoded type should already be CeremonyDetails now
     # details = CeremonyDetails(guardian_count, guardian_quorum)
 
-
-# TODO remove unless different from create
-# @ceremony.command(roles=['admin'])
-# def announce():
-#     raise NotImplementedError
+@ceremony.command()
+def show():
+    """Print your current ceremony details as JSON.
+    Use jq to access fields if needed.
+    For example:
+    MY_N_GUARDIANS=$(egc ceremony show | jq '.number_of_guardians' -r)
+    """
+    # TODO encode/decode schema?
+    ceremony = asyncio.run(Client().ceremony_show())
+    click.echo(json.dumps(ceremony))
 
 @ceremony.command(roles=['guardian'])
 def keygen():

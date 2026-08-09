@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
-# TODO unify with CeremonyDetails
+# TODO unify with egc.CeremonyDetails
 # TODO field and post validators?
-class CeremonyCreate(BaseModel):
+class CeremonyDetails(BaseModel):
     number_of_guardians: int
     quorum: int
