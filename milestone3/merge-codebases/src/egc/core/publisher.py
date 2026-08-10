@@ -106,7 +106,7 @@ class ElectionPublisher:
         self._guard_wallet()
 
         # Check what the node actually sees
-        utxos = OGMIOS_CTX.utxos(self.wallet.addr)
+        utxos = ogmios_retry( lambda: OGMIOS_CTX.utxos(self.wallet.addr) )
         LOG.debug('UTxOs at publisher address: %s' % len(utxos))
         for u in utxos:
             LOG.debug(
@@ -167,7 +167,7 @@ class ElectionPublisher:
         deadline = time.monotonic() + OGMIOS_TIMEOUT_SEC
         while True:
             if all(
-                OGMIOS_CTX.utxo_by_tx_id(tx_id, i) is not None
+                ogmios_retry( lambda: OGMIOS_CTX.utxo_by_tx_id(tx_id, i) ) is not None
                 for i in output_indices
             ):
                 LOG.debug(f'tx {tx_id} confirmed.') # TODO log how many seconds it took?
@@ -219,9 +219,10 @@ class ElectionPublisher:
             wallet = self.wallet
         else:
             wallet = from_wallet
-        def list_utxos():
-            return OGMIOS_CTX.utxos(wallet.addr)
-        utxos = ogmios_retry(list_utxos, timeout=timeout)
+        utxos = ogmios_retry(
+            lambda: OGMIOS_CTX.utxos(wallet.addr),
+            timeout = timeout
+        )
         for utxo in utxos:
             amt = utxo.output.amount
             if amt.coin != COLLATERAL_LOVELACE:

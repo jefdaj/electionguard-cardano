@@ -20,7 +20,7 @@ from pycardano import PlutusData, PlutusV3Script, ScriptHash, UTxO, Address, Net
 def pick_oneshot_utxo(context, addr):
     # No particular logic to max here; any UTXO should work for the initial tests
     # TODO pick a smaller one so you can't lock most of the tADA accidentally?
-    utxos = context.utxos(addr)
+    utxos = context.utxos(addr) # TODO ogmios_retry here?
     LOG.debug(f'pick_oneshot_utxo addr:{addr} utxos:{utxos}')
     if not utxos:
         raise Exception(f'addr {addr} has no UTXOs')

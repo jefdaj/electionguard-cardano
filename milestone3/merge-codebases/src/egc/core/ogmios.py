@@ -91,7 +91,7 @@ async def ogmios_wait_until_synced(timeout=600, interval=5):
 
 def get_balance_ada(address: Address) -> float:
     """Return total lovelace balance at an address."""
-    utxos = OGMIOS_CTX.utxos(address)
+    utxos = ogmios_retry( lambda: OGMIOS_CTX.utxos(address) )
     balance_ll = sum(u.output.amount.coin for u in utxos)
     balance_ada = float(balance_ll) / LOVELACE_PER_ADA
     return balance_ada
@@ -145,7 +145,7 @@ async def query_network_tip() -> dict:
 
 # TODO is this the only way we ever want to run it?
 def query_network_tip_sync() -> dict:
-    return asyncio.run(query_network_tip())
+    return ogmios_retry( lambda: asyncio.run(query_network_tip()) )
 
 
 ### fee calculations ###
@@ -161,7 +161,7 @@ def top_up_to_min_ada(output: UTxO):
     can loop until it stabilizes.
     """
     for _ in range(3):  # shouldn't need more than 2 iterations
-        min_lv = min_lovelace(OGMIOS_CTX, output)
+        min_lv = ogmios_retry( lambda: min_lovelace(OGMIOS_CTX, output) )
         new_coin = max(output.amount.coin, min_lv)
         if output.amount.coin == new_coin:
             break
@@ -434,7 +434,7 @@ def ogmios_retry(fn: Callable, timeout=OGMIOS_TIMEOUT_SEC) -> Optional[Any]:
 
 def utxo_for_input(tx_in: TransactionInput) -> UTxO | None:
     tx_id_hex = tx_in.transaction_id.payload.hex()
-    return OGMIOS_CTX.utxo_by_tx_id(tx_id_hex, tx_in.index)
+    return ogmios_retry( lambda: OGMIOS_CTX.utxo_by_tx_id(tx_id_hex, tx_in.index) )
 
 
 def utxos_for_inputs(tx_inputs: list[TransactionInput]) -> dict[TransactionInput, UTxO]:
@@ -466,7 +466,7 @@ def await_blocks(n_blocks: int = 1):
 def is_utxo_unspent(utxo: UTxO) -> bool:
     """Return True if the given UTxO is still present on-chain (unspent)."""
     address = str(utxo.output.address)
-    current = OGMIOS_CTX.utxos(address)
+    current = ogmios_retry( lambda: OGMIOS_CTX.utxos(address) )
     return any(u.input == utxo.input for u in current)
 
 

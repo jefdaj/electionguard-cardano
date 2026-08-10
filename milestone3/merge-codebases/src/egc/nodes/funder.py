@@ -215,7 +215,9 @@ class FunderNode(ObserverNode):
         #     oneshot_utxo = pick_oneshot_utxo(OGMIOS_CTX, funder_wallet.addr)
 
         funder_wallet = self.publisher.wallet
-        oneshot_utxo = pick_oneshot_utxo(OGMIOS_CTX, funder_wallet.addr)
+        oneshot_utxo = ogmios_retry(
+            lambda: pick_oneshot_utxo(OGMIOS_CTX, funder_wallet.addr)
+        )
 
         script = derive_script(oneshot_utxo)
 
