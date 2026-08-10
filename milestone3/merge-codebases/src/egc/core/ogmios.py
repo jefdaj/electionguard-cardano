@@ -1,6 +1,7 @@
 import aiohttp
 import asyncio
 import json
+import socket
 import websockets
 import time
 import math
@@ -410,6 +411,13 @@ def ogmios_retry(fn: Callable, timeout=OGMIOS_TIMEOUT_SEC) -> Optional[Any]:
     while time.monotonic() < deadline:
         try:
             return fn()
+        except socket.gaierror as e:
+            # TODO any common ones besides [Errno -3] Temporary failure in name resolution?
+            verdict = "retry"
+            LOG.debug(f'ogmios_retry attempt={attempt} verdict={verdict} e={e}')
+            time.sleep(OGMIOS_DELAY_SEC)
+            attempt += 1
+            continue
         except ResponseError as e:
             verdict = ogmios_classify_error(e)
             LOG.debug(f'ogmios_retry attempt={attempt} verdict={verdict} e={e}')
