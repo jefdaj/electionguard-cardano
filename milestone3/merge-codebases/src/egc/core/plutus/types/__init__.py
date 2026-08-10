@@ -5,6 +5,7 @@ from .action import (
   EndElection,
   RmSubChannels,
   RebalanceFunds,
+  SetIpfsNode,
   PostPublicRecords,
   EndElection,
   BurnTestTokens,
@@ -34,6 +35,16 @@ from .ipfs_cid import (
   IpfsCid,
   coerce_ipfs_cid,
   ipfs_cid_to_string,
+)
+
+from .ipfs_node import (
+  IpfsNode,
+  IpfsPeerId,
+  IpfsMultiaddr,
+  coerce_ipfs_peerid,
+  coerce_ipfs_multiaddr,
+  ipfs_peerid_to_string,
+  ipfs_multiaddr_to_string,
 )
 
 from .record import (
