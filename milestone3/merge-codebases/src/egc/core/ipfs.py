@@ -482,13 +482,14 @@ class IPFSService:
             return
         LOG.info(f'update {channel_id} channel node: {opt_prev} -> {opt_new}')
         self.channel_nodes[channel_id] = opt_new
-        if isinstance(opt_new, NoIpfsNode):
+        # if isinstance(opt_new, NoIpfsNode):
+        if opt_new == NoIpfsNode():
             return
         id_str = ipfs_peerid_to_string(opt_new.value.peer_id)
         if opt_new.value.peer_id == self.get_own_peer_id():
-            LOG.debug(f'skip peering with own node: {id_str}')
+            LOG.info(f'skip peering with own node: {id_str}')
         else:
-            LOG.debug(f'peering with {id_str}')
+            LOG.info(f'peering with {id_str}')
             self._run_sync(
                 self.add_explicit_peer(opt_new.value)
             )
