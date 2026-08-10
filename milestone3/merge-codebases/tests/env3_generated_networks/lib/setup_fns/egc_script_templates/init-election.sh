@@ -17,4 +17,8 @@ egc election share --election-save-png qrcodes/election.png
 egc collateral await
 CH_STR=$(egc channel await --role admin)
 [[ "$CH_STR" == "admin" ]] || { echo "failed to acquire admin channel" >&2; exit 1; }
+
+# post ipfs contact info
+egc ipfs show | jq
+egc ipfs post
 {% endblock %}
