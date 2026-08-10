@@ -13,6 +13,7 @@ from egc_app.cli import channel
 from egc_app.cli import collateral
 from egc_app.cli import config
 from egc_app.cli import election
+from egc_app.cli import ipfs
 from egc_app.cli import manifest
 from egc_app.cli import node
 from egc_app.cli import phase
@@ -45,6 +46,7 @@ cli.add_command(ceremony.ceremony)
 cli.add_command(channel.channel)
 cli.add_command(collateral.collateral)
 cli.add_command(config.config)
+cli.add_command(ipfs.election)
 cli.add_command(election.election)
 cli.add_command(manifest.manifest)
 cli.add_command(node.node)

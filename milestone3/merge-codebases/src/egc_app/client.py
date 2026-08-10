@@ -165,3 +165,12 @@ class Client:
         LOG.debug(f'manifest dict: {manifest_dict}')
         resp = await self._c.post('/manifest', json=manifest_dict)
         resp.raise_for_status()
+
+    async def ipfs_show(self):
+        resp = await self._c.get('/ipfs') # TODO /ipfs_nodes?
+        resp.raise_for_status()
+        return resp.json()
+
+    async def ipfs_post(self):
+        resp = await self._c.put('/ipfs') # TODO /ipfs_nodes?
+        resp.raise_for_status()

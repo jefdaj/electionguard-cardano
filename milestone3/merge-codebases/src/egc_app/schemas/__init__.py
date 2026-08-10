@@ -5,3 +5,4 @@ from .collateral import *
 from .channel import *
 from .ceremony import *
 from .records import *
+from .ipfs import *
