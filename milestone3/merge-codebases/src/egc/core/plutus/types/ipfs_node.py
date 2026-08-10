@@ -5,6 +5,8 @@ import base58
 from multiaddr import Multiaddr as _MultiaddrObj
 from pycardano import PlutusData
 
+from .action import decode_plutusdata_union
+
 # Should be kept in sync with onchain/validators/election/types/ipfs_node.ak
 
 
@@ -114,6 +116,7 @@ def ipfs_multiaddr_to_string(value: bytes) -> str:
 # mixins
 # --------------------------------------------------------------------------
 
+# TODO move to util class and use for other str fields too?
 class _PlutusStrMixin:
     """
     Shared field-aware __str__. Cooperating mixins register per-field
@@ -208,3 +211,28 @@ class IpfsNode(IpfsPeerIdMixin, IpfsMultiaddrMixin, PlutusData):
 
     peer_id: bytes
     addr_hints: List[bytes]
+
+
+# --------------------------------------------------------------------------
+# Option<IpfsNode>
+# --------------------------------------------------------------------------
+
+# TODO make this generic and re-use for other types?
+# TODO anything needed for proper __str__?
+# TODO Some comes before None?
+
+@dataclass
+class SomeIpfsNode(PlutusData):
+    """Aiken: Some(IpfsNode)"""
+    CONSTR_ID = 0
+    value: IpfsNode
+
+@dataclass
+class NoIpfsNode(PlutusData):
+    """Aiken: None"""
+    CONSTR_ID = 1
+
+OptionIpfsNode = Union[SomeIpfsNode, NoIpfsNode]
+
+def decode_option_ipfs_node(redeemer_str):
+    return decode_plutusdata_union(OptionIpfsNode, redeemer_str)

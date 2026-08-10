@@ -3,7 +3,7 @@
 from .channel_id import *
 from .phase import ElectionPhase
 from .record import PublicRecord
-from .ipfs_node import IpfsNode
+from .ipfs_node import OptionIpfsNode
 from dataclasses import dataclass
 from pycardano import PlutusData, Network, VerificationKeyHash, Address
 from typing import List, Union, Optional, TYPE_CHECKING
@@ -14,7 +14,7 @@ from typing import List, Union, Optional, TYPE_CHECKING
 class AdminChannelState(PlutusData):
     CONSTR_ID = 0
     admin: bytes  # VerificationKeyHash
-    ipfs_node: Optional[IpfsNode]
+    ipfs_node: OptionIpfsNode
     subchannels: List[bytes]
     new_records: List[PublicRecord]
     phase: ElectionPhase
@@ -27,7 +27,7 @@ class AdminChannelState(PlutusData):
         return (
             'AdminChannelState('
             f"admin='{self.admin.hex()}', "     # TODO clean up to avoid bytes.fromhex
-            f"ipfs_node='{str(self.ipfs_node)}', "
+            f"ipfs_node={str(self.ipfs_node)}, "
             f'subchannels={self.subchannels}, ' # TODO clean up to avoid bytes.fromhex
             f'new_records=[' + records_str + '], '
             f'phase={str(self.phase)}, '
@@ -39,7 +39,7 @@ class SubChannelState(PlutusData):
     CONSTR_ID = 0
     channel_id: bytes
     publisher: bytes   # VerificationKeyHash
-    ipfs_node: Optional[IpfsNode]
+    ipfs_node: OptionIpfsNode
     new_records: List[PublicRecord]
     seq: int
 
@@ -50,7 +50,7 @@ class SubChannelState(PlutusData):
             'SubChannelState('
             f'channel_id={self.channel_id}, '
             f"publisher='{self.publisher.hex()}', "   # TODO clean up to avoid bytes.fromhex
-            f"ipfs_node='{str(self.ipfs_node)}', "
+            f"ipfs_node={str(self.ipfs_node)}, "
             f'new_records=[' + records_str + '], '
             f'seq={self.seq})'
         )
@@ -61,7 +61,7 @@ class AdminChannel(PlutusData):
     state: AdminChannelState
 
     def __repr__(self):
-        return f'AdminChannel({str(self.state)})'
+        return f'AdminChannel(state={str(self.state)})'
 
 @dataclass
 class SubChannel(PlutusData):
@@ -69,7 +69,7 @@ class SubChannel(PlutusData):
     state: SubChannelState
 
     def __repr__(self):
-        return f'SubChannel({str(self.state)})'
+        return f'SubChannel(state={str(self.state)})'
 
 ChannelState = Union[AdminChannel, SubChannel]
 

@@ -39,12 +39,16 @@ from .ipfs_cid import (
 
 from .ipfs_node import (
   IpfsNode,
+  SomeIpfsNode,
+  NoIpfsNode,
+  OptionIpfsNode,
   IpfsPeerId,
   IpfsMultiaddr,
   coerce_ipfs_peerid,
   coerce_ipfs_multiaddr,
   ipfs_peerid_to_string,
   ipfs_multiaddr_to_string,
+  decode_option_ipfs_node,
 )
 
 from .record import (

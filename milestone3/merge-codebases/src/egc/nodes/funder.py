@@ -77,7 +77,7 @@ class FunderNode(ObserverNode):
 
         state = AdminChannelState(
             admin       = admin_vkh.payload,
-            ipfs_node   = None,
+            ipfs_node   = NoIpfsNode(),
             subchannels = [],
             new_records = [],
             phase       = phase,

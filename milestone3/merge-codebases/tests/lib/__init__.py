@@ -39,7 +39,7 @@ def sub_s0(sub_id: ChannelId, sub_vkh: VerificationKeyHash) -> ChannelState:
     return SubChannel(state=SubChannelState(
         channel_id  = sub_id,
         publisher   = sub_vkh.payload,
-        ipfs_node   = None,
+        ipfs_node   = NoIpfsNode(),
         new_records = [],
         seq         = 0,
     ))
