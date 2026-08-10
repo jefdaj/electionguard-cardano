@@ -62,6 +62,10 @@ pub type ElectionAction {
   // Single channel actions for anyone
   // ===========================================
 
+  // Set or remove an IPFS node
+  // TODO update all python constructors to match this!
+  SetIpfsNode
+
   // Admin or regular publisher, but only one channel.
   // Post a list of one or more public records (IPFS CIDs + metadata).
   // TODO include info to display in UI here? or get from kupo?

@@ -2,6 +2,7 @@ use aiken/collection/list
 use aiken/crypto.{VerificationKeyHash}
 use election/types/channel_id.{ChannelId}
 use election/types/channel.{ChannelState, AdminChannel, AdminChannelState, SubChannel, SubChannelState}
+use election/types/ipfs_node.{IpfsNode}
 use election/types/phase.{ElectionPhase, ElectionConfigPhase, ConfigAnnouncePhase}
 use election/types/record.{PublicRecord}
 use election/utils.{remove_elements}
@@ -9,10 +10,31 @@ use election/utils.{remove_elements}
 pub fn init_election(admin: VerificationKeyHash) -> AdminChannelState {
   AdminChannelState {
     admin: admin,
+    ipfs_node: None,
     subchannels: [],
     new_records: [],
     phase: ElectionConfigPhase(ConfigAnnouncePhase),
     seq: 0
+  }
+}
+
+// Can be used to set or remove the ipfs_node any time.
+pub fn set_ipfs_node(
+  state: ChannelState,
+  ipfs_node: Option<IpfsNode>
+) -> ChannelState {
+  trace @"set_ipfs_node"
+  when state is {
+    AdminChannel(admin_state) -> AdminChannel(AdminChannelState {
+      ..admin_state,
+      ipfs_node: ipfs_node,
+      seq: admin_state.seq + 1
+    })
+    SubChannel(sub_state) -> SubChannel(SubChannelState {
+      ..sub_state,
+      ipfs_node: ipfs_node,
+      seq: sub_state.seq + 1
+    })
   }
 }
 
@@ -26,6 +48,7 @@ pub fn add_subchannels(
   trace @"add_subchannels"
   AdminChannelState(
     state.admin, // should be unchanged
+    state.ipfs_node, // should be unchanged
     list.concat(channels, state.subchannels), // TODO sort here? reverse order?
     [], // should be reset on each non-post tx
     cont_phase, // TODO should this be validated here rather than separately?
@@ -43,6 +66,7 @@ pub fn rm_subchannels(
   trace @"rm_subchannels"
   AdminChannelState(
     state.admin, // should be unchanged
+    state.ipfs_node, // should be unchanged
     remove_elements(state.subchannels, channels),
     [], // should be reset on each non-post tx
     cont_phase, // TODO should this be validated here rather than separately?
@@ -61,6 +85,7 @@ pub fn post_public_records(
   when state is {
     AdminChannel(admin_state) -> AdminChannel(AdminChannelState(
       admin_state.admin,
+      admin_state.ipfs_node,
       admin_state.subchannels,
       records, // should replace the old list
       when cont_phase is {
@@ -72,6 +97,7 @@ pub fn post_public_records(
     SubChannel(sub_state) -> SubChannel(SubChannelState(
       sub_state.channel_id,
       sub_state.publisher,
+      sub_state.ipfs_node,
       records, // should be replaced
       sub_state.seq + 1, // should be incremented
     ))

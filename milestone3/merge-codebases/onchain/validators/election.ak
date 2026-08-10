@@ -8,14 +8,16 @@ use election/types/action.{
   ElectionAction,
   BurnTestTokens,
   InitElection, AddSubChannels, AdvancePhase, EndElection,
-  RmSubChannels, RebalanceFunds, PostPublicRecords,
+  RmSubChannels, RebalanceFunds,
+  SetIpfsNode, PostPublicRecords,
 }
 use election/cont.{
   init_election,
-  add_subchannels, rm_subchannels, post_public_records,
+  add_subchannels, rm_subchannels, set_ipfs_node, post_public_records,
   advance_phase, rebalance_funds_admin, rebalance_funds_subchannel,
 }
 use election/fund.{ada_retained_during_election, collateral_sent_to_publishers}
+use election/types/ipfs_node.{validate_ipfs_node}
 use election/types/phase.{is_final_phase, is_valid_phase_transition}
 use election/types/record.{validate_records}
 use election/types/channel_id.{ChannelId}
@@ -122,7 +124,7 @@ pub fn validate_mint(
       validate_admin_channel_mint(oneshot_ref, redeemer, policy_id, tx)
     AddSubChannels { .. } | RmSubChannels { .. } ->
       validate_subchannel_mints(redeemer, policy_id, tx)
-    AdvancePhase | PostPublicRecords | RebalanceFunds { .. } ->
+    AdvancePhase | SetIpfsNode | PostPublicRecords | RebalanceFunds { .. } ->
       no_mints_for_policy(policy_id, tx)
   }
 }
@@ -389,21 +391,38 @@ pub fn validate_admin_multi_channel_spend(
   }
 }
 
-// Will be called once with either the admin or a subchannel STT.
-pub fn validate_anyone_single_channel_spend(
+pub fn validate_setipfsnode_spend(
   state: ChannelState,
-  redeemer: ElectionAction,
   own_ref: OutputReference,
   tx: Transaction,
 ) -> Bool {
-  trace @"validate_anyone_single_channel_spend"
 
-  // Gotcha: admin_signed wouldn't do here, because we don't want the admin to
-  // be able to post to a non-admin channel.
-  let authorized = publisher_signed(state, tx) ?
+  let cont_state = get_continuation_state(state, own_ref, tx)
+  let new_node = when cont_state is {
+    AdminChannel(admin_state) -> admin_state.ipfs_node
+    SubChannel(sub_state)     -> sub_state.ipfs_node
+  }
+  let new_node_valid = when new_node is {
+    None -> True
+    Some(node) -> validate_ipfs_node(node)
+  }
+  let expected = set_ipfs_node(state, new_node)
+  let cont_as_expected = (cont_state == expected) ?
+
+  and {
+    new_node_valid,
+    cont_as_expected,
+  }
+}
+
+pub fn validate_postpublicrecords_spend(
+ state: ChannelState,
+  own_ref: OutputReference,
+  tx: Transaction,
+) -> Bool {
 
   // The only "anyone, single channel" redeemer so far
-  expect PostPublicRecords = redeemer
+  // expect PostPublicRecords = redeemer
 
   let cont_state = get_continuation_state(state, own_ref, tx)
   let new_records = get_new_records(state, cont_state)
@@ -426,11 +445,31 @@ pub fn validate_anyone_single_channel_spend(
   let cont_as_expected = (cont_state == expected) ?
 
   and {
-    authorized,
     new_records_valid,
     phase_valid,
     cont_as_expected,
   }
+}
+
+// Will be called once with either the admin or a subchannel STT.
+pub fn validate_anyone_single_channel_spend(
+  state: ChannelState,
+  redeemer: ElectionAction,
+  own_ref: OutputReference,
+  tx: Transaction,
+) -> Bool {
+  trace @"validate_anyone_single_channel_spend"
+
+  // Gotcha: admin_signed wouldn't do here, because we don't want the admin to
+  // be able to post to a non-admin channel.
+  let authorized = publisher_signed(state, tx) ?
+
+  authorized && when redeemer is {
+    SetIpfsNode       -> validate_setipfsnode_spend(state, own_ref, tx)
+    PostPublicRecords -> validate_postpublicrecords_spend(state, own_ref, tx)
+    _ -> False
+  }
+
 }
 
 pub fn validate_spend(
@@ -448,7 +487,7 @@ pub fn validate_spend(
       validate_admin_single_channel_spend(state, redeemer, own_ref, tx)
     RmSubChannels { .. } | RebalanceFunds { .. } ->
       validate_admin_multi_channel_spend(state, redeemer, own_ref, tx)
-    PostPublicRecords ->
+    SetIpfsNode | PostPublicRecords ->
       validate_anyone_single_channel_spend(state, redeemer, own_ref, tx)
   }
 }

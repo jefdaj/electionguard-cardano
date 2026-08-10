@@ -1,5 +1,5 @@
 name = "jefdaj/electionguard-cardano"
-version = "0.5.1"
+version = "0.6.0"
 compiler = "v1.1.21"
 plutus = "v3"
 license = "Apache-2.0"

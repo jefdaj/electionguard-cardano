@@ -2,6 +2,7 @@ use aiken/crypto.{VerificationKeyHash}
 use election/types/phase.{ElectionPhase}
 use election/types/record.{PublicRecord}
 use election/types/channel_id.{ChannelId}
+use election/types/ipfs_node.{IpfsNode}
 
 pub type ChannelState {
   AdminChannel(AdminChannelState)
@@ -16,6 +17,10 @@ pub type AdminChannelState {
 
   // This is its "publisher" key, but also allows other admin actions.
   admin: VerificationKeyHash,
+
+  // ipfs_node is set by the publisher and can be updated.
+  // It works the same on the admin or subchannels.
+  ipfs_node: Option<IpfsNode>,
 
   // Only the admin can mint and burn subchannels.
   subchannels: List<ChannelId>,
@@ -41,6 +46,10 @@ pub type SubChannelState {
   // TODO later, let the admin change the publisher key?
   channel_id: ChannelId,
   publisher: VerificationKeyHash,
+
+  // ipfs_node is set by the publisher and can be updated.
+  // It works the same on the admin or subchannels.
+  ipfs_node: Option<IpfsNode>,
 
   // Works the same as on the admin channel.
   new_records: List<PublicRecord>,

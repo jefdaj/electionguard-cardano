@@ -51,7 +51,7 @@ pub fn validate_multiaddr(addr: IpfsMultiaddr) -> Bool {
 /// Validate the whole ipfs_node field.
 pub fn validate_ipfs_node(ipfs_node: IpfsNode) -> Bool {
   trace @"validate_ipfs_node"
-  let Publisher { peer_id, addr_hints } = ipfs_node
+  let IpfsNode { peer_id, addr_hints } = ipfs_node
 
   and {
     validate_peer_id(peer_id),
