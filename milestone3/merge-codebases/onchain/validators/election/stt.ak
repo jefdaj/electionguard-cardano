@@ -30,7 +30,7 @@ pub fn full_stt_name(channel_id: ChannelId) -> ByteArray {
   let prefix = string.from_bytearray(config.stt_prefix)
   let id = string.from_bytearray(channel_id)
   let full_name = string.join([prefix, id], @"-")
-  trace @"full_name" : full_name
+  // trace @"full_name" : full_name
   string.to_bytearray(full_name)
 }
 
@@ -84,7 +84,7 @@ pub fn get_policy_id(
   own_ref: OutputReference,
   inputs: List<Input>
 ) -> PolicyId {
-  trace @"get_policy_id"
+  // trace @"get_policy_id"
   expect Some(own_input) = inputs |> transaction.find_input(own_ref)
   expect Script(policy_id) = own_input.output.address.payment_credential
   // trace @"policy_id" : policy_id
@@ -161,7 +161,7 @@ pub fn get_stt_state(
   policy_id: PolicyId,
   stt_name: ByteArray,
 ) -> ChannelState {
-  trace @"get_stt_state"
+  // trace @"get_stt_state"
   expect Some(stt_output) =
     list.find(outputs, fn(output) {
       assets.has_nft(output.value, policy_id, stt_name)

@@ -7,7 +7,7 @@ pub type ChannelId = ByteArray
 // TODO rename from_string?
 // TODO avoid using this except in test modules? shouldn't be needed on chain
 pub fn channel_id(channel_name: String) -> ChannelId {
-  trace @"channel_id"
+  // trace @"channel_id"
   string.to_bytearray(channel_name)
 }
 
@@ -16,7 +16,7 @@ pub fn channel_id(channel_name: String) -> ChannelId {
 /// - "admin"
 /// - "guardian", "device", or "verifier" + number 1-100
 pub fn validate_channel_id(channel_id: ChannelId) -> Bool {
-  trace @"validate_channel_id"
+  // trace @"validate_channel_id"
   if channel_id == "admin" {
     True
   } else {

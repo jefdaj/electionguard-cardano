@@ -60,7 +60,7 @@ pub type PublicRecordMetadata {
 }
 
 pub fn validate_guardian_number(guardian_number: Int) -> Bool {
-  trace @"validate_guardian_number"
+  // trace @"validate_guardian_number"
   guardian_number > 0 && guardian_number <= max_guardians
 }
 
@@ -168,11 +168,11 @@ pub type PublicRecord {
 }
 
 pub fn validate_record(record: PublicRecord) -> Bool {
-  trace @"validate_record"
+  // trace @"validate_record"
   validate_metadata(record.metadata) && validate_ipfs_cid(record.ipfs_cid)
 }
 
 pub fn validate_records(records: List<PublicRecord>) -> Bool {
-  trace @"validate_records"
+  // trace @"validate_records"
   list.all(records, validate_record)
 }
