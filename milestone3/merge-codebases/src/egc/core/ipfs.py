@@ -437,7 +437,7 @@ class IPFSService:
 
     def get_peer_id(self) -> IpfsPeerId:
         LOG.debug('get_peer_id')
-        id_str = self.call_sync(await self.ipfs._client.id())
+        id_str = self.call_sync(self.ipfs._client.id())
         LOG.debug(f'id_str: {id_str}')
         id_plutus = coerce_ipfs_peerid(id_str)
         LOG.debug(f'id_plutus: {id_plutus}')
