@@ -3,9 +3,10 @@
 from .channel_id import *
 from .phase import ElectionPhase
 from .record import PublicRecord
+from .ipfs_node import IpfsNode
 from dataclasses import dataclass
 from pycardano import PlutusData, Network, VerificationKeyHash, Address
-from typing import List, Union, TYPE_CHECKING
+from typing import List, Union, Optional, TYPE_CHECKING
 
 # TODO rewrite these to use __str__ rather than __repr__ and standardize on JSON?
 
@@ -13,6 +14,7 @@ from typing import List, Union, TYPE_CHECKING
 class AdminChannelState(PlutusData):
     CONSTR_ID = 0
     admin: bytes  # VerificationKeyHash
+    ipfs_node: Optional[IpfsNode]
     subchannels: List[bytes]
     new_records: List[PublicRecord]
     phase: ElectionPhase
@@ -25,6 +27,7 @@ class AdminChannelState(PlutusData):
         return (
             'AdminChannelState('
             f"admin='{self.admin.hex()}', "     # TODO clean up to avoid bytes.fromhex
+            f"ipfs_node='{str(self.ipfs_node)}', "
             f'subchannels={self.subchannels}, ' # TODO clean up to avoid bytes.fromhex
             f'new_records=[' + records_str + '], '
             f'phase={str(self.phase)}, '
@@ -36,6 +39,7 @@ class SubChannelState(PlutusData):
     CONSTR_ID = 0
     channel_id: bytes
     publisher: bytes   # VerificationKeyHash
+    ipfs_node: Optional[IpfsNode]
     new_records: List[PublicRecord]
     seq: int
 
@@ -46,6 +50,7 @@ class SubChannelState(PlutusData):
             'SubChannelState('
             f'channel_id={self.channel_id}, '
             f"publisher='{self.publisher.hex()}', "   # TODO clean up to avoid bytes.fromhex
+            f"ipfs_node='{str(self.ipfs_node)}', "
             f'new_records=[' + records_str + '], '
             f'seq={self.seq})'
         )

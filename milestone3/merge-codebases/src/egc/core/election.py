@@ -20,8 +20,8 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-# Increment whenever you change the serialization.
-SCHEMA_VERSION = 3
+# Increment whenever you change the serialization or plutus blueprints.
+SCHEMA_VERSION = 4
 
 NETWORK_MAGIC = {
     "mainnet": 764824073,

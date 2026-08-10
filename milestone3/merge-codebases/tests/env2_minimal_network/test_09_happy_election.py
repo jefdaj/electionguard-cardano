@@ -28,6 +28,7 @@ LOG = logging.getLogger(__name__)
 def admin_s0(admin_vkh: VerificationKeyHash) -> ChannelState:
     return AdminChannel(state=AdminChannelState(
         admin       = admin_vkh.payload,
+        ipfs_node   = None,
         subchannels = [],
         new_records = [],
         phase       = ElectionConfigPhase(ConfigAnnouncePhase()),
