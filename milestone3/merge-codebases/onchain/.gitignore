@@ -13,4 +13,4 @@ result*
 
 # Parameterized validators
 # (we do still want to version control the non-parameterized ones)
-election-plutus-traced-*.json
+egc-plutus*.json

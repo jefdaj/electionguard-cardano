@@ -4,5 +4,6 @@ set -x
 set -e
 cd $(dirname "$0")
 aiken check --trace-level silent # don't want to generate the JSON if it's failing a test
-aiken build --out egc-plutus-burntesttokens.json
-aiken build --out egc-plutus-burntesttokens-traced.json --trace-level verbose
+aiken build --out egc-plutus-burntesttokens-silent.json  --trace-level silent
+aiken build --out egc-plutus-burntesttokens-compact.json --trace-level compact
+aiken build --out egc-plutus-burntesttokens-verbose.json --trace-level verbose
