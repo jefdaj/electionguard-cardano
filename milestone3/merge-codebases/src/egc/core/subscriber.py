@@ -31,6 +31,7 @@ from .ogmios import *
 from .plutus.types.phase import *
 from .plutus.types.action import *
 from .plutus.types.channel import *
+from .plutus.types.ipfs_node import *
 from .election import ElectionConfig, ElectionContext
 from .utils import safe_deepdiff
 
@@ -182,9 +183,13 @@ def election_events(event: ChannelEvent) -> list[ElectionEvent]:
             e = election_event(ti, sn, s, 'advance phase', f'advanced to {phase}')
             es.append(e)
         case SetIpfsNode():
-            opt_ipfs_node = event.output_state.state.ipfs_node
-            e = election_event(ti, sn, s, 'set ipfs node', f'set ipfs node to {opt_ipfs_node}')
-            es.append(e)
+            match event.output_state.state.ipfs_node:
+                case NoIpfsNode(): pass
+                case SomeIpfsNode(value=node):
+                    id_str = ipfs_peerid_to_string(node.peer_id)
+                    e = election_event(ti, sn, s, 'set ipfs node', f'posted ipfs peerid {id_str}')
+                    es.append(e)
+                case _: raise NotImplementedError
         case PostPublicRecords():
             pass # covered above
         case AddSubChannels(channels=cs):
