@@ -161,7 +161,7 @@ class ArionConfig:
 def arion_config(draw):
     _ = draw(st.integers(1,1)) # silence hypothesis warning
     cfg = ArionConfig(
-        egc_image = "electionguard-cardano:0.3.0",
+        egc_image = "electionguard-cardano:0.6.0", # TODO how to auto-update this?
     )
     return cfg
 
