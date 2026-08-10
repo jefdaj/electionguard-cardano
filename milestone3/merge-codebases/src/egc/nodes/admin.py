@@ -202,7 +202,7 @@ class AdminNode(VerifierNode):
 
             stt_datum = SubChannel(state=SubChannelState(
                 channel_id  = sub_id,
-                publisher   = sub_vkh.payload, # TODO is this right?
+                publisher   = sub_vkh.payload,
                 ipfs_node   = None,
                 new_records = [],
                 seq         = 0,

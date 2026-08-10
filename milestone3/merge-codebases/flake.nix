@@ -170,7 +170,7 @@
           in
             pkgs.dockerTools.buildLayeredImage {
               name = "electionguard-cardano";
-              tag = "0.3.0";
+              tag = "0.6.0";
               contents = [
                 pythonEnv
                 pkgs.coreutils

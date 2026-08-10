@@ -1,6 +1,6 @@
 [project]
 name = "electionguard-cardano"
-version = "0.3.0"
+version = "0.6.0"
 description = "End-to-end verifiable blockchain elections."
 authors = [{ name = "jefdaj", email = "1198065+jefdaj@users.noreply.github.com" }]
 requires-python = ">=3.13,<3.14"
