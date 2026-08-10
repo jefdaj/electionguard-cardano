@@ -227,6 +227,9 @@ class SomeIpfsNode(PlutusData):
     CONSTR_ID = 0
     value: IpfsNode
 
+    def __str__(self) -> str:
+        return f'SomeIpfsNode(value={str(self.value)})'
+
 @dataclass
 class NoIpfsNode(PlutusData):
     """Aiken: None"""

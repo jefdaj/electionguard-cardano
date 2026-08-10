@@ -184,6 +184,7 @@ def election_events(event: ChannelEvent) -> list[ElectionEvent]:
         case SetIpfsNode():
             opt_ipfs_node = event.output_state.state.ipfs_node
             e = election_event(ti, sn, s, 'set ipfs node', f'set ipfs node to {opt_ipfs_node}')
+            es.append(e)
         case PostPublicRecords():
             pass # covered above
         case AddSubChannels(channels=cs):

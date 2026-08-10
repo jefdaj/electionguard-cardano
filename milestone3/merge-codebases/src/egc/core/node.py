@@ -339,17 +339,17 @@ class ElectionNode:
         # TODO implement addr_hints
         # peer_id: IpfsPeerId = self.ipfs.get_own_peer_id()
         # new_node = IpfsNode(peer_id = peer_id, addr_hints = [])
-        new_node = self.ipfs.get_own_node()
+        opt_new_node = self.ipfs.get_own_node()
         out_state = replace(
             in_state,
-            ipfs_node = SomeIpfsNode(new_node),
+            ipfs_node = opt_new_node,
             new_records = [],
             seq = in_state.seq + 1,
         )
 
         LOG.debug('out_state: %s' % pformat(out_state))
 
-        tx_msgs.append(f'{ch_str} set ipfs node to {new_node}')
+        tx_msgs.append(f'{ch_str} set ipfs node to {opt_new_node}')
 
         # Re-wrap in original ChannelState type.
         out_datum = replace(in_datum, state=out_state)

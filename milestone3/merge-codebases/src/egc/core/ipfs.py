@@ -444,10 +444,15 @@ class IPFSService:
         return id_plutus
 
     # TODO better name
-    def get_own_node(self) -> IpfsNode:
-        peer_id = self.get_own_peer_id()
-        # TODO implement addr_hints
-        return IpfsNode(peer_id=peer_id, addr_hints=[])
+    # TODO is there ever really a NoIpfsNode case here? Maybe don't return option
+    def get_own_node(self) -> OptionIpfsNode:
+        try:
+            peer_id = self.get_own_peer_id()
+            # TODO implement addr_hints
+            return SomeIpfsNode(IpfsNode(peer_id=peer_id, addr_hints=[]))
+        except Exception as e:
+            LOG.error(e)
+            return NoIpfsNode()
 
     async def add_explicit_peer(self, node: IpfsNode):
         peer_id = ipfs_peerid_to_string(node.peer_id)
@@ -479,10 +484,11 @@ class IPFSService:
         self.channel_nodes[channel_id] = opt_new
         if isinstance(opt_new, NoIpfsNode):
             return
+        id_str = ipfs_peerid_to_string(opt_new.value.peer_id)
         if opt_new.value.peer_id == self.get_own_peer_id():
-            id_str = ipfs_peerid_to_string(opt_new.value.peer_id)
             LOG.debug(f'skip peering with own node: {id_str}')
         else:
+            LOG.debug(f'peering with {id_str}')
             self._run_sync(
                 self.add_explicit_peer(opt_new.value)
             )
