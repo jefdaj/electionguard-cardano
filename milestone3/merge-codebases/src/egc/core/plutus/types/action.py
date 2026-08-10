@@ -45,15 +45,19 @@ class RebalanceFunds(ChannelIdMixin, PlutusData):
 ### Single-channel actions for anyone ###
 
 @dataclass
-class PostPublicRecords(PlutusData):
+class SetIpfsNode(PlutusData):
     CONSTR_ID = 6
+
+@dataclass
+class PostPublicRecords(PlutusData):
+    CONSTR_ID = 7
 
 
 ### Actions to remove for production use ###
 
 @dataclass
 class BurnTestTokens(PlutusData):
-    CONSTR_ID = 7
+    CONSTR_ID = 8
 
 
 ElectionAction = Union[
@@ -63,6 +67,7 @@ ElectionAction = Union[
   EndElection,
   RmSubChannels,
   RebalanceFunds,
+  SetIpfsNode,
   PostPublicRecords,
   BurnTestTokens,
 ]

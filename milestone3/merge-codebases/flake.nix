@@ -142,7 +142,7 @@
 
         plutusBlueprints = pkgs.stdenv.mkDerivation {
           pname = "egc-plutus-blueprints";
-          version = "0.5.1"; # should match aiken.toml
+          version = "0.6.0"; # should match aiken.toml
           src = ./onchain;
 
           nativeBuildInputs = (devPkgList pkgs) ++ [
