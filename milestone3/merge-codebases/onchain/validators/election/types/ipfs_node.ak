@@ -22,18 +22,22 @@ pub type IpfsNode {
 // Keeping this structural rather than fully parsing the varint length.
 pub fn validate_peer_id(peer_id: IpfsPeerId) -> Bool {
   trace @"validate_peer_id"
-  let length      = builtin.length_of_bytearray(peer_id)
-  let hash_code   = builtin.index_bytearray(peer_id, 0)
-  let digest_len  = builtin.index_bytearray(peer_id, 1)
+  let length = builtin.length_of_bytearray(peer_id)
 
-  and {
-    // total length must match the declared digest length + 2 header bytes
-    length == digest_len + 2,
-    // accept the two codes we expect to see
-    or {
-      hash_code == 0x00, // identity (Ed25519 public key inlined)
-      hash_code == 0x12, // sha2-256
-    },
+  // guard so short inputs return False instead of crashing on index_bytearray
+  if length < 2 {
+    False
+  } else {
+    let hash_code  = builtin.index_bytearray(peer_id, 0)
+    let digest_len = builtin.index_bytearray(peer_id, 1)
+
+    and {
+      length == digest_len + 2,
+      or {
+        hash_code == 0x00, // identity (Ed25519 public key inlined)
+        hash_code == 0x12, // sha2-256
+      },
+    }
   }
 }
 
