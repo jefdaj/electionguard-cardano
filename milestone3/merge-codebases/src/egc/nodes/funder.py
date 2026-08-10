@@ -233,7 +233,7 @@ class FunderNode(ObserverNode):
         LOG.info(f'{self.channel_str()} deployed contract')
 
         if context_backup_json is not None:
-            election_ctx.to_json(context_backup_json)
+            election_ctx.to_file(context_backup_json)
             LOG.info(f'{self.channel_str()} saved contract details to {context_backup_json}')
 
         election_cfg = ElectionConfig.from_election_context(election_ctx)

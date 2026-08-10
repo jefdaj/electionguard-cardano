@@ -181,6 +181,9 @@ def election_events(event: ChannelEvent) -> list[ElectionEvent]:
             phase = event.output_state.state.phase
             e = election_event(ti, sn, s, 'advance phase', f'advanced to {phase}')
             es.append(e)
+        case SetIpfsNode():
+            opt_ipfs_node = event.output_state.state.ipfs_node
+            e = election_event(ti, sn, s, 'set ipfs node', f'set ipfs node to {opt_ipfs_node}')
         case PostPublicRecords():
             pass # covered above
         case AddSubChannels(channels=cs):
@@ -201,7 +204,7 @@ def election_events(event: ChannelEvent) -> list[ElectionEvent]:
             e = election_event(ti, sn, 'someone', 'burn test tokens', 'ended election by burning test tokens')
             es.append(e)
         case _:
-            raise NotImplemented
+            raise NotImplementedError
 
     # TODO where are these duplicates sneaking in?
     seen = set()
@@ -1490,6 +1493,7 @@ class ElectionSubscriber:
             case EndElection():              return self._on_endelection(event)
             case RmSubChannels(channels=_):  return self._on_rmsubchannels(event)
             case RebalanceFunds(channels=_): return self._on_rebalancefunds(event)
+            case SetIpfsNode():              return self._on_setipfsnode(event)
             case PostPublicRecords():        return self._on_postpublicrecords(event)
             case BurnTestTokens():           return self._on_burntesttokens(event)
             case _:                          raise NotImplementedError
@@ -1552,6 +1556,12 @@ class ElectionSubscriber:
         self._on_cont(event)
         return event
 
+
+    def _on_setipfsnode(self, event: ChannelEvent):
+        log_call()
+        # TODO anything in particular to do here?
+        self._on_cont(event)
+        return event
 
     def _on_postpublicrecords(self, event: ChannelEvent):
         log_call()

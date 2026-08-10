@@ -21,4 +21,6 @@ CH_STR=$(egc channel await --role admin)
 # post ipfs contact info
 egc ipfs show | jq
 egc ipfs post
+sleep 5
+egc ipfs show | jq
 {% endblock %}

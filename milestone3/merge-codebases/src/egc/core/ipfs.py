@@ -184,7 +184,7 @@ class IPFSService:
         self.records_fetched_dir = records_fetched_dir
 
         # These are set by the node's on_channel_event handler.
-        self.channel_nodes: dict[ChannelId, IpfsNode] = {}
+        self.channel_nodes: dict[ChannelId, OptionIpfsNode] = {}
 
         self.maddr = maddr
         self.fresh_workers = fresh_workers
@@ -449,8 +449,8 @@ class IPFSService:
         # TODO implement addr_hints
         return IpfsNode(peer_id=peer_id, addr_hints=[])
 
-    async def add_explicit_peer(self, ipfs_node: IpfsNode):
-        peer_id = ipfs_peerid_to_string(ipfs_node.peer_id)
+    async def add_explicit_peer(self, node: IpfsNode):
+        peer_id = ipfs_peerid_to_string(node.peer_id)
         LOG.debug(f'peer_id: {peer_id}')
         hint_addrs = [] # TODO implement these
         # Build a multiaddr that includes the /p2p/<id> component.
@@ -467,20 +467,22 @@ class IPFSService:
 
     # TODO async?
     # TODO any need for a lock?
-    def set_channel_node(self, channel_id: ChannelId, ipfs_node: IpfsNode):
-        prev_node = (
+    def set_channel_node(self, channel_id: ChannelId, opt_new: OptionIpfsNode):
+        opt_prev = (
             self.channel_nodes[channel_id]
             if channel_id in self.channel_nodes
             else None
         )
-        if prev_node == ipfs_node:
+        if opt_prev == opt_new:
             return
-        LOG.info(f'update {channel_id} channel node: {prev_node} -> {ipfs_node}')
-        self.channel_nodes[channel_id] = ipfs_node
-        if ipfs_node.peer_id == self.get_own_peer_id():
-            id_str = ipfs_peerid_to_string(ipfs_node.peer_id)
+        LOG.info(f'update {channel_id} channel node: {opt_prev} -> {opt_new}')
+        self.channel_nodes[channel_id] = opt_new
+        if isinstance(opt_new, NoIpfsNode):
+            return
+        if opt_new.value.peer_id == self.get_own_peer_id():
+            id_str = ipfs_peerid_to_string(opt_new.value.peer_id)
             LOG.debug(f'skip peering with own node: {id_str}')
         else:
             self._run_sync(
-                self.add_explicit_peer(ipfs_node)
+                self.add_explicit_peer(opt_new.value)
             )

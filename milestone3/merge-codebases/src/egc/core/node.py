@@ -31,18 +31,21 @@ def make_event_handler(ipfs: IPFSService, own_ch_id: Optional[ChannelId]):
 
         # Maintains a map of channel id -> (peerid, maddrs) for use as
         # bootstrapping peers.
-        ipfs_node = event.output_state.state.ipfs_node
-        if isinstance(ipfs_node, SomeIpfsNode):
-            ipfs.set_channel_node(event.channel_id, ipfs_node)
-        else:
-            assert isinstance(ipfs_node, NoIpfsNode)
+        try:
+            opt_ipfs_node = event.output_state.state.ipfs_node
+            ipfs.set_channel_node(event.channel_id, opt_ipfs_node)
+        except Exception as e:
+            LOG.error(e)
 
         # Queues new records to be fetched, with retry logic.
-        ch_str = channel_id_to_string(event.channel_id)
-        new_records = event.output_state.state.new_records
-        for r in new_records:
-            LOG.info(f'{ch_str} posted {r.metadata}')
-            ipfs.fetch_record_soon(r)
+        try:
+            ch_str = channel_id_to_string(event.channel_id)
+            new_records = event.output_state.state.new_records
+            for r in new_records:
+                LOG.info(f'{ch_str} posted {r.metadata}')
+                ipfs.fetch_record_soon(r)
+        except Exception as e:
+            LOG.error(e)
 
     return on_channel_event
 
@@ -325,8 +328,8 @@ class ElectionNode:
         # in_datum should be one of the ChannelState wrapper types:
         # AdminChannel or SubChannel. Whichever type it is will be re-used
         # throughout.
-        assert isinstance(in_datum, ChannelState)
         LOG.debug('in_datum: %s' % pformat(in_datum))
+        assert isinstance(in_datum, ChannelState)
 
         # Same goes with the inner state type: re-use to match original type.
         in_state = in_datum.state
@@ -346,8 +349,7 @@ class ElectionNode:
 
         LOG.debug('out_state: %s' % pformat(out_state))
 
-        for record in new_records:
-            tx_msgs.append(f'{ch_str} set ipfs node to {new_node}')
+        tx_msgs.append(f'{ch_str} set ipfs node to {new_node}')
 
         # Re-wrap in original ChannelState type.
         out_datum = replace(in_datum, state=out_state)

@@ -337,9 +337,12 @@ class ElectionContext:
             script         = ElectionScript.from_dict(data["script"]),
         )
 
-    def to_json(self, path: str | Path) -> None:
+    def to_json(self) -> str:
+        return json.dumps(self.to_dict(), indent=2)
+
+    def to_file(self, path: str | Path) -> None:
         LOG.debug('ElectionContext.to_json')
-        Path(path).write_text(json.dumps(self.to_dict(), indent=2))
+        Path(path).write_text(self.to_json())
         LOG.debug(f'saved ElectionContext to {path}')
 
     @classmethod
