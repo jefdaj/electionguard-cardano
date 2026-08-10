@@ -10,8 +10,8 @@ LOG = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/ipfs") # TODO /ipfs_nodes?
 
-def show_node(ipfs_node: IpfsNode) -> schemas.IpfsNodeOut:
-    LOG.debug(f'show_node {ipfs_node}')
+def node_out(ipfs_node: IpfsNode) -> schemas.IpfsNodeOut:
+    LOG.debug(f'node_out {ipfs_node}')
     return schemas.IpfsNodeOut(
         peer_id = ipfs_peerid_to_string(ipfs_node.peer_id),
         addr_hints = [
@@ -23,14 +23,21 @@ def show_node(ipfs_node: IpfsNode) -> schemas.IpfsNodeOut:
 @router.get("")
 async def ipfs_show(state=Depends(get_state)):
     LOG.debug('ipfs_show')
-    if getattr(state, 'node', None) is None:
-        nodes = []
-    else:
-        nodes = {
-            channel_id_to_string(ch_id) : show_node(n)
-            for (ch_id, n) in state.node.ipfs.channel_nodes.items()
-        }
-    return schemas.IpfsNodesOut(channel_nodes = nodes)
+    # TODO raise error if can't get own id
+    # if getattr(state, 'node', None) is None:
+    #     ch_nodes = []
+    # else:
+    own_node = state.node.ipfs.get_own_node()
+    LOG.debug(f'own_node: {own_node}')
+    ch_nodes = {
+        channel_id_to_string(ch_id) : node_out(n)
+        for (ch_id, n) in state.node.ipfs.channel_nodes.items()
+    }
+    LOG.debug(f'ch_nodes: {ch_nodes}')
+    return schemas.IpfsNodesOut(
+        own_node      = node_out(own_node),
+        channel_nodes = ch_nodes,
+    )
 
 @router.put("")
 async def ipfs_post(state=Depends(get_state)):

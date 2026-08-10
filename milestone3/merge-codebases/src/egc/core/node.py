@@ -334,8 +334,9 @@ class ElectionNode:
 
         # TODO this is the first unique part
         # TODO implement addr_hints
-        peer_id: IpfsPeerId = self.ipfs.get_peer_id()
-        new_node = IpfsNode(peer_id = peer_id, addr_hints = [])
+        # peer_id: IpfsPeerId = self.ipfs.get_own_peer_id()
+        # new_node = IpfsNode(peer_id = peer_id, addr_hints = [])
+        new_node = self.ipfs.get_own_node()
         out_state = replace(
             in_state,
             ipfs_node = SomeIpfsNode(new_node),
