@@ -20,6 +20,7 @@ const add_action = ea.AddSubChannels { channels: [subchannel_id] }
 
 const admin_pre_add_state = AdminChannelState {
   admin: mock.admin_vkh,
+  ipfs_node: None,
   subchannels: [],
   new_records: [],
   phase: ep.ElectionConfigPhase(ep.ConfigOnboardingPhase),
@@ -57,6 +58,7 @@ const admin_post_add_output = Output {
 const sub_post_add_state = SubChannelState {
   channel_id: subchannel_id,
   publisher: mock.vkh(subchannel_id),
+  ipfs_node: None,
   new_records: [],
   seq: 0,
 }
@@ -95,6 +97,7 @@ const rm_action = ea.RmSubChannels { channels: [subchannel_id] }
 
 const admin_pre_rm_state = AdminChannelState {
   admin: mock.admin_vkh,
+  ipfs_node: None,
   subchannels: [subchannel_id],
   new_records: [],
   phase: ep.ElectionFinalizePhase,
@@ -183,6 +186,7 @@ const sub_post_add_states_multi =
       SubChannelState {
         channel_id: sub_id,
         publisher: mock.vkh(subchannel_id),
+        ipfs_node: None,
         new_records: [],
         seq: 0,
       }
@@ -249,6 +253,7 @@ pub fn sub_pre_rm_inputs_multi() -> List<Input> {
 
 const admin_pre_rm_state_multi = AdminChannelState {
   admin: mock.admin_vkh,
+  ipfs_node: None,
   subchannels: subchannel_ids,
   new_records: [],
   phase: ep.ElectionFinalizePhase,

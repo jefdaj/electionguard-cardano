@@ -36,6 +36,7 @@ fn tx0() -> Transaction {
 fn state0() -> AdminChannelState {
   AdminChannelState {
     admin: mock.admin_vkh,
+    ipfs_node: None,
     subchannels: [],
     new_records: [],
     phase: ep.ElectionConfigPhase(ep.ConfigAnnouncePhase),

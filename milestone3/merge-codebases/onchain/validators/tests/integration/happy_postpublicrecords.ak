@@ -20,6 +20,7 @@ pub const manifest = er.PublicRecord {
 
 pub const admin_state0 =  AdminChannelState {
   admin: mock.admin_vkh,
+  ipfs_node: None,
   subchannels: [],
   new_records: [],
   phase: ep.ElectionConfigPhase(ep.ConfigAnnouncePhase),
@@ -44,6 +45,7 @@ pub const admin_input = Input {
 pub fn admin_state1() -> AdminChannelState {
   AdminChannelState {
     admin: mock.admin_vkh,
+    ipfs_node: None,
     subchannels: [],
     new_records: [manifest, manifest, manifest], // duplicates, but doesn't matter here
     phase: ep.ElectionConfigPhase(ep.ConfigAnnouncePhase),
@@ -80,6 +82,7 @@ pub const subchannel_id = string.to_bytearray(@"guardian1")
 pub const sub_state0 =  SubChannelState {
   channel_id: subchannel_id,
   publisher: mock.vkh(subchannel_id),
+  ipfs_node: None,
   new_records: [],
   seq: 0
 }
@@ -103,6 +106,7 @@ pub fn sub_state1() -> SubChannelState {
   SubChannelState {
     channel_id: subchannel_id,
     publisher: mock.vkh(subchannel_id),
+    ipfs_node: None,
     new_records: [manifest], // wrong record type, but doesn't matter here
     seq: sub_state0.seq + 1,
   }

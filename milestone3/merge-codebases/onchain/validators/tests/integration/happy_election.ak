@@ -68,6 +68,7 @@ fn happy_admin_post(
 
 const admin_s0 = AdminChannelState {
   admin: mock.admin_vkh,
+  ipfs_node: None,
   subchannels: [],
   new_records: [],
   phase: ep.ElectionConfigPhase(ep.ConfigAnnouncePhase),
@@ -93,6 +94,7 @@ pub fn test_admin_tx0() {
 // post 2 records and advance
 const admin_s1 = AdminChannelState {
   admin: mock.admin_vkh,
+  ipfs_node: None,
   subchannels: [],
   new_records: [
     sr.manifest,
@@ -126,6 +128,7 @@ const admin_act2 = ea.AddSubChannels { channels: subchannel_ids }
 // add subchannels, advance phase
 const admin_s2 = AdminChannelState {
   admin: mock.admin_vkh,
+  ipfs_node: None,
   new_records: [],
   subchannels: subchannel_ids,
   phase: ep.ElectionConfigPhase(ep.ConfigCeremonyPhase),
@@ -138,6 +141,7 @@ fn sub_s0(subchannel_id: ChannelId) -> SubChannelState {
   SubChannelState {
     channel_id: subchannel_id,
     publisher: mock.vkh(subchannel_id),
+    ipfs_node: None,
     new_records: [],
     seq: 0,
   }
@@ -776,6 +780,7 @@ pub fn test_guardian3_tx5() {
 const device1_s1 = SubChannelState {
   channel_id: d1,
   publisher: mock.vkh(d1),
+  ipfs_node: None,
   new_records: [
     sr.device1,
   ],
@@ -798,6 +803,7 @@ pub fn test_device1_tx1() {
 const device1_s2 = SubChannelState {
   channel_id: d1,
   publisher: mock.vkh(d1),
+  ipfs_node: None,
   new_records: [
     sr.ballot_submitted_476d9db6,
     sr.ballot_submitted_480eed2e,
@@ -835,6 +841,7 @@ pub fn test_device1_tx2() {
 const device1_s3 = SubChannelState {
   channel_id: d1,
   publisher: mock.vkh(d1),
+  ipfs_node: None,
   new_records: [
     sr.ballot_spoiled_476d9db6,
     sr.ballot_spoiled_480eed2e,
@@ -875,6 +882,7 @@ pub fn test_device1_tx3() {
 const verifier1_s1 = SubChannelState {
   channel_id: v1,
   publisher: mock.vkh(v1),
+  ipfs_node: None,
   new_records: [
     sr.verifier1_summary,
   ],
