@@ -12,10 +12,13 @@ from egc import *
 def ipfs() -> None:
     "Show and post explicit IPFS peers."
 
+# TODO resolve: are you showing your own node, the list of subscribed ones, or both?
+
 @ipfs.command()
 def show():
     """Print your current IPFS channel nodes (explicit peers mentioned in the
-    election state) as JSON. Use jq to access fields if needed.
+    election state) as JSON, as well as your own node info. Use jq to access
+    fields if needed.
     """
     cfg = asyncio.run(Client().ipfs_show())
     click.echo(json.dumps(cfg))

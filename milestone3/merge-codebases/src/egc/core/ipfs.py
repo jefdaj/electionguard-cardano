@@ -435,6 +435,14 @@ class IPFSService:
                 except OSError:
                     pass
 
+    def get_peer_id(self) -> IpfsPeerId:
+        LOG.debug('get_peer_id')
+        id_str = self.call_sync(await self.ipfs._client.id())
+        LOG.debug(f'id_str: {id_str}')
+        id_plutus = coerce_ipfs_peerid(id_str)
+        LOG.debug(f'id_plutus: {id_plutus}')
+        return id_plutus
+
     async def add_explicit_peer(self, ipfs_node: IpfsNode):
         peer_id = ipfs_peerid_to_string(ipfs_node.peer_id)
         LOG.debug(f'peer_id: {peer_id}')
@@ -461,8 +469,12 @@ class IPFSService:
         )
         if prev_node == ipfs_node:
             return
-        LOG.debug(f'update {channel_id} channel node: {prev_node} -> {ipfs_node}')
+        LOG.info(f'update {channel_id} channel node: {prev_node} -> {ipfs_node}')
         self.channel_nodes[channel_id] = ipfs_node
-        self._run_sync(
-            self.add_explicit_peer(ipfs_node)
-        )
+        if ipfs_node.peer_id == self.get_peer_id():
+            id_str = ipfs_peerid_to_string(ipfs_node.peer_id)
+            LOG.debug(f'skip peering with own node: {id_str}')
+        else:
+            self._run_sync(
+                self.add_explicit_peer(ipfs_node)
+            )

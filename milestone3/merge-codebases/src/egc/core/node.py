@@ -305,6 +305,98 @@ class ElectionNode:
 
     ### contract operations ###
 
+    # TODO factor out the common parts of set_ipfs_node and post_public_records
+
+    # TODO is the name not clear enough about this posting on chain?
+    def set_ipfs_node(self):
+
+        LOG.debug('ElectionNode.set_ipfs_node')
+
+        ch_str = self.channel_str()
+
+        tx_msgs = []
+
+        pub_col_utxo = self.publisher.await_collateral()
+        LOG.debug('pub_col_utxo: %s' % pformat(pub_col_utxo))
+
+        in_utxo  = self.current_utxo()
+        in_datum = self.current_state()
+
+        # in_datum should be one of the ChannelState wrapper types:
+        # AdminChannel or SubChannel. Whichever type it is will be re-used
+        # throughout.
+        assert isinstance(in_datum, ChannelState)
+        LOG.debug('in_datum: %s' % pformat(in_datum))
+
+        # Same goes with the inner state type: re-use to match original type.
+        in_state = in_datum.state
+        LOG.debug('in_state: %s' % pformat(in_state))
+
+        # TODO this is the first unique part
+        # TODO implement addr_hints
+        peer_id: IpfsPeerId = self.ipfs.get_peer_id()
+        new_node = IpfsNode(peer_id = peer_id, addr_hints = [])
+        out_state = replace(
+            in_state,
+            ipfs_node = SomeIpfsNode(new_node),
+            new_records = [],
+            seq = in_state.seq + 1,
+        )
+
+        LOG.debug('out_state: %s' % pformat(out_state))
+
+        for record in new_records:
+            tx_msgs.append(f'{ch_str} set ipfs node to {new_node}')
+
+        # Re-wrap in original ChannelState type.
+        out_datum = replace(in_datum, state=out_state)
+        assert isinstance(out_datum, ChannelState)
+        LOG.debug('out_datum: %s' % pformat(out_datum))
+
+        # The continuation UTXO will have its ADA value auto-adjusted to make the
+        # TX balance, but needs the other assets to be correct already. So we
+        # start with a copy of the in_utxo Value with the STT. The original
+        # is left alone (not mutated) so we don't mess up PyCardano calculations.
+        cont_value = Value.from_primitive(in_utxo.output.amount.to_primitive()) # deep copy
+        cont_addr = Address(self.election.script.policy_id, network=Network.TESTNET) # TODO dynamic network
+        cont_utxo = TransactionOutput(
+            address = cont_addr,
+            amount  = cont_value,
+            datum   = out_datum,
+        )
+
+        # The continuation redeemer will have its ex_units set to make the TX
+        # balance, so it's important not to set them here.
+        # TODO and this is the second unique part
+        cont_redeemer = Redeemer(data=SetIpfsNode())
+
+        # TX building is pretty standard other than the cont_* parts above.
+        txb = (
+            TransactionBuilder(OGMIOS_CTX)
+            .add_script_input(
+                in_utxo,
+                script=self.election.script.spend_script,
+                redeemer=cont_redeemer
+            )
+            .add_output(cont_utxo)
+        )
+        txb.collaterals.append(pub_col_utxo)
+        txb.required_signers = [self.publisher.wallet.vkh]
+
+        # Fancy stuff here.
+        tx_signed = self.balance_and_sign_state_transition_tx(
+            txb,
+            cont_utxo,
+        )
+
+        self.publisher.submit_tx(tx_signed)
+
+        for msg in tx_msgs:
+            LOG.info(msg)
+
+        return tx_signed
+
+
     # TODO underscore this in favor of batch_post
     def post_public_records(
             self,

@@ -24,7 +24,7 @@ def show_node(ipfs_node: IpfsNode) -> schemas.IpfsNodeOut:
 async def ipfs_show(state=Depends(get_state)):
     LOG.debug('ipfs_show')
     if getattr(state, 'node', None) is None:
-        nodes = schemas.IpfsNodesOut(channel_nodes=[])
+        nodes = []
     else:
         nodes = {
             channel_id_to_string(ch_id) : show_node(n)
@@ -35,5 +35,6 @@ async def ipfs_show(state=Depends(get_state)):
 @router.put("")
 async def ipfs_post(state=Depends(get_state)):
     LOG.debug('ipfs_post')
-    raise NotImplementedError
+    tx = state.node.set_ipfs_node()
+    state.node.await_tx_confirmed(tx)
     return Response(status_code=201)
