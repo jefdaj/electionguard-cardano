@@ -370,7 +370,7 @@ class IPFSService:
     async def wait_until_stable(
         self,
         timeout=300,
-        min_peers=10,
+        min_peers=3, # TODO why does setting this higher delay stability?
         rate_threshold=50_000, # bytes/sec (RateIn + RateOut)
         required_stable_polls=3,
         interval=5,
