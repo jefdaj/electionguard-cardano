@@ -14,11 +14,11 @@ use tests/mock
 // add single subchannel
 // ===============================
 
-const subchannel_id = string.to_bytearray(@"guardian1")
+pub const subchannel_id = string.to_bytearray(@"guardian1")
 
 const add_action = ea.AddSubChannels { channels: [subchannel_id] }
 
-const admin_pre_add_state = AdminChannelState {
+pub const admin_pre_add_state = AdminChannelState {
   admin: mock.admin_vkh,
   ipfs_node: None,
   subchannels: [],
@@ -42,7 +42,7 @@ pub const admin_pre_add_input = Input {
   output: admin_pre_add_output,
 }
 
-const admin_post_add_state = AdminChannelState {
+pub const admin_post_add_state = AdminChannelState {
   ..admin_pre_add_state,
   subchannels: [subchannel_id],
   seq: admin_pre_add_state.seq + 1
@@ -55,7 +55,7 @@ const admin_post_add_output = Output {
   reference_script: None,
 }
 
-const sub_post_add_state = SubChannelState {
+pub const sub_post_add_state = SubChannelState {
   channel_id: subchannel_id,
   publisher: mock.vkh(subchannel_id),
   ipfs_node: None,

@@ -61,25 +61,27 @@ test multiaddr_too_long() {
 
 // ---- validate_ipfs_node ----
 
-test publisher_valid_no_hints() {
-  let p =
-    IpfsNode {
-      peer_id: #"1220bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-      addr_hints: [],
-    }
-  validate_ipfs_node(p)
+pub const ipfs_node_valid_no_hints =
+  IpfsNode {
+    peer_id: #"1220bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    addr_hints: [],
+  }
+
+test test_ipfs_node_valid_no_hints() {
+  validate_ipfs_node(ipfs_node_valid_no_hints)
 }
 
-test publisher_valid_with_hints() {
-  let p =
-    IpfsNode {
-      peer_id: #"1220bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-      addr_hints: [#"0401020304060fa1", #"04ac1100010600fb"],
-    }
-  validate_ipfs_node(p)
+pub const ipfs_node_valid_with_hints =
+  IpfsNode {
+    peer_id: #"1220bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    addr_hints: [#"0401020304060fa1", #"04ac1100010600fb"],
+  }
+
+test test_ipfs_node_valid_with_hints() {
+  validate_ipfs_node(ipfs_node_valid_with_hints)
 }
 
-test publisher_bad_peer_id() {
+test ipfs_node_bad_peer_id() {
   let p =
     IpfsNode {
       peer_id: #"0120bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
@@ -88,7 +90,7 @@ test publisher_bad_peer_id() {
   validate_ipfs_node(p) == False
 }
 
-test publisher_bad_hint() {
+test ipfs_node_bad_hint() {
   let p =
     IpfsNode {
       peer_id: #"1220bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
@@ -97,7 +99,7 @@ test publisher_bad_hint() {
   validate_ipfs_node(p) == False
 }
 
-test publisher_too_many_hints() {
+test ipfs_node_too_many_hints() {
   let hint = #"0401020304060fa1"
   let p =
     IpfsNode {
