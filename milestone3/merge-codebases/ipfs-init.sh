@@ -32,9 +32,9 @@ ipfs config --json Swarm.RelayClient.Enabled true      # keep so YOU stay reacha
 # ipfs config AutoNAT.ServiceMode disabled
 ipfs config AutoNAT.ServiceMode enabled # TODO does this help?
 
-# Local mDNS off (irrelevant over internet, saves noise)
-# ipfs config --json Discovery.MDNS.Enabled false
-ipfs config --json Discovery.MDNS.Enabled true # TODO does this help?
+# Local mDNS is the main way to find peers on a LAN,
+# which is probably going to be important in many election scenarios.
+ipfs config --json Discovery.MDNS.Enabled true
 
 # Cap resource-manager scaling explicitly. The RM auto-scales to your RAM, which on a big host = huge limits. Pin them:
 # (Claude recommended 512)

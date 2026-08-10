@@ -18,44 +18,33 @@ LOG = logging.getLogger(__name__)
 
 
 # TODO should this operate on ElectionEvents? channel seems better so far
-# TODO async?
 # TODO handle state changes on rollbacks
-# def make_fetch_fn(fetched_dir: Path, to_post_dir: Path, own_ch_id: Optional[ChannelId]):
-def make_fetch_fn(ipfs: IPFSService, own_ch_id: Optional[ChannelId]):
-    LOG.info('make_fetch_fn')
-    def fetch_new_records(event: ChannelEvent):
-        LOG.info('fetch_new_records')
+def make_event_handler(ipfs: IPFSService, own_ch_id: Optional[ChannelId]):
+    LOG.info('make_event_handler')
+
+    def on_channel_event(event: ChannelEvent):
+        LOG.info('on_channel_event')
         LOG.info('\n' + pformat(event) + '\n')
+
         if getattr(event, 'output_state', None) is None:
             return
-        # ch_str = channel_id_to_string(event.channel_id)
+
+        # Maintains a map of channel id -> (peerid, maddrs) for use as
+        # bootstrapping peers.
+        ipfs_node = event.output_state.state.ipfs_node
+        if isinstance(ipfs_node, SomeIpfsNode):
+            ipfs.set_channel_node(event.channel_id, ipfs_node)
+        else:
+            assert isinstance(ipfs_node, NoIpfsNode)
+
+        # Queues new records to be fetched, with retry logic.
+        ch_str = channel_id_to_string(event.channel_id)
         new_records = event.output_state.state.new_records
         for r in new_records:
-            LOG.info(f'{event.channel_id} posted {r.metadata}')
+            LOG.info(f'{ch_str} posted {r.metadata}')
             ipfs.fetch_record_soon(r)
 
-        # TODO all this goes in IPFSService now?
-
-        # fetch new records
-        # TODO any need for long term retry logic here?
-        # fetched_paths = ipfs_fetch_records_to_file_sync(new_records, fetched_dir)
-        # for (i, p) in enumerate(fetched_paths):
-        #     LOG.info(f'fetched {new_records[i].metadata} -> {p}')
-        # assert len(new_records) == len(fetched_paths)
-
-        # rm records to post
-        # if own_ch_id != event.channel_id:
-        #     LOG.info('we did not post these records')
-        #     return
-        # LOG.info(f'we posted these records; removing the to_post versions')
-        # for fetched_path in fetched_paths:
-        #     rel_path = fetched_path.relative_to(fetched_dir)
-        #     to_post_path = to_post_dir / rel_path
-        #     if to_post_path.exists():
-        #         LOG.info(f'rm {to_post_path}')
-        #         to_post_path.unlink(missing_ok=False)
-
-    return fetch_new_records
+    return on_channel_event
 
 
 class ElectionNode:
@@ -138,7 +127,7 @@ class ElectionNode:
         self.election_cfg = election_cfg
         self.election = ElectionContext.from_config(election_cfg)
 
-        fetch_fn = make_fetch_fn(
+        handler = make_event_handler(
             # self.records_fetched_dir,
             # self.records_to_post_dir,
             self.ipfs,
@@ -149,7 +138,7 @@ class ElectionNode:
             election = self.election,
             on_event = on_event,
             on_error = on_error,
-            on_channel_event = fetch_fn,
+            on_channel_event = handler,
         )
         # TODO set self.script here
         self.subscriber.start()

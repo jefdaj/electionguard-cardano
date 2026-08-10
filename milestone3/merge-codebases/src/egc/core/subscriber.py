@@ -603,7 +603,7 @@ class ElectionSubscriber:
                 states[ch_id] = self.current_state(ch_id)
             return states
 
-
+    
     def current_phase(self) -> EgcPhase:
         log_call()
         with self._history_lock:

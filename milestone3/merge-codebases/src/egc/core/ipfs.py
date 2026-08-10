@@ -183,6 +183,9 @@ class IPFSService:
         self.records_to_post_dir = records_to_post_dir
         self.records_fetched_dir = records_fetched_dir
 
+        # These are set by the node's on_channel_event handler.
+        self.channel_nodes: dict[ChannelId, IpfsNode] = {}
+
         self.maddr = maddr
         self.fresh_workers = fresh_workers
         self.fresh_timeout = fresh_timeout
@@ -431,3 +434,35 @@ class IPFSService:
                     os.remove(tmp_path)
                 except OSError:
                     pass
+
+    async def add_explicit_peer(self, ipfs_node: IpfsNode):
+        peer_id = ipfs_peerid_to_string(ipfs_node.peer_id)
+        LOG.debug(f'peer_id: {peer_id}')
+        hint_addrs = [] # TODO implement these
+        # Build a multiaddr that includes the /p2p/<id> component.
+        # TODO do this for each hint, right?
+        if hint_addrs:
+            addr = hint_addrs[0]
+            maddr = addr if "/p2p/" in addr else f"{addr}/p2p/{peer_id}"
+        else:
+            maddr = f"/p2p/{peer_id}"
+
+        LOG.debug(f'maddr: {maddr}')
+        await self.ipfs._client.swarm.peering.add(maddr)
+        LOG.info(f'added explicit peer {maddr}')
+
+    # TODO async?
+    # TODO any need for a lock?
+    def set_channel_node(self, channel_id: ChannelId, ipfs_node: IpfsNode):
+        prev_node = (
+            self.channel_nodes[channel_id]
+            if channel_id in self.channel_nodes
+            else None
+        )
+        if prev_node == ipfs_node:
+            return
+        LOG.debug(f'update {channel_id} channel node: {prev_node} -> {ipfs_node}')
+        self.channel_nodes[channel_id] = ipfs_node
+        self._run_sync(
+            self.add_explicit_peer(ipfs_node)
+        )
