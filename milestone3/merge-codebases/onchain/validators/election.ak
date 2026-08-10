@@ -396,6 +396,7 @@ pub fn validate_setipfsnode_spend(
   own_ref: OutputReference,
   tx: Transaction,
 ) -> Bool {
+  trace @"validate_setipfsnode_spend"
 
   let cont_state = get_continuation_state(state, own_ref, tx)
   let new_node = when cont_state is {
@@ -420,6 +421,7 @@ pub fn validate_postpublicrecords_spend(
   own_ref: OutputReference,
   tx: Transaction,
 ) -> Bool {
+  trace @"validate_postpublicrecords_spend"
 
   // The only "anyone, single channel" redeemer so far
   // expect PostPublicRecords = redeemer
