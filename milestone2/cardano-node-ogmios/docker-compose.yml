@@ -10,8 +10,6 @@ services:
     ]
     volumes:
       - ./config/network/${NETWORK:-preview}/cardano-node:/config
-      # TODO is this needed?
-      # - ./config/network/${NETWORK:-preview}/genesis:/genesis
       - ./data/node-db:/data
       - ./data/node-ipc:/ipc
     restart: on-failure
@@ -40,6 +38,45 @@ services:
       - ${OGMIOS_PORT:-1337}:1337
     networks:
       - shared-net
+
+  # ---------------------------------------------------------------------------
+  # One-shot Mithril bootstrap. Runs ONLY when the "bootstrap" profile is
+  # active, so `docker compose up` won't touch it. Populates ./data/node-db/db
+  # from a signed Mithril snapshot before the node's first start.
+  #
+  #   NETWORK=preview docker compose --profile bootstrap run --rm mithril
+  #
+  # Notes:
+  #  - ./data/node-db -> /data, and we set --download-dir /data, so the
+  #    snapshot unpacks to /data/db == ./data/node-db/db (what the node uses).
+  #  - Full snapshot (incl. ledger state) => fast node startup.
+  #  - Skips if a DB already exists.
+  # ---------------------------------------------------------------------------
+  mithril:
+    profiles: ["bootstrap"]
+    image: ghcr.io/intersectmbo/mithril-client:main-58b575a
+    user: "${MITHRIL_UID:-0}:${MITHRIL_GID:-0}"
+    environment:
+      NETWORK: ${NETWORK:-preview}
+      AGGREGATOR_ENDPOINT: ${MITHRIL_AGGREGATOR_ENDPOINT:-https://aggregator.pre-release-preview.api.mithril.network/aggregator}
+      GENESIS_VERIFICATION_KEY: ${MITHRIL_GENESIS_VERIFICATION_KEY:?Set MITHRIL_GENESIS_VERIFICATION_KEY (see .env)}
+      MITHRIL_ANCILLARY_VERIFICATION_KEY: ${MITHRIL_ANCILLARY_VERIFICATION_KEY:?Set MITHRIL_ANCILLARY_VERIFICATION_KEY (see .env)}
+    volumes:
+      - ./data/node-db:/data
+    # entrypoint left as the image default (mithril-client)
+    # command: ["cardano-db", "download", "latest", "--download-dir", "/data"]
+    command:
+      - "cardano-db"
+      - "download"
+      - "latest"
+      - "--download-dir"
+      - "/data"
+      - "--include-ancillary"
+      - "--ancillary-verification-key"
+      - "${MITHRIL_ANCILLARY_VERIFICATION_KEY}"
+    networks:
+      - shared-net
+
 
 # allow communication with other docker-compose networks, for example kupo
 # TODO would just using the ipc socket work across networks instead?
