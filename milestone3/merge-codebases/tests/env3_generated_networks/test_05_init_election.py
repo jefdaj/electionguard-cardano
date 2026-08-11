@@ -51,7 +51,7 @@ def test_init_election(cfg: ResolvedTestConfig):
         'deployed contract',
         'saved contract details',
         'Subscribe to this election with',
-        '^egc:election:3:',
+        '^egc:election:4:',
         'Started observer',
     ])
     assert_script_logs_match(cfg, '(?!admin)', [
