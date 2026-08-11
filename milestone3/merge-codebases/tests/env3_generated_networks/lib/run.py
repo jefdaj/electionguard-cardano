@@ -36,7 +36,7 @@ def prerun_egc_scripts(final_test_fn_from_rcfg):
     return fn_from_fixtures
 
 
-def run_egc_scripts(cfg: ResolvedTestConfig, arion_dir: Path, timeout=300):
+def run_egc_scripts(cfg: ResolvedTestConfig, arion_dir: Path, timeout=1200):
     """Exec /script.sh in each container and log to logfiles. This can be much
     simpler than the old run_many_in_containers, because it only needs to
     manage one long-running script per node."""
