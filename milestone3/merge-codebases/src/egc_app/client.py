@@ -111,8 +111,11 @@ class Client:
         out = schemas.ChannelAwaitOut.model_validate(resp.json())
         return out.channel_str
 
-    async def channel_create(self, data: schemas.ChannelRequestOut):
-        # TODO is it weird that the Out version is coming in here? Maybe call it "complete"?
+    async def channel_create(self, reqs: list[schemas.ChannelRequestOut], channel_ada: int):
+        data = schemas.ChannelCreate(
+            requests = reqs,
+            ada_per_channel = channel_ada,
+        )
         resp = await self._c.post('/channel/create', json=data.model_dump())
         resp.raise_for_status()
 

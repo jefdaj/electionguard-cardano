@@ -63,3 +63,8 @@ class ChannelRequestOut(BaseModel):
             str(self.publisher_vkh), # TODO is this right?
         ])
         return qr_str
+
+class ChannelCreate(BaseModel):
+    requests: list[ChannelRequestOut]
+    ada_per_channel: int
+    done_onboarding: bool # if True, advance phase
