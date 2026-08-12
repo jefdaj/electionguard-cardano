@@ -3,23 +3,11 @@ import click
 from egc_app.cli.utils import RoleAwareGroup
 from egc_app import schemas
 from egc_app.client import Client
+from egc_app.cli.utils import *
 
 @click.group(cls=RoleAwareGroup)
 def channel() -> None:
     "Request, add, remove, or await channels."
-
-@click.option('--role', type=click.STRING, required=True)
-@channel.command(roles=['observer'])
-def request(role: str):
-    """Save a subchannel request.
-
-    Subchannel requests are communicated to the admin offchain.
-    This saves your request to JSON or a QR code.
-    """
-    # TODO guard wallet
-    # TODO guard role
-    # TODO guard election? maybe not needed
-    raise NotImplementedError
 
 @channel.command(roles=['admin'])
 def add():
@@ -45,7 +33,7 @@ def await_(role: str):
 
 @channel.command(roles=['observer'])
 @click.option('--role', type=click.STRING, required=True)
-@multi_save_arg("request", ["cam", "png", "txt", "json"])
+@multi_save_arg("request", ["cam", "png", "txt", "json"]) # TODO can it be "request"?
 def request(role: str, request: MultiIOArg):
     """Create a channel request.
 

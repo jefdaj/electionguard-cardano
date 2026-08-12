@@ -1,5 +1,5 @@
 from pydantic import BaseModel, field_validator
-from typing import Annotated, Optional
+from typing import Annotated, Optional, Self
 from egc import is_valid_role, is_valid_channel_str
 
 # TODO move to a util module:
