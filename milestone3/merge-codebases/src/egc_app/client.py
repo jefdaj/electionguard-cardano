@@ -111,6 +111,16 @@ class Client:
         out = schemas.ChannelAwaitOut.model_validate(resp.json())
         return out.channel_str
 
+    async def channel_request(self, role: str) -> schemas.ChannelRequestOut:
+        data = schemas.ChannelRequest(requested_role=role)
+        resp = await self._c.get(
+            '/channel/request',
+            params=data.model_dump(mode='json', exclude_none=True)
+        )
+        resp.raise_for_status()
+        out = schemas.ChannelRequestOut.model_validate(resp.json())
+        return out
+
     async def ceremony(self):
         resp = await self._c.get('/ceremony')
         resp.raise_for_status()

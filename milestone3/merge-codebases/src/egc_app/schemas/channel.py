@@ -23,6 +23,11 @@ class ChannelAwaitOut(BaseModel):
 
 class ChannelRequest(BaseModel):
     requested_role: str
+
+class ChannelRequestOut(BaseModel):
+    "The finished request returned from the server, ready to share."
+
+    requested_role: str
     election_oneshot_hex: str
     election_network_magic: int
     publisher_vkh: VerificationKeyHashType
