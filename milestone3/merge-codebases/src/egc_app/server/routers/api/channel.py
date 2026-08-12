@@ -80,7 +80,7 @@ async def channel_request(
     except:
         raise HTTPException(status_code=409, detail="Subscribe to an election first.")
     data = schemas.ChannelRequestOut(
-        requested_role         = params.role,
+        requested_role         = params.requested_role,
         election_oneshot_hex   = election_cfg.oneshot_hex,
         election_network_magic = str(election_cfg.network_magic),
         publisher_vkh          = state.wallet.vkh,

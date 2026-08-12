@@ -114,7 +114,7 @@ class RoleAwareGroup(cloup.Group):
         # see the correct role before the callback ever runs.
         if parent is None:
             config_path = _peek_arg(args, "--config")
-            role = _peek_arg(args, "--role") or os.environ.get("CLI_ROLE", "any")
+            role = _peek_arg(args, "--cli-role") or os.environ.get("CLI_ROLE", "any")
             kwargs.setdefault("default_map", _build_default_map(config_path, role))
         return super().make_context(info_name, args, parent=parent, **kwargs)
 
