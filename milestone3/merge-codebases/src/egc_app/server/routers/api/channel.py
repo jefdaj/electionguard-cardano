@@ -67,3 +67,23 @@ async def channel_await(params: Annotated[schemas.ChannelAwait, Query()], state=
 
     except (TimeoutError, asyncio.TimeoutError):
         raise HTTPException(status_code=504, detail="Timed out waiting for channel")
+
+@router.get("/request")
+async def channel_request(
+        params: Annotated[schemas.ChannelRequest, Query()],
+        state=Depends(get_state)
+    ):
+    if state.wallet is None:
+        raise HTTPException(status_code=409, detail="Load or create a wallet first.")
+    try:
+        election_cfg = state.node.election_cfg
+    except:
+        raise HTTPException(status_code=409, detail="Subscribe to an election first.")
+    data = schemas.ChannelRequestOut(
+        requested_role         = params.role,
+        election_oneshot_hex   = election_cfg.oneshot_hex,
+        election_network_magic = str(election_cfg.network_magic),
+        publisher_vkh          = state.wallet.vkh,
+    )
+    LOG.debug(f'data: {data}')
+    return data
