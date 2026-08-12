@@ -171,6 +171,14 @@ class ElectionNode:
             return EgcPhase.NOT_INDEXED
         return self.subscriber.current_phase()
 
+    def all_channel_publishers(self):
+        "Used to prevent duplicate requests."
+        pubs = {}
+        for channel_id in self.subscriber.all_channel_ids():
+            vkh = self.subscriber.channel_vkh(channel_id)
+            pubs[vkh] = channel_id
+        return pubs
+
     def await_tx_confirmed(
             self,
             tx: Transaction,

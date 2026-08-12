@@ -87,3 +87,24 @@ async def channel_request(
     )
     LOG.debug(f'data: {data}')
     return data
+
+@router.post("/create")
+async def channel_create(
+        data: schemas.ChannelRequestOut,
+        state = Depends(get_state)
+    ):
+    try:
+        election_cfg = state.node.election_cfg
+    except:
+        raise HTTPException(status_code=409, detail="Subscribe to an election first.")
+    if election_cfg.oneshot_hex != data.election_oneshot_hex:
+        raise HTTPException(status_code=409, detail="Request is for the wrong election.")
+    if election_cfg.network_magic != data.election_network_magic:
+        raise HTTPException(status_code=409, detail="Request is for the wrong Cardano network.")
+    current_publishers = state.node.all_channel_publishers()
+    if data.publisher_vkh in current_publishers:
+        prev_role = current_publishers[vkh]
+        raise HTTPException(
+            status_code = 409,
+            detail = f"Publisher {data.publisher_vkh} is already {prev_role}."
+        )
