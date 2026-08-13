@@ -34,29 +34,29 @@ ADD_SUBCHANNELS_CONFIGS = [f() for f in [
 )
 def test_add_subchannels(cfg: ResolvedTestConfig):
     assert_script_logs_do_not_match(cfg, '.*', [
-        # 'Traceback',
-        # 'arion: FatalError',
-        # 'Command not available from current role',
+        'Traceback',
+        'arion: FatalError',
+        'Command not available from current role',
     ])
-    assert_script_logs_match(cfg, 'admin', [
+    # assert_script_logs_match(cfg, 'admin', [
         # 'CH_STR=admin$',
         # 'egc collateral await$',
         # '^private.*manifest\\.json$',
-    ])
-    assert_node_logs_match(cfg, '.*', [
+    # ])
+    # assert_node_logs_match(cfg, '.*', [
 
         # TODO get this working reliably... maybe wait longer? tweak ipfs?
         # 'fetched.*CeremonyDetails',
 
-    ])
-    assert_node_logs_match(cfg, 'admin', [
+    # ])
+    # assert_node_logs_match(cfg, 'admin', [
         # 'GET /api/channel/await\\?role=admin',
         # 'GET /api/collateral/await',
         # 'POST /api/ceremony/create',
         # 'POST /api/records/post.*201$',
         # 'admin posted PublicRecord.*metadata=Manifest',
-    ])
-    assert_script_logs_match(cfg, '(?!admin)', [
+    # ])
+    # assert_script_logs_match(cfg, '(?!admin)', [
         # 'admin posted Manifest',
         # '^[0-9]{9,}\\s.*ended election',
-    ])
+    # ])

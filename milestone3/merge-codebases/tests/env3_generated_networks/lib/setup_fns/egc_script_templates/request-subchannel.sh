@@ -7,9 +7,13 @@ egc channel request \
   --request-save-png qrcodes/channel-${EGC_NODE_NAME}.png \
   --role $EGC_NODE_ROLE
 
-# Wait to be authorized to post. Normally you wouldn't expect any particular
+# Wait to be authorized to post. Normally you wouldn't expect a particular
 # index here, but for the tests we want to make sure they line up with the
 # docker names etc.
 CH_STR=$(egc channel await --role $EGC_NODE_ROLE)
 [[ $CH_STR == $EGC_NODE_NAME ]] || (echo "wrong channel"; exit 1)
+
+egc ipfs show
+egc ipfs post
+egc ipfs show
 {% endblock %}

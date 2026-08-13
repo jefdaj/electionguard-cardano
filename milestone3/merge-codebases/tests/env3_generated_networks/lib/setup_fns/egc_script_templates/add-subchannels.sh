@@ -2,9 +2,8 @@
 {% block body %}
 {{ super() }}
 
-# This is just for testing purposes. Normally the admin would be able to tell
-# on their own whether they have enough requests, or do multiple transactions
-# as needed.
+# Normally the admin would be manage their requests intelligently,
+# but having a fixed number is easier to script for the tests.
 n_expected=$(cat private/n_requests.txt)
 while true; do
   sleep 3
@@ -12,10 +11,9 @@ while true; do
   [[ $n_expected == $n_actual ]] && break
 done
 
-ls qrcodes/channel-*.png | sort | while read req; do
-  reqs="$reqs --request-load-png $req"
+reqs=()
+for f in qrcodes/channel-*.png; do
+  reqs+=(--request-load-png "$f")
 done
-# cmd="$cmd --subchannel-ada 20 --done-onboarding"
-egc channel create $reqs
-eval "$cmd"
+egc channel create "${reqs[@]}" --subchannel-ada 20 --done-onboarding
 {% endblock %}

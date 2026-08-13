@@ -86,6 +86,9 @@ def burn_test_tokens(state=Depends(get_state)):
     # The wait here is necessary because whoever burns the tokens needs to get
     # this TX confirmed before returning their collateral.
     # Can't use subscriber to wait here because it shuts down after burn.
+    if state.node is None or state.node.election is None:
+        LOG.debug('No election yet, so no need to burn test tokens')
+        return
     burn_tx = state.node.burn_test_tokens()
     state.node.await_tx_confirmed(burn_tx, subscriber_too=False)
     await_blocks() # TODO fold into regular await_tx_confirmed?

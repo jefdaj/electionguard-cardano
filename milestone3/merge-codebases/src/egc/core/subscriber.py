@@ -735,7 +735,7 @@ class ElectionSubscriber:
                         LOG.debug(f'Channel {ch_str} gives {vkh} role {role}.')
                         return ch_str
             time.sleep(OGMIOS_POLL_SEC)
-        raise TimeoutError(f'Channel for {vkh} with role {txid} did not appear within {timeout}s.')
+        raise TimeoutError(f'Channel for {vkh} with role {role} did not appear within {timeout}s.')
 
 
     def all_records(self) -> list[PublicRecord]:
