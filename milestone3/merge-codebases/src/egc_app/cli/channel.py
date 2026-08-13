@@ -53,5 +53,7 @@ def request(role: str, request: MultiIOArg):
 
 @channel.command(roles=['admin'])
 @multi_load_many("request", schemas.ChannelRequestOut, ["png", "txt", "json"]) # TODO also cam?
-def create(request: list[MultiIOArg]):
-    click.echo(request)
+@click.option('--subchannel-ada', type=click.INT, default=20)
+@click.option('--done-onboarding', is_flag=True, default=False)
+def create(request: list[MultiIOArg], subchannel_ada: int, done_onboarding: bool):
+    click.echo(locals())
