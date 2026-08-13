@@ -56,4 +56,9 @@ def request(role: str, request: MultiIOArg):
 @click.option('--subchannel-ada', type=click.INT, default=20)
 @click.option('--done-onboarding', is_flag=True, default=False)
 def create(request: list[MultiIOArg], subchannel_ada: int, done_onboarding: bool):
-    click.echo(locals())
+    # click.echo(locals())
+    asyncio.run(Client().channel_create(
+        requests        = request, # singular above so each cli arg comes out right
+        subchannel_ada  = subchannel_ada,
+        done_onboarding = done_onboarding,
+    ))

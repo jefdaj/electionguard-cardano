@@ -111,10 +111,16 @@ class Client:
         out = schemas.ChannelAwaitOut.model_validate(resp.json())
         return out.channel_str
 
-    async def channel_create(self, reqs: list[schemas.ChannelRequestOut], channel_ada: int):
+    async def channel_create(
+            self,
+            requests: list[schemas.ChannelRequestOut],
+            subchannel_ada: int,
+            done_onboarding: bool,
+        ):
         data = schemas.ChannelCreate(
-            requests = reqs,
-            ada_per_channel = channel_ada,
+            requests        = requests,
+            ada_per_channel = subchannel_ada,
+            done_onboarding = done_onboarding,
         )
         resp = await self._c.post('/channel/create', json=data.model_dump())
         resp.raise_for_status()
