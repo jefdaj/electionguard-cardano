@@ -1,12 +1,12 @@
 import pytest
 from egc import *
 
-def test_ipfs_stable(ipfs):
+def test_ipfs_stable(env2_ipfs):
     # the fixture includes .wait_until_stable(); this confirms after
-    status = ipfs.status_sync()
+    status = env2_ipfs.status_sync()
     assert status['n_peers'] >= 3
 
-def test_ogmios_synced(ogmios: OgmiosV6ChainContext):
+def test_ogmios_synced(env2_ogmios: OgmiosV6ChainContext):
     health = ogmios_health_sync()
     status = health["connectionStatus"]
     sync   = health["networkSynchronization"]
@@ -16,7 +16,7 @@ def test_ogmios_synced(ogmios: OgmiosV6ChainContext):
         raise RuntimeError(f"Ogmios not synced (networkSynchronization={sync}): {health}")
     assert health["network"] == "preview"
 
-def test_ogmios_query(ogmios: OgmiosV6ChainContext):
+def test_ogmios_query(env2_ogmios: OgmiosV6ChainContext):
     tip = query_network_tip_sync()
     assert isinstance(tip, dict)
     assert isinstance(tip['slot'], int)

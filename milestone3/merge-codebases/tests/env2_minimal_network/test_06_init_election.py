@@ -16,6 +16,10 @@ def test_roundtrip_electioncontext(dummy_electioncontext: ElectionContext):
     dec2 = ElectionContext.from_dict(tmp)
     assert dec2 == dummy_electioncontext
 
+# TODO test_consolidate_utxos
+
+# TODO test_funder_create_own_collateral
+
 def test_init_tx(init_tx: Transaction):
     # This is mainly for testing that the teardown works.
     # TODO is there a better way to do that explicitly?
