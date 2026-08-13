@@ -276,6 +276,58 @@ class ElectionPublisher:
             time.sleep(OGMIOS_POLL_SEC)
 
 
+    def consolidate_utxos(self) -> Transaction:
+        """Mainly used to set up before testing create_own_collateral. This may
+        take multiple transactions. Unlike most functions, this will wait to
+        confirm all of them internally rather than returning a tx.
+        """
+        # TODO timeouts?
+
+        def summarize(utxos):
+            total_lovelace = 0
+            asset_count = 0
+            policies = set()
+            for u in utxos:
+                total_lovelace += u.output.amount.coin
+                ma = u.output.amount.multi_asset
+                if ma:
+                    for pid, assets in ma.data.items():
+                        policies.add(pid)
+                        asset_count += len(assets)
+            return total_lovelace, asset_count, len(policies)
+
+        def consolidate_batch(utxos):
+            builder = TransactionBuilder(OGMIOS_CTX)
+            for u in utxos:
+                builder.add_input(u)
+            # With no explicit outputs and a change_address, the builder sweeps
+            # everything (ADA + native assets) into a single output at `addr`,
+            # automatically computing the fee and respecting min-ADA for the bundle.
+            signed_tx = builder.build_and_sign(
+                signing_keys=[self.wallet.sk],
+                change_address=self.wallet.addr,
+            )
+            OGMIOS_CTX.submit_tx(signed_tx)
+            return signed_tx
+
+        while True:
+            utxos = ogmios_retry( lambda: OGMIOS_CTX.utxos(self.wallet.addr) ) # TODO str?
+            LOG.debug(f"Found {len(utxos)} UTXOs at {self.wallet.addr}")
+            if len(utxos) < 2:
+                LOG.info("Done consolidating UTXOs.")
+                return
+            total_lovelace, asset_count, policy_count = summarize(utxos)
+            LOG.debug(f"Total: {total_lovelace / 1_000_000:.6f} tADA")
+            LOG.debug(f"Native assets: {asset_count} across {policy_count} policies")
+            batch = utxos[0:MAX_INPUTS_PER_TX]
+            LOG.debug(f"Submitting batch of {len(batch)} inputs...")
+            tx = consolidate_batch(batch)
+            LOG.debug(f"tx submitted: {tx.id}")
+            self.await_tx_confirmed(tx)
+            LOG.debug(f"tx confirmed: {tx.id}")
+
+
+
     # TODO verify this isn't being run more often than needed
     # TODO move to FunderNode? they're the only ones generally expected to use it
     def create_own_collateral(self) -> Transaction:

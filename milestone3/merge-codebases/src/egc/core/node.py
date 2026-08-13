@@ -182,7 +182,7 @@ class ElectionNode:
     def await_tx_confirmed(
             self,
             tx: Transaction,
-            subscriber_too: bool = True # set False to return collateral after election
+            subscriber_too: bool = True # set False when there's no subscriber
         ):
         # TODO how to handle cases not indexed by STT cleanly? (collateral etc)
 

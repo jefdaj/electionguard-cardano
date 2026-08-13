@@ -467,7 +467,7 @@ def await_blocks(n_blocks: int = 1):
 def is_utxo_unspent(utxo: UTxO) -> bool:
     """Return True if the given UTxO is still present on-chain (unspent)."""
     address = str(utxo.output.address)
-    current = ogmios_retry( lambda: OGMIOS_CTX.utxos(address) )
+    current = ogmios_retry( lambda: OGMIOS_CTX.utxos(address) ) # TODO util fn for this?
     return any(u.input == utxo.input for u in current)
 
 
