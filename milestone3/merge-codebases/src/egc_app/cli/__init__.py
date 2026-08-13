@@ -29,14 +29,14 @@ from egc_app.cli import wallet
     required=False,
 )
 @click.option(
-    "--role",
+    "--cli-role", # TODO would --as-role be clearer?
     envvar="CLI_ROLE",
     default="observer",
     show_default=True,
     type=click.Choice(CLI_ROLES, case_sensitive=False),
 )
 @click.pass_context
-def cli(ctx, config, role):
+def cli(ctx, config, cli_role):
     if ctx.invoked_subcommand is None:
         click.echo(ctx.get_help())
 

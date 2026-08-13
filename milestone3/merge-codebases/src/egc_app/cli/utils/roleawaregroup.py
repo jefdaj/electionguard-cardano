@@ -74,14 +74,14 @@ def _peek_arg(args: list[str], flag: str) -> str | None:
     return None
 
 
-def _build_default_map(config_path: str | None, role: str) -> dict:
+def _build_default_map(config_path: str | None, cli_role: str) -> dict:
     from_cfg  = get_cli_config(config_path)
     LOG.debug(f'from_cfg: {from_cfg}')
     from_env  = get_env_config()
     LOG.debug(f'from_env: {from_env}')
     from_node = get_node_config()
     LOG.debug(f'from_node: {from_node}')
-    from_cli = {} if role == 'any' else {"node":{"role": role}}
+    from_cli = {} if cli_role == 'any' else {"node":{"role": cli_role}}
     LOG.debug(f'from_cli: {from_cli}')
     dm = deep_merge_all(
         from_node,
@@ -114,20 +114,20 @@ class RoleAwareGroup(cloup.Group):
         # see the correct role before the callback ever runs.
         if parent is None:
             config_path = _peek_arg(args, "--config")
-            role = _peek_arg(args, "--cli-role") or os.environ.get("CLI_ROLE", "any")
-            kwargs.setdefault("default_map", _build_default_map(config_path, role))
+            cli_role = _peek_arg(args, "--cli-role") or os.environ.get("CLI_ROLE", "any")
+            kwargs.setdefault("default_map", _build_default_map(config_path, cli_role))
         return super().make_context(info_name, args, parent=parent, **kwargs)
 
-    def _role(self, ctx: click.Context) -> str:
+    def _cli_role(self, ctx: click.Context) -> str:
         default_map = ctx.find_root().default_map or {}
-        return default_map.get("node", {}).get("role", "any")
+        return default_map.get("node", {}).get("role", "any") # TODO cli_role?
 
     def _allowed(self, ctx: click.Context, cmd: click.Command) -> bool:
-        role = self._role(ctx)
-        if role == "any":
+        cli_role = self._cli_role(ctx)
+        if cli_role == "any":
             return True
         roles = getattr(cmd, "roles", frozenset())
-        return not roles or role in roles
+        return not roles or cli_role in roles
 
     def _has_visible_descendant(self, ctx: click.Context, group: click.Group) -> bool:
         for name, cmd in group.commands.items():
@@ -185,11 +185,11 @@ class RoleAwareGroup(cloup.Group):
             rows.append((name, cmd.get_short_help_str()))
 
         if not rows:
-            role = self._role(ctx)
+            role = self._cli_role(ctx)
             formatter.write(f"\nNo {role} commands here.\n")
             return
 
-        role = self._role(ctx)
+        role = self._cli_role(ctx)
         label = f"{role.replace("any", "all").capitalize()} commands"
         with formatter.section(label):
             formatter.write_dl(rows)
@@ -229,6 +229,3 @@ def role_group(first=None, /, *grp_args, **grp_kwargs):
         return grp
 
     return deco
-
-
-### IO decorators ###

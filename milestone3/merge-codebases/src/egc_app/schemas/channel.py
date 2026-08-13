@@ -1,6 +1,10 @@
 from pydantic import BaseModel, field_validator
 from typing import Annotated, Optional, Self
 from egc import is_valid_role, is_valid_channel_str
+from pycardano import VerificationKeyHash
+
+import logging
+LOG = logging.getLogger(__name__)
 
 # TODO move to a util module:
 from .election import VerificationKeyHashType
@@ -47,10 +51,10 @@ class ChannelRequestOut(BaseModel):
         network_magic  = int(network_magic)
         publisher_vkh = VerificationKeyHash.from_primitive(publisher_vkh)
         return cls(
-            role,
-            oneshot_hex,
-            network_magic,
-            publisher_vkh
+            requested_role         = role,
+            election_oneshot_hex   = oneshot_hex,
+            election_network_magic = network_magic,
+            publisher_vkh          = publisher_vkh
         )
 
     def to_qr_str(self) -> str:

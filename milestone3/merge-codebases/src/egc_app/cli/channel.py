@@ -5,6 +5,9 @@ from egc_app import schemas
 from egc_app.client import Client
 from egc_app.cli.utils import *
 
+import logging
+LOG = logging.getLogger(__name__)
+
 @click.group(cls=RoleAwareGroup)
 def channel() -> None:
     "Request, add, remove, or await channels."
@@ -47,3 +50,8 @@ def request(role: str, request: MultiIOArg):
     data = asyncio.run(Client().channel_request(role=role))
     LOG.debug(f'data: {data}')
     multi_save(request, data, exist_ok=False)
+
+@channel.command(roles=['admin'])
+@multi_load_many("request", schemas.ChannelRequestOut, ["png", "txt", "json"]) # TODO also cam?
+def create(request: list[MultiIOArg]):
+    click.echo(request)

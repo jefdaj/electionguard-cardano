@@ -9,6 +9,9 @@ import re
 import logging
 from egc import *
 
+import logging
+LOG = logging.getLogger(__name__)
+
 # TODO is there any good way to make the node auto-swap without calling channel await explicitly?
 
 LOG = logging.getLogger(__name__)
@@ -136,6 +139,7 @@ async def channel_create(
         data: schemas.ChannelCreate,
         state = Depends(get_state)
     ):
+    LOG.debug(f'data: {data}')
 
     try:
         election_cfg = state.node.election_cfg
@@ -169,7 +173,6 @@ async def channel_create(
                 detail = f"Publisher {req.publisher_vkh} is already {prev_role}."
             )
 
-    LOG.debug(f'data: {data}')
     roles_by_vkh = {
         r.publisher_vkh: r.requested_role
         for r in data.requests
