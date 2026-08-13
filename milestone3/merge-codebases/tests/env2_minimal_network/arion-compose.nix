@@ -67,7 +67,7 @@ let
   };
 
 in {
-  config.project.name = "egc-minimal";
+  config.project.name = "egc-env2";
   config.enableDefaultNetwork = true;
   config.services = {
     cardano.service = cardanoService;
