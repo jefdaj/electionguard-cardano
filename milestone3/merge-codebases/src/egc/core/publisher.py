@@ -194,13 +194,14 @@ class ElectionPublisher:
         txb = TransactionBuilder(OGMIOS_CTX)
         txb.add_input_address(self.wallet.addr)
         txb.add_output(TransactionOutput(recipient, Value(lovelace)))
-        signed = txb.build_and_sign([self.wallet.sk], change_address=self.wallet.addr)
-        self.submit_tx(signed)
+        # signed = txb.build_and_sign([self.wallet.sk], change_address=self.wallet.addr)
+        # self.submit_tx(signed)
+        tx = self.sign_and_submit_tx(txb)
         LOG.debug(
             "Sent %d lovelace from %s to %s (tx %s)",
-            lovelace, self.wallet.addr, recipient, signed.id,
+            lovelace, self.wallet.addr, recipient, tx.id,
         )
-        return signed
+        return tx
 
     def find_collateral_utxo(
             self,
@@ -301,18 +302,15 @@ class ElectionPublisher:
             return total_lovelace, asset_count, len(policies)
 
         def consolidate_batch(utxos):
-            builder = TransactionBuilder(OGMIOS_CTX)
-            for u in utxos:
-                builder.add_input(u)
             # With no explicit outputs and a change_address, the builder sweeps
             # everything (ADA + native assets) into a single output at `addr`,
             # automatically computing the fee and respecting min-ADA for the bundle.
-            signed_tx = builder.build_and_sign(
-                signing_keys=[self.wallet.sk],
-                change_address=self.wallet.addr,
-            )
-            OGMIOS_CTX.submit_tx(signed_tx)
-            return signed_tx
+            txb = TransactionBuilder(OGMIOS_CTX)
+            for u in utxos:
+                txb.add_input(u)
+            tx = self.sign_and_submit_tx(txb)
+            self.await_tx_confirmed(tx)
+            return
 
         while True:
             utxos = ogmios_retry( lambda: OGMIOS_CTX.utxos(self.wallet.addr) ) # TODO str?
@@ -324,8 +322,7 @@ class ElectionPublisher:
             LOG.debug(f"Total: {total_lovelace / 1_000_000:.6f} tADA")
             LOG.debug(f"Native assets: {asset_count} across {policy_count} policies")
             batch = utxos[0:max_inputs_per_tx]
-            tx = consolidate_batch(batch)
-            self.await_tx_confirmed(tx)
+            consolidate_batch(batch)
 
 
 
@@ -346,9 +343,9 @@ class ElectionPublisher:
                 existing.input.transaction_id, existing.input.index,
             )
             return existing.input.transaction_id
-        res = self.send_lovelace(self.wallet.addr, COLLATERAL_LOVELACE)
+        tx = self.send_lovelace(self.wallet.addr, COLLATERAL_LOVELACE)
         LOG.info(f'{ch_str} created own collateral UTXO at {self.wallet.addr}')
-        return res
+        return tx
 
     def return_collateral(
         self,
@@ -375,12 +372,13 @@ class ElectionPublisher:
         # the entire UTXO to go to the funder, minus the fee. Using the
         # funder as the change address makes the builder route the remainder
         # (collateral - fee) to them automatically.
-        signed = txb.build_and_sign(
-            [wallet.sk], change_address=return_addr,
-        )
-        self.submit_tx(signed)
+        # signed = txb.build_and_sign(
+            # [wallet.sk], change_address=return_addr,
+        # )
+        # tx = self.submit_tx(signed)
+        tx = self.sign_and_submit_tx(txb, change_address=return_addr)
         LOG.debug(
             "%s returned collateral from %s to %s, less tx fee (tx %s)",
-            self.channel_str(), wallet.addr, return_addr, signed.id,
+            self.channel_str(), wallet.addr, return_addr, tx.id,
         )
-        return signed
+        return tx

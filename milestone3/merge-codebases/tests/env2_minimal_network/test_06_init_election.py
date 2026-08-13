@@ -23,7 +23,13 @@ def test_funder_consolidate_utxos(funder: ObserverNode):
     ) # TODO util fn?
     assert len(utxos) == 1
 
-# TODO test_funder_create_own_collateral
+def test_funder_create_own_collateral(funder: ObserverNode):
+    funder.publisher.consolidate_utxos()
+    funder.publisher.create_own_collateral()
+    utxos = ogmios_retry(
+        lambda: OGMIOS_CTX.utxos(funder.publisher.wallet.addr)
+    )
+    assert len(utxos) == 2 # main balance (consolidated) + collateral utxo
 
 def test_init_tx(init_tx: Transaction):
     # This is mainly for testing that the teardown works.

@@ -186,7 +186,7 @@ class ElectionNode:
         ):
         # TODO how to handle cases not indexed by STT cleanly? (collateral etc)
 
-        assert isinstance(tx, Transaction)
+        assert isinstance(tx, Transaction), f'wrong tx type: {type(tx)}'
 
         ch_str = self.channel_str()
         tx_str = str(tx.id)

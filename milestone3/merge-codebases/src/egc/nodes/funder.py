@@ -67,8 +67,9 @@ class FunderNode(ObserverNode):
 
         # Without this set, the FunderNode risks the entire dev wallet when
         # deploying a contract.
-        self.publisher.create_own_collateral()
-        funder_collateral = self.publisher.await_collateral()
+        tx = self.publisher.create_own_collateral()
+        self.await_tx_confirmed(tx, subscriber_too=False)
+        funder_collateral = self.publisher.await_collateral() # TODO remove?
 
         redeemer = Redeemer(data=InitElection())
         LOG.debug('init redeemer: %s' % pformat(redeemer))
