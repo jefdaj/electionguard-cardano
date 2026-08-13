@@ -4,8 +4,8 @@
 
 # Request a channel from admin via qrcode.
 egc channel request \
-  --role $EGC_NODE_ROLE \
-  --request-save-png qrcodes/channel-${EGC_NODE_NAME}.png
+  --request-save-png qrcodes/channel-${EGC_NODE_NAME}.png \
+  --role $EGC_NODE_ROLE
 
 # Wait to be authorized to post. Normally you wouldn't expect any particular
 # index here, but for the tests we want to make sure they line up with the

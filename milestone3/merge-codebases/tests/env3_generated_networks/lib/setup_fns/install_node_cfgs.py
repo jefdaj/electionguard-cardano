@@ -10,6 +10,7 @@ LOG = logging.getLogger(__name__)
 
 def install_node_cfgs(cfg: ResolvedTestConfig):
     "Split the main test.json config into relevant fields per node."
+    LOG.debug('install_node_cfgs')
     node_counts = {
         'admin':    1,
         'guardian': cfg.config.nodes.guardians.number_of_guardians,
