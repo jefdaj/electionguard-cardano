@@ -12,6 +12,8 @@ from electionguard import serialize as eg_serialize
 import click
 import cloup
 from cloup.constraints import mutually_exclusive, require_one
+from cloup.constraints import RequireAtLeast  # "at least one across the group"
+
 
 import logging
 
@@ -81,7 +83,6 @@ def _add_options(f, name, mediums, direction, required):
         f = opt(f)
     return f
 
-
 def build_multi_arg(name, direction, params) -> MultiIOArg:
     """Pop this group's params out of `params` (mutates) and build a MultiIOArg."""
     # TODO proper logging here
@@ -110,6 +111,101 @@ def build_multi_arg(name, direction, params) -> MultiIOArg:
     LOG.debug(f'value: {value}')
     path = None if medium == "cam" else Path(value)
     return MultiIOArg(name, direction, medium, path)
+
+
+# ---- plural versions
+
+def _make_group_many(name, direction):
+    title = f"{name.capitalize()} inputs" if direction == "in" else f"{name} outputs"
+    return cloup.OptionGroup(title, constraint=RequireAtLeast(1))
+
+def _add_options_many(f, name, mediums, direction):
+    help_text = {  # (same dicts as before)
+        "in": {
+            "cam":  "Scan QR code(s) via the camera (repeatable).",
+            "png":  "Load QR code from a png file (repeatable).",
+            "txt":  "Load QR text (`egc:...`) from a file (repeatable).",
+            "json": "Load from a JSON file (repeatable).",
+        },
+        "out": {
+            "cam":  "Show QR code(s) so you can take pics of them.",
+            "png":  "Save QR code as a png file (repeatable).",
+            "txt":  "Save QR text (`egc:...`) to a file (repeatable).",
+            "json": "Save to a JSON file (repeatable).",
+        },
+    }[direction]
+    cli_verbs = {
+        "in" : {"cam": "scan-qr", "png": "load-png", "json": "load-json", "txt": "load-txt"},
+        "out": {"cam": "show-qr", "png": "save-png", "json": "save-json", "txt": "save-txt"},
+    }[direction]
+    group = _make_group_many(name, direction)
+
+    factories = {
+        # count=True -> repeatable flag; value is an int (number of times passed)
+        "cam": lambda: group.option(
+            f"--{name}-{cli_verbs['cam']}", count=True,
+            help=help_text["cam"]),
+        "png": lambda: group.option(
+            f"--{name}-{cli_verbs['png']}", type=click.Path(), metavar="PATH",
+            multiple=True, help=help_text["png"]),
+        "txt": lambda: group.option(
+            f"--{name}-{cli_verbs['txt']}", type=click.Path(), metavar="PATH",
+            multiple=True, help=help_text["txt"]),
+        "json": lambda: group.option(
+            f"--{name}-{cli_verbs['json']}", type=click.Path(), metavar="PATH",
+            multiple=True, help=help_text["json"]),
+    }
+    opts = [factories[m]() for m in mediums]
+    for opt in reversed(opts):
+        f = opt(f)
+    return f
+
+def build_multi_args(name, direction, params) -> list[MultiIOArg]:
+    """Pop this group's params out of `params` (mutates), return a list of MultiIOArg."""
+    prefix = f"{name}_"
+    args: list[MultiIOArg] = []
+    for k in [k for k in params if k.startswith(prefix)]:
+        v = params.pop(k)
+        if not v:
+            continue
+        suffix = k[len(prefix):]          # e.g. "load_png", "scan_qr"
+        if "scan" in suffix or "show" in suffix:
+            for _ in range(int(v)):       # count=True -> int
+                args.append(MultiIOArg(name, direction, "cam", None))
+        else:
+            medium = ("json" if "json" in suffix
+                      else "txt" if "txt" in suffix
+                      else "png")
+            for val in v:                 # multiple=True -> tuple
+                args.append(MultiIOArg(name, direction, medium, Path(val)))
+    if not args:
+        raise click.UsageError(f"At least one {name} {direction}-source required.")
+    LOG.debug(f'{name} args: {args}')
+    return args
+
+def multi_load_many(name, decode_cls, mediums, *, required=True):
+    """`in`: gather repeated args, read+parse each to `decode_cls`, inject as `name` (a list)."""
+    def decorator(fn):
+        @functools.wraps(fn)
+        def wrapper(**params):
+            pios = build_multi_args(name, "in", params)   # pops name_* keys
+            results = []
+            for pio in pios:
+                n_attempts = 0
+                while True:
+                    n_attempts += 1
+                    try:
+                        results.append(_multi_read(pio, decode_cls=decode_cls))
+                        break
+                    except Exception as e:
+                        LOG.error(e)
+                        if n_attempts > 3:
+                            raise
+                        time.sleep(1)
+            params[name] = results
+            return fn(**params)
+        return _add_options_many(wrapper, name, mediums, "in")
+    return decorator
 
 
 # ---- read / write --------------------------------------------------------
