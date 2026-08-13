@@ -25,6 +25,10 @@ def config_add_subchannels(draw):
             name = 'install_node_cfgs',
             args = ()
         ),
+        FnCallConfig(
+            name = 'install_n_requests',
+            args = ()
+        ),
     ])
     return cfg
 

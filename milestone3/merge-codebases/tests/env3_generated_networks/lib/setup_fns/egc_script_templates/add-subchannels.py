@@ -12,6 +12,9 @@ while true; do
   [[ $n_expected == $n_actual ]] && break
 done
 
-# TODO what's the easiest way to take multiple files here?
-egc channel create --channel-load-pngs 
+cmd="egc channel create"
+ls qrcodes/channel-*.png | sort | while read req; do
+  cmd="$cmd --channel-load-png $req"
+done
+eval "$cmd"
 {% endblock %}
