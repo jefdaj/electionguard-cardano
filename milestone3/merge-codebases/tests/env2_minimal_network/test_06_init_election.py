@@ -17,9 +17,10 @@ def test_roundtrip_electioncontext(dummy_electioncontext: ElectionContext):
     assert dec2 == dummy_electioncontext
 
 def test_funder_consolidate_utxos(funder: ObserverNode):
-    tx = funder.publisher.consolidate_utxos()
-    funder.await_tx_confirmed(tx, subscriber_too=False)
-    utxos = ogmios_retry( lambda: OGMIOS_CTX.utxos(address) ) # TODO util fn for this?
+    funder.publisher.consolidate_utxos()
+    utxos = ogmios_retry(
+        lambda: OGMIOS_CTX.utxos(funder.publisher.wallet.addr)
+    ) # TODO util fn?
     assert len(utxos) == 1
 
 # TODO test_funder_create_own_collateral

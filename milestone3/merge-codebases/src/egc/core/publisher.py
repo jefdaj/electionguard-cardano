@@ -276,10 +276,14 @@ class ElectionPublisher:
             time.sleep(OGMIOS_POLL_SEC)
 
 
-    def consolidate_utxos(self) -> Transaction:
-        """Mainly used to set up before testing create_own_collateral. This may
-        take multiple transactions. Unlike most functions, this will wait to
-        confirm all of them internally rather than returning a tx.
+    def consolidate_utxos(self, max_inputs_per_tx=120) -> Transaction:
+        """Mainly used to set up before testing create_own_collateral.
+
+        This may take multiple transactions. Unlike most functions, this will
+        wait to confirm all of them internally rather than returning a tx.
+
+        Txs with native assets are larger per input than pure-ADA ones.
+        Lower max_inputs_per_tx if you hit tx-too-large errors.
         """
         # TODO timeouts?
 
@@ -319,12 +323,9 @@ class ElectionPublisher:
             total_lovelace, asset_count, policy_count = summarize(utxos)
             LOG.debug(f"Total: {total_lovelace / 1_000_000:.6f} tADA")
             LOG.debug(f"Native assets: {asset_count} across {policy_count} policies")
-            batch = utxos[0:MAX_INPUTS_PER_TX]
-            LOG.debug(f"Submitting batch of {len(batch)} inputs...")
+            batch = utxos[0:max_inputs_per_tx]
             tx = consolidate_batch(batch)
-            LOG.debug(f"tx submitted: {tx.id}")
             self.await_tx_confirmed(tx)
-            LOG.debug(f"tx confirmed: {tx.id}")
 
 
 
