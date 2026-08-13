@@ -328,11 +328,12 @@ class ElectionPublisher:
 
     # TODO verify this isn't being run more often than needed
     # TODO move to FunderNode? they're the only ones generally expected to use it
-    def create_own_collateral(self) -> Transaction:
+    def create_own_collateral(self):
         """Funder sends themselves exactly COLLATERAL_ADA to create a
         usable collateral UTXO. No-op (returns None-ish? see below) if one
         already exists — callers that want to force a new one should spend
         the existing one first."""
+        # TODO return Optional[Transcation]? txid?
         self._guard_wallet()
         ch_str = self.channel_str()
         existing = self.find_collateral_utxo()
@@ -342,10 +343,12 @@ class ElectionPublisher:
                 ch_str, self.wallet.addr,
                 existing.input.transaction_id, existing.input.index,
             )
-            return existing.input.transaction_id
+            # return existing.input.transaction_id
+            return
         tx = self.send_lovelace(self.wallet.addr, COLLATERAL_LOVELACE)
         LOG.info(f'{ch_str} created own collateral UTXO at {self.wallet.addr}')
-        return tx
+        # return tx
+        return
 
     def return_collateral(
         self,

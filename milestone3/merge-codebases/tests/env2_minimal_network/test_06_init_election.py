@@ -25,8 +25,8 @@ def test_funder_consolidate_utxos(funder: ObserverNode):
 
 def test_funder_create_own_collateral(funder: ObserverNode):
     funder.publisher.consolidate_utxos()
-    tx = funder.publisher.create_own_collateral()
-    funder.publisher.await_tx_confirmed(tx)
+    funder.publisher.create_own_collateral()
+    funder.publisher.await_collateral()
     utxos = ogmios_retry(
         lambda: OGMIOS_CTX.utxos(funder.publisher.wallet.addr)
     )
