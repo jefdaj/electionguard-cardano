@@ -13,7 +13,7 @@ def funder(env2_arion_network, funder_wallet: Wallet, env2_tmp_root: Path, reque
         wallet      = funder_wallet,
         private_dir = fixture_private_dir(env2_tmp_root, request),
     )
-    LOG.debug(f'env2_funder: {node_}')
+    LOG.debug(f'funder: {node_}')
     node_.ipfs.wait_until_stable_sync()
     try:
         yield node_

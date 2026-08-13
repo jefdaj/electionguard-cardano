@@ -68,16 +68,16 @@ def test_publish_static_records(static_records_list, published_static_records):
     for r in published_static_records:
         assert isinstance(r, PublicRecord)
 
-def test_fetch_static_records(ipfs, published_static_records):
+def test_fetch_static_records(env2_ipfs, published_static_records):
     for r in published_static_records:
-        ipfs.fetch_record_soon(r)
+        env2_ipfs.fetch_record_soon(r)
     deadline = time.monotonic() + 10
     while time.monotonic() < deadline:
         time.sleep(1)
-        n = ipfs.count_pending_records()
+        n = env2_ipfs.count_pending_records()
         LOG.debug(f'pending records: {n}')
         if n == 0:
             break
-    paths = sorted(list(ipfs.records_fetched_dir.rglob('*.json')))
+    paths = sorted(list(env2_ipfs.records_fetched_dir.rglob('*.json')))
     LOG.debug(f'fetched json paths: {paths}')
     assert len(paths) == len(published_static_records)

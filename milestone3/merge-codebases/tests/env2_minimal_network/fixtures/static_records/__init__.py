@@ -46,7 +46,7 @@ def static_records_list(static_transactions) -> list[PublicRecord]:
 #     return load_static_record_pairs(static_records_list, static_files_dir)
 
 @pytest.fixture(scope='module')
-def published_static_records(ipfs, static_records_list, static_files_dir):
+def published_static_records(env2_ipfs, static_records_list, static_files_dir):
     pairs = load_static_record_pairs(static_records_list, static_files_dir)
-    records = ipfs.publish_and_make_records(pairs)
+    records = env2_ipfs.publish_and_make_records(pairs)
     return records

@@ -344,10 +344,11 @@ class IPFSService:
         try:
             peers = await self.ipfs._client.swarm.peers()
             peers = peers.get('Peers')
+            n_peers = len(peers)
             connected = True
         except Exception as e:
             LOG.error(e)
-            peers = []
+            n_peers = 0
         try:
             bw = await self.ipfs._client.stats.bw()
             rate = int(bw.get("RateIn", 0) + bw.get("RateOut", 0))
@@ -357,7 +358,7 @@ class IPFSService:
             rate = 0
         return {
             'connected': connected,
-            'n_peers': len(peers),
+            'n_peers': n_peers,
             'bandwidth_Bs': rate
         }
 
