@@ -66,7 +66,7 @@ def init_election_tuple(
         admin_vkh  = admin_vkh,
         admin_ada  = 200, # TODO what's a good amount?
     )
-    funder.await_tx_confirmed(init_tx)
+    funder.await_tx_confirmed(init_tx) # subscriber_too works from here on
 
     # All other tests happen here
     yield (init_tx, cfg) # TODO config here, not context
