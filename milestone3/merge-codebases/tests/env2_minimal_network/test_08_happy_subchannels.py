@@ -124,7 +124,7 @@ def test_add_subchannel(
     assert_nodes_converge([
         (admin, s2),
         (guardian1, guardian1_s0),
-    ], EgcPhase.CONFIG_CEREMONY)
+    ], EgcPhase.CONFIG_CEREMONY_ROUND1)
 
 
 ## ----------- tx3: rm single subchannel -----------
@@ -159,4 +159,4 @@ def test_rm_subchannel(admin, s3, tx3, guardian1):
     assert_nodes_converge([
         (admin, s3),
         (guardian1, None)
-    ], EgcPhase.CONFIG_CEREMONY)
+    ], EgcPhase.CONFIG_CEREMONY_ROUND1)

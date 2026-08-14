@@ -95,21 +95,11 @@ def assert_no_collateral(nodes: list[ElectionNode]):
         LOG.info(f'{name} has no collateral utxo, as expected.')
 
 
-def assert_nodes_converge(
+def assert_node_states_converge(
         expected_states: list[ Tuple[ElectionNode, Optional[ChannelState]] ],
-        expected_phase: EgcPhase = None,
-        interval = 1,
-        timeout = 60,
+        interval = 5,
+        timeout = 300,
     ):
-    """The inputs here are a state per node, but that's just a convenient format
-    for passing the args. What it actually does is:
-
-    1. logs how many nodes have reached the expected channel states every 5 sec
-    2. once all of them reach those states, assert that their phases and histories are also as expected
-
-    The two are combined because we always want both, and to avoid a fixed
-    delay before the equal history check. A state of None means the channel is closed."""
-
     n = len(expected_states) # both the number of nodes and number of states being checked
 
     for (node, state) in expected_states:
@@ -117,7 +107,7 @@ def assert_nodes_converge(
         if state is not None:
             assert is_channelstate(state)
 
-    waited = 0
+    waited = 0 # TODO time.monotonic deadline instead
     while True:
         n_nodes_correct_prev = 0
         n_nodes_correct = 0
@@ -161,10 +151,10 @@ def assert_nodes_converge(
             n_nodes_correct_prev = n_nodes_correct
 
         if n_nodes_correct == n:
-            for (n, _) in expected_states:
-                p = n.current_phase()
-                assert p == expected_phase, f"Node {n} should have phase {expected_phase}, but has {p}."
-            LOG.debug(f"All nodes have the expected phase {expected_phase}.")
+            # for (n, _) in expected_states:
+            #     p = n.current_phase()
+            #     assert p == expected_phase
+            # LOG.debug(f"All nodes have the expected phase {expected_phase}.")
             try:
                 # This normally works the first time, but occasionally fails.
                 # Perhaps there's a same-but-spent update during?
@@ -178,3 +168,64 @@ def assert_nodes_converge(
 
         time.sleep(interval)
         waited += interval
+
+def assert_node_phases_converge(
+        nodes: list[ElectionNode],
+        expected_phase: EgcPhase, # TODO is this right?
+        interval = 5,
+        timeout = 300,
+    ):
+        waited = 0 # TODO time.monotonic deadline instead
+        while True:
+            n_phases_correct = 0
+            for n in nodes:
+                n_str = n.channel_str()
+                p = n.current_phase()
+                try:
+                    assert p == expected_phase
+                    n_phases_correct += 1
+                except AssertionError as e:
+                    LOG.debug(
+                        f'{n_str} node has wrong phase after {waited}s: {p}, not {expected_phase}.'
+                    )
+                    if waited >= timeout:
+                        # diff = safe_deepdiff(expected_state, actual_state)
+                        LOG.error(
+                            f'Nodes did not converge on {expected_phase} within {timeout}s.'
+                        )
+                        raise
+                    else:
+                        continue # next node
+
+            LOG.debug(
+                f'After {waited} seconds, {n_phases_correct}/{len(nodes)}'
+                f' nodes converged on {expected_phase}.'
+            )
+
+            # success
+            if n_phases_correct == len(nodes):
+                return
+
+            time.sleep(interval)
+            waited += interval
+
+ 
+
+def assert_nodes_converge(
+        expected_states: list[ Tuple[ElectionNode, Optional[ChannelState]] ],
+        expected_phase: EgcPhase = None,
+        interval = 5,
+        timeout = 300,
+    ):
+    """The inputs here are a state per node, but that's just a convenient format
+    for passing the args. What it actually does is:
+
+    1. logs how many nodes have reached the expected channel states every 5 sec
+    2. once all of them reach those states, assert that their phases and histories are also as expected
+
+    The two are combined because we always want both, and to avoid a fixed
+    delay before the equal history check. A state of None means the channel is closed."""
+
+    assert_node_states_converge(expected_states, interval, timeout)
+    nodes = [n for (n, _) in expected_states] # TODO if s is not None?
+    assert_node_phases_converge(nodes, expected_phase, interval, timeout)

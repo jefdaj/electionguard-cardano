@@ -163,7 +163,7 @@ def test_phase1_onboarding(
         (guardian3, guardian3_s0),
         (device1  , device1_s0  ),
         (verifier1, verifier1_s0),
-    ], EgcPhase.CONFIG_CEREMONY)
+    ], EgcPhase.CONFIG_CEREMONY_ROUND1)
     assert_collateral([
         admin,
         guardian1, guardian2, guardian3,
@@ -262,7 +262,7 @@ def test_phase2_ceremony_round1(
         (guardian3, guardian3_s1),
         (device1  , device1_s0  ),
         (verifier1, verifier1_s0),
-    ], EgcPhase.CONFIG_CEREMONY)
+    ], EgcPhase.CONFIG_CEREMONY_ROUND2)
 
 
 ## ----------- Round 2 -----------
@@ -315,7 +315,7 @@ def test_phase2_ceremony_round2(
         (guardian3, guardian3_s2),
         (device1  , device1_s0  ),
         (verifier1, verifier1_s0),
-    ], EgcPhase.CONFIG_CEREMONY)
+    ], EgcPhase.CONFIG_CEREMONY_ROUND3)
 
 
 ## ----------- Round 3 -----------
