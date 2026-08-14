@@ -21,23 +21,37 @@ async def phase_get(state=Depends(get_state)):
     out = schemas.Phase(egc_phase_value=phase_.value)
     return out
 
+# TODO where should this live?
+def _guard_election(state):
+    try:
+        election_cfg = state.node.election_cfg # TODO any better way?
+    except:
+        raise HTTPException(status_code=409, detail="Subscribe to an election first.")
+
 @router.get("/await")
 async def phase_await(
         params: Annotated[schemas.Phase, Query()],
         state=Depends(get_state)
     ):
-    # TODO better precondition(s)
-    try:
-        election_cfg = state.node.election_cfg # TODO _guard_election or similar instead?
-    except:
-        raise HTTPException(status_code=409, detail="Subscribe to an election first.")
+    _guard_election(state)
     phase_ = EgcPhase(params.egc_phase_value)
     state.node.await_phase(phase=phase_)
     return Response(status_code=201)
 
-@router.post("")
+# TODO where should this live?
+def _guard_admin(state):
+    try:
+        assert state.node.channel_id() == ADMIN_CHANNEL_ID
+    except:
+        raise HTTPException(status_code=409, detail="Only the admin can do that.")
+
+@router.post("", status_code=201)
 async def phase_advance(
         data: schemas.Phase,
         state = Depends(get_state)
     ):
-    raise NotImplementedError
+    _guard_election(state)
+    _guard_admin(state)
+    phase_ = EgcPhase(data.egc_phase_value)
+    tx = state.node.advance_phase(phase_)
+    state.node.await_tx_confirmed(tx)
