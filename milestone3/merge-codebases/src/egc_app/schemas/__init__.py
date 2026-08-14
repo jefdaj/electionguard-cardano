@@ -6,3 +6,4 @@ from .channel import *
 from .ceremony import *
 from .records import *
 from .ipfs import *
+from .phase import *

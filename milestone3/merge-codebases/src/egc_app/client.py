@@ -105,9 +105,21 @@ class Client:
         resp = await self._c.get('/wallet/save')
         return handle_http_errors(resp).json()
 
-    async def phase_get(self):
+    async def phase_get(self) -> EgcPhase:
         resp = await self._c.get('/phase')
-        return handle_http_errors(resp).json()
+        resp = handle_http_errors(resp)
+        out = schemas.Phase.model_validate(resp.json())
+        return EgcPhase(out.egc_phase_value)
+
+    async def phase_await(self, phase: EgcPhase):
+        data = schemas.Phase(egc_phase_value=phase.value)
+        resp = await self._c.get('/phase/await', params=data.model_dump(mode='json', exclude_none=True))
+        handle_http_errors(resp)
+
+    async def phase_advance(self, phase: EgcPhase):
+        data = schemas.Phase(egc_phase_value=phase.value)
+        resp = await self._c.put('/phase', json=data.model_dump())
+        handle_http_errors(resp)
 
     async def collateral_return(self, return_addr: Optional[str] = None):
         data = schemas.CollateralReturn(return_addr=return_addr)
