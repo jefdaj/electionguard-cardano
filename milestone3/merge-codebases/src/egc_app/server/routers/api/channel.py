@@ -110,27 +110,39 @@ def pick_new_channel_ids(
         cur_ids: list[ChannelId],
     ) -> dict[VerificationKeyHash, str]:
     # TODO should this just assume the current ids are in order (none missing)?
-    cur_ri_pairs = [channel_role_and_index(ch_id) for ch_id in cur_ids]
-    cur_indexes = {}
-    for (role, index) in cur_ri_pairs:
-        if not role in cur_indexes:
-            cur_indexes[role] = []
-        cur_indexes[role].append(index)
-    new_ri_pairs_by_vkh = {}
-    for (role, vkh) in roles_by_vkh.items():
+    cur_ri_pairs = [
+        channel_role_and_index(ch_id)
+        for ch_id in cur_ids
+    ]
+    LOG.debug(f'cur_ri_pairs: {cur_ri_pairs}')
+    # cur_indexes = {
+    #     'guardian': [],
+    #     'device':   [],
+    #     'verifier': [],
+    # }
+    # for (role, index) in cur_ri_pairs:
+    #     cur_indexes[role].append(index)
+    # LOG.debug(f'cur_indexes: {cur_indexes}')
+    new_ri_pairs_by_vkh = {} # TODO no need for this intermediate format?
+    for (vkh, role) in roles_by_vkh.items():
         # Note we *haven't* sorted this anywhere,
         # which makes it simple to match up all the test requests in order.
         # TODO is this a problem to rely on in the tests?
-        i = 0
-        while i in cur_indexes[role]:
+        LOG.debug(f'(vkh, role): {(vkh, role)}')
+        i = 1
+        # while i in cur_indexes[role]:
+        while (role, i) in cur_ri_pairs or \
+              (role, i) in new_ri_pairs_by_vkh.values():
             i += 1
         new_ri_pairs_by_vkh[vkh] = (role, i)
-        cur_indexes[role].append(i)
-    ch_ids_by_vkh = {
-        v: f'{r}{i}'
+        # cur_indexes[role].append(i)
+    LOG.debug(f'new_ri_pairs_by_vkh: {new_ri_pairs_by_vkh}')
+    vkhs_by_ch_id = {
+        coerce_channel_id(f'{r}{i}'): v
         for (v, (r, i)) in new_ri_pairs_by_vkh.items()
     }
-    return ch_ids_by_vkh
+    LOG.debug(f'vkhs_by_ch_id: {vkhs_by_ch_id}')
+    return vkhs_by_ch_id
 
 
 @router.post("/create")
@@ -146,11 +158,13 @@ async def channel_create(
     except:
         raise HTTPException(status_code=409, detail="Subscribe to an election first.")
 
-    try:
-        # TODO use node class instead?
-        assert self.node.channel_id() == ADMIN_CHANNEL_ID
-    except:
-        raise HTTPException(status_code=409, detail="Only the admin can add subchannels.")
+#     try:
+#         # TODO use node class instead?
+#         LOG.info(f'node cls: {type(self.node)}')
+#         LOG.info(f'channel_id: {self.node.channel_id()}')
+#         # assert self.node.channel_id() == ADMIN_CHANNEL_ID
+#     except:
+#         raise HTTPException(status_code=409, detail="Only the admin can add subchannels.")
 
     vkhs_set = set()
     for req in data.requests:
@@ -180,10 +194,10 @@ async def channel_create(
     LOG.debug(f'roles_by_vkh: {roles_by_vkh}')
     cur_ids = state.node.subscriber.all_channel_ids()
     LOG.debug(f'cur_ids: {cur_ids}')
-    ch_ids_by_vkh = pick_new_channel_ids(roles_by_vkh, cur_ids)
-    LOG.debug(f'ch_ids_by_vkh: {ch_ids_by_vkh}')
-    self.node.add_subchannels(
-        subchannels     = ch_ids_by_vkh,
+    vkhs_by_ch_id = pick_new_channel_ids(roles_by_vkh, cur_ids)
+    LOG.debug(f'vkhs_by_ch_id: {vkhs_by_ch_id}')
+    state.node.add_subchannels(
+        subchannels     = vkhs_by_ch_id,
         subchannel_ada  = data.ada_per_channel,
         done_onboarding = data.done_onboarding,
     )
