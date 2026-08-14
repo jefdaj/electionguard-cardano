@@ -5,6 +5,7 @@ from egc import *
 import time
 import typing
 from dataclasses import asdict
+from collections import Counter
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -94,6 +95,29 @@ def assert_no_collateral(nodes: list[ElectionNode]):
         assert utxo is None
         LOG.info(f'{name} has no collateral utxo, as expected.')
 
+
+def assert_node_phases_converge_2(
+        nodes: list[ElectionNode],
+        expected_phase: EgcPhase,
+        interval = 5,
+        timeout = 300,
+    ):
+    start = time.monotonic()
+    deadline = start + timeout
+    while True:
+        now = time.monotonic()
+        if now > deadline:
+            msg = f'All {len(nodes)} nodes did not converge to {expected_phase} within {timeout}s.'
+            LOG.error(msg)
+            raise TimeoutError(msg)
+        sec = int(now - start)
+        phases_by_str = {n.channel_str(): n.current_phase() for n in nodes}
+        phase_counts = Counter(phases_by_str.values())
+        LOG.debug(f'phase_counts after {sec}s: {dict(phase_counts)}')
+        if phase_counts[expected_phase] == len(nodes):
+            LOG.debug(f'All {len(nodes)} nodes converged to {expected_phase} after {sec}s.')
+            return
+        time.sleep(interval)
 
 def assert_node_states_converge(
         expected_states: list[ Tuple[ElectionNode, Optional[ChannelState]] ],
@@ -218,14 +242,7 @@ def assert_nodes_converge(
         timeout = 300,
     ):
     """The inputs here are a state per node, but that's just a convenient format
-    for passing the args. What it actually does is:
-
-    1. logs how many nodes have reached the expected channel states every 5 sec
-    2. once all of them reach those states, assert that their phases and histories are also as expected
-
-    The two are combined because we always want both, and to avoid a fixed
-    delay before the equal history check. A state of None means the channel is closed."""
-
+    for passing the args. A state of None means the channel is closed."""
+    nodes = [n for (n, _) in expected_states]
+    assert_node_phases_converge_2(nodes, expected_phase, interval, timeout)
     assert_node_states_converge(expected_states, interval, timeout)
-    nodes = [n for (n, _) in expected_states] # TODO if s is not None?
-    assert_node_phases_converge(nodes, expected_phase, interval, timeout)

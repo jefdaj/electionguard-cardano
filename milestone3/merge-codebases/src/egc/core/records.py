@@ -262,28 +262,74 @@ def load_record(metadata: r.PublicRecordMetadata, pub_dir: Path):
     return data
 
 
-# TODO where should this live?
+# TODO later, replace this with/turn into a verification
 def load_all_guardian_pubkeys(n_guardians: int, pub_dir: Path):
     "Load all guardian pubkeys, or raise an error if any are missing."
+    LOG.debug('load_all_guardian_pubkeys')
+    LOG.debug(f'n_guardians: {n_guardians}')
     pub_dir = Path(pub_dir)
+    LOG.debug(f'pub_dir: {pub_dir}')
     records = []
     for i in range(1, n_guardians+1):
-        r = load_record(r.GuardianPubkey(guardian_number=i))
-        records.append(r)
+        rec = load_record(r.GuardianPubkey(guardian_number=i), pub_dir)
+        LOG.debug(f'loaded rec: {rec}')
+        records.append(rec)
     return records
+
+
+# TODO later, replace this with/turn into a verification
+def key_ceremony_round1_complete(pub_dir: Path):
+    try:
+        details = load_record(r.CeremonyDetails(), pub_dir)
+        LOG.debug(f'details: {details}')
+        n = details.number_of_guardians
+        LOG.debug(f'n guardians: {n}')
+        # TODO prevent guardians from gaming this by posting an extra key
+        pubkeys = load_all_guardian_pubkeys(n, pub_dir)
+        LOG.debug(f'actual n_pubkeys: {len(pubkeys)}')
+        return len(pubkeys) == n
+    except Exception as e:
+        LOG.error(e)
+        return False
+ 
+
+def key_ceremony_round2_complete(pub_dir: Path):
+    try:
+        details = load_record(r.CeremonyDetails(), pub_dir)
+        LOG.debug(f'details: {details}')
+        n = details.number_of_guardians
+        LOG.debug(f'n guardians: {n}')
+        # TODO prevent guardians from gaming this by posting extra backups
+        n_backups_expected = n**2 - n
+        LOG.debug(f'n_backups_expected: {n_backups_expected}')
+        backups = load_all_guardian_backups(n, pub_dir)
+        LOG.debug(f'actual n_backups: {len(backups)}')
+        return len(backups) == n_backups_expected
+    except Exception as e:
+        LOG.error(e)
+        return False
+ 
 
 # TODO where should this live?
 def load_all_guardian_backups(n_guardians: int, pub_dir: Path):
     "Load all guardian backups, or raise an error if any are missing."
+    LOG.debug('load_all_guardian_backups')
+    LOG.debug(f'n_guardians: {n_guardians}')
     pub_dir = Path(pub_dir)
+    LOG.debug(f'pub_dir: {pub_dir}')
     records = []
     for guardian_number in range(1, n_guardians+1):
         for backup_order in range(1, n_guardians+1):
             if guardian_number == backup_order:
+                LOG.debug(f'skip guardian_number {guardian_number} backup {backup_order}')
                 continue # guardians don't send themselves a backup
-            r = load_record(r.GuardianBackup(
-                guardian_number = guardian_number,
-                backup_order    = backup_order
-            ))
-            records.append(r)
+            rec = load_record(
+                r.GuardianBackup(
+                    guardian_number = guardian_number,
+                    backup_order    = backup_order
+                ),
+                pub_dir
+            )
+            LOG.debug(f'loaded rec: {rec}')
+            records.append(rec)
     return records

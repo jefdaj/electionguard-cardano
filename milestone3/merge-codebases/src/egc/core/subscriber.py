@@ -35,6 +35,7 @@ from .plutus.types.channel import *
 from .plutus.types.ipfs_node import *
 from .election import ElectionConfig, ElectionContext
 from .utils import safe_deepdiff
+from .records import *
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -550,7 +551,7 @@ class ElectionSubscriber:
                 states[ch_id] = self.current_state(ch_id)
             return states
 
-    
+
     def current_phase(self) -> EgcPhase:
         log_call()
         with self._history_lock:
@@ -564,40 +565,23 @@ class ElectionSubscriber:
             phase = None
 
         if phase is None or phase < ElectionConfigPhase(ConfigCeremonyPhase()):
-            ceremony_round1_complete = False
-            ceremony_round2_complete = False
+            LOG.debug('Before ceremony, round1 and round2 are False.')
+            round1 = False
+            round2 = False
         elif phase > ElectionConfigPhase(ConfigCeremonyPhase()):
-            ceremony_round1_complete = True
-            ceremony_round2_complete = True
+            LOG.debug('After ceremony, round1 and round2 are True.')
+            round1 = True
+            round2 = True
         else:
-            # Currently running ceremony; check fetched records to determine which round.
-            try:
-                details = load_record(r.CeremonyDetails(), self.records_fetched_dir)
-                LOG.debug(f'details: {details}')
-                n = details.number_of_guardians
-                LOG.debug(f'n guardians: {n}')
-                # TODO prevent guardians from gaming this by posting an extra key
-                pubkeys = load_all_guardian_pubkeys(n, self.records_fetched_dir)
-                LOG.debug(f'actual n_pubkeys: {len(pubkeys)}')
-                ceremony_round1_complete = len(pubkeys) == n
-                try:
-                    # TODO prevent guardians from gaming this by posting extra backups
-                    n_backups_expected = n**2 - n
-                    LOG.debug(f'n_backups_expected: {n_backups_expected}')
-                    backups = load_all_guardian_backups(n, self.records_fetched_dir)
-                    LOG.debug(f'actual n_backups: {len(backups)}')
-                    ceremony_round2_complete = len(backups) == n_backups_expected
-                except:
-                    ceremony_round2_complete = False
-            except:
-                ceremony_round1_complete = False
-                ceremony_round2_complete = False
+            LOG.debug('During ceremony, have to check fetched files to determine round.')
+            round1 = key_ceremony_round1_complete(self.records_fetched_dir)
+            round2 = key_ceremony_round2_complete(self.records_fetched_dir)
 
         ctx = EgcPhaseContext(
             indexed = len(self._checkpoints) > 0,
             deployed = bool(event is not None),
-            ceremony_round1_complete = ceremony_round1_complete,
-            ceremony_round2_complete = ceremony_round2_complete,
+            ceremony_round1_complete = round1,
+            ceremony_round2_complete = round2,
             onchain_phase = phase,
         )
         LOG.debug(f'ctx: {ctx}')
