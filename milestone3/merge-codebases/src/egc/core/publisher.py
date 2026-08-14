@@ -78,7 +78,7 @@ class ElectionPublisher:
 
     # TODO clarify: channel_id won't exist for observers, but channel_str will?
     def channel_id(self) -> Optional[ChannelId]:
-        LOG.debug('ElectionPublisher.channel_id')
+        # LOG.debug('ElectionPublisher.channel_id')
         if self.role in ['observer', 'funder']:
             return None
         if self.role == 'admin':

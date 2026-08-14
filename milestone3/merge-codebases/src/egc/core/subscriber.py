@@ -563,14 +563,14 @@ class ElectionSubscriber:
         except:
             phase = None
 
-        if phase < ElectionConfigPhase(ConfigCeremonyPhase()):
+        if phase is None or phase < ElectionConfigPhase(ConfigCeremonyPhase()):
             ceremony_round1_complete = False
             ceremony_round2_complete = False
         elif phase > ElectionConfigPhase(ConfigCeremonyPhase()):
             ceremony_round1_complete = True
             ceremony_round2_complete = True
         else:
-            # If currently doing the ceremony, have to check fetched records...
+            # Currently running ceremony; check fetched records to determine which round.
             try:
                 details = load_record(r.CeremonyDetails(), self.records_fetched_dir)
                 LOG.debug(f'details: {details}')
