@@ -24,10 +24,6 @@ def create(
     explicit inline options for each part of the config.
     """
     asyncio.run(Client().ceremony_create(ceremony=ceremony))
-    # TODO any need to raise_for_status here?
-
-    # The decoded type should already be CeremonyDetails now
-    # details = CeremonyDetails(guardian_count, guardian_quorum)
 
 @ceremony.command()
 def show():
