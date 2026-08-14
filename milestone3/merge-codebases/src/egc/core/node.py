@@ -76,11 +76,10 @@ class ElectionNode:
         keys_dir: Optional[Path] = None,
         key_name: Optional[Path] = None,
 
-        # TODO mk_ipfs or similar?
     ):
         LOG.debug('ElectionNode.__init__')
 
-        self.private_dir = Path(private_dir) # TODO absolute()?
+        self.private_dir = Path(private_dir)
         self.records_to_post_dir = self.private_dir / 'records_to_post'
         self.records_fetched_dir = self.private_dir / 'records_fetched' # TODO not needed here anymore?
 
@@ -115,8 +114,6 @@ class ElectionNode:
             self.election = None # TODO rename election_ctx to avoid confusion?
         else:
             self.subscribe(self.election_cfg)
-            # TODO wait for first event here?
-            # time.sleep(OGMIOS_POLL_SEC + 1) # TODO how long is actually needed?
 
         LOG.info(f'Started {self.channel_str()} node.')
 
@@ -143,7 +140,6 @@ class ElectionNode:
             on_error = on_error,
             on_channel_event = handler,
         )
-        # TODO set self.script here
         self.subscriber.start()
 
     # def _guard_script(self):
@@ -546,7 +542,6 @@ class ElectionNode:
         mint_redeemer = Redeemer(data=BurnTestTokens())
         LOG.debug(f'mint_redeemer: {mint_redeemer}')
 
-        # TODO why is this failing? seems to not get the message that STTs have been burned?
         channel_ids = self.subscriber.current_channel_ids()
         LOG.debug(f'channel_ids: {channel_ids}')
 
