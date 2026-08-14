@@ -195,7 +195,7 @@ class ElectionNode:
             self.subscriber.await_tx_confirmed(tx_str)
             LOG.debug(f'{ch_str} subscriber confirmed tx {tx.id}')
 
-    def await_phase(self, phase: Optional[ElectionPhase], timeout=OGMIOS_TIMEOUT_SEC):
+    def await_phase(self, phase: EgcPhase, timeout=OGMIOS_TIMEOUT_SEC):
         self.subscriber.await_phase(phase, timeout=timeout)
 
     def await_channel(self, role: str, timeout=OGMIOS_TIMEOUT_SEC):

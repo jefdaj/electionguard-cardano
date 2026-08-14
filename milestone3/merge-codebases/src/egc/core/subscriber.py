@@ -591,7 +591,7 @@ class ElectionSubscriber:
 
 
     def await_phase(self, phase: EgcPhase, timeout=OGMIOS_TIMEOUT_SEC):
-        "Poll until the election reaches the specified phase, or time out."
+        "Poll until the election reaches (or passes) the specified phase, or time out."
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
             actual_phase = self.current_phase()
