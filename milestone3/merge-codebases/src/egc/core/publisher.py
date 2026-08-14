@@ -379,11 +379,12 @@ class ElectionPublisher:
         # the entire UTXO to go to the funder, minus the fee. Using the
         # funder as the change address makes the builder route the remainder
         # (collateral - fee) to them automatically.
-        # signed = txb.build_and_sign(
-            # [wallet.sk], change_address=return_addr,
-        # )
-        # tx = self.submit_tx(signed)
-        tx = self.sign_and_submit_tx(txb, change_address=return_addr)
+        # We don't use self.sign_and_submit_tx here because it expects to sign
+        # with our own wallet.sk rather than from_wallet.
+        signed = txb.build_and_sign(
+            [wallet.sk], change_address=return_addr,
+        )
+        tx = self.submit_tx(signed)
         LOG.debug(
             "%s returned collateral from %s to %s, less tx fee (tx %s)",
             self.channel_str(), wallet.addr, return_addr, tx.id,
