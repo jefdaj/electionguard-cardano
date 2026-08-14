@@ -38,11 +38,11 @@ class Client:
 
     async def config(self):
         resp = await self._c.get("/config")
-        return handle_http_errors(resp.json())
+        return handle_http_errors(resp).json()
 
     async def node_status(self):
         resp = await self._c.get("/node/status")
-        return handle_http_errors(resp.json())
+        return handle_http_errors(resp).json()
 
     async def node_await(self):
         # TODO what's a good timeout here?
@@ -94,20 +94,20 @@ class Client:
 
     async def wallet_show(self):
         resp = await self._c.get('/wallet')
-        return handle_http_errors(resp.json())
+        return handle_http_errors(resp).json()
 
     async def wallet_clear(self):
         resp = await self._c.delete('/wallet')
-        return handle_http_errors(resp.json())
+        return handle_http_errors(resp).json()
 
     async def wallet_save(self):
         # Differs from wallet show in that this includes the (private) signing key.
         resp = await self._c.get('/wallet/save')
-        return handle_http_errors(resp.json())
+        return handle_http_errors(resp).json()
 
     async def phase_get(self):
         resp = await self._c.get('/phase')
-        return handle_http_errors(resp.json())
+        return handle_http_errors(resp).json()
 
     async def collateral_return(self, return_addr: Optional[str] = None):
         data = schemas.CollateralReturn(return_addr=return_addr)
