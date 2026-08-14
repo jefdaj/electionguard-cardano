@@ -10,7 +10,7 @@ class Client:
         self._c = httpx.AsyncClient(
             base_url=base_url,
             transport=transport,
-            timeout = httpx.Timeout(30, read=600), # TODO what should these actually be?
+            timeout = httpx.Timeout(900, read=900), # TODO what should these actually be?
         )
 
     async def aclose(self):

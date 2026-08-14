@@ -45,12 +45,12 @@ LOG.info(f'OGMIOS_CTX: {OGMIOS_CTX}')
 OGMIOS_POLL_SEC    =   1 # TODO does this matter? what's reasonable?
 
 # TODO What's reasonable here? I assumed 300 but doubled it after one failed.
-OGMIOS_TIMEOUT_SEC = 600
+OGMIOS_TIMEOUT_SEC = 900
 
 # Estimate of how long it might take a new TX to show up in the node.
 # TODO how much longer should this be for production use?
 # TODO rename network delay?
-OGMIOS_DELAY_SEC = 10
+OGMIOS_DELAY_SEC = 60
 
 
 ### inital health check before running any testnet tests ###
