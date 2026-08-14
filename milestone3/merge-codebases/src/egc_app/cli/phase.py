@@ -3,6 +3,11 @@ import asyncio
 from egc import *
 from egc_app.cli.utils import RoleAwareGroup
 from egc_app.client import Client
+import logging
+
+
+LOG = logging.getLogger(__name__)
+
 
 @click.group(cls=RoleAwareGroup)
 def phase() -> None:
@@ -17,10 +22,9 @@ def advance(phase: str):
 
 @phase.command()
 def get():
-    phase = asyncio.run(Client().phase_get())
-    print(f'phase: {phase}')
-    print(f'phase type: {type(phase)}')
-    click.echo(phase)
+    phase_ = asyncio.run(Client().phase_get())
+    LOG.debug(f'phase_: {phase_}')
+    click.echo(phase_.name) # TODO .lower()?
 
 @phase.command(name='await')
 @click.option('--phase', type=click.STRING, required=True)

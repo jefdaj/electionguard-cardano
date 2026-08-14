@@ -1,15 +1,24 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Query
 from egc_app.server.state import get_state
 from copy import deepcopy
 from dataclasses import asdict
+from typing import Annotated
+from egc_app import schemas
+import logging
+
+
+LOG = logging.getLogger(__name__)
+
 
 router = APIRouter(prefix="/phase")
 
+
 @router.get("")
 async def phase_get(state=Depends(get_state)):
-    phase =  state.node.current_phase()
-    print(f'phase: {phase}')
-    return phase
+    phase_ =  state.node.current_phase()
+    LOG.debug(f'phase_: {phase_}')
+    out = schemas.Phase(egc_phase_value=phase_.value)
+    return out
 
 @router.get("/await")
 async def phase_await(
