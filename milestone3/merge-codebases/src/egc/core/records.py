@@ -260,3 +260,30 @@ def load_record(metadata: r.PublicRecordMetadata, pub_dir: Path):
     LOG.debug(f'data: {data}')
     assert type(data) == decode_cls
     return data
+
+
+# TODO where should this live?
+def load_all_guardian_pubkeys(n_guardians: int, pub_dir: Path):
+    "Load all guardian pubkeys, or raise an error if any are missing."
+    pub_dir = Path(pub_dir)
+    records = []
+    for i in range(1, n_guardians+1):
+        r = load_record(r.GuardianPubkey(guardian_number=i))
+        records.append(r)
+    return records
+
+# TODO where should this live?
+def load_all_guardian_backups(n_guardians: int, pub_dir: Path):
+    "Load all guardian backups, or raise an error if any are missing."
+    pub_dir = Path(pub_dir)
+    records = []
+    for guardian_number in range(1, n_guardians+1):
+        for backup_order in range(1, n_guardians+1):
+            if guardian_number == backup_order:
+                continue # guardians don't send themselves a backup
+            r = load_record(r.GuardianBackup(
+                guardian_number = guardian_number,
+                backup_order    = backup_order
+            ))
+            records.append(r)
+    return records

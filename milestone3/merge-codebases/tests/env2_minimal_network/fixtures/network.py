@@ -42,10 +42,14 @@ def env2_ogmios(env2_arion_network) -> OgmiosV6ChainContext:
         time.sleep(OGMIOS_POLL_SEC)
 
 @pytest.fixture(scope='session')
-def env2_ipfs(env2_arion_network, env2_tmp_root: Path):
+def env2_records_fetched_dir(env2_tmp_root: Path):
+        return env2_tmp_root / 'env2_ipfs' / 'records_fetched'
+
+@pytest.fixture(scope='session')
+def env2_ipfs(env2_arion_network, env2_tmp_root: Path, env2_records_fetched_dir: Path):
     ipfs_ = IPFSService(
         records_to_post_dir = env2_tmp_root / 'env2_ipfs' / 'records_to_post',
-        records_fetched_dir = env2_tmp_root / 'env2_ipfs' / 'records_fetched',
+        records_fetched_dir = env2_records_fetched_dir,
     )
     ipfs_.start()
     ipfs_.wait_until_stable_sync()

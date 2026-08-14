@@ -25,10 +25,11 @@ from typing import Any, Tuple, Optional, Self, Iterable, assert_never
 from urllib3.util.retry import Retry
 from pydantic_core import to_jsonable_python
 from enum import Enum
-from functools import total_ordering
+from pathlib import Path
 
 from .ogmios import *
 from .phase import EgcPhase, EgcPhaseContext, resolve_egc_phase
+from .plutus.types.phase import *
 from .plutus.types.action import *
 from .plutus.types.channel import *
 from .plutus.types.ipfs_node import *
@@ -423,6 +424,7 @@ class ElectionSubscriber:
             self,
             # config: ElectionConfig,
             election: ElectionContext,
+            records_fetched_dir: Path,
             on_event = _make_example_callback('on_event'),
             on_error = _make_example_callback('on_error'),
             on_channel_event = _make_example_callback('on_channel_event'),
@@ -433,6 +435,9 @@ class ElectionSubscriber:
 
         # self.config = config # TODO remove in favor of context?
         self.election = election
+
+        # Needed to determine key ceremony phase.
+        self.records_fetched_dir = records_fetched_dir
 
         # Client callbacks, which default to printing events.
         self._client_on_event         = on_event
@@ -557,11 +562,42 @@ class ElectionSubscriber:
             phase = event.output_state.state.phase
         except:
             phase = None
+
+        if phase < ElectionConfigPhase(ConfigCeremonyPhase()):
+            ceremony_round1_complete = False
+            ceremony_round2_complete = False
+        elif phase > ElectionConfigPhase(ConfigCeremonyPhase()):
+            ceremony_round1_complete = True
+            ceremony_round2_complete = True
+        else:
+            # If currently doing the ceremony, have to check fetched records...
+            try:
+                details = load_record(r.CeremonyDetails(), self.records_fetched_dir)
+                LOG.debug(f'details: {details}')
+                n = details.number_of_guardians
+                LOG.debug(f'n guardians: {n}')
+                # TODO prevent guardians from gaming this by posting an extra key
+                pubkeys = load_all_guardian_pubkeys(n, self.records_fetched_dir)
+                LOG.debug(f'actual n_pubkeys: {len(pubkeys)}')
+                ceremony_round1_complete = len(pubkeys) == n
+                try:
+                    # TODO prevent guardians from gaming this by posting extra backups
+                    n_backups_expected = n**2 - n
+                    LOG.debug(f'n_backups_expected: {n_backups_expected}')
+                    backups = load_all_guardian_backups(n, self.records_fetched_dir)
+                    LOG.debug(f'actual n_backups: {len(backups)}')
+                    ceremony_round2_complete = len(backups) == n_backups_expected
+                except:
+                    ceremony_round2_complete = False
+            except:
+                ceremony_round1_complete = False
+                ceremony_round2_complete = False
+
         ctx = EgcPhaseContext(
             indexed = len(self._checkpoints) > 0,
             deployed = bool(event is not None),
-            ceremony_round1_complete = False, # TODO implement detection
-            ceremony_round2_complete = False, # TODO implement detection
+            ceremony_round1_complete = ceremony_round1_complete,
+            ceremony_round2_complete = ceremony_round2_complete,
             onchain_phase = phase,
         )
         LOG.debug(f'ctx: {ctx}')

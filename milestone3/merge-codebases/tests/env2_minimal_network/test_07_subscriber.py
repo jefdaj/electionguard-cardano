@@ -11,8 +11,8 @@ LOG = logging.getLogger(__name__)
 # their election steps in other test modules though.
 
 @pytest.fixture(scope='module')
-def subscriber(election_ctx: ElectionContext):
-    sub = ElectionSubscriber(election_ctx)
+def subscriber(election_ctx: ElectionContext, env2_records_fetched_dir: Path):
+    sub = ElectionSubscriber(election_ctx, env2_records_fetched_dir)
     sub.start()
     yield sub
     sub.stop()

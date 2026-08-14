@@ -1,4 +1,6 @@
 from enum import Enum
+from typing import Optional
+from functools import total_ordering
 from .plutus.types.phase import *
 import logging
 
