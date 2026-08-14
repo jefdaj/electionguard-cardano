@@ -28,7 +28,7 @@ from enum import Enum
 from functools import total_ordering
 
 from .ogmios import *
-from .plutus.types.phase import *
+from .phase import EgcPhase, EgcPhaseContext, resolve_egc_phase
 from .plutus.types.action import *
 from .plutus.types.channel import *
 from .plutus.types.ipfs_node import *
@@ -325,73 +325,6 @@ def kupo_match_to_pycardano_utxo(kupo_dict: dict) -> UTxO:
 
     return UTxO(tx_input, tx_output)
 
-
-# TODO where should this live?
-@dataclass(frozen=True)
-class EgcPhaseContext:
-    "Extra context needed to determine EgcPhase from (on-chain) ElectionPhase."
-
-    # TODO add key ceremony rounds: 1,2,3
-    # TODO add transition grace periods that finish when everyone announces they're ready
-
-    # Whether the Kupo thread has started indexing yet.
-    indexed: bool
-
-    # Disambiguates whether a contract_phase of None means before or after election.
-    deployed: bool
-
-    onchain_phase: Optional[ElectionPhase]
-
-
-# TODO where should this live?
-@total_ordering
-class EgcPhase(Enum):
-    """A more complete phase that includes on-chain ElectionPhase + other info.
-    It should be preferred over raw ElectionPhase for use in interfaces etc.
-    """
-
-    NOT_INDEXED       = 0 # no election subscribed to, or Kupo starting up
-    NOT_DEPLOYED      = 1 # init_election not run yet, or tx not confirmed
-    CONFIG_ANNOUNCE   = 2
-    CONFIG_ONBOARDING = 3
-    CONFIG_CEREMONY   = 4
-    CONFIG_FINALIZE   = 5
-    VOTING            = 6
-    RESULTS_TALLY     = 7
-    RESULTS_DECRYPT   = 8
-    VERIFY            = 9
-    FINALIZE          = 10
-    FINISHED          = 11
-
-    def __lt__(self, other):
-        if not isinstance(other, EgcPhase):
-            return NotImplemented
-        return self.value < other.value
-
-
-def resolve_egc_phase(ctx: EgcPhaseContext) -> EgcPhase:
-    if not ctx.indexed:
-        return EgcPhase.NOT_INDEXED
-    if ctx.onchain_phase is None:
-        return EgcPhase.FINISHED if ctx.deployed else EgcPhase.NOT_DEPLOYED
-    match ctx.onchain_phase:
-        case ElectionConfigPhase(phase=p):
-            match p:
-                case ConfigAnnouncePhase():   return EgcPhase.CONFIG_ANNOUNCE
-                case ConfigOnboardingPhase(): return EgcPhase.CONFIG_ONBOARDING
-                case ConfigCeremonyPhase():   return EgcPhase.CONFIG_CEREMONY
-                case ConfigFinalizePhase():   return EgcPhase.CONFIG_FINALIZE
-                case _: assert_never(p)
-        case ElectionVotingPhase(): return EgcPhase.VOTING
-        case ElectionResultsPhase(phase=p):
-            match p:
-                case ResultsTallyPhase():   return EgcPhase.RESULTS_TALLY
-                case ResultsDecryptPhase(): return EgcPhase.RESULTS_DECRYPT
-                case _: assert_never(p)
-        case ElectionVerifyPhase():   return EgcPhase.VERIFY
-        case ElectionFinalizePhase(): return EgcPhase.FINALIZE
-        case _: assert_never(ctx.onchain_phase)
-
 # TODO where should this live?
 def is_being_minted(channel_str: str, action: ElectionAction) -> bool:
     ch_id = coerce_channel_id(channel_str)
@@ -627,6 +560,8 @@ class ElectionSubscriber:
         ctx = EgcPhaseContext(
             indexed = len(self._checkpoints) > 0,
             deployed = bool(event is not None),
+            ceremony_round1_complete = False, # TODO implement detection
+            ceremony_round2_complete = False, # TODO implement detection
             onchain_phase = phase,
         )
         LOG.debug(f'ctx: {ctx}')
