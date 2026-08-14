@@ -146,11 +146,9 @@ class ElectionPublisher:
             ch_str = self.channel_str()
             fee_ada = self.total_fees_ada()
             LOG.debug(f'{ch_str} fees so far: {fee_ada} ADA')
-            return tx_signed
 
-        return ogmios_retry(
-            submit_fn,
-        )
+        ogmios_retry(submit_fn)
+        return tx_signed
 
 
     # TODO get this working for the case where the utxo is confirmed + consumed between polls
