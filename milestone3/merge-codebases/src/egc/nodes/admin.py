@@ -149,7 +149,7 @@ class AdminNode(VerifierNode):
         LOG.debug('cont_redeemer: %s' % pformat(cont_redeemer))
 
         # TODO more comprehensive guards based on subscriber phase
-        assert in_state.phase == ElectionConfigPhase(phase=ConfigOnboardingPhase())
+        assert in_state.phase == ElectionConfigPhase(phase=ConfigOnboardingPhase()), f'Wrong phase: {in_state.phase}'
         new_phase = ElectionConfigPhase(phase=ConfigCeremonyPhase())
 
         cont_state: AdminChannelState = replace(
