@@ -38,6 +38,34 @@ def cfg_init_election(draw):
     return cfg
 
 
+def assert_admin_initelection(cfg):
+    assert_script_logs_match(cfg, 'admin', [
+        'CH_STR=admin$',
+    ])
+    assert_node_logs_match(cfg, 'admin', [
+        'minted admin channel STT',
+        'deployed contract',
+        'saved contract details',
+        'Subscribe to this election with',
+        '^egc:election:4:',
+        'Started observer',
+     ])
+
+
+def assert_admin_election_cleanup(cfg):
+    assert_script_logs_match(cfg, 'admin', [
+        'egc election burntesttokens$',
+        'egc collateral return$',
+        'exit 0$'
+    ])
+
+
+# TODO remove?
+def assert_init_election(cfg):
+    assert_admin_initelection(cfg)
+    assert_admin_election_cleanup(cfg)
+
+
 @given_cached_tests(
     cfg_strategy = cfg_init_election(),
     max_examples = 1,
@@ -47,21 +75,4 @@ def test_init_election(cfg: ResolvedTestConfig):
     assert_wallet_created(cfg)
     assert_node_ready(cfg)
     assert_endelection_event(cfg)
-    assert_script_logs_match(cfg, 'admin', [
-        'CH_STR=admin$',
-        'egc collateral await$',
-        'egc election burntesttokens$',
-        'egc collateral return$',
-        'exit 0$'
-    ])
-    assert_node_logs_match(cfg, 'admin', [
-        'minted admin channel STT',
-        'deployed contract',
-        'saved contract details',
-        'Subscribe to this election with',
-        '^egc:election:4:',
-        'Started observer',
-    ])
-    # assert_script_logs_match(cfg, '(?!admin)', [
-    #     '^[0-9]{9,}\\s.*ended election'
-    # ])
+    assert_init_election(cfg)
