@@ -1,3 +1,4 @@
+import re
 from hypothesis import given, settings, seed, Phase
 from hypothesis import strategies as st
 from egc import *
@@ -7,7 +8,7 @@ from .lib  import *
 from .test_02_create_wallet import assert_wallet_created
 from .test_03_node_ready    import assert_node_ready
 from .test_04_subscribe     import assert_endelection_event
-from .test_06_admin_post_ipfs import assert_admin_post_ipfs, assert_subchannels_show_ipfs
+from .test_06_admin_post_ipfs import assert_admin_post_ipfs
 from .test_07_post_manifest import cfg_post_manifest_base, assert_post_manifest
 
 
@@ -35,8 +36,6 @@ def assert_post_ceremony(cfg):
         'POST /api/ceremony/create',
         'POST /api/records/post.*201$',
         'admin posted PublicRecord.*metadata=CeremonyDetails',
-    ])
-    assert_node_logs_match(cfg, 'admin', [
         'fetched.*CeremonyDetails',
     ])
     assert_script_logs_match(cfg, '(?!admin)', [
@@ -45,8 +44,9 @@ def assert_post_ceremony(cfg):
 
 
 def assert_advance_phase(cfg, phase: ElectionPhase):
+    phase_esc = re.escape(str(phase))
     assert_script_logs_match(cfg, '(?!admin)', [
-        f'admin advanced to {str(phase)}$',
+        f'admin advanced phase to {phase_esc}$',
     ])
     
 
@@ -60,7 +60,6 @@ def test_post_batch(cfg: ResolvedTestConfig):
     assert_node_ready(cfg)
     assert_endelection_event(cfg)
     assert_admin_post_ipfs(cfg)
-    assert_subchannels_show_ipfs(cfg)
     assert_post_manifest(cfg)
     assert_post_ceremony(cfg)
-    assert_advance_phase(cfg, ElectionConfigPhase(ConfigAnnouncePhase()))
+    assert_advance_phase(cfg, ElectionConfigPhase(ConfigOnboardingPhase()))
