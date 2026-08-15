@@ -2,19 +2,19 @@ import pytest
 import sys
 from hypothesis import given, settings, seed, Phase
 from hypothesis import strategies as st
-from dataclasses import replace
 from egc import *
 from ..lib import *
 from .lib  import *
 
-from .test_03_node_ready import *
+from .test_02_create_wallet import assert_wallet_created
+from .test_03_node_ready import assert_node_ready
 
 
 @st.composite
 def cfg_subscribe_txt(draw):
     cfg = draw( config_test_base() )
     cfg = append_config_fn_name(cfg)
-    cfg = replace_setup_fns(cfg, [
+    cfg = append_setup_fns(cfg, [
         FnCallConfig(
             name = f'install_qr_txt',
             args = (('drawn', draw(st.integers(0, 1000))),)
@@ -43,6 +43,7 @@ def assert_endelection_event(cfg):
 )
 def test_subscribe_txt(cfg: ResolvedTestConfig):
     assert_test_completed(cfg)
+    assert_wallet_created(cfg)
     assert_node_ready(cfg)
     assert_endelection_event(cfg)
 
@@ -51,7 +52,7 @@ def test_subscribe_txt(cfg: ResolvedTestConfig):
 def cfg_subscribe_png(draw):
     cfg = draw( config_test_base() )
     cfg = append_config_fn_name(cfg)
-    cfg = replace_setup_fns(cfg, [
+    cfg = append_setup_fns(cfg, [
         FnCallConfig(
             name = f'install_qr_png',
             args = (('drawn', draw(st.integers(0, 1000))),)
@@ -70,5 +71,6 @@ def cfg_subscribe_png(draw):
 )
 def test_subscribe_qr_png(cfg: ResolvedTestConfig):
     assert_test_completed(cfg)
+    assert_wallet_created(cfg)
     assert_node_ready(cfg)
     assert_endelection_event(cfg)

@@ -4,7 +4,7 @@ from egc import *
 from ..lib import *
 from .lib  import *
 
-from .test_03_node_ready import *
+from .test_03_node_ready import assert_node_ready
 from .test_04_subscribe import *
 
 

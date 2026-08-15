@@ -2,7 +2,6 @@ import pytest
 import sys
 from hypothesis import given, settings, seed, Phase
 from hypothesis import strategies as st
-from dataclasses import replace
 from egc import *
 from ..lib import *
 from .lib  import *
@@ -14,7 +13,7 @@ from .test_02_create_wallet import assert_wallet_created
 def cfg_node_ready(draw):
     cfg = draw( config_test_base() )
     cfg = append_config_fn_name(cfg)
-    cfg = replace_setup_fns(cfg, [
+    cfg = append_setup_fns(cfg, [
         FnCallConfig(
             name = 'render_egc_scripts',
             args = (('default', '03_node_ready.sh'),),
