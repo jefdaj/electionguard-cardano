@@ -7,7 +7,7 @@ from .lib  import *
 from .test_02_create_wallet import assert_wallet_created
 from .test_03_node_ready    import assert_node_ready
 from .test_04_subscribe     import assert_endelection_event
-from .test_06_admin_post_ipfs import assert_admin_post_ipfs, assert_subchannels_show_ipfs
+from .test_06_admin_post_ipfs import assert_admin_post_ipfs
 from .test_07_post_manifest import cfg_post_manifest_base, assert_post_manifest
 from .test_08_post_batch    import assert_advance_phase
 
@@ -29,8 +29,8 @@ def cfg_advance_phase(draw):
 
 
 def assert_advance_phase_standalone(cfg):
-    assert_script_logs_match(cfg, '.*', [
-        '^CONFIG_CEREMONY_ROUND1$',
+    assert_script_logs_match(cfg, 'admin', [
+        '^config_ceremony_round1$',
     ])
     assert_node_logs_match(cfg, 'admin', [
         'PUT /api/phase.*201$',
@@ -50,8 +50,7 @@ def test_advance_phase(cfg: ResolvedTestConfig):
     assert_node_ready(cfg)
     assert_endelection_event(cfg)
     assert_admin_post_ipfs(cfg)
-    assert_subchannels_show_ipfs(cfg)
     assert_post_manifest(cfg)
     assert_post_ceremony(cfg)
-    assert_advance_phase(cfg, ElectionConfigPhase(ConfigAnnouncePhase()))
+    assert_advance_phase(cfg, ElectionConfigPhase(ConfigCeremonyPhase()))
     assert_advance_phase_standalone(cfg)

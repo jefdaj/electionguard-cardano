@@ -29,7 +29,7 @@ def advance(phase: str):
 def get():
     phase_ = asyncio.run(Client().phase_get())
     LOG.debug(f'phase_: {phase_}')
-    click.echo(phase_.name) # TODO .lower()?
+    click.echo(phase_.name.lower())
 
 @phase.command(name='await')
 @click.option('--phase', type=click.STRING, required=True)
