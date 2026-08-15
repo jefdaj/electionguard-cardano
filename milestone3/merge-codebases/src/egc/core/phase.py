@@ -88,3 +88,24 @@ def resolve_egc_phase(ctx: EgcPhaseContext) -> EgcPhase:
         case ElectionVerifyPhase():   return EgcPhase.VERIFY
         case ElectionFinalizePhase(): return EgcPhase.FINALIZE
         case _: assert_never(ctx.onchain_phase)
+
+
+def resolve_onchain_phase(egc_phase: EgcPhase) -> Optional[ElectionPhase]:
+    "Used by `egc phase advance` to translate to internal (on-chain) type."
+    # TODO is there a better/clever way?
+    match egc_phase.value:
+        case 0:  return None
+        case 1:  return None
+        case 2:  return ElectionConfigPhase(ConfigAnnouncePhase())
+        case 3:  return ElectionConfigPhase(ConfigOnboardingPhase())
+        case 4:  return ElectionConfigPhase(ConfigCeremonyPhase())
+        case 5:  return ElectionConfigPhase(ConfigCeremonyPhase())
+        case 6:  return ElectionConfigPhase(ConfigCeremonyPhase())
+        case 7:  return ElectionConfigPhase(ConfigFinalizePhase())
+        case 8:  return ElectionVotingPhase()
+        case 9:  return ElectionResultsPhase(ResultsTallyPhase())
+        case 10: return ElectionResultsPhase(ResultsDecryptPhase())
+        case 11: return ElectionVerifyPhase()
+        case 12: return ElectionFinalizePhase()
+        case 13: return None
+        case _:  raise NotImplementedError

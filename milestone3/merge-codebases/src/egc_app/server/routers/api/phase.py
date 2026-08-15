@@ -52,6 +52,16 @@ async def phase_advance(
     ):
     _guard_election(state)
     _guard_admin(state)
-    phase_ = EgcPhase(data.egc_phase_value)
+
+    # This one has to be translated back to the on-chain type first
+    # TODO adjust the CLI to take an explicit on-chain phase name instead?
+    egc_phase = EgcPhase(data.egc_phase_value)
+    phase_ = resolve_onchain_phase(egc_phase)
+    if phase_ is None:
+        raise HTTPException(
+            status_code=409,
+            detail=f"No on-chain phase matches {egc_phase}."
+        )
+
     tx = state.node.advance_phase(phase_)
     state.node.await_tx_confirmed(tx)
