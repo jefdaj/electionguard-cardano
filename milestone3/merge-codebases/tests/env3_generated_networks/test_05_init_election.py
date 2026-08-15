@@ -37,7 +37,8 @@ INIT_ELECTION_CONFIGS = [f() for f in [
 def test_init_election(cfg: ResolvedTestConfig):
     assert_script_logs_do_not_match(cfg, '.*', [
         'Traceback',
-        'arion: FatalError'
+        'arion: FatalError',
+        '^cleanup failed$',
     ])
     assert_script_logs_match(cfg, 'admin', [
         'CH_STR=admin$',

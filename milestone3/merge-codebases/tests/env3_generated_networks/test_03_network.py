@@ -37,4 +37,5 @@ def test_node_ready(cfg: ResolvedTestConfig):
         '^Traceback',
         '^arion: FatalError',
         '"connected": false',
+        '^cleanup failed$',
     ])

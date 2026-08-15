@@ -6,15 +6,15 @@ from .lib  import *
 
 # TODO derive this from config_announce_ceremony instead (need a replace egc script fn)
 @st.composite
-def config_add_subchannels(draw):
+def config_subchannels_post_ipfs(draw):
     cfg = draw( config_test_base() )
     cfg = append_config_fn_name(cfg)
     cfg = replace_setup_fns(cfg, [
         FnCallConfig(
             name = 'render_egc_scripts',
             args = (
-                ('default', 'request-subchannel.sh'),
-                ('admin', 'add-subchannels.sh'),
+                ('default', 'subchannel-post-ipfs.sh'),
+                ('admin', 'admin-wait-for-ipfs.sh'),
             ),
         ),
         FnCallConfig(name='install_funder_sk' , args=()),
@@ -23,16 +23,16 @@ def config_add_subchannels(draw):
     ])
     return cfg
 
-ADD_SUBCHANNELS_CONFIGS = [f() for f in [
-    config_add_subchannels,
+SUBCHANNELS_POST_IPFS_CONFIGS = [f() for f in [
+    config_subchannels_post_ipfs,
 ]]
 
 
 @given_cached_tests(
-    cfg_strategy = st.one_of(ADD_SUBCHANNELS_CONFIGS),
-    max_examples = 2,
+    cfg_strategy = st.one_of(SUBCHANNELS_POST_IPFS_CONFIGS),
+    max_examples = 1,
 )
-def test_add_subchannels(cfg: ResolvedTestConfig):
+def test_subchannels_post_ipfs(cfg: ResolvedTestConfig):
     assert_script_logs_do_not_match(cfg, '.*', [
         'Traceback',
         'arion: FatalError',

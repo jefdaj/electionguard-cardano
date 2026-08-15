@@ -61,4 +61,4 @@ def test_subscribe_qr_png(cfg: ResolvedTestConfig):
         '^[0-9]{9,}\\s.*(ended election|subscriber timed out)'
 
     ])
-    assert_script_logs_do_not_match(cfg, '.*', ['^Traceback', '^arion: FatalError'])
+    assert_script_logs_do_not_match(cfg, '.*', ['^Traceback', '^arion: FatalError', '^cleanup failed$'])

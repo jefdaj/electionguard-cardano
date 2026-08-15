@@ -42,6 +42,7 @@ def test_build_manifest(cfg: ResolvedTestConfig):
         'Traceback',
         'arion: FatalError',
         'Command not available from current role',
+        '^cleanup failed$',
     ])
     assert_script_logs_match(cfg, 'admin', [
         'CH_STR=admin$',

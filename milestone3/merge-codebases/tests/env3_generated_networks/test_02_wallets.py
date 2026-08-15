@@ -26,7 +26,7 @@ WALLET_CONFIGS = [f() for f in [
 
 @given_cached_tests(st.one_of(WALLET_CONFIGS), max_examples=3)
 def test_create_wallet(cfg: ResolvedTestConfig):
-    assert_script_logs_do_not_match(cfg, '.*', ['^Traceback', '^arion: FatalError'])
+    assert_script_logs_do_not_match(cfg, '.*', ['^Traceback', '^arion: FatalError', '^cleanup failed$'])
     assert_script_logs_match(cfg, '.*', [
         '^\\s*"addr": "addr_test1'
     ])

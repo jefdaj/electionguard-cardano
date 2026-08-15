@@ -10,7 +10,7 @@ cd /data
 
 set -Eeuo pipefail
 {% if debug_script %}
-PS4='+ $(date "+%H:%M:%S") '
+PS4='+ {{node_name}} $(date "+%H:%M:%S") '
 set -x
 {% endif %}
 {% endblock %}

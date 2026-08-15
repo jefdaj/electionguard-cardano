@@ -174,6 +174,7 @@
               contents = [
                 pythonEnv
                 pkgs.coreutils
+                pkgs.gnugrep
                 pkgs.findutils
                 pkgs.bashInteractive
                 pkgs.jq

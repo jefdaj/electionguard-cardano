@@ -12,8 +12,4 @@ egc channel request \
 # docker names etc.
 CH_STR=$(egc channel await --role $EGC_NODE_ROLE)
 [[ $CH_STR == $EGC_NODE_NAME ]] || (echo "wrong channel"; exit 1)
-
-egc ipfs show
-egc ipfs post
-egc ipfs show
 {% endblock %}

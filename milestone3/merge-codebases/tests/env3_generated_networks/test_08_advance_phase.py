@@ -36,6 +36,7 @@ def test_advance_phase(cfg: ResolvedTestConfig):
         'Traceback',
         'arion: FatalError',
         'Command not available from current role',
+        '^cleanup failed$',
     ])
     assert_script_logs_match(cfg, '.*', [
         '^CONFIG_CEREMONY_ROUND1$',
