@@ -6,7 +6,7 @@ from egc import *
 from ..lib import *
 from .lib  import *
 
-from .test_01_cleanup import *
+from .test_01_cleanup import assert_cleanup_called
 
 
 @st.composite

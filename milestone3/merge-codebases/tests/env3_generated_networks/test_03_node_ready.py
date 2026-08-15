@@ -7,7 +7,7 @@ from egc import *
 from ..lib import *
 from .lib  import *
 
-from .test_02_create_wallet import *
+from .test_02_create_wallet import assert_wallet_created
 
 
 @st.composite
