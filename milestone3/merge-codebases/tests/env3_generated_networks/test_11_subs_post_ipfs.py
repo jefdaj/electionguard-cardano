@@ -15,7 +15,7 @@ def cfg_subchannels_ipfs(draw):
         FnCallConfig(
             name = 'render_egc_scripts',
             args = (
-                ('default', '11_subchannel_post_ipfs.sh'),
+                ('default', '11_sub_post_ipfs.sh'),
                 ('admin', '11_admin_watch_ipfs.sh'),
             ),
         ),
@@ -27,7 +27,7 @@ def cfg_subchannels_ipfs(draw):
     cfg_strategy = cfg_subchannels_ipfs(),
     max_examples = 1,
 )
-def test_subchannels_post_ipfs(cfg: ResolvedTestConfig):
+def test_subs_post_ipfs(cfg: ResolvedTestConfig):
     assert_test_completed(cfg)
     # assert_script_logs_match(cfg, 'admin', [
         # 'CH_STR=admin$',

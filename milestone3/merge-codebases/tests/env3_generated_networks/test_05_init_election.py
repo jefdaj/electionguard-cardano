@@ -30,8 +30,8 @@ def cfg_init_election(draw):
         FnCallConfig(
             name = 'render_egc_scripts',
             args = (
-                ('default', '04_subscribe_png.sh'), # TODO separate script?
-                ('admin', '05_init_election.sh'),
+                ('default', '04_subscribe_png.sh'), # same, but now admin creates qrcode
+                ('admin', '05_admin_init_election.sh'),
             ),
         ),
     ])

@@ -1,4 +1,4 @@
-{% extends "05_init_election.sh" %}
+{% extends "05_admin_init_election.sh" %}
 {% block body %}
 {{ super() }}
 # post ipfs peer_id on chain

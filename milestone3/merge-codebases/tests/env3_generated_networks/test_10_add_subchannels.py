@@ -4,7 +4,7 @@ from egc import *
 from ..lib import *
 from .lib  import *
 
-from .test_07_post_ceremony import *
+# from .test_07_post_manifest import *
 
 
 @st.composite
