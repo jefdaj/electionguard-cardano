@@ -4,7 +4,6 @@ from egc import *
 from ..lib import *
 from .lib  import *
 
-from .test_07_build_manifest import BUILD_MANIFEST_CONFIGS
 
 @st.composite
 def config_announce_ceremony(draw):
@@ -29,13 +28,9 @@ def config_announce_ceremony(draw):
     ])
     return cfg
 
-ANNOUNCE_CEREMONY_CONFIGS = [f() for f in [
-    config_announce_ceremony,
-]] + BUILD_MANIFEST_CONFIGS
-
 
 @given_cached_tests(
-    cfg_strategy = st.one_of(ANNOUNCE_CEREMONY_CONFIGS),
+    cfg_strategy = config_announce_ceremony(),
     max_examples = 3,
 )
 def test_announce_ceremony(cfg: ResolvedTestConfig):

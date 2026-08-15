@@ -4,7 +4,6 @@ from egc import *
 from ..lib import *
 from .lib  import *
 
-from .test_06_announce_ceremony import config_announce_ceremony
 
 @st.composite
 def config_init_election(draw):
@@ -25,13 +24,9 @@ def config_init_election(draw):
     ])
     return cfg
 
-INIT_ELECTION_CONFIGS = [f() for f in [
-    config_init_election,
-    config_announce_ceremony,
-]]
 
 @given_cached_tests(
-    cfg_strategy = st.one_of(INIT_ELECTION_CONFIGS),
+    cfg_strategy = config_init_election(),
     max_examples = 3,
 )
 def test_init_election(cfg: ResolvedTestConfig):

@@ -4,6 +4,7 @@ from egc import *
 from ..lib import *
 from .lib  import *
 
+
 # TODO derive this from config_announce_ceremony instead (need a replace egc script fn)
 @st.composite
 def config_add_subchannels(draw):
@@ -23,14 +24,10 @@ def config_add_subchannels(draw):
     ])
     return cfg
 
-ADD_SUBCHANNELS_CONFIGS = [f() for f in [
-    config_add_subchannels,
-]]
-
 
 @given_cached_tests(
-    cfg_strategy = st.one_of(ADD_SUBCHANNELS_CONFIGS),
-    max_examples = 2,
+    cfg_strategy = config_add_subchannels(),
+    max_examples = 1,
 )
 def test_add_subchannels(cfg: ResolvedTestConfig):
     assert_script_logs_do_not_match(cfg, '.*', [

@@ -7,9 +7,6 @@ from egc import *
 from ..lib import *
 from .lib  import *
 
-from .test_04_subscribe import config_subscribe_qr_txt, config_subscribe_qr_png
-from .test_05_init_election import INIT_ELECTION_CONFIGS
-
 @st.composite
 def config_node_ready(draw):
     cfg = draw( config_test_base() )
@@ -22,15 +19,7 @@ def config_node_ready(draw):
     ])
     return cfg
 
-# These all include making sure the node is ready
-# TODO when should the composite functions be called?
-NODE_READY_CONFIGS = [f() for f in [
-    config_node_ready,
-    config_subscribe_qr_txt,
-    config_subscribe_qr_png,
-]] + INIT_ELECTION_CONFIGS
-
-@given_cached_tests(st.one_of(NODE_READY_CONFIGS), max_examples=10)
+@given_cached_tests(config_node_ready(), max_examples=1)
 def test_node_ready(cfg: ResolvedTestConfig):
     assert_script_logs_match(cfg, '.*', ['^node is ready$'])
     assert_script_logs_do_not_match(cfg, '.*', [

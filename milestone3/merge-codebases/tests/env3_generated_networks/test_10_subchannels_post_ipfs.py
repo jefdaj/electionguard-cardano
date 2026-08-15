@@ -4,6 +4,7 @@ from egc import *
 from ..lib import *
 from .lib  import *
 
+
 # TODO derive this from config_announce_ceremony instead (need a replace egc script fn)
 @st.composite
 def config_subchannels_post_ipfs(draw):
@@ -23,13 +24,9 @@ def config_subchannels_post_ipfs(draw):
     ])
     return cfg
 
-SUBCHANNELS_POST_IPFS_CONFIGS = [f() for f in [
-    config_subchannels_post_ipfs,
-]]
-
 
 @given_cached_tests(
-    cfg_strategy = st.one_of(SUBCHANNELS_POST_IPFS_CONFIGS),
+    cfg_strategy = config_subchannel_post_ipfs(),
     max_examples = 1,
 )
 def test_subchannels_post_ipfs(cfg: ResolvedTestConfig):

@@ -4,6 +4,7 @@ from egc import *
 from ..lib import *
 from .lib  import *
 
+
 # TODO derive this from config_announce_ceremony instead (need a replace egc script fn)
 @st.composite
 def config_advance_phase(draw):
@@ -22,13 +23,9 @@ def config_advance_phase(draw):
     ])
     return cfg
 
-ADVANCE_PHASE_CONFIGS = [f() for f in [
-    config_advance_phase,
-]] # TODO more here
-
 
 @given_cached_tests(
-    cfg_strategy = st.one_of(ADVANCE_PHASE_CONFIGS),
+    cfg_strategy = config_announce_phase(),
     max_examples = 1,
 )
 def test_advance_phase(cfg: ResolvedTestConfig):

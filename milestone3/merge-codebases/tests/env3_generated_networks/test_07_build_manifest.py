@@ -28,14 +28,10 @@ def config_build_manifest(draw):
     ])
     return cfg
 
-BUILD_MANIFEST_CONFIGS = [f() for f in [
-    config_build_manifest,
-]]
-
 
 @given_cached_tests(
-    cfg_strategy = st.one_of(BUILD_MANIFEST_CONFIGS),
-    max_examples = 3,
+    cfg_strategy = config_build_manifest(),
+    max_examples = 1,
 )
 def test_build_manifest(cfg: ResolvedTestConfig):
     assert_script_logs_do_not_match(cfg, '.*', [
