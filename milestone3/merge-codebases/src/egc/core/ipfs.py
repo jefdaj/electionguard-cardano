@@ -100,7 +100,7 @@ class PendingStore:
 
     def mark_attempt(self, record, attempts, next_attempt):
         key = record_key(record)
-        LOG.debug(f'mark_attempt record:{record} attempts:{attempts} next_attempt:{next_attempt}')
+        LOG.info(f'mark_attempt record:{record} attempts:{attempts} next_attempt:{next_attempt}')
         self._db[key] = (record, attempts, next_attempt)
 
     def due(self, now):

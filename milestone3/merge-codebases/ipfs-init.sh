@@ -40,7 +40,7 @@ ipfs config --json Discovery.MDNS.Enabled true
 # ipfs config --json Swarm.ResourceMgr.MaxFileDescriptors 128
 
 # Disable the accelerated DHT client if it got enabled — it does bulk network sweeps:
-ipfs config --json Routing.AcceleratedDHTClient false
+ipfs config --json Routing.AcceleratedDHTClient true
 
 # TODO Stop advertising a relay & stop NAT port mapping storms?
 # ipfs config --json Swarm.RelayService.Enabled false
@@ -48,5 +48,5 @@ ipfs config --json Routing.AcceleratedDHTClient false
 
 # QUIC opens lots of UDP flows -> conntrack blowup on cheap routers.
 # Test with TCP only to confirm that's the cause:
-ipfs config --json Swarm.Transports.Network.QUIC false
+ipfs config --json Swarm.Transports.Network.QUIC true
 # ipfs config --json Swarm.Transports.Network.Relay false

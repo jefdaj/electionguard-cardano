@@ -904,9 +904,7 @@ class ElectionSubscriber:
         self._log_thread.start()
 
         # prevents polling error during startup
-        # TODO if this becomes a problem, wait for /health -> 200 OK instead
-        # self.sleep(1)
-        # time.sleep(OGMIOS_POLL_SEC + 1) # TODO how long is actually needed?
+        self.sleep(1)
 
 
     def _kupo_log(self) -> None:
