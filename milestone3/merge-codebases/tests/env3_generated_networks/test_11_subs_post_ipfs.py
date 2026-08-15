@@ -4,7 +4,7 @@ from egc import *
 from ..lib import *
 from .lib  import *
 
-from .test_10_add_subchannels import *
+# from .test_10_add_subchannels import *
 
 
 @st.composite

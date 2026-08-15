@@ -904,7 +904,7 @@ class ElectionSubscriber:
         self._log_thread.start()
 
         # prevents polling error during startup
-        self.sleep(1)
+        time.sleep(1)
 
 
     def _kupo_log(self) -> None:

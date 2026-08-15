@@ -4,14 +4,19 @@ from egc import *
 from ..lib import *
 from .lib  import *
 
-# from .test_07_post_manifest import *
+from .test_02_create_wallet import assert_wallet_created
+from .test_03_node_ready    import assert_node_ready
+from .test_04_subscribe     import assert_endelection_event
+from .test_06_admin_post_ipfs import assert_admin_post_ipfs
+from .test_07_post_manifest import cfg_post_manifest_base, assert_post_manifest
+from .test_08_post_batch    import assert_advance_phase, assert_post_manifest, assert_post_ceremony
 
 
 @st.composite
 def cfg_add_subchannels_base(draw):
-    cfg = draw( cfg_post_ceremony_base() )
+    cfg = draw( cfg_post_manifest_base() )
     cfg = append_config_fn_name(cfg)
-    cfg = replace_setup_fns(cfg, [
+    cfg = append_setup_fns(cfg, [
         FnCallConfig(name='install_n_requests', args=()),
     ])
     return cfg
@@ -21,7 +26,7 @@ def cfg_add_subchannels_base(draw):
 def cfg_add_subchannels(draw):
     cfg = draw( cfg_add_subchannels_base() )
     cfg = append_config_fn_name(cfg)
-    cfg = replace_setup_fns(cfg, [
+    cfg = append_setup_fns(cfg, [
         FnCallConfig(
             name = 'render_egc_scripts',
             args = (
@@ -38,7 +43,6 @@ def cfg_add_subchannels(draw):
     max_examples = 1,
 )
 def test_add_subchannels(cfg: ResolvedTestConfig):
-    assert_test_completed(cfg)
     # assert_script_logs_match(cfg, 'admin', [
         # 'CH_STR=admin$',
         # 'egc collateral await$',
@@ -61,3 +65,12 @@ def test_add_subchannels(cfg: ResolvedTestConfig):
         # 'admin posted Manifest',
         # '^[0-9]{9,}\\s.*ended election',
     # ])
+    assert_test_completed(cfg)
+    assert_wallet_created(cfg)
+    assert_node_ready(cfg)
+    assert_endelection_event(cfg)
+    assert_admin_post_ipfs(cfg)
+    assert_post_manifest(cfg)
+    assert_post_ceremony(cfg)
+    assert_advance_phase(cfg, ElectionConfigPhase(ConfigCeremonyPhase()))
+    # assert_advance_phase_standalone(cfg)
