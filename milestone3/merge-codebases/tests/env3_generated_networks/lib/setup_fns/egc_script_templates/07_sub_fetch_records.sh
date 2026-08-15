@@ -1,10 +1,11 @@
-{% extends "06_sub_show_ipfs.sh" %}
+{% extends "04_subscribe_png.sh" %}
 {% block cleanup %}
-cleanup() {
-  egc election events
-  # check that records were fetched
-  egc records await
-  find private/records_* -type f
-  echo "cleaning up";
-}
+cleanup() { echo "cleaning up"; }
+{% endblock %}
+{% block body %}
+{{ super() }}
+# check that records were fetched
+egc election events
+egc records await
+find private/records_* -type f
 {% endblock %}

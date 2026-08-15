@@ -4,7 +4,7 @@ cleanup() {
   echo "cleaning up"
   egc election burntesttokens || true
   egc collateral return || true
-  # TODO egc records await?
+  egc records await
 }
 {% endblock %}
 {% block body %}
