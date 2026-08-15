@@ -29,11 +29,9 @@ def cfg_subscribe_txt(draw):
 
 def assert_endelection_event(cfg):
     assert_script_logs_match(cfg, '.*', [
-
-        # some of the test qr_strs point to elections that never finished
-        # TODO separate timeout test
+        # some of the test qr_strs point to elections that never finished,
+        # so timing out is the expected/correct behavior
         '^[0-9]{9,}\\s.*(ended election|subscriber timed out)'
-
    ])
 
 
