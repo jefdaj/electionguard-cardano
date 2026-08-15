@@ -5,10 +5,10 @@ from ..lib import *
 from .lib  import *
 
 from .test_02_create_wallet import assert_wallet_created
-from .test_03_node_ready import assert_node_ready
-from .test_04_subscribe import assert_endelection_event
+from .test_03_node_ready    import assert_node_ready
+from .test_04_subscribe     import assert_endelection_event
 from .test_05_init_election import cfg_init_election_base
-from .test_06_admin_ipfs import assert_admin_post_ipfs, assert_subchannels_show_ipfs
+from .test_06_admin_ipfs    import assert_admin_post_ipfs, assert_subchannels_show_ipfs
 
 
 @st.composite

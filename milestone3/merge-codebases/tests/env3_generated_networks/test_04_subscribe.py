@@ -7,7 +7,7 @@ from ..lib import *
 from .lib  import *
 
 from .test_02_create_wallet import assert_wallet_created
-from .test_03_node_ready import assert_node_ready
+from .test_03_node_ready    import assert_node_ready
 
 
 @st.composite

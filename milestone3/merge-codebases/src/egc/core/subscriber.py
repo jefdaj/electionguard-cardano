@@ -214,6 +214,9 @@ def election_events(event: ChannelEvent) -> list[ElectionEvent]:
         case _:
             raise NotImplementedError
 
+    # add advance phase if any
+    # TODO write this!
+
     # TODO where are these duplicates sneaking in?
     seen = set()
     es2 = []
