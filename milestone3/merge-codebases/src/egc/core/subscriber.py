@@ -215,7 +215,13 @@ def election_events(event: ChannelEvent) -> list[ElectionEvent]:
             raise NotImplementedError
 
     # add advance phase if any
-    # TODO write this!
+    if event.input_state and event.output_state:
+        old_phase = event.input_state.state.phase
+        new_phase = event.output_state.state.phase
+        if new_phase != old_phase:
+            new_name = new_phase.name.lower()
+            e = election_event(ti, sn, 'admin', 'advance phase', f'advanced phase to {new_name}')
+            es.append(e)
 
     # TODO where are these duplicates sneaking in?
     seen = set()
