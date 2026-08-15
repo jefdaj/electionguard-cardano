@@ -17,8 +17,10 @@ def phase() -> None:
 @phase.command(roles=['admin'])
 @click.option('--phase', type=click.STRING, required=True)
 def advance(phase: str):
-    phase = EgcPhase[phase.upper()] # TODO anything more we should do to parse?
-    asyncio.run(Client().phase_advance(phase=phase))
+    prev = asyncio.run(Client().phase_get())
+    new  = EgcPhase[phase.upper()] # TODO anything more we should do to parse?
+    print(f'Advance phase: {prev} -> {new}')
+    asyncio.run(Client().phase_advance(new_phase=new))
 
 @phase.command()
 def get():
@@ -29,5 +31,5 @@ def get():
 @phase.command(name='await')
 @click.option('--phase', type=click.STRING, required=True)
 def await_(phase: str):
-    phase = EgcPhase[phase.upper()] # TODO anything more we should do to parse?
-    asyncio.run(Client().phase_await(phase=phase))
+    phase_ = EgcPhase[phase.upper()]
+    asyncio.run(Client().phase_await(phase=phase_))

@@ -45,23 +45,28 @@ def _guard_admin(state):
     except:
         raise HTTPException(status_code=409, detail="Only the admin can do that.")
 
-@router.post("", status_code=201)
+@router.put("", status_code=201)
 async def phase_advance(
         data: schemas.Phase,
         state = Depends(get_state)
     ):
+    LOG.debug('phase_advance')
     _guard_election(state)
     _guard_admin(state)
 
     # This one has to be translated back to the on-chain type first
     # TODO adjust the CLI to take an explicit on-chain phase name instead?
     egc_phase = EgcPhase(data.egc_phase_value)
+    LOG.debug(f'egc_phase: {egc_phase}')
     phase_ = resolve_onchain_phase(egc_phase)
+    LOG.debug(f'phase_: {phase_}')
     if phase_ is None:
         raise HTTPException(
             status_code=409,
             detail=f"No on-chain phase matches {egc_phase}."
         )
 
-    tx = state.node.advance_phase(phase_)
+    LOG.debug('submitting tx.')
+    tx = state.node.advance_phase(new_phase=phase_)
+    LOG.debug('submitted tx. waiting to confirm')
     state.node.await_tx_confirmed(tx)

@@ -116,8 +116,8 @@ class Client:
         resp = await self._c.get('/phase/await', params=data.model_dump(mode='json', exclude_none=True))
         handle_http_errors(resp)
 
-    async def phase_advance(self, phase: EgcPhase):
-        data = schemas.Phase(egc_phase_value=phase.value)
+    async def phase_advance(self, new_phase: EgcPhase):
+        data = schemas.Phase(egc_phase_value=new_phase.value)
         resp = await self._c.put('/phase', json=data.model_dump())
         handle_http_errors(resp)
 

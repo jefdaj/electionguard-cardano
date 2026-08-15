@@ -20,6 +20,8 @@ def pytest_configure(config):
     # Same with some of our code.
     logging.getLogger('egc.core.subscriber').setLevel(logging.INFO)
 
+    logging.getLogger('egc.nodes.admin').setLevel(logging.DEBUG)
+
 
 pytest_plugins = [
 

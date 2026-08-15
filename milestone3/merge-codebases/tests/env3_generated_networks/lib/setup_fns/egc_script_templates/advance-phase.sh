@@ -1,4 +1,4 @@
-{% extends "announce-ceremony.sh" %}
+{% extends "build-manifest.sh" %}
 {% block body %}
 {{ super() }}
 

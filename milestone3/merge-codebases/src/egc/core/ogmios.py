@@ -291,6 +291,7 @@ def set_out_value_and_fee(
 
 
 OGMIOS_FATAL_CODES = set({
+    3136, # invalid transaction submitted as valid, or vice versa
 })
 
 OGMIOS_RETRY_CODES = set({
