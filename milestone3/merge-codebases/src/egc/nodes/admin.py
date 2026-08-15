@@ -48,6 +48,7 @@ class AdminNode(VerifierNode):
         ) -> Transaction:
 
         LOG.debug('AdminNode.advance_phase')
+        LOG.debug(f'new_phase: {new_phase}')
 
         ch_str = self.channel_str()
         tx_msgs = []

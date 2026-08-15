@@ -17,9 +17,12 @@ def phase() -> None:
 @phase.command(roles=['admin'])
 @click.option('--phase', type=click.STRING, required=True)
 def advance(phase: str):
-    prev = asyncio.run(Client().phase_get())
-    new  = EgcPhase[phase.upper()] # TODO anything more we should do to parse?
-    print(f'Advance phase: {prev} -> {new}')
+    old = asyncio.run(Client().phase_get())
+    new = EgcPhase[phase.upper()] # TODO anything more we should do to parse?
+    guard_phase_transition(
+        resolve_onchain_phase(old),
+        resolve_onchain_phase(new)
+    )
     asyncio.run(Client().phase_advance(new_phase=new))
 
 @phase.command()

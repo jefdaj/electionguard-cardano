@@ -210,6 +210,7 @@ fn validate_advancephase_spend(
   tx: Transaction,
 ) -> Bool {
   trace @"validate_advancephase_spend"
+  // TODO should "advancing" to the current phase be prohibited?
   expect AdminChannel(admin_state) = state
   expect AdminChannel(cont_state) = get_continuation_state(state, own_ref, tx)
   let valid_transition = is_valid_phase_transition(admin_state.phase, cont_state.phase) ?

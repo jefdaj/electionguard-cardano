@@ -56,15 +56,16 @@ async def phase_advance(
 
     # This one has to be translated back to the on-chain type first
     # TODO adjust the CLI to take an explicit on-chain phase name instead?
-    egc_phase = EgcPhase(data.egc_phase_value)
-    LOG.debug(f'egc_phase: {egc_phase}')
-    phase_ = resolve_onchain_phase(egc_phase)
-    LOG.debug(f'phase_: {phase_}')
-    if phase_ is None:
+    egc_old = state.node.current_phase()    ; LOG.debug(f'egc_old: {egc_old}')
+    egc_new = EgcPhase(data.egc_phase_value); LOG.debug(f'egc_new: {egc_new}')
+    old = resolve_onchain_phase(egc_old)    ; LOG.debug(f'old: {old}')
+    new = resolve_onchain_phase(egc_new)    ; LOG.debug(f'new: {new}')
+    if new is None:
         raise HTTPException(
             status_code=409,
             detail=f"No on-chain phase matches {egc_phase}."
         )
+    guard_phase_transition(old, new)
 
     LOG.debug('submitting tx.')
     tx = state.node.advance_phase(new_phase=phase_)
