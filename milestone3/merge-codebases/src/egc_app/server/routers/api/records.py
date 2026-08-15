@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from egc_app.server.state import get_state
 from egc_app import schemas
 from typing import Annotated
-import logging
 import shutil
 import time
+from egc import *
+import logging
 
 LOG = logging.getLogger(__name__)
 
@@ -43,7 +44,7 @@ def records_post(data: schemas.RecordsPost, state=Depends(get_state)):
     if data.new_phase:
         # TODO factor this out? it's partially duplicated in phase_advance
         egc_old = state.node.current_phase(); LOG.debug(f'egc_old: {egc_old}')
-        egc_new = EgcPhase(data.new_phase)  ; LOG.debug(f'egc_new: {egc_new}')
+        egc_new = EgcPhase(data.new_phase.egc_phase_value)  ; LOG.debug(f'egc_new: {egc_new}')
         old = resolve_onchain_phase(egc_old); LOG.debug(f'old: {old}')
         new = resolve_onchain_phase(egc_new); LOG.debug(f'new: {new}')
         if new is None:

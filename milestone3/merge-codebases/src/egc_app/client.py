@@ -196,6 +196,8 @@ class Client:
             max_size: int = 10, # TODO tune for traced contract first
             new_phase: Optional[EgcPhase] = None
         ):
+        if new_phase:
+            new_phase = schemas.Phase(egc_phase_value=new_phase.value)
         data = schemas.RecordsPost(
             indexes_to_post = indexes,
             min_size        = min_size,

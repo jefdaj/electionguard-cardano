@@ -37,25 +37,12 @@ def test_advance_phase(cfg: ResolvedTestConfig):
         'arion: FatalError',
         'Command not available from current role',
     ])
-    # assert_script_logs_match(cfg, 'admin', [
-        # 'CH_STR=admin$',
-        # 'egc collateral await$',
-        # '^private.*manifest\\.json$',
-    # ])
-    # assert_node_logs_match(cfg, '.*', [
-
-        # TODO get this working reliably... maybe wait longer? tweak ipfs?
-        # 'fetched.*CeremonyDetails',
-
-    # ])
-    # assert_node_logs_match(cfg, 'admin', [
-        # 'GET /api/channel/await\\?role=admin',
-        # 'GET /api/collateral/await',
-        # 'POST /api/ceremony/create',
-        # 'POST /api/records/post.*201$',
-        # 'admin posted PublicRecord.*metadata=Manifest',
-    # ])
-    # assert_script_logs_match(cfg, '(?!admin)', [
-        # 'admin posted Manifest',
-        # '^[0-9]{9,}\\s.*ended election',
-    # ])
+    assert_script_logs_match(cfg, '.*', [
+        '^CONFIG_CEREMONY_ROUND1$',
+    ])
+    assert_node_logs_match(cfg, 'admin', [
+        'PUT /api/phase.*201$',
+    ])
+    assert_node_logs_match(cfg, '.*', [
+        'GET /api/phase/await.*201$',
+    ])

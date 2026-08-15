@@ -1,6 +1,7 @@
 import asyncio
 import click
 from .utils import RoleAwareGroup, indexes_arg
+from egc import *
 from egc_app.client import Client
 
 @click.group(cls=RoleAwareGroup)
