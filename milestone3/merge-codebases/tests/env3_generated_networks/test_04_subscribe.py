@@ -67,7 +67,7 @@ def cfg_subscribe_png(draw):
     cfg_strategy = cfg_subscribe_png(),
     max_examples = 1,
 )
-def test_subscribe_qr_png(cfg: ResolvedTestConfig):
+def test_subscribe_png(cfg: ResolvedTestConfig):
     assert_test_completed(cfg)
     assert_wallet_created(cfg)
     assert_node_ready(cfg)
