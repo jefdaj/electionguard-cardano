@@ -10,4 +10,8 @@ egc records post
 egc records await
 find private/records_* -type f
 egc records list
+
+# prevent the case where admin can burn test tokens and shut down before
+# subchannel nodes have fetched records
+sleep 30
 {% endblock %}

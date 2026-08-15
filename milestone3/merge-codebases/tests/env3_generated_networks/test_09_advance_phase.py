@@ -9,7 +9,7 @@ from .test_03_node_ready    import assert_node_ready
 from .test_04_subscribe     import assert_endelection_event
 from .test_06_admin_post_ipfs import assert_admin_post_ipfs
 from .test_07_post_manifest import cfg_post_manifest_base, assert_post_manifest
-from .test_08_post_batch    import assert_advance_phase
+from .test_08_post_batch    import assert_advance_phase, assert_post_ceremony
 
 
 @st.composite
