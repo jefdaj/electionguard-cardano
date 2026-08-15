@@ -5,6 +5,8 @@ from typing import Annotated, Any, Optional
 from pydantic import BaseModel, GetCoreSchemaHandler
 from pydantic_core import core_schema
 
+from .phase import Phase
+
 # TODO move to a util file?
 class _PublicRecordMetadataPydantic:
     @classmethod
@@ -38,7 +40,7 @@ class RecordsPost(BaseModel):
     indexes_to_post: list[int] # auto-select if empty
     min_size:        int
     max_size:        int
-    advance_phase:   Optional[str] # TODO parse?
+    new_phase:       Optional[Phase]
 
 
 class RecordsAwait(BaseModel):

@@ -194,13 +194,13 @@ class Client:
             indexes: list[int],
             min_size: int = 1,
             max_size: int = 10, # TODO tune for traced contract first
-            advance_phase: Optional[str] = None
+            new_phase: Optional[EgcPhase] = None
         ):
         data = schemas.RecordsPost(
             indexes_to_post = indexes,
             min_size        = min_size,
             max_size        = max_size,
-            advance_phase   = advance_phase,
+            new_phase       = new_phase,
         )
         resp = await self._c.post('/records/post', json=data.model_dump())
         handle_http_errors(resp)

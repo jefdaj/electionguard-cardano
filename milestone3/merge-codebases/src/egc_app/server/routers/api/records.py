@@ -39,9 +39,25 @@ def records_post(data: schemas.RecordsPost, state=Depends(get_state)):
         max_size = data.max_size,
     )
     LOG.info(f'pairs: {pairs}')
+
+    if data.new_phase:
+        # TODO factor this out? it's partially duplicated in phase_advance
+        egc_old = state.node.current_phase(); LOG.debug(f'egc_old: {egc_old}')
+        egc_new = EgcPhase(data.new_phase)  ; LOG.debug(f'egc_new: {egc_new}')
+        old = resolve_onchain_phase(egc_old); LOG.debug(f'old: {old}')
+        new = resolve_onchain_phase(egc_new); LOG.debug(f'new: {new}')
+        if new is None:
+            raise HTTPException(
+                status_code=409,
+                detail=f"No on-chain phase matches {egc_phase}."
+            )
+        guard_phase_transition(old, new)
+    else:
+        new = None
+
     tx = state.node.post_public_records(
         new_record_pairs = pairs,
-        new_phase = None, # TODO parse str -> ElectionPhase and add here
+        new_phase = new,
     )
     state.node.await_tx_confirmed(tx)
 

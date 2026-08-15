@@ -46,13 +46,13 @@ def post(indexes: list[int], min_size: int, max_size: int, advance_phase: str):
     Max size is a minimal placeholder too; future versions should
     calculate/simulate to determine how many records will actually fit in a TX.
     """
-    # TODO return code to indicate whether all records fit or not? or print something? or use list?
-    # TODO parse phase
+    if advance_phase:
+        advance_phase = EgcPhase[advance_phase.upper()]
     asyncio.run(Client().records_post(
         indexes,
         min_size = min_size,
         max_size = max_size,
-        advance_phase = advance_phase,
+        new_phase = advance_phase,
     ))
 
 

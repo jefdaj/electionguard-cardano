@@ -68,6 +68,6 @@ async def phase_advance(
     guard_phase_transition(old, new)
 
     LOG.debug('submitting tx.')
-    tx = state.node.advance_phase(new_phase=phase_)
+    tx = state.node.advance_phase(new_phase=new)
     LOG.debug('submitted tx. waiting to confirm')
     state.node.await_tx_confirmed(tx)
