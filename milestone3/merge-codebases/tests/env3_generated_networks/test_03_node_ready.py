@@ -11,7 +11,7 @@ from .test_02_create_wallet import assert_wallet_created
 
 @st.composite
 def cfg_node_ready(draw):
-    cfg = draw( config_test_base() )
+    cfg = draw( cfg_test_base() )
     cfg = append_config_fn_name(cfg)
     cfg = append_setup_fns(cfg, [
         FnCallConfig(

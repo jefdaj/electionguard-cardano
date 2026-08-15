@@ -27,7 +27,7 @@ on_exit() {
   set +e
   cleanup & local cleanup_pid=$!
   # 10min timeout to burn tokens + recover collateral
-  (sleep 600; kill -KILL "$cleanup_pid" 2>/dev/null) & local watchdog_pid=$!
+  (sleep 900; kill -KILL "$cleanup_pid" 2>/dev/null) & local watchdog_pid=$!
   wait "$cleanup_pid" || echo "cleanup failed" >&2
   kill "$watchdog_pid" 2>/dev/null
   wait "$watchdog_pid" 2>/dev/null

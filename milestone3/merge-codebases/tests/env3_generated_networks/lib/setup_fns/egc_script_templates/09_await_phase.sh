@@ -1,4 +1,4 @@
-{% extends "04_subscribe_png_base.sh" %}
+{% extends "07_sub_fetch_records.sh" %}
 {% block body %}
 {{ super() }}
 # wait for admin to advance phase

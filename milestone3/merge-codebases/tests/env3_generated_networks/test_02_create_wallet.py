@@ -11,7 +11,7 @@ from .test_01_cleanup import assert_cleanup_called
 
 @st.composite
 def cfg_create_wallet(draw):
-    cfg = draw( config_test_base() )
+    cfg = draw( cfg_test_base() )
     cfg = append_config_fn_name(cfg)
     cfg = append_setup_fns(cfg, [
         FnCallConfig(

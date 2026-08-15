@@ -319,16 +319,12 @@ class HashedTestConfig:
 # This follows a different naming convention because it's the first that will
 # be used by name in the config files.
 @st.composite
-def config_test_base(draw) -> HashedTestConfig:
+def cfg_test_base(draw) -> HashedTestConfig:
     fn_name = sys._getframe().f_code.co_name # TODO util fn for this
     pytest_config = PytestConfig(
         config_fns = ConfigFnsConfig(names=(fn_name,)),
         setup_fns = SetupFnsConfig(fns=(
             # TODO anything that should always be done here?
-            # FnCallConfig(
-            #     name = 'render_egc_scripts',
-            #     args = (('default', 'base.sh'),),
-            # ),
         )),
         attack_fns = AttackFnsConfig(fns=()),
     )

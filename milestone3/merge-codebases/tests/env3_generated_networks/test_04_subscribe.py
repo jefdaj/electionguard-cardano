@@ -12,7 +12,7 @@ from .test_03_node_ready    import assert_node_ready
 
 @st.composite
 def cfg_subscribe_txt(draw):
-    cfg = draw( config_test_base() )
+    cfg = draw( cfg_test_base() )
     cfg = append_config_fn_name(cfg)
     cfg = append_setup_fns(cfg, [
         FnCallConfig(
@@ -48,7 +48,7 @@ def test_subscribe_txt(cfg: ResolvedTestConfig):
 
 @st.composite
 def cfg_subscribe_png(draw):
-    cfg = draw( config_test_base() )
+    cfg = draw( cfg_test_base() )
     cfg = append_config_fn_name(cfg)
     cfg = append_setup_fns(cfg, [
         FnCallConfig(

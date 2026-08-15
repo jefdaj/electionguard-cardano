@@ -11,7 +11,7 @@ from .test_04_subscribe     import assert_endelection_event
 
 @st.composite
 def cfg_init_election_base(draw):
-    cfg = draw( config_test_base() )
+    cfg = draw( cfg_test_base() )
     cfg = append_config_fn_name(cfg)
     cfg = append_setup_fns(cfg, [
         FnCallConfig(

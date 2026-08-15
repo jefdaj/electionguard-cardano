@@ -37,7 +37,6 @@ def cfg_post_manifest(draw):
     return cfg
 
 
-# TODO find and assert from all nodes, not just admin
 def assert_post_manifest(cfg):
     assert_script_logs_match(cfg, 'admin', [
         '^private.*manifest\\.json$',

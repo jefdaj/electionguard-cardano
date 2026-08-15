@@ -6,7 +6,7 @@ from pathlib import Path
 from .random_seed   import get_random_seed
 from .arion_network import arion_network_up
 from .run   import prerun_egc_scripts
-from .config import config_test_base
+from .config import cfg_test_base
 from .tmpdir   import init_test_tmpdir, lock_test_tmpdir
 
 from .setup_fns import run_setup_fns
@@ -36,7 +36,7 @@ def silent_yad(decorators):
 #
 # TODO is this a partial solution to https://github.com/HypothesisWorks/hypothesis/issues/114
 def given_cached_tests(
-        cfg_strategy = config_test_base,
+        cfg_strategy = cfg_test_base,
         max_examples = 10,
     ):
     return silent_yad([

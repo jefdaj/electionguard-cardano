@@ -1,4 +1,4 @@
-{% extends "08_batch_manifest.sh" %}
+{% extends "08_admin_post_batch.sh" %}
 {% block body %}
 {{ super() }}
 # standalone advance phase

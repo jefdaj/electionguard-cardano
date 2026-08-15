@@ -1,4 +1,4 @@
-{% extends "04_subscribe_png_base.sh" %}
+{% extends "04_subscribe_png.sh" %}
 {% block body %}
 {{ super() }}
 

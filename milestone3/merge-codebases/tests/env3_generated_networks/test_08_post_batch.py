@@ -27,7 +27,6 @@ def cfg_post_batch(draw):
     return cfg
 
 
-# TODO find and assert from all nodes, not just admin
 def assert_post_ceremony(cfg):
     assert_script_logs_match(cfg, 'admin', [
         '^private.*ceremony\\.json$',
@@ -45,9 +44,11 @@ def assert_post_ceremony(cfg):
     ])
 
 
-def assert_advance_phase(cfg):
-    raise NotImplementedError
-
+def assert_advance_phase(cfg, phase: ElectionPhase):
+    assert_script_logs_match(cfg, '(?!admin)', [
+        f'admin advanced to {str(phase)}$',
+    ])
+    
 
 @given_cached_tests(
     cfg_strategy = cfg_post_batch(),
@@ -62,4 +63,4 @@ def test_post_batch(cfg: ResolvedTestConfig):
     assert_subchannels_show_ipfs(cfg)
     assert_post_manifest(cfg)
     assert_post_ceremony(cfg)
-    # assert_advance_phase(cfg)
+    assert_advance_phase(cfg, ElectionConfigPhase(ConfigAnnouncePhase()))
