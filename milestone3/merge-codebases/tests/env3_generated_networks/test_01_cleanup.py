@@ -20,6 +20,7 @@ def cfg_cleanup_called(draw):
 
 def assert_cleanup_called(cfg):
     assert_script_logs_match(cfg, '.*', ['^cleaning up$'])
+    assert_node_logs_match(cfg, '.*', ['Stopped.*node.$'])
 
 
 @given_cached_tests(cfg_cleanup_called(), max_examples=1)

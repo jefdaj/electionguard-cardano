@@ -4,12 +4,12 @@ from egc import *
 from ..lib import *
 from .lib  import *
 
-from .test_05_init_election import *
+from .test_07_post_ceremony import *
 
 
 @st.composite
 def cfg_add_subchannels_base(draw):
-    cfg = draw( cfg_init_election_base() )
+    cfg = draw( cfg_post_ceremony_base() )
     cfg = append_config_fn_name(cfg)
     cfg = replace_setup_fns(cfg, [
         FnCallConfig(name='install_n_requests', args=()),
@@ -25,8 +25,8 @@ def cfg_add_subchannels(draw):
         FnCallConfig(
             name = 'render_egc_scripts',
             args = (
-                ('default', 'request-subchannel.sh'),
-                ('admin', 'add-subchannels.sh'),
+                ('default', '10_request_subchannel.sh'),
+                ('admin', '10_add_subchannels.sh'),
             ),
         ),
     ])

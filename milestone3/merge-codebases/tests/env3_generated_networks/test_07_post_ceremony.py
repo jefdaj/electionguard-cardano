@@ -8,11 +8,19 @@ from .test_06_admin_ipfs import *
 
 
 @st.composite
-def cfg_post_ceremony(draw):
+def cfg_post_ceremony_base(draw):
     cfg = draw( cfg_init_election_baes() )
     cfg = append_config_fn_name(cfg)
     cfg = replace_setup_fns(cfg, [
         FnCallConfig(name = 'install_node_cfgs', args = ()),
+    ])
+    return cfg
+
+@st.composite
+def cfg_post_ceremony(draw):
+    cfg = draw( cfg_post_ceremony_base() )
+    cfg = append_config_fn_name(cfg)
+    cfg = replace_setup_fns(cfg, [
         FnCallConfig(
             name = 'render_egc_scripts',
             args = (

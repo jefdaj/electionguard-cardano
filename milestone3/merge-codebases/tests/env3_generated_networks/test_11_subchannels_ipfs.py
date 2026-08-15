@@ -24,7 +24,7 @@ def cfg_subchannels_ipfs(draw):
 
 
 @given_cached_tests(
-    cfg_strategy = config_subchannel_post_ipfs(),
+    cfg_strategy = cfg_subchannels_ipfs(),
     max_examples = 1,
 )
 def test_subchannels_post_ipfs(cfg: ResolvedTestConfig):
