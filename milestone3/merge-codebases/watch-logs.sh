@@ -5,5 +5,6 @@
 
 base="./data/env3/test*/data/*/*/egc"
 multitail --closeidle 60 \
+       "pytest.log" \
   -Q 3 "$base/node.log" \
   -Q 3 "$base/script.log"
