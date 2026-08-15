@@ -95,12 +95,12 @@ class PendingStore:
 
     def remove(self, record):
         key = record_key(record)
-        LOG.info(f'remove {record}')
+        LOG.debug(f'remove {record}')
         del self._db[key]
 
     def mark_attempt(self, record, attempts, next_attempt):
         key = record_key(record)
-        LOG.info(f'mark_attempt record:{record} attempts:{attempts} next_attempt:{next_attempt}')
+        LOG.debug(f'mark_attempt record:{record} attempts:{attempts} next_attempt:{next_attempt}')
         self._db[key] = (record, attempts, next_attempt)
 
     def due(self, now):
@@ -267,7 +267,7 @@ class IPFSService:
         records = []
         for (data, metadata) in pairs:
             record = self.publish_and_make_record(data, metadata)
-            LOG.info(f'newly published record: {record}')
+            LOG.info(f'published {record}')
             records.append(record)
         return records
 

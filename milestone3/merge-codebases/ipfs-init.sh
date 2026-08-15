@@ -2,7 +2,7 @@
 set -eu
 
 # Keep DHT so content is still findable, but as client only
-ipfs config Routing.Type dhtclient
+# ipfs config Routing.Type dhtclient
 
 # Don't be a general IPFS gateway for finding everyones' content.
 # Only serve the election data.
@@ -10,7 +10,6 @@ ipfs config --json Gateway.NoFetch true
 
 # Announce only roots ("pinned" strategy or "roots"), and less often.
 # TODO does this matter in our case?
-# TODO add_json also pins, right?
 ipfs config Provide.Strategy pinned
 
 # HARD caps on total connections — this is the real lever
@@ -21,16 +20,15 @@ ipfs config --json Swarm.ResourceMgr.Enabled true
 # Note that these must be lower than the hard caps above.
 ipfs config --json Swarm.ConnMgr.LowWater 10
 ipfs config --json Swarm.ConnMgr.HighWater 20
-ipfs config Swarm.ConnMgr.GracePeriod 5s
+ipfs config Swarm.ConnMgr.GracePeriod 30s
 
-# Kill relay serving (you don't need to relay others' traffic)
-ipfs config --json Swarm.RelayService.Enabled false
+# TODO Kill relay serving (you don't need to relay others' traffic)?
+ipfs config --json Swarm.RelayService.Enabled true
 ipfs config --json Swarm.Transports.Network.Relay true # required for next one
 ipfs config --json Swarm.RelayClient.Enabled true      # keep so YOU stay reachable
 
-# Reduce NAT probing chatter
-# ipfs config AutoNAT.ServiceMode disabled
-ipfs config AutoNAT.ServiceMode enabled # TODO does this help?
+# TODO disabled to reduce NAT probing chatter?
+ipfs config AutoNAT.ServiceMode enabled
 
 # Local mDNS is the main way to find peers on a LAN,
 # which is probably going to be important in many election scenarios.
@@ -44,11 +42,9 @@ ipfs config --json Discovery.MDNS.Enabled true
 # Disable the accelerated DHT client if it got enabled — it does bulk network sweeps:
 ipfs config --json Routing.AcceleratedDHTClient false
 
-# Stop advertising a relay & stop NAT port mapping storms
+# TODO Stop advertising a relay & stop NAT port mapping storms?
 # ipfs config --json Swarm.RelayService.Enabled false
 # ipfs config --json Swarm.DisableNatPortMap true
-ipfs config --json Swarm.RelayService.Enabled true # TODO does this help?
-ipfs config --json Swarm.DisableNatPortMap false # TODO does this help?
 
 # QUIC opens lots of UDP flows -> conntrack blowup on cheap routers.
 # Test with TCP only to confirm that's the cause:
