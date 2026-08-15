@@ -4,11 +4,10 @@
 
 # Normally the admin would be manage their requests individually,
 # but counting files is easier to script for the tests.
-n_expected=$(cat private/n_requests.txt)
-while true; do
-  sleep 3
-  n_actual=$(ls qrcodes/channel-*.png | wc -l)
-  [[ $n_expected == $n_actual ]] && break
+n_subs=$(cat private/n_requests.txt)
+while sleep 3; do
+  n_pngs=$(ls qrcodes/channel-*.png | wc -l)
+  [[ $n_subs == $n_pngs ]] && break
 done
 
 set +x
@@ -18,4 +17,5 @@ for f in qrcodes/channel-*.png; do
 done
 set -x
 egc channel create "${reqs[@]}" --subchannel-ada 20 --done-onboarding
+egc phase await --phase config_ceremony_round1
 {% endblock %}
