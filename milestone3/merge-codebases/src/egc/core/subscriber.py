@@ -181,9 +181,7 @@ def election_events(event: ChannelEvent) -> list[ElectionEvent]:
             e = election_event(ti, sn, 'funder', 'init election', 'authorized admin')
             es.append(e)
         case AdvancePhase():
-            phase = event.output_state.state.phase
-            e = election_event(ti, sn, s, 'advance phase', f'advanced to {phase}')
-            es.append(e)
+            pass # covered below
         case SetIpfsNode():
             match event.output_state.state.ipfs_node:
                 case NoIpfsNode(): pass
@@ -215,12 +213,12 @@ def election_events(event: ChannelEvent) -> list[ElectionEvent]:
             raise NotImplementedError
 
     # add advance phase if any
-    if event.input_state and event.output_state:
+    if s == 'admin' and event.input_state and event.output_state:
         old_phase = event.input_state.state.phase
         new_phase = event.output_state.state.phase
         if new_phase != old_phase:
-            new_name = new_phase.name.lower()
-            e = election_event(ti, sn, 'admin', 'advance phase', f'advanced phase to {new_name}')
+            # TODO convert this to an EgcPhase, but how?
+            e = election_event(ti, sn, s, 'advance phase', f'advanced phase to {new_phase}')
             es.append(e)
 
     # TODO where are these duplicates sneaking in?

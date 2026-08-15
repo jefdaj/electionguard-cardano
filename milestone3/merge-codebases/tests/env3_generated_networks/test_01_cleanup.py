@@ -12,7 +12,7 @@ def cfg_cleanup_called(draw):
     cfg = append_setup_fns(cfg, [
         FnCallConfig(
             name = 'render_egc_scripts',
-            args = (('default', '01_cleanup.sh'),),
+            args = (('default', '01_base_script.sh'),),
         ),
     ])
     return cfg

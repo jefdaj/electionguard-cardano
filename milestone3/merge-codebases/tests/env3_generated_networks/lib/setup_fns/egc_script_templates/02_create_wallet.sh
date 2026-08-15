@@ -1,4 +1,4 @@
-{% extends "01_cleanup.sh" %}
+{% extends "01_base_script.sh" %}
 {% block body %}
 {{ super() }}
 # create a wallet
