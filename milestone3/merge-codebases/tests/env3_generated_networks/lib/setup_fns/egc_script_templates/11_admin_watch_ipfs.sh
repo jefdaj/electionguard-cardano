@@ -1,4 +1,4 @@
-{% extends "add-subchannels.sh" %}
+{% extends "10_add_subchannels.sh" %}
 {% block body %}
 {{ super() }}
 while sleep 10; do

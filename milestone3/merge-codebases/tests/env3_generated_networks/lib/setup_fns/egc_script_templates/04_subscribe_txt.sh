@@ -1,4 +1,4 @@
-{% extends "node-ready.sh" %}
+{% extends "03_node_ready.sh" %}
 {% block cleanup %}
 cleanup() {
   echo "cleaning up"

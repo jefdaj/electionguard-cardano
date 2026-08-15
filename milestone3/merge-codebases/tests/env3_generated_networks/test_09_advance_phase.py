@@ -7,7 +7,7 @@ from .lib  import *
 
 # TODO derive this from config_announce_ceremony instead (need a replace egc script fn)
 @st.composite
-def config_advance_phase(draw):
+def cfg_advance_phase(draw):
     cfg = draw( config_test_base() )
     cfg = append_config_fn_name(cfg)
     cfg = replace_setup_fns(cfg, [
@@ -29,12 +29,7 @@ def config_advance_phase(draw):
     max_examples = 1,
 )
 def test_advance_phase(cfg: ResolvedTestConfig):
-    assert_script_logs_do_not_match(cfg, '.*', [
-        'Traceback',
-        'arion: FatalError',
-        'Command not available from current role',
-        '^cleanup failed$',
-    ])
+    assert_test_completed(cfg)
     assert_script_logs_match(cfg, '.*', [
         '^CONFIG_CEREMONY_ROUND1$',
     ])

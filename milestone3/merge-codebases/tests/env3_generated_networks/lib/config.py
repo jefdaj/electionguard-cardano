@@ -324,10 +324,11 @@ def config_test_base(draw) -> HashedTestConfig:
     pytest_config = PytestConfig(
         config_fns = ConfigFnsConfig(names=(fn_name,)),
         setup_fns = SetupFnsConfig(fns=(
-            FnCallConfig(
-                name = 'render_egc_scripts',
-                args = (('default', 'base.sh'),),
-            ),
+            # TODO anything that should always be done here?
+            # FnCallConfig(
+            #     name = 'render_egc_scripts',
+            #     args = (('default', 'base.sh'),),
+            # ),
         )),
         attack_fns = AttackFnsConfig(fns=()),
     )
@@ -350,12 +351,21 @@ def append_config_fn_name(cfg: HashedTestConfig) -> HashedTestConfig:
         tuple(list(cfg.pytest.config_fns.names) + [caller])
     )
 
-def replace_setup_fns(cfg: HashedTestConfig, fns: list[FnCallConfig]) -> HashedTestConfig:
+def append_setup_fns(cfg: HashedTestConfig, new_fns: list[FnCallConfig]) -> HashedTestConfig:
+    all_fns = list(cfg.pytest.setup_fns.fns) + new_fns
     return deep_replace(
         cfg,
         'pytest.setup_fns',
-        SetupFnsConfig(fns=tuple(fns))
+        SetupFnsConfig(fns=tuple(all_fns))
     )
+
+# TODO remove?
+# def replace_setup_fns(cfg: HashedTestConfig, fns: list[FnCallConfig]) -> HashedTestConfig:
+#     return deep_replace(
+#         cfg,
+#         'pytest.setup_fns',
+#         SetupFnsConfig(fns=tuple(fns))
+#     )
 
 
 

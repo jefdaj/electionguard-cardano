@@ -1,4 +1,4 @@
-{% extends "wallet.sh" %}
+{% extends "02_create_wallet.sh" %}
 {% block body %}
 {{ super() }}
 # wait for cardano + ipfs to stabilize

@@ -1,4 +1,4 @@
-{% extends "request-subchannel.sh" %}
+{% extends "10_request_subchannel.sh" %}
 {% block body %}
 {{ super() }}
 # TODO do they always post at the same slot?

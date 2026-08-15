@@ -1,4 +1,4 @@
-{% extends "build-manifest.sh" %}
+{% extends "08_batch_manifest.sh" %}
 {% block body %}
 {{ super() }}
 

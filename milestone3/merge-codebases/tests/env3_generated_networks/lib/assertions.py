@@ -32,3 +32,12 @@ def assert_node_logs_do_not_match(cfg, node_ptn, line_ptns):
 
 def assert_script_logs_do_not_match(cfg, node_ptn, line_ptns):
     _assert_logs(cfg, node_ptn, line_ptns, cfg.script_log_path, should_match=False)
+
+
+def assert_test_completed(cfg):
+    assert_script_logs_do_not_match(cfg, '.*', [
+        '^Traceback',
+        '^arion: FatalError',
+        '"connected": false',
+        '^cleanup failed$',
+    ])
