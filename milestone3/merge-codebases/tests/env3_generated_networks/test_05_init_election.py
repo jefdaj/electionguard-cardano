@@ -4,6 +4,7 @@ from egc import *
 from ..lib import *
 from .lib  import *
 
+from .test_02_create_wallet import assert_wallet_created
 from .test_03_node_ready import assert_node_ready
 from .test_04_subscribe import assert_endelection_event
 
@@ -23,7 +24,7 @@ def cfg_init_election_base(draw):
 
 @st.composite
 def cfg_init_election(draw):
-    cfg = draw( config_init_election_base() )
+    cfg = draw( cfg_init_election_base() )
     cfg = append_config_fn_name(cfg)
     cfg = append_setup_fns(cfg, [
         FnCallConfig(

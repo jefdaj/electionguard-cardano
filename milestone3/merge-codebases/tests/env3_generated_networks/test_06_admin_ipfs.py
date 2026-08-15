@@ -4,12 +4,12 @@ from egc import *
 from ..lib import *
 from .lib  import *
 
-from .test_05_init_election import *
+from .test_05_init_election import cfg_init_election_base
 
 
 @st.composite
 def cfg_admin_ipfs(draw):
-    cfg = draw( config_init_election_base() )
+    cfg = draw( cfg_init_election_base() )
     cfg = append_config_fn_name(cfg)
     cfg = append_setup_fns(cfg, [
         FnCallConfig(

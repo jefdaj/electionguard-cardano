@@ -17,6 +17,7 @@ set -x
 {% block cleanup %}
 cleanup() { echo "cleaning up"; }
 {% endblock %}
+
 {% block onexit %}
 # run cleanup before exiting
 export -f cleanup

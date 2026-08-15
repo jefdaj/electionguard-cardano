@@ -1,8 +1,13 @@
 {% extends "10_request_subchannel.sh" %}
 {% block body %}
 {{ super() }}
-# TODO do they always post at the same slot?
+# post ipfs peer_id on chain
 egc ipfs post
+
+# TODO do they always post at the same slot?
+# check that other publishers' peer_ids are picked up
 egc ipfs show | jq
-egc records await
+
+# TODO remove?
+# egc records await
 {% endblock %}

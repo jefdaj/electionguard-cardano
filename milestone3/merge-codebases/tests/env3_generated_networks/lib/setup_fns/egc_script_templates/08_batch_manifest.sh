@@ -1,7 +1,7 @@
 {% extends "06_admin_ipfs.sh" %}
 {% block body %}
 {{ super() }}
-# first proper batch: 2 records and advance phase
+# first proper batch: post 2 records and advance phase
 egc ceremony create --ceremony-load-json private/ceremony.json
 egc manifest create --manifest-load-json private/manifest.json
 find private/records_* -type f
