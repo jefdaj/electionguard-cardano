@@ -101,7 +101,9 @@ async def make_addr_hints(client, n_hints=4, prefer_lan=False,
         _strip_own(a, my_id)
         for a in candidates
         if not _is_circuit(a) and _keep(a, prefer_lan)
+        and not a.replace('quic', 'quic-v1') in candidates
     }
+
     LOG.debug(f'direct: {direct}')
 
     def sort_key(ma):
@@ -117,6 +119,8 @@ async def make_addr_hints(client, n_hints=4, prefer_lan=False,
     if include_relays:
         for a in candidates:
             if not _is_circuit(a):
+                continue
+            if a.replace('quic', 'quic-v1') in candidates:
                 continue
             # Keep everything up to '/p2p-circuit' and drop the trailing
             # '/p2p/<my_id>', then tag it as a relay with the 'r:' prefix.
