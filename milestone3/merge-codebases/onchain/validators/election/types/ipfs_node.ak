@@ -50,7 +50,7 @@ pub fn validate_multiaddr(addr: IpfsMultiaddr) -> Bool {
   let length = builtin.length_of_bytearray(addr)
   and {
     length > 0,
-    length <= 128,
+    length <= 1024, // TODO what's a reasonable upper bound?
   }
 }
 

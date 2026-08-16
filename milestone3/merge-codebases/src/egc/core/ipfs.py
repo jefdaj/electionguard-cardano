@@ -178,7 +178,7 @@ class IPFSService:
         retry_concurrency=4, # bounded => can't hog the node
         sweep_interval=1,    # how often the sweeper wakes
         base_delay=1,        # first retry backoff
-        max_delay=600,       # retry-forever settles to every 10 min
+        max_delay=30,       # retry-forever settles to every 10 min
         backoff=1.5
     ):
 

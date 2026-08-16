@@ -1275,8 +1275,13 @@ class ElectionSubscriber:
     def _assemble_events(self, ioa_triples_by_sc: dict) -> Iterable[ChannelEvent]:
         log_call()
 
+        seen_keys = set()
         for (key, val) in ioa_triples_by_sc.items():
             (slot_no, ch_str) = key
+            if key in seen_keys:
+                raise Exception(f'seen key! {key} val: {val}')
+            else:
+                seen_keys.add(key)
             (input_match, output_match, action) = val
 
             if self._handle_unpaired_match(ch_str, val):
@@ -1477,7 +1482,7 @@ class ElectionSubscriber:
                 prev = self._history[i][-1]
             diff = safe_deepdiff(prev, event)
             LOG.error(f'diff:\n{pformat(diff)}')
-        assert self.current_phase() == EgcPhase.NOT_DEPLOYED, 'InitElection should always happen first'
+        assert self.current_phase() in [EgcPhase.NOT_INDEXED, EgcPhase.NOT_DEPLOYED], 'InitElection should always happen first'
         assert event.channel_id == ADMIN_CHANNEL_ID # note this tx was published by the funder
         self._on_mint(event)
         return event

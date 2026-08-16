@@ -9,6 +9,10 @@ from pycardano.serialization import ByteString
 
 from .action import decode_plutusdata_union
 
+import logging
+
+LOG = logging.getLogger(__name__)
+
 # Should be kept in sync with onchain/validators/election/types/ipfs_node.ak
 
 
@@ -21,7 +25,7 @@ type IpfsMultiaddr = ByteString # required when len > 64
 _PEER_ID_HASH_CODES = frozenset({0x00, 0x12})
 
 # Multiaddr / hint-list bounds (mirror the on-chain guards).
-_MAX_MULTIADDR_LEN = 128
+_MAX_MULTIADDR_LEN = 1024 # TODO what's a reasonable limit here?
 _MAX_ADDR_HINTS = 8
 
 # Field names across PlutusData types that should be treated as peer IDs
@@ -110,7 +114,12 @@ def coerce_ipfs_multiaddr(value: Union[str, bytes, bytearray, ByteString]) -> By
         raise TypeError(
             f"multiaddr must be str or bytes, got {type(value).__name__}"
         )
-    _validate_multiaddr_bytes(b)
+    try:
+        _validate_multiaddr_bytes(b)
+    except Exception as e:
+        LOG.error(e)
+        LOG.error(f'offending value: {value}')
+        raise
     b = ByteString(b)
     return b
 
