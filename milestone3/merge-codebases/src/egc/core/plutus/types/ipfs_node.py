@@ -5,6 +5,7 @@ import re
 import base58
 from multiaddr import Multiaddr as _MultiaddrObj
 from pycardano import PlutusData
+from pycardano.serialization import ByteString
 
 from .action import decode_plutusdata_union
 
@@ -12,7 +13,7 @@ from .action import decode_plutusdata_union
 
 
 type IpfsPeerId = bytes
-type IpfsMultiaddr = bytes
+type IpfsMultiaddr = ByteString # required when len > 64
 
 # Peer ID = multihash: [hash_code(1)][digest_len(1)][digest(N)]
 #   - 0x00 identity  (Ed25519 public key inlined): 0x00 0x24 + 36 bytes -> 38
@@ -81,6 +82,7 @@ def ipfs_peerid_to_string(value: bytes) -> str:
 
 def _validate_multiaddr_bytes(b: bytes) -> None:
     """Light structural check matching the on-chain non-empty + size guard."""
+    # TODO should this expect a ByteString instead?
     if len(b) == 0:
         raise ValueError("multiaddr must be non-empty")
     if len(b) > _MAX_MULTIADDR_LEN:
@@ -89,14 +91,18 @@ def _validate_multiaddr_bytes(b: bytes) -> None:
         )
 
 
-def coerce_ipfs_multiaddr(value: Union[str, bytes, bytearray]) -> bytes:
+def coerce_ipfs_multiaddr(value: Union[str, bytes, bytearray, ByteString]) -> ByteString:
     """
     Accept a multiaddr as either its human string form
     (e.g. '/ip4/1.2.3.4/tcp/4001') or its packed bytes, and return canonical bytes.
     """
+    if isinstance(value, ByteString):
+        value = value.value
     if isinstance(value, str):
         value = re.sub('^r:', '', value) # TODO clean this up!
         b = _MultiaddrObj(value).to_bytes()
+    # if isinstance(value, ByteString):
+    #     value = value.value
     elif isinstance(value, (bytes, bytearray)):
         # round-trip through the parser to reject obvious garbage
         b = _MultiaddrObj(bytes(value)).to_bytes()
@@ -105,13 +111,14 @@ def coerce_ipfs_multiaddr(value: Union[str, bytes, bytearray]) -> bytes:
             f"multiaddr must be str or bytes, got {type(value).__name__}"
         )
     _validate_multiaddr_bytes(b)
+    b = ByteString(b)
     return b
 
 
-def ipfs_multiaddr_to_string(value: bytes) -> str:
+def ipfs_multiaddr_to_string(b: ByteString) -> str:
     """Convert packed multiaddr bytes to their human string form."""
-    _validate_multiaddr_bytes(value)
-    s = str(_MultiaddrObj(value))
+    _validate_multiaddr_bytes(b.value)
+    s = str(_MultiaddrObj(b.value))
     if '/p2p/' in s:
         s = 'r:' + s # TODO clean this up!
     return s
@@ -215,7 +222,7 @@ class IpfsNode(IpfsPeerIdMixin, IpfsMultiaddrMixin, PlutusData):
     CONSTR_ID = 0
 
     peer_id: bytes
-    addr_hints: List[bytes]
+    addr_hints: List[ByteString]
 
 
 # --------------------------------------------------------------------------

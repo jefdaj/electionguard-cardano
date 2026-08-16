@@ -449,17 +449,19 @@ class IPFSService:
     # TODO better name
     # TODO is there ever really a NoIpfsNode case here? Maybe don't return option
     def get_own_node(self) -> OptionIpfsNode:
-        try:
-            peer_id = self.get_own_peer_id()
-            hints = [coerce_ipfs_multiaddr(h) for h in self.own_addr_hints()]
+        # try:
+        # TODO refactor this
+        peer_id = self.get_own_peer_id()
+        hints = [coerce_ipfs_multiaddr(h) for h in self.own_addr_hints()]
+        if hints:
             LOG.info(f'first hint type: {type(hints[0])}')   # want: <class 'bytes'>
-            LOG.info(f'peer_id type: {type(peer_id)}')       # want: <class 'bytes'>
-            hints = [h for h in hints if len(h) < 64] # TODO fix chunking bug that requires this
-            LOG.info(f'hints < 64b: {hints}')
-            return SomeIpfsNode(IpfsNode(peer_id=peer_id, addr_hints=hints))
-        except Exception as e:
-            LOG.error(e)
-            return NoIpfsNode()
+        LOG.info(f'peer_id type: {type(peer_id)}')       # want: <class 'bytes'>
+        # hints = [h for h in hints if len(h) < 64] # TODO fix chunking bug that requires this
+        # LOG.info(f'hints < 64b: {hints}')
+        return SomeIpfsNode(IpfsNode(peer_id=peer_id, addr_hints=hints))
+        # except Exception as e:
+        #     LOG.error(e)
+        #     return NoIpfsNode()
 
 #     async def add_explicit_peer(self, node: IpfsNode):
 #         peer_id = ipfs_peerid_to_string(node.peer_id)
@@ -524,7 +526,7 @@ class IPFSService:
         return ids
 
     # TODO return coerced bytes, or the entire IpfsNode type? less footgun
-    def own_addr_hints(self, n_global=4, n_local=2):
+    def own_addr_hints(self, n_global=4, n_local=4):
         """List N best guesses at the most useful current addr_hints. Depends
         on channel_node peerids because we especially want to be dialable to
         them. Relays are shortened with `r:` notation, which should be expanded

@@ -1,5 +1,6 @@
 import pytest
 from egc import *
+from pycardano.serialization import ByteString
 
 # TODO test addr_hints
 
@@ -22,3 +23,12 @@ def test_some_ipfs_node_roundtrip_cbor():
 def test_no_ipfs_node_roundtrip_cbor():
     opt = NoIpfsNode()
     assert decode_option_ipfs_node(opt.to_cbor_hex()) == opt
+
+def test_multiaddr_roundtrip_bytestring():
+    # TODO how to handle the r: thing properly?
+    # s = "/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ"
+    s = "/ip4/104.131.131.82/tcp/4001"
+    m = coerce_ipfs_multiaddr(s)
+    assert isinstance(m, ByteString)
+    s2 = ipfs_multiaddr_to_string(m)
+    assert s == s2
