@@ -451,8 +451,8 @@ class IPFSService:
     def get_own_node(self) -> OptionIpfsNode:
         try:
             peer_id = self.get_own_peer_id()
-            # TODO implement addr_hints
-            return SomeIpfsNode(IpfsNode(peer_id=peer_id, addr_hints=[]))
+            hints = self.own_addr_hints()
+            return SomeIpfsNode(IpfsNode(peer_id=peer_id, addr_hints=hints))
         except Exception as e:
             LOG.error(e)
             return NoIpfsNode()
