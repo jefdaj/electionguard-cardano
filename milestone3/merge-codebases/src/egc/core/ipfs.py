@@ -448,11 +448,23 @@ class IPFSService:
 
     # TODO better name
     # TODO is there ever really a NoIpfsNode case here? Maybe don't return option
-    def get_own_node(self) -> OptionIpfsNode:
+    def get_own_node(
+            self,
+            explicit_hints: list[str] = [],
+            n_global_hints: int = 4,
+            n_local_hints: int = 4,
+        ) -> OptionIpfsNode:
         # try:
         # TODO refactor this
         peer_id = self.get_own_peer_id()
-        hints = [coerce_ipfs_multiaddr(h) for h in self.own_addr_hints()]
+        hints = [
+            coerce_ipfs_multiaddr(h)
+            for h in self.own_addr_hints(
+                explicit = explicit_hints,
+                n_global = n_global_hints,
+                n_local  = n_local_hints,
+            )
+        ]
         if hints:
             LOG.info(f'first hint type: {type(hints[0])}')   # want: <class 'bytes'>
         LOG.info(f'peer_id type: {type(peer_id)}')       # want: <class 'bytes'>
@@ -526,13 +538,15 @@ class IPFSService:
         return ids
 
     # TODO return coerced bytes, or the entire IpfsNode type? less footgun
-    def own_addr_hints(self, n_global=4, n_local=4):
+    def own_addr_hints(self, explicit: list[str], n_global: int = 4, n_local: int = 4):
         """List N best guesses at the most useful current addr_hints. Depends
         on channel_node peerids because we especially want to be dialable to
         them. Relays are shortened with `r:` notation, which should be expanded
         with self.expand_addr_hints before use by other nodes."""
         # TODO prepend with any explicit user hints
         # TODO enforce contract limit of 8
+        # TODO validate explicit hints
+        LOG.debug(f'explicit: {explicit}')
         channel_peerid_strs = self.all_other_channel_peerid_strs()
         LOG.debug(f'channel_peerid_strs: {channel_peerid_strs}')
         global_hints = self._run_sync(
@@ -555,4 +569,4 @@ class IPFSService:
             )
         )
         LOG.debug(f'local_hints: {local_hints}')
-        return global_hints + local_hints
+        return explicit + global_hints + local_hints

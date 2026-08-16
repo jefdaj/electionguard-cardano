@@ -47,8 +47,13 @@ async def ipfs_show(state=Depends(get_state)):
     return data
 
 @router.put("")
-async def ipfs_post(state=Depends(get_state)):
+async def ipfs_post(data: schemas.IpfsPost, state=Depends(get_state)):
     LOG.debug('ipfs_post')
-    tx = state.node.set_ipfs_node()
+    LOG.debug(f'data: {data}')
+    tx = state.node.set_ipfs_node(
+        explicit_hints = data.explicit_hints,
+        n_global_hints = data.n_global_hints,
+        n_local_hints  = data.n_local_hints,
+    )
     state.node.await_tx_confirmed(tx)
     return Response(status_code=201)

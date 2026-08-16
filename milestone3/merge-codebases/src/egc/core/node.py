@@ -316,7 +316,12 @@ class ElectionNode:
     # TODO factor out the common parts of set_ipfs_node and post_public_records
 
     # TODO is the name not clear enough about this posting on chain?
-    def set_ipfs_node(self):
+    def set_ipfs_node(
+            self,
+            explicit_hints: list[str],
+            n_global_hints: int,
+            n_local_hints: int,
+        ):
 
         LOG.debug('ElectionNode.set_ipfs_node')
 
@@ -341,10 +346,11 @@ class ElectionNode:
         LOG.debug('in_state: %s' % pformat(in_state))
 
         # TODO this is the first unique part
-        # TODO implement addr_hints
-        # peer_id: IpfsPeerId = self.ipfs.get_own_peer_id()
-        # new_node = IpfsNode(peer_id = peer_id, addr_hints = [])
-        opt_new_node = self.ipfs.get_own_node()
+        opt_new_node = self.ipfs.get_own_node(
+            explicit_hints = explicit_hints,
+            n_global_hints = n_global_hints,
+            n_local_hints  = n_local_hints,
+        )
         # LOG.info(f'first hint type: {type(opt_own_node.value.hints[0])}')
         out_state = replace(
             in_state,

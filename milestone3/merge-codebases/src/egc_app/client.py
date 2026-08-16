@@ -223,6 +223,16 @@ class Client:
         resp = handle_http_errors(resp)
         return resp.json()
 
-    async def ipfs_post(self):
-        resp = await self._c.put('/ipfs') # TODO /ipfs_nodes?
+    async def ipfs_post(
+            self,
+            explicit_hints: list[str],
+            n_global_hints: int,
+            n_local_hints: int,
+        ):
+        data = schemas.IpfsPost(
+            explicit_hints = explicit_hints,
+            n_global_hints = n_global_hints,
+            n_local_hints  = n_local_hints,
+        )
+        resp = await self._c.put('/ipfs', json=data.model_dump()) # TODO /ipfs_nodes?
         handle_http_errors(resp)

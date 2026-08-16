@@ -24,6 +24,19 @@ def show():
     click.echo(json.dumps(cfg))
 
 @ipfs.command(roles=['admin', 'guardian', 'device', 'verifier'])
-def post():
-    "Post your current IPFS contact info to your channel state."
-    asyncio.run(Client().ipfs_post())
+@click.option('--explicit-hints', type=click.STRING, required=False, multiple=True)
+@click.option('--n-global-hints', type=click.INT, default=4)
+@click.option('--n-local-hints', type=click.INT, default=4)
+def post(explicit_hints: list[str], n_global_hints: int, n_local_hints: int):
+    """Post your current IPFS contact info to your channel state. Always
+    includes your peer_id. Can optionally also include explicit relays or addr
+    hints, or auto-generate them to optimize for global and/or local
+    connectivity."""
+    n_total = len(explicit_hints) + n_global_hints + n_local_hints
+    if n_total > 8:
+        raise Exception('Max 8 hints allowed by contract')
+    asyncio.run(Client().ipfs_post(
+        explicit_hints = explicit_hints,
+        n_global_hints = n_global_hints,
+        n_local_hints = n_local_hints,
+    ))
