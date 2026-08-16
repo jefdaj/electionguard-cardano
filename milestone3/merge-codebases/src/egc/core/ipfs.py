@@ -569,4 +569,9 @@ class IPFSService:
             )
         )
         LOG.debug(f'local_hints: {local_hints}')
-        return explicit + global_hints + local_hints
+        deduped_hints = []
+        for h in explicit + global_hints + local_hints:
+            if not h in deduped_hints:
+                deduped_hints.append(h)
+        LOG.debug(f'deduped_hints: {deduped_hints}')
+        return deduped_hints
