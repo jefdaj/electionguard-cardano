@@ -489,12 +489,7 @@ class IPFSService:
         if opt_new.value.peer_id == self.get_own_peer_id():
             LOG.info(f'skip peering with own node: {peerid_str}')
         else:
-            # TODO factor out into separate fn
-            LOG.info(f'peering with {peerid_str}')
-            hints = [ipfs_multiaddr_to_string(h) for h in opt_new.value.addr_hints]
-            LOG.info(f'hints before expand: {hints}')
-            hints = self.expand_addr_hints(peerid_str, hints)
-            LOG.info(f'hints after expand: {hints}')
+            hints = self.channel_addr_hints(opt_new.value)
             for h in hints:
                 # TODO better way to aggregate the async calls?
                 LOG.info(f'adding hint {h}')
@@ -502,17 +497,55 @@ class IPFSService:
                     self.ipfs._client.swarm.peering.add(maddr)
                 )
 
-    def addr_hints(self, n_hints=4, prefer_lan=False, want_peers=(), include_relays=None):
-        return self._run_sync(
-            make_addr_hints(
-                self.ipfs._client,
-                n_hints        = n_hints,
-                prefer_lan     = prefer_lan,
-                want_peers     = want_peers,
-                include_relays = include_relays
-            )
-        )
-
-    # TODO take the onchain data type directly?
     def expand_addr_hints(self, peer_id: str, addr_hints: list[str]) -> list[str]:
         return expand_addr_hints(my_id, addr_hints) # TODO same name ok?
+
+    def channel_addr_hints(self, ipfs_node: IpfsNode):
+        peerid_str = ipfs_peerid_to_string(ipfs_node.peer_id)
+        hints = [ipfs_multiaddr_to_string(h) for h in ipfs_node.addr_hints]
+        LOG.info(f'hints before expand: {hints}')
+        hints = self.expand_addr_hints(peerid_str, hints)
+        LOG.info(f'hints after expand: {hints}')
+        return hints
+
+    def all_other_channel_peerid_strs(self) -> list[str]:
+        "Used to prioritize own_addr_hints."
+        ids = []
+        for opt_node in self.channel_nodes.values():
+            if opt_node == NoIpfsNode():
+                continue
+            if opt_node.value.peer_id == self.get_own_peer_id():
+                continue
+            ids.append(opt_node.value.peer_id)
+        return ids
+
+    def own_addr_hints(self, n_global=4, n_local=2):
+        """List N best guesses at the most useful current addr_hints. Depends
+        on channel_node peerids because we especially want to be dialable to
+        them. Relays are shortened with `r:` notation, which should be expanded
+        with self.expand_addr_hints before use by other nodes."""
+        # TODO prepend with any explicit user hints
+        # TODO enforce contract limit of 8
+        channel_peerid_strs = self.all_other_channel_peerid_strs()
+        LOG.debug(f'channel_peerid_strs: {channel_peerid_strs}')
+        global_hints = self._run_sync(
+            make_addr_hints(
+                self.ipfs._client,
+                n_hints        = n_global,
+                want_peers     = channel_peerid_strs,
+                prefer_lan     = False,
+                include_relays = True,
+            )
+        )
+        LOG.debug(f'global_hints: {global_hints}')
+        local_hints = self._run_sync(
+            make_addr_hints(
+                self.ipfs._client,
+                n_hints        = n_local,
+                want_peers     = channel_peerid_strs,
+                prefer_lan     = True,
+                include_relays = False,
+            )
+        )
+        LOG.debug(f'local_hints: {local_hints}')
+        return global_hints + local_hints
