@@ -14,6 +14,8 @@ from aioipfs import AsyncIPFS
 from .plutus  import *
 from .records import *
 
+from .ipfs_hints import make_addr_hints, expand_addr_hints
+
 import logging
 
 LOG = logging.getLogger(__name__)
@@ -494,3 +496,18 @@ class IPFSService:
             self._run_sync(
                 self.add_explicit_peer(opt_new.value)
             )
+
+    def addr_hints(self, n_hints=4, prefer_lan=False, want_peers=(), include_relays=None):
+        return self._run_sync(
+            make_addr_hints(
+                self.ipfs._client,
+                n_hints        = n_hints,
+                prefer_lan     = prefer_lan,
+                want_peers     = want_peers,
+                include_relays = include_relays
+            )
+        )
+
+    # TODO take the onchain data type directly?
+    def expand_addr_hints(self, peer_id: str, addr_hints: list[str]) -> list[str]:
+        return expand_addr_hints(my_id, addr_hints) # TODO same name ok?

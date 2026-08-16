@@ -1,5 +1,9 @@
 import ipaddress
 import aioipfs
+import logging
+
+
+LOG = logging.getLogger(__name__)
 
 
 # ---- multiaddr helpers -------------------------------------------------
@@ -49,6 +53,12 @@ def _rank(ma, lan):
     return (scope, quic, tcp)
 
 
+def _strip_own(ma, my_id):
+    """Drop only the terminal '/p2p/<my_id>', preserving the rest verbatim."""
+    suffix = f"/p2p/{my_id}"
+    return ma[:-len(suffix)] if ma.endswith(suffix) else ma
+
+
 # ---- main --------------------------------------------------------------
 
 async def make_addr_hints(client, n_hints=4, prefer_lan=False,
@@ -65,11 +75,13 @@ async def make_addr_hints(client, n_hints=4, prefer_lan=False,
                      True  -> always include, False -> never include
 
     Relay hints are emitted as compact 'r:'-prefixed tokens and must be
-    passed through expand_hints() on the read end before dialing.
+    passed through expand_addr_hints() on the read end before dialing.
     """
     me = await client.core.id()
     my_id = me["ID"]
+    LOG.debug(f'my_id: {my_id}')
     candidates = set(me.get("Addresses") or [])
+    LOG.debug(f'candidates: {candidates}')
 
     if include_relays is None:
         include_relays = not prefer_lan  # relays only help global reachability
@@ -82,13 +94,15 @@ async def make_addr_hints(client, n_hints=4, prefer_lan=False,
             if p.get("Peer") in want:
                 d = _parse(p.get("Addr", ""))
                 seen_families.add("ip6" if "ip6" in d else "ip4")
+    LOG.debug(f'seen_families: {seen_families}')
 
     # --- direct hints: filter to scope, strip our own /p2p suffix ---
     direct = {
-        "/".join(f"/{k}/{v}" for k, v in _parse(a).items() if k != "p2p")
+        _strip_own(a, my_id)
         for a in candidates
         if not _is_circuit(a) and _keep(a, prefer_lan)
     }
+    LOG.debug(f'direct: {direct}')
 
     def sort_key(ma):
         d = _parse(ma)
@@ -96,6 +110,7 @@ async def make_addr_hints(client, n_hints=4, prefer_lan=False,
         return (0 if fam in seen_families else 1, *_rank(ma, prefer_lan))
 
     ordered = sorted(direct, key=sort_key)
+    LOG.debug(f'ordered: {ordered}')
 
     # --- compact relay tokens (publish minimal, expand on read) ---
     relays = []
@@ -118,6 +133,7 @@ async def make_addr_hints(client, n_hints=4, prefer_lan=False,
             token = "r:" + a.split("/p2p-circuit")[0].rstrip("/")
             relays.append(token)
         relays = sorted(set(relays))
+    LOG.debug(f'relays: {relays}')
 
     # direct hints take priority; relays fill remaining slots as fallback
     hints = ordered[:n_hints]
@@ -127,12 +143,13 @@ async def make_addr_hints(client, n_hints=4, prefer_lan=False,
                 break
             if r not in hints:
                 hints.append(r)
+    LOG.debug(f'hints: {hints}')
     return hints
 
 
 # ---- read-end expander -------------------------------------------------
 
-def expand_hints(peer_id, hints):
+def expand_addr_hints(peer_id, hints):
     """
     Rebuild dialable multiaddrs from published hints for a given peer id.
 
