@@ -1,7 +1,6 @@
 {% extends "08_admin_post_batch.sh" %}
 {% block body %}
 {{ super() }}
-
 # Normally the admin would be manage their requests individually,
 # but counting files is easier to script for the tests.
 n_subs=$(cat private/n_requests.txt)

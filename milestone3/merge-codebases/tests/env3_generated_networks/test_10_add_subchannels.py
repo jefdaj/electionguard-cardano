@@ -38,33 +38,21 @@ def cfg_add_subchannels(draw):
     return cfg
 
 
+def assert_add_subchannels(cfg):
+    assert_script_logs_match(cfg, 'admin', [
+        'egc channel create'
+    ])
+    assert_node_logs_match(cfg, 'admin', [
+        'POST /api/channel/create.*200$',
+        'admin sent 5 ADA from admin channel fee pool',
+    ])
+
+
 @given_cached_tests(
     cfg_strategy = cfg_add_subchannels(),
     max_examples = 1,
 )
 def test_add_subchannels(cfg: ResolvedTestConfig):
-    # assert_script_logs_match(cfg, 'admin', [
-        # 'CH_STR=admin$',
-        # 'egc collateral await$',
-        # '^private.*manifest\\.json$',
-    # ])
-    # assert_node_logs_match(cfg, '.*', [
-
-        # TODO get this working reliably... maybe wait longer? tweak ipfs?
-        # 'fetched.*CeremonyDetails',
-
-    # ])
-    # assert_node_logs_match(cfg, 'admin', [
-        # 'GET /api/channel/await\\?role=admin',
-        # 'GET /api/collateral/await',
-        # 'POST /api/ceremony/create',
-        # 'POST /api/records/post.*201$',
-        # 'admin posted PublicRecord.*metadata=Manifest',
-    # ])
-    # assert_script_logs_match(cfg, '(?!admin)', [
-        # 'admin posted Manifest',
-        # '^[0-9]{9,}\\s.*ended election',
-    # ])
     assert_test_completed(cfg)
     assert_wallet_created(cfg)
     assert_node_ready(cfg)
@@ -73,4 +61,4 @@ def test_add_subchannels(cfg: ResolvedTestConfig):
     assert_post_manifest(cfg)
     assert_post_ceremony(cfg)
     assert_advance_phase(cfg, ElectionConfigPhase(ConfigCeremonyPhase()))
-    # assert_advance_phase_standalone(cfg)
+    assert_add_subchannels(cfg)

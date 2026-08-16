@@ -4,14 +4,20 @@ from egc import *
 from ..lib import *
 from .lib  import *
 
-# from .test_10_add_subchannels import *
+from .test_02_create_wallet import assert_wallet_created
+from .test_03_node_ready    import assert_node_ready
+from .test_04_subscribe     import assert_endelection_event
+from .test_06_admin_post_ipfs import assert_admin_post_ipfs
+from .test_07_post_manifest import cfg_post_manifest_base, assert_post_manifest
+from .test_08_post_batch    import assert_advance_phase, assert_post_manifest, assert_post_ceremony
+from .test_10_add_subchannels import cfg_add_subchannels_base
 
 
 @st.composite
-def cfg_subchannels_ipfs(draw):
+def cfg_subs_post_ipfs(draw):
     cfg = draw( cfg_add_subchannels_base() )
     cfg = append_config_fn_name(cfg)
-    cfg = replace_setup_fns(cfg, [
+    cfg = append_setup_fns(cfg, [
         FnCallConfig(
             name = 'render_egc_scripts',
             args = (
@@ -24,7 +30,7 @@ def cfg_subchannels_ipfs(draw):
 
 
 @given_cached_tests(
-    cfg_strategy = cfg_subchannels_ipfs(),
+    cfg_strategy = cfg_subs_post_ipfs(),
     max_examples = 1,
 )
 def test_subs_post_ipfs(cfg: ResolvedTestConfig):

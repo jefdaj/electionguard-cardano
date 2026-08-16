@@ -9,8 +9,4 @@ done
 
 # Show all peer_ids
 egc ipfs show | jq
-
-# Confirm that all records can now be fetched
-# TODO remove here since there aren't any yet?
-# egc records await
 {% endblock %}

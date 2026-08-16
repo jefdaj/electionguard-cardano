@@ -7,7 +7,6 @@ cleanup() {
 {% endblock %}
 {% block body %}
 {{ super() }}
-
 await_file() {
   timeout 900 bash -c 'until [ -e "$1" ]; do sleep 1; done' _ "$1"
 }

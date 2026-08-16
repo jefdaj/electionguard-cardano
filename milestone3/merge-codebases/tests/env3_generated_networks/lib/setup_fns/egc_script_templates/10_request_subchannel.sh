@@ -1,7 +1,15 @@
 {% extends "04_subscribe_png.sh" %}
+{% block cleanup %}
+cleanup() {
+  # check that records were fetched
+  egc records await
+  find private/records_* -type f
+  echo "cleaning up";
+  egc collateral return
+}
+{% endblock %}
 {% block body %}
 {{ super() }}
-
 # Request a channel from admin via qrcode.
 egc channel request \
   --request-save-png qrcodes/channel-${EGC_NODE_NAME}.png \

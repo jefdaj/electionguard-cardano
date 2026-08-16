@@ -7,7 +7,4 @@ egc ipfs post
 # TODO do they always post at the same slot?
 # check that other publishers' peer_ids are picked up
 egc ipfs show | jq
-
-# TODO remove?
-# egc records await
 {% endblock %}
