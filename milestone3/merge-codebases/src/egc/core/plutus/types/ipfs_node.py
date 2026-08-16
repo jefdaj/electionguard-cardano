@@ -1,6 +1,7 @@
 from dataclasses import dataclass, fields as dc_fields
 from typing import List, Union
 
+import re
 import base58
 from multiaddr import Multiaddr as _MultiaddrObj
 from pycardano import PlutusData
@@ -94,6 +95,7 @@ def coerce_ipfs_multiaddr(value: Union[str, bytes, bytearray]) -> bytes:
     (e.g. '/ip4/1.2.3.4/tcp/4001') or its packed bytes, and return canonical bytes.
     """
     if isinstance(value, str):
+        value = re.sub('^r:', '', value) # TODO clean this up!
         b = _MultiaddrObj(value).to_bytes()
     elif isinstance(value, (bytes, bytearray)):
         # round-trip through the parser to reject obvious garbage
@@ -109,7 +111,10 @@ def coerce_ipfs_multiaddr(value: Union[str, bytes, bytearray]) -> bytes:
 def ipfs_multiaddr_to_string(value: bytes) -> str:
     """Convert packed multiaddr bytes to their human string form."""
     _validate_multiaddr_bytes(value)
-    return str(_MultiaddrObj(value))
+    s = str(_MultiaddrObj(value))
+    if '/p2p/' in s:
+        s = 'r:' + s # TODO clean this up!
+    return s
 
 
 # --------------------------------------------------------------------------
