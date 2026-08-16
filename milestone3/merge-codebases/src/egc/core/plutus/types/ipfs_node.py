@@ -192,7 +192,7 @@ class IpfsMultiaddrMixin(_PlutusStrMixin):
     def _field_formatters(self) -> dict:
         fmts = super()._field_formatters()
         for name in MULTIADDR_FIELDS:
-            fmts[name] = lambda v: repr([ipfs_multiaddr_to_string(a) for a in v])
+            fmts[name] = lambda v, _n=name: repr([ipfs_multiaddr_to_string(a) for a in v])
         return fmts
 
 
