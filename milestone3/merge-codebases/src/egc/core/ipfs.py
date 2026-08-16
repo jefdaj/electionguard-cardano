@@ -457,24 +457,22 @@ class IPFSService:
             LOG.error(e)
             return NoIpfsNode()
 
-    async def add_explicit_peer(self, node: IpfsNode):
-        peer_id = ipfs_peerid_to_string(node.peer_id)
-        LOG.debug(f'peer_id: {peer_id}')
-        hint_addrs = [] # TODO implement these
-        # Build a multiaddr that includes the /p2p/<id> component.
-        # TODO do this for each hint, right?
-        if hint_addrs:
-            addr = hint_addrs[0]
-            maddr = addr if "/p2p/" in addr else f"{addr}/p2p/{peer_id}"
-        else:
-            maddr = f"/p2p/{peer_id}"
+#     async def add_explicit_peer(self, node: IpfsNode):
+#         peer_id = ipfs_peerid_to_string(node.peer_id)
+#         LOG.debug(f'peer_id: {peer_id}')
+#         hint_addrs = [] # TODO implement these
+#         # Build a multiaddr that includes the /p2p/<id> component.
+#         # TODO do this for each hint, right?
+#         if hint_addrs:
+#             addr = hint_addrs[0]
+#             maddr = addr if "/p2p/" in addr else f"{addr}/p2p/{peer_id}"
+#         else:
+#             maddr = f"/p2p/{peer_id}"
+# 
+#         LOG.debug(f'maddr: {maddr}')
+#         await self.ipfs._client.swarm.peering.add(maddr)
+#         LOG.info(f'added explicit peer {maddr}')
 
-        LOG.debug(f'maddr: {maddr}')
-        await self.ipfs._client.swarm.peering.add(maddr)
-        LOG.info(f'added explicit peer {maddr}')
-
-    # TODO async?
-    # TODO any need for a lock?
     def set_channel_node(self, channel_id: ChannelId, opt_new: OptionIpfsNode):
         opt_prev = (
             self.channel_nodes[channel_id]
@@ -485,17 +483,24 @@ class IPFSService:
             return
         LOG.info(f'update {channel_id} channel node: {opt_prev} -> {opt_new}')
         self.channel_nodes[channel_id] = opt_new
-        # if isinstance(opt_new, NoIpfsNode):
         if opt_new == NoIpfsNode():
             return
-        id_str = ipfs_peerid_to_string(opt_new.value.peer_id)
+        peerid_str = ipfs_peerid_to_string(opt_new.value.peer_id)
         if opt_new.value.peer_id == self.get_own_peer_id():
-            LOG.info(f'skip peering with own node: {id_str}')
+            LOG.info(f'skip peering with own node: {peerid_str}')
         else:
-            LOG.info(f'peering with {id_str}')
-            self._run_sync(
-                self.add_explicit_peer(opt_new.value)
-            )
+            # TODO factor out into separate fn
+            LOG.info(f'peering with {peerid_str}')
+            hints = [ipfs_multiaddr_to_string(h) for h in opt_new.value.addr_hints]
+            LOG.info(f'hints before expand: {hints}')
+            hints = self.expand_addr_hints(peerid_str, hints)
+            LOG.info(f'hints after expand: {hints}')
+            for h in hints:
+                # TODO better way to aggregate the async calls?
+                LOG.info(f'adding hint {h}')
+                self._run_sync(
+                    self.ipfs._client.swarm.peering.add(maddr)
+                )
 
     def addr_hints(self, n_hints=4, prefer_lan=False, want_peers=(), include_relays=None):
         return self._run_sync(

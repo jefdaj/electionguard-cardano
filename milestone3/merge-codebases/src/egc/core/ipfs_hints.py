@@ -168,4 +168,6 @@ def expand_addr_hints(peer_id, hints):
             out.append(f"{relay}/p2p-circuit/p2p/{peer_id}")
         else:
             out.append(f"{h}/p2p/{peer_id}")
+    if not out:
+        out.append(f"/p2p/{peer_id}") # plain peer_id with no hint
     return out
