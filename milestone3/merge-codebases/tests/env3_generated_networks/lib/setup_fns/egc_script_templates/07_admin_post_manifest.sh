@@ -7,7 +7,7 @@ egc manifest create --manifest-load-json private/manifest.json
 find private/records_* -type f
 egc records list
 egc records post
-egc records await
+time timeout 900s egc records await
 find private/records_* -type f
 egc records list
 

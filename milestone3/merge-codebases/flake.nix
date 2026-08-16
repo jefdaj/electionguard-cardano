@@ -175,6 +175,7 @@
                 pythonEnv
                 pkgs.coreutils
                 pkgs.gnugrep
+                pkgs.time
                 pkgs.findutils
                 pkgs.bashInteractive
                 pkgs.jq

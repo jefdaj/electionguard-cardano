@@ -2,7 +2,7 @@
 {% block cleanup %}
 cleanup() {
   # check that records were fetched
-  egc records await
+  time timeout 900s egc records await
   find private/records_* -type f
   echo "cleaning up";
   egc collateral return
