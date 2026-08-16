@@ -6,6 +6,8 @@ pub type IpfsPeerId =
   ByteArray
 
 /// A single multiaddr in its binary (packed) encoding.
+/// Note that there's also a shortened "r:" variant for relays which needs a
+/// bit of expanding on the python side before use.
 pub type IpfsMultiaddr =
   ByteArray
 
