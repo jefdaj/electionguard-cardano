@@ -12,7 +12,7 @@ router = APIRouter(prefix="/ipfs") # TODO /ipfs_nodes?
 
 def node_out(opt_node: OptionIpfsNode) -> Optional[schemas.IpfsNodeOut]:
     LOG.debug(f'opt_node: {opt_node}')
-    if isinstance(opt_node, NoIpfsNode):
+    if opt_node == NoIpfsNode():
         return None
     assert isinstance(opt_node, SomeIpfsNode), f'unexpected opt_node: {opt_node}'
     node = opt_node.value

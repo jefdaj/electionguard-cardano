@@ -451,7 +451,11 @@ class IPFSService:
     def get_own_node(self) -> OptionIpfsNode:
         try:
             peer_id = self.get_own_peer_id()
-            hints = self.own_addr_hints()
+            hints = [coerce_ipfs_multiaddr(h) for h in self.own_addr_hints()]
+            LOG.info(f'first hint type: {type(hints[0])}')   # want: <class 'bytes'>
+            LOG.info(f'peer_id type: {type(peer_id)}')       # want: <class 'bytes'>
+            hints = [h for h in hints if len(h) < 64] # TODO fix chunking bug that requires this
+            LOG.info(f'hints < 64b: {hints}')
             return SomeIpfsNode(IpfsNode(peer_id=peer_id, addr_hints=hints))
         except Exception as e:
             LOG.error(e)
@@ -494,11 +498,11 @@ class IPFSService:
                 # TODO better way to aggregate the async calls?
                 LOG.info(f'adding hint {h}')
                 self._run_sync(
-                    self.ipfs._client.swarm.peering.add(maddr)
+                    self.ipfs._client.swarm.peering.add(h)
                 )
 
     def expand_addr_hints(self, peer_id: str, addr_hints: list[str]) -> list[str]:
-        return expand_addr_hints(my_id, addr_hints) # TODO same name ok?
+        return expand_addr_hints(peer_id, addr_hints) # TODO same name ok?
 
     def channel_addr_hints(self, ipfs_node: IpfsNode):
         peerid_str = ipfs_peerid_to_string(ipfs_node.peer_id)
@@ -519,6 +523,7 @@ class IPFSService:
             ids.append(opt_node.value.peer_id)
         return ids
 
+    # TODO return coerced bytes, or the entire IpfsNode type? less footgun
     def own_addr_hints(self, n_global=4, n_local=2):
         """List N best guesses at the most useful current addr_hints. Depends
         on channel_node peerids because we especially want to be dialable to

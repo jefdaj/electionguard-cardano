@@ -345,6 +345,7 @@ class ElectionNode:
         # peer_id: IpfsPeerId = self.ipfs.get_own_peer_id()
         # new_node = IpfsNode(peer_id = peer_id, addr_hints = [])
         opt_new_node = self.ipfs.get_own_node()
+        # LOG.info(f'first hint type: {type(opt_own_node.value.hints[0])}')
         out_state = replace(
             in_state,
             ipfs_node = opt_new_node,
