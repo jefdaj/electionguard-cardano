@@ -315,28 +315,27 @@ class IPFSService:
         delay = random.uniform(0, cap) # full jitter
         self.store.mark_attempt(record, attempts, time.time() + delay)
 
+    async def force_reconnect(self, maddr: str):
+        LOG.debug(f'force_reconnect {maddr}')
+        try:
+            await self.ipfs._client.swarm.disconnect(maddr)
+        except Exception as e:
+            LOG.error(e)
+        await self.ipfs._client.swarm.connect(maddr)
+
     async def _watchdog(self):
         "Force reconnect occasionally to prevent stuck node."
         # TODO find the root cause of getting stuck!
         while True:
-            await asyncio.sleep(60)
-            # async with aioipfs.AsyncIPFS() as client:
+            await asyncio.sleep(60) # TODO variable?
             # bitswap = await self.ipfs._client.bitswap.stat()
             # If wantlist is non-empty but no blocks received recently → reconnect
             # (for now, just do every 60s regardless)
-            # connected_peers = {p["Peer"] for p in await self.ipfs._client.swarm.peers()}
-            for addr in self.all_channel_addr_hints():
-                # peer_id = addr.split("/p2p/")[-1]
-                # if peer_id not in connected_peers:
-                LOG.debug(f'watchdog (re)connecting to {addr}')
-                try:
-                    await self.ipfs._client.swarm.disconnect(addr)
-                except Exception as e:
-                    LOG.error(e)
-                try:
-                    res = await self.ipfs._client.swarm.connect(addr)
-                except Exception as e:
-                    LOG.error(e)
+            for maddr in self.all_channel_addr_hints():
+                task = self._loop.create_task(self.force_reconnect(maddr))
+                task.add_done_callback(
+                    lambda t: t.exception() and LOG.error(t.exception())
+                )
 
     async def _sweeper(self, jitter=True):
         """Retry lane: patient, bounded, forever, on a slow cadence.
@@ -354,7 +353,6 @@ class IPFSService:
                     continue
                 await self._retry_sem.acquire()
                 task = self._loop.create_task(self._retry_one(record, attempts))
-                # TODO does the callback work?
                 task.add_done_callback(
                     lambda t: t.exception() and LOG.error(t.exception())
                 )
