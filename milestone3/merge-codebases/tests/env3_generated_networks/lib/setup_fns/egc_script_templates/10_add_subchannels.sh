@@ -18,7 +18,7 @@ create_channels() {
   for f in "${batch[@]}"; do
     cmd+=(--request-load-png "$f")
   done
-  (( n_channels_posted + ${#batch[@]} == n_subs )) && cmd+=(--done-onboarding)
+  (( n_channels_posted + ${#batch[@]} >= n_subs )) && cmd+=(--done-onboarding)
   "${cmd[@]}" || { echo "ERROR: command failed" >&2; exit 1; }
   for f in "${batch[@]}"; do processed["$f"]=1; done
   (( n_channels_posted += ${#batch[@]} ))

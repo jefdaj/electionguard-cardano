@@ -263,6 +263,7 @@
                echo "pycardano $(python -c "import importlib.metadata as m; print(m.version('pycardano'))")"
                export EGC_CARDANO_DIR="$(realpath "$EGC_CARDANO_DIR")"
                export EGC_WALLET_DIR="$(realpath "./keys")"
+               export EGC_HOST_IP=$(curl -s https://api.ipify.org)
                env | grep ^EGC_ | sort
                unset PYTHONPATH
             '';

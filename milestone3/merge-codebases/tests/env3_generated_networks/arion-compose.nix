@@ -15,6 +15,9 @@ let
 
   ogmiosPort = 1337;
 
+  # TODO set like this?
+  # export EGC_HOST_IP=$(curl -s https://api.ipify.org)
+  hostIp = builtins.getEnv "EGC_HOST_IP";
 
   ### packages ###
 
@@ -37,7 +40,7 @@ let
   ogmiosPairNetName   = role: i: "${nodeName role i}-ogmios-net";
   ipfsPairNetName     = role: i: "${nodeName role i}-ipfs-pair-net";
   ipfsSwarmNetName    = role: i: "${nodeName role i}-ipfs-swarm-net";
-  # ipfsMeshNetworkName = "ipfs-mesh-net";
+  ipfsMeshNetworkName = "ipfs-mesh-net";
   cardanoNetworkName  = "cardano-net";
 
   listOgmiosNetworks = cfg: lib.filter
@@ -83,18 +86,18 @@ let
           name = cardanoNetworkName;
           value = { driver = "bridge"; };
         }
-        # {
-        #   # shared IPFS mesh network with bridge to internet
-        #   name = ipfsMeshNetworkName;
-        #   # Restricting the IPFS net to internal only fixes my internet issues
-        #   # for now, but will prevent testing elections over the internet
-        #   # later...
-        #   value = {
-        #     driver = "bridge";
-        #     # TODO does this work to isolate them from each other?
-        #     # driver_opts."com.docker.network.bridge.enable_icc" = "false";
-        #   };
-        # }
+        {
+          # shared IPFS mesh network with bridge to internet
+          name = ipfsMeshNetworkName;
+          # Restricting the IPFS net to internal only fixes my internet issues
+          # for now, but will prevent testing elections over the internet
+          # later...
+          value = {
+            driver = "bridge";
+            # TODO does this work to isolate them from each other?
+            # driver_opts."com.docker.network.bridge.enable_icc" = "false";
+          };
+        }
       ]
     );
 
@@ -130,24 +133,61 @@ let
       };
   };
 
-  ipfsService = role: data_dir: i: {
+  ipfsService = role: data_dir: i: portOffset:
+  let
+    swarmPort = builtins.toString (4000 + portOffset + i);
+    initScriptName = "ipfs-init.sh";
+    initScriptPkg = pkgs.writeTextFile rec {
+      name = initScriptName;
+      destination = "/bin/${name}";
+      text = ''
+        #!/bin/sh
+        set -eu
+        ipfs config        AutoNAT.ServiceMode enabled
+        ipfs config --json Discovery.MDNS.Enabled true
+        ipfs config --json Routing.AcceleratedDHTClient true
+        ipfs config --json Swarm.ConnMgr.HighWater 10
+        ipfs config --json Swarm.ConnMgr.LowWater 3
+        ipfs config        Swarm.ConnMgr.GracePeriod 10s
+        ipfs config --json Swarm.RelayClient.Enabled true
+        ipfs config --json Swarm.RelayService.Enabled true
+        ipfs config --json Swarm.ResourceMgr.Enabled true
+        ipfs config --json Swarm.Transports.Network.QUIC true
+        ipfs config --json Swarm.Transports.Network.Relay true
+
+        # ipfs config --json Addresses.Swarm '["/ip4/0.0.0.0/tcp/${swarmPort}", "/ip4/0.0.0.0/udp/${swarmPort}/quic-v1"]'
+        ipfs config --json Addresses.AppendAnnounce \
+          "[
+            \"/ip4/${hostIp}/tcp/${swarmPort}\",
+            \"/ip4/${hostIp}/udp/${swarmPort}/quic-v1\",
+            \"/ip4/${hostIp}/udp/${swarmPort}/quic-v1/webtransport\"
+          ]"
+      '';
+    };
+  in {
     service.image = "ipfs/kubo:v0.42.0"; 
     service.restart = "always"; # TODO does this fix intermittent panics?
     service.volumes = [
       "${data_dir}/private/${nodeName role i}/ipfs:/data/ipfs"
-      "${../../ipfs-init.sh}:/container-init.d/001-config.sh:ro"
-      # "${../../ipfs-caps.json}:/data/ipfs/libp2p-resource-limit-overrides.json:ro"
+      "${initScriptPkg}/bin/${initScriptName}:/container-init.d/001-config.sh:ro"
+
+      # TODO remove?
+      "${../../ipfs-caps.json}:/data/ipfs/libp2p-resource-limit-overrides.json:ro"
     ];
     service.networks = [
       (ipfsPairNetName role i)
       (ipfsSwarmNetName role i)
-      # ipfsMeshNetworkName
+      ipfsMeshNetworkName
     ];
     service.ports = [
+      # These allow IPFS to communicate with the outside world on host ports.
+
       # host:container
-      # TODO are these only needed for testing but not production?
-      # TODO add 127.0.0.1?
-      # "${builtins.toString (4000 + portSuffix)}:4001" # ipfs swarm
+      # "${swarmPort}:${swarmPort}"
+      # "${swarmPort}:${swarmPort}/udp"
+      "${swarmPort}:4001"
+      "${swarmPort}:4001/udp"
+
       # "${builtins.toString (5000 + portSuffix)}:5001" # ipfs api
       # "${builtins.toString (8080 + portSuffix)}:8080" # ipfs gateway
     ];
@@ -215,19 +255,19 @@ let
         value = egcService egc_image role project_name data_dir scripts_dir i;
       };
 
-      pairIpfsAttrs = role: data_dir: i: {
+      pairIpfsAttrs = role: data_dir: i: portOffset: {
         name = "${nodeName role i}-ipfs";
-        value = ipfsService role data_dir i;
+        value = ipfsService role data_dir i portOffset;
       };
 
       # Produce (egc, ipfs) pairs for 1..nVms
-      pairAttrsList = project_name: egc_image: data_dir: scripts_dir: role: nVms:
+      pairAttrsList = project_name: egc_image: data_dir: scripts_dir: role: nVms: portOffset:
         let
           range = pkgs.lib.range 1 nVms;
         in
         pkgs.lib.concatMap (i: [
           (pairEgcAttrs egc_image role project_name data_dir scripts_dir i)
-          (pairIpfsAttrs role data_dir i)
+          (pairIpfsAttrs role data_dir i portOffset)
         ]) range;
 
       mkServicePairs =
@@ -242,10 +282,10 @@ let
       "shared-cardano".service = cardanoService;
       "shared-ogmios".service = ogmiosService (listOgmiosNetworks cfg);
     } //
-      builtins.listToAttrs (mkServicePairs "admin"    1) //
-      builtins.listToAttrs (mkServicePairs "device"   cfg.nodes.devices.count) //
-      builtins.listToAttrs (mkServicePairs "guardian" cfg.nodes.guardians.number_of_guardians) //
-      builtins.listToAttrs (mkServicePairs "verifier" cfg.nodes.verifiers.count);
+      builtins.listToAttrs (mkServicePairs "admin"    1 0) //
+      builtins.listToAttrs (mkServicePairs "device"   cfg.nodes.devices.count 1) //
+      builtins.listToAttrs (mkServicePairs "guardian" cfg.nodes.guardians.number_of_guardians (1 + cfg.nodes.devices.count)) //
+      builtins.listToAttrs (mkServicePairs "verifier" cfg.nodes.verifiers.count (1 + cfg.nodes.devices.count + cfg.nodes.guardians.number_of_guardians));
 
 
 in {
