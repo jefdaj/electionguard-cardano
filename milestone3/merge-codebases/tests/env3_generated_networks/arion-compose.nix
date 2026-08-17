@@ -34,9 +34,10 @@ let
                             then role
                             else "${role}${builtins.toString index}";
 
-  ogmiosNetworkName   = role: i: "${nodeName role i}-ogmios-net";
-  ipfsNetworkName     = role: i: "${nodeName role i}-ipfs-net";
-  ipfsMeshNetworkName = "ipfs-mesh-net";
+  ogmiosPairNetName   = role: i: "${nodeName role i}-ogmios-net";
+  ipfsPairNetName     = role: i: "${nodeName role i}-ipfs-pair-net";
+  ipfsSwarmNetName    = role: i: "${nodeName role i}-ipfs-swarm-net";
+  # ipfsMeshNetworkName = "ipfs-mesh-net";
   cardanoNetworkName  = "cardano-net";
 
   listOgmiosNetworks = cfg: lib.filter
@@ -58,12 +59,16 @@ let
           (c: pkgs.lib.concatMap
             (n: [
               {
-                name = ogmiosNetworkName c.role n;
+                name = ogmiosPairNetName c.role n;
                 value = { internal = true; };
               }
               {
-                name = ipfsNetworkName c.role n;
+                name = ipfsPairNetName c.role n;
                 value = { internal = true; };
+              }
+              {
+                name = ipfsSwarmNetName c.role n;
+                value = { driver = "bridge"; };
               }
             ])
             (pkgs.lib.range 1 c.n)
@@ -78,17 +83,18 @@ let
           name = cardanoNetworkName;
           value = { driver = "bridge"; };
         }
-        {
-          # shared IPFS mesh network with bridge to internet
-          name = ipfsMeshNetworkName;
-
-          # Restricting the IPFS net to internal only fixes my internet issues
-          # for now, but will prevent testing elections over the internet
-          # later...
-          value = { driver = "bridge"; };
-          # value = { internal = true; };
-
-        }
+        # {
+        #   # shared IPFS mesh network with bridge to internet
+        #   name = ipfsMeshNetworkName;
+        #   # Restricting the IPFS net to internal only fixes my internet issues
+        #   # for now, but will prevent testing elections over the internet
+        #   # later...
+        #   value = {
+        #     driver = "bridge";
+        #     # TODO does this work to isolate them from each other?
+        #     # driver_opts."com.docker.network.bridge.enable_icc" = "false";
+        #   };
+        # }
       ]
     );
 
@@ -108,8 +114,8 @@ let
       "${scripts_dir}/${nodeName role i}.sh:/script.sh:ro"
     ];
     service.networks = [
-      (ogmiosNetworkName role i)
-      (ipfsNetworkName role i)
+      (ogmiosPairNetName role i)
+      (ipfsPairNetName role i)
     ];
     # service.useHostStore = true;
     service.stop_signal = "SIGINT";
@@ -130,11 +136,12 @@ let
     service.volumes = [
       "${data_dir}/private/${nodeName role i}/ipfs:/data/ipfs"
       "${../../ipfs-init.sh}:/container-init.d/001-config.sh:ro"
-      "${../../ipfs-caps.json}:/data/ipfs/libp2p-resource-limit-overrides.json:ro"
+      # "${../../ipfs-caps.json}:/data/ipfs/libp2p-resource-limit-overrides.json:ro"
     ];
     service.networks = [
-      (ipfsNetworkName role i)
-      ipfsMeshNetworkName
+      (ipfsPairNetName role i)
+      (ipfsSwarmNetName role i)
+      # ipfsMeshNetworkName
     ];
     service.ports = [
       # host:container
