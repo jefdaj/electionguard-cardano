@@ -6,11 +6,11 @@ set -eu
 
 # Don't be a general IPFS gateway for finding everyones' content.
 # Only serve the election data.
-ipfs config --json Gateway.NoFetch true
+# ipfs config --json Gateway.NoFetch true
 
 # Announce only roots ("pinned" strategy or "roots"), and less often.
 # TODO does this matter in our case?
-ipfs config Provide.Strategy pinned
+# ipfs config Provide.Strategy pinned
 
 # HARD caps on total connections — this is the real lever
 # Specific caps are set by bind mounting ipfs-caps.json

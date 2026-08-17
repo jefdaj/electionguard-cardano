@@ -283,6 +283,8 @@ class IPFSService:
             cid_str = ipfs_cid_to_string(record.ipfs_cid)
             data = await self._run_async(self.ipfs.cat(cid_str), timeout=timeout)
             await self._save_fetched_data(data, record)
+            async for pin_status in self.ipfs._client.pin.add(cid_str):
+                LOG.debug(f'progress pinning {cid_str}: {pin_status}')
             self.store.remove(record) # success => no longer pending
             remove_fetched_from_to_post(self.records_to_post_dir, self.records_fetched_dir)
             LOG.info("fetched %s", record)
