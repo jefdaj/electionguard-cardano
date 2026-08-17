@@ -18,9 +18,9 @@ ipfs config --json Swarm.ResourceMgr.Enabled true
 
 # Much tighter connection budget
 # Note that these must be lower than the hard caps above.
-ipfs config --json Swarm.ConnMgr.LowWater 10
-ipfs config --json Swarm.ConnMgr.HighWater 25
-ipfs config Swarm.ConnMgr.GracePeriod 30s
+ipfs config --json Swarm.ConnMgr.LowWater 3
+ipfs config --json Swarm.ConnMgr.HighWater 10
+ipfs config Swarm.ConnMgr.GracePeriod 10s
 
 # TODO Kill relay serving (you don't need to relay others' traffic)?
 ipfs config --json Swarm.RelayService.Enabled true
