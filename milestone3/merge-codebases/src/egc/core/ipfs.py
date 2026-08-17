@@ -319,9 +319,12 @@ class IPFSService:
         LOG.debug(f'force_reconnect {maddr}')
         try:
             await self.ipfs._client.swarm.disconnect(maddr)
-        except Exception as e:
+        except:
             pass
-        await self.ipfs._client.swarm.connect(maddr)
+        try:
+            await self.ipfs._client.swarm.connect(maddr)
+        except:
+            pass
 
     async def _watchdog(self, interval=120, jitter=True):
         "Force reconnect occasionally to prevent stuck node."
