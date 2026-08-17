@@ -219,6 +219,7 @@ class IPFSService:
         for _ in range(self.fresh_workers):
             self._loop.create_task(self._fresh_worker())
         self._loop.create_task(self._sweeper())
+        self._loop.create_task(self._watchdog())
         self._ready.set()
         self._loop.run_forever()
 
@@ -313,6 +314,29 @@ class IPFSService:
         cap = min(self.base_delay * self.backoff ** (attempts - 1), self.max_delay)
         delay = random.uniform(0, cap) # full jitter
         self.store.mark_attempt(record, attempts, time.time() + delay)
+
+    async def _watchdog(self):
+        "Force reconnect occasionally to prevent stuck node."
+        # TODO find the root cause of getting stuck!
+        while True:
+            await asyncio.sleep(60)
+            # async with aioipfs.AsyncIPFS() as client:
+            # bitswap = await self.ipfs._client.bitswap.stat()
+            # If wantlist is non-empty but no blocks received recently → reconnect
+            # (for now, just do every 60s regardless)
+            # connected_peers = {p["Peer"] for p in await self.ipfs._client.swarm.peers()}
+            for addr in self.all_channel_addr_hints():
+                # peer_id = addr.split("/p2p/")[-1]
+                # if peer_id not in connected_peers:
+                LOG.debug(f'watchdog (re)connecting to {addr}')
+                try:
+                    await self.ipfs._client.swarm.disconnect(addr)
+                except Exception as e:
+                    LOG.error(e)
+                try:
+                    res = await self.ipfs._client.swarm.connect(addr)
+                except Exception as e:
+                    LOG.error(e)
 
     async def _sweeper(self, jitter=True):
         """Retry lane: patient, bounded, forever, on a slow cadence.
@@ -538,6 +562,19 @@ class IPFSService:
                 continue
             ids.append(opt_node.value.peer_id)
         return ids
+
+    def all_channel_addr_hints(self):
+        nodes = [
+            n.value
+            for n in self.channel_nodes.values()
+            if isinstance(n, SomeIpfsNode)
+        ]
+        LOG.debug(f'nodes: {nodes}')
+        hints = []
+        for n in nodes:
+            hints += self.channel_addr_hints(n)
+        LOG.debug(f'hints: {hints}')
+        return sorted(list(set(hints)))
 
     # TODO return coerced bytes, or the entire IpfsNode type? less footgun
     def own_addr_hints(self, explicit: list[str], n_global: int = 4, n_local: int = 4):
