@@ -3,10 +3,10 @@
 {{ super() }}
 # TODO set -euo pipefail overall?
 
+readonly n_subs=$(< private/n_requests.txt)
 readonly max_per_tx=4
-declare -A processed
-n_channels_posted=0
-n_subs=$(< private/n_requests.txt)
+declare -A paths_posted
+n_posted=0
 
 create_channels() {
   # create subchannels (authorize those publishers to post)
@@ -18,24 +18,30 @@ create_channels() {
   for f in "${batch[@]}"; do
     cmd+=(--request-load-png "$f")
   done
-  (( n_channels_posted + ${#batch[@]} >= n_subs )) && cmd+=(--done-onboarding)
+  (( n_posted + ${#batch[@]} >= n_subs )) && cmd+=(--done-onboarding)
   "${cmd[@]}" || { echo "ERROR: command failed" >&2; exit 1; }
-  for f in "${batch[@]}"; do processed["$f"]=1; done
-  (( n_channels_posted += ${#batch[@]} ))
+  for f in "${batch[@]}"; do paths_posted["$f"]=1; done
+  (( n_posted += ${#batch[@]} ))
 }
 
-while (( n_channels_posted < n_subs )); do
+while (( n_posted < n_subs )); do
+  echo "n_subs: ${n_subs}"
+  echo "n_posted: ${n_posted}"
   sleep 5
   batch=()
   for path in qrcodes/channel-*.png; do
     [[ -e "$path" ]] || continue
-    [[ -v processed["$path"] ]] && continue
+    [[ -v paths_posted["$path"] ]] && continue
     batch+=("$path")
     if (( ${#batch[@]} >= max_per_tx )); then
       create_channels "${batch[@]}"
       batch=()
+      break
     fi
   done
+  if (( ${#batch[@]} > 0 )); then
+    create_channels "${batch[@]}"
+  fi
 done
 
 egc phase await --phase config_ceremony_round1
