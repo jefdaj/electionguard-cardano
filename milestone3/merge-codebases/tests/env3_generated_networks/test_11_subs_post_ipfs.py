@@ -31,7 +31,7 @@ def cfg_subs_post_ipfs(draw):
 
 @given_cached_tests(
     cfg_strategy = cfg_subs_post_ipfs(),
-    max_examples = 1,
+    max_examples = 5,
 )
 def test_subs_post_ipfs(cfg: ResolvedTestConfig):
     assert_test_completed(cfg)

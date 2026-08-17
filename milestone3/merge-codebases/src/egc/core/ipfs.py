@@ -451,8 +451,8 @@ class IPFSService:
     def get_own_node(
             self,
             explicit_hints: list[str] = [],
-            n_global_hints: int = 4,
-            n_local_hints: int = 4,
+            n_global_hints: int = 8,
+            n_local_hints: int = 0,
         ) -> OptionIpfsNode:
         # try:
         # TODO refactor this

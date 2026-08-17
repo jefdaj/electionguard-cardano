@@ -25,8 +25,8 @@ def show():
 
 @ipfs.command(roles=['admin', 'guardian', 'device', 'verifier'])
 @click.option('--explicit-hints', type=click.STRING, required=False, multiple=True)
-@click.option('--n-global-hints', type=click.INT, default=4)
-@click.option('--n-local-hints', type=click.INT, default=4)
+@click.option('--n-global-hints', type=click.INT, default=8)
+@click.option('--n-local-hints', type=click.INT, default=0)
 def post(explicit_hints: list[str], n_global_hints: int, n_local_hints: int):
     """Post your current IPFS contact info to your channel state. Always
     includes your peer_id. Can optionally also include explicit relays or addr
