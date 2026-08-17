@@ -320,17 +320,17 @@ class IPFSService:
         try:
             await self.ipfs._client.swarm.disconnect(maddr)
         except Exception as e:
-            LOG.error(e)
+            pass
         await self.ipfs._client.swarm.connect(maddr)
 
-    async def _watchdog(self):
+    async def _watchdog(self, interval=120, jitter=True):
         "Force reconnect occasionally to prevent stuck node."
+        # TODO only run if wantlist is non-empty but no blocks received recently
         # TODO find the root cause of getting stuck!
+        if jitter:
+            interval *= random.uniform(0.6, 1.4)
         while True:
-            await asyncio.sleep(60) # TODO variable?
-            # bitswap = await self.ipfs._client.bitswap.stat()
-            # If wantlist is non-empty but no blocks received recently → reconnect
-            # (for now, just do every 60s regardless)
+            await asyncio.sleep(interval)
             for maddr in self.all_channel_addr_hints():
                 task = self._loop.create_task(self.force_reconnect(maddr))
                 task.add_done_callback(
