@@ -200,6 +200,9 @@ class FunderNode(ObserverNode):
 
         LOG.debug('Funder.init_election')
 
+        # TODO is there a better place to put this?
+        # self.consolidate_if_needed()
+
         if admin_vkh is None:
             admin_vkh = self.publisher.wallet.vkh
 

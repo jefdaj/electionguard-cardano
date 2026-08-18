@@ -19,6 +19,9 @@ def pytest_configure(config):
 
     # Same with some of our code.
     # logging.getLogger('egc.core.subscriber').setLevel(logging.INFO)
+    logging.getLogger('egc.core.node').setLevel(logging.DEBUG)
+    logging.getLogger('egc.core.publisher').setLevel(logging.DEBUG)
+    logging.getLogger('egc.core.subscriber').setLevel(logging.INFO)
     logging.getLogger('egc.nodes.admin').setLevel(logging.DEBUG)
     logging.getLogger('egc.nodes.ipfs').setLevel(logging.DEBUG)
 

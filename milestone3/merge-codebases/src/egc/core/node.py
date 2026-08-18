@@ -311,7 +311,7 @@ class ElectionNode:
         return pairs
 
 
-    def _consolidate_if_needed(self, max_utxos=100):
+    def consolidate_if_needed(self, max_utxos=100):
         "Automatically consolidate UTXOs when there are getting to be a lot."
         # TODO is this helpful for eliminating "random" tx failures?
         # TODO how many should count as too many?
@@ -338,7 +338,7 @@ class ElectionNode:
         LOG.debug('ElectionNode.set_ipfs_node')
 
         # TODO is there a better place to put this?
-        self._consolidate_if_needed()
+        # self.consolidate_if_needed()
 
         ch_str = self.channel_str()
 
@@ -437,7 +437,7 @@ class ElectionNode:
         LOG.debug('ElectionNode.post_public_records')
 
         # TODO is there a better place to put this?
-        self._consolidate_if_needed()
+        # self.consolidate_if_needed()
 
         assert len(new_record_pairs) > 0, 'post_public_records new_record_pairs empty'
 

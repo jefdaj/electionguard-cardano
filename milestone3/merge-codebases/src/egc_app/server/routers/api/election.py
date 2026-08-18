@@ -58,6 +58,9 @@ def create_election(data: schemas.ElectionCreate, state=Depends(get_state)):
         wallet = funder_wallet,
     )
 
+    # TODO better place for this?
+    tmp_funder_node.consolidate_if_needed()
+
     # create the election
     (tx, election_cfg) = tmp_funder_node.init_election(
         admin_vkh = data.admin_vkh,
