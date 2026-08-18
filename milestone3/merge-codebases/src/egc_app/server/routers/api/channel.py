@@ -203,7 +203,7 @@ async def channel_create(
     )
 
     try:
-        state.node.await_tx_confirmed(tx)
+        state.node.await_tx_confirmed(tx, subscriber_too=True)
 
     except (asyncio.TimeoutError, TimeoutError):
         raise HTTPException(

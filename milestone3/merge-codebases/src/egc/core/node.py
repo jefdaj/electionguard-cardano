@@ -184,7 +184,8 @@ class ElectionNode:
         # TODO how to handle cases not indexed by STT cleanly? (collateral etc)
 
         if tx is None:
-            LOG.warning('You called await_tx_confirmed called with None. Skipping it.')
+            LOG.warning('You called await_tx_confirmed called with None. Waiting 1 block instead.')
+            await_blocks(1)
             return
 
         assert isinstance(tx, Transaction), f'wrong tx type: {type(tx)}'
@@ -192,12 +193,19 @@ class ElectionNode:
         ch_str = self.channel_str()
         tx_str = str(tx.id)
 
-        self.publisher.await_tx_confirmed(tx)
-        LOG.debug(f'{ch_str} publisher confirmed tx {tx.id}')
+        try:
+            self.publisher.await_tx_confirmed(tx)
+            LOG.debug(f'{ch_str} publisher confirmed tx {tx.id}')
 
-        if subscriber_too:
-            self.subscriber.await_tx_confirmed(tx_str)
-            LOG.debug(f'{ch_str} subscriber confirmed tx {tx.id}')
+            if subscriber_too:
+                self.subscriber.await_tx_confirmed(tx_str)
+                LOG.debug(f'{ch_str} subscriber confirmed tx {tx.id}')
+        except Exception as e:
+            LOG.error(e)
+            # TODO does this help prevent any further errors in cleanup etc?
+            LOG.warning('Error during await_tx_confirmed. Waiting 1 block before raising.')
+            await_blocks(1)
+            raise
 
     def await_phase(self, phase: EgcPhase, timeout=OGMIOS_TIMEOUT_SEC):
         self.subscriber.await_phase(phase, timeout=timeout)

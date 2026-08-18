@@ -1,5 +1,5 @@
 import json
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, HTTPException, Response
 from egc_app.server.state import get_state
 from egc_app import schemas
 import shutil
@@ -55,5 +55,13 @@ async def ipfs_post(data: schemas.IpfsPost, state=Depends(get_state)):
         n_global_hints = data.n_global_hints,
         n_local_hints  = data.n_local_hints,
     )
-    state.node.await_tx_confirmed(tx)
+
+    # TODO this whole block as a util fn?
+    try:
+        state.node.await_tx_confirmed(tx, subscriber_too=True)
+    except (asyncio.TimeoutError, TimeoutError):
+        raise HTTPException(
+            status_code = HTTP_504_GATEWAY_TIMEOUT,
+            default = f"TX failed to confirm: {tx}",
+        )
     return Response(status_code=201)
