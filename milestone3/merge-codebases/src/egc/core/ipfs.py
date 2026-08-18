@@ -318,6 +318,9 @@ class IPFSService:
     async def _ipfs_is_stuck(self):
         # TODO why does this happen?
         stat = await self.ipfs._client.bitswap.stat()
+        if stat is None:
+            LOG.error('failed to check whether ipfs is stuck. is it down?')
+            return False
         LOG.debug(f'stat: {stat}')
         blocks_sent = int(stat.get('BlocksSent'    , 0))
         blocks_recv = int(stat.get('BlocksReceived', 0))
