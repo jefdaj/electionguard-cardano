@@ -184,7 +184,7 @@ class ElectionNode:
         # TODO how to handle cases not indexed by STT cleanly? (collateral etc)
 
         if tx is None:
-            LOG.warning('You called await_tx_confirmed called with None. Waiting 1 block instead.')
+            LOG.warning('await_tx_confirmed called with None. Waiting 1 block instead.')
             await_blocks(1)
             return
 
