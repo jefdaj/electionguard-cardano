@@ -339,9 +339,9 @@ class IPFSService:
             pass
 
     async def _watchdog(self, interval=120, jitter=True):
-        "Force reconnect occasionally to prevent stuck node."
-        # TODO only run if wantlist is non-empty but no blocks received recently
-        # TODO find the root cause of getting stuck!
+        """Force reconnect occasionally to prevent 'stuck' node (shows peers,
+        but no data is transferred). Not sure why, but this seems to be
+        required! At least in local Docker networks."""
         if jitter:
             interval *= random.uniform(0.6, 1.4)
         while True:

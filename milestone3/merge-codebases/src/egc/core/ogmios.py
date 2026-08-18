@@ -42,9 +42,12 @@ OGMIOS_CTX = OgmiosV6ChainContext(
 )
 LOG.info(f'OGMIOS_CTX: {OGMIOS_CTX}')
 
-OGMIOS_POLL_SEC    =   1 # TODO does this matter? what's reasonable?
+# TODO think how to handle that this is used multiple places now...
+# - split into several timeouts?
+# - move to a util module?
+OGMIOS_POLL_SEC    =   5
 
-# TODO What's reasonable here? I assumed 300 but doubled it after one failed.
+# TODO What's reasonable here?
 OGMIOS_TIMEOUT_SEC = 900
 
 # Estimate of how long it might take a new TX to show up in the node.
@@ -299,8 +302,8 @@ def set_out_value_and_fee(
 
 
 OGMIOS_FATAL_CODES = set({
+    3010, # Some scripts of the transactions terminated with error(s).
     3012, # is this right? script rejected tx, maybe with trace
-    3110, # Some scripts of the transactions terminated with error(s).
     3136, # invalid transaction submitted as valid, or vice versa
 })
 

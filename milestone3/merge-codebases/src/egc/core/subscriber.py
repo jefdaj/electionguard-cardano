@@ -491,7 +491,7 @@ class ElectionSubscriber:
         # When polling for all_election_events, clients can miss error
         # callbacks. This is a partial solution: store important errors (so
         # far only timeouts) and raise them after streaming.
-        # TODO is there a less convoluted way way?
+        # TODO is there a less convoluted way?
         self._fatal_error: Optional[ElectionEvent] = None
 
 
@@ -614,7 +614,7 @@ class ElectionSubscriber:
                 # TODO throw error here? maybe there should be options for either
                 # raise Exception(f'Awaited phase {phase} has already passed! Current phase is {actual_phase}.')
                 return
-            time.sleep(OGMIOS_POLL_SEC)
+            time.sleep(OGMIOS_POLL_SEC) # TODO self.sleep?
         raise TimeoutError(f'Election did not reach phase within {timeout}s: {phase}.')
 
 
@@ -657,7 +657,7 @@ class ElectionSubscriber:
             for e in self.all_election_events(): # TODO is this a lot of computation?
                 if pred_fn(e):
                     return e
-            time.sleep(timeout)
+            time.sleep(timeout) # TODO self.sleep?
         raise TimeoutError(f'No matching ElectionEvent within {timeout}s.')
 
 
@@ -683,7 +683,7 @@ class ElectionSubscriber:
             if self.is_confirmed(txid):
                 LOG.debug(f'txid {txid} confirmed in _history')
                 return
-            time.sleep(OGMIOS_POLL_SEC)
+            time.sleep(OGMIOS_POLL_SEC) # TODO self.sleep?
         raise TimeoutError(f'txid {txid} not confirmed in _history within {timeout}s.')
 
 
@@ -700,7 +700,7 @@ class ElectionSubscriber:
                     if vkh == actual_vkh:
                         LOG.debug(f'Channel {ch_str} gives {vkh} role {role}.')
                         return ch_str
-            time.sleep(OGMIOS_POLL_SEC)
+            time.sleep(OGMIOS_POLL_SEC) # TODO self.sleep?
         raise TimeoutError(f'Channel for {vkh} with role {role} did not appear within {timeout}s.')
 
 
@@ -908,7 +908,7 @@ class ElectionSubscriber:
         self._log_thread.start()
 
         # prevents polling error during startup
-        time.sleep(1)
+        time.sleep(1) # TODO self.sleep?
 
 
     def _kupo_log(self) -> None:
@@ -939,7 +939,7 @@ class ElectionSubscriber:
                     matches_by_sc = self._fetch_matches_by_sc()
                     self._handle_matches(matches_by_sc)
 
-                self.sleep(KUPO_POLL_SEC)
+                self.sleep(KUPO_POLL_SEC) # TODO self.sleep?
             except requests.RequestException as e:
                 LOG.warning(f'Kupo polling error: {e}') # TODO error?
             except KeyboardInterrupt:
@@ -1476,13 +1476,23 @@ class ElectionSubscriber:
 
     def _on_initelection(self, event: ChannelEvent):
         log_call()
-        if self.current_phase() != EgcPhase.NOT_DEPLOYED:
+
+        if not self.current_phase() in [EgcPhase.NOT_INDEXED, EgcPhase.NOT_DEPLOYED]:
+            # Extra section for debugging the "init should always happen first" bug....
             i = event.channel_id
             with self._history_lock:
+                init = self._history[i][0]
                 prev = self._history[i][-1]
-            diff = safe_deepdiff(prev, event)
-            LOG.error(f'diff:\n{pformat(diff)}')
+            diff_init = safe_deepdiff(init, event)
+            diff_prev = safe_deepdiff(prev, event)
+            LOG.error('probably-spurious InitElection event?')
+            LOG.error(f'diff with init event:\n{pformat(diff_init)}')
+            LOG.error(f'diff with prev event:\n{pformat(diff_prev)}')
+            # TODO just abort here and don't record it? would work if always spurious
+            # return
+
         assert self.current_phase() in [EgcPhase.NOT_INDEXED, EgcPhase.NOT_DEPLOYED], 'InitElection should always happen first'
+        # TODO would it work to wipe the whole history if this happens and start over?
         assert event.channel_id == ADMIN_CHANNEL_ID # note this tx was published by the funder
         self._on_mint(event)
         return event
