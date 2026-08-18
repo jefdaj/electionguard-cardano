@@ -4,7 +4,6 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-from .wait_n_blocks      import wait_n_blocks
 from .render_egc_scripts import render_egc_scripts
 from .install_qrcode     import install_qr_txt, install_qr_png
 from .install_funder_sk  import install_funder_sk

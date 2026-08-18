@@ -10,6 +10,17 @@ from hypothesis     import strategies as st
 from pathlib        import Path
 from pathlib        import Path
 from typing         import Callable
+from egc            import await_blocks
+
+import logging
+
+LOG = logging.getLogger(__name__)
+
+
+def wait_n_blocks(n: int = 1):
+    n = int(n)
+    LOG.warning(f'Waiting {n} blocks for any previous TXs to settle.')
+    await_blocks(n)
 
 
 def run_egc_scripts_cached(
@@ -25,9 +36,9 @@ def run_egc_scripts_cached(
             init_test_tmpdir(cfg=rcfg)
             run_setup_fns(cfg=rcfg)
             with arion_network_up(cfg=rcfg, arion_dir=env3_arion_dir):
+                wait_n_blocks(1)
                 run_egc_scripts(cfg=rcfg, arion_dir=env3_arion_dir)
     return rcfg
-
 
 def prerun_egc_scripts(final_test_fn_from_rcfg):
     def fn_from_fixtures(cfg: HashedTestConfig, env3_tmp_root: Path, env3_arion_dir: Path):
