@@ -86,11 +86,19 @@ async def ogmios_wait_until_synced(timeout=600, interval=5):
             raise TimeoutError("IPFS did not stabilize in time")
 
 
+def get_utxos_for_addr(addr, *args, **kwargs):
+    return ogmios_retry(
+        lambda: OGMIOS_CTX.utxos(addr),
+        *args,
+        need_return_value = True,
+        **kwargs
+    )
+
 ### get balances in order to track fees ###
 
 def get_balance_ada(address: Address) -> float:
     """Return total lovelace balance at an address."""
-    utxos = ogmios_retry( lambda: OGMIOS_CTX.utxos(address) )
+    utxos = get_utxos_for_addr(address)
     balance_ll = sum(u.output.amount.coin for u in utxos)
     balance_ada = float(balance_ll) / LOVELACE_PER_ADA
     return balance_ada
@@ -403,9 +411,10 @@ def ogmios_classify_error(e):
     return "fatal"
 
 
-def ogmios_retry(fn: Callable, timeout=OGMIOS_TIMEOUT_SEC) -> Optional[Any]:
+def ogmios_retry(fn: Callable, timeout=OGMIOS_TIMEOUT_SEC, need_return_value=False) -> Optional[Any]:
     # Note that in case of "success" errors, we can't return a value.
     # That should be OK for our particular use cases.
+    # When it's not OK, use need_return_value=True to retry.
     deadline = time.monotonic() + timeout
     attempt = 1
     while time.monotonic() < deadline:
@@ -416,7 +425,12 @@ def ogmios_retry(fn: Callable, timeout=OGMIOS_TIMEOUT_SEC) -> Optional[Any]:
             verdict = ogmios_classify_error(e)
             LOG.debug(f'ogmios_retry attempt={attempt} verdict={verdict} e={e}')
             if verdict == "success":
-                return
+                if need_return_value:
+                    time.sleep(OGMIOS_DELAY_SEC)
+                    attempt += 1
+                    continue
+                else:
+                    return
             if verdict == "retry":
                 time.sleep(OGMIOS_DELAY_SEC)
                 attempt += 1

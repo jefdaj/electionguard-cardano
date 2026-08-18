@@ -110,7 +110,7 @@ class ElectionPublisher:
         self._guard_wallet()
 
         # Check what the node actually sees
-        utxos = ogmios_retry( lambda: OGMIOS_CTX.utxos(self.wallet.addr) )
+        utxos = get_utxos_for_addr(self.wallet.addr)
         LOG.debug('UTxOs at publisher address: %s' % len(utxos))
         for u in utxos:
             LOG.debug(
@@ -222,10 +222,7 @@ class ElectionPublisher:
             wallet = self.wallet
         else:
             wallet = from_wallet
-        utxos = ogmios_retry(
-            lambda: OGMIOS_CTX.utxos(wallet.addr),
-            timeout = timeout
-        )
+        utxos = get_utxos_for_addr(wallet.addr, timeout = timeout)
         for utxo in utxos:
             amt = utxo.output.amount
             if amt.coin != COLLATERAL_LOVELACE:
@@ -315,14 +312,14 @@ class ElectionPublisher:
             return
 
         while True:
-            utxos = ogmios_retry( lambda: OGMIOS_CTX.utxos(self.wallet.addr) ) # TODO str?
-            LOG.debug(f"Found {len(utxos)} UTXOs at {self.wallet.addr}")
+            utxos = get_utxos_for_addr(self.wallet.addr)
+            LOG.info(f"Found {len(utxos)} UTXOs at {self.wallet.addr}")
             if len(utxos) < 2:
                 LOG.info("Done consolidating UTXOs.")
                 return
             total_lovelace, asset_count, policy_count = summarize(utxos)
-            LOG.debug(f"Total: {total_lovelace / 1_000_000:.6f} tADA")
-            LOG.debug(f"Native assets: {asset_count} across {policy_count} policies")
+            LOG.info(f"Total: {total_lovelace / 1_000_000:.6f} tADA")
+            LOG.info(f"Native assets: {asset_count} across {policy_count} policies")
             batch = utxos[0:max_inputs_per_tx]
             consolidate_batch(batch)
 
@@ -340,7 +337,7 @@ class ElectionPublisher:
         ch_str = self.channel_str()
         existing = self.find_collateral_utxo()
         if existing is not None:
-            LOG.debug(
+            LOG.info(
                 "%s found existing collateral UTXO at %s (%s#%d)",
                 ch_str, self.wallet.addr,
                 existing.input.transaction_id, existing.input.index,

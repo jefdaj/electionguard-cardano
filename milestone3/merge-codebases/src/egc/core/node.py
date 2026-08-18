@@ -315,12 +315,11 @@ class ElectionNode:
         "Automatically consolidate UTXOs when there are getting to be a lot."
         # TODO is this helpful for eliminating "random" tx failures?
         # TODO how many should count as too many?
-        utxos = ogmios_retry( lambda: OGMIOS_CTX.utxos(self.wallet.addr) )
+        utxos = get_utxos_for_addr(self.wallet.addr)
         LOG.debug('UTxOs at publisher address: %s' % len(utxos))
         if len(utxos) > max_utxos:
-            LOG.warning(f'Auto-consolidating UTXOs because there more than {max_utxos}.')
-            tx = self.publisher.consolidate_utxos()
-            self.await_tx_confirmed(subscriber_too=False)
+            LOG.warning(f'Auto-consolidating UTXOs because there are more than {max_utxos}.')
+            self.publisher.consolidate_utxos()
 
 
     ### contract operations ###

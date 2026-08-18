@@ -18,18 +18,14 @@ def test_roundtrip_electioncontext(dummy_electioncontext: ElectionContext):
 
 def test_funder_consolidate_utxos(funder: ObserverNode):
     funder.publisher.consolidate_utxos()
-    utxos = ogmios_retry(
-        lambda: OGMIOS_CTX.utxos(funder.publisher.wallet.addr)
-    ) # TODO util fn?
+    utxos = get_utxos_for_addr(funder.publisher.wallet.addr)
     assert len(utxos) == 1
 
 def test_funder_create_own_collateral(funder: ObserverNode):
     funder.publisher.consolidate_utxos()
     funder.publisher.create_own_collateral()
     funder.publisher.await_collateral()
-    utxos = ogmios_retry(
-        lambda: OGMIOS_CTX.utxos(funder.publisher.wallet.addr)
-    )
+    utxos = get_utxos_for_addr(funder.publisher.wallet.addr)
     assert len(utxos) == 2 # main balance (consolidated) + collateral utxo
 
 def test_init_tx(init_tx: Transaction):
