@@ -1,5 +1,6 @@
 from __future__ import annotations
 import sys
+import os
 from dataclasses import dataclass, field, asdict
 from typing import Mapping, Optional, Self
 import hashlib, json
@@ -161,7 +162,7 @@ class ArionConfig:
 def arion_config(draw):
     _ = draw(st.integers(1,1)) # silence hypothesis warning
     cfg = ArionConfig(
-        egc_image = "electionguard-cardano:0.6.0", # TODO how to auto-update this?
+        egc_image = os.environ.get("EGC_DOCKER_IMAGE") # TODO fallback?
     )
     return cfg
 

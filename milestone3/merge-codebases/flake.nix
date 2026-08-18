@@ -29,6 +29,13 @@
   outputs = { self, nixpkgs, aiken, arion, electionguard-python,
               uv2nix, pyproject-nix, pyproject-build-systems, ... }:
     let
+
+      # These should be changed in sync with:
+      # - uv.lock
+      # - onchain/aiken.toml
+      egcName = "electionguard-cardano";
+      egcVersion = "0.6.1";
+
       inherit (nixpkgs) lib;
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
@@ -96,7 +103,7 @@
           ]);
 
       # TODO bundle plutusBlueprints with this too?
-      pythonEnv = pythonSet.mkVirtualEnv "electionguard-cardano" workspace.deps.default;
+      pythonEnv = pythonSet.mkVirtualEnv egcName workspace.deps.default;
 
       kupo = pkgs.callPackage ./nix/kupo.nix {};
       runtimeDeps = [
@@ -142,7 +149,7 @@
 
         plutusBlueprints = pkgs.stdenv.mkDerivation {
           pname = "egc-plutus-blueprints";
-          version = "0.6.1"; # should match aiken.toml
+          version = egcVersion;
           src = ./onchain;
 
           nativeBuildInputs = (devPkgList pkgs) ++ [
@@ -169,8 +176,8 @@
           let inherit (self.packages.${system}) plutusBlueprints;
           in
             pkgs.dockerTools.buildLayeredImage {
-              name = "electionguard-cardano";
-              tag = "0.6.1";
+              name = egcName;
+              tag = egcVersion;
               contents = [
                 pythonEnv
                 pkgs.coreutils
@@ -228,7 +235,7 @@
           let
             editableOverlay = workspace.mkEditablePyprojectOverlay { root = "$PWD"; };
             editablePythonSet = pythonSet.overrideScope editableOverlay;
-            venv = editablePythonSet.mkVirtualEnv "electionguard-cardano" workspace.deps.all;
+            venv = editablePythonSet.mkVirtualEnv egcName workspace.deps.all;
             inherit (self.packages.${system}) plutusBlueprints;
           in
           pkgs.mkShell {
@@ -250,6 +257,7 @@
               EGC_PLUTUS_MODE  = "burntesttokens-compact";
               EGC_WALLET_MODE  = "scripted";
               EGC_WALLET_DIR   = "./keys"; # should be in .gitignore
+              EGC_DOCKER_IMAGE = "${egcName}:${egcVersion}";
 
               # TODO remove?
               # SSL_CERT_FILE     = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
