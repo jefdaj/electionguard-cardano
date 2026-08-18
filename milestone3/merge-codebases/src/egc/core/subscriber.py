@@ -1106,9 +1106,17 @@ class ElectionSubscriber:
         for m in prev_matches + matches:
             ch_str = kupo_match_to_channel_str(m)
 
+            # This always exists, but for output-only matches (channel STT
+            # mints) the entire input match will be missing, so all we get here
+            # is when the output match was created.
             created_key = (m['created_at']['slot_no'], ch_str)
             matches_by_sc[created_key] = m
 
+            # This will often be None at first, because new UTXOs are unspent
+            # (unless Kupo is still catching up to the chain tip). That's fine.
+            # The whole event will be replaced by a same-but-spent one later
+            # when it appears. It could also be None if this is a burn TX,
+            # because Kupo won't index an output without an STT.
             if m['spent_at'] is not None:
                 spent_key = (m['spent_at']['slot_no'], ch_str)
                 matches_by_sc[spent_key] = m
