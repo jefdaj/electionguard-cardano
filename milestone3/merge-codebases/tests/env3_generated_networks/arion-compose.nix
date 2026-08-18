@@ -278,15 +278,21 @@ let
         in
           pairAttrsList project_name egc_image data_dir scripts_dir;
 
-    in {
-      "shared-cardano".service = cardanoService;
-      "shared-ogmios".service = ogmiosService (listOgmiosNetworks cfg);
-    } //
-      builtins.listToAttrs (mkServicePairs "admin"    1 0) //
-      builtins.listToAttrs (mkServicePairs "device"   cfg.nodes.devices.count 1) //
-      builtins.listToAttrs (mkServicePairs "guardian" cfg.nodes.guardians.number_of_guardians (1 + cfg.nodes.devices.count)) //
-      builtins.listToAttrs (mkServicePairs "verifier" cfg.nodes.verifiers.count (1 + cfg.nodes.devices.count + cfg.nodes.guardians.number_of_guardians));
+      serviceTypes = [
+	{ name = "admin";    count = 1; }
+	{ name = "device";   count = cfg.nodes.devices.count; }
+	{ name = "guardian"; count = cfg.nodes.guardians.number_of_guardians; }
+	{ name = "verifier"; count = cfg.nodes.verifiers.count; }
+      ];
 
+  in {
+    "shared-cardano".service = cardanoService;
+    "shared-ogmios".service = ogmiosService (listOgmiosNetworks cfg);
+  } //
+    (builtins.foldl' (acc: svc: {
+      attrs  = acc.attrs // builtins.listToAttrs (mkServicePairs svc.name svc.count acc.portOffset);
+      portOffset = acc.portOffset + svc.count;
+    }) { attrs = {}; portOffset = 0; } serviceTypes).attrs;
 
 in {
   config.project.name = testConfig.arion.project_name;
