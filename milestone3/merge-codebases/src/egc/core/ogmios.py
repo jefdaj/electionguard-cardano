@@ -482,7 +482,10 @@ def await_blocks(n_blocks: int = 1):
     count = 0
     while count < n_blocks:
         time.sleep(OGMIOS_POLL_SEC)
-        tip = query_network_tip_sync()['block_hash']
+        tip = ogmios_retry(
+            lambda: query_network_tip_sync()['block_hash'],
+            need_return_value = True
+        )
         if tip == prev:
             continue
         elif prev is None:
