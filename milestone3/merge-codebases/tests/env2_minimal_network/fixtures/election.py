@@ -77,9 +77,17 @@ def init_election_tuple(
             LOG.debug('skip burn_tx because STTs already gone')
         else:
             # Can't use subscriber to wait here because it shuts down after burn.
-            burn_tx = funder.burn_test_tokens()
-            funder.await_tx_confirmed(burn_tx, subscriber_too=False)
-            await_blocks() # TODO fold into regular await_tx_confirmed?
+            def burn():
+                burn_tx = funder.burn_test_tokens()
+                funder.await_tx_confirmed(burn_tx, subscriber_too=False)
+            try:
+                burn()
+            except Exception as e:
+                LOG.error('Failed to burn test tokens. Waiting 1 block and trying again')
+                await_blocks(1)
+                burn()
+            finally:
+                await_blocks(1)
 
     except Exception as e:
         LOG.error(e, exc_info=True)

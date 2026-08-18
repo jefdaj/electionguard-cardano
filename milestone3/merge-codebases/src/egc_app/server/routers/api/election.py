@@ -93,9 +93,17 @@ def burn_test_tokens(state=Depends(get_state)):
     if state.node is None or state.node.election is None:
         LOG.debug('No election yet, so no need to burn test tokens')
         return
-    burn_tx = state.node.burn_test_tokens()
-    state.node.await_tx_confirmed(burn_tx, subscriber_too=False)
-    await_blocks() # TODO fold into regular await_tx_confirmed?
+    def burn():
+        burn_tx = state.node.burn_test_tokens()
+        state.node.await_tx_confirmed(burn_tx, subscriber_too=False)
+    try:
+        burn()
+    except Exception as e:
+        LOG.error('Failed to burn test tokens. Waiting 1 block and trying again')
+        await_blocks(1)
+        burn()
+    finally:
+        await_blocks(1)
 
 @router.get("/events")
 async def stream_events(request: Request, state=Depends(get_state)):
