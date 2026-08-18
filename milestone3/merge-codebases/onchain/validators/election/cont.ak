@@ -1,4 +1,5 @@
 use aiken/collection/list
+use aiken/primitive/bytearray
 use aiken/crypto.{VerificationKeyHash}
 use election/types/channel_id.{ChannelId}
 use election/types/channel.{ChannelState, AdminChannel, AdminChannelState, SubChannel, SubChannelState}
@@ -49,7 +50,7 @@ pub fn add_subchannels(
   AdminChannelState(
     state.admin, // should be unchanged
     state.ipfs_node, // should be unchanged
-    list.concat(channels, state.subchannels), // TODO sort here? reverse order?
+    list.sort(list.concat(state.subchannels, channels), bytearray.compare),
     [], // should be reset on each non-post tx
     cont_phase, // TODO should this be validated here rather than separately?
     state.seq + 1 // should be incremented

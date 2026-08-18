@@ -142,7 +142,7 @@
 
         plutusBlueprints = pkgs.stdenv.mkDerivation {
           pname = "egc-plutus-blueprints";
-          version = "0.6.0"; # should match aiken.toml
+          version = "0.6.1"; # should match aiken.toml
           src = ./onchain;
 
           nativeBuildInputs = (devPkgList pkgs) ++ [
@@ -170,7 +170,7 @@
           in
             pkgs.dockerTools.buildLayeredImage {
               name = "electionguard-cardano";
-              tag = "0.6.0";
+              tag = "0.6.1";
               contents = [
                 pythonEnv
                 pkgs.coreutils
@@ -197,7 +197,7 @@
                   "PATH=/bin"
                   "EGC_NETWORK_MODE=preview"
                   "EGC_PLUTUS_DIR=${plutusBlueprints}"
-                  "EGC_PLUTUS_MODE=burntesttokens-silent"
+                  "EGC_PLUTUS_MODE=burntesttokens-compact"
                   "EGC_WALLET_MODE=scripted"
                   "EGC_WALLET_DIR=/data/private" # TODO /data/private/keys?
                 ];
@@ -247,7 +247,7 @@
               EGC_PLUTUS_DIR   = "${plutusBlueprints}";
               EGC_CARDANO_DIR  = "../../milestone2/cardano-node-ogmios";
               EGC_NETWORK_MODE = "preview";
-              EGC_PLUTUS_MODE  = "burntesttokens-silent";
+              EGC_PLUTUS_MODE  = "burntesttokens-compact";
               EGC_WALLET_MODE  = "scripted";
               EGC_WALLET_DIR   = "./keys"; # should be in .gitignore
 

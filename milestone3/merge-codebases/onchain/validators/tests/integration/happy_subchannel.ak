@@ -2,6 +2,7 @@
 // Builds on the admin channel tests in validators/tests/integration/minimal.tests.ak.
 
 use aiken/primitive/string
+use aiken/primitive/bytearray
 use aiken/collection/list
 use cardano/transaction.{Input, Output, OutputReference, Transaction}
 // TODO can't import test modules? use tests/integration/happy_adminchannel
@@ -158,11 +159,13 @@ pub fn test_single_rm() {
 // add multiple subchannels
 // ===============================
 
-const subchannel_ids = [
+const subchannel_ids_unsorted = [
   "guardian1", "guardian2", "guardian3",
   "device1", "device2",
   "verifier1", "verifier2", "verifier3"
 ]
+
+const subchannel_ids = list.sort(subchannel_ids_unsorted, bytearray.compare)
 
 const add_action_multi = ea.AddSubChannels { channels: subchannel_ids }
 

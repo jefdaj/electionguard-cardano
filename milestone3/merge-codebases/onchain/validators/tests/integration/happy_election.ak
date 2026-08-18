@@ -19,6 +19,7 @@
 // See also the roughly matching offchain/tests/integration/test_happy_election.py
 
 use aiken/collection/list
+use aiken/primitive/bytearray
 use cardano/assets
 use cardano/transaction.{NoDatum, Transaction, Input, Output}
 use election/types/action as ea
@@ -39,7 +40,9 @@ const g3 = channel_id(@"guardian3")
 const d1 = channel_id(@"device1")
 const v1 = channel_id(@"verifier1")
 
-const subchannel_ids: List<ChannelId> = [g1, g2, g3, d1, v1]
+const subchannel_ids_unsorted: List<ChannelId> = [g1, g2, g3, d1, v1]
+
+const subchannel_ids = list.sort(subchannel_ids_unsorted, bytearray.compare)
 
 // Automate simple admin transactions that take one input, post some new
 // records, and produce one output. Returns the Input too for use in other tests.

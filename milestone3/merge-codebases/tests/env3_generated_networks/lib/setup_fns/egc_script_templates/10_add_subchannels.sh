@@ -4,7 +4,7 @@
 # TODO set -euo pipefail overall?
 
 readonly n_subs=$(< private/n_requests.txt)
-readonly max_per_tx=6
+readonly max_per_tx=4
 declare -A paths_posted
 n_posted=0
 

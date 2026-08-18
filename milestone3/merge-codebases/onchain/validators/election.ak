@@ -182,8 +182,8 @@ fn validate_addsubchannels_spend(
   let new_channels_unique = are_disjoint(admin_state.subchannels, new_channels) ?
 
   let expected = add_subchannels(admin_state, new_channels, cont_state.phase)
-  // trace @"expected" : expected
-  // trace @"cont_state" : cont_state
+  trace @"expected" : expected
+  trace @"cont_state" : cont_state
   let cont_as_expected = (cont_state == expected) ?
   
   // The new phase could still be ConfigOnboardingPhase,

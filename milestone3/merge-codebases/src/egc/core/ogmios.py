@@ -299,13 +299,13 @@ def set_out_value_and_fee(
 
 
 OGMIOS_FATAL_CODES = set({
+    3012, # is this right? script rejected tx, maybe with trace
+    3110, # Some scripts of the transactions terminated with error(s).
     3136, # invalid transaction submitted as valid, or vice versa
 })
 
 OGMIOS_RETRY_CODES = set({
     3004,
-    3010, # TODO is this really retryable?
-    3110, # TODO is this really retryable?
 })
 
 OGMIOS_RETRY_PATTERNS = set({

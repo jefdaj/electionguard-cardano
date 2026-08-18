@@ -145,7 +145,7 @@ class AdminNode(VerifierNode):
         in_state: AdminChannelState = in_datum.state
         LOG.debug('in_state: %s' % pformat(in_state))
 
-        sub_ids = list(subchannels.keys()) # TODO sort?
+        sub_ids = sort(list(subchannels.keys())) # remember sort must match the aiken version
         cont_redeemer = Redeemer(data=AddSubChannels(channels=sub_ids))
         LOG.debug('cont_redeemer: %s' % pformat(cont_redeemer))
 
