@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from egc_app.server.state import get_state
 from egc_app import schemas
 from typing import Annotated
@@ -60,7 +60,17 @@ def records_post(data: schemas.RecordsPost, state=Depends(get_state)):
         new_record_pairs = pairs,
         new_phase = new,
     )
-    state.node.await_tx_confirmed(tx)
+
+    try:
+        state.node.await_tx_confirmed(tx)
+
+    except (asyncio.TimeoutError, TimeoutError):
+        raise HTTPException(
+            status_code = HTTP_504_GATEWAY_TIMEOUT,
+            default = f"TX failed to confirm: {tx}",
+        )
+
+    return Response(status_code=201)
 
 @router.get("/await", status_code=200)
 async def records_await(params: Annotated[schemas.RecordsAwait, Query()], state=Depends(get_state)):
