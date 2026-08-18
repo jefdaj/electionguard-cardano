@@ -13,13 +13,13 @@ def setup_logging(log_file=None):
     logging.getLogger('aiohttp').setLevel(logging.WARNING)
 
     logging.getLogger('egc.core.ogmios').setLevel(logging.DEBUG)
+    logging.getLogger('egc.core.subscriber').setLevel(logging.DEBUG)
     # logging.getLogger('egc.core.node').setLevel(logging.DEBUG)
     # logging.getLogger('egc.core.phase').setLevel(logging.DEBUG)
     # logging.getLogger('egc.core.publisher').setLevel(logging.DEBUG)
     # logging.getLogger('egc.core.records').setLevel(logging.DEBUG)
     # logging.getLogger('egc.nodes.admin').setLevel(logging.DEBUG)
     # logging.getLogger('egc.nodes.ipfs').setLevel(logging.DEBUG)
-    # logging.getLogger('egc.core.subscriber').setLevel(logging.DEBUG)
 
 
     logging.config.dictConfig({
@@ -30,7 +30,7 @@ def setup_logging(log_file=None):
             "file": {
                 "class": "logging.handlers.RotatingFileHandler",
                 "filename": log_file,
-                "maxBytes": 10_000_000,
+                "maxBytes": 100_000_000,
                 "backupCount": 5,
                 "formatter": "default",
             }
