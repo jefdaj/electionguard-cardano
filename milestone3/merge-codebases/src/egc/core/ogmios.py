@@ -482,10 +482,16 @@ def await_blocks(n_blocks: int = 1):
     count = 0
     while count < n_blocks:
         time.sleep(OGMIOS_POLL_SEC)
-        tip = ogmios_retry(
-            lambda: query_network_tip_sync()['block_hash'],
-            need_return_value = True
-        )
+        # TODO version of this that works from fastapi event loop too
+        # tip = ogmios_retry(
+        #     lambda: query_network_tip_sync()['block_hash'],
+        #     need_return_value = True
+        # )
+        try:
+            tip = query_network_tip_sync()['block_hash']
+        except Exception as e:
+            LOG.error(e)
+            continue
         if tip == prev:
             continue
         elif prev is None:
