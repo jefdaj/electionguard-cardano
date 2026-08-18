@@ -196,8 +196,19 @@ async def channel_create(
     LOG.debug(f'cur_ids: {cur_ids}')
     vkhs_by_ch_id = pick_new_channel_ids(roles_by_vkh, cur_ids)
     LOG.debug(f'vkhs_by_ch_id: {vkhs_by_ch_id}')
-    state.node.add_subchannels(
+    tx = state.node.add_subchannels(
         subchannels     = vkhs_by_ch_id,
         subchannel_ada  = data.ada_per_channel,
         done_onboarding = data.done_onboarding,
     )
+
+    try:
+        state.node.await_tx_confirmed(tx)
+
+    except (asyncio.TimeoutError, TimeoutError):
+        raise HTTPException(
+            status_code = HTTP_504_GATEWAY_TIMEOUT,
+            default = f"TX failed to confirm: {tx}",
+        )
+
+    return Response(status_code=201)
