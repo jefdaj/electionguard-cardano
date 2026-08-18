@@ -308,8 +308,10 @@ OGMIOS_FATAL_CODES = set({
     3136, # invalid transaction submitted as valid, or vice versa
 })
 
-# TODO OGMIOS_FATAL_PATTERNS (more reliable than the codes?):
-# Invalid transaction; It looks like the given transaction wasn't well-formed.
+OGMIOS_FATAL_PATTERNS = set({
+    "Invalid transaction",
+    "It looks like the given transaction wasn't well-formed.",
+})
 
 OGMIOS_RETRY_CODES = set({
     3004,
@@ -406,10 +408,14 @@ def ogmios_classify_error(e):
     # texts = ogmios_extract_texts(e)
     # TODO make patterns regexes if the need comes up
     txt = str(e).lower() # Error is unstructured; might as well match on the whole thing
+    any_fatal_text   = any(p for p in OGMIOS_FATAL_PATTERNS   if p in txt)
     any_success_text = any(p for p in OGMIOS_SUCCESS_PATTERNS if p in txt)
     any_retry_text   = any(p for p in OGMIOS_RETRY_PATTERNS   if p in txt)
+    LOG.debug(f'any_fatal_text: {any_fatal_text}')
     LOG.debug(f'any_success_text: {any_success_text}')
     LOG.debug(f'any_retry_text: {any_retry_text}')
+    if any_fatal_text:
+        return "fatal"
     if any_success_text:
         return "success"
     if any_retry_text:
