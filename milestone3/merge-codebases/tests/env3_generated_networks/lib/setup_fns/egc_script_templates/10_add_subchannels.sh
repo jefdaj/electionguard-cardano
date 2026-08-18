@@ -4,7 +4,7 @@
 # TODO set -euo pipefail overall?
 
 readonly n_subs=$(< private/n_requests.txt)
-readonly max_per_tx=4
+readonly max_per_tx=6
 declare -A paths_posted
 n_posted=0
 
@@ -14,7 +14,7 @@ create_channels() {
   # along with 5 for collateral (automatic)
   # finally, also advance to ceremony phase
   local -a batch=("$@")
-  local -a cmd=(egc channel create --subchannel-ada 20)
+  local -a cmd=(timeout 900 egc channel create --subchannel-ada 20)
   for f in "${batch[@]}"; do
     cmd+=(--request-load-png "$f")
   done
@@ -44,5 +44,5 @@ while (( n_posted < n_subs )); do
   fi
 done
 
-egc phase await --phase config_ceremony_round1
+timeout 900 egc phase await --phase config_ceremony_round1
 {% endblock %}
