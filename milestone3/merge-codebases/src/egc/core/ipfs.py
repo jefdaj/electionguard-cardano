@@ -325,7 +325,7 @@ class IPFSService:
         return n_waiting > 0 and (blocks_sent + blocks_recv) == 0
 
     async def force_reconnect(self, maddr: str):
-        LOG.debug(f'force_reconnect {maddr}')
+        LOG.warning(f'force_reconnect {maddr}')
         try:
             await self.ipfs._client.swarm.disconnect(maddr)
         except:
@@ -347,7 +347,7 @@ class IPFSService:
             if not stuck:
                 LOG.debug('not stuck! skip force reconnects')
                 return
-            LOG.debug('ipfs is stuck. force reconnecting all hints...')
+            LOG.error('ipfs is stuck. force reconnecting all hints...')
             for maddr in self.all_channel_addr_hints():
                 task = self._loop.create_task(self.force_reconnect(maddr))
                 task.add_done_callback(

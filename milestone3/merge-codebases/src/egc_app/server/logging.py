@@ -16,6 +16,7 @@ def setup_logging(log_file=None):
     logging.getLogger('egc.core.records').setLevel(logging.DEBUG)
     logging.getLogger('egc.core.node').setLevel(logging.DEBUG)
     logging.getLogger('egc.nodes.admin').setLevel(logging.DEBUG)
+    logging.getLogger('egc.nodes.ipfs').setLevel(logging.DEBUG)
 
 
     logging.config.dictConfig({
