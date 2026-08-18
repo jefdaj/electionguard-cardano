@@ -48,9 +48,9 @@ pub fn add_subchannels(
 ) -> AdminChannelState {
   trace @"add_subchannels"
   let cont_channels = list.sort(list.concat(state.subchannels, channels), bytearray.compare)
-  trace @"state.channels" : state.subchannels
-  trace @"channels"       : channels
-  trace @"cont_channels"  : cont_channels
+  // trace @"state.channels" : state.subchannels
+  // trace @"channels"       : channels
+  // trace @"cont_channels"  : cont_channels
   AdminChannelState(
     state.admin, // should be unchanged
     state.ipfs_node, // should be unchanged
