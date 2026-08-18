@@ -47,10 +47,14 @@ pub fn add_subchannels(
   cont_phase: ElectionPhase
 ) -> AdminChannelState {
   trace @"add_subchannels"
+  let cont_channels = list.sort(list.concat(state.subchannels, channels), bytearray.compare)
+  trace @"state.channels" : state.subchannels
+  trace @"channels"       : channels
+  trace @"cont_channels"  : cont_channels
   AdminChannelState(
     state.admin, // should be unchanged
     state.ipfs_node, // should be unchanged
-    list.sort(list.concat(state.subchannels, channels), bytearray.compare),
+    cont_channels,
     [], // should be reset on each non-post tx
     cont_phase, // TODO should this be validated here rather than separately?
     state.seq + 1 // should be incremented
