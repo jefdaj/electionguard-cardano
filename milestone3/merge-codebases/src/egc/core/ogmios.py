@@ -311,6 +311,7 @@ OGMIOS_FATAL_CODES = set({
 OGMIOS_FATAL_PATTERNS = set({
     "Invalid transaction",
     "It looks like the given transaction wasn't well-formed.",
+    "The transaction contains unknown UTxO references as inputs.",
 })
 
 OGMIOS_RETRY_CODES = set({
