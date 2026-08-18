@@ -325,7 +325,10 @@ def cfg_test_base(draw) -> HashedTestConfig:
     pytest_config = PytestConfig(
         config_fns = ConfigFnsConfig(names=(fn_name,)),
         setup_fns = SetupFnsConfig(fns=(
-            # TODO anything that should always be done here?
+            FnCallConfig(
+                name = 'wait_n_blocks',
+                args = (('n', 1),),
+            ),
         )),
         attack_fns = AttackFnsConfig(fns=()),
     )

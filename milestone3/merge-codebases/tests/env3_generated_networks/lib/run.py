@@ -10,7 +10,6 @@ from hypothesis     import strategies as st
 from pathlib        import Path
 from pathlib        import Path
 from typing         import Callable
-from egc            import await_blocks
 
 
 def run_egc_scripts_cached(
@@ -46,8 +45,6 @@ def run_egc_scripts(cfg: ResolvedTestConfig, arion_dir: Path, timeout=30*60):
     procs = {} # node_name -> (proc, log_path)
     node_names = cfg.node_names()
     kwargs = arion_subprocess_kwargs(cfg, arion_dir)
-    LOG.warning('Waiting 1 block so any prev TXs settle before starting test.')
-    await_blocks(1)
     for node_name in node_names:
         log_path = cfg.private_path(node_name) / 'egc' / 'script.log'
         log_handle = log_path.open('w', buffering=1) # TODO 'a' mode?
