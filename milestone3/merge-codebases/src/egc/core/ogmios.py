@@ -45,7 +45,7 @@ LOG.info(f'OGMIOS_CTX: {OGMIOS_CTX}')
 # TODO think how to handle that this is used multiple places now...
 # - split into several timeouts?
 # - move to a util module?
-OGMIOS_POLL_SEC    =   5
+OGMIOS_POLL_SEC    =   10
 
 # TODO What's reasonable here?
 OGMIOS_TIMEOUT_SEC = 900
@@ -302,10 +302,14 @@ def set_out_value_and_fee(
 
 
 OGMIOS_FATAL_CODES = set({
+    -32602, # Invalid transaction; It looks like the given transaction wasn't well-formed.
     3010, # Some scripts of the transactions terminated with error(s).
     3012, # is this right? script rejected tx, maybe with trace
     3136, # invalid transaction submitted as valid, or vice versa
 })
+
+# TODO OGMIOS_FATAL_PATTERNS (more reliable than the codes?):
+# Invalid transaction; It looks like the given transaction wasn't well-formed.
 
 OGMIOS_RETRY_CODES = set({
     3004,
@@ -316,6 +320,7 @@ OGMIOS_RETRY_PATTERNS = set({
     "missing from utxo set",     # TODO is this really retryable?
 })
 
+# TODO are these really successes? maybe they should have a 3rd "check again, maybe retry" verdict?
 OGMIOS_SUCCESS_PATTERNS = set({
     "all inputs are spent",
     "probably already been included",
