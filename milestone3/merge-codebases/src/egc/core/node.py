@@ -183,6 +183,10 @@ class ElectionNode:
         ):
         # TODO how to handle cases not indexed by STT cleanly? (collateral etc)
 
+        if tx is None:
+            LOG.warning('You called await_tx_confirmed called with None. Skipping it.')
+            return
+
         assert isinstance(tx, Transaction), f'wrong tx type: {type(tx)}'
 
         ch_str = self.channel_str()
@@ -557,7 +561,9 @@ class ElectionNode:
 
         # Without this set, the FunderNode risks the entire dev wallet when
         # deploying a contract.
-        self.publisher.create_own_collateral()
+        tx = self.publisher.create_own_collateral()
+        if tx is not None:
+            self.await_tx_confirmed(tx, subscriber_too=False) # TODO remove?
         col = self.publisher.await_collateral()
 
         # Messages to log if/when the TX succeeds

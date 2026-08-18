@@ -346,8 +346,7 @@ class ElectionPublisher:
             return
         tx = self.send_lovelace(self.wallet.addr, COLLATERAL_LOVELACE)
         LOG.info(f'{ch_str} created own collateral UTXO at {self.wallet.addr}')
-        # return tx
-        return
+        return tx
 
     def return_collateral(
         self,
