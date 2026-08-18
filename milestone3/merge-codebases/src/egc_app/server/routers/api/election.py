@@ -74,7 +74,8 @@ def create_election(data: schemas.ElectionCreate, state=Depends(get_state)):
 
     # TODO actually, could we skip the wait?
     try:
-        state.node.await_tx_confirmed(tx) # TODO make this async?
+        state.node.await_tx_confirmed(tx)
+
     except (asyncio.TimeoutError, TimeoutError):
         raise HTTPException(
             status_code = HTTP_504_GATEWAY_TIMEOUT,

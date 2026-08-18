@@ -315,7 +315,7 @@ class ElectionNode:
         "Automatically consolidate UTXOs when there are getting to be a lot."
         # TODO is this helpful for eliminating "random" tx failures?
         # TODO how many should count as too many?
-        utxos = get_utxos_for_addr(self.wallet.addr)
+        utxos = get_utxos_for_addr(self.publisher.wallet.addr)
         LOG.debug('UTxOs at publisher address: %s' % len(utxos))
         if len(utxos) > max_utxos:
             LOG.warning(f'Auto-consolidating UTXOs because there are more than {max_utxos}.')
