@@ -315,6 +315,15 @@ class IPFSService:
         delay = random.uniform(0, cap) # full jitter
         self.store.mark_attempt(record, attempts, time.time() + delay)
 
+    async def _ipfs_is_stuck(self):
+        # TODO why does this happen?
+        stat = await self.ipfs._client.bitswap.stat()
+        LOG.debug(f'stat: {stat}')
+        blocks_sent = int(stat.get('BlocksSent'    , 0))
+        blocks_recv = int(stat.get('BlocksReceived', 0))
+        n_waiting   = len(stat.get('Wantlist'      , 0))
+        return n_waiting > 0 and (blocks_sent + blocks_recv) == 0
+
     async def force_reconnect(self, maddr: str):
         LOG.debug(f'force_reconnect {maddr}')
         try:
@@ -334,6 +343,11 @@ class IPFSService:
             interval *= random.uniform(0.6, 1.4)
         while True:
             await asyncio.sleep(interval)
+            stuck = await self._ipfs_is_stuck()
+            if not stuck:
+                LOG.debug('not stuck! skip force reconnects')
+                return
+            LOG.debug('ipfs is stuck. force reconnecting all hints...')
             for maddr in self.all_channel_addr_hints():
                 task = self._loop.create_task(self.force_reconnect(maddr))
                 task.add_done_callback(
