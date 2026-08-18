@@ -8,7 +8,7 @@ from .render_egc_scripts import render_egc_scripts
 from .install_qrcode     import install_qr_txt, install_qr_png
 from .install_funder_sk  import install_funder_sk
 from .install_node_cfgs  import install_node_cfgs
-from .install_n_requests import install_n_requests
+from .install_n_subs     import install_n_subs
 
 def run_setup_fns(cfg: ResolvedTestConfig):
     "Pull fn names + args from cfg and run them."

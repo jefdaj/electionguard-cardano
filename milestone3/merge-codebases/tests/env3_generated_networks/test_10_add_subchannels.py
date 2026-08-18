@@ -13,18 +13,8 @@ from .test_08_post_batch    import assert_advance_phase, assert_post_manifest, a
 
 
 @st.composite
-def cfg_add_subchannels_base(draw):
-    cfg = draw( cfg_post_manifest_base() )
-    cfg = append_config_fn_name(cfg)
-    cfg = append_setup_fns(cfg, [
-        FnCallConfig(name='install_n_requests', args=()),
-    ])
-    return cfg
-
-
-@st.composite
 def cfg_add_subchannels(draw):
-    cfg = draw( cfg_add_subchannels_base() )
+    cfg = draw( cfg_post_manifest_base() )
     cfg = append_config_fn_name(cfg)
     cfg = append_setup_fns(cfg, [
         FnCallConfig(

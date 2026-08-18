@@ -13,5 +13,6 @@ egc records list
 
 # prevent the case where admin can burn test tokens and shut down before
 # subchannel nodes have fetched records
+# TODO remove?
 sleep 30
 {% endblock %}

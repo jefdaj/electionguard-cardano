@@ -10,12 +10,11 @@ from .test_04_subscribe     import assert_endelection_event
 from .test_06_admin_post_ipfs import assert_admin_post_ipfs
 from .test_07_post_manifest import cfg_post_manifest_base, assert_post_manifest
 from .test_08_post_batch    import assert_advance_phase, assert_post_manifest, assert_post_ceremony
-from .test_10_add_subchannels import cfg_add_subchannels_base
 
 
 @st.composite
 def cfg_subs_post_ipfs(draw):
-    cfg = draw( cfg_add_subchannels_base() )
+    cfg = draw( cfg_post_manifest_base() )
     cfg = append_config_fn_name(cfg)
     cfg = append_setup_fns(cfg, [
         FnCallConfig(

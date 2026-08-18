@@ -14,10 +14,14 @@ def cfg_init_election_base(draw):
     cfg = draw( cfg_test_base() )
     cfg = append_config_fn_name(cfg)
     cfg = append_setup_fns(cfg, [
-        FnCallConfig(
-            name = 'install_funder_sk',
-            args = ()
-        ),
+
+        # For funding the election.
+        FnCallConfig(name='install_funder_sk' , args=()),
+
+        # Used to estimate --admin-ada when funding the election,
+        # and to wait for the correct number of channel request qrcodes.
+        FnCallConfig(name='install_n_subs', args=()),
+
     ])
     return cfg
  

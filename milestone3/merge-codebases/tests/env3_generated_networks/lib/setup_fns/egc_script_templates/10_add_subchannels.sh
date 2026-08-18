@@ -3,7 +3,6 @@
 {{ super() }}
 # TODO set -euo pipefail overall?
 
-readonly n_subs=$(< private/n_requests.txt)
 readonly max_per_tx=4
 declare -A paths_posted
 n_posted=0
@@ -14,18 +13,18 @@ create_channels() {
   # along with 5 for collateral (automatic)
   # finally, also advance to ceremony phase
   local -a batch=("$@")
-  local -a cmd=(timeout 900 egc channel create --subchannel-ada 20)
+  local -a cmd=(timeout 900 egc channel create --subchannel-ada $ADA_PER_SUB)
   for f in "${batch[@]}"; do
     cmd+=(--request-load-png "$f")
   done
-  (( n_posted + ${#batch[@]} >= n_subs )) && cmd+=(--done-onboarding)
+  (( n_posted + ${#batch[@]} >= N_SUBS )) && cmd+=(--done-onboarding)
   "${cmd[@]}" || { echo "ERROR: command failed" >&2; exit 1; }
   for f in "${batch[@]}"; do paths_posted["$f"]=1; done
   (( n_posted += ${#batch[@]} ))
 }
 
-while (( n_posted < n_subs )); do
-  echo "n_subs: ${n_subs}"
+while (( n_posted < N_SUBS )); do
+  echo "N_SUBS: ${N_SUBS}"
   echo "n_posted: ${n_posted}"
   sleep 5
   batch=()
