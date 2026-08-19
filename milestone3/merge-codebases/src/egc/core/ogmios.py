@@ -312,6 +312,7 @@ OGMIOS_FATAL_PATTERNS = set({
     "Invalid transaction",
     "It looks like the given transaction wasn't well-formed.",
     "The transaction contains unknown UTxO references as inputs.",
+    "Unknown transaction input (missing from UTxO set)", # TODO 3rd category here for "retry entire build-and-submit"
 })
 
 OGMIOS_RETRY_CODES = set({
