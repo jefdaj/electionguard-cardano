@@ -35,6 +35,9 @@ def assert_script_logs_do_not_match(cfg, node_ptn, line_ptns):
 
 
 def assert_test_completed(cfg):
+    assert_script_logs_match(cfg, '.*', [
+        'exit 0$', # TODO does it also need to be the last line?
+    ])
     assert_script_logs_do_not_match(cfg, '.*', [
         '^Traceback',
         '^arion: FatalError',
