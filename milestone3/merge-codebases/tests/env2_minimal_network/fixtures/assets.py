@@ -17,8 +17,8 @@ def admin_assets(script: ElectionScript) -> MultiAsset:
 
 @pytest.fixture(scope='module')
 def subchannel_ids() -> List[ChannelId]:
-    strs = ['guardian1', 'guardian2', 'guardian3', 'device1', 'verifier1']
-    ids = [coerce_channel_id(s) for s in strs]
+    strs = ['device1', 'guardian1', 'guardian2', 'guardian3', 'verifier1']
+    ids = sorted([coerce_channel_id(s) for s in strs]) # should match aiken sort
     LOG.debug(f'subchannel_ids: {ids}')
     return ids
 

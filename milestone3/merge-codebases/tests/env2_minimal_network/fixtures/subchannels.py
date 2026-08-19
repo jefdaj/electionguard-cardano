@@ -155,17 +155,17 @@ def verifier1(
 
 @pytest.fixture(scope='module')
 def subchannel_nodes(
+        device1: DeviceNode,
         guardian1: GuardianNode,
         guardian2: GuardianNode,
         guardian3: GuardianNode,
-        device1: DeviceNode,
         verifier1: VerifierNode,
     ) -> list[ElectionNode]:
     return [
+        device1,
         guardian1,
         guardian2,
         guardian3,
-        device1,
         verifier1,
     ]
 
