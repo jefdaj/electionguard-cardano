@@ -316,6 +316,8 @@ class ElectionPublisher:
             LOG.info(f"Found {len(utxos)} UTXOs at {self.wallet.addr}")
             if len(utxos) < 2:
                 LOG.info("Done consolidating UTXOs.")
+                LOG.warning('waiting one more block for good measure.') # TODO why is this needed?
+                await_blocks(1)
                 return
             total_lovelace, asset_count, policy_count = summarize(utxos)
             LOG.info(f"Total: {total_lovelace / 1_000_000:.6f} tADA")
