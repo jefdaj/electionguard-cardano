@@ -96,7 +96,7 @@ def assert_no_collateral(nodes: list[ElectionNode]):
         LOG.info(f'{name} has no collateral utxo, as expected.')
 
 
-def assert_node_phases_converge_2(
+def assert_node_phases_converge(
         nodes: list[ElectionNode],
         expected_phase: EgcPhase,
         interval = 5,
@@ -118,6 +118,7 @@ def assert_node_phases_converge_2(
             LOG.debug(f'All {len(nodes)} nodes converged to {expected_phase} after {sec}s.')
             return
         time.sleep(interval)
+
 
 def assert_node_states_converge(
         expected_states: list[ Tuple[ElectionNode, Optional[ChannelState]] ],
@@ -193,47 +194,6 @@ def assert_node_states_converge(
         time.sleep(interval)
         waited += interval
 
-def assert_node_phases_converge(
-        nodes: list[ElectionNode],
-        expected_phase: EgcPhase, # TODO is this right?
-        interval = 5,
-        timeout = 300,
-    ):
-        waited = 0 # TODO time.monotonic deadline instead
-        while True:
-            n_phases_correct = 0
-            for n in nodes:
-                n_str = n.channel_str()
-                p = n.current_phase()
-                try:
-                    assert p == expected_phase
-                    n_phases_correct += 1
-                except AssertionError as e:
-                    LOG.debug(
-                        f'{n_str} node has wrong phase after {waited}s: {p}, not {expected_phase}.'
-                    )
-                    if waited >= timeout:
-                        # diff = safe_deepdiff(expected_state, actual_state)
-                        LOG.error(
-                            f'Nodes did not converge on {expected_phase} within {timeout}s.'
-                        )
-                        raise
-                    else:
-                        continue # next node
-
-            LOG.debug(
-                f'After {waited} seconds, {n_phases_correct}/{len(nodes)}'
-                f' nodes converged on {expected_phase}.'
-            )
-
-            # success
-            if n_phases_correct == len(nodes):
-                return
-
-            time.sleep(interval)
-            waited += interval
-
- 
 
 def assert_nodes_converge(
         expected_states: list[ Tuple[ElectionNode, Optional[ChannelState]] ],
@@ -244,5 +204,5 @@ def assert_nodes_converge(
     """The inputs here are a state per node, but that's just a convenient format
     for passing the args. A state of None means the channel is closed."""
     nodes = [n for (n, _) in expected_states]
-    assert_node_phases_converge_2(nodes, expected_phase, interval, timeout)
+    assert_node_phases_converge(nodes, expected_phase, interval, timeout)
     assert_node_states_converge(expected_states, interval, timeout)
