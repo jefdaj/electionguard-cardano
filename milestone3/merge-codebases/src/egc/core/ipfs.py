@@ -348,9 +348,9 @@ class IPFSService:
             await asyncio.sleep(interval)
             stuck = await self._ipfs_is_stuck()
             if not stuck:
-                LOG.debug('not stuck! skip force reconnects')
+                # LOG.debug('not stuck! skip force reconnects')
                 return
-            LOG.error('ipfs is stuck. force reconnecting all hints...')
+            LOG.error('ipfs is stuck. force reconnecting all addrs...')
             for maddr in self.all_channel_addr_hints():
                 task = self._loop.create_task(self.force_reconnect(maddr))
                 task.add_done_callback(

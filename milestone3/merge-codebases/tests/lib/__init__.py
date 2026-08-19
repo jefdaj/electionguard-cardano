@@ -33,7 +33,7 @@ def isinstance_of_union(obj, union_type) -> bool:
 
 # TODO move to channel.py
 def is_channelstate(obj) -> bool:
-	return isinstance_of_union(obj, ChannelState)
+    return isinstance_of_union(obj, ChannelState)
 
 
 def sub_s0(sub_id: ChannelId, sub_vkh: VerificationKeyHash) -> ChannelState:
@@ -120,79 +120,63 @@ def assert_node_phases_converge(
         time.sleep(interval)
 
 
+def channel_state_masked(ch_state):
+    """Mask parts of the chanel state that aren't known in test fixtures to
+    make testing by equality work."""
+    LOG.debug(f'ch_state: {ch_state}')
+    if ch_state is None:
+        return None
+    masked = deep_replace(ch_state, 'state.ipfs_node', 'masked')
+    LOG.debug(f'masked: {masked}')
+    return masked
+
+
+class ErrorWithDiff(ValueError):
+    def __init__(self, message, *, diff):
+        self.diff = diff
+        super().__init__(f"{message}\n\nDiff:\n{pformat(diff)}\n")
+
+
 def assert_node_states_converge(
-        expected_states: list[ Tuple[ElectionNode, Optional[ChannelState]] ],
+        expected_states: list[ tuple[ElectionNode, Optional[ChannelState]] ],
         interval = 5,
         timeout = 300,
     ):
-    n = len(expected_states) # both the number of nodes and number of states being checked
-
-    for (node, state) in expected_states:
-        assert isinstance(node, ElectionNode)
-        if state is not None:
-            assert is_channelstate(state)
-
-    waited = 0 # TODO time.monotonic deadline instead
+    """For each node, check that each actual channel state is as expected.
+    A state of None here means that node's channel should be closed.
+    """
+    n = len(expected_states) # number of nodes and also states being checked per node
+    start = time.monotonic()
+    deadline = start + timeout
     while True:
-        n_nodes_correct_prev = 0
-        n_nodes_correct = 0
-
+        now = time.monotonic()
+        sec = int(now - start)
+        errors = []
         for (node_to_test, _) in expected_states:
-            node_str = node_to_test.channel_str()
-            n_states_correct = 0
-
-            # How many states does this node have correct so far?
+            # node_str = node_for_id.channel_str()
             for (node_for_id, expected_state) in expected_states:
-                state_str = node_for_id.channel_str()
-                actual_state = node_to_test.current_state(node_for_id.channel_id())
+                ch_id  = node_for_id.channel_id()
+                ch_str = node_for_id.channel_str()
+                actual_state  = node_to_test.current_state(ch_id)
+                expected_mask = channel_state_masked(expected_state)
+                actual_mask   = channel_state_masked(actual_state)
                 try:
-                    assert expected_state == actual_state
-                    n_states_correct += 1
+                    assert actual_mask == expected_mask # pytest will fancy up the plain assertion
                 except AssertionError as e:
-                    if waited >= timeout:
-                        diff = safe_deepdiff(expected_state, actual_state)
-                        LOG.debug(
-                            f'{node_str} node has wrong {state_str} state'
-                            f' after {waited}s:\n{pformat(diff)}'
-                        )
-                        LOG.error(
-                            'Nodes did not converge on expected states'
-                            f' within {timeout}s.'
-                        )
-                        raise
-                    else:
-                        continue # next node
-
-            # How many nodes have them all correct?
-            if n_states_correct == n:
-                n_nodes_correct += 1
-
-        # just to clean up the logs
-        if n_nodes_correct != n_nodes_correct_prev:
-            LOG.debug(
-                f'After {waited} seconds, {n_nodes_correct}/{n}'
-                ' nodes converged on expected states.'
-            )
-            n_nodes_correct_prev = n_nodes_correct
-
-        if n_nodes_correct == n:
-            # for (n, _) in expected_states:
-            #     p = n.current_phase()
-            #     assert p == expected_phase
-            # LOG.debug(f"All nodes have the expected phase {expected_phase}.")
-            try:
-                # This normally works the first time, but occasionally fails.
-                # Perhaps there's a same-but-spent update during?
-                assert_nodes_have_same_history([n for (n, _) in expected_states])
-                break
-            except AssertionError as e:
-                if waited >= timeout:
-                    LOG.error(f'Nodes did not all have the same history within {timeout}s.')
-                else:
-                    LOG.debug('Nodes do not all have the same history yet.')
-
-        time.sleep(interval)
-        waited += interval
+                    # TODO is the pytest version good enough? or do we still want a separate diff too?
+                    diff = safe_deepdiff(actual_mask, expected_mask) # TODO flip?
+                    errors.append(ErrorWithDiff(str(e), diff=diff))
+        if errors:
+            msg = f'After {sec}s, there are still {len(errors)} incorrect node states.'
+            if now > deadline:
+                raise ExceptionGroup(msg, errors)
+            else:
+                LOG.warning(msg)
+                time.sleep(interval)
+        else:
+            msg = f'After {sec}s, all {n} nodes converged to the correct states.'
+            LOG.info(msg)
+            return
 
 
 def assert_nodes_converge(
@@ -206,3 +190,5 @@ def assert_nodes_converge(
     nodes = [n for (n, _) in expected_states]
     assert_node_phases_converge(nodes, expected_phase, interval, timeout)
     assert_node_states_converge(expected_states, interval, timeout)
+    assert_nodes_have_same_history(nodes)
+    # TODO also assert (separately) that all records are fetched?
