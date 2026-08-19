@@ -11,7 +11,7 @@ ElectionGuard + Cardano
 
 Work in progress on [the Catalyst fund13 project](https://milestones.projectcatalyst.io/projects/1300090).
 
-Current status as of 2026-07-18:
+Current status as of 2026-08-19:
 
 - [ ] [Milestone 3](./milestone3/) (ElectionGuard + Cardano integration):
 
