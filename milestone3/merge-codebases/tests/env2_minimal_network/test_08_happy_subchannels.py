@@ -39,6 +39,7 @@ def s1(
         s0: ChannelState,
         static_transactions, static_files_dir,
         static_phases,
+        published_static_records, # loads them into the ipfs node
     ) -> ChannelState:
     prev = s0.state
     record_pairs = load_static_record_pairs(

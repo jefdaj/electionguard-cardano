@@ -65,6 +65,7 @@ def admin_s1(
         admin_s0: ChannelState,
         static_transactions,
         static_phases,
+        published_static_records, # loads them into the ipfs node
     ) -> ChannelState:
     prev = admin_s0.state
     return AdminChannel(state=replace(
