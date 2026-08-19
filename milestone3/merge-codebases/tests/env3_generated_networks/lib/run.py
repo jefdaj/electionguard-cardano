@@ -19,7 +19,7 @@ LOG = logging.getLogger(__name__)
 
 def wait_n_blocks(n: int = 1):
     n = int(n)
-    LOG.warning(f'Waiting {n} blocks for any previous TXs to settle.')
+    LOG.warning(f'Waiting {n} blocks for any previous TXs to confirm.')
     await_blocks(n)
 
 
