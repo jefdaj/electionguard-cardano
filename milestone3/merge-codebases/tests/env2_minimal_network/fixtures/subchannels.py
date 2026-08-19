@@ -161,6 +161,7 @@ def subchannel_nodes(
         guardian3: GuardianNode,
         verifier1: VerifierNode,
     ) -> list[ElectionNode]:
+    # should match aiken sort
     return [
         device1,
         guardian1,

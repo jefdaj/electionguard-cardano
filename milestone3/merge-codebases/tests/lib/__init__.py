@@ -57,8 +57,8 @@ def assert_tx(node_: ElectionNode, state: Optional[ChannelState], tx: Transactio
 
 
 def assert_nodes_have_same_history(nodes: list[ElectionNode]):
-    # You probably want assert_nodes_converge below,
-    # unless you don't know what the stages should be
+    """You probably want assert_nodes_converge below, unless you don't know
+    what the phases/states should be beforehand."""
     if len(nodes) < 2:
         return
     ref_node = nodes[0]; other_nodes = nodes[1:]
@@ -131,12 +131,6 @@ def channel_state_masked(ch_state):
     return masked
 
 
-class ErrorWithDiff(ValueError):
-    def __init__(self, message, *, diff):
-        self.diff = diff
-        super().__init__(f"{message}\n\nDiff:\n{pformat(diff)}\n")
-
-
 def assert_node_states_converge(
         expected_states: list[ tuple[ElectionNode, Optional[ChannelState]] ],
         interval = 5,
@@ -151,9 +145,8 @@ def assert_node_states_converge(
     while True:
         now = time.monotonic()
         sec = int(now - start)
-        errors = []
+        diffs = []
         for (node_to_test, _) in expected_states:
-            # node_str = node_for_id.channel_str()
             for (node_for_id, expected_state) in expected_states:
                 ch_id  = node_for_id.channel_id()
                 ch_str = node_for_id.channel_str()
@@ -161,20 +154,20 @@ def assert_node_states_converge(
                 expected_mask = channel_state_masked(expected_state)
                 actual_mask   = channel_state_masked(actual_state)
                 try:
-                    assert actual_mask == expected_mask # pytest will fancy up the plain assertion
+                    assert expected_mask == actual_mask
                 except AssertionError as e:
-                    # TODO is the pytest version good enough? or do we still want a separate diff too?
-                    diff = safe_deepdiff(actual_mask, expected_mask) # TODO flip?
-                    errors.append(ErrorWithDiff(str(e), diff=diff))
-        if errors:
-            msg = f'After {sec}s, there are still {len(errors)} incorrect node states.'
+                    diff = safe_deepdiff(expected_mask, actual_mask)
+                    diffs.append(diff)
+        if diffs:
+            diff_counts = dict(Counter([pformat(d) for d in diffs]))
+            msg = f'After {sec}s, there are still {len(diffs)} unexpected channel states:\n{pformat(diff_counts)}'
             if now > deadline:
-                raise ExceptionGroup(msg, errors)
+                raise TimeoutError(msg) # TODO ValueError?
             else:
                 LOG.warning(msg)
                 time.sleep(interval)
         else:
-            msg = f'After {sec}s, all {n} nodes converged to the correct states.'
+            msg = f'After {sec}s, all {n} nodes converged to the expected channel states.'
             LOG.info(msg)
             return
 

@@ -27,7 +27,7 @@ def static_transactions():
 
 @pytest.fixture(scope='module')
 def subchannel_ids(static_transactions) -> list[ChannelId]:
-    return static_transactions['admin'][2][0].channels
+    return sorted(static_transactions['admin'][2][0].channels) # should match aiken sort
 
 @pytest.fixture(scope='module')
 def subchannel_strs(subchannel_ids: list[ChannelId]) -> list[str]:

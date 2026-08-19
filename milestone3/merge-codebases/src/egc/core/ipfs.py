@@ -97,7 +97,7 @@ class PendingStore:
 
     def remove(self, record):
         key = record_key(record)
-        LOG.debug(f'remove {record}')
+        # LOG.debug(f'remove {record}')
         del self._db[key]
 
     def mark_attempt(self, record, attempts, next_attempt):
@@ -543,7 +543,8 @@ class IPFSService:
         )
         if opt_prev == opt_new:
             return
-        LOG.info(f'update {channel_id} channel node: {opt_prev} -> {opt_new}')
+        ch_str = channel_id_to_string(channel_id)
+        LOG.info(f'update {ch_str} channel node: {opt_prev} -> {opt_new}')
         self.channel_nodes[channel_id] = opt_new
         if opt_new == NoIpfsNode():
             return
