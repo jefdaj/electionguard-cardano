@@ -16,7 +16,7 @@ readonly N_SUBS=$(< private/n_subs.txt)
 # create an election using separate dev wallet as funder
 # TODO more realistic formula for ADA needed including n votes, guardians, etc
 ADA_PER_SUB=20
-ADMIN_ADA=$(( 50 + ADA_PER_SUB*N_SUBS ))
+ADMIN_ADA=$(( 100 + 5*N_SUBS + ADA_PER_SUB*N_SUBS ))
 egc election create --funder-load-json private/funder.sk --admin-ada $ADMIN_ADA
 egc election share --election-save-png qrcodes/election.png
 
