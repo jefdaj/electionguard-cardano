@@ -24,9 +24,7 @@ create_channels() {
 }
 
 while (( n_posted < N_SUBS )); do
-  echo "N_SUBS: ${N_SUBS}"
-  echo "n_posted: ${n_posted}"
-  sleep 5
+  sleep 10
   batch=()
   for path in qrcodes/channel-*.png; do
     [[ -e "$path" ]] || continue
