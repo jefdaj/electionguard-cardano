@@ -57,8 +57,9 @@ from pycardano import *
 KUPO_HOST = environ.get('KUPO_HOST', '127.0.0.1')
 KUPO_PORT = int(environ.get('KUPO_PORT', '1442'))
 
+# TODO does this matter? aside from unreadable logs, 1 sec seems fine too
+KUPO_POLL_SEC = 10
 
-KUPO_POLL_SEC = 1
 KUPO_MAX_CHECKPOINTS = 50
 
 
