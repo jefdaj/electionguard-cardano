@@ -38,7 +38,7 @@ def assert_admin_post_ipfs(cfg):
 
 def assert_subchannels_show_ipfs(cfg):
     assert_script_logs_match(cfg, '(?!admin)', [
-        'admin posted ipfs peerid',
+        'admin posted ipfs peer_id',
         '"peer_id": "12D',
     ])
     assert_node_logs_match(cfg, '(?!admin)', [
