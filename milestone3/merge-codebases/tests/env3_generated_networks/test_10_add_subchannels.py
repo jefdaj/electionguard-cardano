@@ -27,11 +27,16 @@ def cfg_add_subchannels(draw):
 
 def assert_add_subchannels(cfg):
     assert_script_logs_match(cfg, 'admin', [
-        'egc channel create'
+        'egc channel create',
+        '^config_ceremony_round1$',
+        '^all subchannels added$',
     ])
     assert_node_logs_match(cfg, 'admin', [
         'POST /api/channel/create.*201$',
         'admin sent 5 ADA from admin channel fee pool',
+    ])
+    assert_script_logs_match(cfg, '(?!admin)', [
+        '^correct channel$',
     ])
 
 
