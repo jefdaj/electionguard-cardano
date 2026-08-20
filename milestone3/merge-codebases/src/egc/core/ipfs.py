@@ -378,7 +378,7 @@ class IPFSService:
             return False
 
         # No progress. Are we past the stuck window?
-        return (now - snap_time) >= self.IPFS_STUCK_WINDOW
+        return (now - snap_time) >= IPFS_STUCK_WINDOW
 
     async def _force_reconnect(self, maddr: str):
         LOG.warning(f'_force_reconnect {maddr}')
