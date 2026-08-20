@@ -909,7 +909,8 @@ class ElectionSubscriber:
         self._log_thread.start()
 
         # prevents polling error during startup
-        time.sleep(1) # TODO self.sleep?
+        # TODO does making this longer fix "InitElection should always happen first" bug?
+        self.sleep(KUPO_POLL_SEC)
 
 
     def _kupo_log(self) -> None:
