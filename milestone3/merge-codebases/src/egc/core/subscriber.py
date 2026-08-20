@@ -187,9 +187,9 @@ def election_events(event: ChannelEvent) -> list[ElectionEvent]:
             match event.output_state.state.ipfs_node:
                 case NoIpfsNode(): pass
                 case SomeIpfsNode(value=node):
-                    id_str = ipfs_peerid_to_string(node.peer_id)
+                    # id_str = ipfs_peerid_to_string(node.peer_id)
                     n_hints = len(node.addr_hints)
-                    msg = f'posted ipfs peer_id {id_str}'
+                    msg = f'posted ipfs peer_id'
                     if n_hints > 0:
                         msg += f' + {n_hints} addr_hints'
                     e = election_event(ti, sn, s, 'set ipfs node', msg)

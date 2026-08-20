@@ -4,8 +4,6 @@ from egc import *
 from ..lib import *
 from .lib  import *
 
-from .test_02_create_wallet import assert_wallet_created
-from .test_03_node_ready    import assert_node_ready
 from .test_04_subscribe     import assert_election_events
 
 
@@ -70,13 +68,8 @@ def assert_init_election(cfg):
     assert_admin_election_cleanup(cfg)
 
 
-@given_cached_tests(
-    cfg_strategy = cfg_init_election(),
-    max_examples = 1,
-)
+@given_cached_tests(cfg_strategy=cfg_init_election(), max_examples=1)
 def test_init_election(cfg: ResolvedTestConfig):
     assert_test_completed(cfg)
-    assert_wallet_created(cfg)
-    assert_node_ready(cfg)
     assert_election_events(cfg)
     assert_init_election(cfg)

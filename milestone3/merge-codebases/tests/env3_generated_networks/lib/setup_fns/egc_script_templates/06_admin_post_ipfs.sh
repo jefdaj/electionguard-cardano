@@ -2,7 +2,7 @@
 
 {% block body %}
 {{ super() }}
-# post ipfs peer_id on chain
+# post ipfs peer_id + optional addr_hints (up to 8 by default) on chain
 egc ipfs post
 {% endblock %}
 
