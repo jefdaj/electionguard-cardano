@@ -338,9 +338,12 @@ class IPFSService:
         Returns True if there are pending wants but no data has moved in the last IPFS_STUCK_WINDOW seconds.
         Updates self._last_bitswap_snapshot on success.
         """
+        if self.count_pending_records() == 0:
+            LOG.debug('no pending records; skipping stuck check')
+            return False
         if not await self._ipfs_is_reachable():
             LOG.warning('ipfs node is unreachable; skipping stuck check')
-            return False # not "stuck" in the reconnectable sense — nothing to reconnect to
+            return False
         try:
             stat = await self.ipfs._client.bitswap.stat()
         except Exception as e:
