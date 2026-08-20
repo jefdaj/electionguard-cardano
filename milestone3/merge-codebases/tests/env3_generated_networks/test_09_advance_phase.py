@@ -25,7 +25,7 @@ def cfg_advance_phase(draw):
 
 
 def assert_advance_phase_standalone(cfg):
-    assert_script_logs_match(cfg, 'admin', [
+    assert_script_logs_match(cfg, '.*', [
         '^config_ceremony_round1$',
     ])
     assert_node_logs_match(cfg, 'admin', [

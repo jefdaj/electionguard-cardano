@@ -4,9 +4,9 @@
 {{ super() }}
 # wait for admin to advance phase
 egc phase await --phase config_ceremony_round1
+egc phase get
 {% endblock %}
 
 {% block report %}
-egc phase get
 egc election events
 {% endblock %}
