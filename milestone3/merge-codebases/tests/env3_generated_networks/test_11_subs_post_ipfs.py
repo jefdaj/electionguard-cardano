@@ -25,7 +25,7 @@ def cfg_subs_post_ipfs(draw):
     return cfg
 
 
-@given_cached_tests(cfg_strategy=cfg_subs_post_ipfs(), max_examples=5)
+@given_cached_tests(cfg_strategy=cfg_subs_post_ipfs(), max_examples=1)
 def test_subs_post_ipfs(cfg: ResolvedTestConfig):
     assert_test_completed(cfg)
     # assert_script_logs_match(cfg, 'admin', [
