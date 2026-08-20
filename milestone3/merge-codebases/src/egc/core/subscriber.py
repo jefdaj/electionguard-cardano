@@ -615,7 +615,7 @@ class ElectionSubscriber:
                 # TODO throw error here? maybe there should be options for either
                 # raise Exception(f'Awaited phase {phase} has already passed! Current phase is {actual_phase}.')
                 return
-            time.sleep(OGMIOS_POLL_SEC) # TODO self.sleep?
+            self.sleep(OGMIOS_POLL_SEC)
         raise TimeoutError(f'Election did not reach phase within {timeout}s: {phase}.')
 
 
@@ -658,7 +658,7 @@ class ElectionSubscriber:
             for e in self.all_election_events(): # TODO is this a lot of computation?
                 if pred_fn(e):
                     return e
-            time.sleep(timeout) # TODO self.sleep?
+            self.sleep(timeout)
         raise TimeoutError(f'No matching ElectionEvent within {timeout}s.')
 
 
@@ -684,7 +684,7 @@ class ElectionSubscriber:
             if self.is_confirmed(txid):
                 LOG.debug(f'txid {txid} confirmed in _history')
                 return
-            time.sleep(OGMIOS_POLL_SEC) # TODO self.sleep?
+            self.sleep(OGMIOS_POLL_SEC)
         raise TimeoutError(f'txid {txid} not confirmed in _history within {timeout}s.')
 
 
@@ -701,7 +701,7 @@ class ElectionSubscriber:
                     if vkh == actual_vkh:
                         LOG.debug(f'Channel {ch_str} gives {vkh} role {role}.')
                         return ch_str
-            time.sleep(OGMIOS_POLL_SEC) # TODO self.sleep?
+            self.sleep(OGMIOS_POLL_SEC)
         raise TimeoutError(f'Channel for {vkh} with role {role} did not appear within {timeout}s.')
 
 
@@ -827,9 +827,11 @@ class ElectionSubscriber:
            and not self._kupo_thread.is_alive()
 
 
-    def sleep(self, seconds):
+    def sleep(self, seconds, jitter=True):
+        "Like time.sleep, except it short-circuits properly on shutdown and has optional jitter."
         log_call()
-        # This is kind of like time.sleep, except it short circuits properly during shutdown.
+        if jitter:
+            seconds *= random.uniform(0.8, 1.2)
         self._kupo_stop.wait(timeout=seconds)
 
 
@@ -941,7 +943,7 @@ class ElectionSubscriber:
                     matches_by_sc = self._fetch_matches_by_sc()
                     self._handle_matches(matches_by_sc)
 
-                self.sleep(KUPO_POLL_SEC) # TODO self.sleep?
+                self.sleep(KUPO_POLL_SEC)
             except requests.RequestException as e:
                 LOG.warning(f'Kupo polling error: {e}') # TODO error?
             except KeyboardInterrupt:
