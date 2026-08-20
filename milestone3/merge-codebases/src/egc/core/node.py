@@ -332,6 +332,8 @@ class ElectionNode:
         if len(utxos) > max_utxos:
             LOG.warning(f'Auto-consolidating UTXOs because there are more than {max_utxos}.')
             self.publisher.consolidate_utxos()
+            LOG.warning('Waiting one more block at the node level too.')
+            await_blocks(1) # TODO remove?
 
 
     ### contract operations ###

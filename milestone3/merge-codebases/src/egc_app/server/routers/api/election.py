@@ -69,19 +69,16 @@ def create_election(data: schemas.ElectionCreate, state=Depends(get_state)):
         context_backup_json = _context_backup_json_path(state),
     )
 
-    # TODO wait to subscribe until after tx confirms?
     _subscribe_to_election_config(state, election_cfg)
 
-    # TODO actually, could we skip the wait?
+    # TODO this block as util fn?
     try:
         state.node.await_tx_confirmed(tx)
-
     except (asyncio.TimeoutError, TimeoutError):
         raise HTTPException(
             status_code = HTTP_504_GATEWAY_TIMEOUT,
             default = f"TX failed to confirm: {tx}",
         )
-
     return Response(status_code=201)
 
 
