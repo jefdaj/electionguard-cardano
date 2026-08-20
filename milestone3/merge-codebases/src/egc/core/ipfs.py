@@ -24,6 +24,10 @@ LOG = logging.getLogger(__name__)
 IPFS_API_ADDR = os.environ.get('IPFS_API_ADDR', '/dns4/127.0.0.1/tcp/5001')
 LOG.info(f'IPFS_API_ADDR: {IPFS_API_ADDR}')
 
+# Force reconnect to all addr_hints if there have been CIDs pending with no
+# data transfer for this many seconds.
+IPFS_STUCK_WINDOW = 120
+
 
 class RetryingIPFS:
     """Thin retrying wrapper: handles CONNECTION-level failures (node
@@ -209,6 +213,11 @@ class IPFSService:
         self._retry_sem = None
         self._inflight = set() # CIDs being fetched right now (dedup)
 
+        # For detecting whether data transfers are stuck.
+        # (monotonic_time, blocks_sent, blocks_recv) at last meaningful poll
+        self._last_bitswap_snapshot: tuple[float, int, int] | None = None
+
+
     def _run_loop(self):
         "Lifecycle."
         asyncio.set_event_loop(self._loop)
@@ -315,34 +324,70 @@ class IPFSService:
         delay = random.uniform(0, cap) # full jitter
         self.store.mark_attempt(record, attempts, time.time() + delay)
 
+
     async def _ipfs_is_stuck(self):
-        # TODO does this ever happen more than once? if not, maybe startup related
-        # TODO take into account recent sent/recv, not just total
-        stat = await self.ipfs._client.bitswap.stat()
+        """Check bitswap stats and return True if the node appears stuck.
+
+        Returns True if:
+          - the IPFS node is unresponsive or returns bad data, OR
+          - there are pending wants but no data has moved in the last IPFS_STUCK_WINDOW seconds.
+        Updates self._last_bitswap_snapshot on success.
+        """
+        try:
+            stat = await self.ipfs._client.bitswap.stat()
+        except Exception as e:
+            LOG.error(f'failed to get bitswap stat (treating as stuck): {e}')
+            return True
+
         if stat is None:
-            LOG.error('failed to check whether ipfs is stuck. is it down?')
-            return False
+            LOG.error('bitswap stat returned None (treating as stuck)')
+            return True
+
         LOG.debug(f'stat: {stat}')
-        blocks_sent = int(stat.get('BlocksSent'    , 0))
+
+        blocks_sent = int(stat.get('BlocksSent',     0))
         blocks_recv = int(stat.get('BlocksReceived', 0))
-        n_waiting   = len(stat.get('Wantlist'      , 0))
-        return n_waiting > 0 and (blocks_sent + blocks_recv) == 0
+        n_waiting   = len(stat.get('Wantlist',      []))
+        now         = time.monotonic()
+
+        if n_waiting == 0:
+            # Nothing pending; update snapshot so the clock resets.
+            self._last_bitswap_snapshot = (now, blocks_sent, blocks_recv)
+            return False
+
+        # We have pending wants. Check whether any data has moved since
+        # the last snapshot.
+        if self._last_bitswap_snapshot is None:
+            # First poll with a non-empty wantlist; start the clock.
+            self._last_bitswap_snapshot = (now, blocks_sent, blocks_recv)
+            return False
+
+        snap_time, snap_sent, snap_recv = self._last_bitswap_snapshot
+
+        data_moved = (blocks_sent - snap_sent) + (blocks_recv - snap_recv)
+        if data_moved > 0:
+            # Progress since last snapshot; reset the clock.
+            self._last_bitswap_snapshot = (now, blocks_sent, blocks_recv)
+            return False
+
+        # No progress. Are we past the stuck window?
+        return (now - snap_time) >= self.IPFS_STUCK_WINDOW
 
     async def _force_reconnect(self, maddr: str):
         LOG.warning(f'_force_reconnect {maddr}')
         try:
             await self.ipfs._client.swarm.disconnect(maddr)
-        except:
+        except Exception:
             pass
         try:
             await self.ipfs._client.swarm.connect(maddr)
-        except:
+        except Exception:
             pass
 
-    async def _watchdog(self, interval=120, jitter=True):
-        """Force reconnect occasionally to prevent 'stuck' node (shows peers,
-        but no data is transferred). Not sure why, but this seems to be
-        required! At least in local Docker networks."""
+    async def _watchdog(self, interval=30, jitter=True):
+        """Force reconnect when the node appears stuck (peers connected but no
+        data moving). Polls every ~30s; triggers if nothing has transferred for
+        IPFS_STUCK_WINDOW seconds while wants are pending."""
         while True:
             if jitter:
                 await asyncio.sleep(interval * random.uniform(0.8, 1.2))
@@ -351,17 +396,20 @@ class IPFSService:
             try:
                 stuck = await self._ipfs_is_stuck()
             except Exception as e:
-                LOG.error(e)
-                # TODO should this also trigger force reconnect?
-                continue
+                # Shouldn't normally reach here — _ipfs_is_stuck handles its
+                # own errors — but treat unexpected exceptions as stuck too.
+                LOG.error(f'unexpected error in _ipfs_is_stuck (treating as stuck): {e}')
+                stuck = True
             if not stuck:
                 continue
             LOG.error('ipfs is stuck. force reconnecting all addrs...')
+            self._last_bitswap_snapshot = None  # reset so we don't re-trigger immediately
             for maddr in self.all_channel_addr_hints():
                 task = self._loop.create_task(self._force_reconnect(maddr))
                 task.add_done_callback(
                     lambda t: t.exception() and LOG.error(t.exception())
                 )
+
 
     async def _sweeper(self, jitter=True):
         """Retry lane: patient, bounded, forever, on a slow cadence.
@@ -536,7 +584,7 @@ class IPFSService:
 #             maddr = addr if "/p2p/" in addr else f"{addr}/p2p/{peer_id}"
 #         else:
 #             maddr = f"/p2p/{peer_id}"
-# 
+#
 #         LOG.debug(f'maddr: {maddr}')
 #         await self.ipfs._client.swarm.peering.add(maddr)
 #         LOG.info(f'added explicit peer {maddr}')
