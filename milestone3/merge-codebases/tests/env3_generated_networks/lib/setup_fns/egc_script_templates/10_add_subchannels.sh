@@ -1,9 +1,8 @@
 {% extends "08_admin_post_batch.sh" %}
+
 {% block body %}
 {{ super() }}
-# TODO set -euo pipefail overall?
-
-readonly max_per_tx=4
+max_per_tx=4
 declare -A paths_posted
 n_posted=0
 
@@ -42,4 +41,10 @@ while (( n_posted < N_SUBS )); do
 done
 
 timeout 900 egc phase await --phase config_ceremony_round1
+{% endblock %}
+
+{% block report %}
+egc election events
+[[ $n_posted == $N_SUBS ]] && echo "all subchannels added"
+egc phase get
 {% endblock %}

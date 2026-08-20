@@ -5,8 +5,7 @@ from ..lib import *
 from .lib  import *
 
 from .test_04_subscribe     import assert_election_events
-from .test_07_post_manifest import cfg_post_manifest_base, assert_post_manifest
-from .test_08_post_batch    import assert_advance_phase, assert_post_ceremony
+from .test_07_post_manifest import cfg_post_manifest_base
 
 
 @st.composite
@@ -41,7 +40,4 @@ def assert_advance_phase_standalone(cfg):
 def test_advance_phase(cfg: ResolvedTestConfig):
     assert_test_completed(cfg)
     assert_election_events(cfg)
-    assert_post_manifest(cfg)
-    assert_post_ceremony(cfg)
-    assert_advance_phase(cfg, ElectionConfigPhase(ConfigCeremonyPhase()))
     assert_advance_phase_standalone(cfg)

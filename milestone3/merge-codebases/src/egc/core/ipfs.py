@@ -335,10 +335,7 @@ class IPFSService:
 
     async def _ipfs_is_stuck(self):
         """Check bitswap stats and return True if the node appears stuck.
-
-        Returns True if:
-          - the IPFS node is unresponsive or returns bad data, OR
-          - there are pending wants but no data has moved in the last IPFS_STUCK_WINDOW seconds.
+        Returns True if there are pending wants but no data has moved in the last IPFS_STUCK_WINDOW seconds.
         Updates self._last_bitswap_snapshot on success.
         """
         if not await self._ipfs_is_reachable():
@@ -347,12 +344,11 @@ class IPFSService:
         try:
             stat = await self.ipfs._client.bitswap.stat()
         except Exception as e:
-            LOG.error(f'failed to get bitswap stat (treating as stuck): {e}')
-            return True
-
+            LOG.error(f'failed to get bitswap stat; skipping stuck check: {e}')
+            return False
         if stat is None:
-            LOG.error('bitswap stat returned None (treating as stuck)')
-            return True
+            LOG.error('bitswap stat returned None; skipping stuck check')
+            return False
 
         LOG.debug(f'stat: {stat}')
 

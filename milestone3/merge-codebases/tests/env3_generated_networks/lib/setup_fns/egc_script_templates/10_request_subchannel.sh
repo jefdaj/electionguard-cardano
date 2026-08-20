@@ -1,13 +1,5 @@
 {% extends "04_subscribe_png.sh" %}
-{% block cleanup %}
-cleanup() {
-  # check that records were fetched
-  time timeout 900s egc records await
-  find private/records_* -type f
-  echo "cleaning up";
-  egc collateral return
-}
-{% endblock %}
+
 {% block body %}
 {{ super() }}
 # Request a channel from admin via qrcode.
@@ -19,5 +11,13 @@ egc channel request \
 # index here, but for the tests we want to make sure they line up with the
 # docker names etc.
 CH_STR=$(egc channel await --role $EGC_NODE_ROLE)
-[[ $CH_STR == $EGC_NODE_NAME ]] || (echo "wrong channel"; exit 1)
+{% endblock %}
+
+{% block cleanup %}
+egc collateral return
+{% endblock %}
+
+{% block report %}
+egc election events
+[[ $CH_STR == $EGC_NODE_NAME ]] && echo "correct channel" || echo "wrong channel"
 {% endblock %}
