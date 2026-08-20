@@ -47,10 +47,7 @@ def assert_advance_phase(cfg, phase: ElectionPhase):
     ])
     
 
-@given_cached_tests(
-    cfg_strategy = cfg_post_batch(),
-    max_examples = 1,
-)
+@given_cached_tests(cfg_strategy=cfg_post_batch(), max_examples=1)
 def test_post_batch(cfg: ResolvedTestConfig):
     assert_test_completed(cfg)
     assert_election_events(cfg)

@@ -4,12 +4,9 @@ from egc import *
 from ..lib import *
 from .lib  import *
 
-from .test_02_create_wallet import assert_wallet_created
-from .test_03_node_ready    import assert_node_ready
 from .test_04_subscribe     import assert_election_events
-from .test_06_admin_post_ipfs import assert_admin_post_ipfs
-from .test_07_post_manifest import cfg_post_manifest_base, assert_post_manifest
-from .test_08_post_batch    import assert_advance_phase, assert_post_manifest, assert_post_ceremony
+from .test_07_post_manifest import cfg_post_manifest_base
+from .test_08_post_batch    import assert_advance_phase
 
 
 @st.composite
@@ -38,17 +35,9 @@ def assert_add_subchannels(cfg):
     ])
 
 
-@given_cached_tests(
-    cfg_strategy = cfg_add_subchannels(),
-    max_examples = 1,
-)
+@given_cached_tests(cfg_strategy=cfg_add_subchannels(), max_examples=1)
 def test_add_subchannels(cfg: ResolvedTestConfig):
     assert_test_completed(cfg)
-    assert_wallet_created(cfg)
-    assert_node_ready(cfg)
-    # TODO put back assert_election_events(cfg)
-    assert_admin_post_ipfs(cfg)
-    # TODO put back assert_post_manifest(cfg)
-    # TODO put backassert_post_ceremony(cfg)
-    # assert_advance_phase(cfg, ElectionConfigPhase(ConfigCeremonyPhase()))
+    assert_election_events(cfg)
+    assert_advance_phase(cfg, ElectionConfigPhase(ConfigCeremonyPhase()))
     assert_add_subchannels(cfg)

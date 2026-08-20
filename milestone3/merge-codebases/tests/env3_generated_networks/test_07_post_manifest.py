@@ -49,10 +49,7 @@ def assert_post_manifest(cfg):
     ])
 
 
-@given_cached_tests(
-    cfg_strategy = cfg_post_manifest(),
-    max_examples = 1,
-)
+@given_cached_tests(cfg_strategy=cfg_post_manifest(), max_examples=1)
 def test_post_manifest(cfg: ResolvedTestConfig):
     assert_test_completed(cfg)
     assert_election_events(cfg)
