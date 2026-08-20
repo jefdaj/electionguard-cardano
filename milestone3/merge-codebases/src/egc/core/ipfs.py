@@ -316,7 +316,8 @@ class IPFSService:
         self.store.mark_attempt(record, attempts, time.time() + delay)
 
     async def _ipfs_is_stuck(self):
-        # TODO why does this happen?
+        # TODO does this ever happen more than once? if not, maybe startup related
+        # TODO take into account recent sent/recv, not just total
         stat = await self.ipfs._client.bitswap.stat()
         if stat is None:
             LOG.error('failed to check whether ipfs is stuck. is it down?')
@@ -327,8 +328,8 @@ class IPFSService:
         n_waiting   = len(stat.get('Wantlist'      , 0))
         return n_waiting > 0 and (blocks_sent + blocks_recv) == 0
 
-    async def force_reconnect(self, maddr: str):
-        LOG.warning(f'force_reconnect {maddr}')
+    async def _force_reconnect(self, maddr: str):
+        LOG.warning(f'_force_reconnect {maddr}')
         try:
             await self.ipfs._client.swarm.disconnect(maddr)
         except:
@@ -342,17 +343,22 @@ class IPFSService:
         """Force reconnect occasionally to prevent 'stuck' node (shows peers,
         but no data is transferred). Not sure why, but this seems to be
         required! At least in local Docker networks."""
-        if jitter:
-            interval *= random.uniform(0.6, 1.4)
         while True:
-            await asyncio.sleep(interval)
-            stuck = await self._ipfs_is_stuck()
+            if jitter:
+                await asyncio.sleep(interval * random.uniform(0.8, 1.2))
+            else:
+                await asyncio.sleep(interval)
+            try:
+                stuck = await self._ipfs_is_stuck()
+            except Exception as e:
+                LOG.error(e)
+                # TODO should this also trigger force reconnect?
+                continue
             if not stuck:
-                # LOG.debug('not stuck! skip force reconnects')
-                return
+                continue
             LOG.error('ipfs is stuck. force reconnecting all addrs...')
             for maddr in self.all_channel_addr_hints():
-                task = self._loop.create_task(self.force_reconnect(maddr))
+                task = self._loop.create_task(self._force_reconnect(maddr))
                 task.add_done_callback(
                     lambda t: t.exception() and LOG.error(t.exception())
                 )
