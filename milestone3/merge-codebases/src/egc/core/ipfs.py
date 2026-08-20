@@ -325,6 +325,14 @@ class IPFSService:
         self.store.mark_attempt(record, attempts, time.time() + delay)
 
 
+    async def _ipfs_is_reachable(self) -> bool:
+        """Lightweight check — returns False if the IPFS node is down."""
+        try:
+            await self.ipfs._client.version()
+            return True
+        except Exception:
+            return False
+
     async def _ipfs_is_stuck(self):
         """Check bitswap stats and return True if the node appears stuck.
 
@@ -333,6 +341,9 @@ class IPFSService:
           - there are pending wants but no data has moved in the last IPFS_STUCK_WINDOW seconds.
         Updates self._last_bitswap_snapshot on success.
         """
+        if not await self._ipfs_is_reachable():
+            LOG.warning('ipfs node is unreachable; skipping stuck check')
+            return False # not "stuck" in the reconnectable sense — nothing to reconnect to
         try:
             stat = await self.ipfs._client.bitswap.stat()
         except Exception as e:
@@ -396,10 +407,8 @@ class IPFSService:
             try:
                 stuck = await self._ipfs_is_stuck()
             except Exception as e:
-                # Shouldn't normally reach here — _ipfs_is_stuck handles its
-                # own errors — but treat unexpected exceptions as stuck too.
-                LOG.error(f'unexpected error in _ipfs_is_stuck (treating as stuck): {e}')
-                stuck = True
+                LOG.error(f'unexpected error in _ipfs_is_stuck: {e}')
+                continue
             if not stuck:
                 continue
             LOG.error('ipfs is stuck. force reconnecting all addrs...')
