@@ -25,28 +25,20 @@ def cfg_subs_post_ipfs(draw):
     return cfg
 
 
-@given_cached_tests(cfg_strategy=cfg_subs_post_ipfs(), max_examples=1)
+def assert_peer_id_posted(cfg, node_name: str):
+    assert_script_logs_match(cfg, '.*', [
+        f'{node_name} posted ipfs peer_id',
+        f'"{node_name}": ."peer_id": "12D3Koo',
+    ])
+
+
+def assert_all_peer_ids_posted(cfg):
+    assert_script_logs_match(cfg, 'admin', ['^all peer_ids on chain$'])
+    for n in cfg.node_names():
+        assert_peer_id_posted(cfg, n)
+
+
+@given_cached_tests(cfg_strategy=cfg_subs_post_ipfs(), max_examples=5)
 def test_subs_post_ipfs(cfg: ResolvedTestConfig):
     assert_test_completed(cfg)
-    # assert_script_logs_match(cfg, 'admin', [
-        # 'CH_STR=admin$',
-        # 'egc collateral await$',
-        # '^private.*manifest\\.json$',
-    # ])
-    # assert_node_logs_match(cfg, '.*', [
-
-        # TODO get this working reliably... maybe wait longer? tweak ipfs?
-        # 'fetched.*CeremonyDetails',
-
-    # ])
-    # assert_node_logs_match(cfg, 'admin', [
-        # 'GET /api/channel/await\\?role=admin',
-        # 'GET /api/collateral/await',
-        # 'POST /api/ceremony/create',
-        # 'POST /api/records/post.*201$',
-        # 'admin posted PublicRecord.*metadata=Manifest',
-    # ])
-    # assert_script_logs_match(cfg, '(?!admin)', [
-        # 'admin posted Manifest',
-        # '^[0-9]{9,}\\s.*ended election',
-    # ])
+    assert_all_peer_ids_posted(cfg)
