@@ -6,8 +6,6 @@ from egc import *
 from ..lib import *
 from .lib  import *
 
-from .test_02_create_wallet import assert_wallet_created
-
 
 @st.composite
 def cfg_node_ready(draw):
@@ -23,11 +21,13 @@ def cfg_node_ready(draw):
 
 
 def assert_node_ready(cfg):
-    assert_script_logs_match(cfg, '.*', ['^node is ready$'])
+    assert_script_logs_match(cfg, '.*', [
+        '"cardano": {"connected": true, "sync_percent": 100',
+        '"ipfs": {"connected": true',
+    ])
 
 
 @given_cached_tests(cfg_node_ready(), max_examples=1)
 def test_node_ready(cfg: ResolvedTestConfig):
     assert_test_completed(cfg)
-    assert_wallet_created(cfg)
     assert_node_ready(cfg)

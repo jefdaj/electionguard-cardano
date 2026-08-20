@@ -6,7 +6,7 @@ from .lib  import *
 
 from .test_02_create_wallet import assert_wallet_created
 from .test_03_node_ready    import assert_node_ready
-from .test_04_subscribe     import assert_endelection_event
+from .test_04_subscribe     import assert_election_events
 from .test_05_init_election import cfg_init_election_base
 
 
@@ -54,6 +54,6 @@ def test_admin_post_ipfs(cfg: ResolvedTestConfig):
     assert_test_completed(cfg)
     assert_wallet_created(cfg)
     assert_node_ready(cfg)
-    assert_endelection_event(cfg)
+    assert_election_events(cfg)
     assert_admin_post_ipfs(cfg)
     assert_subchannels_show_ipfs(cfg)

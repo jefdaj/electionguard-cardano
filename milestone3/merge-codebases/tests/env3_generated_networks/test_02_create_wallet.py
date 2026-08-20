@@ -6,8 +6,6 @@ from egc import *
 from ..lib import *
 from .lib  import *
 
-from .test_01_cleanup import assert_cleanup_called
-
 
 @st.composite
 def cfg_create_wallet(draw):
@@ -24,7 +22,7 @@ def cfg_create_wallet(draw):
 
 def assert_wallet_created(cfg):
     assert_script_logs_match(cfg, '.*', [
-        '^\\s*"addr": "addr_test1'
+        '^{.*"addr": "addr_test1'
     ])
     assert_node_logs_match(cfg, '.*', [
         'PUT /api/wallet',
@@ -35,5 +33,4 @@ def assert_wallet_created(cfg):
 @given_cached_tests(cfg_create_wallet(), max_examples=1)
 def test_create_wallet(cfg: ResolvedTestConfig):
     assert_test_completed(cfg)
-    assert_cleanup_called(cfg)
     assert_wallet_created(cfg)

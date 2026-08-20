@@ -6,7 +6,7 @@ from .lib  import *
 
 
 @st.composite
-def cfg_cleanup_called(draw):
+def cfg_base_script(draw):
     cfg = draw( cfg_test_base() )
     cfg = append_config_fn_name(cfg)
     cfg = append_setup_fns(cfg, [
@@ -18,12 +18,15 @@ def cfg_cleanup_called(draw):
     return cfg
 
 
-def assert_cleanup_called(cfg):
-    assert_script_logs_match(cfg, '.*', ['^cleaning up$'])
+def assert_base_script(cfg):
+    assert_script_logs_match(cfg, '.*', [
+        '^cleanup here$',
+        '^report here$',
+    ])
     assert_node_logs_match(cfg, '.*', ['Stopped.*node.$'])
 
 
-@given_cached_tests(cfg_cleanup_called(), max_examples=1)
-def test_cleanup_called(cfg: ResolvedTestConfig):
+@given_cached_tests(cfg_base_script(), max_examples=1)
+def test_base_script(cfg: ResolvedTestConfig):
     assert_test_completed(cfg)
-    assert_cleanup_called(cfg)
+    assert_base_script(cfg)

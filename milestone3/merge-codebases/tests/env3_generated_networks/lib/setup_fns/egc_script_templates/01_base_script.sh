@@ -14,26 +14,38 @@ PS4='+ {{node_name}} $(date "+%H:%M:%S") '
 set -x
 {% endif %}
 {% endblock %}
+
+cleanup() {
 {% block cleanup %}
-cleanup() { echo "cleaning up"; }
+echo "cleanup here"
 {% endblock %}
+}
+
+report() {
+{% block report %}
+echo "report here"
+{% endblock %}
+}
 
 {% block onexit %}
-# run cleanup before exiting
+# run cleanup + report before exiting
 export -f cleanup
+export -f report
 on_exit() {
   local return_code=$?
   trap - EXIT INT TERM
   set +e
   cleanup & local cleanup_pid=$!
-  # 10min timeout to burn tokens + recover collateral
-  (sleep 900; kill -KILL "$cleanup_pid" 2>/dev/null) & local watchdog_pid=$!
+  # long timeout to burn tokens, recover collateral, fetch files, etc
+  (sleep 1200; kill -KILL "$cleanup_pid" 2>/dev/null) & local watchdog_pid=$!
   wait "$cleanup_pid" || echo "cleanup failed" >&2
   kill "$watchdog_pid" 2>/dev/null
   wait "$watchdog_pid" 2>/dev/null
+  report # TODO timeout?
   exit $return_code
 }
 trap on_exit EXIT INT TERM
-{% endblock %}
+{% endblock -%}
+
 {% block body %}
 {% endblock %}

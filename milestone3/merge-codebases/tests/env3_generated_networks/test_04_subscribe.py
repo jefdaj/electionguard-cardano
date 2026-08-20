@@ -6,9 +6,6 @@ from egc import *
 from ..lib import *
 from .lib  import *
 
-from .test_02_create_wallet import assert_wallet_created
-from .test_03_node_ready    import assert_node_ready
-
 
 @st.composite
 def cfg_subscribe_txt(draw):
@@ -27,23 +24,22 @@ def cfg_subscribe_txt(draw):
     return cfg
 
 
-def assert_endelection_event(cfg):
-    assert_script_logs_match(cfg, '(?!admin)', [
+def assert_election_events(cfg):
+    assert_script_logs_match(cfg, '.*', [
+
+        '^[0-9]{9,}\\s.*funder authorized admin',
+
         # some of the test qr_strs point to elections that never finished,
         # so timing out is the expected/correct behavior
-        '^[0-9]{9,}\\s.*(ended election|subscriber timed out)'
+        '^[0-9]{9,}\\s.*(ended election|subscriber timed out)',
+
    ])
 
 
-@given_cached_tests(
-    cfg_strategy = cfg_subscribe_txt(),
-    max_examples = 1,
-)
+@given_cached_tests(cfg_strategy=cfg_subscribe_txt(), max_examples=1)
 def test_subscribe_txt(cfg: ResolvedTestConfig):
     assert_test_completed(cfg)
-    assert_wallet_created(cfg)
-    assert_node_ready(cfg)
-    assert_endelection_event(cfg)
+    assert_election_events(cfg)
 
 
 @st.composite
@@ -63,12 +59,7 @@ def cfg_subscribe_png(draw):
     return cfg
 
 
-@given_cached_tests(
-    cfg_strategy = cfg_subscribe_png(),
-    max_examples = 1,
-)
+@given_cached_tests(cfg_strategy=cfg_subscribe_png(), max_examples=1)
 def test_subscribe_png(cfg: ResolvedTestConfig):
     assert_test_completed(cfg)
-    assert_wallet_created(cfg)
-    assert_node_ready(cfg)
-    assert_endelection_event(cfg)
+    assert_election_events(cfg)
