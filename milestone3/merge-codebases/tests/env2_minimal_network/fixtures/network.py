@@ -8,7 +8,7 @@ from egc import *
 
 # TODO what should this yield, if anything?
 # TODO how to force arion down on pytest exceptions, keyboardinturrupt etc?
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='module')
 def env2_arion_network(request):
     compose_dir = Path(__file__).parent.parent
     # in case of leftovers from a previous run:
@@ -21,7 +21,7 @@ def env2_arion_network(request):
         subprocess.run(["arion", "down", "--remove-orphans", "--volumes"], cwd=compose_dir, check=False)
         # time.sleep(5) # TODO remove?
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='module')
 def env2_ogmios(env2_arion_network) -> OgmiosV6ChainContext:
     ctx = OGMIOS_CTX
     deadline = time.monotonic() + OGMIOS_TIMEOUT_SEC
@@ -41,11 +41,11 @@ def env2_ogmios(env2_arion_network) -> OgmiosV6ChainContext:
             raise TimeoutError(f'ogmios not ready after {OGMIOS_TIMEOUT_SEC}s.')
         time.sleep(OGMIOS_POLL_SEC)
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='module')
 def env2_records_fetched_dir(env2_tmp_root: Path):
         return env2_tmp_root / 'env2_ipfs' / 'records_fetched'
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='module')
 def env2_ipfs(env2_arion_network, env2_tmp_root: Path, env2_records_fetched_dir: Path):
     ipfs_ = IPFSService(
         records_to_post_dir = env2_tmp_root / 'env2_ipfs' / 'records_to_post',
