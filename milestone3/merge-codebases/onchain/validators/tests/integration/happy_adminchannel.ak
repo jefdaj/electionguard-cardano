@@ -73,8 +73,8 @@ const minimal_states = [
 // and the phase at index n in the minimal_states list.
 fn minimal_state(n: Int) -> AdminChannelState {
   expect Some((seq, phase)) = list.at(minimal_states, n-1) // zero indexed
-  trace @"seq" : seq
-  trace @"phase" : phase
+  // trace @"seq" : seq
+  // trace @"phase" : phase
   AdminChannelState {
     ..state0(),
     phase: phase,

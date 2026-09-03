@@ -121,7 +121,7 @@ fn validate_verifier_id_pattern(
 }
 
 pub fn validate_metadata(metadata: PublicRecordMetadata) -> Bool {
-  trace @"validate_metadata" : metadata
+  // trace @"validate_metadata" : metadata
   when metadata is {
 
     GuardianPubkey { guardian_number } -> validate_guardian_number(guardian_number)

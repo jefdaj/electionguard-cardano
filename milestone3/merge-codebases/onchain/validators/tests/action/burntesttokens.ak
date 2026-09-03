@@ -90,7 +90,7 @@ const happy_stt_input_list = list.flat_map(
 pub fn happy_stt_input() -> Fuzzer<Input> {
   fuzz.int_between(0, list.length(happy_stt_input_list) - 1)
     |> fuzz.map(fn(i) {
-      trace @"i" : i
+      // trace @"i" : i
       when list.at(happy_stt_input_list, i) is {
         Some(input) -> input
         None -> fail @"Index out of bounds"

@@ -114,7 +114,7 @@ fn election_validate_spend(
   tx: Transaction,
 ) -> Bool {
   trace @"election_validate_spend"
-  trace @"datum" : datum
+  // trace @"datum" : datum
   // TODO have to filter out inputs that aren't from the contract here, so it doesn't fail on the oneshot utxo?
   expect InlineDatum(d) = datum
   expect state: ChannelState = d
@@ -131,7 +131,7 @@ pub fn subchannel_datum(state: SubChannelState) -> Datum {
 
 pub fn mint_stt(channel_id: ChannelId) -> Value {
   let stt_name = stt.full_stt_name(channel_id)
-  trace @"mint_stt stt_name" : string.from_bytearray(stt_name)
+  // trace @"mint_stt stt_name" : string.from_bytearray(stt_name)
   assets.from_asset(
     policy_id: policy_id(),
     asset_name: stt_name,
