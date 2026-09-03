@@ -3,7 +3,8 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    aiken.url   = "github:aiken-lang/aiken/v1.1.21";
+    # aiken.url   = "github:aiken-lang/aiken/v1.1.21";
+    aiken.url   = "path:/mnt/data/git/aiken";
     arion.url = "github:jefdaj/arion/rm-obsolete-version-attribute";
     electionguard-python = {
       url = "github:jefdaj/electionguard-python/nix-lib-outputs";
