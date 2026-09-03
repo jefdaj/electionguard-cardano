@@ -3,11 +3,10 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    # aiken.url   = "github:aiken-lang/aiken/v1.1.21";
-    aiken.url   = "path:/mnt/data/git/aiken";
+    aiken.url   = "github:jefdaj/aiken"; # TODO back to upstream?
     arion.url = "github:jefdaj/arion/rm-obsolete-version-attribute";
     electionguard-python = {
-      url = "github:jefdaj/electionguard-python/nix-lib-outputs";
+      url = "github:jefdaj/electionguard-python";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     pyproject-nix = {
