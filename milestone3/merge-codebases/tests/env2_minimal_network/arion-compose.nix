@@ -27,9 +27,7 @@ let
   };
 
   ogmiosService = {
-    # TODO is this also compatible with pycardano? or do I need to keep the old one?
-    # image = "11a9e511ae98"; # TODO upgrade once there's a node 11 compatible pycardano
-    image = "cardanosolutions/ogmios:v7.0.0";
+    image = "jefdaj/ogmios-nix:latest";
     restart = "on-failure";
     command = [
       "--host"        "0.0.0.0"

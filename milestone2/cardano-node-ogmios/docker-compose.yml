@@ -23,7 +23,7 @@ services:
       - shared-net
 
   ogmios:
-    # TODO time to retire my fork now?
+    # TODO push jefdaj/ogmios-nix to ghcr and use here
     image: cardanosolutions/ogmios:v7.0.0
     restart: on-failure
     command: [
