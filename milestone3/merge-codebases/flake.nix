@@ -252,7 +252,7 @@
               UV_PYTHON_DOWNLOADS = "never";
               PYTHONDONTWRITEBYTECODE = true;
               EGC_PLUTUS_DIR   = "${plutusBlueprints}";
-              EGC_CARDANO_DIR  = "../../milestone2/cardano-node-ogmios";
+              EGC_CARDANO_DIR  = "../../milestone2/cardano-node-ogmios"; # TODO point directly to actual path
               EGC_NETWORK_MODE = "preview";
               EGC_PLUTUS_MODE  = "burntesttokens-compact";
               EGC_WALLET_MODE  = "scripted";
