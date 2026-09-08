@@ -621,26 +621,27 @@ class ElectionSubscriber:
 
     # TODO accept optional channel_id?
     # TODO underscore this?
-    def all_events(self) -> list[ChannelEvent]:
+    def all_channel_events(self) -> list[ChannelEvent]:
         # All events in _history, sorted by (slot_no, ch_str)
-        events: dict[int, list[ChannelEvent]] = {}
+        events_dict: dict[int, list[ChannelEvent]] = {}
         with self._history_lock:
             for (ch, es) in self._history.items():
                 s = channel_id_to_string(ch)
                 for e in es:
                     k = (e.slot_no, s)
-                    if not k in events:
-                        events[k] = []
-                    events[k].append(e)
-        events2 = []
-        for k in sorted(list(events.keys())):
-            events2 += events[k]
-        return events2
+                    if not k in events_dict:
+                        events_dict[k] = []
+                    events_dict[k].append(e)
+        events_list = []
+        for k in sorted(list(events_dict.keys())):
+            events_list += events_dict[k]
+        assert len(events_list) == len(events_dict)
+        return events_list
 
 
     def all_election_events(self) -> list[ElectionEvent]:
         es = []
-        for ch_evt in self.all_events():
+        for ch_evt in self.all_channel_events():
             es += election_events(ch_evt)
         if self._fatal_error is not None:
             es.append(self._fatal_error)
@@ -664,8 +665,10 @@ class ElectionSubscriber:
 
     # TODO n_confirmations
     def is_confirmed(self, txid: str) -> bool:
+        assert txid is not None # TODO does this help?
+        txid = str(txid) # TODO does this help?
         # Does _history contain this txid?
-        events: list[ChannelEvent] = self.all_events()
+        events: list[ChannelEvent] = self.all_channel_events()
         for e in events:
             if e.input_match and e.input_match['transaction_id'] == txid:
                 return True
@@ -708,7 +711,7 @@ class ElectionSubscriber:
     def all_records(self) -> list[PublicRecord]:
         # All records in _history, sorted by slot_no
         records = []
-        for e in self.all_events():
+        for e in self.all_channel_events():
             # TODO just out states should cover it, right?
             if e.output_state:
                 records += e.output_state.state.new_records
@@ -1368,7 +1371,6 @@ class ElectionSubscriber:
 
     def _is_duplicate_event(self, event) -> bool:
         log_call()
-        # TODO why are there sometimes duplicates of all events at once?
         i = event.channel_id
         with self._history_lock:
             if i in self._history:
