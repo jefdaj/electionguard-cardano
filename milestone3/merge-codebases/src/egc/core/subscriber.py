@@ -520,21 +520,22 @@ class ElectionSubscriber:
             return deepcopy(self._history)
 
 
-    def channel_history(self, channel_id: ChannelId) -> list[ChannelEvent]:
+    def channel_history(self, channel_id: ChannelId) -> Optional[list[ChannelEvent]]:
         # Works fine on already-closed channels. Raises KeyError on not-yet-opened ones.
         # TODO return copies from all public methods
         log_call()
         with self._history_lock:
-            return deepcopy(self._history[channel_id]) # TODO return None rather than raise KeyError?
+            if not channel_id in self._history:
+                return None # different from []
+            return deepcopy(self._history[channel_id])
 
 
     def current_utxo(self, channel_id: ChannelId) -> Optional[UTxO]:
         # Returns None if the channel hasn't been opened yet or was already closed
         # TODO return copies from all public methods
         log_call()
-        try:
-            event = self.channel_history(channel_id)[-1]
-        except KeyError:
+        event = self.channel_history(channel_id)[-1]
+        if event is None:
             return None
         match = event.output_match
         if match is None:
@@ -547,12 +548,11 @@ class ElectionSubscriber:
         # Returns None if the channel hasn't been opened yet or was already closed
         # TODO return copies from all public methods
         log_call()
-        try:
-            with self._history_lock:
-                event = self.channel_history(channel_id)[-1]
-                return deepcopy(event.output_state) # may also be None
-        except (KeyError, IndexError):
-            return None
+        with self._history_lock:
+            event = self.channel_history(channel_id)[-1]
+            if event is None or not event.output_state:
+                return None
+            return deepcopy(event.output_state)
 
 
     def current_states(self) -> dict[str, Optional[ChannelState]]:
@@ -567,9 +567,8 @@ class ElectionSubscriber:
     def current_phase(self) -> EgcPhase:
         log_call()
         with self._history_lock:
-            try:
-                event = deepcopy(self.channel_history(ADMIN_CHANNEL_ID)[-1])
-            except:
+            event = deepcopy(self.channel_history(ADMIN_CHANNEL_ID)[-1])
+            if event is None:
                 event = None
         try:
             phase = event.output_state.state.phase
@@ -731,13 +730,18 @@ class ElectionSubscriber:
         log_call()
         try:
             with self._history_lock:
-                event = self.channel_history(ADMIN_CHANNEL_ID)[-1]
+                hist =  self.channel_history(ADMIN_CHANNEL_ID)
+                if hist is None:
+                    return None
+                event = hist[-1]
                 state = event.output_state if event.output_state else event.input_state
                 vkh   = VerificationKeyHash(state.state.admin)
                 addr  = Address(payment_part=vkh, network=Network.TESTNET) # TODO dynamic network
                 return addr
         except Exception as e:
             LOG.error(e)
+            # import traceback
+            # traceback.print_exc()
             return None
 
 
@@ -745,6 +749,7 @@ class ElectionSubscriber:
     def channel_vkh(self, channel_id: ChannelId) -> VerificationKeyHash:
         with self._history_lock:
             event = self.channel_history(channel_id)[-1]
+        assert event is not None
         state = event.output_state if event.output_state else event.input_state
         if channel_id == ADMIN_CHANNEL_ID:
             vkh = VerificationKeyHash(state.state.admin)
@@ -826,6 +831,8 @@ class ElectionSubscriber:
 
     def is_done(self):
         log_call()
+        if self._kupo_thread is None:
+            return False # TODO is that right?
         return self._kupo_stop.is_set() \
            and not self._kupo_thread.is_alive()
 
@@ -1043,10 +1050,16 @@ class ElectionSubscriber:
                 # then time out if it's been a long time since the election started
                 # AND a new block comes in.
                 # TODO should it time out before waiting for the new block?
-                if self._latest_event_slot is not None and len(self._checkpoints) > 1:
-                    slots_since_event = tip.slot_no - self._latest_event_slot
+                if len(self._checkpoints) > 1:
+                    if self._latest_event_slot is None:
+                        # Treat deployment as the initial event
+                        # TODO set that during __init__ and remove special case here?
+                        latest_event_slot = self.election.deployment.since_slot
+                    else:
+                        latest_event_slot = self._latest_event_slot
+                    slots_since_event = tip.slot_no - latest_event_slot
                     if slots_since_event > self._timeout_slots:
-                        self._handle_timeout(tip.slot_no, self._latest_event_slot)
+                        self._handle_timeout(tip.slot_no, latest_event_slot)
 
                 return True
 
@@ -1450,7 +1463,7 @@ class ElectionSubscriber:
 
     def _handle_timeout(self, current_slot: int, latest_event_slot: int):
         log_call()
-        slots_since_event = current_slot - self._latest_event_slot
+        slots_since_event = current_slot - latest_event_slot
         err = election_error('timeout', {'slot_since_last_event': slots_since_event})
 
         # TODO clean this up
