@@ -567,9 +567,11 @@ class ElectionSubscriber:
     def current_phase(self) -> EgcPhase:
         log_call()
         with self._history_lock:
-            event = deepcopy(self.channel_history(ADMIN_CHANNEL_ID)[-1])
-            if event is None:
+            hist = self.channel_history(ADMIN_CHANNEL_ID)
+            if hist is None:
                 event = None
+            else:
+                event = deepcopy(hist[-1])
         try:
             phase = event.output_state.state.phase
         except:
@@ -748,7 +750,7 @@ class ElectionSubscriber:
     # TODO rename?
     def channel_vkh(self, channel_id: ChannelId) -> VerificationKeyHash:
         with self._history_lock:
-            event = self.channel_history(channel_id)[-1]
+            event = self.channel_history(channel_id)[-1] # TODO raise a more informative error if no history?
         assert event is not None
         state = event.output_state if event.output_state else event.input_state
         if channel_id == ADMIN_CHANNEL_ID:
