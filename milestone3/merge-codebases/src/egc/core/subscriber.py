@@ -534,9 +534,10 @@ class ElectionSubscriber:
         # Returns None if the channel hasn't been opened yet or was already closed
         # TODO return copies from all public methods
         log_call()
-        event = self.channel_history(channel_id)[-1]
-        if event is None:
+        hist = self.channel_history(channel_id)
+        if hist is None:
             return None
+        event = hist[-1]
         match = event.output_match
         if match is None:
             return None
@@ -549,7 +550,10 @@ class ElectionSubscriber:
         # TODO return copies from all public methods
         log_call()
         with self._history_lock:
-            event = self.channel_history(channel_id)[-1]
+            hist = self.channel_history(channel_id)
+            if hist is None:
+                return None
+            event = hist[-1]
             if event is None or not event.output_state:
                 return None
             return deepcopy(event.output_state)
@@ -750,7 +754,10 @@ class ElectionSubscriber:
     # TODO rename?
     def channel_vkh(self, channel_id: ChannelId) -> VerificationKeyHash:
         with self._history_lock:
-            event = self.channel_history(channel_id)[-1] # TODO raise a more informative error if no history?
+            hist = self.channel_history(channel_id)
+            if hist is None:
+                raise Exception(f'No history for channel {channel_id}') # TODO proper error here?
+            event = hist[-1]
         assert event is not None
         state = event.output_state if event.output_state else event.input_state
         if channel_id == ADMIN_CHANNEL_ID:
