@@ -3,7 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    aiken.url   = "github:jefdaj/aiken"; # TODO back to upstream?
+    aiken.url   = "github:jefdaj/aiken/nix-flake-update-fix-crate-403";
     arion.url = "github:jefdaj/arion/rm-obsolete-version-attribute";
     electionguard-python = {
       url = "github:jefdaj/electionguard-python";
