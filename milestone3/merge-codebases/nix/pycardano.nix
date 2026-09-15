@@ -8,8 +8,8 @@
   cachetools,
   base58,
   cbor2,
-  cbor2pure,
   cose,
+  crc8,
   docker,
   ecpy,
   frozendict,
@@ -46,8 +46,14 @@ buildPythonPackage rec {
   src = fetchFromGitHub {
     owner = "Python-Cardano";
     repo = "pycardano";
-    tag = "v${version}";
-    hash = "sha256-aLePVslTCm5NJ0s3w8gK7AeWeg8rKDYC2uxg/WJ3bjY=";
+
+    # TODO back to this format once there's a release compatible with node 11
+    # tag = "v${version}";
+    # hash = "sha256-aLePVslTCm5NJ0s3w8gK7AeWeg8rKDYC2uxg/WJ3bjY=";
+
+    rev = "877be3ad9a2221fce7eac777c9927430cbc3b868";
+    hash = "sha256-Aea1OSXj3v9kxCLnvPXShW297slqIsg9B7eMP3p498Y=";
+
   };
 
   build-system = [
@@ -59,7 +65,7 @@ buildPythonPackage rec {
     cachetools
     base58
     cbor2
-    cbor2pure
+    crc8
     cose_0_9_dev8
     docker
     ecpy

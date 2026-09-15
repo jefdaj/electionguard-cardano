@@ -1,5 +1,6 @@
 # This isn't needed in the final code, but I keep it around as a sort of
 # documentation for how to incrementally add Python packages to Nix.
+# Usage: NIXPKGS_ALLOW_INSECURE=1 nix-shell test.nix
 
 with import <nixpkgs> {};
 let
@@ -10,9 +11,9 @@ let
   aioipfs = pkgs.python3Packages.callPackage ./aioipfs.nix {
     inherit py-multiformats-cid;
   };
-  cbor2pure = pkgs.python3Packages.callPackage ./cbor2pure.nix {};
+  crc8 = pkgs.python3Packages.callPackage ./crc8.nix {};
   pycardano = pkgs.python3Packages.callPackage ./pycardano.nix {
-    inherit cbor2pure;
+    inherit crc8;
   };
 
 in
@@ -27,8 +28,7 @@ in
     pytest-runner # deprecated, but used by py-multiformats-cid
     py-multiformats-cid
     aioipfs
-    # cbor2?
-    cbor2pure
+    crc8
     pycardano
 
   ])
