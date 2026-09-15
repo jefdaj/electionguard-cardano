@@ -27,7 +27,8 @@ let
   };
 
   ogmiosService = {
-    image = "jefdaj/ogmios-nix:latest";
+    # image = "jefdaj/ogmios-nix-docker:latest";
+    image = "ghcr.io/intersectmbo/ogmios:v6.14.0.3";
     restart = "on-failure";
     command = [
       "--host"        "0.0.0.0"
