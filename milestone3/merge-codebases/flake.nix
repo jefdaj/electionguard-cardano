@@ -38,29 +38,40 @@
 
       inherit (nixpkgs) lib;
       system = "x86_64-linux";
-      pkgs = nixpkgs.legacyPackages.${system};
+
       workspace = uv2nix.lib.workspace.loadWorkspace { workspaceRoot = ./.; };
-      overlay = workspace.mkPyprojectOverlay { sourcePreference = "wheel"; };
 
-      # python = pkgs.python313;
-      # python = myPython313;
-
-      myPython313 = pkgs.python313.override {
-        packageOverrides = pyself: pysuper: {
-
-          # add new packages here:
-          # TODO and get some into nixpkgs when you have time
-          pytest-runner       = pyself.callPackage ./nix/pytest-runner.nix       {};
-          py-multiformats-cid = pyself.callPackage ./nix/py-multiformats-cid.nix {};
-          aioipfs             = pyself.callPackage ./nix/aioipfs.nix             {};
-          crc8                = pyself.callPackage ./nix/crc8.nix                {};
-          pycardano           = pyself.callPackage ./nix/pycardano.nix           {};
-
+      pkgsOverlay = final: prev: {
+        python313 = prev.python313.override {
+          packageOverrides = pyFinal: pyPrev: {
+            # add new packages here:
+            # TODO and get some into nixpkgs when you have time
+            pytest-runner       = pyFinal.callPackage ./nix/pytest-runner.nix       {};
+            py-multiformats-cid = pyFinal.callPackage ./nix/py-multiformats-cid.nix {};
+            aioipfs             = pyFinal.callPackage ./nix/aioipfs.nix             {};
+            crc8                = pyFinal.callPackage ./nix/crc8.nix                {};
+            pycardano           = pyFinal.callPackage ./nix/pycardano.nix           {};
+          };
         };
+        # keep python313Packages in sync with the overridden interpreter
+        python313Packages = final.python313.pkgs;
       };
+
+      # pkgs = nixpkgs.legacyPackages.${system};
+      pkgs = import nixpkgs {
+        inherit system;
+        overlays = [ pkgsOverlay ];
+        config.permittedInsecurePackages = [
+          "python3.13-ecdsa-0.19.2"
+        ];
+      };
+
+      python = pkgs.python313;
 
       pyprojectOverrides = final: prev:
         let
+          hacks = pkgs.callPackage pyproject-nix.build.hacks {};
+
           # lots of the overrides seem to be about adding a build system
           addBuildSystem = names: pkg: pkg.overrideAttrs (old: {
             nativeBuildInputs = (old.nativeBuildInputs or [])
@@ -84,10 +95,16 @@
             '';
           });
 
+          # TODO add other custom pkgs here too?
+          pycardano = hacks.nixpkgsPrebuilt {
+            from = pkgs.python313Packages.pycardano;
+            prev = prev.pycardano or {}; # carries name/version/lock metadata
+          };
+
         };
 
       pythonSet =
-        (pkgs.callPackage pyproject-nix.build.packages { python = myPython313; })
+        (pkgs.callPackage pyproject-nix.build.packages { inherit python; })
           .overrideScope (lib.composeManyExtensions [
             pyproject-build-systems.overlays.default
 
@@ -97,13 +114,15 @@
             # TODO is this needed?
             electionguard-python.lib.overlay
 
-            overlay
+            (workspace.mkPyprojectOverlay { sourcePreference = "wheel"; })
+
             pyprojectOverrides
           ]);
 
       # TODO bundle plutusBlueprints with this too?
       pythonEnv = pythonSet.mkVirtualEnv egcName workspace.deps.default;
 
+      # pkgs = nixpkgs.legacyPackages.${system};
       kupo = pkgs.callPackage ./nix/kupo.nix {};
       runtimeDeps = [
         kupo
@@ -115,9 +134,10 @@
       myPkgs = pkgs.extend (final: prev: rec {
         inherit kupo;
         egc       = pythonEnv;
-        python    = python3;
-        python3   = python313;
-        python313 = myPython313;
+        # TODO put back?
+        # python    = python3;
+        # python3   = python313;
+        # python313 = myPython313;
       });
 
       devPkgList = ps: with ps; [
@@ -145,6 +165,9 @@
         # This is the Python library code + binaries.
         # TODO clean up all the misc extra files included here
         inherit pythonEnv;
+
+        # For debugging.
+        inherit pythonSet;
 
         plutusBlueprints = pkgs.stdenv.mkDerivation {
           pname = "egc-plutus-blueprints";
