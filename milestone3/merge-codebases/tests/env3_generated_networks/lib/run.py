@@ -24,11 +24,13 @@ def wait_n_blocks(n: int = 1):
 
 
 def run_egc_scripts_cached(
+        request,
         cfg: HashedTestConfig,
         env3_tmp_root: Path,
         env3_arion_dir: Path,
     ) -> ResolvedTestConfig:
-    rcfg = resolve_test_config(cfg=cfg, tmp_root=env3_tmp_root)
+    run = getattr(request.node, "execution_count", 1)  # set by pytest-rerunfailures
+    rcfg = resolve_test_config(cfg=cfg, tmp_root=env3_tmp_root, run=run)
     with lock_test_tmpdir(cfg=rcfg):
         log_path = rcfg.log_path()
         if not log_path.exists():
@@ -41,8 +43,13 @@ def run_egc_scripts_cached(
     return rcfg
 
 def prerun_egc_scripts(final_test_fn_from_rcfg):
-    def fn_from_fixtures(cfg: HashedTestConfig, env3_tmp_root: Path, env3_arion_dir: Path):
-        rcfg = run_egc_scripts_cached(cfg, env3_tmp_root, env3_arion_dir)
+    def fn_from_fixtures(
+            request,
+            cfg: HashedTestConfig,
+            env3_tmp_root: Path,
+            env3_arion_dir: Path
+        ):
+        rcfg = run_egc_scripts_cached(request, cfg, env3_tmp_root, env3_arion_dir)
         return final_test_fn_from_rcfg(rcfg)
     return fn_from_fixtures
 

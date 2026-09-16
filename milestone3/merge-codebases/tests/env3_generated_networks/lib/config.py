@@ -379,9 +379,13 @@ class ResolvedTestConfig:
     config: HashedTestConfig
     cache_key: str
     tmp_root: Path
+    run: int = field(default=1)
 
     def tmpdir_path(self) -> Path:
-        return Path(self.tmp_root) / f'test{self.cache_key}'
+        root = Path(self.tmp_root) / f'test{self.cache_key}'
+        if self.run > 1:
+            root = root.with_name(root.name + f'_run{self.run}')
+        return root
 
     def cfg_path(self) -> Path:
         return self.tmpdir_path() / 'test.json'
@@ -425,12 +429,13 @@ class ResolvedTestConfig:
         return sorted(list(dirs))
 
     @classmethod
-    def from_config(cls, cfg: HashedTestConfig, tmp_root: Path) -> Self:
+    def from_config(cls, cfg: HashedTestConfig, tmp_root: Path, run: int) -> Self:
         key = cfg.cache_key()
         return cls(
             config    = cfg,
             cache_key = key,
             tmp_root  = str(tmp_root),
+            run = run,
         )
 
     def to_json(self) -> str:
@@ -452,5 +457,9 @@ class ResolvedTestConfig:
         return fancy_dumps(cfg)
 
 # @contextmanager
-def resolve_test_config(cfg: HashedTestConfig, tmp_root: Path) -> ResolvedTestConfig:
-    return ResolvedTestConfig.from_config(cfg, tmp_root)
+def resolve_test_config(
+        cfg: HashedTestConfig,
+        tmp_root: Path,
+        run: int
+    ) -> ResolvedTestConfig:
+    return ResolvedTestConfig.from_config(cfg, tmp_root, run)

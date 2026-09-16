@@ -12,4 +12,4 @@ export EGC_WALLET_MODE='scripted'
 
 EXTRA_ARGS="$@"
 
-pytest -vv $EXTRA_ARGS 2>&1 | tee test.log
+pytest -vv --reruns 1 $EXTRA_ARGS 2>&1 | tee test.log

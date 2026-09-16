@@ -30,6 +30,7 @@ dependencies = [
     "unidecode>=1.4.0",
     # should match nix/pycardano.nix
     "pycardano==0.19.2",
+    "pytest-rerunfailures>=16.6.1",
 ]
 
 [tool.uv.sources]
