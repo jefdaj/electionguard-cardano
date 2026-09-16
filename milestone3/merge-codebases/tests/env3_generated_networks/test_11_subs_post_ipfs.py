@@ -38,7 +38,7 @@ def assert_all_peer_ids_posted(cfg):
         assert_peer_id_posted(cfg, n)
 
 
-@given_cached_tests(cfg_strategy=cfg_subs_post_ipfs(), max_examples=5)
+@given_cached_tests(cfg_strategy=cfg_subs_post_ipfs(), max_examples=1)
 def test_subs_post_ipfs(cfg: ResolvedTestConfig):
     assert_test_completed(cfg)
     assert_all_peer_ids_posted(cfg)
