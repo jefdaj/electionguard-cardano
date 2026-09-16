@@ -12,7 +12,9 @@ def cfg_base_script(draw):
     cfg = append_setup_fns(cfg, [
         FnCallConfig(
             name = 'render_egc_scripts',
-            args = (('default', '01_base_script.sh'),),
+            args = (
+                ('default', '01_base_script.sh'),
+            ),
         ),
     ])
     return cfg

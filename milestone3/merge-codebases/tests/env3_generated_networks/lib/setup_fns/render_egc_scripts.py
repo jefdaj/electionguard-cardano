@@ -33,6 +33,7 @@ def render_egc_scripts(
         guardian: Optional[str] = None,
         device:   Optional[str] = None,
         verifier: Optional[str] = None,
+        pause_for_dev_work: bool = False, # wait until pause.txt is manually deleted to run cleanup
     ):
     "Render egc scripts from their jinja2 templates."
 
@@ -84,6 +85,7 @@ def render_egc_scripts(
                 node_index   = node_index,
                 # template_name = template_name,
                 debug_script = True,
+                pause_for_dev = bool(pause_for_dev_work),
             )
             LOG.debug(f'render_egc_scripts write {out_path}')
             out_path.write_text(out_text)

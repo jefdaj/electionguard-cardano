@@ -18,6 +18,7 @@ def cfg_admin_post_ipfs(draw):
             args = (
                 ('default', '06_sub_show_ipfs.sh'),
                 ('admin', '06_admin_post_ipfs.sh'),
+                # ('pause_for_dev_work', True),
             ),
         ),
     ])

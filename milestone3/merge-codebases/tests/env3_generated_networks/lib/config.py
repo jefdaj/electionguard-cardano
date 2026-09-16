@@ -276,7 +276,10 @@ def setup_fns_config(draw):
     return SetupFnsConfig(fns=(
         FnCallConfig(
             name = 'render_egc_scripts',
-            args = (('default', 'base.sh'),),
+            args = (
+                ('default', 'base.sh'),
+                ('pause_for_dev_work', False),
+            ),
         ),
     ))
 

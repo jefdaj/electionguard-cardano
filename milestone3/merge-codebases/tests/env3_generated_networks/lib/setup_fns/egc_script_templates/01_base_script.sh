@@ -13,6 +13,18 @@ set -Eeuo pipefail
 PS4='+ {{node_name}} $(date "+%H:%M:%S") '
 set -x
 {% endif %}
+
+{% if pause_for_dev %}
+pause_for_dev_work() {
+  set +x
+  touch private/pause.txt
+  echo "delete pause.txt to resume script"
+  while sleep 3; do
+    [[ -e private/pause.txt ]] || break
+  done
+  set -x
+}
+{% endif %}
 {% endblock %}
 
 cleanup() {
@@ -49,3 +61,7 @@ trap on_exit EXIT INT TERM
 
 {% block body %}
 {% endblock %}
+
+{%- if pause_for_dev %}
+pause_for_dev_work
+{% endif %}
