@@ -158,7 +158,7 @@ class ElectionNode:
             channel_id = self.channel_id()
         return self.subscriber.current_utxo(channel_id)
 
-    def current_state(self, channel_id=None) -> Optional[UTxO]:
+    def current_state(self, channel_id=None) -> Optional[ChannelState]:
         if channel_id is None:
             channel_id = self.channel_id()
         return self.subscriber.current_state(channel_id)
