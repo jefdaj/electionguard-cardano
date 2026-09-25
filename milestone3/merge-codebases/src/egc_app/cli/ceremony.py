@@ -37,17 +37,17 @@ def show():
     click.echo(json.dumps(ceremony))
 
 @ceremony.command(roles=['guardian'])
-def keygen():
+def round1():
+    "Ceremony round 1: generate a guardian keypair and post the pubkey."
+    # TODO later, option to interact with a hardware wallet or airgapped machine here
     raise NotImplementedError
 
 @ceremony.command(roles=['guardian'])
-def announce_pubkey():
+def round2():
+    "Ceremony round2: secret share private key backups to other guardians."
     raise NotImplementedError
 
 @ceremony.command(roles=['guardian'])
-def announce_backup():
-    raise NotImplementedError
-
-@ceremony.command(roles=['guardian'])
-def confirm_backup():
+def round3():
+    "Ceremoney round3: confirm secret shares received from other guardians."
     raise NotImplementedError

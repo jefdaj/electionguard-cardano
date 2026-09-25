@@ -33,7 +33,6 @@ def assert_peer_id_posted(cfg, node_name: str):
 
 
 def assert_all_peer_ids_posted(cfg):
-    assert_script_logs_match(cfg, 'admin', ['^all peer_ids on chain$'])
     for n in cfg.node_names():
         assert_peer_id_posted(cfg, n)
 
@@ -42,3 +41,4 @@ def assert_all_peer_ids_posted(cfg):
 def test_subs_post_ipfs(cfg: ResolvedTestConfig):
     assert_test_completed(cfg)
     assert_all_peer_ids_posted(cfg)
+    assert_script_logs_match(cfg, 'admin', ['^all peer_ids on chain$'])
