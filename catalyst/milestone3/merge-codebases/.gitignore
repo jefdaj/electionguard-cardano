@@ -1,6 +1,0 @@
-/data/
-__pycache__/
-*.log
-log
-keys/
-election-*.json
