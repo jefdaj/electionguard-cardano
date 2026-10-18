@@ -3,7 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    aiken.url   = "github:jefdaj/aiken/nix-flake-update-fix-crate-403";
+    aiken.url   = "github:aiken-lang/aiken/v1.1.24";
     arion.url = "github:jefdaj/arion/rm-obsolete-version-attribute";
     electionguard-python = {
       url = "github:jefdaj/electionguard-python";
@@ -87,6 +87,7 @@
           python-baseconv  = addBuildSystem {"setuptools" = []; } prev.python-baseconv;
 
           # native zbar dependency for pyzbar
+          # TODO switch from zbar to something better at iffy qr codes
           pyzbar = prev.pyzbar.overrideAttrs (old: {
             postInstall = (old.postInstall or "") + ''
               substituteInPlace $out/${final.python.sitePackages}/pyzbar/zbar_library.py \
@@ -274,7 +275,7 @@
               UV_PYTHON_DOWNLOADS = "never";
               PYTHONDONTWRITEBYTECODE = true;
               EGC_PLUTUS_DIR   = "${plutusBlueprints}";
-              EGC_CARDANO_DIR  = "../../milestone2/cardano-node-ogmios"; # TODO point directly to actual path
+              EGC_CARDANO_DIR  = "./catalyst/milestone2/cardano-node-ogmios"; # TODO move this
               EGC_NETWORK_MODE = "preview";
               EGC_PLUTUS_MODE  = "burntesttokens-compact";
               EGC_WALLET_MODE  = "scripted";
