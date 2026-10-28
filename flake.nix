@@ -1,10 +1,20 @@
 {
-  description = "ElectionGuard+Cardano CLI Design";
+  description = "ElectionGuard + Cardano";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    aiken.url   = "github:aiken-lang/aiken/v1.1.24";
-    arion.url = "github:jefdaj/arion/rm-obsolete-version-attribute";
+    nixpkgs = {
+      # url = "github:NixOS/nixpkgs/nixos-unstable";
+      url = "github:NixOS/nixpkgs/18dd725c29603f582cf1900e0d25f9f1063dbf11";
+      # TODO follow? pin?
+    };
+    aiken = {
+      url = "github:aiken-lang/aiken/v1.1.24";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    arion = {
+      url = "github:jefdaj/arion/rm-obsolete-version-attribute";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     electionguard-python = {
       url = "github:jefdaj/electionguard-python";
       inputs.nixpkgs.follows = "nixpkgs";
