@@ -3,9 +3,7 @@
 
   inputs = {
     nixpkgs = {
-      # url = "github:NixOS/nixpkgs/nixos-unstable";
-      url = "github:NixOS/nixpkgs/18dd725c29603f582cf1900e0d25f9f1063dbf11";
-      # TODO follow? pin?
+      url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     };
     aiken = {
       url = "github:aiken-lang/aiken/v1.1.24";
@@ -60,6 +58,7 @@
             py-multiformats-cid = pyFinal.callPackage ./nix/py-multiformats-cid.nix {};
             aioipfs             = pyFinal.callPackage ./nix/aioipfs.nix             {};
             crc8                = pyFinal.callPackage ./nix/crc8.nix                {};
+            # cbor2               = final.callPackage ./nix/cbor2.nix               {};
             pycardano           = pyFinal.callPackage ./nix/pycardano.nix           {};
           };
         };
