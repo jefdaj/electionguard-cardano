@@ -23,7 +23,9 @@ def cfg_latest(draw):
                 ('admin',    '99_latest_admin.sh'),
                 ('guardian', '99_latest_guardian.sh'),
                 ('default',  '99_latest_sub.sh'),
-                ('pause_for_dev_work', True),
+
+                # Uncomment to pause and give time for running new things manually.
+                # ('pause_for_dev_work', True),
             ),
         ),
     ])
