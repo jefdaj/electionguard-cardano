@@ -28,7 +28,7 @@ let
   # now we can get anything else needed from the flake
   # system = "x86_64-linux";
   # egcApp    = flake.outputs.packages.${system}.default;
-  # egcDocker = flake.outputs.packages.${system}.dockerImage;
+  # egcDocker = flake.outputs.packages.${system}.egcDockerImage;
 
 
   ### networks ###

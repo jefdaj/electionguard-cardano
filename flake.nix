@@ -54,12 +54,12 @@
           packageOverrides = pyFinal: pyPrev: {
             # add new packages here:
             # TODO and get some into nixpkgs when you have time
-            pytest-runner       = pyFinal.callPackage ./nix/pytest-runner.nix       {};
-            py-multiformats-cid = pyFinal.callPackage ./nix/py-multiformats-cid.nix {};
-            aioipfs             = pyFinal.callPackage ./nix/aioipfs.nix             {};
-            crc8                = pyFinal.callPackage ./nix/crc8.nix                {};
-            # cbor2               = final.callPackage ./nix/cbor2.nix               {};
-            pycardano           = pyFinal.callPackage ./nix/pycardano.nix           {};
+            pytest-runner       = pyFinal.callPackage ./nix-packages/pytest-runner.nix       {};
+            py-multiformats-cid = pyFinal.callPackage ./nix-packages/py-multiformats-cid.nix {};
+            aioipfs             = pyFinal.callPackage ./nix-packages/aioipfs.nix             {};
+            crc8                = pyFinal.callPackage ./nix-packages/crc8.nix                {};
+            # cbor2               = final.callPackage ./nix-packages/cbor2.nix               {};
+            pycardano           = pyFinal.callPackage ./nix-packages/pycardano.nix           {};
           };
         };
         # keep python313Packages in sync with the overridden interpreter
@@ -133,7 +133,7 @@
       pythonEnv = pythonSet.mkVirtualEnv egcName workspace.deps.default;
 
       # pkgs = nixpkgs.legacyPackages.${system};
-      kupo = pkgs.callPackage ./nix/kupo.nix {};
+      kupo = pkgs.callPackage ./nix-packages/kupo.nix {};
       runtimeDeps = [
         kupo
         # TODO some of the other pkgs go here instead?
@@ -160,6 +160,14 @@
         tree
         multitail
       ];
+
+    # dockerTools.pullImage from saved nix-prefetch-docker output
+    imageFromPrefetchAttrs = path:
+      let attrs = import path; in {
+        inherit (attrs) finalImageName finalImageTag;
+        ref  = "${attrs.finalImageName}:${attrs.finalImageTag}";
+        file = pkgs.dockerTools.pullImage (attrs // { os = "linux"; arch = "amd64"; }); # TODO follow system
+      };
 
     in
     {
@@ -204,7 +212,15 @@
           '';
         };
 
-        dockerImage =
+        allDockerImages = {
+          egc     = self.packages.${system}.egcDockerImage;
+          cardano = imageFromPrefetchAttrs ./nix-docker-images/cardano.nix;
+          ipfs    = imageFromPrefetchAttrs ./nix-docker-images/ipfs.nix;
+          ogmios  = imageFromPrefetchAttrs ./nix-docker-images/ogmios.nix;
+        };
+
+        # TODO update references to new name
+        egcDockerImage =
           let inherit (self.packages.${system}) plutusBlueprints;
           in
             pkgs.dockerTools.buildLayeredImage {
