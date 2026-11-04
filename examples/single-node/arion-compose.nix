@@ -7,13 +7,15 @@
 # It's similar to the tests/env2 environment, except here egc is also packaged
 # as a container.
 
-# TODO load images from nix store
 # TODO additional egc service
 # TODO ascii art of the container connectivity
 # TODO generate docker compose from this
 
 { pkgs, lib, ... }:
 let
+
+  inherit (pkgs) flake; # TODO document
+  inherit (pkgs.stdenv.hostPlatform) system;
 
   # Shared cardano node data (~15G) for all the dev networks
   # Set it manually with `export EGC_CARDANO_DIR=...` before running this
@@ -22,8 +24,16 @@ let
   cardanoDataDir   = "${cardanoDir}/data";
   cardanoNetwork   = "preview";
 
+  # Reference a Docker image based on its pullImage attrs.
+  # Note that because Arion is just generating a docker-compose file,
+  # this *does not* actually load the image into docker. That needs
+  # to be done separately before `arion up`.
+  # TODO write that script, and think about the overall ergonomics
+  imageName = attrs: "${attrs.finalImageName}:${attrs.finalImageTag}";
+
   cardanoService = {
-    image = "ghcr.io/intersectmbo/cardano-node:11.0.1";
+    # image = "ghcr.io/intersectmbo/cardano-node:11.0.1";
+    image = imageName flake.outputs.packages.${system}.allDockerImages.cardano;
     command = [
       "run"
       "--config"        "/config/config.json"
@@ -42,7 +52,8 @@ let
   };
 
   ogmiosService = {
-    image = "ghcr.io/intersectmbo/ogmios:v6.14.0.3"; # TODO is this right?
+    # image = "ghcr.io/intersectmbo/ogmios:v6.14.0.3"; # TODO is this right?
+    image = imageName flake.outputs.packages.${system}.allDockerImages.ogmios;
     restart = "on-failure";
     command = [
       "--host"        "0.0.0.0"
@@ -63,7 +74,8 @@ let
   };
 
   ipfsService = {
-    image = "ipfs/kubo:v0.42.0"; 
+    # image = "ipfs/kubo:v0.42.0";
+    image = imageName flake.outputs.packages.${system}.allDockerImages.ipfs;
     restart = "on-failure";
     volumes = [
       { type = "tmpfs"; target = "/data"; }
