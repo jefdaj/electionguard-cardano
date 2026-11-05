@@ -133,7 +133,7 @@
       pythonEnv = pythonSet.mkVirtualEnv egcName workspace.deps.default;
 
       # pkgs = nixpkgs.legacyPackages.${system};
-      kupo = pkgs.callPackage ./nix-packages/kupo.nix {};
+      kupo = pkgs.callPackage ./nix/packages/kupo.nix {};
       runtimeDeps = [
         kupo
         # TODO some of the other pkgs go here instead?
