@@ -6,4 +6,4 @@ ElectionGuard + Cardano
 =======================
 </div>
 
-
+Work in progress on the Catalyst Fund13 project. See [catalyst/](catalyst/) for details.
