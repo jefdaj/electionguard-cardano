@@ -300,7 +300,7 @@
               UV_PYTHON_DOWNLOADS = "never";
               PYTHONDONTWRITEBYTECODE = true;
               EGC_PLUTUS_DIR   = "${plutusBlueprints}";
-              EGC_CARDANO_DIR  = "$HOME/tmp/cardano-node-ogmios"; # TODO move this
+              EGC_CARDANO_DIR  = "./cardano"; # config but not data version controlled
               EGC_NETWORK_MODE = "preview";
               EGC_PLUTUS_MODE  = "burntesttokens-compact";
               EGC_WALLET_MODE  = "scripted";
