@@ -15,7 +15,7 @@ else
   # Create it ourselves so Docker doesn't make it root-owned
   mkdir -p "$NODE_DB_DIR"
   MITHRIL_UID="$(id -u)" MITHRIL_GID="$(id -g)" \
-    docker compose --profile mithril run --rm mithril
+    docker compose --profile quickstart run --rm mithril
 fi
 
-# exec docker compose up "$@"
+exec docker compose up "$@"

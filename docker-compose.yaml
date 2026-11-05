@@ -1,9 +1,8 @@
 # Single EGC node: cardano + ogmios + ipfs + egc
 #
-# Quick start:
-# 1. Optionally pre-fetch blockchain data: ./mithril.sh
-# 2. docker compose up
-# 3. docker exec -it egcnode-egc-1 egc
+# Get it running:
+# 1. ./quickstart.sh OR docker compose up
+# 2. docker exec -it egcnode-egc-1 egc
 #
 # Re-use existing cardano node config + data:
 #   EGC_CARDANO_DIR=/path/to/cardano docker compose up
@@ -45,9 +44,9 @@ services:
   # Warning: because of an issue with the first version of the spec,
   # this also has to trust an IOG "ancillary verification" key to sign a few
   # files that aren't included in the main hash. Hopefully that can be removed soon!
-  # USAGE: run ./mithril.sh rather than `docker compose up` the first run
+  # USAGE: run ./quickstart.sh rather than `docker compose up` the first run
   mithril:
-    profiles: ["mithril"]
+    profiles: ["quickstart"]
     image: ghcr.io/intersectmbo/mithril-client:latest  # TODO pin this one too
     user: "${MITHRIL_UID:-0}:${MITHRIL_GID:-0}"
     environment:
