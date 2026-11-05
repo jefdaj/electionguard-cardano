@@ -172,7 +172,7 @@ let
       "${initScriptPkg}/bin/${initScriptName}:/container-init.d/001-config.sh:ro"
 
       # TODO remove?
-      "${../../ipfs-caps.json}:/data/ipfs/libp2p-resource-limit-overrides.json:ro"
+      "${../../nix/images/ipfs/ipfs-caps.json}:/data/ipfs/libp2p-resource-limit-overrides.json:ro"
     ];
     service.networks = [
       (ipfsPairNetName role i)

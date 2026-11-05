@@ -53,8 +53,8 @@ let
     restart = "on-failure";
     volumes = [
       { type = "tmpfs"; target = "/data"; }
-      "${../../ipfs-init.sh}:/container-init.d/001-config.sh:ro"
-      "${../../ipfs-caps.json}:/data/ipfs/libp2p-resource-limit-overrides.json:ro"
+      "${../../nix/images/ipfs/ipfs-init.sh}:/container-init.d/001-config.sh:ro"
+      "${../../nix/images/ipfs/ipfs-caps.json}:/data/ipfs/libp2p-resource-limit-overrides.json:ro"
     ];
     environment = {
       IPFS_IMPORT_CIDVERSION = "1";
