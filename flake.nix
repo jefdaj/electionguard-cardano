@@ -54,12 +54,12 @@
           packageOverrides = pyFinal: pyPrev: {
             # add new packages here:
             # TODO and get some into nixpkgs when you have time
-            pytest-runner       = pyFinal.callPackage ./nix-packages/pytest-runner.nix       {};
-            py-multiformats-cid = pyFinal.callPackage ./nix-packages/py-multiformats-cid.nix {};
-            aioipfs             = pyFinal.callPackage ./nix-packages/aioipfs.nix             {};
-            crc8                = pyFinal.callPackage ./nix-packages/crc8.nix                {};
-            # cbor2               = final.callPackage ./nix-packages/cbor2.nix               {};
-            pycardano           = pyFinal.callPackage ./nix-packages/pycardano.nix           {};
+            pytest-runner       = pyFinal.callPackage ./nix/packages/pytest-runner.nix       {};
+            py-multiformats-cid = pyFinal.callPackage ./nix/packages/py-multiformats-cid.nix {};
+            aioipfs             = pyFinal.callPackage ./nix/packages/aioipfs.nix             {};
+            crc8                = pyFinal.callPackage ./nix/packages/crc8.nix                {};
+            # cbor2               = final.callPackage ./nix/packages/cbor2.nix               {};
+            pycardano           = pyFinal.callPackage ./nix/packages/pycardano.nix           {};
           };
         };
         # keep python313Packages in sync with the overridden interpreter
@@ -214,9 +214,9 @@
 
         allDockerImages = {
           egc     = self.packages.${system}.egcDockerImage;
-          cardano = imageFromPrefetchAttrs ./nix-docker-images/cardano.nix;
-          ipfs    = imageFromPrefetchAttrs ./nix-docker-images/ipfs.nix;
-          ogmios  = imageFromPrefetchAttrs ./nix-docker-images/ogmios.nix;
+          cardano = imageFromPrefetchAttrs ./nix/images/cardano.nix;
+          ipfs    = imageFromPrefetchAttrs ./nix/images/ipfs.nix;
+          ogmios  = imageFromPrefetchAttrs ./nix/images/ogmios.nix;
         };
 
         # TODO update references to new name
