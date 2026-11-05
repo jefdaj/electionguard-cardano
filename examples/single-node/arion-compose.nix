@@ -34,6 +34,10 @@ let
   egcService = {
     image = builtImageRef flake.outputs.packages.${system}.allDockerImages.egc;
     # TODO finish writing this
+    environment = {
+      IPFS_API_ADDR = "/dns4/ipfs/tcp/5001";
+      OGMIOS_HOST = "ogmios"; OGMIOS_PORT = "1337";
+    };
   };
 
   cardanoService = {
