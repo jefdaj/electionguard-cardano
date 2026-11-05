@@ -1,13 +1,14 @@
 # Single EGC node: cardano + ogmios + ipfs + egc
 #
-# To download the preview chain quickly the first time:
-#   ./mithril.sh
+# Quick start:
+# 1. Optionally pre-fetch blockchain data: ./mithril.sh
+# 2. docker compose up
+# 3. docker exec -it egcnode-egc-1 egc
 #
-# To reuse an existing synced preview node:
+# Re-use existing cardano node config + data:
 #   EGC_CARDANO_DIR=/path/to/cardano docker compose up
 #
-# To check whether everything is working:
-#
+# Check that everything is working:
 # 1. cardano: docker compose logs cardano --follow | grep 'new tip'
 # 2. ogmios: http://localhost:1337/
 # 3. ipfs: http://localhost:5001/webui/ or docker compose logs ipfs

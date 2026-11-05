@@ -18,4 +18,4 @@ else
     docker compose --profile mithril run --rm mithril
 fi
 
-exec docker compose up "$@"
+# exec docker compose up "$@"
