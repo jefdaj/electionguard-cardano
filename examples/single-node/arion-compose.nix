@@ -24,16 +24,21 @@ let
   cardanoDataDir   = "${cardanoDir}/data";
   cardanoNetwork   = "preview";
 
-  # Reference a Docker image based on its pullImage attrs.
   # Note that because Arion is just generating a docker-compose file,
-  # this *does not* actually load the image into docker. That needs
+  # these *do not* actually load the images into docker. That needs
   # to be done separately before `arion up`.
   # TODO write that script, and think about the overall ergonomics
-  imageName = attrs: "${attrs.finalImageName}:${attrs.finalImageTag}";
+  pulledImageRef = attrs: "${attrs.finalImageName}:${attrs.finalImageTag}";
+  builtImageRef = image: "${image.imageName}:${image.imageTag}";
+
+  egcService = {
+    image = builtImageRef flake.outputs.packages.${system}.allDockerImages.egc;
+    # TODO finish writing this
+  };
 
   cardanoService = {
     # image = "ghcr.io/intersectmbo/cardano-node:11.0.1";
-    image = imageName flake.outputs.packages.${system}.allDockerImages.cardano;
+    image = pulledImageRef flake.outputs.packages.${system}.allDockerImages.cardano;
     command = [
       "run"
       "--config"        "/config/config.json"
@@ -53,7 +58,7 @@ let
 
   ogmiosService = {
     # image = "ghcr.io/intersectmbo/ogmios:v6.14.0.3"; # TODO is this right?
-    image = imageName flake.outputs.packages.${system}.allDockerImages.ogmios;
+    image = pulledImageRef flake.outputs.packages.${system}.allDockerImages.ogmios;
     restart = "on-failure";
     command = [
       "--host"        "0.0.0.0"
@@ -75,7 +80,7 @@ let
 
   ipfsService = {
     # image = "ipfs/kubo:v0.42.0";
-    image = imageName flake.outputs.packages.${system}.allDockerImages.ipfs;
+    image = pulledImageRef flake.outputs.packages.${system}.allDockerImages.ipfs;
     restart = "on-failure";
     volumes = [
       { type = "tmpfs"; target = "/data"; }
@@ -94,9 +99,10 @@ let
   };
 
 in {
-  config.project.name = "egc-single-node";
+  config.project.name = "single-node";
   config.enableDefaultNetwork = true;
   config.services = {
+    egc.service     = egcService;
     cardano.service = cardanoService;
     ogmios.service  = ogmiosService;
     ipfs.service    = ipfsService;
