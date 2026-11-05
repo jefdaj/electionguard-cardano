@@ -1,0 +1,87 @@
+# docker-compose.yaml
+# Single EGC node: cardano + ogmios + ipfs + egc
+#
+# To reuse an existing synced preview node:
+#   EGC_CARDANO_DIR=/path/to/cardano docker compose up
+
+name: egcnode
+
+services:
+
+  cardano:
+    image: ghcr.io/intersectmbo/cardano-node:11.0.1
+    restart: on-failure
+    command:
+      - run
+      - --config
+      - /config/config.json
+      - --database-path
+      - /data/db
+      - --socket-path
+      - /ipc/node.socket
+      - --topology
+      - /config/topology.json
+    volumes:
+      - ${EGC_CARDANO_DIR:-./cardano}/config/network/${CARDANO_NETWORK:-preview}/cardano-node:/config
+      - ${EGC_CARDANO_DIR:-./cardano}/data/node-db:/data
+      - ${EGC_CARDANO_DIR:-./cardano}/data/node-ipc:/ipc
+    stop_signal: SIGINT
+    stop_grace_period: 60s # default 10s kills it, forcing re-sync on next startup
+
+  ogmios:
+    image: ghcr.io/intersectmbo/ogmios:v6.14.0.3
+    restart: on-failure
+    depends_on:
+      - cardano
+    command:
+      - --host
+      - 0.0.0.0
+      - --node-socket
+      - /ipc/node.socket
+      - --node-config
+      - /config/cardano-node/config.json
+    volumes:
+      - ${EGC_CARDANO_DIR:-./cardano}/data/node-ipc:/ipc
+      - ${EGC_CARDANO_DIR:-./cardano}/config/network/${CARDANO_NETWORK:-preview}:/config
+    ports:
+      - "1337:1337"
+    environment:
+      NETWORK: ${CARDANO_NETWORK:-preview}
+      OGMIOS_PORT: "1337"
+    stop_signal: SIGINT
+    stop_grace_period: 60s
+
+  ipfs:
+    image: ipfs/kubo:v0.42.0
+    restart: on-failure
+    volumes:
+      - type: tmpfs
+        target: /data
+      - type: bind
+        source: ./ipfs/ipfs-init.sh
+        target: /container-init.d/001-config.sh
+        read_only: true
+      - type: bind
+        source: ./ipfs/ipfs-caps.json
+        target: /data/ipfs/libp2p-resource-limit-overrides.json
+        read_only: true
+    environment:
+      IPFS_IMPORT_CIDVERSION: "1"
+      IPFS_LOGGING: info
+      IPFS_TELEMETRY: "off"
+    ports:
+      - "4001:4001"            # ipfs swarm
+      - "127.0.0.1:5001:5001"  # api access
+
+  egc:
+    # TODO push to ghcr for release:
+    # image: ghcr.io/jefdaj/electionguard-cardano:0.6.1
+    image: electionguard-cardano:0.6.1
+    restart: on-failure
+    depends_on:
+      - ogmios
+      - ipfs
+    environment:
+      IPFS_API_ADDR: /dns4/ipfs/tcp/5001
+      OGMIOS_HOST: ogmios
+      OGMIOS_PORT: "1337"
