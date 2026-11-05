@@ -1,4 +1,3 @@
-# docker-compose.yaml
 # Single EGC node: cardano + ogmios + ipfs + egc
 #
 # To download the preview chain quickly the first time:
@@ -6,6 +5,13 @@
 #
 # To reuse an existing synced preview node:
 #   EGC_CARDANO_DIR=/path/to/cardano docker compose up
+#
+# To check whether everything is working:
+#
+# 1. cardano: docker compose logs cardano --follow | grep 'new tip'
+# 2. ogmios: http://localhost:1337/
+# 3. ipfs: http://localhost:5001/webui/ or docker compose logs ipfs
+# 4. egc: docker exec -it egcnode-egc-1 egc node status
 
 name: egcnode
 
