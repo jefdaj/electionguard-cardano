@@ -40,7 +40,7 @@
 
       # These should be changed in sync with:
       # - uv.lock
-      # - onchain/aiken.toml
+      # - aiken/aiken.toml
       egcName = "electionguard-cardano";
       egcVersion = "0.6.1";
 
@@ -169,6 +169,8 @@
         file = pkgs.dockerTools.pullImage (attrs // { os = "linux"; arch = "amd64"; }); # TODO follow system
       };
 
+      aikenPkg = aiken.packages.x86_64-linux.aiken;
+
     in
     {
 
@@ -190,7 +192,7 @@
         plutusBlueprints = pkgs.stdenv.mkDerivation {
           pname = "egc-plutus-blueprints";
           version = egcVersion;
-          src = ./onchain;
+          src = ./aiken;
 
           nativeBuildInputs = (devPkgList pkgs) ++ [
             aiken.packages.x86_64-linux.aiken
@@ -267,13 +269,13 @@
         default = offchain;
 
         # only the aiken-related tools
-        onchain = pkgs.mkShell {
+        aiken = pkgs.mkShell {
           nativeBuildInputs = devPkgList pkgs ++ (with pkgs; [
-            aiken.packages.x86_64-linux.aiken
+            aikenPkg
           ]);
           shellHook = ''
-            echo "running devShells.x86_64-linux.onchain shellHook"
-            cd onchain
+            echo "running devShells.x86_64-linux.aiken shellHook"
+            cd aiken
             echo "$(aiken --version)"
           '';
         };
@@ -287,7 +289,7 @@
             inherit (self.packages.${system}) plutusBlueprints;
           in
           pkgs.mkShell {
-            packages = runtimeDeps ++ onchain.nativeBuildInputs ++ (with pkgs; [
+            packages = runtimeDeps ++ aiken.nativeBuildInputs ++ (with pkgs; [
               # electionguard-python.packages.${system}.default
               jq
               uv
