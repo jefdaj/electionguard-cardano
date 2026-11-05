@@ -1,6 +1,9 @@
 # docker-compose.yaml
 # Single EGC node: cardano + ogmios + ipfs + egc
 #
+# To download the preview chain quickly the first time:
+#   ./mithril.sh
+#
 # To reuse an existing synced preview node:
 #   EGC_CARDANO_DIR=/path/to/cardano docker compose up
 
@@ -28,7 +31,38 @@ services:
     stop_signal: SIGINT
     stop_grace_period: 60s # default 10s kills it, forcing re-sync on next startup
 
+  # This is a new (experimental) method to quickly download the Cardano
+  # blockchain. Validators collectively sign a hash of the agreed upon state each
+  # epoch, so when joining the network you can just download everything in bulk and
+  # verify a few signatures rather than going block by block. It's totally optional.
+  # Warning: because of an issue with the first version of the spec,
+  # this also has to trust an IOG "ancillary verification" key to sign a few
+  # files that aren't included in the main hash. Hopefully that can be removed soon!
+  # USAGE: run ./mithril.sh rather than `docker compose up` the first run
+  mithril:
+    profiles: ["mithril"]
+    image: ghcr.io/intersectmbo/mithril-client:latest  # TODO pin this one too
+    user: "${MITHRIL_UID:-0}:${MITHRIL_GID:-0}"
+    environment:
+      NETWORK: ${CARDANO_NETWORK:-preview}
+      AGGREGATOR_ENDPOINT: ${MITHRIL_AGGREGATOR_ENDPOINT:-https://aggregator.pre-release-preview.api.mithril.network/aggregator}
+      GENESIS_VERIFICATION_KEY: ${MITHRIL_GENESIS_VERIFICATION_KEY:?Set MITHRIL_GENESIS_VERIFICATION_KEY (see .env)}
+      MITHRIL_ANCILLARY_VERIFICATION_KEY: ${MITHRIL_ANCILLARY_VERIFICATION_KEY:?Set MITHRIL_ANCILLARY_VERIFICATION_KEY (see .env)}
+    volumes:
+      - ${EGC_CARDANO_DIR:-./cardano}/data/node-db:/data
+    command:
+      - cardano-db
+      - download
+      - latest
+      - --download-dir
+      - /data
+      - --include-ancillary
+      - --ancillary-verification-key
+      - ${MITHRIL_ANCILLARY_VERIFICATION_KEY}
+
+  # Ogmios provides an API for the Cardano node.
   ogmios:
+    # TODO update once node 11 stuff is worked out:
     image: ghcr.io/intersectmbo/ogmios:v6.14.0.3
     restart: on-failure
     depends_on:
