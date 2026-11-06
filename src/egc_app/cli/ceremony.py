@@ -1,7 +1,8 @@
 import click
 from egc_app.cli.utils import RoleAwareGroup
 from pathlib import Path
-from egc_app.cli.utils import asyncio, json, multi_load
+from egc_app.cli.utils import asyncio, multi_load
+import json
 from electionguard import CeremonyDetails
 from egc_app.client import Client
 
