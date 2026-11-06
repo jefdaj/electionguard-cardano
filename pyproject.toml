@@ -51,6 +51,10 @@ dev = [
     "pytest-asyncio",
     "pytest-mock",
 ]
+docs = [
+  "mkdocs-material",
+  "mkdocstrings[python]",
+]
 
 [tool.hatch.build.targets.sdist]
 include = [

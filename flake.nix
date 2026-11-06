@@ -263,6 +263,16 @@
               };
             };
 
+        build-docs = pkgs.writeShellApplication {
+          name = "build-docs";
+          runtimeInputs = [
+            pkgs.uv
+            aiken.packages.x86_64-linux.aiken
+            pkgs.nix
+          ];
+          text = builtins.readFile ./nix/docs/build-docs.sh;
+        };
+
       };
 
       devShells.${system} = rec {

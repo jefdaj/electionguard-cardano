@@ -8,3 +8,5 @@ election-*.json
 keys/
 log
 result*
+/site/
+/docs/nix/packages.md
