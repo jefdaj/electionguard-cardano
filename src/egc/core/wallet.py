@@ -16,7 +16,8 @@ import qrcode
 from pathlib import Path
 from typing import Optional, Self, Tuple
 from dataclasses import dataclass
-from pycardano import *
+from pycardano import (Address, Network, PaymentSigningKey, PaymentVerificationKey, SigningKey,
+                       VerificationKey, VerificationKeyHash)
 from .env import EGC_WALLET_MODE, EGC_WALLET_DIR
 import logging
 import shutil

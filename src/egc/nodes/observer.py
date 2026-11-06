@@ -5,8 +5,7 @@ from typing import List
 from pprint import pformat
 from datetime import datetime
 
-from pycardano import *
-from ..core import *
+from ..core import ElectionNode, Optional, Wallet
 # from .admin import *
 
 # careful, admin and pycardano can both shadow this

@@ -11,8 +11,11 @@ import shutil
 from aiohttp import ClientConnectorError, ClientConnectorDNSError
 from aioipfs import AsyncIPFS
 
-from .plutus  import *
-from .records import *
+from .plutus import (ChannelId, IpfsNode, IpfsPeerId, NoIpfsNode, OptionIpfsNode, PublicRecord,
+                     PublicRecordMetadata, SomeIpfsNode, channel_id_to_string, coerce_ipfs_cid,
+                     coerce_ipfs_multiaddr, coerce_ipfs_peerid, ipfs_cid_to_string,
+                     ipfs_multiaddr_to_string, ipfs_peerid_to_string)
+from .records import Path, record_path
 
 from .ipfs_hints import make_addr_hints, expand_addr_hints
 
