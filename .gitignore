@@ -1,15 +1,23 @@
-cardano/data
-*.log
 *.sw*
 .tmp-arion-docker-compose*.yaml
-/data/
 __pycache__/
 election-*.json
-keys/
-log
 result*
-/site/
+
+# default node data location
+cardano/data
+
+# generated + manual cardano keys
+keys/
+
+# test logs + data
+log
+*.log
+/data/
 
 # generated parts of the doc src
 /docs/nix/packages.md
 /docs/aiken
+
+# compiled docs output
+/site/
