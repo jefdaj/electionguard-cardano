@@ -1,7 +1,7 @@
 # Should be kept in sync with aiken/validators/election/types/channel.ak
 # Note that order is important! CONSTR_IDs must all match.
 
-from .channel_id import *
+from .channel_id import ADMIN_CHANNEL_ID, ChannelId, channel_id_to_string
 from .phase import ElectionPhase
 from .record import PublicRecord
 from .ipfs_node import OptionIpfsNode

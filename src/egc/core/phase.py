@@ -1,7 +1,11 @@
 from enum import Enum
 from typing import Optional
 from functools import total_ordering
-from .plutus.types.phase import *
+from .plutus.types.phase import (ConfigAnnouncePhase, ConfigCeremonyPhase, ConfigFinalizePhase,
+                                 ConfigOnboardingPhase, ElectionConfigPhase, ElectionFinalizePhase,
+                                 ElectionPhase, ElectionResultsPhase, ElectionVerifyPhase,
+                                 ElectionVotingPhase, ResultsDecryptPhase, ResultsTallyPhase,
+                                 dataclass)
 import logging
 
 
