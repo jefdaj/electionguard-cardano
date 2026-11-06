@@ -35,6 +35,7 @@ from .plutus.types.action import (AddSubChannels, AdvancePhase, BurnTestTokens, 
                                   RmSubChannels, SetIpfsNode)
 from .plutus.types.channel import (ADMIN_CHANNEL_ID, ChannelId, ChannelState, PublicRecord,
                                    channel_id_to_string)
+from .plutus.types.channel_id import coerce_channel_id
 from .plutus.types.ipfs_node import NoIpfsNode, SomeIpfsNode, decode_plutusdata_union
 from .election import ElectionConfig, ElectionContext
 from .utils import safe_deepdiff
