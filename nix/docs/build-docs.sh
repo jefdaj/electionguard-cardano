@@ -16,10 +16,12 @@ mkdir -p docs/nix
   '
 } > docs/nix/packages.md
 
-# 2. Python + hand-written docs
-command -v mkdocs python
-python -c "import pycardano; print(pycardano.__file__)"
+# 2. Aiken HTML into docs/ so mkdocs copies it and can validate links to it
+rm -rf docs/aiken
+(cd aiken && aiken docs --destination ../docs/aiken)
+
+# 3. Build the site
 mkdocs build --strict --site-dir site
 
-# 3. Aiken HTML, placed inside the built site
-(cd aiken && aiken docs --destination ../site/aiken)
+# 4. serve locally to check everything looks good
+python -m http.server -d site/

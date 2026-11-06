@@ -9,4 +9,7 @@ keys/
 log
 result*
 /site/
+
+# generated parts of the doc src
 /docs/nix/packages.md
+/docs/aiken

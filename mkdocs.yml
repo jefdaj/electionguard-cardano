@@ -3,9 +3,15 @@ repo_url: https://github.com/jefdaj/electionguard-cardano
 theme:
   name: material
 
+validation:
+  nav:
+    not_found: info
+
 nav:
   - Home: index.md
+  - Getting started: getting-started.md
   - Python API: python.md
+  - Aiken API: aiken/index.html
   - Nix packages: nix/packages.md
 
 plugins:
@@ -17,5 +23,3 @@ plugins:
           options:
             docstring_style: google
             show_source: false
-            # preload_modules:
-            # - pycardano
