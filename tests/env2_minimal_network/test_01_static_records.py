@@ -5,6 +5,9 @@ from .lib import load_static_record_pairs
 from egc import (ElectionAction, ElectionPhase, PublicRecord, PublicRecordMetadata,
                  ipfs_cid_to_string)
 
+# Star import is required by eval() in test_roundtrip_static_records_to_str
+from egc.core.plutus.types.record import *
+
 import logging
 from pathlib import Path
 from typing import Tuple
@@ -61,6 +64,7 @@ def test_roundtrip_static_records_to_str(
         # but reasonable for comparing with cardano-cli etc. So we round-trip
         # to str instead.
         tmp  = str(rec)
+        # print(f'tmp: {tmp}')
         rec2 = eval(tmp)
         assert rec2 == rec
 
