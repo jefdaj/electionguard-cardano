@@ -17,3 +17,5 @@ plugins:
           options:
             docstring_style: google
             show_source: false
+            # preload_modules:
+            # - pycardano

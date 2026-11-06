@@ -130,7 +130,10 @@
           ]);
 
       # TODO bundle plutusBlueprints with this too?
-      pythonEnv = pythonSet.mkVirtualEnv egcName workspace.deps.default;
+      egcPythonEnv = pythonSet.mkVirtualEnv egcName workspace.deps.default;
+      docsPythonEnv = pythonSet.mkVirtualEnv "${egcName}-docs" (
+        workspace.deps.default // { "${egcName}" = ["docs"]; }
+      );
 
       # pkgs = nixpkgs.legacyPackages.${system};
       kupo = pkgs.callPackage ./nix/packages/kupo.nix {};
@@ -143,7 +146,7 @@
       # This is an actual output; see note below.
       myPkgs = pkgs.extend (final: prev: rec {
         inherit kupo;
-        egc       = pythonEnv;
+        egc       = egcPythonEnv;
         # TODO put back?
         # python    = python3;
         # python3   = python313;
@@ -180,11 +183,11 @@
 
       packages.${system} = {
 
-        default = pythonEnv;
+        default = egcPythonEnv;
 
         # This is the Python library code + binaries.
         # TODO clean up all the misc extra files included here
-        inherit pythonEnv;
+        inherit egcPythonEnv;
 
         # For debugging.
         inherit pythonSet;
@@ -229,7 +232,7 @@
               name = egcName;
               tag = egcVersion;
               contents = [
-                pythonEnv
+                egcPythonEnv
                 pkgs.coreutils
                 pkgs.gnugrep
                 pkgs.time
@@ -247,7 +250,7 @@
               '';
               config = {
                 # TODO log to stdout? also a logfile under /data?
-                Entrypoint = [ "${pythonEnv}/bin/egc" ];
+                Entrypoint = [ "${egcPythonEnv}/bin/egc" ];
                 Cmd = [ "node" "run" "--private-dir" "/data/private" ];
                 User = "1000:100"; # TODO named egc user? 1000:1000?
                 Env = [
@@ -263,15 +266,22 @@
               };
             };
 
-        build-docs = pkgs.writeShellApplication {
-          name = "build-docs";
-          runtimeInputs = [
-            pkgs.uv
-            aiken.packages.x86_64-linux.aiken
-            pkgs.nix
-          ];
-          text = builtins.readFile ./nix/docs/build-docs.sh;
-        };
+        build-docs =
+          let
+            # editableOverlay = workspace.mkEditablePyprojectOverlay { root = "$PWD"; };
+            # editablePythonSet = pythonSet.overrideScope editableOverlay;
+            # venv = editablePythonSet.mkVirtualEnv egcName workspace.deps.all;
+          in pkgs.writeShellApplication {
+             name = "build-docs";
+             runtimeInputs = [
+               # pkgs.uv
+               docsPythonEnv
+               # venv
+               aiken.packages.x86_64-linux.aiken
+               pkgs.nix
+             ];
+             text = builtins.readFile ./nix/docs/build-docs.sh;
+           };
 
       };
 

@@ -17,7 +17,9 @@ mkdir -p docs/nix
 } > docs/nix/packages.md
 
 # 2. Python + hand-written docs
-uv run --group docs mkdocs build --strict --site-dir site
+command -v mkdocs python
+python -c "import pycardano; print(pycardano.__file__)"
+mkdocs build --strict --site-dir site
 
 # 3. Aiken HTML, placed inside the built site
 (cd aiken && aiken docs --destination ../site/aiken)
