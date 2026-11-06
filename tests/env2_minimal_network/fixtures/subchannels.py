@@ -1,6 +1,7 @@
 import pytest
 
-from egc import *
+from egc import (ChannelState, DeviceNode, EgcPhase, ElectionConfig, ElectionNode, GuardianNode,
+                 Path, VerifierNode, Wallet)
 from tests.lib import sub_s0
 from ..lib import fixture_private_dir
 

@@ -1,5 +1,5 @@
 from fastapi import Request
-from egc import *
+from egc import ObserverNode
 
 # TODO is this a reasonable state pattern?
 

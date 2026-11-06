@@ -1,5 +1,6 @@
 import pytest
-from egc import *
+from egc import (Address, EgcPhase, ElectionPublisher, FunderNode, SigningKey, VerificationKeyHash,
+                 Wallet)
 import logging
 
 LOG = logging.getLogger(__name__)

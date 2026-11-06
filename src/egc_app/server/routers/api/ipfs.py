@@ -3,7 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from egc_app.server.state import get_state
 from egc_app import schemas
 import shutil
-from egc import *
+from egc import (NoIpfsNode, OptionIpfsNode, Optional, SomeIpfsNode, asyncio, channel_id_to_string,
+                 ipfs_multiaddr_to_string, ipfs_peerid_to_string)
 
 import logging
 LOG = logging.getLogger(__name__)

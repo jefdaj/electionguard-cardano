@@ -2,10 +2,13 @@ import pytest
 from hypothesis import given, settings
 from pathlib import Path
 
-from egc import *
 # from ..lib import *
 from ..lib.json_utils import assert_json_roundtrip
-from .lib.config import *
+from .lib.config import (ArionConfig, AttackFnsConfig, ContestsConfig, DevicesConfig,
+                         GuardiansConfig, HashedTestConfig, NodesConfig, SetupFnsConfig,
+                         VerifiersConfig, VotesConfig, arion_config, attack_fns_config,
+                         cfg_test_base, contests_config, devices_config, guardians_config,
+                         nodes_config, setup_fns_config, verifiers_config, votes_config)
 
 
 ### round-trip configs to json ###

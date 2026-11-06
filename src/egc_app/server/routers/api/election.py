@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, Request, Response
 from fastapi import HTTPException
 from dataclasses import asdict
 from egc_app.server.state import get_state, reset_election_state
-from egc import *
+from egc import (ChannelEvent, ElectionConfig, ElectionError, FunderNode, OGMIOS_POLL_SEC, Wallet,
+                 await_blocks)
 import asyncio
 import json
 from fastapi.responses import StreamingResponse

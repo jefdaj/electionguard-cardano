@@ -1,5 +1,5 @@
 import pytest
-from egc import *
+from egc import AssetName, ElectionScript, MultiAsset
 import logging
 
 LOG = logging.getLogger(__name__)

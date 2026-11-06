@@ -5,7 +5,6 @@ import os
 import signal
 from pathlib import Path
 from contextlib import contextmanager
-from egc import *
 from ..lib.config import ResolvedTestConfig
 from tests.lib.py_utils import raise_on_signals
 

@@ -1,6 +1,5 @@
 import pytest
-from pycardano import *
-from egc import *
+from egc import Path, Wallet
 import logging
 
 LOG = logging.getLogger(__name__)

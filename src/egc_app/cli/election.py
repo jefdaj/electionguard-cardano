@@ -5,8 +5,8 @@ import asyncio
 from egc import ElectionConfig, scan_qrcode, print_qrcode # TODO relative?
 from egc_app.client import Client
 from egc_app import schemas
-from egc_app.cli.utils import *
-from egc import *
+from egc_app.cli.utils import MultiIOArg, RoleAwareGroup, multi_load, multi_save, multi_save_arg
+from egc import VerificationKeyHash, Wallet
 
 @click.group(cls=RoleAwareGroup)
 def election() -> None:

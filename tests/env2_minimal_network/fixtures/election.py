@@ -1,7 +1,8 @@
 import pytest
 from datetime import datetime
-from pycardano import *
-from egc import *
+from egc import (DEFAULT_NETWORK_MAGIC, ElectionConfig, ElectionContext, ElectionDeployment,
+                 ElectionScript, ObserverNode, OgmiosV6ChainContext, Path, Transaction, UTxO,
+                 VerificationKeyHash, Wallet, await_blocks, get_balance_ada, query_network_tip_sync)
 import logging
 import time
 

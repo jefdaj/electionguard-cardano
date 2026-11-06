@@ -1,6 +1,6 @@
 import pytest
-from pycardano import *
-from egc import *
+from egc import (ADMIN_CHANNEL_ID, ChannelId, ElectionScript, MultiAsset, coerce_channel_id,
+                 mint_channel_stt_assets)
 from typing import List
 import logging
 

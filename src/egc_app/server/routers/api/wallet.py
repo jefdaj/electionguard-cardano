@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Response
 from egc_app.server.state import get_state
 from egc_app import schemas
 import shutil
-from egc import *
+from egc import Path, SigningKey, Wallet, create_wallet
 
 router = APIRouter(prefix="/wallet")
 

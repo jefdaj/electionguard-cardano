@@ -2,7 +2,8 @@ import json
 import pytest
 import time
 from .lib import load_static_record_pairs
-from egc import *
+from egc import (ElectionAction, ElectionPhase, PublicRecord, PublicRecordMetadata,
+                 ipfs_cid_to_string)
 
 import logging
 from pathlib import Path

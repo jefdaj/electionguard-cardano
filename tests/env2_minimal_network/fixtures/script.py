@@ -1,10 +1,9 @@
 import pytest
-from pycardano import *
-from egc import *
+from egc import Address, ElectionScript, Network, UTxO, pick_oneshot_utxo, utxo_to_ref_hex
 import logging
 
 # TODO are the conftests not importing anything? why is this needed?
-from .network import *
+from .network import OgmiosV6ChainContext
 
 LOG = logging.getLogger(__name__)
 

@@ -1,6 +1,6 @@
 import click
 import asyncio
-from egc import *
+from egc import EgcPhase, resolve_onchain_phase
 from egc_app.cli.utils import RoleAwareGroup
 from egc_app.client import Client
 import logging

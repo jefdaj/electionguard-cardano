@@ -2,7 +2,8 @@ import pytest
 import subprocess
 import time
 from pathlib import Path
-from egc import *
+from egc import (IPFSService, LOG, OGMIOS_CTX, OGMIOS_POLL_SEC, OGMIOS_TIMEOUT_SEC,
+                 OgmiosV6ChainContext, ogmios_health_sync)
 
 # TODO alias for package scope to match the others
 

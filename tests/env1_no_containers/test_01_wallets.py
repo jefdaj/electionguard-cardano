@@ -1,5 +1,6 @@
 import pytest
-from egc import *
+from egc import (Address, Path, SigningKey, VerificationKey, VerificationKeyHash, Wallet,
+                 load_wallet_by_address)
 import logging
 
 LOG = logging.getLogger(__name__)

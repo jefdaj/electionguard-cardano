@@ -1,6 +1,5 @@
 import pytest
-from pycardano import *
-from egc import *
+from egc import AdminNode, EgcPhase, ElectionConfig, Path, Wallet
 import logging
 import time
 from ..lib import fixture_private_dir

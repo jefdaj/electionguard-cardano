@@ -2,7 +2,8 @@ import click
 import httpx
 from dataclasses import asdict
 from pathlib import Path
-from egc import *
+from egc import (CeremonyDetails, EgcManifest, EgcPhase, ElectionConfig, ElectionEvent, LOG,
+                 Optional, PublicRecordMetadata, SigningKey, VerificationKeyHash, json)
 from . import schemas
 
 # TODO clean this up

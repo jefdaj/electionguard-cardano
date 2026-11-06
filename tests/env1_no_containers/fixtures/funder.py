@@ -3,7 +3,7 @@ import pytest
 import logging
 LOG = logging.getLogger(__name__)
 
-from egc import *
+from egc import Address, FunderNode, Path, Wallet
 
 @pytest.fixture(scope='session') # TODO module?
 def funder_wallet() -> Wallet:

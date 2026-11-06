@@ -1,6 +1,5 @@
 import pytest
-from pycardano import *
-from egc import *
+from egc import Address, Path, VerificationKeyHash, Wallet
 import logging
 import time
 

@@ -1,5 +1,6 @@
 import pytest
-from egc import *
+from egc import (AdminNode, EgcPhase, ElectionContext, ElectionNode, ElectionPublisher,
+                 ElectionSubscriber)
 from ..lib import assert_nodes_converge
 import logging
 

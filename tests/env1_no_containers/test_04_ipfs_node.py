@@ -1,5 +1,6 @@
 import pytest
-from egc import *
+from egc import (IpfsNode, NoIpfsNode, SomeIpfsNode, coerce_ipfs_multiaddr, decode_option_ipfs_node,
+                 ipfs_multiaddr_to_string, ipfs_peerid_to_string)
 from pycardano.serialization import ByteString
 
 # TODO test addr_hints

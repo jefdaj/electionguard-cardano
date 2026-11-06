@@ -2,10 +2,10 @@
 
 import pytest
 from dataclasses import replace
-from pycardano import *
-from egc import *
-from ..lib import *
-from .lib import *
+from ..lib import assert_nodes_converge, assert_tx
+from .lib import (AdminChannel, AdminChannelState, AdminNode, ChannelId, ChannelState,
+                  ConfigAnnouncePhase, EgcPhase, ElectionConfigPhase, GuardianNode, NoIpfsNode,
+                  Transaction, VerificationKeyHash, channel_id_to_string, load_static_record_pairs)
 import logging
 import time
 

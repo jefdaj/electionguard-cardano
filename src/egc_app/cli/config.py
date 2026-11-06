@@ -2,7 +2,7 @@ import asyncio
 import click
 import json
 from egc_app.client import Client
-from egc_app.cli.utils import *
+from egc_app.cli.utils import RoleAwareGroup
 
 @click.group(cls=RoleAwareGroup)
 def config() -> None:

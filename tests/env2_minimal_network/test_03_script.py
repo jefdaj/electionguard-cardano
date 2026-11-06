@@ -1,5 +1,5 @@
 import pytest
-from egc import *
+from egc import ElectionScript, UTxO
 
 def test_roundrip_oneshot_utxo(oneshot_utxo: UTxO):
     tmp = oneshot_utxo.to_cbor_hex()

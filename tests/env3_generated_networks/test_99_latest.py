@@ -1,8 +1,7 @@
 from hypothesis import given, settings, seed, Phase
 from hypothesis import strategies as st
-from egc import *
-from ..lib import *
-from .lib  import *
+from .lib import (FnCallConfig, ResolvedTestConfig, append_config_fn_name, append_setup_fns,
+                  assert_test_completed, given_cached_tests)
 
 # This "test latest" file is for developing the latest bit of the election
 # workflow, whatever that is at a given time. It runs the workflow so far, then

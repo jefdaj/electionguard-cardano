@@ -4,7 +4,7 @@ from copy import deepcopy
 from dataclasses import asdict
 from typing import Annotated
 from egc_app import schemas
-from egc import *
+from egc import ADMIN_CHANNEL_ID, EgcPhase, resolve_onchain_phase
 import logging
 
 

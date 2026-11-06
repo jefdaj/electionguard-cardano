@@ -1,5 +1,5 @@
 import pytest
-from egc import *
+from egc import OgmiosV6ChainContext, ogmios_health_sync, query_network_tip_sync
 
 def test_ipfs_stable(env2_ipfs):
     # the fixture includes .wait_until_stable(); this confirms after

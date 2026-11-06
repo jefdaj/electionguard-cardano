@@ -7,7 +7,8 @@ from copy import deepcopy
 from dataclasses import asdict
 import re
 import logging
-from egc import *
+from egc import (ADMIN_CHANNEL_ID, AdminNode, ChannelId, DeviceNode, GuardianNode,
+                 VerificationKeyHash, VerifierNode, channel_id_to_string, coerce_channel_id)
 
 import logging
 LOG = logging.getLogger(__name__)

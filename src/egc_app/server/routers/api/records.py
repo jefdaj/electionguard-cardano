@@ -4,7 +4,7 @@ from egc_app import schemas
 from typing import Annotated
 import shutil
 import time
-from egc import *
+from egc import EgcPhase, asyncio, resolve_onchain_phase
 import logging
 
 LOG = logging.getLogger(__name__)

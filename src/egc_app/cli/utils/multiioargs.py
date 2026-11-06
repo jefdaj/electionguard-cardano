@@ -1,4 +1,4 @@
-from egc.core.qrcodes import *
+from egc.core.qrcodes import load_qrcode, print_qrcode, save_qrcode, scan_qrcode
 
 import functools
 from dataclasses import dataclass

@@ -5,8 +5,8 @@ import asyncio
 # from egc import ElectionConfig, scan_qrcode, print_qrcode # TODO relative?
 from egc_app.client import Client
 from egc_app import schemas
-from egc_app.cli.utils import *
-from egc import *
+from egc_app.cli.utils import RoleAwareGroup
+from egc import json
 
 @click.group(cls=RoleAwareGroup)
 def ipfs() -> None:

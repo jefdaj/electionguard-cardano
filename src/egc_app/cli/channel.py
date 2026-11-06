@@ -3,7 +3,7 @@ import click
 from egc_app.cli.utils import RoleAwareGroup
 from egc_app import schemas
 from egc_app.client import Client
-from egc_app.cli.utils import *
+from egc_app.cli.utils import MultiIOArg, multi_load_many, multi_save, multi_save_arg
 
 import logging
 LOG = logging.getLogger(__name__)

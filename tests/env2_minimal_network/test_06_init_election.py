@@ -1,5 +1,6 @@
 import pytest
-from egc import *
+from egc import (ElectionConfig, ElectionContext, ElectionDeployment, ObserverNode, Transaction,
+                 get_utxos_for_addr)
 import logging
 
 LOG = logging.getLogger(__name__)

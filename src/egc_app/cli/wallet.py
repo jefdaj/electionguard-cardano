@@ -1,9 +1,9 @@
 import click
 import json
 from egc_app.client import Client
-from egc_app.cli.utils import *
+from egc_app.cli.utils import MultiIOArg, RoleAwareGroup, multi_load, multi_save, multi_save_arg
 from egc_app.schemas.wallet import WalletLoadOrCreate
-from egc import *
+from egc import Wallet, asyncio
 
 @click.group(cls=RoleAwareGroup)
 def wallet() -> None:

@@ -1,6 +1,13 @@
 # Generated with static_records_py.py. Consider editing and re-running that to make any changes.
 
-from egc import *
+from egc import (AddSubChannels, AdvancePhase, BallotSpoiled, BallotSubmitted, CastNotice,
+                 CeremonyDetails, CiphertextTally, ConfigAnnouncePhase, ConfigCeremonyPhase,
+                 ConfigOnboardingPhase, Constants, Device, ElectionConfigPhase,
+                 ElectionFinalizePhase, ElectionResultsPhase, ElectionVerifyPhase,
+                 ElectionVotingPhase, EndElection, GuardianBackup, GuardianPubkey,
+                 GuardianVerification, InitElection, JointKey, Manifest, PlaintextTally,
+                 PostPublicRecords, PublicRecord, ResultsDecryptPhase, ResultsTallyPhase,
+                 RmSubChannels, SpoiledResult, SpoiledShare, Summary, TallyShare)
 
 STATIC_PHASES = \
 {0: ElectionConfigPhase(phase=ConfigAnnouncePhase()),

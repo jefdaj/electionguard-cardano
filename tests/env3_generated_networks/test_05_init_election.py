@@ -1,8 +1,8 @@
 from hypothesis import given, settings, seed, Phase
 from hypothesis import strategies as st
-from egc import *
-from ..lib import *
-from .lib  import *
+from .lib import (FnCallConfig, ResolvedTestConfig, append_config_fn_name, append_setup_fns,
+                  assert_node_logs_match, assert_script_logs_match, assert_test_completed,
+                  cfg_test_base, given_cached_tests)
 
 from .test_04_subscribe     import assert_election_events
 

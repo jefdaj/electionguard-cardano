@@ -1,5 +1,5 @@
 import pytest
-from egc import *
+from egc import EGC_WALLET_MODE
 # from ..lib import per_election_fixture
 from pathlib import Path
 import os
