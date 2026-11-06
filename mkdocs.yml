@@ -9,10 +9,10 @@ validation:
 
 nav:
   - Home: index.md
+  - Nix: nix/packages.md
   - Getting started: getting-started.md
-  - Python API: python.md
-  - Aiken API: aiken/index.html
-  - Nix packages: nix/packages.md
+  - Aiken: aiken/index.html
+  - Python: python.md
 
 plugins:
   - search

@@ -20,6 +20,11 @@ mkdir -p docs/nix
 rm -rf docs/aiken
 (cd aiken && aiken docs --destination ../docs/aiken)
 
+# Point source links at the aiken/ subdirectory
+# TODO add a tag per aiken version so the src links work?
+find docs/aiken -name '*.html' -exec \
+  sed -i -E 's#(https://github\.com/jefdaj/electionguard-cardano/blob/[^/"]+)/#\1/aiken/#g' {} +
+
 # 3. Build the site
 mkdocs build --strict --site-dir site
 

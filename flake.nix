@@ -183,7 +183,7 @@
 
       packages.${system} = {
 
-        default = egcPythonEnv;
+        default = lib.addMetaAttrs { description = "Description here?"; } egcPythonEnv;
 
         # This is the Python library code + binaries.
         # TODO clean up all the misc extra files included here
@@ -274,11 +274,11 @@
           in pkgs.writeShellApplication {
              name = "build-docs";
              runtimeInputs = [
-               # pkgs.uv
                docsPythonEnv
-               # venv
                aiken.packages.x86_64-linux.aiken
                pkgs.nix
+               pkgs.gnused
+               pkgs.findutils
              ];
              text = builtins.readFile ./nix/docs/build-docs.sh;
            };
