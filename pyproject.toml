@@ -73,6 +73,9 @@ include = [
 "src/egc"     = "egc"
 "src/egc_app" = "egc_app"
 
+[tool.ruff.lint]
+extend-select = ["F403", "F405"] # warn about star imports
+
 [build-system]
 requires = ["hatchling", "editables"]
 build-backend = "hatchling.build"

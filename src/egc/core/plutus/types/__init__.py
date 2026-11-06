@@ -35,9 +35,12 @@ from .channel import (
     publisher_vkh,
     publisher_address,
     channel_id_to_string,
+)
+
+from .channel_id import (
     coerce_channel_id,
-    is_valid_role,
     is_valid_channel_str,
+    is_valid_role,
 )
 
 from .ipfs_cid import (
