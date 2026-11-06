@@ -50,6 +50,7 @@ dev = [
     "pytest>=7.0",
     "pytest-asyncio",
     "pytest-mock",
+    "removestar>=1.5.3",
 ]
 docs = [
   "mkdocs-material",

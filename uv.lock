@@ -679,6 +679,7 @@ dev = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-mock" },
+    { name = "removestar" },
 ]
 docs = [
     { name = "mkdocs-material" },
@@ -713,6 +714,7 @@ dev = [
     { name = "pytest", specifier = ">=7.0" },
     { name = "pytest-asyncio" },
     { name = "pytest-mock" },
+    { name = "removestar", specifier = ">=1.5.3" },
 ]
 docs = [
     { name = "mkdocs-material" },
@@ -1733,6 +1735,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pyflakes"
+version = "4.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/9b/43/f4566b992ab97abd18426aeba516a83c7a833230614a2c3f4d3e9d8ff0f0/pyflakes-4.1.0.tar.gz", hash = "sha256:592beb57058eb82eb190fb7514f2081c555c51000b029ff71286a681e6cf2f83", size = 67243, upload-time = "2026-10-28T20:10:02.469Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fd/52/98c9a0e4718abe887121279457bc7140115df22d714b7183880eb61e359f/pyflakes-4.1.0-py2.py3-none-any.whl", hash = "sha256:b2e05e6bac8e49b67be2a6ffa63422c60f7193fc72e8180255907b41ec997dc1", size = 66258, upload-time = "2026-10-28T20:10:01.109Z" },
+]
+
+[[package]]
 name = "pygments"
 version = "2.20.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1952,6 +1963,18 @@ wheels = [
 [package.optional-dependencies]
 pil = [
     { name = "pillow" },
+]
+
+[[package]]
+name = "removestar"
+version = "1.5.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyflakes" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d9/a8/4d8629e6e1296682038aacac71b902f898206427c188c9c611e8e81bb5ce/removestar-1.5.3.tar.gz", hash = "sha256:c3a717fa5906a3a48ed410635d3375f3884da0c99e76ac83cbd613617903c038", size = 13967, upload-time = "2026-10-23T07:56:03.243Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0c/e5/8f40d61b243f2d60b115209a2b98f548693f5deadb547f1be3e66e7c9941/removestar-1.5.3-py3-none-any.whl", hash = "sha256:1404d0796e188ce4e1253d3ed86af616de31eb59da7a44a70bfce7d1a07e8056", size = 16211, upload-time = "2026-10-23T07:56:01.834Z" },
 ]
 
 [[package]]
