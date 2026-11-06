@@ -1,4 +1,4 @@
-# Should be kept in sync with onchain/validators/election/action.ak
+# Should be kept in sync with aiken/validators/election/action.ak
 # Note that order is important! CONSTR_IDs must all match.
 
 from dataclasses import dataclass

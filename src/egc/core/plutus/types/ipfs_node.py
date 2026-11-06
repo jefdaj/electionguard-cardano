@@ -13,7 +13,10 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-# Should be kept in sync with onchain/validators/election/types/ipfs_node.ak
+
+# Types for posting IPFS IDs + address hints on chain.
+# Should be kept in sync with aiken/validators/election/types/ipfs_node.ak
+# TODO is this practically required for small elections? for large ones?
 
 
 type IpfsPeerId = bytes

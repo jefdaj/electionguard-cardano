@@ -1,4 +1,5 @@
-# Should be kept in sync with onchain/validators/election/types/channel.ak
+# Should be kept in sync with aiken/validators/election/types/channel.ak
+# Note that order is important! CONSTR_IDs must all match.
 
 from .channel_id import *
 from .phase import ElectionPhase

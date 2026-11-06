@@ -2,7 +2,8 @@ import re
 from dataclasses import dataclass
 from pycardano import PlutusData
 
-# Should be kept in sync with onchain/validators/election/types/ballot_id.ak
+# Should be kept in sync with aiken/validators/election/types/ballot_id.ak
+# Note that order is important! CONSTR_IDs must all match.
 
 type BallotId = bytes
 

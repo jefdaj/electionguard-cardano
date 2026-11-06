@@ -1,4 +1,8 @@
-# Should be kept in sync with onchain/validators/election/types/phase.ak
+# Types for keeping track of where we are in the election workflow.
+#
+# The on-chain versions control which Actions can be taken.
+# Note that they don't include rounds within the key ceremony; the guardians handle that themselves.
+# Should be kept in sync with aiken/validators/election/types/phase.ak
 
 from pycardano import PlutusData
 from dataclasses import dataclass

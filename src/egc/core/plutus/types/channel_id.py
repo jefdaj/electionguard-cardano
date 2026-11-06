@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass
 from pycardano import PlutusData
 
-# Should be kept in sync with onchain/election/types/channel_id.ak
+# Should be kept in sync with aiken/election/types/channel_id.ak
 #
 # Valid ChannelIds:
 # - "admin"
@@ -122,4 +122,3 @@ class ChannelIdMixin:
 
 # Module-level constant, kept for backward compatibility with existing call sites.
 ADMIN_CHANNEL_ID = coerce_channel_id('admin')
-

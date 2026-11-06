@@ -6,6 +6,10 @@ LOG = logging.getLogger(__name__)
 
 from pycardano import *
 
+
+# Utility functions related to state thread tokens (STTs).
+
+
 # This should match the one defined in aiken.toml
 # TODO custom prefix set by funder
 STT_PREFIX: str = "election"

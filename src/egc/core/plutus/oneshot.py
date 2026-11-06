@@ -16,6 +16,9 @@ LOG = logging.getLogger(__name__)
 from pycardano import PlutusData, PlutusV3Script, ScriptHash, UTxO, Address, Network
 
 
+# Utility functions for parameterizing the plutus contract with a one-shot UTXO,
+# and other variables if needed. (There used to also be an election name.)
+
 
 def pick_oneshot_utxo(context, addr):
     # No particular logic to max here; any UTXO should work for the initial tests

@@ -2,7 +2,9 @@ from dataclasses import dataclass, fields as dc_fields
 from multiformats_cid import make_cid
 from pycardano import PlutusData
 
-# Should be kept in sync with onchain/validators/election/types/ipfs_cid.ak
+
+# Types for posting IPFS content identifiers (CIDs) on chain.
+# Should be kept in sync with aiken/validators/election/types/ipfs_cid.ak
 
 
 type IpfsCid = bytes

@@ -1,4 +1,11 @@
-# Should be kept in sync with onchain/validators/election/types/record.ak
+# Types for public record metadata.
+#
+# Note that the on chain code can't enforce that the content of an IPFS file
+# matches its on chain metadata. In the future an arbitration process could be
+# added to slash anyone posting invalid files along with other protocol
+# violations.
+#
+# Should be kept in sync with aiken/validators/election/types/record.ak
 
 from dataclasses import dataclass
 from pycardano import PlutusData

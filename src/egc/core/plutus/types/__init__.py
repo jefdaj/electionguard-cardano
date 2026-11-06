@@ -1,3 +1,12 @@
+# All the types here whose names match on-chain (Aiken) types should be
+# equivalent to them, and should be round-trippable to them. Where applicable
+# the constructor IDs also need to be in the same order.
+#
+# Some also match names of ElectionGuard types. They should conceptually match
+# but are NOT necessarily interchangable because they have different
+# serialization formats. I'd like to make it more ergonomic medium term, but
+# that's not a high priority for now.
+
 from .action import (
   InitElection,
   AddSubChannels,
