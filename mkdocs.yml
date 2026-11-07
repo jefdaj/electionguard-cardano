@@ -9,6 +9,7 @@ validation:
 
 nav:
   - Home: index.md
+  - Validator: validator.md
   - Nix: nix/packages.md
   - Getting started: getting-started.md
   - Aiken: aiken/index.html
