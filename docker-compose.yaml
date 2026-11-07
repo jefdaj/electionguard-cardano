@@ -1,17 +1,21 @@
-# Single EGC node: cardano + ogmios + ipfs + egc
+# ---md
+# ## Single EGC node: cardano + ogmios + ipfs + egc
 #
-# Get it running:
+# ### Get it running:
+#
 # 1. ./quickstart.sh OR docker compose up
 # 2. docker exec -it egcnode-egc-1 egc
 #
-# Re-use existing cardano node config + data:
+# ### Re-use existing cardano node config + data:
 #   EGC_CARDANO_DIR=/path/to/cardano docker compose up
 #
-# Check that everything is working:
+# ### Check that everything is working:
+#
 # 1. cardano: docker compose logs cardano --follow | grep 'new tip'
 # 2. ogmios: http://localhost:1337/
 # 3. ipfs: http://localhost:5001/webui/ or docker compose logs ipfs
 # 4. egc: docker exec -it egcnode-egc-1 egc node status
+# ---
 
 name: egcnode
 

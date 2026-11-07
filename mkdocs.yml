@@ -9,11 +9,20 @@ validation:
 
 nav:
   - Home: index.md
-  - Validator: validator.md
+  - Aiken: aiken_.md # underscore prevents recursive iframe
   - Nix: nix/packages.md
   - Getting started: getting-started.md
-  - Aiken: aiken/index.html
+  # - Aiken: aiken/index.html
   - Python: python.md
+  - Docker: docker.md
+
+hooks:
+  - hooks/compose_docs.py
+watch:
+  - docker-compose.yaml   # so `mkdocs serve` reloads when the file changes
+
+# TODO try mkdocs serve
+
 
 plugins:
   - search
