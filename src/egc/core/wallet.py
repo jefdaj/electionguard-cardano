@@ -29,6 +29,7 @@ LOG = logging.getLogger(__name__)
 KEYS_LOG = logging.getLogger('test-wallets')
 if EGC_WALLET_MODE == 'scripted':
     log_path = (EGC_WALLET_DIR / 'wallets.log').absolute()
+    log_path.parent.mkdir(exist_ok=True)
     keys_fh = logging.FileHandler(log_path)
     keys_fh.setFormatter(
         logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
