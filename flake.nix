@@ -295,6 +295,7 @@
               uv
               venv
               plutusBlueprints
+              nix-prefetch-docker
             ]);
             env = {
               UV_NO_SYNC = "1";
