@@ -38,16 +38,18 @@ services:
     stop_grace_period: 60s # default 10s kills it, forcing re-sync on next startup
 
   # This is a new (experimental) method to quickly download the Cardano
-  # blockchain. Validators collectively sign a hash of the agreed upon state each
-  # epoch, so when joining the network you can just download everything in bulk and
-  # verify a few signatures rather than going block by block. It's totally optional.
-  # Warning: because of an issue with the first version of the spec,
-  # this also has to trust an IOG "ancillary verification" key to sign a few
-  # files that aren't included in the main hash. Hopefully that can be removed soon!
+  # blockchain. Validators collectively sign a hash of the agreed upon state
+  # each epoch, so when joining the network you can just download everything in
+  # bulk and verify a few signatures rather than going block by block. It's
+  # totally optional.  Warning: because of an issue with the first version of
+  # the spec, this also has to trust an "ancillary verification" key from IOG
+  # (the company that originally built Cardano) to sign a few files that aren't
+  # included in the main hash. Hopefully that can be removed soon!
   # USAGE: run ./quickstart.sh rather than `docker compose up` the first run
   mithril:
     profiles: ["quickstart"]
-    image: ghcr.io/intersectmbo/mithril-client:latest  # TODO pin this one too
+    # image: ghcr.io/intersectmbo/mithril-client:latest
+    image: ghcr.io/intersectmbo/mithril-client:2642.0-e85df3d
     user: "${MITHRIL_UID:-0}:${MITHRIL_GID:-0}"
     environment:
       NETWORK: ${CARDANO_NETWORK:-preview}

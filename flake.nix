@@ -219,6 +219,7 @@
           cardano = imageFromPrefetchAttrs ./nix/images/cardano.nix;
           ipfs    = imageFromPrefetchAttrs ./nix/images/ipfs.nix;
           ogmios  = imageFromPrefetchAttrs ./nix/images/ogmios.nix;
+          mithril = imageFromPrefetchAttrs ./nix/images/mithril.nix;
         };
 
         # TODO update references to new name
