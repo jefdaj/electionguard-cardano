@@ -219,10 +219,10 @@ class ElectionNode:
         assert utxo is not None
         return
 
-    def await_records(self, timeout=OGMIOS_TIMEOUT_SEC):
+    def await_records(self, records=[], timeout=OGMIOS_TIMEOUT_SEC):
         deadline = time.monotonic() + timeout
         while True:
-            n = self.ipfs.count_pending_records()
+            n = self.ipfs.count_unfetched_records(records)
             if n == 0:
                 return
             if time.monotonic() > deadline:

@@ -79,40 +79,42 @@ class RetryingIPFS:
 def record_key(record) -> str:
     "Work around record `unhashable type` issues."
     # TODO add a method to the dataclass instead?
-    # TODO use entire record including cid for key?
+    # TODO use entire record including cid for key? seems more secure, but not always known?
     return str(record.metadata)
 
 
-class PendingStore:
+class RecordsFetched:
     """Claude tried to add a SQLite db here. I rewrote it as a dict but left
     the class in case we want persistent storage later.
     """
 
     def __init__(self):
-        self._db = {} # metadata str -> (record, attempts, next attempt)
+        self._pending: dict = {} # metadata str -> (record, attempts, next attempt)
+        self._fetched: set[str] = set() # set(metadata str)
 
     def add(self, record):
         key = record_key(record)
-        if key in self._db.keys():
+        if key in self._pending.keys():
             LOG.info(f'add {record} ignoring duplicate')
         else:
             LOG.info(f'add {record}')
-            self._db[key] = (record, 0, 0)
+            self._pending[key] = (record, 0, 0)
 
-    def remove(self, record):
+    def mark_fetched(self, record):
         key = record_key(record)
-        # LOG.debug(f'remove {record}')
-        del self._db[key]
+        LOG.debug(f'fetched {record}')
+        self._fetched.add(key)
+        del self._pending[key]
 
     def mark_attempt(self, record, attempts, next_attempt):
         key = record_key(record)
         LOG.info(f'mark_attempt record:{record} attempts:{attempts} next_attempt:{next_attempt}')
-        self._db[key] = (record, attempts, next_attempt)
+        self._pending[key] = (record, attempts, next_attempt)
 
     def due(self, now):
         records_due = [
             (record, attempts)
-            for (record, attempts, next_attempt) in self._db.values()
+            for (record, attempts, next_attempt) in self._pending.values()
             if next_attempt <= now
         ]
         if records_due:
@@ -120,9 +122,23 @@ class PendingStore:
         random.shuffle(records_due) # TODO is this a good strategy? or should they be sorted?
         return records_due
 
-    def count(self):
-        return len(self._db.keys())
+    def n_pending(self, records=[]):
+        "The number of keys seen on chain but not yet fetched."
+        # TODO remove? not sure you ever want it instead of n_unfetched
+        keys = self._pending.keys()
+        if records:
+            keys = [
+                k for k in keys
+                if k in [record_key(r) for r in records]
+            ]
+        return len(keys)
 
+    def n_unfetched(self, records=[]):
+        "Like n_pending, but also counts records not seen yet on chain."
+        # TODO return the records instead? won't work if none passed
+        keys = [record_key(r) for r in records]
+        unfetched = [k for k in keys if not k in self._fetched]
+        return len(unfetched)
 
 
 class PostFetchMismatchError(Exception):
@@ -222,7 +238,7 @@ class IPFSService:
         "Lifecycle."
         asyncio.set_event_loop(self._loop)
         self.ipfs = RetryingIPFS(self.maddr)
-        self.store = PendingStore()
+        self.store = RecordsFetched()
         self._fresh_q = asyncio.Queue()
         self._retry_sem = asyncio.Semaphore(self._retry_concurrency)
         for _ in range(self.fresh_workers):
@@ -295,7 +311,7 @@ class IPFSService:
             await self._save_fetched_data(data, record)
             async for pin_status in self.ipfs._client.pin.add(cid_str):
                 LOG.debug(f'progress pinning {cid_str}: {pin_status}')
-            self.store.remove(record) # success => no longer pending
+            self.store.mark_fetched(record) # success => no longer pending
             remove_fetched_from_to_post(self.records_to_post_dir, self.records_fetched_dir)
             LOG.info("fetched %s", record)
             return True
@@ -473,8 +489,11 @@ class IPFSService:
     def status_sync(self):
         return self._run_sync(self._status())
 
-    def count_pending_records(self):
-        return self.store.count()
+    def count_unfetched_records(self, records=[]):
+        return self.store.n_unfetched(records)
+
+    def count_pending_records(self, records=[]):
+        return self.store.n_pending(records)
 
     async def wait_until_stable(
         self,
