@@ -19,7 +19,7 @@ services:
 
   cardano:
     image: ghcr.io/intersectmbo/cardano-node:11.0.1
-    restart: on-failure
+    restart: no # restart in production?
     command:
       - run
       - --config
@@ -72,7 +72,7 @@ services:
   ogmios:
     # TODO update once node 11 stuff is worked out:
     image: ghcr.io/intersectmbo/ogmios:v6.14.0.3
-    restart: on-failure
+    restart: no # restart in production?
     depends_on:
       - cardano
     command:
@@ -95,7 +95,7 @@ services:
 
   ipfs:
     image: ipfs/kubo:v0.42.0
-    restart: on-failure
+    restart: no # restart in production?
     volumes:
       - type: tmpfs
         target: /data
@@ -119,7 +119,7 @@ services:
     # TODO push to ghcr for release:
     # image: ghcr.io/jefdaj/electionguard-cardano:0.6.1
     image: electionguard-cardano:0.6.1
-    restart: on-failure
+    restart: no # restart in production?
     depends_on:
       - ogmios
       - ipfs
