@@ -19,8 +19,9 @@
         { "address": "192.168.17.108", "port": 3001 }
       ],
       "advertise": false,
-      "trustable": false,
-      "valency": 1
+      "trustable": true,
+      "hotValency": 2,
+      "warmValency": 3
     }
   ],
   "peerSnapshotFile": "peer-snapshot.json",
