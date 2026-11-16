@@ -7,17 +7,7 @@
   ],
   "localRoots": [
     {
-      "accessPoints": [
-        { "address": "192.168.17.100", "port": 3001 },
-        { "address": "192.168.17.101", "port": 3001 },
-        { "address": "192.168.17.102", "port": 3001 },
-        { "address": "192.168.17.103", "port": 3001 },
-        { "address": "192.168.17.104", "port": 3001 },
-        { "address": "192.168.17.105", "port": 3001 },
-        { "address": "192.168.17.106", "port": 3001 },
-        { "address": "192.168.17.107", "port": 3001 },
-        { "address": "192.168.17.108", "port": 3001 }
-      ],
+      "accessPoints": [],
       "advertise": false,
       "trustable": true,
       "hotValency": 2,
