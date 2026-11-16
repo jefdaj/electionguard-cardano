@@ -33,6 +33,7 @@ services:
       - --topology
       - /config/topology.json
       - +RTS
+      - -A16m
       - -IO
       - -F1.5
       - --disable-delayed-os-memory-return
