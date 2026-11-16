@@ -13,6 +13,8 @@
 # 3. ipfs: http://localhost:5001/webui/ or docker compose logs ipfs
 # 4. egc: docker exec -it egcnode-egc-1 egc node status
 
+# TODO ghc runtime flags to reduce peak ram
+
 name: egcnode
 
 services:
@@ -30,15 +32,22 @@ services:
       - /ipc/node.socket
       - --topology
       - /config/topology.json
+      - +RTS
+      - -IO
+      - -F1.5
+      - --disable-delayed-os-memory-return
+      - -RTS
     volumes:
       - ${EGC_CARDANO_DIR:-./cardano}/config/network/${CARDANO_NETWORK:-preview}/cardano-node:/config
-      - ${EGC_CARDANO_DIR:-./cardano}/data/node-db:/data
+      - ${EGC_CARDANO_DIR:-./cardano}/data/node-db:/data/node-db
+      - ${EGC_CARDANO_DIR:-./cardano}/data/node-lsm:/data/node-lsm
       - ${EGC_CARDANO_DIR:-./cardano}/data/node-ipc:/ipc
       - ${EGC_CARDANO_TOPOLOGY}:/config/topology.json
     stop_signal: SIGINT
-    stop_grace_period: 60s # default 10s kills it, forcing re-sync on next startup
+    oom_score_adj: -500 # kill other processes first
     security_opt:
       - seccomp=./cardano/seccomp.json # allow io_uring calls needed by LSM backend
+    stop_grace_period: 5m # minimize chances of having to re-sync after unclean shutdown
 
   # This is a new (experimental) method to quickly download the Cardano
   # blockchain. Validators collectively sign a hash of the agreed upon state
