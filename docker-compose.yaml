@@ -37,6 +37,8 @@ services:
       - ${EGC_CARDANO_TOPOLOGY}:/config/topology.json
     stop_signal: SIGINT
     stop_grace_period: 60s # default 10s kills it, forcing re-sync on next startup
+    security_opt:
+      - seccomp=./cardano/seccomp.json # allow io_uring calls needed by LSM backend
 
   # This is a new (experimental) method to quickly download the Cardano
   # blockchain. Validators collectively sign a hash of the agreed upon state
