@@ -1,4 +1,8 @@
 {
+  "MinBigLedgerPeersForTrustedState": 0,
+  "SyncTargetNumberOfActiveBigLedgerPeers": 0,
+  "SyncTargetNumberOfEstablishedBigLedgerPeers": 0,
+  "SyncTargetNumberOfKnownBigLedgerPeers": 0,
   "AlonzoGenesisFile": "alonzo-genesis.json",
   "AlonzoGenesisHash": "7e94a15f55d1e82d10f09203fa1d40f8eede58fd8066542cf6566008068ed874",
   "ByronGenesisFile": "byron-genesis.json",
@@ -15,7 +19,7 @@
   "LastKnownBlockVersion-Minor": 1,
   "LedgerDB": {
     "Backend": "V2LSM",
-    "LSMDatabasePath": "/data/node-lsm",
+    "LSMDatabasePath": "/data/node/lsm",
     "NumOfDiskSnapshots": 2
   },
   "MinNodeVersion": "10.7.0",

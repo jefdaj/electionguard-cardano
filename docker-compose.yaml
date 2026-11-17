@@ -40,8 +40,8 @@ services:
       - -RTS
     volumes:
       - ${EGC_CARDANO_DIR:-./cardano}/config/network/${CARDANO_NETWORK:-preview}/cardano-node:/config
-      - ${EGC_CARDANO_DIR:-./cardano}/data/node-db:/data/node-db
-      - ${EGC_CARDANO_DIR:-./cardano}/data/node-lsm:/data/node-lsm
+      - ${EGC_CARDANO_DIR:-./cardano}/data/node-db:/data/node/db
+      - ${EGC_CARDANO_DIR:-./cardano}/data/node-lsm:/data/node/lsm
       - ${EGC_CARDANO_DIR:-./cardano}/data/node-ipc:/ipc
       - ${EGC_CARDANO_TOPOLOGY}:/config/topology.json
     stop_signal: SIGINT
@@ -49,6 +49,7 @@ services:
     security_opt:
       - seccomp=./cardano/seccomp.json # allow io_uring calls needed by LSM backend
     stop_grace_period: 5m # minimize chances of having to re-sync after unclean shutdown
+    # network_mode: host # TODO remove
 
   # This is a new (experimental) method to quickly download the Cardano
   # blockchain. Validators collectively sign a hash of the agreed upon state
