@@ -40,8 +40,7 @@ services:
       - -RTS
     volumes:
       - ${EGC_CARDANO_DIR:-./cardano}/config/network/${CARDANO_NETWORK:-preview}/cardano-node:/config
-      - ${EGC_CARDANO_DIR:-./cardano}/data/node-db:/data/node/db
-      - ${EGC_CARDANO_DIR:-./cardano}/data/node-lsm:/data/node/lsm
+      - ${EGC_CARDANO_DIR:-./cardano}/data/node-db:/data
       - ${EGC_CARDANO_DIR:-./cardano}/data/node-ipc:/ipc
       - ${EGC_CARDANO_TOPOLOGY}:/config/topology.json
     stop_signal: SIGINT
