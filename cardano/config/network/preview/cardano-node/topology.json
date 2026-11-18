@@ -9,9 +9,8 @@
     {
       "accessPoints": [],
       "advertise": false,
-      "trustable": true,
-      "hotValency": 2,
-      "warmValency": 3
+      "trustable": false,
+      "valency": 1
     }
   ],
   "peerSnapshotFile": "peer-snapshot.json",
