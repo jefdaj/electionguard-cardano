@@ -14,10 +14,9 @@
   "LastKnownBlockVersion-Major": 3,
   "LastKnownBlockVersion-Minor": 1,
   "LedgerDB": {
-    "Backend": "V2InMemory",
-    "NumOfDiskSnapshots": 2,
-    "QueryBatchSize": 100000,
-    "SnapshotInterval": 864
+    "Backend": "V2LSM",
+    "LSMDatabasePath": "/data/lsm",
+    "NumOfDiskSnapshots": 2
   },
   "MinNodeVersion": "10.7.0",
   "Protocol": "Cardano",

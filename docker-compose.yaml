@@ -13,13 +13,15 @@
 # 3. ipfs: http://localhost:5001/webui/ or docker compose logs ipfs
 # 4. egc: docker exec -it egcnode-egc-1 egc node status
 
+# TODO ghc runtime flags to reduce peak ram
+
 name: egcnode
 
 services:
 
   cardano:
     image: ghcr.io/intersectmbo/cardano-node:11.0.1
-    restart: on-failure
+    restart: no # restart in production?
     command:
       - run
       - --config
@@ -30,12 +32,23 @@ services:
       - /ipc/node.socket
       - --topology
       - /config/topology.json
+      - +RTS
+      - -A16m
+      - -IO
+      - -F1.5
+      - --disable-delayed-os-memory-return
+      - -RTS
     volumes:
       - ${EGC_CARDANO_DIR:-./cardano}/config/network/${CARDANO_NETWORK:-preview}/cardano-node:/config
       - ${EGC_CARDANO_DIR:-./cardano}/data/node-db:/data
       - ${EGC_CARDANO_DIR:-./cardano}/data/node-ipc:/ipc
+      - ${EGC_CARDANO_TOPOLOGY}:/config/topology.json
     stop_signal: SIGINT
-    stop_grace_period: 60s # default 10s kills it, forcing re-sync on next startup
+    oom_score_adj: -500 # kill other processes first
+    security_opt:
+      - seccomp=./cardano/seccomp.json # allow io_uring calls needed by LSM backend
+    stop_grace_period: 5m # minimize chances of having to re-sync after unclean shutdown
+    # network_mode: host # TODO remove
 
   # This is a new (experimental) method to quickly download the Cardano
   # blockchain. Validators collectively sign a hash of the agreed upon state
@@ -72,7 +85,7 @@ services:
   ogmios:
     # TODO update once node 11 stuff is worked out:
     image: ghcr.io/intersectmbo/ogmios:v6.14.0.3
-    restart: on-failure
+    restart: no # restart in production?
     depends_on:
       - cardano
     command:
@@ -95,7 +108,7 @@ services:
 
   ipfs:
     image: ipfs/kubo:v0.42.0
-    restart: on-failure
+    restart: no # restart in production?
     volumes:
       - type: tmpfs
         target: /data
@@ -119,7 +132,7 @@ services:
     # TODO push to ghcr for release:
     # image: ghcr.io/jefdaj/electionguard-cardano:0.6.1
     image: electionguard-cardano:0.6.1
-    restart: on-failure
+    restart: no # restart in production?
     depends_on:
       - ogmios
       - ipfs
