@@ -1,5 +1,6 @@
 let
-  flake = builtins.getFlake (toString ../..);
+  # The git part prevents .gitignored files being copied to the Nix store.
+  flake = builtins.getFlake "git+file://${toString ../..}";
   inherit (flake) pkgs;
 
 in pkgs // {
