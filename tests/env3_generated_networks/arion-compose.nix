@@ -202,23 +202,34 @@ let
   };
 
   cardanoService = {
-    image = "ghcr.io/intersectmbo/cardano-node:11.0.1";
-    command = [
-      "run"
-      "--config" "/config/config.json"
-      "--database-path" "/data/db"
-      "--socket-path" "/ipc/node.socket"
-      "--topology" "/config/topology.json"
-    ];
-    volumes = [
-      "${cardanoConfigDir}/network/${cardanoNetwork}/cardano-node:/config"
-      "${cardanoDataDir}/node-db:/data"
-      "${cardanoDataDir}/node-ipc:/ipc"
-    ];
-    restart = "on-failure"; # TODO remove?
-    networks = [ cardanoNetworkName ];
-    stop_signal = "SIGINT";
-    stop_grace_period = "60s"; # default 10s kills it, forcing re-sync on next startup
+    service = {
+      image = "ghcr.io/intersectmbo/cardano-node:11.0.1";
+      command = [
+        "run"
+        "--config" "/config/config.json"
+        "--database-path" "/data/db"
+        "--socket-path" "/ipc/node.socket"
+        "--topology" "/config/topology.json"
+        "+RTS" "-A16m" "-IO" "-F1.5" "--disable-delayed-os-memory-return" "-RTS"
+      ];
+      volumes = [
+        "${cardanoConfigDir}/network/${cardanoNetwork}/cardano-node:/config"
+        "${cardanoDataDir}/node-db:/data"
+        "${cardanoDataDir}/node-ipc:/ipc"
+      ];
+      restart = "no"; # TODO on-failure in production?
+      networks = [ cardanoNetworkName ];
+      stop_signal = "SIGINT";
+      stop_grace_period = "5m"; # default 10s kills it, forcing re-sync on next startup
+    };
+
+    # Arion doesn't have pre-made options for these, but we can still insert
+    # them directly in the compose output.
+    out.service = {
+      oom_score_adj = -500; # kill other processes first
+      security_opt = [ "seccomp=${cardanoDir}/seccomp.json" ]; # allow uring calls needed for LSM
+    };
+
     # TODO how should this look in Arion?
     # logging = {
     #   driver = "json-file";
@@ -230,22 +241,24 @@ let
   };
 
   ogmiosService = perPairNetworks: {
-    # image = "jefdaj/ogmios-nix-docker:latest";
-    image = "ghcr.io/intersectmbo/ogmios:v6.14.0.3";
-    restart = "on-failure";
-    command = [
-      "--host" "0.0.0.0"
-      "--node-socket" "/ipc/node.socket"
-      "--node-config" "/config/cardano-node/config.json"
-    ];
-    volumes = [
-      "${cardanoConfigDir}/network/${cardanoNetwork}:/config"
-      "${cardanoDataDir}/node-ipc:/ipc"
-    ];
-    ports = [ "127.0.0.1:${toString ogmiosPort}:1337" ];
-    networks = [ cardanoNetworkName ] ++ perPairNetworks;
-    stop_signal = "SIGINT";
-    stop_grace_period = "60s"; # default 10s kills it, forcing re-sync on next startup
+    service = {
+      # image = "jefdaj/ogmios-nix-docker:latest";
+      image = "ghcr.io/intersectmbo/ogmios:v6.14.0.3";
+      restart = "on-failure";
+      command = [
+        "--host" "0.0.0.0"
+        "--node-socket" "/ipc/node.socket"
+        "--node-config" "/config/cardano-node/config.json"
+      ];
+      volumes = [
+        "${cardanoConfigDir}/network/${cardanoNetwork}:/config"
+        "${cardanoDataDir}/node-ipc:/ipc"
+      ];
+      ports = [ "127.0.0.1:${toString ogmiosPort}:1337" ];
+      networks = [ cardanoNetworkName ] ++ perPairNetworks;
+      stop_signal = "SIGINT";
+      stop_grace_period = "60s"; # default 10s kills it, forcing re-sync on next startup
+    };
   };
 
   mkServices = cfg:
@@ -287,8 +300,8 @@ let
       ];
 
   in {
-    "shared-cardano".service = cardanoService;
-    "shared-ogmios".service = ogmiosService (listOgmiosNetworks cfg);
+    "shared-cardano" = cardanoService;
+    "shared-ogmios" = ogmiosService (listOgmiosNetworks cfg);
   } //
     (builtins.foldl' (acc: svc: {
       attrs  = acc.attrs // builtins.listToAttrs (mkServicePairs svc.name svc.count acc.portOffset);
