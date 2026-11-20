@@ -1,7 +1,7 @@
 { pkgs, lib, ... }:
 let
 
-  # Shared cardano node data (~15G) for all the dev networks
+  # Shared cardano node data (~15-20G) for all the dev networks
   cardanoDir       = builtins.getEnv "EGC_CARDANO_DIR";
   cardanoConfigDir = "${cardanoDir}/config";
   cardanoDataDir   = "${cardanoDir}/data";

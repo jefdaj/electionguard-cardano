@@ -7,7 +7,7 @@ let
   # Can be written manually or generated via pytest.
   testConfig = builtins.fromJSON (builtins.readFile (builtins.getEnv "EGC_TEST_JSON"));
 
-  # Shared cardano node data (~15G) for all the dev codebases
+  # Shared cardano node data (~16-20G) for all the dev codebases
   cardanoDir = builtins.getEnv "EGC_CARDANO_DIR";
   cardanoConfigDir = "${cardanoDir}/config";
   cardanoDataDir   = "${cardanoDir}/data";

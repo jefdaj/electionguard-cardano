@@ -4,4 +4,4 @@ from pathlib import Path
 @pytest.fixture(scope='session')
 def env1_tmp_root(request):
     project_root = request.config.rootpath.absolute()
-    return project_root / 'data' / 'env1'
+    return project_root / 'tests' / 'data' / 'env1'

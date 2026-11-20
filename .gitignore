@@ -1,10 +1,26 @@
-cardano/data
+# cardano-node docker data
+/cardano/data
+
+# per-test bind mounts, logs, etc
+/tests/data/
+
+# logs
 *.log
+
+# vim
 *.sw*
+
+# arion generated docker compose files
 .tmp-arion-docker-compose*.yaml
-/data/
+
+# python
 __pycache__/
-election-*.json
+
+# aiken
+# TODO put back? election-*.json
+
+# cardano dev keys
 keys/
-log
+
+# nix
 result*
