@@ -3,7 +3,7 @@
 
 # TODO also include env1, env2
 
-base="./data/env3/test*/data/*/*/egc"
+base="./tests/data/env3/test*/data/*/*/egc"
 interval=5
 
 # loop because it crashes a lot
