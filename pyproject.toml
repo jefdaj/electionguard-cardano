@@ -50,6 +50,7 @@ dev = [
     "pytest>=7.0",
     "pytest-asyncio",
     "pytest-mock",
+    "rich>=15.0.0",
 ]
 
 [tool.hatch.build.targets.sdist]
