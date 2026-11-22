@@ -183,8 +183,11 @@ def remove_fetched_from_to_post(records_to_post: Path, records_fetched: Path) ->
 
 
 class IPFSService:
-    """The service: owns the event loop, both lanes, and the store.
-    Each ElectionNode should have one of these and use it for all IPFS calls.
+    """Handles all IFPS calls for a single EGC node, including:
+    - publishing new records posted on chain by the node
+    - fetching and pinning records posted on chain by others
+    - recovering from a "stuck" IPFS node and other errors
+    Owns the event loop, both lanes, and the store.
     """
 
     # TODO tune these defaults based on test data

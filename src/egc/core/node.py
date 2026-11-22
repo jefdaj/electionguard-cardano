@@ -80,8 +80,8 @@ class ElectionNode:
         LOG.debug('ElectionNode.__init__')
 
         self.private_dir = Path(private_dir)
-        self.records_to_post_dir = self.private_dir / 'records_to_post'
-        self.records_fetched_dir = self.private_dir / 'records_fetched'
+        self.records_to_post_dir = self.private_dir / 'records_to_post' # TODO just 'to_post'?
+        self.records_fetched_dir = self.private_dir / 'records_fetched' # TODO just 'records'?
 
         # May be None in case of an Observer.
         # self.script: Optional[Script] = script
