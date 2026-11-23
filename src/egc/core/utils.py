@@ -1,5 +1,6 @@
 from dataclasses import replace, is_dataclass
 from deepdiff import DeepDiff
+import inspect
 import logging
 
 LOG = logging.getLogger(__name__)
@@ -26,3 +27,14 @@ def deep_replace(obj, path, value):
         value = deep_replace(getattr(obj, key), rest, value)
     return replace(obj, **{key: value})
 
+def make_log_call(log_fn):
+    def log_call():
+    	# Logs the name of the current function or method for debugging.
+        frame = inspect.currentframe()
+        try:
+            caller = frame.f_back if frame else None
+            name = caller.f_code.co_qualname if caller else "<unknown>"
+            log_fn(name)
+        finally:
+            del frame
+    return log_call

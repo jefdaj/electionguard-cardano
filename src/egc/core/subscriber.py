@@ -1,5 +1,4 @@
 import argparse
-import inspect
 import itertools
 import json
 import os
@@ -34,16 +33,12 @@ from .plutus.types.action import *
 from .plutus.types.channel import *
 from .plutus.types.ipfs_node import *
 from .election import ElectionConfig, ElectionContext
-from .utils import safe_deepdiff
+from .utils import safe_deepdiff, make_log_call
 from .records import *
 
 import logging
 LOG = logging.getLogger(__name__)
-
-
-def log_call(log_fn=LOG.debug):
-    # Logs the name of the current function or method for debugging.
-    log_fn(inspect.currentframe().f_back.f_code.co_qualname)
+LOG_CALL = make_log_call(LOG.debug)
 
 from pycardano import *
 
@@ -263,7 +258,7 @@ def event_txid(event: ChannelEvent):
 
 # TODO move to channel_id.py
 def channel_id_from_asset_name(encoded: str) -> ChannelId:
-    log_call()
+    LOG_CALL()
     channel_id = bytes.fromhex(encoded)
     # assert ChannelIdHelper.validate_bytes(channel_id)
     LOG.debug(f'decoded {asset_name} -> {channel_id}')
@@ -444,7 +439,7 @@ class ElectionSubscriber:
             timeout_slots = 60 * 60 * 24, # in slots, but also roughly seconds TODO cli option for this
         ):
 
-        log_call()
+        LOG_CALL()
 
         # self.config = config # TODO remove in favor of context?
         self.election = election
@@ -501,13 +496,13 @@ class ElectionSubscriber:
 
     def all_channel_ids(self) -> list[ChannelId]:
         # Includes historical channels that have already been closed.
-        log_call()
+        LOG_CALL()
         with self._history_lock:
             return sorted(list(self._history.keys()))
 
 
     def current_channel_ids(self) -> list[ChannelId]:
-        log_call()
+        LOG_CALL()
         return [
             i for i in self.all_channel_ids()
             if self.current_state(i) is not None
@@ -515,7 +510,7 @@ class ElectionSubscriber:
 
 
     def all_history(self):
-        log_call()
+        LOG_CALL()
         with self._history_lock:
             return deepcopy(self._history)
 
@@ -523,7 +518,7 @@ class ElectionSubscriber:
     def channel_history(self, channel_id: ChannelId) -> Optional[list[ChannelEvent]]:
         # Works fine on already-closed channels. Raises KeyError on not-yet-opened ones.
         # TODO return copies from all public methods
-        log_call()
+        LOG_CALL()
         with self._history_lock:
             if not channel_id in self._history:
                 return None # different from []
@@ -533,7 +528,7 @@ class ElectionSubscriber:
     def current_utxo(self, channel_id: ChannelId) -> Optional[UTxO]:
         # Returns None if the channel hasn't been opened yet or was already closed
         # TODO return copies from all public methods
-        log_call()
+        LOG_CALL()
         hist = self.channel_history(channel_id)
         if hist is None:
             return None
@@ -548,7 +543,7 @@ class ElectionSubscriber:
     def current_state(self, channel_id: ChannelId) -> Optional[ChannelState]:
         # Returns None if the channel hasn't been opened yet or was already closed
         # TODO return copies from all public methods
-        log_call()
+        LOG_CALL()
         with self._history_lock:
             hist = self.channel_history(channel_id)
             if hist is None:
@@ -569,7 +564,7 @@ class ElectionSubscriber:
 
 
     def current_phase(self) -> EgcPhase:
-        log_call()
+        LOG_CALL()
         with self._history_lock:
             hist = self.channel_history(ADMIN_CHANNEL_ID)
             if hist is None:
@@ -733,7 +728,7 @@ class ElectionSubscriber:
 
 
     def admin_address(self) -> Optional[Address]:
-        log_call()
+        LOG_CALL()
         try:
             with self._history_lock:
                 hist =  self.channel_history(ADMIN_CHANNEL_ID)
@@ -772,7 +767,7 @@ class ElectionSubscriber:
 
     def start(self) -> None:
         # TODO assert being called from main thread?
-        log_call()
+        LOG_CALL()
         self._kupo_stop.clear()
 
         def _start_and_watch() -> None:
@@ -801,7 +796,7 @@ class ElectionSubscriber:
 
     def join(self):
         # TODO assert being called from main thread? or at least not the watcher
-        log_call()
+        LOG_CALL()
         t = self._kupo_thread
         if t and t is not threading.current_thread():
             t.join()
@@ -810,7 +805,7 @@ class ElectionSubscriber:
 
     def request_stop(self):
         """Idempotent, safe to call from ANY thread (including the watcher)."""
-        log_call()
+        LOG_CALL()
         self._kupo_stop.set()
         if self._kupo_proc:
             self._kupo_proc.terminate()  # don't .wait() here; let watcher unwind
@@ -818,7 +813,7 @@ class ElectionSubscriber:
 
     def stop(self):
         """Full teardown + reap. Call only from a thread that is NOT the watcher."""
-        log_call()
+        LOG_CALL()
         self.request_stop()
 
         if self._kupo_proc:
@@ -839,7 +834,7 @@ class ElectionSubscriber:
 
 
     def is_done(self):
-        log_call()
+        LOG_CALL()
         if self._kupo_thread is None:
             return False # TODO is that right?
         return self._kupo_stop.is_set() \
@@ -848,7 +843,7 @@ class ElectionSubscriber:
 
     def sleep(self, seconds, jitter=True):
         "Like time.sleep, except it short-circuits properly on shutdown and has optional jitter."
-        log_call()
+        LOG_CALL()
         if jitter:
             seconds *= random.uniform(0.8, 1.2)
         self._kupo_stop.wait(timeout=seconds)
@@ -858,7 +853,7 @@ class ElectionSubscriber:
 
 
     def __del__(self):
-        log_call()
+        LOG_CALL()
         # Just a proactive warning in case of future thread stopping related issues:
         proc = getattr(self, '_kupo_proc', None)
         if proc is not None and proc.poll() is None:
@@ -874,7 +869,7 @@ class ElectionSubscriber:
 
 
     def _kupo_find_port(self):
-        log_call()
+        LOG_CALL()
         self._kupo_port = find_unused_port()
         LOG.debug(f'will start kupo on port {self._kupo_port}')
 
@@ -884,7 +879,7 @@ class ElectionSubscriber:
         Start Kupo as a subprocess.
         Uses `--since {slot}.{hash}` and `--match '{policy_id}/*'`.
         '''
-        log_call()
+        LOG_CALL()
 
         if self._kupo_proc is not None and self._kupo_proc.poll() is None:
             LOG.warning(f'Kupo already running (pid={self._kupo_proc.pid})')
@@ -935,7 +930,7 @@ class ElectionSubscriber:
 
 
     def _kupo_log(self) -> None:
-        log_call()
+        LOG_CALL()
         proc = self._kupo_proc
         if proc.stdout is None:
             return
@@ -950,7 +945,7 @@ class ElectionSubscriber:
 
 
     def _kupo_watch(self) -> None:
-        log_call()
+        LOG_CALL()
         LOG.debug(f'Watcher thread started for policy_id={self.election.script.policy_id}')
         while not self._kupo_stop.is_set():
             try:
@@ -977,7 +972,7 @@ class ElectionSubscriber:
 
 
     def _handle_matches(self, matches_by_sc):
-        log_call()
+        LOG_CALL()
 
         if not matches_by_sc:
             return
@@ -1010,7 +1005,7 @@ class ElectionSubscriber:
 
 
     def _kupo_api_url(self) -> str:
-        log_call()
+        LOG_CALL()
         return f'http://{KUPO_HOST}:{self._kupo_port}/v1'
 
 
@@ -1018,7 +1013,7 @@ class ElectionSubscriber:
         # If not given a particular slot_no, uses the latest one.
         # TODO should it return a point if none exactly match slot_no?
         # TODO remove the slot_no option if not using it anymore?
-        log_call()
+        LOG_CALL()
         with self._history_lock:
             n_points = len(self._checkpoints)
             LOG.debug(f'Have {n_points} saved checkpoints.')
@@ -1036,7 +1031,7 @@ class ElectionSubscriber:
     def _add_checkpoint(self, headers: dict) -> bool:
         # This returns whether a checkpoint was added, but that info isn't
         # currently used to decide anything.
-        log_call()
+        LOG_CALL()
         LOG.debug(f'headers: {headers}')
         try:
             tip = Point.from_kupo_headers(headers)
@@ -1074,7 +1069,7 @@ class ElectionSubscriber:
 
 
     def _fetch_matches_by_sc(self) -> list[dict]:
-        log_call()
+        LOG_CALL()
         base_params = {"order": "oldest_first"}
 
         # The tip Point should advance with the chain tip as reported by Kupo
@@ -1157,7 +1152,7 @@ class ElectionSubscriber:
 
 
     def _pair_inputs_with_outputs(self, matches_by_sc: dict) -> list[Tuple[Optional[dict], Optional[dict]]]:
-        log_call()
+        LOG_CALL()
 
         io_pair_keys = sorted(list(matches_by_sc.keys()))
         if io_pair_keys:
@@ -1205,7 +1200,7 @@ class ElectionSubscriber:
 
 
     def _find_output_for_input(self, in_sc_key, matches_by_sc) -> Optional[dict]:
-        log_call()
+        LOG_CALL()
         (in_s, in_c) = in_sc_key
         in_match = matches_by_sc[in_sc_key]
         outputs = [
@@ -1222,7 +1217,7 @@ class ElectionSubscriber:
 
 
     def _find_input_for_output(self, out_sc_key: dict, matches_by_sc: dict) -> Optional[dict]:
-        log_call()
+        LOG_CALL()
         (out_s, out_c) = out_sc_key
         out_match = matches_by_sc[out_sc_key]
         inputs = [
@@ -1239,7 +1234,7 @@ class ElectionSubscriber:
 
 
     def _matches_to_search_for_actions(self, io_pairs_by_sc) -> list[dict]:
-        log_call()
+        LOG_CALL()
         # TODO search by txid + index, not just txid?
         # TODO make this more detailed so it's valid in general, not just when using identical redeemers
         matches_to_search = []
@@ -1256,7 +1251,7 @@ class ElectionSubscriber:
 
     def _find_action(self, out_match: dict, matches_to_search: list[dict]) -> Optional[ElectionAction]:
         """Find the validator spend redeemer for a tx, ignoring mint redeemers."""
-        log_call()
+        LOG_CALL()
         txid = out_match['transaction_id']
         for m in matches_to_search:
             spent = m.get("spent_at")
@@ -1270,7 +1265,7 @@ class ElectionSubscriber:
 
 
     def _fill_in_actions(self, io_pairs_by_sc):
-        log_call()
+        LOG_CALL()
         matches_to_search = self._matches_to_search_for_actions(io_pairs_by_sc)
         ioa_triples_by_sc = {}
         for (key, (in_match, out_match)) in io_pairs_by_sc.items():
@@ -1310,7 +1305,7 @@ class ElectionSubscriber:
 
 
     def _assemble_events(self, ioa_triples_by_sc: dict) -> Iterable[ChannelEvent]:
-        log_call()
+        LOG_CALL()
 
         seen_keys = set()
         for (key, val) in ioa_triples_by_sc.items():
@@ -1351,7 +1346,7 @@ class ElectionSubscriber:
 
 
     def _fetch_state(self, kupo_match: dict) -> ChannelState:
-        log_call()
+        LOG_CALL()
         LOG.debug(f'kupo_match: {kupo_match}')
         datum_hash = kupo_match['datum_hash']
         url = self._kupo_api_url() + f'/datums/{datum_hash}'
@@ -1369,7 +1364,7 @@ class ElectionSubscriber:
 
 
     def _handle_same_but_spent(self, event) -> bool:
-        log_call()
+        LOG_CALL()
         i = event.channel_id
         s = channel_id_to_string(i)
         with self._history_lock:
@@ -1392,7 +1387,7 @@ class ElectionSubscriber:
 
 
     def _is_duplicate_event(self, event) -> bool:
-        log_call()
+        LOG_CALL()
         i = event.channel_id
         with self._history_lock:
             if i in self._history:
@@ -1409,7 +1404,7 @@ class ElectionSubscriber:
         # an input/output pair. Not sure whether that's a Kupo thing or a bug
         # in our matching algorithm. For now the cleanest fix seems to be to
         # stash those matches and re-inject them next poll.
-        log_call()
+        LOG_CALL()
 
         (input_match, output_match, action) = ioa_triple
 
@@ -1429,7 +1424,7 @@ class ElectionSubscriber:
 
 
     def _handle_rollback(self):
-        log_call()
+        LOG_CALL()
 
         # This is just the simplest probably-workable method for now.
         # For production use it should be cleaner and report a state diff to clients.
@@ -1471,7 +1466,7 @@ class ElectionSubscriber:
 
 
     def _handle_timeout(self, current_slot: int, latest_event_slot: int):
-        log_call()
+        LOG_CALL()
         slots_since_event = current_slot - latest_event_slot
         err = election_error('timeout', {'slot_since_last_event': slots_since_event})
 
@@ -1494,7 +1489,7 @@ class ElectionSubscriber:
 
 
     def _on_action(self, event: ChannelEvent):
-        log_call()
+        LOG_CALL()
         self._latest_event_slot = event.slot_no
         LOG.debug(f'dispatching event:\n{pformat(event)}')
         match event.action:
@@ -1511,7 +1506,7 @@ class ElectionSubscriber:
 
 
     def _on_initelection(self, event: ChannelEvent):
-        log_call()
+        LOG_CALL()
 
         if not self.current_phase() in [EgcPhase.NOT_INDEXED, EgcPhase.NOT_DEPLOYED]:
             # Extra section for debugging the "init should always happen first" bug....
@@ -1535,7 +1530,7 @@ class ElectionSubscriber:
 
 
     def _on_addsubchannels(self, event: ChannelEvent):
-        log_call()
+        LOG_CALL()
         # remember this will be called once per channel touched
         if event.channel_id == ADMIN_CHANNEL_ID:
             self._on_cont(event)
@@ -1545,7 +1540,7 @@ class ElectionSubscriber:
 
 
     def _on_advancephase(self, event: ChannelEvent):
-        log_call()
+        LOG_CALL()
         assert event.channel_id == ADMIN_CHANNEL_ID, 'only admin can advance phase'
         self._on_cont(event)
         return event
@@ -1553,7 +1548,7 @@ class ElectionSubscriber:
 
     def _on_endelection(self, event: ChannelEvent):
         # TODO is this a good place to self.stop()? or does that need to be done elsewhere?
-        log_call()
+        LOG_CALL()
         assert event.channel_id == ADMIN_CHANNEL_ID, 'only admin can end election'
         self._on_burn(event)
         self.request_stop()
@@ -1561,7 +1556,7 @@ class ElectionSubscriber:
 
 
     def _on_rmsubchannels(self, event: ChannelEvent):
-        log_call()
+        LOG_CALL()
         # remember this will be called once per channel touched
         assert event.channel_id in self._history, f'tried to remove non-existent channel {event.channel_id}'
         if event.channel_id == ADMIN_CHANNEL_ID:
@@ -1572,27 +1567,27 @@ class ElectionSubscriber:
 
 
     def _on_rebalancefunds(self, event: ChannelEvent):
-        log_call()
+        LOG_CALL()
         # remember this will be called once per channel touched
         self._on_cont(event)
         return event
 
 
     def _on_setipfsnode(self, event: ChannelEvent):
-        log_call()
+        LOG_CALL()
         # TODO anything in particular to do here?
         self._on_cont(event)
         return event
 
     def _on_postpublicrecords(self, event: ChannelEvent):
-        log_call()
+        LOG_CALL()
         # TODO fetch from IPFS here
         self._on_cont(event)
         return event
 
 
     def _on_burntesttokens(self, event: ChannelEvent):
-        log_call()
+        LOG_CALL()
         # TODO remove for production use, or make a CLI flag for it
         self._on_burn(event)
         self.request_stop()
@@ -1600,7 +1595,7 @@ class ElectionSubscriber:
 
 
     def _on_mint(self, event: ChannelEvent):
-        log_call()
+        LOG_CALL()
         # LOG.debug(f'history during _on_mint:\n{pformat(self._history)}')
         with self._history_lock:
             assert not event.channel_id in self._history, f"tried to mint existing channel!\n{event}\n{self._history}"
@@ -1610,7 +1605,7 @@ class ElectionSubscriber:
 
 
     def _on_burn(self, event: ChannelEvent):
-        log_call()
+        LOG_CALL()
         ch_str = channel_id_to_string(event.channel_id)
         assert event.output_state is None, f'{ch_str} being removed, but has an output'
         with self._history_lock:
@@ -1618,7 +1613,7 @@ class ElectionSubscriber:
 
 
     def _on_cont(self, event: ChannelEvent):
-        log_call()
+        LOG_CALL()
         assert event.input_match  is not None, 'continuation without input_match'
         assert event.input_state  is not None, 'continuation without input_state'
         assert event.output_match is not None, 'continuation without output_match'

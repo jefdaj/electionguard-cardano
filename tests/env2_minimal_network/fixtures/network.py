@@ -46,10 +46,20 @@ def env2_records_fetched_dir(env2_tmp_root: Path):
         return env2_tmp_root / 'env2_ipfs' / 'records_fetched'
 
 @pytest.fixture(scope='module')
-def env2_ipfs(env2_arion_network, env2_tmp_root: Path, env2_records_fetched_dir: Path):
+def env2_record_store(env2_records_fetched_dir: Path):
+        return RecordStore(env2_records_fetched_dir)
+
+@pytest.fixture(scope='module')
+def env2_ipfs(
+    env2_arion_network,
+    env2_tmp_root: Path,
+    env2_records_fetched_dir: Path,
+    env2_record_store: RecordStore
+):
     ipfs_ = IPFSService(
         records_to_post_dir = env2_tmp_root / 'env2_ipfs' / 'records_to_post',
         records_fetched_dir = env2_records_fetched_dir,
+        store = env2_record_store,
     )
     ipfs_.start()
     ipfs_.wait_until_stable_sync()

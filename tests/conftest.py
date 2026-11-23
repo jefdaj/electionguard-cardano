@@ -11,20 +11,20 @@ def pytest_configure(config):
 
     # These are all probably worth looking at again if/when we have mysterious
     # API issues. But the rest of the time they're pretty noisy.
-    logging.getLogger('websockets').setLevel(logging.WARNING)
-    logging.getLogger('urllib3').setLevel(logging.INFO)
-    logging.getLogger('ogmios').setLevel(logging.WARNING)
-    logging.getLogger('asyncio').setLevel(logging.WARNING)
-    logging.getLogger('aiohttp').setLevel(logging.WARNING)
+    logging.getLogger('websockets').setLevel(logging.DEBUG)
+    logging.getLogger('urllib3').setLevel(logging.DEBUG)
+    logging.getLogger('ogmios').setLevel(logging.DEBUG)
+    logging.getLogger('asyncio').setLevel(logging.DEBUG)
+    logging.getLogger('aiohttp').setLevel(logging.DEBUG)
 
     # Same with some of our code.
-    logging.getLogger('egc.core.node').setLevel(logging.INFO)
-    logging.getLogger('egc.core.ogmios').setLevel(logging.INFO)
-    logging.getLogger('egc.core.plutus').setLevel(logging.INFO)
-    logging.getLogger('egc.core.publisher').setLevel(logging.INFO)
-    logging.getLogger('egc.core.subscriber').setLevel(logging.INFO)
-    logging.getLogger('egc.nodes.admin').setLevel(logging.INFO)
-    logging.getLogger('egc.nodes.ipfs').setLevel(logging.INFO)
+    logging.getLogger('egc.core.node').setLevel(logging.DEBUG)
+    logging.getLogger('egc.core.ogmios').setLevel(logging.DEBUG)
+    logging.getLogger('egc.core.plutus').setLevel(logging.DEBUG)
+    logging.getLogger('egc.core.publisher').setLevel(logging.DEBUG)
+    logging.getLogger('egc.core.subscriber').setLevel(logging.DEBUG)
+    logging.getLogger('egc.nodes.admin').setLevel(logging.DEBUG)
+    logging.getLogger('egc.nodes.ipfs').setLevel(logging.DEBUG)
 
     # Turn up the logging on sections we're actively debugging though.
     logging.getLogger('egc.core.records').setLevel(logging.DEBUG)

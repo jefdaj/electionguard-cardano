@@ -8,10 +8,12 @@ from pathlib import Path
 from time import sleep
 from typing import List, Optional
 from pprint import pformat
-import logging
 import time
+from .utils import make_log_call
 
+import logging
 LOG = logging.getLogger(__name__)
+LOG_CALL = make_log_call(LOG.debug)
 
 from .ogmios   import *
 from .election import ElectionContext
@@ -51,7 +53,7 @@ class ElectionPublisher:
     ):
         """Create the publisher.
         """
-        LOG.debug('ElectionPublisher.__init__')
+        LOG_CALL()
 
         self.role = role
         self.role_index = role_index
@@ -79,6 +81,7 @@ class ElectionPublisher:
     # TODO clarify: channel_id won't exist for observers, but channel_str will?
     def channel_id(self) -> Optional[ChannelId]:
         # LOG.debug('ElectionPublisher.channel_id')
+        LOG_CALL()
         if self.role in ['observer', 'funder']:
             return None
         if self.role == 'admin':
@@ -89,6 +92,7 @@ class ElectionPublisher:
 
     def channel_str(self):
         "Like channel_id, but informal for logs. Includes observer as valid."
+        LOG_CALL()
         if self.role in ['observer', 'funder']:
             return f'{self.role}{self.role_index}'
         else:
@@ -97,6 +101,7 @@ class ElectionPublisher:
         #    return 'funder' # TODO safer way?
 
     def _guard_wallet(self):
+        LOG_CALL()
         if self.wallet is None:
             raise Exception('create a wallet first')
 
@@ -105,7 +110,7 @@ class ElectionPublisher:
             txb: TransactionBuilder,
             change_addr: Optional[Address] = None
         ) -> Transaction:
-        LOG.debug('ElectionPublisher.sign_and_submit')
+        LOG_CALL()
 
         self._guard_wallet()
 
@@ -133,11 +138,13 @@ class ElectionPublisher:
 
         # Log the actual inputs in the built transaction
         # TODO remove?
+        LOG_CALL()
         LOG.debug('tx inputs:')
         for inp in tx_signed.transaction_body.inputs:
             LOG.debug('  %s#%d' % (inp.transaction_id, inp.index))
 
         def submit_fn():
+            LOG_CALL()
             fee = tx_signed.transaction_body.fee
             LOG.debug(f'tx_signed about to be submitted:\n%s\n' % pformat(tx_signed))
             OGMIOS_CTX.submit_tx(tx_signed) # always returns None?
@@ -157,7 +164,7 @@ class ElectionPublisher:
             tx: Transaction,
             output_indices=(0,), # TODO remove if we always use 0?
         ):
-        LOG.debug('ElectionPublisher.await_tx_confirmed')
+        LOG_CALL()
         if tx is None:
             LOG.debug('tx is None; not waiting for confirmation.')
             return
@@ -192,6 +199,7 @@ class ElectionPublisher:
         """Plain wallet-to-wallet ADA send. Internal helper shared by the
         collateral funding / return / sweep functions. Not for spending from
         a script address."""
+        LOG_CALL()
         self._guard_wallet()
         txb = TransactionBuilder(OGMIOS_CTX)
         txb.add_input_address(self.wallet.addr)
@@ -217,6 +225,7 @@ class ElectionPublisher:
         the ledger requires, but it guarantees the UTXO matches what our
         funding functions produce and won't collide with other holdings.
         """
+        LOG_CALL()
         if from_wallet is None:
             self._guard_wallet()
             wallet = self.wallet
@@ -243,6 +252,7 @@ class ElectionPublisher:
         """Like find_collateral_utxo but raises if missing. Publishers call
         this when building any contract tx and pass the result as the
         collateral input."""
+        LOG_CALL()
         self._guard_wallet()
         utxo = self.find_collateral_utxo()
         if utxo is None:
@@ -258,6 +268,7 @@ class ElectionPublisher:
         `timeout` seconds go by. Used right after a funding tx to bridge
         the gap between submission and the publisher's address being
         re-indexed."""
+        LOG_CALL()
         self._guard_wallet()
         deadline = time.monotonic() + timeout
         while True:
@@ -286,8 +297,10 @@ class ElectionPublisher:
         Lower max_inputs_per_tx if you hit tx-too-large errors.
         """
         # TODO timeouts?
+        LOG_CALL()
 
         def summarize(utxos):
+            LOG_CALL()
             total_lovelace = 0
             asset_count = 0
             policies = set()
@@ -304,6 +317,7 @@ class ElectionPublisher:
             # With no explicit outputs and a change_address, the builder sweeps
             # everything (ADA + native assets) into a single output at `addr`,
             # automatically computing the fee and respecting min-ADA for the bundle.
+            LOG_CALL()
             txb = TransactionBuilder(OGMIOS_CTX)
             for u in utxos:
                 txb.add_input(u)
@@ -335,6 +349,7 @@ class ElectionPublisher:
         already exists — callers that want to force a new one should spend
         the existing one first."""
         # TODO return Optional[Transcation]? txid?
+        LOG_CALL()
         self._guard_wallet()
         ch_str = self.channel_str()
         existing = self.find_collateral_utxo()
@@ -359,6 +374,7 @@ class ElectionPublisher:
         original funder, less tx fee. The publisher is expected to do this,
         but it can't be enforced on chain. Returns None if the publisher has
         no collateral UTXO to return."""
+        LOG_CALL()
         # You probably want the version in egc/core/node.py that auto-picks return_addr.
         if from_wallet is None:
             self._guard_wallet()

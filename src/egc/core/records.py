@@ -3,13 +3,15 @@ from .plutus.types import record as r
 
 import electionguard as eg
 
+import random
 import re
-import logging
 from typing import Any
 from pathlib import Path
 
-
+from .utils import make_log_call
+import logging
 LOG = logging.getLogger(__name__)
+LOG_CALL = make_log_call(LOG.debug)
 
 
 # plutus metadata type : (decode to type, dir relname, basename fmtargs ptn)
@@ -333,3 +335,93 @@ def load_all_guardian_backups(n_guardians: int, pub_dir: Path):
             LOG.debug(f'loaded rec: {rec}')
             records.append(rec)
     return records
+
+
+def record_key(record) -> str:
+    "Work around record `unhashable type` issues."
+    # TODO add a method to the dataclass instead?
+    # TODO use entire record including cid for key? seems more secure, but not always known?
+    return str(record.metadata)
+
+
+class RecordStore:
+    """Manages fetching and verifying records. All save and load operations
+    should go through this rather than reading or writing files directly.
+    Various other objects should keep references to it for record related queries."""
+
+    def __init__(self, records_fetched_dir: Path):
+        LOG_CALL()
+        self.records_fetched_dir: Path = records_fetched_dir
+        self._all_records: dict[str, r.PublicRecord] # all records so far in any state
+        self._pending_cids: dict = {} # metadata str -> (cid, attempts, next attempt)
+        self._fetched_cids: set[str] = set() # set(cid)
+
+    def key_for_record(self, record: r.PublicRecord):
+        LOG_CALL()
+        return record_key(record) # TODO better keys here
+
+    def record_for_key(self, key: str):
+        LOG_CALL()
+        return self._all_records[key]
+
+    def add_record_seen_on_chain(self, record):
+        "Main entry point for new records seen on chain. Called by Subscriber."
+        LOG_CALL()
+        key = self.key(record)
+        if key in self._all_records.keys():
+            LOG.info(f'add {record} ignoring duplicate')
+        else:
+            LOG.info(f'add {record}')
+            self._all_records[key] = record
+            self._pending_cids[key] = (record.ipfs_cid, 0, 0)
+
+    def mark_fetched_cids(self, cid):
+        """Called by IPFSService after a successful fetch. Implies the content is
+        ready to be verified, NOT that it already has been."""
+        # key = self.key(cid)
+        LOG_CALL()
+        LOG.debug(f'fetched {cid}')
+        self._fetched_cids.add(cid)
+        del self._pending_cids[cid]
+
+    def mark_attempt(self, record, attempts, next_attempt):
+        LOG_CALL()
+        key = self.key(record)
+        LOG.info(f'mark_attempt key:{key} attempts:{attempts} next_attempt:{next_attempt}')
+        self._pending_cids[key] = (attempts, next_attempt)
+
+    def due(self, now):
+        LOG_CALL()
+        # TODO should this live here or in IPFSService?
+        cids_due = [
+            (cid, attempts)
+            for (cid, attempts, next_attempt) in self._pending_cids.values()
+            if next_attempt <= now
+        ]
+        if cids_due:
+            LOG.debug(f'cids_due: {len(cids_due)}')
+        random.shuffle(cids_due) # TODO is this a good strategy? or should they be sorted?
+        return cids_due
+
+    def n_pending_cids(self, records=[]):
+        "The number of keys seen on chain but not yet fetched."
+        LOG_CALL()
+        # TODO remove? not sure you ever want it instead of n_unfetched
+        keys = self._pending_cids.keys()
+        if records:
+            keys = [
+                k for k in keys
+                if k in [self.key(r) for r in records]
+            ]
+        return len(keys)
+
+    def n_unfetched(self, records=[]):
+        """Like n_pending_cids, but also counts records not seen yet on chain
+        (when passed explicitly)."""
+        LOG_CALL()
+        # TODO return the records instead? won't work if none passed
+        keys = [self.key(r) for r in records]
+        unfetched = [k for k in keys if not k in self._fetched_cids]
+        return len(unfetched)
+
+

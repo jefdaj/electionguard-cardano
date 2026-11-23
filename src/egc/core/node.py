@@ -19,7 +19,7 @@ LOG = logging.getLogger(__name__)
 
 # TODO should this operate on ElectionEvents? channel seems better so far
 # TODO handle state changes on rollbacks
-def make_event_handler(ipfs: IPFSService, own_ch_id: Optional[ChannelId]):
+def make_event_handler(ipfs: IPFSService, store: RecordStore, own_ch_id: Optional[ChannelId]):
     LOG.info('make_event_handler')
 
     def on_channel_event(event: ChannelEvent):
@@ -43,7 +43,8 @@ def make_event_handler(ipfs: IPFSService, own_ch_id: Optional[ChannelId]):
             new_records = event.output_state.state.new_records
             for r in new_records:
                 LOG.info(f'{ch_str} posted {r.metadata}')
-                ipfs.fetch_record_soon(r)
+                # ipfs.fetch_record_soon(r)
+                store.add_record_seen_on_chain(r)
         except Exception as e:
             LOG.error(e)
 
@@ -96,9 +97,15 @@ class ElectionNode:
             key_name   = key_name,
         )
 
-        self.ipfs = IPFSService(
-            records_to_post_dir = self.records_to_post_dir,
+        self.store = RecordStore(
+            # records_to_post_dir = self.records_to_post_dir,
             records_fetched_dir = self.records_fetched_dir,
+        )
+
+        self.ipfs = IPFSService(
+            records_to_post_dir = self.records_to_post_dir, # TODO remove?
+            records_fetched_dir = self.records_fetched_dir, # TODO remove
+            store = self.store,
             # channel_id = self.channel_id,
         )
         self.ipfs.start()
@@ -131,6 +138,7 @@ class ElectionNode:
             # self.records_fetched_dir,
             # self.records_to_post_dir,
             self.ipfs,
+            self.store,
             self.channel_id(),
         )
 

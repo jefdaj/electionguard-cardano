@@ -16,9 +16,11 @@ from .records import *
 
 from .ipfs_hints import make_addr_hints, expand_addr_hints
 
+from .utils import make_log_call
 import logging
 
 LOG = logging.getLogger(__name__)
+LOG_CALL = make_log_call(log_fn=LOG.debug)
 
 
 IPFS_API_ADDR = os.environ.get('IPFS_API_ADDR', '/dns4/127.0.0.1/tcp/5001')
@@ -36,15 +38,18 @@ class RetryingIPFS:
     """
 
     def __init__(self, maddr, retries=10, delay=1.0, backoff=1.5):
+        LOG_CALL()
         self._client  = AsyncIPFS(maddr=maddr)
         self._retries = retries
         self._delay   = delay
         self._backoff = backoff
 
     async def close(self):
+        LOG_CALL()
         await self._client.close()
 
     async def _retry(self, coro_factory):
+        LOG_CALL()
         delay = self._delay
         for attempt in range(self._retries):
             try:
@@ -56,89 +61,30 @@ class RetryingIPFS:
                 delay *= self._backoff
 
     async def add(self, *a, **k):
+        LOG_CALL()
         k.setdefault('cid_version', 1)
         return await self._retry(lambda: self._client.add(*a, **k))
 
     async def add_json(self, *a, **k):
+        LOG_CALL()
         k.setdefault('cid_version', 1)
         return await self._retry(lambda: self._client.add_json(*a, **k))
 
     async def cat(self, *a, **k):
+        LOG_CALL()
         return await self._retry(lambda: self._client.cat(*a, **k))
 
     async def get(self, *a, **k):
+        LOG_CALL()
         return await self._retry(lambda: self._client.get(*a, **k))
 
     async def pin_add(self, *a, **k):
+        LOG_CALL()
         return await self._retry(lambda: self._client.pin.add(*a, **k))
 
     def __getattr__(self, name): # fallback, no retries
+        LOG_CALL()
         return getattr(self._client, name)
-
-
-def record_key(record) -> str:
-    "Work around record `unhashable type` issues."
-    # TODO add a method to the dataclass instead?
-    # TODO use entire record including cid for key? seems more secure, but not always known?
-    return str(record.metadata)
-
-
-class RecordsFetched:
-    """Claude tried to add a SQLite db here. I rewrote it as a dict but left
-    the class in case we want persistent storage later.
-    """
-
-    def __init__(self):
-        self._pending: dict = {} # metadata str -> (record, attempts, next attempt)
-        self._fetched: set[str] = set() # set(metadata str)
-
-    def add(self, record):
-        key = record_key(record)
-        if key in self._pending.keys():
-            LOG.info(f'add {record} ignoring duplicate')
-        else:
-            LOG.info(f'add {record}')
-            self._pending[key] = (record, 0, 0)
-
-    def mark_fetched(self, record):
-        key = record_key(record)
-        LOG.debug(f'fetched {record}')
-        self._fetched.add(key)
-        del self._pending[key]
-
-    def mark_attempt(self, record, attempts, next_attempt):
-        key = record_key(record)
-        LOG.info(f'mark_attempt record:{record} attempts:{attempts} next_attempt:{next_attempt}')
-        self._pending[key] = (record, attempts, next_attempt)
-
-    def due(self, now):
-        records_due = [
-            (record, attempts)
-            for (record, attempts, next_attempt) in self._pending.values()
-            if next_attempt <= now
-        ]
-        if records_due:
-            LOG.debug(f'records_due: {len(records_due)}')
-        random.shuffle(records_due) # TODO is this a good strategy? or should they be sorted?
-        return records_due
-
-    def n_pending(self, records=[]):
-        "The number of keys seen on chain but not yet fetched."
-        # TODO remove? not sure you ever want it instead of n_unfetched
-        keys = self._pending.keys()
-        if records:
-            keys = [
-                k for k in keys
-                if k in [record_key(r) for r in records]
-            ]
-        return len(keys)
-
-    def n_unfetched(self, records=[]):
-        "Like n_pending, but also counts records not seen yet on chain."
-        # TODO return the records instead? won't work if none passed
-        keys = [record_key(r) for r in records]
-        unfetched = [k for k in keys if not k in self._fetched]
-        return len(unfetched)
 
 
 class PostFetchMismatchError(Exception):
@@ -151,6 +97,7 @@ class PostFetchMismatchError(Exception):
 
 def _hash(path: Path, chunk=64*1024) -> str:
     # TODO any subtle serialization issues here?
+    LOG_CALL()
     h = hashlib.sha256()
     with path.open("rb") as f:
         for block in iter(lambda: f.read(chunk), b""):
@@ -162,6 +109,7 @@ def remove_fetched_from_to_post(records_to_post: Path, records_fetched: Path) ->
     """Delete files in records_to_post that also exist in records_fetched with
     identical content. After processing everything, raise PostFetchMismatchError
     if any shared relative path had differing content. Returns removed rel paths."""
+    LOG_CALL()
     removed, mismatches = [], []
     for post_file in records_to_post.rglob("*"):
         if not post_file.is_file():
@@ -194,6 +142,7 @@ class IPFSService:
     def __init__(self,
         records_to_post_dir: Path,
         records_fetched_dir: Path,
+        store: RecordStore,
         maddr=IPFS_API_ADDR,
         fresh_workers=4,
         fresh_timeout=10,    # short: withheld CIDs fail fast
@@ -204,6 +153,7 @@ class IPFSService:
         max_delay=30,       # retry-forever settles to every 10 min
         backoff=1.5
     ):
+        LOG_CALL()
 
         self.records_to_post_dir = records_to_post_dir
         self.records_fetched_dir = records_fetched_dir
@@ -239,9 +189,10 @@ class IPFSService:
 
     def _run_loop(self):
         "Lifecycle."
+        LOG_CALL()
         asyncio.set_event_loop(self._loop)
         self.ipfs = RetryingIPFS(self.maddr)
-        self.store = RecordsFetched()
+        self.store = RecordStore(self.records_fetched_dir)
         self._fresh_q = asyncio.Queue()
         self._retry_sem = asyncio.Semaphore(self._retry_concurrency)
         for _ in range(self.fresh_workers):
@@ -252,33 +203,40 @@ class IPFSService:
         self._loop.run_forever()
 
     def start(self):
+        LOG_CALL()
         self._thread.start()
         self._ready.wait()
 
     def stop(self):
+        LOG_CALL()
         asyncio.run_coroutine_threadsafe(self.ipfs.close(), self._loop).result(10)
         self._loop.call_soon_threadsafe(self._loop.stop)
 
     def _run_sync(self, coro, timeout: float | None = None):
         "Call an async method from a sync context (a DIFFERENT thread). All calls should go through one of these?"
+        LOG_CALL()
         fut = asyncio.run_coroutine_threadsafe(coro, self._loop)
         return fut.result(timeout) # blocks, re-raises exceptions here
 
     async def _run_async(self, coro, timeout=None):
         "Call an async method from for example FastAPI. All calls should go through one of these?"
+        LOG_CALL()
         fut = asyncio.run_coroutine_threadsafe(coro, self._loop)
         return await asyncio.wait_for(asyncio.wrap_future(fut), timeout)
 
-    def _accept(self, record):
-        self.store.add(record)                # persist first
-        self._fresh_q.put_nowait((record, 0)) # then attempt promptly
+    def _accept(self, cid):
+        LOG_CALL()
+        # self.store.add_record_seen_on_chain(record) # track first
+        self._fresh_q.put_nowait((cid, 0)) # then attempt promptly
 
-    def fetch_record_soon(self, record: PublicRecord):
+    def fetch_cid_soon(self, cid):
         "Called from the subscriber thread. Returns immediately."
-        self._loop.call_soon_threadsafe(self._accept, record)
+        LOG_CALL()
+        self._loop.call_soon_threadsafe(self._accept, cid)
 
     def publish_and_make_record(self, data: dict, metadata: PublicRecordMetadata) -> PublicRecord:
         "Publish data to IPFS and return a new record, ready to post onchain."
+        LOG_CALL()
         added_file = self._run_sync(self.ipfs.add_json(data))
         cid_str = added_file['Hash']
         LOG.debug(f'cid_str: {cid_str}')
@@ -294,6 +252,7 @@ class IPFSService:
         self,
         pairs: list[tuple[dict, PublicRecordMetadata]],
     ) -> list[PublicRecord]:
+        LOG_CALL()
         # TODO how should we handle failures partway through here?
         records = []
         for (data, metadata) in pairs:
@@ -302,20 +261,24 @@ class IPFSService:
             records.append(record)
         return records
 
-    async def _attempt_fetch(self, record: PublicRecord, timeout):
+    async def _attempt_fetch(self, cid, timeout):
         "The one fetch primitive both lanes share."
-        key = record_key(record)
-        if key in self._inflight: # never fetch same CID twice at once
+        LOG_CALL()
+        # key = record_key(record)
+        if cid in self._inflight: # never fetch same CID twice at once
             return False
-        self._inflight.add(key)
+        self._inflight.add(cid)
         try:
-            cid_str = ipfs_cid_to_string(record.ipfs_cid)
+            cid_str = ipfs_cid_to_string(cid)
             data = await self._run_async(self.ipfs.cat(cid_str), timeout=timeout)
             await self._save_fetched_data(data, record)
             async for pin_status in self.ipfs._client.pin.add(cid_str):
                 LOG.debug(f'progress pinning {cid_str}: {pin_status}')
-            self.store.mark_fetched(record) # success => no longer pending
+            self.store.mark_fetched(cid) # success => no longer pending
+
+            # TODO handle this in RecordStore?
             remove_fetched_from_to_post(self.records_to_post_dir, self.records_fetched_dir)
+
             LOG.info("fetched %s", record)
             return True
         except asyncio.TimeoutError:
@@ -324,28 +287,31 @@ class IPFSService:
             LOG.error("fetch error %s: %s", record, e)
             return False # keep it pending, retry later
         finally:
-            self._inflight.discard(key)
+            self._inflight.discard(cid)
 
     async def _fresh_worker(self):
         "Fresh lane: prompt, short timeout, one shot each."
+        LOG_CALL()
         while True:
-            record, _ = await self._fresh_q.get()
+            cid, _ = await self._fresh_q.get()
             try:
-                ok = await self._attempt_fetch(record, self.fresh_timeout)
+                ok = await self._attempt_fetch(cid, self.fresh_timeout)
                 if not ok:
-                    self._schedule_retry(record, attempts=1) # demote to slow lane
+                    self._schedule_retry(cid, attempts=1) # demote to slow lane
             finally:
                 self._fresh_q.task_done()
 
-    def _schedule_retry(self, record, attempts):
+    def _schedule_retry(self, cid, attempts):
         "Jitter to prevent all test nodes retrying at once."
+        LOG_CALL()
         cap = min(self.base_delay * self.backoff ** (attempts - 1), self.max_delay)
         delay = random.uniform(0, cap) # full jitter
-        self.store.mark_attempt(record, attempts, time.time() + delay)
+        self.store.mark_attempt(cid, attempts, time.time() + delay)
 
 
     async def _ipfs_is_reachable(self) -> bool:
         """Lightweight check — returns False if the IPFS node is down."""
+        LOG_CALL()
         try:
             await self.ipfs._client.version()
             return True
@@ -357,6 +323,7 @@ class IPFSService:
         Returns True if there are pending wants but no data has moved in the last IPFS_STUCK_WINDOW seconds.
         Updates self._last_bitswap_snapshot on success.
         """
+        LOG_CALL()
         if not await self._ipfs_is_reachable():
             LOG.warning('ipfs node is unreachable; skipping stuck check')
             return False # not "stuck" in the reconnectable sense — nothing to reconnect to
@@ -400,6 +367,7 @@ class IPFSService:
         return (now - snap_time) >= IPFS_STUCK_WINDOW
 
     async def _force_reconnect(self, maddr: str):
+        LOG_CALL()
         LOG.warning(f'_force_reconnect {maddr}')
         try:
             await self.ipfs._client.swarm.disconnect(maddr)
@@ -414,6 +382,7 @@ class IPFSService:
         """Force reconnect when the node appears stuck (peers connected but no
         data moving). Polls every ~30s; triggers if nothing has transferred for
         IPFS_STUCK_WINDOW seconds while wants are pending."""
+        LOG_CALL()
         while True:
             if jitter:
                 await asyncio.sleep(interval * random.uniform(0.8, 1.2))
@@ -439,31 +408,34 @@ class IPFSService:
         """Retry lane: patient, bounded, forever, on a slow cadence.
         Jitter to prevent all test nodes sweeping at once.
         """
+        LOG_CALL()
         while True:
             interval = self.sweep_interval
             if jitter:
                 interval *= random.uniform(0.8, 1.2)
             await asyncio.sleep(interval)
             now = time.time()
-            for record, attempts in self.store.due(now):
-                key = record_key(record)
-                if key in self._inflight:
+            for cid, attempts in self.store.due(now):
+                # key = record_key(record)
+                if cid in self._inflight:
                     continue
                 await self._retry_sem.acquire()
-                task = self._loop.create_task(self._retry_one(record, attempts))
+                task = self._loop.create_task(self._retry_one(cid, attempts))
                 task.add_done_callback(
                     lambda t: t.exception() and LOG.error(t.exception())
                 )
 
-    async def _retry_one(self, record, attempts):
+    async def _retry_one(self, cid, attempts):
+        LOG_CALL()
         try:
-            ok = await self._attempt_fetch(record, self.retry_timeout)
+            ok = await self._attempt_fetch(cid, self.retry_timeout)
             if not ok:
-                self._schedule_retry(record, attempts + 1) # cap keeps it periodic
+                self._schedule_retry(cid, attempts + 1) # cap keeps it periodic
         finally:
             self._retry_sem.release()
 
     async def _status(self):
+        LOG_CALL()
         connected = False
         try:
             peers = await self.ipfs._client.swarm.peers()
@@ -487,16 +459,20 @@ class IPFSService:
         }
 
     async def status(self):
+        LOG_CALL()
         return await self._run_async(self._status()) # TODO timeout?
 
     def status_sync(self):
+        LOG_CALL()
         return self._run_sync(self._status())
 
     def count_unfetched_records(self, records=[]):
-        return self.store.n_unfetched(records)
+        LOG_CALL()
+        return self.store.n_unfetched(records) # TODO n_unfetched_records to be less ambiguous
 
     def count_pending_records(self, records=[]):
-        return self.store.n_pending(records)
+        LOG_CALL()
+        return self.store.n_pending(records) # TODO n_pending_records to be less ambiguous
 
     async def wait_until_stable(
         self,
@@ -510,6 +486,7 @@ class IPFSService:
         of bandwidth from searching for them subsides. Needs to be tuned for
         real life performance. Should be changed in sync with ipfs-caps.json.
         """
+        LOG_CALL()
         end = asyncio.get_event_loop().time() + timeout
         stable = 0
         while True:
@@ -532,12 +509,15 @@ class IPFSService:
                 raise TimeoutError("IPFS did not stabilize in time")
 
     def wait_until_stable_sync(self, *args, **kwargs):
+        LOG_CALL()
         return self._run_sync(self.wait_until_stable(*args, **kwargs))
 
+    # TODO this should happen in the RecordStore after verifying the content
     async def _save_fetched_data(self, data: bytes, record: PublicRecord):
         """Given a record and bytes matching its CID, write the bytes to the
         proper file. Returns the save path, although that isn't used so far.
         """
+        LOG_CALL()
         save_path = record_path(
             record.metadata,
             pub_dir = self.records_fetched_dir
@@ -564,7 +544,7 @@ class IPFSService:
                     pass
 
     def get_own_peer_id(self) -> IpfsPeerId:
-        LOG.debug('get_own_peer_id')
+        LOG_CALL()
         id_str = self._run_sync(self.ipfs._client.id())['ID']
         LOG.debug(f'id_str: {id_str}')
         id_plutus = coerce_ipfs_peerid(id_str)
@@ -579,6 +559,7 @@ class IPFSService:
             n_global_hints: int = 4,
             n_local_hints: int = 4,
         ) -> OptionIpfsNode:
+        LOG_CALL()
         # try:
         # TODO refactor this
         peer_id = self.get_own_peer_id()
@@ -617,6 +598,7 @@ class IPFSService:
 #         LOG.info(f'added explicit peer {maddr}')
 
     def set_channel_node(self, channel_id: ChannelId, opt_new: OptionIpfsNode):
+        LOG_CALL()
         opt_prev = (
             self.channel_nodes[channel_id]
             if channel_id in self.channel_nodes
@@ -642,9 +624,11 @@ class IPFSService:
                 )
 
     def expand_addr_hints(self, peer_id: str, addr_hints: list[str]) -> list[str]:
+        LOG_CALL()
         return expand_addr_hints(peer_id, addr_hints) # TODO same name ok?
 
     def channel_addr_hints(self, ipfs_node: IpfsNode):
+        LOG_CALL()
         peerid_str = ipfs_peerid_to_string(ipfs_node.peer_id)
         hints = [ipfs_multiaddr_to_string(h) for h in ipfs_node.addr_hints]
         LOG.info(f'hints before expand: {hints}')
@@ -654,6 +638,7 @@ class IPFSService:
 
     def all_other_channel_peerid_strs(self) -> list[str]:
         "Used to prioritize own_addr_hints."
+        LOG_CALL()
         ids = []
         for opt_node in self.channel_nodes.values():
             if opt_node == NoIpfsNode():
@@ -664,6 +649,7 @@ class IPFSService:
         return ids
 
     def all_channel_addr_hints(self):
+        LOG_CALL()
         nodes = [
             n.value
             for n in self.channel_nodes.values()
@@ -685,6 +671,7 @@ class IPFSService:
         # TODO prepend with any explicit user hints
         # TODO enforce contract limit of 8
         # TODO validate explicit hints
+        LOG_CALL()
         LOG.debug(f'explicit: {explicit}')
         channel_peerid_strs = self.all_other_channel_peerid_strs()
         LOG.debug(f'channel_peerid_strs: {channel_peerid_strs}')
