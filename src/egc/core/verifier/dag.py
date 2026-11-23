@@ -3,10 +3,8 @@
 # This file is for the DAG of verify_* functions. I found it helpful to
 # separate them from the machinery for running them in verify.py
 
-from copy import deepcopy
-
-# TODO rewrite these to match current code
-from .utils import (
+from .utils import *
+from ..old_utils import (
     build_election,
     list_submitted_ballot_fmtargs,
     list_cast_ballot_fmtargs,
@@ -20,7 +18,7 @@ from .utils import (
     init_log,
 )
 
-from .utils2 import *
+from copy import deepcopy
 
 from electionguard.ballot import SubmittedBallot
 from electionguard.ballot_box import (BallotBoxState, submit_ballot)

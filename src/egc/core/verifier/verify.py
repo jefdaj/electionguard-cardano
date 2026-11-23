@@ -1,4 +1,4 @@
-from .utils2 import *
+from .utils import *
 from . import dag # for looking up verify_* functions
 
 # TODO version of verify_public_record here that starts from the record metadata directly?
