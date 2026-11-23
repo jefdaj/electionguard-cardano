@@ -1,12 +1,15 @@
 from .utils import *
 from . import dag # for looking up verify_* functions
 
+import logging
+LOG = logging.getLogger(__name__)
+
 # TODO version of verify_public_record here that starts from the record metadata directly?
 
 def verify_target(
     results: ResultsCache,
     pubdir: str,
-    log: logging.Logger,
+    # log: logging.Logger,
     target: TargetName,
     **kwargs
 ):
@@ -35,7 +38,7 @@ def verify_target(
         raise ValueError(f"Unknown verifier: {target}")
     with CaptureLog(level=logging.DEBUG) as log2:
         try:
-            result = verify_fn(results, pubdir, log, **kwargs)
+            result = verify_fn(results, pubdir, **kwargs)
         except Exception as e:
             msgs = [str(e)]
             msgs.append(log2.getvalue().strip())
@@ -76,6 +79,35 @@ def verify_target(
 #     )
 # 
 #     sys.exit(n_errors)
+
+class Verifier:
+    """Stateful verifier for use in a node."""
+    # TODO test just that it can be created and log properly first
+
+    def __init__(self, pubdir, verifier_id):
+        # self.log = ???
+        self.pubdir = pubdir
+        self.verifier_id = verifier_id
+        self.results: ResultsCache = {}
+
+    def verify_target_by_name(self, target_name):
+        # TODO note that this can't save files
+        return verify(self.results, target_name)
+
+    # TODO verify_and_save_record
+
+    def summary_json(self):
+        (successes, errors, bools) = simplify_and_partition(self.results)
+        return summarize_results_sofar(
+            successes, errors, bools,
+        )
+
+    def save_final_summary(self):
+        (successes, errors, bools) = simplify_and_partition(self.results)
+        return summarize_results_final(
+            successes, errors, bools,
+            pubdir=self.pubdir, verifier_id=self.verifier_id,
+        )
 
 
 # @click.command("verify")

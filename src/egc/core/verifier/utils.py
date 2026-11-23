@@ -1,6 +1,4 @@
 from .types import *
-import logging
-
 from typing import Union
 
 # TODO unify this with current core.records code
@@ -13,6 +11,9 @@ from electionguard.tally import PlaintextTally
 
 # from electionguard_verify import *
 
+import logging
+LOG = logging.getLogger(__name__)
+
 
 # from https://stackoverflow.com/a/2704866
 def freeze_kwargs(kwargs):
@@ -21,13 +22,13 @@ def freeze_kwargs(kwargs):
 def unfreeze_kwargs(frozen_kwargs):
     return dict(frozen_kwargs)
 
-def with_checkmark_message(msg, fn_call, log):
+def with_checkmark_message(msg, fn_call):
     try:
         result = fn_call()
-        log.info(f'✅ {msg}')
+        LOG.info(f'✅ {msg}')
         return result
     except Exception as e:
-        log.error(f'❌ {msg}')
+        LOG.error(f'❌ {msg}')
         raise
 
 def verify_deps(**deps):
@@ -50,7 +51,6 @@ def verify_deps(**deps):
 
 def verify_decryption_with_checkmark_message(
     msg: str,
-    log: logging.Logger,
     plaintext_tally: PlaintextTally,
     all_guardian_pubkeys: dict[GuardianId, ElectionPublicKey],
     context: CiphertextElectionContext,
@@ -60,21 +60,20 @@ def verify_decryption_with_checkmark_message(
         if not result.verified:
             raise Exception(result.message)
         return True
-    return with_checkmark_message(msg, verify_closure, log)
+    return with_checkmark_message(msg, verify_closure)
 
-def verify_assertion(msg, assertion, log):
+def verify_assertion(msg, assertion):
     # wrapper is required because you can't `assert` inside a lambda
     def assertion_fn():
         try:
             assert assertion
         except AssertionError as e:
             raise Exception(f'false: {msg}')
-    return with_checkmark_message(msg, assertion_fn, log)
+    return with_checkmark_message(msg, assertion_fn)
 
 def verify_public_record(
     results: ResultsCache,
     pubdir: str,
-    log: logging.Logger,
     target: TargetName,
     **fmtargs
 ) -> Union[Error, Success]:
@@ -92,7 +91,6 @@ def verify_public_record(
         result = with_checkmark_message(
             msg,
             lambda: from_public_record(pubdir, target, **fmtargs),
-            log
         )
         return result
     except Exception as e:
