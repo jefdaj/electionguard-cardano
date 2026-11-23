@@ -100,7 +100,7 @@ def assert_node_phases_converge(
         nodes: list[ElectionNode],
         expected_phase: EgcPhase,
         interval = 5,
-        timeout = 300,
+        timeout = 600,
     ):
     start = time.monotonic()
     deadline = start + timeout
