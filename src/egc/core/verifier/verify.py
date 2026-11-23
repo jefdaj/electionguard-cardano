@@ -1,4 +1,5 @@
-from .utils import *
+from .utils import freeze_kwargs
+from .types import *
 from . import dag # for looking up verify_* functions
 
 import logging
