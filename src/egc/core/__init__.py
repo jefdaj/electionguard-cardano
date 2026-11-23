@@ -12,5 +12,6 @@ from .records    import *
 from .ipfs       import *
 from .qrcodes    import *
 from .manifest   import *
+from .verifier   import *
 
 # from . import ipfs_hints
