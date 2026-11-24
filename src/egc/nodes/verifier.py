@@ -15,7 +15,7 @@ class VerifierNode(ElectionNode):
     def __init__(
         self,
 
-        # Where to keep records_to_post, records_fetched, and other files as needed.
+        # Where to keep records_to_post, records_verified, and other files as needed.
         private_dir: Path,
 
         # election: ElectionContext,

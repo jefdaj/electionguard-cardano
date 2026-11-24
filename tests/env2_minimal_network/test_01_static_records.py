@@ -84,6 +84,6 @@ def test_fetch_static_records(
         LOG.debug(f'pending CIDs: {n}')
         if n == 0:
             break
-    paths = sorted(list(env2_record_store.records_fetched_dir.rglob('*.json')))
+    paths = sorted(list(env2_record_store.records_verified_dir.rglob('*.json')))
     LOG.debug(f'fetched json paths: {paths}')
     assert len(paths) == len(published_static_records)

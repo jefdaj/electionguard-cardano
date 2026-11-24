@@ -104,17 +104,18 @@ def _hash(path: Path, chunk=64*1024) -> str:
     return h.hexdigest()
 
 
-def remove_fetched_from_to_post(records_to_post: Path, records_fetched: Path) -> list[Path]:
-    """Delete files in records_to_post that also exist in records_fetched with
+def remove_verified_from_to_post(records_to_post: Path, records_verified: Path) -> list[Path]:
+    """Delete files in records_to_post that also exist in records_verified with
     identical content. After processing everything, raise PostFetchMismatchError
     if any shared relative path had differing content. Returns removed rel paths."""
+    # TODO should this also remove rejected records? something to think about later
     LOG_CALL()
     removed, mismatches = [], []
     for post_file in records_to_post.rglob("*"):
         if not post_file.is_file():
             continue
         rel = post_file.relative_to(records_to_post)
-        fetched_file = records_fetched / rel
+        fetched_file = records_verified / rel
         if not fetched_file.is_file():
             continue
 
@@ -140,7 +141,7 @@ class IPFSService:
     # TODO tune these defaults based on test data
     def __init__(self,
         records_to_post_dir: Path,
-        records_fetched_dir: Path,
+        records_verified_dir: Path,
         store: RecordStore,
         maddr=IPFS_API_ADDR,
         fresh_workers=4,
@@ -155,7 +156,7 @@ class IPFSService:
         LOG_CALL()
 
         self.records_to_post_dir = records_to_post_dir
-        self.records_fetched_dir = records_fetched_dir
+        self.records_verified_dir = records_verified_dir
 
         # These are set by the node's on_channel_event handler.
         self.channel_nodes: dict[ChannelId, OptionIpfsNode] = {}
@@ -191,7 +192,7 @@ class IPFSService:
         LOG_CALL()
         asyncio.set_event_loop(self._loop)
         self.ipfs = RetryingIPFS(self.maddr)
-        self.store = RecordStore(self.records_fetched_dir)
+        self.store = RecordStore(self.records_verified_dir)
         self._fresh_q = asyncio.Queue()
         self._retry_sem = asyncio.Semaphore(self._retry_concurrency)
         for _ in range(self.fresh_workers):
@@ -279,7 +280,7 @@ class IPFSService:
             LOG.debug(f'fetch_successful was successful for {cid_str}')
 
             # TODO handle this in RecordStore?
-            remove_fetched_from_to_post(self.records_to_post_dir, self.records_fetched_dir)
+            remove_verified_from_to_post(self.records_to_post_dir, self.records_verified_dir)
 
             LOG.info("fetched %s", cid_str)
             return True

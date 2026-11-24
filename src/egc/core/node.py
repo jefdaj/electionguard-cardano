@@ -56,7 +56,7 @@ class ElectionNode:
     def __init__(
         self,
 
-        # Where to keep records_to_post, records_fetched, and other files as needed.
+        # Where to keep records_to_post, records_verified, and other files as needed.
         private_dir: Path,
 
         # For deriving the ChannelId and naming state dirs.
@@ -81,8 +81,9 @@ class ElectionNode:
         LOG.debug('ElectionNode.__init__')
 
         self.private_dir = Path(private_dir)
-        self.records_to_post_dir = self.private_dir / 'records_to_post' # TODO just 'to_post'?
-        self.records_fetched_dir = self.private_dir / 'records_fetched' # TODO just 'records'?
+        self.records_to_post_dir  = self.private_dir / 'records_to_post'
+        self.records_verified_dir = self.private_dir / 'records_verified'
+        self.records_rejected_dir = self.private_dir / 'records_rejected'
 
         # May be None in case of an Observer.
         # self.script: Optional[Script] = script
@@ -98,13 +99,13 @@ class ElectionNode:
         )
 
         self.store = RecordStore(
-            # records_to_post_dir = self.records_to_post_dir,
-            records_fetched_dir = self.records_fetched_dir,
+            records_verified_dir = self.records_verified_dir,
+            records_rejected_dir = self.records_rejected_dir,
         )
 
         self.ipfs = IPFSService(
-            records_to_post_dir = self.records_to_post_dir, # TODO remove?
-            records_fetched_dir = self.records_fetched_dir, # TODO remove
+            records_to_post_dir = self.records_to_post_dir,
+            records_verified_dir = self.records_verified_dir,
             store = self.store,
             # channel_id = self.channel_id,
         )
@@ -135,7 +136,7 @@ class ElectionNode:
         self.election = ElectionContext.from_config(election_cfg)
 
         handler = make_event_handler(
-            # self.records_fetched_dir,
+            # self.records_verified_dir,
             # self.records_to_post_dir,
             self.ipfs,
             self.store,
@@ -144,7 +145,7 @@ class ElectionNode:
 
         self.subscriber = ElectionSubscriber(
             election = self.election,
-            records_fetched_dir = self.records_fetched_dir,
+            records_verified_dir = self.records_verified_dir,
             on_event = on_event,
             on_error = on_error,
             on_channel_event = handler,

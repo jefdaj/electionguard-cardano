@@ -353,13 +353,20 @@ class RecordStore:
     should go through this rather than reading or writing files directly.
     Various other objects should keep references to it for record related queries."""
 
-    def __init__(self, records_fetched_dir: Path):
+    def __init__(
+            self,
+            records_verified_dir: Path,
+            records_rejected_dir: Path,
+        ):
         LOG_CALL()
 
-        # ensure no old unverified records are present in the fetched dir
-        shutil.rmtree(records_fetched_dir, ignore_errors=True)
-        records_fetched_dir.mkdir(parents=True, exist_ok=False)
-        self.records_fetched_dir: Path = records_fetched_dir
+        # ensure record dirs exist and are empty
+        shutil.rmtree(records_verified_dir, ignore_errors=True)
+        shutil.rmtree(records_rejected_dir, ignore_errors=True)
+        records_verified_dir.mkdir(parents=True, exist_ok=False)
+        records_rejected_dir.mkdir(parents=True, exist_ok=False)
+        self.records_verified_dir: Path = records_verified_dir
+        self.records_rejected_dir: Path = records_rejected_dir
 
         self._all_records: dict[str, r.PublicRecord] = {} # all records so far in any state
         self._pending_records: dict = {} # metadata str -> (record, attempts, next attempt)
@@ -409,7 +416,7 @@ class RecordStore:
         ]
 
         # TODO verification here
-        records_verified = records_fetched
+        records_verified = records_verified
 
         self._save_verified_records(data, records_verified)
         # TODO also save records that fail verfification, but flag them
@@ -480,7 +487,7 @@ class RecordStore:
         LOG_CALL()
         save_path = record_path(
             record.metadata,
-            pub_dir = self.records_fetched_dir
+            pub_dir = self.records_verified_dir
         )
         LOG.debug(f'save_path: {save_path}')
         cid_str = ipfs_cid_to_string(record.ipfs_cid)
