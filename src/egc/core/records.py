@@ -441,6 +441,7 @@ class RecordStore:
 
     def n_pending_cids(self, records=[]):
         "The number of CIDs seen on chain but not yet fetched."
+        # TODO remove records arg?
         LOG_CALL()
         keys = self._pending_records.keys()
         if records:
@@ -451,15 +452,20 @@ class RecordStore:
         cids = set(self._all_records[k].ipfs_cid for k in keys)
         return len(cids)
 
-    # def n_unfetched_cids(self, records=[]):
-    #     """Like n_pending_cids, but also counts records not seen yet on chain
-    #     (when passed explicitly)."""
-    #     LOG_CALL()
-    #     # TODO return the records instead? won't work if none passed
-    #     keys = [self.key_for_record(r) for r in records]
-    #     cids = set(self._all_records[key].ipfs_cid for k in keys)
-    #     unfetched = [c for c in cids if not k in self._fetched_cids]
-    #     return len(unfetched)
+    def n_unfetched_records(self, records=[]):
+        """A bit like n_pending_cids, except:
+        - requires a list of records
+        - does not count pending CIDs for other records not passed as an arg
+        - counts CIDs in those records not yet seen on chain
+        - returns the number of records with unfetched CIDs, not unfetched CIDs
+        """
+        LOG_CALL()
+        unfetched = [r for r in records if not r.ipfs_cid in self._fetched_cids]
+        n           = len(records)
+        n_unfetched = len(unfetched)
+        n_fetched   = n - len(unfetched)
+        LOG.info(f'{n_fetched}/{n} records fetched, leaving {n_unfetched} unfetched: {unfetched}')
+        return n_unfetched
 
     # TODO verify content first!
     # TODO figure out async/sync thing here

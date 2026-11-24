@@ -467,12 +467,12 @@ class IPFSService:
         LOG_CALL()
         return self._run_sync(self._status())
 
-    # TODO does this make any sense? a record not yet seen on chain doesn't have a CID
-    # def count_unfetched_cids(self, records=[]):
-    #     LOG_CALL()
-    # return self.store.n_unfetched_cids(records)
+    def count_unfetched_records(self, records: list[PublicRecord]):
+        LOG_CALL()
+        return self.store.n_unfetched_records(records)
 
     def count_pending_cids(self, records=[]):
+        # TODO remove records arg?
         LOG_CALL()
         return self.store.n_pending_cids(records)
 
