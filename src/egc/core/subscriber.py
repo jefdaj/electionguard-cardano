@@ -162,6 +162,7 @@ def election_event(*args):
 
 
 def election_events(event: ChannelEvent) -> list[ElectionEvent]:
+    # TODO can this detect collateral returns too?
     s = channel_id_to_string(event.channel_id)
     es = []
     ti = event_txid(event)
