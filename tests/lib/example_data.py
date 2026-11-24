@@ -56,17 +56,6 @@ EXAMPLE_CONTESTS = [
   },
   {
     "type": "office",
-    "question": "Pope",
-    "context": "Elected by the College of Cardinals",
-    "answers": [
-      "Cardinal Giovanni de' Medici",
-      "Cardinal Roderic Borgia",
-      "Cardinal Karol Wojtyła",
-      "Cardinal Jorge Bergoglio"
-    ]
-  },
-  {
-    "type": "office",
     "question": "Lawspeaker of the Icelandic Althing",
     "context": "Norse Commonwealth's early parliamentary assembly",
     "answers": [
