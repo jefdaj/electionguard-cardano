@@ -395,8 +395,8 @@ class RecordStore:
             self._pending_records[key] = (record, 0, 0)
 
     def fetch_successful(self, cid, data: bytes):
-        """Called by IPFSService after a successful fetch. Implies the content is
-        ready to be verified, NOT that it already has been."""
+        """Called by IPFSService after a successful fetch. Implies the data
+        matches the CID and is ready to be parsed + verified + written to disk."""
         # key = self.key_for_record(cid)
         LOG_CALL()
         cid_str = ipfs_cid_to_string(cid)
@@ -408,13 +408,11 @@ class RecordStore:
             if ipfs_cid_to_string(r.ipfs_cid) == cid_str
         ]
 
-        # TODO separate this part?
-        LOG.debug(f'fetched {cid_str} matching {len(records_fetched)} records: {records_fetched}')
-        for (key, record) in records_fetched:
-            self._save_fetched_data(data, record)
-            LOG.debug(f'remove from pending_records: {key}')
-            del self._pending_records[key]
-        LOG.debug('loc 5')
+        # TODO verification here
+        records_verified = records_fetched
+
+        self._save_verified_records(data, records_verified)
+        # TODO also save records that fail verfification, but flag them
 
     def mark_attempt(self, cid, attempts, next_attempt):
         LOG_CALL()
@@ -467,14 +465,19 @@ class RecordStore:
         LOG.info(f'{n_fetched}/{n} records fetched, leaving {n_unfetched} unfetched: {unfetched}')
         return n_unfetched
 
-    # TODO verify content first!
-    # TODO figure out async/sync thing here
-    def _save_fetched_data(self, data: bytes, record: r.PublicRecord):
+    def _save_verified_records(self, data, kr_pairs):
+        "Multi-record version because a given CID may match more than one."
+        LOG.debug(f'saving {len(kr_pairs)} verified records: {kr_pairs}')
+        for (key, record) in kr_pairs:
+            self._save_verified_record(data, record)
+            LOG.debug(f'remove from pending_records: {key}')
+            del self._pending_records[key]
+
+    def _save_verified_record(self, data: bytes, record: r.PublicRecord):
         """Given a record and bytes matching its CID, write the bytes to the
         proper file. Returns the save path, although that isn't used so far.
         """
         LOG_CALL()
-        LOG.debug('loc 0')
         save_path = record_path(
             record.metadata,
             pub_dir = self.records_fetched_dir

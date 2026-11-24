@@ -331,10 +331,10 @@ class IPFSService:
         try:
             stat = await self.ipfs._client.bitswap.stat()
         except Exception as e:
-            LOG.error(f'failed to get bitswap stat; skipping stuck check: {e}')
+            LOG.warning(f'failed to get bitswap stat; skipping stuck check: {e}')
             return False
         if stat is None:
-            LOG.error('bitswap stat returned None; skipping stuck check')
+            LOG.debug('bitswap stat returned None; skipping stuck check')
             return False
 
         LOG.debug(f'stat: {stat}')
