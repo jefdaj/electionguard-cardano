@@ -7,6 +7,7 @@ import random
 import re
 from typing import Any
 from pathlib import Path
+import shutil
 
 from .utils import make_log_call
 import logging
@@ -351,9 +352,14 @@ class RecordStore:
 
     def __init__(self, records_fetched_dir: Path):
         LOG_CALL()
+
+        # ensure no old unverified records are present in the fetched dir
+        shutil.rmtree(records_fetched_dir, ignore_errors=True)
+        records_fetched_dir.mkdir(parents=True, exist_ok=False)
         self.records_fetched_dir: Path = records_fetched_dir
-        self._all_records: dict[str, r.PublicRecord] # all records so far in any state
-        self._pending_cids: dict = {} # metadata str -> (cid, attempts, next attempt)
+
+        self._all_records: dict[str, r.PublicRecord] = {} # all records so far in any state
+        self._pending_records: dict = {} # metadata str -> (record, attempts, next attempt)
         self._fetched_cids: set[str] = set() # set(cid)
 
     def key_for_record(self, record: r.PublicRecord):
@@ -364,38 +370,60 @@ class RecordStore:
         LOG_CALL()
         return self._all_records[key]
 
+    def keys_for_cid(self, cid):
+        "Return a list of keys for records seen so far with a given CID."
+        LOG_CALL()
+        return sorted([
+            k for (k, r) in self._all_records.items()
+            if r.ipfs_cid == cid
+        ])
+
     def add_record_seen_on_chain(self, record):
         "Main entry point for new records seen on chain. Called by Subscriber."
         LOG_CALL()
-        key = self.key(record)
+        key = self.key_for_record(record)
+        LOG.debug(f'key: {key}')
         if key in self._all_records.keys():
-            LOG.info(f'add {record} ignoring duplicate')
+            LOG.info(f'add {key} ignoring duplicate')
+            # TODO what should the protocol actually require in this situation?
         else:
             LOG.info(f'add {record}')
             self._all_records[key] = record
-            self._pending_cids[key] = (record.ipfs_cid, 0, 0)
+            self._pending_records[key] = (record, 0, 0)
 
-    def mark_fetched_cids(self, cid):
+    def fetch_successful(self, cid, data: bytes):
         """Called by IPFSService after a successful fetch. Implies the content is
         ready to be verified, NOT that it already has been."""
-        # key = self.key(cid)
+        # key = self.key_for_record(cid)
         LOG_CALL()
         LOG.debug(f'fetched {cid}')
         self._fetched_cids.add(cid)
-        del self._pending_cids[cid]
+        # there may be more than one record per cid, so make a list first
+        records_fetched = [
+            (k, r) for (k, (r, _, _))
+            in self._pending_records.items()
+            if r.ipfs_cid == cid
+        ]
+        for (key, record) in records_fetched:
+            self._save_fetched_data(data, record)
+            LOG.debug(f'remove from pending_records: {key}')
+            del self._pending_records[key]
 
-    def mark_attempt(self, record, attempts, next_attempt):
+    def mark_attempt(self, cid, attempts, next_attempt):
         LOG_CALL()
-        key = self.key(record)
-        LOG.info(f'mark_attempt key:{key} attempts:{attempts} next_attempt:{next_attempt}')
-        self._pending_cids[key] = (attempts, next_attempt)
+        LOG.debug(f'all records: {self._all_records}')
+        keys = self.keys_for_cid(cid)
+        LOG.debug(f'keys for cid {cid}: {keys}')
+        for key in keys:
+            LOG.info(f'mark_attempt key:{key} attempts:{attempts} next_attempt:{next_attempt}')
+            self._pending_records[key] = (record, attempts, next_attempt)
 
     def due(self, now):
         LOG_CALL()
         # TODO should this live here or in IPFSService?
         cids_due = [
-            (cid, attempts)
-            for (cid, attempts, next_attempt) in self._pending_cids.values()
+            (record.ipfs_cid, attempts)
+            for (record, attempts, next_attempt) in self._pending_records.values()
             if next_attempt <= now
         ]
         if cids_due:
@@ -404,24 +432,55 @@ class RecordStore:
         return cids_due
 
     def n_pending_cids(self, records=[]):
-        "The number of keys seen on chain but not yet fetched."
+        "The number of CIDs seen on chain but not yet fetched."
         LOG_CALL()
-        # TODO remove? not sure you ever want it instead of n_unfetched
-        keys = self._pending_cids.keys()
+        keys = self._pending_records.keys()
         if records:
             keys = [
                 k for k in keys
-                if k in [self.key(r) for r in records]
+                if k in [self.key_for_record(r) for r in records]
             ]
-        return len(keys)
+        cids = set(self._all_records[key].ipfs_cid for k in keys)
+        return len(cids)
 
-    def n_unfetched(self, records=[]):
-        """Like n_pending_cids, but also counts records not seen yet on chain
-        (when passed explicitly)."""
+    # def n_unfetched_cids(self, records=[]):
+    #     """Like n_pending_cids, but also counts records not seen yet on chain
+    #     (when passed explicitly)."""
+    #     LOG_CALL()
+    #     # TODO return the records instead? won't work if none passed
+    #     keys = [self.key_for_record(r) for r in records]
+    #     cids = set(self._all_records[key].ipfs_cid for k in keys)
+    #     unfetched = [c for c in cids if not k in self._fetched_cids]
+    #     return len(unfetched)
+
+    # TODO verify content first!
+    # TODO figure out async/sync thing here
+    def _save_fetched_data(self, data: bytes, record: r.PublicRecord):
+        """Given a record and bytes matching its CID, write the bytes to the
+        proper file. Returns the save path, although that isn't used so far.
+        """
         LOG_CALL()
-        # TODO return the records instead? won't work if none passed
-        keys = [self.key(r) for r in records]
-        unfetched = [k for k in keys if not k in self._fetched_cids]
-        return len(unfetched)
-
-
+        save_path = record_path(
+            record.metadata,
+            pub_dir = self.records_fetched_dir
+        )
+        LOG.debug(f'save_path: {save_path}')
+        cid_str = ipfs_cid_to_string(record.ipfs_cid)
+        LOG.debug(f'cid_str: {cid_str}')
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        fd, tmp_path = tempfile.mkstemp(suffix=".json.part")
+        os.close(fd) # we'll reopen it with aiofiles next
+        try:
+            # Write tmpfile, then move into place atomically...ish?
+            with aiofiles.open(tmp_path, "wb") as f:
+                f.write(data)
+                f.flush()
+            shutil.move(tmp_path, save_path)
+            return save_path
+        finally:
+            # Clean up tmpfile if anything went wrong before replace
+            if os.path.exists(tmp_path):
+                try:
+                    os.remove(tmp_path)
+                except OSError:
+                    pass

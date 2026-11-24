@@ -43,8 +43,8 @@ def make_event_handler(ipfs: IPFSService, store: RecordStore, own_ch_id: Optiona
             new_records = event.output_state.state.new_records
             for r in new_records:
                 LOG.info(f'{ch_str} posted {r.metadata}')
-                # ipfs.fetch_record_soon(r)
                 store.add_record_seen_on_chain(r)
+                ipfs.fetch_cid_soon(r.ipfs_cid)
         except Exception as e:
             LOG.error(e)
 

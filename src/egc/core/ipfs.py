@@ -268,23 +268,25 @@ class IPFSService:
         if cid in self._inflight: # never fetch same CID twice at once
             return False
         self._inflight.add(cid)
+        cid_str = ipfs_cid_to_string(cid)
         try:
-            cid_str = ipfs_cid_to_string(cid)
             data = await self._run_async(self.ipfs.cat(cid_str), timeout=timeout)
-            await self._save_fetched_data(data, record)
             async for pin_status in self.ipfs._client.pin.add(cid_str):
                 LOG.debug(f'progress pinning {cid_str}: {pin_status}')
-            self.store.mark_fetched(cid) # success => no longer pending
+            # LOG.debug(f'ok, ready to mark {cid_str} successful')
+            LOG.debug(f'fresh: {self._fresh_q}')
+            LOG.debug(f'inflight: {self._inflight}')
+            self.store.fetch_successful(cid, data) # success => no longer pending
 
             # TODO handle this in RecordStore?
             remove_fetched_from_to_post(self.records_to_post_dir, self.records_fetched_dir)
 
-            LOG.info("fetched %s", record)
+            LOG.info("fetched %s", cid_str)
             return True
         except asyncio.TimeoutError:
             return False # file not propagated to ipfs node yet
         except Exception as e:
-            LOG.error("fetch error %s: %s", record, e)
+            LOG.error("fetch error %s: %s", cid_str, e)
             return False # keep it pending, retry later
         finally:
             self._inflight.discard(cid)
@@ -307,7 +309,6 @@ class IPFSService:
         cap = min(self.base_delay * self.backoff ** (attempts - 1), self.max_delay)
         delay = random.uniform(0, cap) # full jitter
         self.store.mark_attempt(cid, attempts, time.time() + delay)
-
 
     async def _ipfs_is_reachable(self) -> bool:
         """Lightweight check — returns False if the IPFS node is down."""
@@ -466,13 +467,14 @@ class IPFSService:
         LOG_CALL()
         return self._run_sync(self._status())
 
-    def count_unfetched_records(self, records=[]):
-        LOG_CALL()
-        return self.store.n_unfetched(records) # TODO n_unfetched_records to be less ambiguous
+    # TODO does this make any sense? a record not yet seen on chain doesn't have a CID
+    # def count_unfetched_cids(self, records=[]):
+    #     LOG_CALL()
+    # return self.store.n_unfetched_cids(records)
 
-    def count_pending_records(self, records=[]):
+    def count_pending_cids(self, records=[]):
         LOG_CALL()
-        return self.store.n_pending(records) # TODO n_pending_records to be less ambiguous
+        return self.store.n_pending_cids(records)
 
     async def wait_until_stable(
         self,
@@ -511,37 +513,6 @@ class IPFSService:
     def wait_until_stable_sync(self, *args, **kwargs):
         LOG_CALL()
         return self._run_sync(self.wait_until_stable(*args, **kwargs))
-
-    # TODO this should happen in the RecordStore after verifying the content
-    async def _save_fetched_data(self, data: bytes, record: PublicRecord):
-        """Given a record and bytes matching its CID, write the bytes to the
-        proper file. Returns the save path, although that isn't used so far.
-        """
-        LOG_CALL()
-        save_path = record_path(
-            record.metadata,
-            pub_dir = self.records_fetched_dir
-        )
-        LOG.debug(f'save_path: {save_path}')
-        cid_str = ipfs_cid_to_string(record.ipfs_cid)
-        LOG.debug(f'cid_str: {cid_str}')
-        save_path.parent.mkdir(parents=True, exist_ok=True)
-        fd, tmp_path = tempfile.mkstemp(suffix=".json.part")
-        os.close(fd) # we'll reopen it with aiofiles next
-        try:
-            # Write tmpfile, then move into place atomically...ish?
-            async with aiofiles.open(tmp_path, "wb") as f:
-                await f.write(data)
-                await f.flush()
-            shutil.move(tmp_path, save_path)
-            return save_path
-        finally:
-            # Clean up tmpfile if anything went wrong before replace
-            if os.path.exists(tmp_path):
-                try:
-                    os.remove(tmp_path)
-                except OSError:
-                    pass
 
     def get_own_peer_id(self) -> IpfsPeerId:
         LOG_CALL()

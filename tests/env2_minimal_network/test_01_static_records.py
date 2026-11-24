@@ -68,16 +68,17 @@ def test_publish_static_records(static_records_list, published_static_records):
     for r in published_static_records:
         assert isinstance(r, PublicRecord)
 
-def test_fetch_static_records(env2_ipfs, published_static_records):
+def test_fetch_static_records(env2_record_store, published_static_records):
     for r in published_static_records:
-        env2_ipfs.fetch_record_soon(r)
+        env2_record_store.add_record_seen_on_chain(r)
+        # env2_ipfs.fetch_cid_soon(r.ipfs_cid)
     deadline = time.monotonic() + 10
     while time.monotonic() < deadline:
         time.sleep(1)
-        n = env2_ipfs.count_pending_records()
-        LOG.debug(f'pending records: {n}')
+        n = env2_record_store.n_pending_cids()
+        LOG.debug(f'pending CIDs: {n}')
         if n == 0:
             break
-    paths = sorted(list(env2_ipfs.records_fetched_dir.rglob('*.json')))
+    paths = sorted(list(env2_record_store.records_fetched_dir.rglob('*.json')))
     LOG.debug(f'fetched json paths: {paths}')
     assert len(paths) == len(published_static_records)

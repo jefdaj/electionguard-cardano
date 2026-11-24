@@ -47,7 +47,7 @@ def env2_records_fetched_dir(env2_tmp_root: Path):
 
 @pytest.fixture(scope='module')
 def env2_record_store(env2_records_fetched_dir: Path):
-        return RecordStore(env2_records_fetched_dir)
+    return RecordStore(env2_records_fetched_dir)
 
 @pytest.fixture(scope='module')
 def env2_ipfs(
