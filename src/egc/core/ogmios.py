@@ -70,23 +70,23 @@ def ogmios_health_sync() -> dict:
     return asyncio.run(ogmios_health())
 
 
-async def ogmios_wait_until_synced(timeout=600, interval=5):
-    end = asyncio.get_event_loop().time() + timeout
+async def ogmios_wait_until_synced(timeout=600, interval=10, tolerance=1e-9):
+    loop = asyncio.get_running_loop()
+    end = loop.time() + timeout
     while True:
         try:
             health = await ogmios_health()
             if health['connectionStatus'] == 'connected':
-                sync_percent = int(health['networkSynchronization'] * 100)
-                LOG.info(f'cardano node is {sync_percent}% synced')
-                if sync_percent == 100:
+                sync = health['networkSynchronization']  # float, 0.0 to 1.0
+                shown = math.floor(sync * 10000) / 100
+                LOG.info(f'cardano node is {shown:.2f}% synced')
+                if sync >= 1 - tolerance:
                     return
         except Exception as e:
             LOG.error(e)
-        finally:
-            await asyncio.sleep(interval)
-
-        if asyncio.get_event_loop().time() > end:
-            raise TimeoutError("IPFS did not stabilize in time")
+        if loop.time() > end:
+            raise TimeoutError("Cardano node did not sync in time")
+        await asyncio.sleep(interval)
 
 
 def get_utxos_for_addr(addr, *args, **kwargs):
