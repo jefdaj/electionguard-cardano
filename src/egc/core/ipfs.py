@@ -2,7 +2,6 @@ import aiofiles
 import asyncio
 import os
 import random
-import tempfile
 import threading
 import time
 import hashlib
@@ -277,6 +276,7 @@ class IPFSService:
             LOG.debug(f'fresh: {self._fresh_q}')
             LOG.debug(f'inflight: {self._inflight}')
             self.store.fetch_successful(cid, data) # success => no longer pending
+            LOG.debug(f'fetch_successful was successful for {cid_str}')
 
             # TODO handle this in RecordStore?
             remove_fetched_from_to_post(self.records_to_post_dir, self.records_fetched_dir)

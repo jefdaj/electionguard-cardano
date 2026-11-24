@@ -1,4 +1,5 @@
 # from .plutus import *
+from .plutus import ipfs_cid_to_string
 from .plutus.types import record as r
 
 import electionguard as eg
@@ -8,6 +9,8 @@ import re
 from typing import Any
 from pathlib import Path
 import shutil
+import tempfile
+import os
 
 from .utils import make_log_call
 import logging
@@ -396,18 +399,22 @@ class RecordStore:
         ready to be verified, NOT that it already has been."""
         # key = self.key_for_record(cid)
         LOG_CALL()
-        LOG.debug(f'fetched {cid}')
+        cid_str = ipfs_cid_to_string(cid)
         self._fetched_cids.add(cid)
         # there may be more than one record per cid, so make a list first
         records_fetched = [
             (k, r) for (k, (r, _, _))
             in self._pending_records.items()
-            if r.ipfs_cid == cid
+            if ipfs_cid_to_string(r.ipfs_cid) == cid_str
         ]
+
+        # TODO separate this part?
+        LOG.debug(f'fetched {cid_str} matching {len(records_fetched)} records: {records_fetched}')
         for (key, record) in records_fetched:
             self._save_fetched_data(data, record)
             LOG.debug(f'remove from pending_records: {key}')
             del self._pending_records[key]
+        LOG.debug('loc 5')
 
     def mark_attempt(self, cid, attempts, next_attempt):
         LOG_CALL()
@@ -461,6 +468,7 @@ class RecordStore:
         proper file. Returns the save path, although that isn't used so far.
         """
         LOG_CALL()
+        LOG.debug('loc 0')
         save_path = record_path(
             record.metadata,
             pub_dir = self.records_fetched_dir
@@ -469,19 +477,17 @@ class RecordStore:
         cid_str = ipfs_cid_to_string(record.ipfs_cid)
         LOG.debug(f'cid_str: {cid_str}')
         save_path.parent.mkdir(parents=True, exist_ok=True)
-        fd, tmp_path = tempfile.mkstemp(suffix=".json.part")
-        os.close(fd) # we'll reopen it with aiofiles next
+        fd, tmp_path = tempfile.mkstemp(dir=save_path.parent, suffix=".json.part")
         try:
-            # Write tmpfile, then move into place atomically...ish?
-            with aiofiles.open(tmp_path, "wb") as f:
+            with os.fdopen(fd, "wb") as f:
                 f.write(data)
                 f.flush()
-            shutil.move(tmp_path, save_path)
+                os.fsync(f.fileno())
+            os.replace(tmp_path, save_path)
             return save_path
         finally:
-            # Clean up tmpfile if anything went wrong before replace
-            if os.path.exists(tmp_path):
-                try:
-                    os.remove(tmp_path)
-                except OSError:
-                    pass
+            # Clean up the temp file if anything failed before the replace
+            try:
+                os.remove(tmp_path)
+            except FileNotFoundError:
+                pass
