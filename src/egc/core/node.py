@@ -81,9 +81,9 @@ class ElectionNode:
         LOG.debug('ElectionNode.__init__')
 
         self.private_dir = Path(private_dir)
-        self.records_posting_dir  = self.private_dir / 'records_posting'
-        self.records_verified_dir = self.private_dir / 'records_verified'
-        self.records_rejected_dir = self.private_dir / 'records_rejected'
+        self.records_posting_dir  = self.private_dir / 'records' / 'posting'
+        self.records_rejected_dir = self.private_dir / 'records' / 'rejected'
+        self.records_verified_dir = self.private_dir / 'records' / 'verified'
 
         # May be None in case of an Observer.
         # self.script: Optional[Script] = script
@@ -105,10 +105,7 @@ class ElectionNode:
         )
 
         self.ipfs = IPFSService(
-            # records_posting_dir = self.records_posting_dir,
-            # records_verified_dir = self.records_verified_dir,
             store = self.store,
-            # channel_id = self.channel_id,
         )
         self.ipfs.start()
 

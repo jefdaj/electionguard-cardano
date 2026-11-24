@@ -43,15 +43,15 @@ def env2_ogmios(env2_arion_network) -> OgmiosV6ChainContext:
 
 @pytest.fixture(scope='module')
 def env2_records_posting_dir(env2_tmp_root: Path):
-        return env2_tmp_root / 'env2_ipfs' / 'records_posting'
+        return env2_tmp_root / 'env2_ipfs' / 'records' / 'posting'
 
 @pytest.fixture(scope='module')
 def env2_records_rejected_dir(env2_tmp_root: Path):
-        return env2_tmp_root / 'env2_ipfs' / 'records_rejected'
+        return env2_tmp_root / 'env2_ipfs' / 'records' / 'rejected'
 
 @pytest.fixture(scope='module')
 def env2_records_verified_dir(env2_tmp_root: Path):
-        return env2_tmp_root / 'env2_ipfs' / 'records_verified'
+        return env2_tmp_root / 'env2_ipfs' / 'records' / 'verified'
 
 @pytest.fixture(scope='module')
 def env2_record_store(
