@@ -440,7 +440,7 @@ class RecordStore:
                 k for k in keys
                 if k in [self.key_for_record(r) for r in records]
             ]
-        cids = set(self._all_records[key].ipfs_cid for k in keys)
+        cids = set(self._all_records[k].ipfs_cid for k in keys)
         return len(cids)
 
     # def n_unfetched_cids(self, records=[]):
