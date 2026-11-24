@@ -478,13 +478,13 @@ class RecordStore:
         # TODO something like this that works: self._records_pending_fetch.remove(record)
         # there may be more than one record per cid, so make a list first
         records_fetched = [
-            (k, r) for (k, (r, _, _))
-            in self._records_pending_fetch.items()
+            (k, r)
+            for (k, r) in self._all_records.items()
             if ipfs_cid_to_string(r.ipfs_cid) == cid_str
         ]
 
         # TODO verification here
-        records_verified = records_verified
+        records_verified = records_fetched
 
         self._save_verified_records(data, records_verified)
         # TODO also save records that fail verfification, but flag them
@@ -523,8 +523,9 @@ class RecordStore:
         for (key, record) in kr_pairs:
             self._save_verified_record(data, record)
             LOG.debug(f'remove from pending_records: {key}')
-            del self._records_pending_fetch[key]
+            self._records_pending_fetch.remove(key)
         remove_verified_from_posting(self.records_posting_dir, self.records_verified_dir)
+        # TODO look for pending verifications that can now continue here
 
     def _save_verified_record(self, data: bytes, record: r.PublicRecord):
         """Given a record and bytes matching its CID, write the bytes to the
