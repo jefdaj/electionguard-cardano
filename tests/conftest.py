@@ -10,12 +10,14 @@ pytest.register_assert_rewrite("tests.helpers")
 def pytest_configure(config):
 
     # These are all probably worth looking at again if/when we have mysterious
-    # API issues. But the rest of the time they're pretty noisy.
+    # issues. But the rest of the time they're pretty noisy.
     logging.getLogger('websockets').setLevel(logging.INFO)
     logging.getLogger('urllib3').setLevel(logging.INFO)
     logging.getLogger('ogmios').setLevel(logging.INFO)
     logging.getLogger('asyncio').setLevel(logging.INFO)
     logging.getLogger('aiohttp').setLevel(logging.INFO)
+    logging.getLogger('pycardano').setLevel(logging.INFO)
+    logging.getLogger('pycardano').handlers.clear()
 
     # Same with some of our code.
     logging.getLogger('egc.core.node').setLevel(logging.INFO)
