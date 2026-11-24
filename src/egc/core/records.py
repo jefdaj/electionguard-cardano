@@ -1,5 +1,6 @@
 # from .plutus import *
 from .plutus import ipfs_cid_to_string
+from .plutus import types as pt
 from .plutus.types import record as r
 
 import electionguard as eg
@@ -341,8 +342,11 @@ def load_all_guardian_backups(n_guardians: int, pub_dir: Path):
     return records
 
 
-def record_key(record) -> str:
+type RecordKey = str
+
+def record_key(record) -> RecordKey:
     "Work around record `unhashable type` issues."
+    # TODO use relative path from the records dir instead?
     # TODO add a method to the dataclass instead?
     # TODO use entire record including cid for key? seems more secure, but not always known?
     return str(record.metadata)
@@ -404,9 +408,35 @@ class RecordStore:
             shutil.rmtree(d, ignore_errors=True)
             d.mkdir(parents=True, exist_ok=False)
 
-        self._all_records: dict[str, r.PublicRecord] = {} # all records so far in any state
-        self._pending_records: dict = {} # metadata str -> (record, attempts, next attempt)
-        self._fetched_cids: set[str] = set() # set(cid)
+        # All records so far in any state.
+        # Needed to store the unhashable records.
+        self._all_records: dict[RecordKey, r.PublicRecord] = {}
+
+        # TODO _records_posting? not needed for now
+
+        # Records which have been seen on chain, but whose data has not been successfully fetched.
+        # More info about the number of attempts etc should be available from the IPFSService.
+        # TODO simplify by moving most of this to ipfs
+        self._records_pending_fetch: set[RecordKey] = set()
+
+        # CIDs whose data has been fetched successfully.
+        # TODO remove?
+        # TODO adjust type since it's using actual CIDs currently
+        self._fetched_cids: set[pt.IpfsCid] = set()
+
+        # Records whose data have been fetched, but which depend on at least
+        # one other unfetched record. They'll be verified or rejected once all
+        # dependencies have been fetched.
+        # TODO also reject if the election/phase ends with the dep still missing?
+        self._records_missing_deps: set[RecordKey] = set()
+
+        # Records successfully verified.
+        self._records_verified: set[RecordKey] = set()
+
+        # Records definitively rejected.
+        self._records_rejected: set[RecordKey] = set()
+
+        # TODO current state enum and method for querying it? might be good for the interface
 
     def key_for_record(self, record: r.PublicRecord):
         LOG_CALL()
@@ -416,26 +446,27 @@ class RecordStore:
         LOG_CALL()
         return self._all_records[key]
 
-    def keys_for_cid(self, cid):
-        "Return a list of keys for records seen so far with a given CID."
-        LOG_CALL()
-        return sorted([
-            k for (k, r) in self._all_records.items()
-            if r.ipfs_cid == cid
-        ])
+    # def keys_for_cid(self, cid):
+    #     "Return a list of keys for records seen so far with a given CID."
+    #     LOG_CALL()
+    #     return sorted([
+    #         k for (k, r) in self._all_records.items()
+    #         if r.ipfs_cid == cid
+    #     ])
 
     def add_record_seen_on_chain(self, record):
         "Main entry point for new records seen on chain. Called by Subscriber."
         LOG_CALL()
         key = self.key_for_record(record)
         LOG.debug(f'key: {key}')
-        if key in self._all_records.keys():
-            LOG.info(f'add {key} ignoring duplicate')
+        if key in self._all_records:
+            LOG.info(f'ignoring duplicate record: {record}')
             # TODO what should the protocol actually require in this situation?
         else:
             LOG.info(f'add {record}')
             self._all_records[key] = record
-            self._pending_records[key] = (record, 0, 0)
+            self._records_pending_fetch.add(key)
+            # self._records_pending_fetch[key] = (record, 0, 0)
 
     def fetch_successful(self, cid, data: bytes):
         """Called by IPFSService after a successful fetch. Implies the data
@@ -444,10 +475,11 @@ class RecordStore:
         LOG_CALL()
         cid_str = ipfs_cid_to_string(cid)
         self._fetched_cids.add(cid)
+        # TODO something like this that works: self._records_pending_fetch.remove(record)
         # there may be more than one record per cid, so make a list first
         records_fetched = [
             (k, r) for (k, (r, _, _))
-            in self._pending_records.items()
+            in self._records_pending_fetch.items()
             if ipfs_cid_to_string(r.ipfs_cid) == cid_str
         ]
 
@@ -457,44 +489,21 @@ class RecordStore:
         self._save_verified_records(data, records_verified)
         # TODO also save records that fail verfification, but flag them
 
-    def mark_attempt(self, cid, attempts, next_attempt):
-        LOG_CALL()
-        LOG.debug(f'all records: {self._all_records}')
-        keys = self.keys_for_cid(cid)
-        LOG.debug(f'keys for cid {cid}: {keys}')
-        for key in keys:
-            LOG.info(f'mark_attempt key:{key} attempts:{attempts} next_attempt:{next_attempt}')
-            (record, _, _) = self._pending_records[key]
-            self._pending_records[key] = (record, attempts, next_attempt)
+    # def n_pending_cids(self, records=[]):
+    #     "The number of CIDs seen on chain but not yet fetched."
+    #     # TODO remove records arg?
+    #     LOG_CALL()
+    #     keys = self._records_pending_fetch.keys()
+    #     if records:
+    #         keys = [
+    #             k for k in keys
+    #             if k in [self.key_for_record(r) for r in records]
+    #         ]
+    #     cids = set(self._all_records[k].ipfs_cid for k in keys)
+    #     return len(cids)
 
-    def due(self, now):
-        LOG_CALL()
-        # TODO should this live here or in IPFSService?
-        cids_due = [
-            (record.ipfs_cid, attempts)
-            for (record, attempts, next_attempt) in self._pending_records.values()
-            if next_attempt <= now
-        ]
-        if cids_due:
-            LOG.debug(f'cids_due: {len(cids_due)}')
-        random.shuffle(cids_due) # TODO is this a good strategy? or should they be sorted?
-        return cids_due
-
-    def n_pending_cids(self, records=[]):
-        "The number of CIDs seen on chain but not yet fetched."
-        # TODO remove records arg?
-        LOG_CALL()
-        keys = self._pending_records.keys()
-        if records:
-            keys = [
-                k for k in keys
-                if k in [self.key_for_record(r) for r in records]
-            ]
-        cids = set(self._all_records[k].ipfs_cid for k in keys)
-        return len(cids)
-
-    def n_unfetched_records(self, records=[]):
-        """A bit like n_pending_cids, except:
+    def count_unfetched_records(self, records=[]):
+        """A bit like IPFSService.count_pending_cids, except:
         - requires a list of records
         - does not count pending CIDs for other records not passed as an arg
         - counts CIDs in those records not yet seen on chain
@@ -514,7 +523,7 @@ class RecordStore:
         for (key, record) in kr_pairs:
             self._save_verified_record(data, record)
             LOG.debug(f'remove from pending_records: {key}')
-            del self._pending_records[key]
+            del self._records_pending_fetch[key]
         remove_verified_from_posting(self.records_posting_dir, self.records_verified_dir)
 
     def _save_verified_record(self, data: bytes, record: r.PublicRecord):
@@ -544,3 +553,5 @@ class RecordStore:
                 os.remove(tmp_path)
             except FileNotFoundError:
                 pass
+
+    # TODO load_verified_record?

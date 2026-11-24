@@ -37,16 +37,11 @@ class RetryingIPFS:
     """
 
     def __init__(self, maddr, retries=10, delay=1.0, backoff=1.5):
-        LOG.info('loc 0')
         LOG_CALL()
         self._client  = AsyncIPFS(maddr=maddr)
-        LOG.info('loc 1')
         self._retries = retries
-        LOG.info('loc 2')
         self._delay   = delay
-        LOG.info('loc 3')
         self._backoff = backoff
-        LOG.info('loc 4')
 
     async def close(self):
         LOG_CALL()
@@ -148,7 +143,7 @@ class IPFSService:
         self._ready = threading.Event()
 
         self.ipfs = None
-        self.store = None
+        self.store = store
         self._fresh_q = None
         self._retry_sem = None
         self._inflight = set() # CIDs being fetched right now (dedup)
@@ -156,6 +151,10 @@ class IPFSService:
         # For detecting whether data transfers are stuck.
         # (monotonic_time, blocks_sent, blocks_recv) at last meaningful poll
         self._last_bitswap_snapshot: tuple[float, int, int] | None = None
+
+        # CIDs pending fetch. Some may also be inflight.
+        # TODO use cid strs rather than actual cids?
+        self._pending: dict[IpfsCid, tuple[int, float]] = {} # TODO is float right?
 
 
     def _run_loop(self):
@@ -199,8 +198,10 @@ class IPFSService:
 
     def _accept(self, record):
         LOG_CALL()
-        self.store.add_record_seen_on_chain(record) # track first
-        self._fresh_q.put_nowait((record.ipfs_cid, 0)) # then attempt promptly
+        cid = record.ipfs_cid
+        self.store.add_record_seen_on_chain(record) # TODO remove? should be redundant
+        self._pending[cid] = (0, 0) # TODO is this right?
+        self._fresh_q.put_nowait((cid, 0)) # then attempt promptly
 
     def fetch_record_soon(self, record):
         "Called from the subscriber thread. Returns immediately."
@@ -246,10 +247,10 @@ class IPFSService:
             data = await self._run_async(self.ipfs.cat(cid_str), timeout=timeout)
             async for pin_status in self.ipfs._client.pin.add(cid_str):
                 LOG.debug(f'progress pinning {cid_str}: {pin_status}')
-            # LOG.debug(f'ok, ready to mark {cid_str} successful')
-            LOG.debug(f'fresh: {self._fresh_q}')
-            LOG.debug(f'inflight: {self._inflight}')
+            # LOG.debug(f'fresh: {self._fresh_q}')
+            # LOG.debug(f'inflight: {self._inflight}')
             self.store.fetch_successful(cid, data) # success => no longer pending
+            del self._pending[cid]
             LOG.info("fetched %s", cid_str)
             return True
         except asyncio.TimeoutError:
@@ -272,12 +273,24 @@ class IPFSService:
             finally:
                 self._fresh_q.task_done()
 
+    def mark_attempt(self, cid, attempts, next_attempt):
+        LOG_CALL()
+        # LOG.debug(f'all records: {self._all_records}')
+        # keys = self.keys_for_cid(cid)
+        # LOG.debug(f'keys for cid {cid}: {keys}')
+        # for key in keys:
+        #     LOG.info(f'mark_attempt key:{key} attempts:{attempts} next_attempt:{next_attempt}')
+        #     (record, _, _) = self._records_pending_fetch[key] # TODO only track cids, not records?
+        #     self._records_pending_fetch[key] = (record, attempts, next_attempt)
+        # cid_str = ipfs_cid_to_string(cid)
+        self._pending[cid] = (attempts, next_attempt)
+
     def _schedule_retry(self, cid, attempts):
         "Jitter to prevent all test nodes retrying at once."
         LOG_CALL()
         cap = min(self.base_delay * self.backoff ** (attempts - 1), self.max_delay)
         delay = random.uniform(0, cap) # full jitter
-        self.store.mark_attempt(cid, attempts, time.time() + delay)
+        self.mark_attempt(cid, attempts, time.time() + delay)
 
     async def _ipfs_is_reachable(self) -> bool:
         """Lightweight check — returns False if the IPFS node is down."""
@@ -373,6 +386,21 @@ class IPFSService:
                     lambda t: t.exception() and LOG.error(t.exception())
                 )
 
+    def due(self, now):
+        LOG_CALL()
+        # TODO should this live here or in IPFSService?
+        cids_due = [
+            # (record.ipfs_cid, attempts)
+            # for (record, attempts, next_attempt) in self._records_pending_fetch.values()
+            # if next_attempt <= now
+            (cid, attempts)
+            for (cid, (attempts, next_attempt)) in self._pending.items()
+            if next_attempt <= now
+        ]
+        if cids_due:
+            LOG.debug(f'cids_due: {len(cids_due)}')
+        random.shuffle(cids_due) # TODO is this a good strategy? or should they be sorted?
+        return cids_due
 
     async def _sweeper(self, jitter=True):
         """Retry lane: patient, bounded, forever, on a slow cadence.
@@ -385,7 +413,7 @@ class IPFSService:
                 interval *= random.uniform(0.8, 1.2)
             await asyncio.sleep(interval)
             now = time.time()
-            for cid, attempts in self.store.due(now):
+            for cid, attempts in self.due(now):
                 # key = record_key(record)
                 if cid in self._inflight:
                     continue
@@ -436,14 +464,9 @@ class IPFSService:
         LOG_CALL()
         return self._run_sync(self._status())
 
-    def count_unfetched_records(self, records: list[PublicRecord]):
+    def count_pending_cids(self):
         LOG_CALL()
-        return self.store.n_unfetched_records(records)
-
-    def count_pending_cids(self, records=[]):
-        # TODO remove records arg?
-        LOG_CALL()
-        return self.store.n_pending_cids(records)
+        return len(self._pending)
 
     async def wait_until_stable(
         self,

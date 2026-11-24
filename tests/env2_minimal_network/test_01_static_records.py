@@ -80,8 +80,8 @@ def test_fetch_static_records(
     deadline = time.monotonic() + 10
     while time.monotonic() < deadline:
         time.sleep(1)
-        n = env2_record_store.n_pending_cids()
-        LOG.debug(f'pending CIDs: {n}')
+        n = env2_record_store.count_unfetched_records()
+        LOG.debug(f'pending records: {n}')
         if n == 0:
             break
     paths = sorted(list(env2_record_store.records_verified_dir.rglob('*.json')))
