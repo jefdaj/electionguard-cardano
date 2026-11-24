@@ -224,15 +224,15 @@ class IPFSService:
         fut = asyncio.run_coroutine_threadsafe(coro, self._loop)
         return await asyncio.wait_for(asyncio.wrap_future(fut), timeout)
 
-    def _accept(self, cid):
+    def _accept(self, record):
         LOG_CALL()
-        # self.store.add_record_seen_on_chain(record) # track first
-        self._fresh_q.put_nowait((cid, 0)) # then attempt promptly
+        self.store.add_record_seen_on_chain(record) # track first
+        self._fresh_q.put_nowait((record.ipfs_cid, 0)) # then attempt promptly
 
-    def fetch_cid_soon(self, cid):
+    def fetch_record_soon(self, record):
         "Called from the subscriber thread. Returns immediately."
         LOG_CALL()
-        self._loop.call_soon_threadsafe(self._accept, cid)
+        self._loop.call_soon_threadsafe(self._accept, record)
 
     def publish_and_make_record(self, data: dict, metadata: PublicRecordMetadata) -> PublicRecord:
         "Publish data to IPFS and return a new record, ready to post onchain."

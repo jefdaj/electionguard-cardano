@@ -416,6 +416,7 @@ class RecordStore:
         LOG.debug(f'keys for cid {cid}: {keys}')
         for key in keys:
             LOG.info(f'mark_attempt key:{key} attempts:{attempts} next_attempt:{next_attempt}')
+            (record, _, _) = self._pending_records[key]
             self._pending_records[key] = (record, attempts, next_attempt)
 
     def due(self, now):

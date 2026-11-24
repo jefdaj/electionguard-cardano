@@ -68,10 +68,15 @@ def test_publish_static_records(static_records_list, published_static_records):
     for r in published_static_records:
         assert isinstance(r, PublicRecord)
 
-def test_fetch_static_records(env2_record_store, published_static_records):
+def test_fetch_static_records(
+        env2_ipfs, # TODO rearrange? this is required for the store to fetch
+        env2_record_store,
+        published_static_records
+    ):
     for r in published_static_records:
+        LOG.debug(f'adding + fetching as if seen on chain: {r}')
         env2_record_store.add_record_seen_on_chain(r)
-        # env2_ipfs.fetch_cid_soon(r.ipfs_cid)
+        env2_ipfs.fetch_record_soon(r)
     deadline = time.monotonic() + 10
     while time.monotonic() < deadline:
         time.sleep(1)

@@ -22,4 +22,4 @@ EXTRA_ARGS="$@"
 # comment out to work on test_99_latest more easily:
 # EXTRA_ARGS="$EXTRA_ARGS --reruns 1"
 
-pytest -vv $EXTRA_ARGS 2>&1 | tee test.log
+pytest -vv -s --tb=long $EXTRA_ARGS 2>&1 | tee test.log
