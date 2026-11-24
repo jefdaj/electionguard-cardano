@@ -37,11 +37,16 @@ class RetryingIPFS:
     """
 
     def __init__(self, maddr, retries=10, delay=1.0, backoff=1.5):
+        LOG.info('loc 0')
         LOG_CALL()
         self._client  = AsyncIPFS(maddr=maddr)
+        LOG.info('loc 1')
         self._retries = retries
+        LOG.info('loc 2')
         self._delay   = delay
+        LOG.info('loc 3')
         self._backoff = backoff
+        LOG.info('loc 4')
 
     async def close(self):
         LOG_CALL()
@@ -86,14 +91,6 @@ class RetryingIPFS:
         return getattr(self._client, name)
 
 
-class PostFetchMismatchError(Exception):
-    "One or more fetched paths have different content than their to-post equivalents."
-
-    def __init__(self, mismatches: list[Path]):
-        self.mismatches = mismatches
-        super().__init__(f"{len(mismatches)} mismatch(es): {mismatches}")
-
-
 def _hash(path: Path, chunk=64*1024) -> str:
     # TODO any subtle serialization issues here?
     LOG_CALL()
@@ -102,32 +99,6 @@ def _hash(path: Path, chunk=64*1024) -> str:
         for block in iter(lambda: f.read(chunk), b""):
             h.update(block)
     return h.hexdigest()
-
-
-def remove_verified_from_to_post(records_to_post: Path, records_verified: Path) -> list[Path]:
-    """Delete files in records_to_post that also exist in records_verified with
-    identical content. After processing everything, raise PostFetchMismatchError
-    if any shared relative path had differing content. Returns removed rel paths."""
-    # TODO should this also remove rejected records? something to think about later
-    LOG_CALL()
-    removed, mismatches = [], []
-    for post_file in records_to_post.rglob("*"):
-        if not post_file.is_file():
-            continue
-        rel = post_file.relative_to(records_to_post)
-        fetched_file = records_verified / rel
-        if not fetched_file.is_file():
-            continue
-
-        if (post_file.stat().st_size == fetched_file.stat().st_size
-                and _hash(post_file) == _hash(fetched_file)):
-            post_file.unlink()
-            removed.append(rel)
-        else:
-            mismatches.append(rel)
-    if mismatches:
-        raise PostFetchMismatchError(mismatches)
-    return removed
 
 
 class IPFSService:
@@ -140,8 +111,8 @@ class IPFSService:
 
     # TODO tune these defaults based on test data
     def __init__(self,
-        records_to_post_dir: Path,
-        records_verified_dir: Path,
+        # records_posting_dir: Path,
+        # records_verified_dir: Path,
         store: RecordStore,
         maddr=IPFS_API_ADDR,
         fresh_workers=4,
@@ -155,8 +126,8 @@ class IPFSService:
     ):
         LOG_CALL()
 
-        self.records_to_post_dir = records_to_post_dir
-        self.records_verified_dir = records_verified_dir
+        # self.records_posting_dir  = records_posting_dir
+        # self.records_verified_dir = records_verified_dir
 
         # These are set by the node's on_channel_event handler.
         self.channel_nodes: dict[ChannelId, OptionIpfsNode] = {}
@@ -192,7 +163,9 @@ class IPFSService:
         LOG_CALL()
         asyncio.set_event_loop(self._loop)
         self.ipfs = RetryingIPFS(self.maddr)
-        self.store = RecordStore(self.records_verified_dir)
+        LOG.info('loc 5')
+        # self.store = RecordStore(self.records_verified_dir, eslf.records_rejected_dir)
+        LOG.info('loc 6')
         self._fresh_q = asyncio.Queue()
         self._retry_sem = asyncio.Semaphore(self._retry_concurrency)
         for _ in range(self.fresh_workers):
@@ -277,11 +250,6 @@ class IPFSService:
             LOG.debug(f'fresh: {self._fresh_q}')
             LOG.debug(f'inflight: {self._inflight}')
             self.store.fetch_successful(cid, data) # success => no longer pending
-            LOG.debug(f'fetch_successful was successful for {cid_str}')
-
-            # TODO handle this in RecordStore?
-            remove_verified_from_to_post(self.records_to_post_dir, self.records_verified_dir)
-
             LOG.info("fetched %s", cid_str)
             return True
         except asyncio.TimeoutError:

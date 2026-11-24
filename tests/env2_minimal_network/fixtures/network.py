@@ -42,25 +42,35 @@ def env2_ogmios(env2_arion_network) -> OgmiosV6ChainContext:
         time.sleep(OGMIOS_POLL_SEC)
 
 @pytest.fixture(scope='module')
+def env2_records_posting_dir(env2_tmp_root: Path):
+        return env2_tmp_root / 'env2_ipfs' / 'records_posting'
+
+@pytest.fixture(scope='module')
+def env2_records_rejected_dir(env2_tmp_root: Path):
+        return env2_tmp_root / 'env2_ipfs' / 'records_rejected'
+
+@pytest.fixture(scope='module')
 def env2_records_verified_dir(env2_tmp_root: Path):
         return env2_tmp_root / 'env2_ipfs' / 'records_verified'
 
 @pytest.fixture(scope='module')
-def env2_record_store(env2_records_verified_dir: Path):
-    return RecordStore(env2_records_verified_dir)
+def env2_record_store(
+        env2_records_posting_dir : Path,
+        env2_records_rejected_dir: Path,
+        env2_records_verified_dir: Path,
+    ):
+    return RecordStore(
+        env2_records_posting_dir,
+        env2_records_rejected_dir,
+        env2_records_verified_dir,
+    )
 
 @pytest.fixture(scope='module')
 def env2_ipfs(
     env2_arion_network,
-    env2_tmp_root: Path,
-    env2_records_verified_dir: Path,
-    env2_record_store: RecordStore
+    env2_record_store: RecordStore,
 ):
-    ipfs_ = IPFSService(
-        records_to_post_dir = env2_tmp_root / 'env2_ipfs' / 'records_to_post',
-        records_verified_dir = env2_records_verified_dir,
-        store = env2_record_store,
-    )
+    ipfs_ = IPFSService(store=env2_record_store)
     ipfs_.start()
     ipfs_.wait_until_stable_sync()
     return ipfs_

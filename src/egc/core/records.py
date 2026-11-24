@@ -348,6 +348,40 @@ def record_key(record) -> str:
     return str(record.metadata)
 
 
+class PostFetchMismatchError(Exception):
+    "One or more fetched paths have different content than their to-post equivalents."
+
+    def __init__(self, mismatches: list[Path]):
+        self.mismatches = mismatches
+        super().__init__(f"{len(mismatches)} mismatch(es): {mismatches}")
+
+
+def remove_verified_from_posting(records_posting_dir: Path, records_verified_dir: Path) -> list[Path]:
+    """Delete files in records_posting_dir that also exist in records_verified_dir with
+    identical content. After processing everything, raise PostFetchMismatchError
+    if any shared relative path had differing content. Returns removed rel paths."""
+    # TODO should this also remove rejected records? something to think about later
+    LOG_CALL()
+    removed, mismatches = [], []
+    for post_file in records_posting_dir.rglob("*"):
+        if not post_file.is_file():
+            continue
+        rel = post_file.relative_to(records_posting_dir)
+        fetched_file = records_verified_dir / rel
+        if not fetched_file.is_file():
+            continue
+
+        if (post_file.stat().st_size == fetched_file.stat().st_size
+                and _hash(post_file) == _hash(fetched_file)):
+            post_file.unlink()
+            removed.append(rel)
+        else:
+            mismatches.append(rel)
+    if mismatches:
+        raise PostFetchMismatchError(mismatches)
+    return removed
+
+
 class RecordStore:
     """Manages fetching and verifying records. All save and load operations
     should go through this rather than reading or writing files directly.
@@ -355,18 +389,20 @@ class RecordStore:
 
     def __init__(
             self,
-            records_verified_dir: Path,
+            records_posting_dir : Path,
             records_rejected_dir: Path,
+            records_verified_dir: Path,
         ):
         LOG_CALL()
 
-        # ensure record dirs exist and are empty
-        shutil.rmtree(records_verified_dir, ignore_errors=True)
-        shutil.rmtree(records_rejected_dir, ignore_errors=True)
-        records_verified_dir.mkdir(parents=True, exist_ok=False)
-        records_rejected_dir.mkdir(parents=True, exist_ok=False)
-        self.records_verified_dir: Path = records_verified_dir
+        self.records_posting_dir : Path = records_posting_dir
         self.records_rejected_dir: Path = records_rejected_dir
+        self.records_verified_dir: Path = records_verified_dir
+
+        # ensure record dirs exist and are empty
+        for d in [records_posting_dir, records_rejected_dir, records_verified_dir]:
+            shutil.rmtree(d, ignore_errors=True)
+            d.mkdir(parents=True, exist_ok=False)
 
         self._all_records: dict[str, r.PublicRecord] = {} # all records so far in any state
         self._pending_records: dict = {} # metadata str -> (record, attempts, next attempt)
@@ -479,6 +515,7 @@ class RecordStore:
             self._save_verified_record(data, record)
             LOG.debug(f'remove from pending_records: {key}')
             del self._pending_records[key]
+        remove_verified_from_posting(self.records_posting_dir, self.records_verified_dir)
 
     def _save_verified_record(self, data: bytes, record: r.PublicRecord):
         """Given a record and bytes matching its CID, write the bytes to the

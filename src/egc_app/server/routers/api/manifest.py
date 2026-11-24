@@ -17,7 +17,7 @@ async def manifest_create(data: dict, state=Depends(get_state)):
     eg_manifest = egc_manifest.to_eg()
     LOG.info(f'eg_manifest: {eg_manifest}')
     # TODO reject if there's already a set of details? or should that update it?
-    rtp_dir = state.node.records_to_post_dir
+    rtp_dir = state.node.records_posting_dir
     metadata = record.Manifest()
     save_record(metadata, eg_manifest, rtp_dir)
     return Response(status_code=201)

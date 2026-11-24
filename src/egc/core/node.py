@@ -56,7 +56,7 @@ class ElectionNode:
     def __init__(
         self,
 
-        # Where to keep records_to_post, records_verified, and other files as needed.
+        # Where to keep records_posting, records_verified, and other files as needed.
         private_dir: Path,
 
         # For deriving the ChannelId and naming state dirs.
@@ -81,7 +81,7 @@ class ElectionNode:
         LOG.debug('ElectionNode.__init__')
 
         self.private_dir = Path(private_dir)
-        self.records_to_post_dir  = self.private_dir / 'records_to_post'
+        self.records_posting_dir  = self.private_dir / 'records_posting'
         self.records_verified_dir = self.private_dir / 'records_verified'
         self.records_rejected_dir = self.private_dir / 'records_rejected'
 
@@ -99,13 +99,14 @@ class ElectionNode:
         )
 
         self.store = RecordStore(
-            records_verified_dir = self.records_verified_dir,
+            records_posting_dir  = self.records_posting_dir,
             records_rejected_dir = self.records_rejected_dir,
+            records_verified_dir = self.records_verified_dir,
         )
 
         self.ipfs = IPFSService(
-            records_to_post_dir = self.records_to_post_dir,
-            records_verified_dir = self.records_verified_dir,
+            # records_posting_dir = self.records_posting_dir,
+            # records_verified_dir = self.records_verified_dir,
             store = self.store,
             # channel_id = self.channel_id,
         )
@@ -137,7 +138,7 @@ class ElectionNode:
 
         handler = make_event_handler(
             # self.records_verified_dir,
-            # self.records_to_post_dir,
+            # self.records_posting_dir,
             self.ipfs,
             self.store,
             self.channel_id(),
@@ -291,13 +292,13 @@ class ElectionNode:
 
     # TODO underscore this?
     def batch_list_paths(self) -> list[Path]:
-        pub_dir = self.records_to_post_dir
+        pub_dir = self.records_posting_dir
         paths = sorted(list(pub_dir.rglob('*.json')))
         return paths
 
     # TODO better name?
     def batch_list(self) -> list[PublicRecordMetadata]:
-        pub_dir = self.records_to_post_dir
+        pub_dir = self.records_posting_dir
         paths = self.batch_list_paths()
         metas = [path_metadata(p, pub_dir) for p in paths]
         return metas
@@ -319,7 +320,7 @@ class ElectionNode:
         assert len(paths) <= max_size
         LOG.info(f'paths after size cutoff: {paths}')
         pairs = []
-        pub_dir = self.records_to_post_dir
+        pub_dir = self.records_posting_dir
         for path in paths:
             LOG.info(f'path: {path}')
             meta = path_metadata(path, pub_dir)

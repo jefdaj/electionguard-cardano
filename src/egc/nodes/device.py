@@ -14,7 +14,7 @@ class DeviceNode(VerifierNode):
     def __init__(
         self,
 
-        # Where to keep records_to_post, records_verified, and other files as needed.
+        # Where to keep records_posting, records_verified, and other files as needed.
         private_dir: Path,
 
         # For deriving the ChannelId
