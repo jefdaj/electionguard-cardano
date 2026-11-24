@@ -21,22 +21,32 @@ def arion_subprocess_kwargs(cfg: ResolvedTestConfig, arion_dir: Path) -> dict:
         'env': arion_env,
     }
 
-def run_arion(cfg: ResolvedTestConfig, arion_dir: Path, arion_args: list[str]):
+def run_arion(
+    cfg: ResolvedTestConfig,
+    arion_dir: Path,
+    arion_args: list[str],
+    log_handle,
+):
     "Run global arion commands like up and down."
-    tmpdir_path = cfg.tmpdir_path()
     kwargs = arion_subprocess_kwargs(cfg, arion_dir)
-    # log_path = tmpdir_path / 'data' / node_name / 'script.log'
     cmd = ["arion"] + arion_args
-    return subprocess.run(cmd, check = True, **kwargs)
 
-def run_arion_down(cfg: ResolvedTestConfig, arion_dir: Path):
+    return subprocess.run(
+        cmd,
+        check=True,
+        stdout=log_handle,
+        stderr=subprocess.STDOUT,  # stderr goes to the same file as stdout
+        **kwargs,
+    )
+
+def run_arion_down(cfg: ResolvedTestConfig, arion_dir: Path, log_handle):
     # TODO --rmi local? all?
-    run_arion(cfg, arion_dir, ['down', '--remove-orphans', '--volumes'])
+    run_arion(cfg, arion_dir, ['down', '--remove-orphans', '--volumes'], log_handle)
 
-def run_arion_up(cfg: ResolvedTestConfig, arion_dir: Path):
-    run_arion_down(cfg, arion_dir) # in case of messy prev run
-    run_arion(cfg, arion_dir, ['up', '-d'])
-    time.sleep(10)
+def run_arion_up(cfg: ResolvedTestConfig, arion_dir: Path, log_handle):
+    run_arion_down(cfg, arion_dir, log_handle) # in case of messy prev run
+    run_arion(cfg, arion_dir, ['up', '-d'], log_handle)
+    time.sleep(10) # TODO remove?
 
 
 # TODO how to force arion down on pytest exceptions, keyboardinturrupt etc?
@@ -52,10 +62,10 @@ def arion_network_up(cfg: ResolvedTestConfig, arion_dir: Path):
         log('arion_network_up start')
 
         with raise_on_signals(signal.SIGTERM, signal.SIGINT):
-            run_arion_up(cfg, arion_dir)
+            run_arion_up(cfg, arion_dir, log_handle)
             try:
                 log('arion_network_up yield')
                 yield cfg.arion_project_name() # TODO or parse arion cat /docker inspect? or None?
             finally:
                 log('arion_network_up finally')
-                run_arion_down(cfg, arion_dir)
+                run_arion_down(cfg, arion_dir, log_handle)
