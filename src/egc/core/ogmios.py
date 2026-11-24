@@ -77,7 +77,7 @@ async def ogmios_wait_until_synced(timeout=600, interval=5):
             health = await ogmios_health()
             if health['connectionStatus'] == 'connected':
                 sync_percent = int(health['networkSynchronization'] * 100)
-                LOG.debug(f'cardano node is {sync_percent}% synced')
+                LOG.info(f'cardano node is {sync_percent}% synced')
                 if sync_percent == 100:
                     return
         except Exception as e:
