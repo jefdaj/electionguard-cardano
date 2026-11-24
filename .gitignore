@@ -5,6 +5,7 @@
 /tests/data/
 
 # logs
+log
 *.log
 
 # vim
