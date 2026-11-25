@@ -5,3 +5,6 @@ from pycardano import *
 
 from .core import *
 from .nodes import *
+
+# TODO gotta be a more elegant way, right?
+del logging
