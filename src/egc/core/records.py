@@ -18,6 +18,9 @@ LOG = logging.getLogger(__name__)
 LOG_CALL = make_log_call(LOG.debug)
 
 
+# TODO different module for these load_all* fns vs store vs metadata key machinery?
+
+
 # Record metadata can be encoded to or decoded from a unique relative path
 # using PUBLIC_RECORD_TYPES below. The path can be used as a hashable key for
 # sets and dicts.
@@ -127,6 +130,7 @@ PUBLIC_RECORD_TYPES = {
 
 def metadata_to_path(metadata: r.PublicRecordMetadata, rec_dir: Path) -> Path:
     "Find the full path of a record in a records dir by metadata."
+    LOG_CALL()
     relpath = metadata_to_relpath(metadata)
     if not isinstance(rec_dir, Path):
         rec_dir = Path(rec_dir)
@@ -137,6 +141,7 @@ def metadata_to_path(metadata: r.PublicRecordMetadata, rec_dir: Path) -> Path:
 
 def metadata_to_relpath(metadata: r.PublicRecordMetadata) -> RecordMetadataRelPath:
     "Encode record metdata as a relative path."
+    LOG_CALL()
     LOG.debug(f'metadata: {metadata}')
     if isinstance(metadata, r.PublicRecord):
         LOG.warning(f'Passed PublicRecord rather than PublicRecordMetadata: {metadata}')
@@ -263,31 +268,33 @@ def relpath_to_metadata(relpath: RecordMetadataRelPath) -> r.PublicRecordMetadat
     raise ValueError(f'No record type matches path: {abspath}')
 
 
-
-# TODO later, replace this with/turn into a verification
-def load_all_guardian_pubkeys(n_guardians: int, pub_dir: Path):
+def load_all_guardian_pubkeys(n_guardians: int, store: RecordStore):
     "Load all guardian pubkeys, or raise an error if any are missing."
-    LOG.debug('load_all_guardian_pubkeys')
+    LOG_CALL()
     LOG.debug(f'n_guardians: {n_guardians}')
-    pub_dir = Path(pub_dir)
-    LOG.debug(f'pub_dir: {pub_dir}')
+    # pub_dir = Path(pub_dir)
+    # LOG.debug(f'pub_dir: {pub_dir}')
     records = []
     for i in range(1, n_guardians+1):
-        rec = load_record(r.GuardianPubkey(guardian_number=i), pub_dir)
+        m = r.GuardianPubkey(guardian_number=i)
+        LOG.debug(f'm: {m}')
+        rec = store.load_verified_record_by_metadata(m)
         LOG.debug(f'loaded rec: {rec}')
         records.append(rec)
     return records
 
 
-# TODO later, replace this with/turn into a verification
-def key_ceremony_round1_complete(pub_dir: Path):
+def key_ceremony_round1_complete(store: RecordStore):
+    LOG_CALL()
     try:
-        details = load_record(r.CeremonyDetails(), pub_dir)
+        # details = load_record(r.CeremonyDetails(), pub_dir)
+        m = r.CeremonyDetails()
+        details = store.load_verified_record_by_metadata(m)
         LOG.debug(f'details: {details}')
         n = details.number_of_guardians
         LOG.debug(f'n guardians: {n}')
         # TODO prevent guardians from gaming this by posting an extra key
-        pubkeys = load_all_guardian_pubkeys(n, pub_dir)
+        pubkeys = load_all_guardian_pubkeys(n, store)
         LOG.debug(f'actual n_pubkeys: {len(pubkeys)}')
         return len(pubkeys) == n
     except Exception as e:
@@ -295,16 +302,19 @@ def key_ceremony_round1_complete(pub_dir: Path):
         return False
 
 
-def key_ceremony_round2_complete(pub_dir: Path):
+def key_ceremony_round2_complete(store: RecordStore):
+    LOG_CALL()
     try:
-        details = load_record(r.CeremonyDetails(), pub_dir)
+        m = r.CeremonyDetails()
+        # details = load_record(m, pub_dir)
+        details = store.load_verified_record_by_metdata(m)
         LOG.debug(f'details: {details}')
         n = details.number_of_guardians
         LOG.debug(f'n guardians: {n}')
         # TODO prevent guardians from gaming this by posting extra backups
         n_backups_expected = n**2 - n
         LOG.debug(f'n_backups_expected: {n_backups_expected}')
-        backups = load_all_guardian_backups(n, pub_dir)
+        backups = load_all_guardian_backups(n, store)
         LOG.debug(f'actual n_backups: {len(backups)}')
         return len(backups) == n_backups_expected
     except Exception as e:
@@ -313,36 +323,35 @@ def key_ceremony_round2_complete(pub_dir: Path):
 
 
 # TODO where should this live?
-def load_all_guardian_backups(n_guardians: int, pub_dir: Path):
+def load_all_guardian_backups(n_guardians: int, store: RecordStore):
     "Load all guardian backups, or raise an error if any are missing."
-    LOG.debug('load_all_guardian_backups')
+    LOG_CALL()
     LOG.debug(f'n_guardians: {n_guardians}')
-    pub_dir = Path(pub_dir)
-    LOG.debug(f'pub_dir: {pub_dir}')
     records = []
     for guardian_number in range(1, n_guardians+1):
         for backup_order in range(1, n_guardians+1):
             if guardian_number == backup_order:
                 LOG.debug(f'skip guardian_number {guardian_number} backup {backup_order}')
                 continue # guardians don't send themselves a backup
-            rec = load_record(
-                r.GuardianBackup(
-                    guardian_number = guardian_number,
-                    backup_order    = backup_order
-                ),
-                pub_dir
-            )
+            m = r.GuardianBackup(
+                guardian_number = guardian_number,
+                backup_order    = backup_order
+            ),
+            LOG.debug(f'm: {m}')
+            # rec = load_record(pub_dir)
+            rec = store.load_verified_record_by_metadata(m)
             LOG.debug(f'loaded rec: {rec}')
             records.append(rec)
     return records
 
 
-def record_key(record) -> RecordMetadataRelPath:
-    "Work around record `unhashable type` issues."
-    # TODO use relative path from the records dir instead?
-    # TODO add a method to the dataclass instead?
-    # TODO use entire record including cid for key? seems more secure, but not always known?
-    return str(record.metadata)
+# def record_key(record) -> RecordMetadataRelPath:
+#     "Work around record `unhashable type` issues."
+#     # TODO use relative path from the records dir instead?
+#     # TODO add a method to the dataclass instead?
+#     # TODO use entire record including cid for key? seems more secure, but not always known?
+#     LOG_CALL()
+#     return str(record.metadata)
 
 
 class VerifiedPostingMismatchError(Exception):
@@ -413,7 +422,7 @@ class RecordStore:
 
     def key_for_record(self, record: r.PublicRecord):
         LOG_CALL()
-        return record_key(record) # TODO better keys here
+        return metadata_to_relpath(record.metadata)
 
     def record_for_key(self, key: str):
         LOG_CALL()
@@ -482,6 +491,7 @@ class RecordStore:
 
     def _save_verified_records(self, data, kr_pairs):
         "Multi-record version because a given CID may match more than one."
+        LOG_CALL()
         LOG.debug(f'saving {len(kr_pairs)} verified records: {kr_pairs}')
         for (key, record) in kr_pairs:
             self._save_verified_record(data, record)
@@ -566,6 +576,7 @@ class RecordStore:
         """Given PublicRecordMetadata, load the corresponding record object.
         Handles decoding, and implicitly verification (by using the verified dir).
         """
+        LOG_CALL()
         if isinstance(metadata, r.PublicRecord):
             LOG.warning(f'Passed PublicRecord rather than PublicRecordMetadata: {metadata}')
             metadata = metadata.metadata
@@ -604,6 +615,7 @@ class RecordStore:
         format. It could also be used to load from various key sets.
         """
         # TODO CLI needs to remove the verified dir prefix, then this will re add it?
+        LOG_CALL()
         LOG.debug(f'relpath: {relpath}')
         metadata = relpath_to_metadata(relpath)
         LOG.debug(f'metadata: {metadata}')
