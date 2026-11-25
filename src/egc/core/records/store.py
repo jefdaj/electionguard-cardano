@@ -271,6 +271,7 @@ class RecordStore:
                 LOG.debug(f'decoded with {decode_cls}.from_json')
             else:
                 # TODO what was up with json.reads?
+                LOG.debug(f'data without regular serialization:\n\n{txt}\n')
                 data = json.loads(txt)
                 LOG.debug('decoded with json.loads')
 
