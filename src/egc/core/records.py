@@ -362,7 +362,6 @@ class VerifiedPostingMismatchError(Exception):
 
 
 def _hash(path: Path, chunk=64*1024) -> str:
-    # TODO any subtle serialization issues here?
     LOG_CALL()
     h = hashlib.sha256()
     with path.open("rb") as f:
@@ -371,30 +370,7 @@ def _hash(path: Path, chunk=64*1024) -> str:
     return h.hexdigest()
 
 
-def remove_verified_from_posting(records_verified_dir: Path, records_posting_dir: Path) -> list[Path]:
-    """Delete files in records_posting_dir that also exist in records_verified_dir with
-    identical content. After processing everything, raise VerifiedPostingMismatchError
-    if any shared relative path had differing content. Returns removed rel paths."""
-    # TODO should this also remove rejected records? something to think about later
-    LOG_CALL()
-    removed, mismatches = [], []
-    for post_file in records_posting_dir.rglob("*"):
-        if not post_file.is_file():
-            continue
-        rel = post_file.relative_to(records_posting_dir)
-        fetched_file = records_verified_dir / rel
-        if not fetched_file.is_file():
-            continue
-
-        if (post_file.stat().st_size == fetched_file.stat().st_size
-                and _hash(post_file) == _hash(fetched_file)):
-            post_file.unlink()
-            removed.append(rel)
-        else:
-            mismatches.append(rel)
-    if mismatches:
-        raise VerifiedPostingMismatchError(mismatches)
-    return removed
+# TODO record state enum here? might be good for the interface
 
 
 class RecordStore:
@@ -419,36 +395,29 @@ class RecordStore:
             shutil.rmtree(d, ignore_errors=True)
             d.mkdir(parents=True, exist_ok=False)
 
-        # All records so far in any state.
-        # Needed to store the unhashable records.
-        self._all_records: dict[RecordKey, r.PublicRecord] = {}
+        # All records seen so far, except the rejected ones.
+        # (These need to be excluded to keep the keys unique)
+        self._records_on_chain: dict[RecordKey, r.PublicRecord] = {}
 
         # TODO _records_posting? not needed for now
 
         # Records which have been seen on chain, but whose data has not been successfully fetched.
         # More info about the number of attempts etc should be available from the IPFSService.
-        # TODO simplify by moving most of this to ipfs
         self._records_pending_fetch: set[RecordKey] = set()
 
-        # CIDs whose data has been fetched successfully.
-        # TODO remove?
-        # TODO adjust type since it's using actual CIDs currently
-        self._fetched_cids: set[pt.IpfsCid] = set()
-
-        # Records whose data have been fetched, but which depend on at least
-        # one other unfetched record. They'll be verified or rejected once all
-        # dependencies have been fetched.
+        # Records whose data have been fetched but not verified yet.
+        # They may have just not been looked at yet, or they may be waiting for
+        # an unfetched dependency. More info available from the Verifier.
         # TODO also reject if the election/phase ends with the dep still missing?
-        self._records_missing_deps: set[RecordKey] = set()
+        self._records_pending_verify: set[RecordKey] = set()
 
         # Records successfully verified.
         self._records_verified: set[RecordKey] = set()
 
-        # Records definitively rejected.
-        # TODO this needs to include the cid as well as key to avoid conflicting with the correct one.
-        self._records_rejected: set[RecordKey] = set()
-
-        # TODO current state enum and method for querying it? might be good for the interface
+        # Records definitively rejected, in no particular order for now.
+        # They can't be kept as a set of keys because those keys aren't reliable and could overlap.
+        # TODO organize by who posted them for disputes: dict[ChannelId, list[r.PublicRecord]]
+        self._records_rejected: list[r.PublicRecord] = []
 
     def key_for_record(self, record: r.PublicRecord):
         LOG_CALL()
@@ -456,63 +425,50 @@ class RecordStore:
 
     def record_for_key(self, key: str):
         LOG_CALL()
-        return self._all_records[key]
+        return self._records_on_chain[key]
 
-    # def keys_for_cid(self, cid):
-    #     "Return a list of keys for records seen so far with a given CID."
-    #     LOG_CALL()
-    #     return sorted([
-    #         k for (k, r) in self._all_records.items()
-    #         if r.ipfs_cid == cid
-    #     ])
-
-    def add_record_seen_on_chain(self, record):
-        "Main entry point for new records seen on chain. Called by Subscriber."
+    def record_seen_on_chain(self, record):
+        """Called by Subscriber in response to a record being posted on chain.
+        Should only be called once if the event filtering is working properly
+        and there are no rollbacks, but idempotent just in case.
+        """
+        # TODO what should happen to the RecordStore state on rollbacks?
         LOG_CALL()
         key = self.key_for_record(record)
         LOG.debug(f'key: {key}')
-        if key in self._all_records:
+        if key in self._records_on_chain:
             LOG.info(f'ignoring duplicate record: {record}')
-            # TODO what should the protocol actually require in this situation?
         else:
             LOG.info(f'add {record}')
-            self._all_records[key] = record
+            self._records_on_chain[key] = record
             self._records_pending_fetch.add(key)
-            # self._records_pending_fetch[key] = (record, 0, 0)
 
-    def fetch_successful(self, cid, data: bytes):
+    def cid_data_fetched(self, cid, data: bytes):
         """Called by IPFSService after a successful fetch. Implies the data
         matches the CID and is ready to be parsed + verified + written to disk."""
         # key = self.key_for_record(cid)
         LOG_CALL()
         cid_str = ipfs_cid_to_string(cid)
-        self._fetched_cids.add(cid)
-        # TODO something like this that works: self._records_pending_fetch.remove(record)
         # there may be more than one record per cid, so make a list first
         records_fetched = [
             (k, r)
-            for (k, r) in self._all_records.items()
-            if ipfs_cid_to_string(r.ipfs_cid) == cid_str
+            for (k, r) in self._records_on_chain.items()
+            if ipfs_cid_to_string(r.ipfs_cid) == cid_str # TODO use cid equality directly?
         ]
 
-        # TODO verification here
+        # Move from pending fetch -> pending verification first
+        for (key, _) in records_fetched:
+            LOG.debug(f'move {key}: pending fetch -> pending verify')
+            self._records_pending_verify.add(key)
+            self._records_pending_fetch.remove(key)
+
+        # Then attempt to do the verification. Some may have to wait because
+        # they have unfetched dependenecies.
+        # TODO verification here (loop, or separate fn?)
         records_verified = records_fetched
 
         self._save_verified_records(data, records_verified)
         # TODO also save records that fail verfification, but flag them
-
-    # def n_pending_cids(self, records=[]):
-    #     "The number of CIDs seen on chain but not yet fetched."
-    #     # TODO remove records arg?
-    #     LOG_CALL()
-    #     keys = self._records_pending_fetch.keys()
-    #     if records:
-    #         keys = [
-    #             k for k in keys
-    #             if k in [self.key_for_record(r) for r in records]
-    #         ]
-    #     cids = set(self._all_records[k].ipfs_cid for k in keys)
-    #     return len(cids)
 
     def count_unverified_records(self, records=[]):
         """A bit like IPFSService.count_pending_cids, except:
@@ -523,7 +479,7 @@ class RecordStore:
         """
         LOG_CALL()
         if not records:
-            records = list(self._all_records.values())
+            records = list(self._records_on_chain.values())
         keys = [self.key_for_record(r) for r in records]
         unverified   = [k for k in keys if not k in self._records_verified]
         n            = len(records)
@@ -539,11 +495,11 @@ class RecordStore:
             self._save_verified_record(data, record)
             LOG.debug(f'move {key}: _records_pending_fetch -> _records_verified')
             self._records_verified.add(key)
-            self._records_pending_fetch.remove(key)
+            self._records_pending_verify.remove(key)
 
-        # This could also remove other now-verified records.
-        # It just seems like a reasonable time to trigger it.
-        removed = remove_verified_from_posting(self.records_verified_dir, self.records_posting_dir)
+        # This may also remove other now-verified records.
+        # It just seems like a reasonable place to trigger it.
+        removed = self._rm_records_posted()
         if removed:
             LOG.info(f'removed now-verified files from posting dir: {removed}')
 
@@ -577,5 +533,41 @@ class RecordStore:
                 os.remove(tmp_path)
             except FileNotFoundError:
                 pass
+
+    def _rm_records_posted(self) -> list[Path]:
+        """Delete files in records_posting_dir that also exist in
+        records_verified_dir with identical relative path + content.
+
+        After processing everything, raises VerifiedPostingMismatchError if any
+        shared relative path had differing content. Returns removed rel paths.
+
+        The idea is to keep the posting dir clean of extra JSON files, but also
+        never accidentally delete something in process.
+
+        This should NOT remove posting files which match rejected records,
+        because the same data can be rejected in one case but valid in another,
+        depending on the metadata. The rejected files will be left in the
+        posting dir for now, which should be helpful for forensics.
+        """
+        LOG_CALL()
+        removed, mismatches = [], []
+        for post_file in self.records_posting_dir.rglob("*"):
+            if not post_file.is_file():
+                continue
+            rel = post_file.relative_to(self.records_posting_dir)
+            fetched_file = self.records_verified_dir / rel
+            if not fetched_file.is_file():
+                continue
+
+            if (post_file.stat().st_size == fetched_file.stat().st_size
+                    and _hash(post_file) == _hash(fetched_file)):
+                post_file.unlink()
+                removed.append(rel)
+            else:
+                mismatches.append(rel)
+        if mismatches:
+            raise VerifiedPostingMismatchError(mismatches)
+        return removed
+
 
     # TODO load_verified_record?

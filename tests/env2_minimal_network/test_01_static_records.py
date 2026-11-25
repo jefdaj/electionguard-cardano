@@ -76,7 +76,7 @@ def test_fetch_static_records(
     ):
     for r in published_static_records:
         LOG.debug(f'adding + fetching as if seen on chain: {r}')
-        env2_record_store.add_record_seen_on_chain(r)
+        env2_record_store.record_seen_on_chain(r)
         env2_ipfs.fetch_record_soon(r)
     deadline = time.monotonic() + 60
     while time.monotonic() < deadline:
