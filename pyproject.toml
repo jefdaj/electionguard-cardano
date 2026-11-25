@@ -107,7 +107,8 @@ log_cli = false
 log_cli_level = "INFO"
 
 # Write all logs to a file.
-# See also tests/conftest.py for per-component log level tweaks.
+# See also tests/conftest.py for per-component log level tweaks,
+# and src/egc_app/server/logging.py for per-component tweaks to server mode.
 log_file = "pytest.log"
 log_file_level = "DEBUG"
 log_format = "%(asctime)s [%(levelname)s] %(name)s (%(filename)s:%(lineno)d): %(message)s"
