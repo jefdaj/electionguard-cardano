@@ -34,24 +34,6 @@ import logging
 logging.getLogger('electionguard').setLevel(logging.WARNING)
 
 
-@dataclass
-class CastNotice:
-    ballot_id: BallotId
-
-    # timestamp, which should be in a window after ballot submitted
-    cast_at: str # TODO int using from_ticks?
-
-
-# TODO dataclass Summary
-
-
-### path maps ###
-#
-#  Single source of truth for how to load and save each artifact.
-#  Prevents having to write out and create the data dirs multiple times.
-#  Maps are dicts of informal type -> (actual type, relative dir path, basename format str)
-#
-#################
 
 PRIVATE_RECORDS = {
     'election_key_pair': (
@@ -67,105 +49,105 @@ PRIVATE_RECORDS = {
 }
 
 # TODO fix local-election scripts to use ballot_id rather than obj.whatever_id
-PUBLIC_RECORDS = {
-    'manifest': (
-        Manifest,
-        '1_config/1_announce',
-        '1_manifest'
-    ),
-    'ceremony_details': (
-        CeremonyDetails,
-        '1_config/1_announce',
-        '2_ceremony'
-    ),
-    'guardian_pubkey': (
-        ElectionPublicKey,
-        '1_config/2_ceremony/1_pubkeys',
-        '{guardian_id}'
-    ),
-    'guardian_backup': (
-        ElectionPartialKeyBackup,
-        '1_config/2_ceremony/2_backups',
-        '{guardian_id}_backup_{backup_order}'
-    ),
-    'guardian_verification': (
-        ElectionPartialKeyVerification,
-        '1_config/2_ceremony/3_verifications',
-        '{guardian_id}_backup_{backup_order}'
-    ),
-    'joint_key': (
-        ElectionJointKey,
-        '1_config/3_election',
-        'joint_key'
-    ),
-    'constants': (
-        ElectionConstants,
-        '1_config/3_election',
-        'constants'
-    ),
-    'context': (
-        CiphertextElectionContext,
-        '1_config/3_election',
-        'context'
-    ),
-    'device': (
-        EncryptionDevice,
-        '1_config/4_devices',
-        'device_{device_number}'
-    ),
-    'ballot_submitted': (
-        CiphertextBallot, # TODO SubmittedBallot with state set to UNKNOWN?
-        '2_ballots/1_submitted',
-        '{ballot_id}'
-    ),
-    'cast_notice': (
-        CastNotice,
-        '2_ballots/2_cast',
-        '{ballot_id}'
-    ),
-    'ballot_spoiled': (
-
-        # This seems correct to me even though it doesn't match the
-        # electionguard-python implementation: we *do* want to publish all
-        # the nonces at this step, right? So people can decrypt immediately
-        # rather than waiting for the guardians.
-        CiphertextBallot,
-
-        '2_ballots/3_spoiled',
-        '{ballot_id}'
-    ),
-    'ciphertext_tally': (
-        PublishedCiphertextTally, # TODO CiphertextTally? (the non-"published" version)
-        '3_results',
-        '1_tally'
-    ),
-    'tally_share': (
-        DecryptionShare,
-        '3_results/2_decrypt/1_shares/1_tally',
-        'tally_{guardian_id}'
-    ),
-    'spoiled_share': (
-        DecryptionShare,
-        '3_results/2_decrypt/1_shares/2_spoiled',
-        '{spoiled_id}_{guardian_id}'
-    ),
-    # TODO rename tally_result?
-    'plaintext_tally': (
-        PlaintextTally,
-        '3_results/2_decrypt/2_combined',
-        '1_tally'
-    ),
-    'spoiled_result': (
-        PlaintextTally,
-        '3_results/2_decrypt/2_combined/2_spoiled',
-        '{ballot_id}'
-    ),
-    'summary': (
-        dict,
-        '4_verify',
-        '{verifier_id}'
-    ),
-}
+# PUBLIC_RECORDS = {
+#     'manifest': (
+#         Manifest,
+#         '1_config/1_announce',
+#         '1_manifest'
+#     ),
+#     'ceremony_details': (
+#         CeremonyDetails,
+#         '1_config/1_announce',
+#         '2_ceremony'
+#     ),
+#     'guardian_pubkey': (
+#         ElectionPublicKey,
+#         '1_config/2_ceremony/1_pubkeys',
+#         '{guardian_id}'
+#     ),
+#     'guardian_backup': (
+#         ElectionPartialKeyBackup,
+#         '1_config/2_ceremony/2_backups',
+#         '{guardian_id}_backup_{backup_order}'
+#     ),
+#     'guardian_verification': (
+#         ElectionPartialKeyVerification,
+#         '1_config/2_ceremony/3_verifications',
+#         '{guardian_id}_backup_{backup_order}'
+#     ),
+#     'joint_key': (
+#         ElectionJointKey,
+#         '1_config/3_election',
+#         'joint_key'
+#     ),
+#     'constants': (
+#         ElectionConstants,
+#         '1_config/3_election',
+#         'constants'
+#     ),
+#     'context': (
+#         CiphertextElectionContext,
+#         '1_config/3_election',
+#         'context'
+#     ),
+#     'device': (
+#         EncryptionDevice,
+#         '1_config/4_devices',
+#         'device_{device_number}'
+#     ),
+#     'ballot_submitted': (
+#         CiphertextBallot, # TODO SubmittedBallot with state set to UNKNOWN?
+#         '2_ballots/1_submitted',
+#         '{ballot_id}'
+#     ),
+#     'cast_notice': (
+#         CastNotice,
+#         '2_ballots/2_cast',
+#         '{ballot_id}'
+#     ),
+#     'ballot_spoiled': (
+# 
+#         # This seems correct to me even though it doesn't match the
+#         # electionguard-python implementation: we *do* want to publish all
+#         # the nonces at this step, right? So people can decrypt immediately
+#         # rather than waiting for the guardians.
+#         CiphertextBallot,
+# 
+#         '2_ballots/3_spoiled',
+#         '{ballot_id}'
+#     ),
+#     'ciphertext_tally': (
+#         PublishedCiphertextTally, # TODO CiphertextTally? (the non-"published" version)
+#         '3_results',
+#         '1_tally'
+#     ),
+#     'tally_share': (
+#         DecryptionShare,
+#         '3_results/2_decrypt/1_shares/1_tally',
+#         'tally_{guardian_id}'
+#     ),
+#     'spoiled_share': (
+#         DecryptionShare,
+#         '3_results/2_decrypt/1_shares/2_spoiled',
+#         '{spoiled_id}_{guardian_id}'
+#     ),
+#     # TODO rename tally_result?
+#     'plaintext_tally': (
+#         PlaintextTally,
+#         '3_results/2_decrypt/2_combined',
+#         '1_tally'
+#     ),
+#     'spoiled_result': (
+#         PlaintextTally,
+#         '3_results/2_decrypt/2_combined/2_spoiled',
+#         '{ballot_id}'
+#     ),
+#     'summary': (
+#         dict,
+#         '4_verify',
+#         '{verifier_id}'
+#     ),
+# }
 
 ### get record filenames ###
 

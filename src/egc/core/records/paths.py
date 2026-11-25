@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -11,6 +12,7 @@ import tempfile
 
 from ..plutus import ipfs_cid_to_string
 from ..plutus.types import record as r
+from ..plutus.types import BallotId
 from ..utils import make_log_call
 
 import logging
@@ -22,6 +24,15 @@ LOG_CALL = make_log_call(LOG.debug)
 # using PUBLIC_RECORD_TYPES below. The path can be used as a hashable key for
 # sets and dicts.
 type RecordMetadataRelPath = Path
+
+
+# TODO remove? not sure cast_at adds anything since you can't trust the sender
+@dataclass
+class CastNotice:
+    ballot_id: BallotId
+
+    # timestamp, which should be in a window after ballot submitted
+    cast_at: str
 
 
 # plutus metadata type : (decode to type, dir relname, basename fmtargs ptn)
@@ -78,7 +89,7 @@ PUBLIC_RECORD_TYPES = {
         '{ballot_id}'
     ),
     r.CastNotice: (
-        r.CastNotice,
+        CastNotice, # the one defined here
         '2_ballots/2_cast',
         '{ballot_id}'
     ),

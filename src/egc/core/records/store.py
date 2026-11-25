@@ -270,12 +270,18 @@ class RecordStore:
                 data = decode_cls.from_json(txt)
                 LOG.debug(f'decoded with {decode_cls}.from_json')
             else:
-                # TODO what was up with json.reads?
-                LOG.debug(f'data without regular serialization:\n\n{txt}\n')
+                # LOG.debug(f'data without regular serialization:\n\n{txt}\n')
                 data = json.loads(txt)
-                LOG.debug('decoded with json.loads')
+                if decode_cls != dict:
+                    try:
+                        data = decode_cls(**data)
+                        LOG.debug(f'decoded using {decode_cls} kwargs')
+                    except:
+                        LOG.debug('decoded with json.loads only')
+                else:
+                    LOG.debug('decoded with json.loads only')
 
-        LOG.debug(f'data: {data}')
+        LOG.debug(f'decoded data: {data}')
         assert type(data) == decode_cls
         return data
 

@@ -45,8 +45,10 @@ def test_load_static_record_pairs(static_records_list, static_store):
         cid_str = ipfs_cid_to_string(rec.ipfs_cid)
         cid_strs.add(cid_str)
         assert isinstance(mdata, PublicRecordMetadata)
-        assert isinstance(obj, dict)
         assert isinstance(rec, PublicRecord)
+        # assert isinstance(obj, dict)
+        # TODO assert decode_cls here?
+        LOG.debug(f'loaded static {mdata} -> {type(obj).__name__}')
     # There are 78 records, but the 5 verifications all have the same
     # CID because they agree exactly.
     assert len(cid_strs) == 74

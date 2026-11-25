@@ -14,6 +14,10 @@ from .action import (
   decode_action,
 )
 
+from .ballot_id import (
+    BallotId,
+)
+
 from .channel import (
     ChannelId,
     ADMIN_CHANNEL_ID,
