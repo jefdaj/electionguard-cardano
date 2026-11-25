@@ -68,6 +68,7 @@ def test_publish_static_records(static_records_list, published_static_records):
     for r in published_static_records:
         assert isinstance(r, PublicRecord)
 
+# TODO rename fetch -> verify once it does that
 def test_fetch_static_records(
         env2_ipfs, # TODO rearrange? this is required for the store to fetch
         env2_record_store,
@@ -80,10 +81,10 @@ def test_fetch_static_records(
     deadline = time.monotonic() + 10
     while time.monotonic() < deadline:
         time.sleep(1)
-        n = env2_record_store.count_unfetched_records()
-        LOG.debug(f'pending records: {n}')
+        n = env2_record_store.count_unverified_records()
+        LOG.debug(f'unverified records: {n}')
         if n == 0:
             break
     paths = sorted(list(env2_record_store.records_verified_dir.rglob('*.json')))
-    LOG.debug(f'fetched json paths: {paths}')
+    LOG.debug(f'verified json paths: {paths}')
     assert len(paths) == len(published_static_records)

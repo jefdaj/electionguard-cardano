@@ -138,10 +138,6 @@ class IPFSService:
 
         self._retry_concurrency = retry_concurrency
 
-        self._loop = asyncio.new_event_loop()
-        self._thread = threading.Thread(target=self._run_loop, daemon=True)
-        self._ready = threading.Event()
-
         self.ipfs = None
         self.store = store
         self._fresh_q = None
@@ -156,6 +152,10 @@ class IPFSService:
         # TODO use cid strs rather than actual cids?
         self._pending: dict[IpfsCid, tuple[int, float]] = {} # TODO is float right?
 
+        self._loop = asyncio.new_event_loop()
+        self._thread = threading.Thread(target=self._run_loop, daemon=True)
+        self._ready = threading.Event()
+
 
     def _run_loop(self):
         "Lifecycle."
@@ -167,12 +167,43 @@ class IPFSService:
         LOG.info('loc 6')
         self._fresh_q = asyncio.Queue()
         self._retry_sem = asyncio.Semaphore(self._retry_concurrency)
-        for _ in range(self.fresh_workers):
-            self._loop.create_task(self._fresh_worker())
-        self._loop.create_task(self._sweeper())
-        self._loop.create_task(self._watchdog())
+
+        self._tasks = set()
+        coros = [self._fresh_worker() for _ in range(self.fresh_workers)]
+        coros += [self._sweeper(), self._watchdog()]
+        for c in coros:
+            t = self._loop.create_task(c)
+            self._tasks.add(t)
+            t.add_done_callback(self._on_task_done)
+
+        # for _ in range(self.fresh_workers):
+        #     self._loop.create_task(self._fresh_worker())
+        # self._loop.create_task(self._sweeper())
+        # self._loop.create_task(self._watchdog())
+
         self._ready.set()
-        self._loop.run_forever()
+
+        # self._loop.run_forever()
+        try:
+            self._loop.run_forever()
+        finally:
+            self._loop.run_until_complete(self._loop.shutdown_asyncgens())
+            self._loop.close()
+
+
+    def _on_task_done(self, t):
+        self._tasks.discard(t)
+        if not t.cancelled() and (exc := t.exception()) is not None:
+            LOG.error("Task %s failed", t.get_name(), exc_info=exc)
+
+
+    async def _shutdown(self):
+        for t in self._tasks:
+            t.cancel()
+        await asyncio.gather(*self._tasks, return_exceptions=True)  # retrieves everything
+        await self.ipfs.close()          # only after the workers are gone
+        self._loop.stop()
+
 
     def start(self):
         LOG_CALL()
@@ -181,8 +212,10 @@ class IPFSService:
 
     def stop(self):
         LOG_CALL()
-        asyncio.run_coroutine_threadsafe(self.ipfs.close(), self._loop).result(10)
-        self._loop.call_soon_threadsafe(self._loop.stop)
+        # asyncio.run_coroutine_threadsafe(self.ipfs.close(), self._loop).result(10)
+        # self._loop.call_soon_threadsafe(self._loop.stop)
+        asyncio.run_coroutine_threadsafe(self._shutdown(), self._loop).result(10)
+        self._thread.join(10)
 
     def _run_sync(self, coro, timeout: float | None = None):
         "Call an async method from a sync context (a DIFFERENT thread). All calls should go through one of these?"
@@ -249,17 +282,24 @@ class IPFSService:
                 LOG.debug(f'progress pinning {cid_str}: {pin_status}')
             # LOG.debug(f'fresh: {self._fresh_q}')
             # LOG.debug(f'inflight: {self._inflight}')
+            LOG.debug('loc 1')
             self.store.fetch_successful(cid, data) # success => no longer pending
+            LOG.debug('loc 2')
             del self._pending[cid]
+            LOG.debug('loc 3')
             LOG.info("fetched %s", cid_str)
             return True
         except asyncio.TimeoutError:
             return False # file not propagated to ipfs node yet
         except Exception as e:
+            LOG.debug('loc 6')
             LOG.error("fetch error %s: %s", cid_str, e)
-            return False # keep it pending, retry later
+            raise
+        # return False # keep it pending, retry later
         finally:
+            LOG.debug('loc 4')
             self._inflight.discard(cid)
+            LOG.debug('loc 5')
 
     async def _fresh_worker(self):
         "Fresh lane: prompt, short timeout, one shot each."

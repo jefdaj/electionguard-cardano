@@ -502,20 +502,21 @@ class RecordStore:
     #     cids = set(self._all_records[k].ipfs_cid for k in keys)
     #     return len(cids)
 
-    def count_unfetched_records(self, records=[]):
+    def count_unverified_records(self, records=[]):
         """A bit like IPFSService.count_pending_cids, except:
         - requires a list of records
         - does not count pending CIDs for other records not passed as an arg
-        - counts CIDs in those records not yet seen on chain
-        - returns the number of records with unfetched CIDs, not unfetched CIDs
+        - counts records not yet seen on chain
+        - returns the number of records with unverified data, not unverified CIDs
         """
         LOG_CALL()
-        unfetched = [r for r in records if not r.ipfs_cid in self._fetched_cids]
-        n           = len(records)
-        n_unfetched = len(unfetched)
-        n_fetched   = n - len(unfetched)
-        LOG.info(f'{n_fetched}/{n} records fetched, leaving {n_unfetched} unfetched: {unfetched}')
-        return n_unfetched
+        keys = [self.key_for_record(r) for r in records]
+        unverified   = [k for k in keys if not k in self._records_verified]
+        n            = len(records)
+        n_unverified = len(unverified)
+        n_verified   = n - len(unverified)
+        LOG.info(f'{n_verified}/{n} records verified, leaving {n_unverified} unverified: {unverified}')
+        return n_unverified
 
     def _save_verified_records(self, data, kr_pairs):
         "Multi-record version because a given CID may match more than one."
@@ -523,6 +524,7 @@ class RecordStore:
         for (key, record) in kr_pairs:
             self._save_verified_record(data, record)
             LOG.debug(f'remove from pending_records: {key}')
+            self._records_verified.add(key)
             self._records_pending_fetch.remove(key)
         remove_verified_from_posting(self.records_posting_dir, self.records_verified_dir)
         # TODO look for pending verifications that can now continue here
