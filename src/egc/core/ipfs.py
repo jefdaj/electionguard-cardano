@@ -8,7 +8,7 @@ import hashlib
 import shutil
 
 from aiohttp import ClientConnectorError, ClientConnectorDNSError
-from aioipfs import AsyncIPFS
+import aioipfs
 
 from .plutus  import *
 from .records import *
@@ -38,7 +38,7 @@ class RetryingIPFS:
 
     def __init__(self, maddr, retries=10, delay=1.0, backoff=1.5):
         LOG_CALL()
-        self._client  = AsyncIPFS(maddr=maddr)
+        self._client  = aioipfs.AsyncIPFS(maddr=maddr)
         self._retries = retries
         self._delay   = delay
         self._backoff = backoff
@@ -162,9 +162,7 @@ class IPFSService:
         LOG_CALL()
         asyncio.set_event_loop(self._loop)
         self.ipfs = RetryingIPFS(self.maddr)
-        LOG.info('loc 5')
         # self.store = RecordStore(self.records_verified_dir, eslf.records_rejected_dir)
-        LOG.info('loc 6')
         self._fresh_q = asyncio.Queue()
         self._retry_sem = asyncio.Semaphore(self._retry_concurrency)
 
@@ -282,24 +280,20 @@ class IPFSService:
                 LOG.debug(f'progress pinning {cid_str}: {pin_status}')
             # LOG.debug(f'fresh: {self._fresh_q}')
             # LOG.debug(f'inflight: {self._inflight}')
-            LOG.debug('loc 1')
             self.store.fetch_successful(cid, data) # success => no longer pending
-            LOG.debug('loc 2')
             del self._pending[cid]
-            LOG.debug('loc 3')
             LOG.info("fetched %s", cid_str)
             return True
         except asyncio.TimeoutError:
             return False # file not propagated to ipfs node yet
+        except aioipfs.APIError as e:
+            LOG.error(f'fetch error {cid_str}: code={e.code} '
+                      f'http={e.http_status} msg={e.message}')
         except Exception as e:
-            LOG.debug('loc 6')
             LOG.error("fetch error %s: %s", cid_str, e)
-            raise
         # return False # keep it pending, retry later
         finally:
-            LOG.debug('loc 4')
             self._inflight.discard(cid)
-            LOG.debug('loc 5')
 
     async def _fresh_worker(self):
         "Fresh lane: prompt, short timeout, one shot each."
