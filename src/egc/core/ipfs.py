@@ -4,8 +4,8 @@ import os
 import random
 import threading
 import time
-import hashlib
 import shutil
+import traceback
 
 from aiohttp import ClientConnectorError, ClientConnectorDNSError
 import aioipfs
@@ -84,16 +84,6 @@ class RetryingIPFS:
     def __getattr__(self, name): # fallback, no retries
         LOG_CALL()
         return getattr(self._client, name)
-
-
-def _hash(path: Path, chunk=64*1024) -> str:
-    # TODO any subtle serialization issues here?
-    LOG_CALL()
-    h = hashlib.sha256()
-    with path.open("rb") as f:
-        for block in iter(lambda: f.read(chunk), b""):
-            h.update(block)
-    return h.hexdigest()
 
 
 class IPFSService:
@@ -284,12 +274,16 @@ class IPFSService:
             LOG.info("fetched %s", cid_str)
             return True
         except asyncio.TimeoutError:
+            LOG.error(f'fetch timed out: {cid_str}')
             return False # file not propagated to ipfs node yet
         except aioipfs.APIError as e:
             LOG.error(f'fetch error {cid_str}: code={e.code} '
                       f'http={e.http_status} msg={e.message}')
+            return False
         except Exception as e:
-            LOG.error("fetch error %s: %s", cid_str, e)
+            tb = traceback.format_exc()
+            LOG.error("fetch error %s: %s", cid_str, tb)
+            return False
         # return False # keep it pending, retry later
         finally:
             self._inflight.discard(cid)

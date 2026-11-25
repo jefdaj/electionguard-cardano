@@ -12,6 +12,7 @@ from pathlib import Path
 import shutil
 import tempfile
 import os
+import hashlib
 
 from .utils import make_log_call
 import logging
@@ -352,17 +353,27 @@ def record_key(record) -> RecordKey:
     return str(record.metadata)
 
 
-class PostFetchMismatchError(Exception):
-    "One or more fetched paths have different content than their to-post equivalents."
+class VerifiedPostingMismatchError(Exception):
+    "One or more verified paths have different content than their to-post equivalents."
 
     def __init__(self, mismatches: list[Path]):
         self.mismatches = mismatches
         super().__init__(f"{len(mismatches)} mismatch(es): {mismatches}")
 
 
-def remove_verified_from_posting(records_posting_dir: Path, records_verified_dir: Path) -> list[Path]:
+def _hash(path: Path, chunk=64*1024) -> str:
+    # TODO any subtle serialization issues here?
+    LOG_CALL()
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        for block in iter(lambda: f.read(chunk), b""):
+            h.update(block)
+    return h.hexdigest()
+
+
+def remove_verified_from_posting(records_verified_dir: Path, records_posting_dir: Path) -> list[Path]:
     """Delete files in records_posting_dir that also exist in records_verified_dir with
-    identical content. After processing everything, raise PostFetchMismatchError
+    identical content. After processing everything, raise VerifiedPostingMismatchError
     if any shared relative path had differing content. Returns removed rel paths."""
     # TODO should this also remove rejected records? something to think about later
     LOG_CALL()
@@ -382,7 +393,7 @@ def remove_verified_from_posting(records_posting_dir: Path, records_verified_dir
         else:
             mismatches.append(rel)
     if mismatches:
-        raise PostFetchMismatchError(mismatches)
+        raise VerifiedPostingMismatchError(mismatches)
     return removed
 
 
@@ -526,11 +537,17 @@ class RecordStore:
         LOG.debug(f'saving {len(kr_pairs)} verified records: {kr_pairs}')
         for (key, record) in kr_pairs:
             self._save_verified_record(data, record)
-            LOG.debug(f'remove from pending_records: {key}')
+            LOG.debug(f'move {key}: _records_pending_fetch -> _records_verified')
             self._records_verified.add(key)
             self._records_pending_fetch.remove(key)
-        remove_verified_from_posting(self.records_posting_dir, self.records_verified_dir)
-        # TODO look for pending verifications that can now continue here
+
+        # This could also remove other now-verified records.
+        # It just seems like a reasonable time to trigger it.
+        removed = remove_verified_from_posting(self.records_verified_dir, self.records_posting_dir)
+        if removed:
+            LOG.info(f'removed now-verified files from posting dir: {removed}')
+
+        # TODO also look for pending verifications that can now continue here
 
     def _save_verified_record(self, data: bytes, record: r.PublicRecord):
         """Given a record and bytes matching its CID, write the bytes to the
@@ -552,6 +569,7 @@ class RecordStore:
                 f.flush()
                 os.fsync(f.fileno())
             os.replace(tmp_path, save_path)
+            LOG.info(f'saved verified {record.metadata} -> {save_path}')
             return save_path
         finally:
             # Clean up the temp file if anything failed before the replace

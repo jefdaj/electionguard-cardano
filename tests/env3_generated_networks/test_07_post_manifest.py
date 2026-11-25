@@ -42,7 +42,7 @@ def assert_post_manifest(cfg):
         'POST /api/manifest .*201$',
         'POST /api/records/post.*201$',
         'admin posted PublicRecord.*metadata=Manifest',
-        'fetched.*Manifest',
+        'saved verified.*Manifest',
     ])
     assert_script_logs_match(cfg, '(?!admin)', [
         'admin posted Manifest',

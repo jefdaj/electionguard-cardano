@@ -33,7 +33,7 @@ def assert_post_ceremony(cfg):
         'POST /api/ceremony/create',
         'POST /api/records/post.*201$',
         'admin posted PublicRecord.*metadata=CeremonyDetails',
-        'fetched.*CeremonyDetails',
+        'saved verified.*CeremonyDetails',
     ])
     assert_script_logs_match(cfg, '(?!admin)', [
         'admin posted CeremonyDetails',
