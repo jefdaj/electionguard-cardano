@@ -12,6 +12,6 @@ egc records await # should be immediate
 
 {% block report %}
 egc election events
-find private/records_* -type f
+find private/records -type f
 egc records list
 {% endblock %}

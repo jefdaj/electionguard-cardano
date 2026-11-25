@@ -11,6 +11,6 @@ egc records await # should be immediate from the same ipfs node
 
 {% block report %}
 egc election events
-find private/records_* -type f
+find private/records -type f
 egc records list
 {% endblock %}

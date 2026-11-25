@@ -9,5 +9,5 @@
 {% block report %}
 egc election events
 timeout 300 egc records await
-find private/records_* -type f
+find private/records -type f
 {% endblock %}
