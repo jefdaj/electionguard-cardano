@@ -110,10 +110,10 @@ class IPFSService:
         # records_verified_dir: Path,
         store: RecordStore,
         maddr=IPFS_API_ADDR,
-        fresh_workers=4,
+        fresh_concurrency=2,
         fresh_timeout=10,    # short: withheld CIDs fail fast
         retry_timeout=30,    # patient: give real files a chance
-        retry_concurrency=4, # bounded => can't hog the node
+        retry_concurrency=2, # bounded => can't hog the node
         sweep_interval=5,    # how often the sweeper wakes
         base_delay=1,        # first retry backoff
         max_delay=30,       # retry-forever settles to every 10 min
@@ -128,7 +128,7 @@ class IPFSService:
         self.channel_nodes: dict[ChannelId, OptionIpfsNode] = {}
 
         self.maddr = maddr
-        self.fresh_workers = fresh_workers
+        self.fresh_concurrency = fresh_concurrency
         self.fresh_timeout = fresh_timeout
         self.retry_timeout = retry_timeout
         self.sweep_interval = sweep_interval
@@ -167,14 +167,14 @@ class IPFSService:
         self._retry_sem = asyncio.Semaphore(self._retry_concurrency)
 
         self._tasks = set()
-        coros = [self._fresh_worker() for _ in range(self.fresh_workers)]
+        coros = [self._fresh_worker() for _ in range(self.fresh_concurrency)]
         coros += [self._sweeper(), self._watchdog()]
         for c in coros:
             t = self._loop.create_task(c)
             self._tasks.add(t)
             t.add_done_callback(self._on_task_done)
 
-        # for _ in range(self.fresh_workers):
+        # for _ in range(self.fresh_concurrency):
         #     self._loop.create_task(self._fresh_worker())
         # self._loop.create_task(self._sweeper())
         # self._loop.create_task(self._watchdog())
@@ -459,6 +459,7 @@ class IPFSService:
 
     async def _retry_one(self, cid, attempts):
         LOG_CALL()
+        time.sleep(3 * random.uniform(0.8, 1.2)) # TODO why is this needed?
         try:
             ok = await self._attempt_fetch(cid, self.retry_timeout)
             if not ok:
