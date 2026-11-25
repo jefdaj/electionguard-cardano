@@ -230,7 +230,7 @@ class IPFSService:
     def _accept(self, record):
         LOG_CALL()
         cid = record.ipfs_cid
-        self.store.add_record_seen_on_chain(record) # TODO remove? should be redundant
+        # self.store.add_record_seen_on_chain(record) # TODO remove? should be redundant
         self._pending[cid] = (0, 0) # TODO is this right?
         self._fresh_q.put_nowait((cid, 0)) # then attempt promptly
 
@@ -269,6 +269,7 @@ class IPFSService:
     async def _attempt_fetch(self, cid, timeout):
         "The one fetch primitive both lanes share."
         LOG_CALL()
+        LOG.debug(f'attempt fetch {cid} n inflight={len(self._inflight)}')
         # key = record_key(record)
         if cid in self._inflight: # never fetch same CID twice at once
             return False
@@ -278,8 +279,6 @@ class IPFSService:
             data = await self._run_async(self.ipfs.cat(cid_str), timeout=timeout)
             async for pin_status in self.ipfs._client.pin.add(cid_str):
                 LOG.debug(f'progress pinning {cid_str}: {pin_status}')
-            # LOG.debug(f'fresh: {self._fresh_q}')
-            # LOG.debug(f'inflight: {self._inflight}')
             self.store.fetch_successful(cid, data) # success => no longer pending
             del self._pending[cid]
             LOG.info("fetched %s", cid_str)
@@ -459,7 +458,6 @@ class IPFSService:
 
     async def _retry_one(self, cid, attempts):
         LOG_CALL()
-        time.sleep(3 * random.uniform(0.8, 1.2)) # TODO why is this needed?
         try:
             ok = await self._attempt_fetch(cid, self.retry_timeout)
             if not ok:

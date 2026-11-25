@@ -434,6 +434,7 @@ class RecordStore:
         self._records_verified: set[RecordKey] = set()
 
         # Records definitively rejected.
+        # TODO this needs to include the cid as well as key to avoid conflicting with the correct one.
         self._records_rejected: set[RecordKey] = set()
 
         # TODO current state enum and method for querying it? might be good for the interface
@@ -504,12 +505,14 @@ class RecordStore:
 
     def count_unverified_records(self, records=[]):
         """A bit like IPFSService.count_pending_cids, except:
-        - requires a list of records
         - does not count pending CIDs for other records not passed as an arg
         - counts records not yet seen on chain
         - returns the number of records with unverified data, not unverified CIDs
+        If not given any records, defaults to all of them.
         """
         LOG_CALL()
+        if not records:
+            records = list(self._all_records.values())
         keys = [self.key_for_record(r) for r in records]
         unverified   = [k for k in keys if not k in self._records_verified]
         n            = len(records)

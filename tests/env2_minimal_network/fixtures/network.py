@@ -73,4 +73,5 @@ def env2_ipfs(
     ipfs_ = IPFSService(store=env2_record_store)
     ipfs_.start()
     ipfs_.wait_until_stable_sync()
-    return ipfs_
+    yield ipfs_
+    ipfs_.stop()

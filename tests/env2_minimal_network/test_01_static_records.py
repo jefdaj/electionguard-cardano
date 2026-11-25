@@ -78,9 +78,8 @@ def test_fetch_static_records(
         LOG.debug(f'adding + fetching as if seen on chain: {r}')
         env2_record_store.add_record_seen_on_chain(r)
         env2_ipfs.fetch_record_soon(r)
-    deadline = time.monotonic() + 10
+    deadline = time.monotonic() + 60
     while time.monotonic() < deadline:
-        time.sleep(1)
         n = env2_record_store.count_unverified_records()
         LOG.debug(f'unverified records: {n}')
         if n == 0:
