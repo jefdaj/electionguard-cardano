@@ -229,7 +229,7 @@ class ElectionNode:
     def await_records(self, records=[], timeout=OGMIOS_TIMEOUT_SEC):
         deadline = time.monotonic() + timeout
         while True:
-            n = self.ipfs.count_unverified_records(records)
+            n = self.store.count_unverified_records(records)
             if n == 0:
                 return
             if time.monotonic() > deadline:
