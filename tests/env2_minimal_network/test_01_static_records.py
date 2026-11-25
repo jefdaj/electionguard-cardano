@@ -1,4 +1,3 @@
-import json
 import pytest
 import time
 from .lib import load_static_record_pairs
@@ -37,17 +36,17 @@ def test_load_static_transactions(
             for rec in recs:
                 assert isinstance(rec, PublicRecord)
 
-def test_load_static_record_pairs(static_records_list, static_files_dir):
-    pairs = load_static_record_pairs(static_records_list, static_files_dir)
+def test_load_static_record_pairs(static_records_list, static_store):
+    pairs = load_static_record_pairs(static_records_list, static_store)
     assert len(static_records_list) == 78
     assert len(pairs) == 78
     cid_strs = set()
     for (rec, (obj, mdata)) in zip(static_records_list, pairs):
         cid_str = ipfs_cid_to_string(rec.ipfs_cid)
         cid_strs.add(cid_str)
-        assert isinstance(rec, PublicRecord)
-        assert isinstance(obj, dict)
         assert isinstance(mdata, PublicRecordMetadata)
+        assert isinstance(obj, dict)
+        assert isinstance(rec, PublicRecord)
     # There are 78 records, but the 5 verifications all have the same
     # CID because they agree exactly.
     assert len(cid_strs) == 74

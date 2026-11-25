@@ -5,6 +5,7 @@ import hashlib
 import os
 import shutil
 import tempfile
+import json
 
 from ..plutus import ipfs_cid_to_string
 from ..plutus.types import record as r
@@ -37,6 +38,7 @@ class RecordStore:
             records_posting_dir : Path,
             records_rejected_dir: Path,
             records_verified_dir: Path,
+            leave_existing_files = False, # Set True to avoid clobbering existing files you're confident in
         ):
         LOG_CALL()
 
@@ -46,8 +48,13 @@ class RecordStore:
 
         # ensure record dirs exist and are empty
         for d in [records_posting_dir, records_rejected_dir, records_verified_dir]:
-            shutil.rmtree(d, ignore_errors=True)
-            d.mkdir(parents=True, exist_ok=False)
+            if not isinstance(d, Path):
+                d = Path(d)
+            if leave_existing_files:
+                d.mkdir(parents=True, exist_ok=True)
+            else:
+                shutil.rmtree(d, ignore_errors=True)
+                d.mkdir(parents=True, exist_ok=False)
 
         # All records seen so far, except the rejected ones.
         # (These need to be excluded to keep the keys unique)
@@ -234,7 +241,7 @@ class RecordStore:
         return removed
 
 
-    def load_verified_record_by_metadata(metadata: r.PublicRecordMetadata):
+    def load_verified_record_by_metadata(self, metadata: r.PublicRecordMetadata):
         """Given PublicRecordMetadata, load the corresponding record object.
         Handles decoding, and implicitly verification (by using the verified dir).
         """
@@ -263,8 +270,9 @@ class RecordStore:
                 data = decode_cls.from_json(txt)
                 LOG.debug(f'decoded with {decode_cls}.from_json')
             else:
-                data = json.reads(txt)
-                LOG.debug('decoded with json.reads')
+                # TODO what was up with json.reads?
+                data = json.loads(txt)
+                LOG.debug('decoded with json.loads')
 
         LOG.debug(f'data: {data}')
         assert type(data) == decode_cls

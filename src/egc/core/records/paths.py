@@ -146,6 +146,7 @@ def metadata_to_relpath(metadata: r.PublicRecordMetadata) -> RecordMetadataRelPa
     m_type = type(metadata)
     LOG.debug(f'm_type: {m_type}')
     (_egtype, dname, fstr) = PUBLIC_RECORD_TYPES[m_type]
+    dname = Path(dname)
     LOG.debug(f'dname: {dname}')
     LOG.debug(f'fstr: {fstr}')
     var_strs = {}

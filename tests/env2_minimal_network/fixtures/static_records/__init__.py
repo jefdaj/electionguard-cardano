@@ -17,6 +17,17 @@ STATIC_FILES_DIR = Path(__file__).absolute().parent / 'files'
 def static_files_dir():
     return STATIC_FILES_DIR
 
+# store to be used only for loading "verified" static records
+# TODO use paths that don't exist rather than creating actual tmpdirs?
+@pytest.fixture(scope='module')
+def static_store(static_files_dir):
+    return RecordStore(
+        tempfile.mkdtemp(),
+        tempfile.mkdtemp(),
+        static_files_dir,
+        leave_existing_files = True,
+    )
+
 @pytest.fixture(scope='module')
 def static_phases():
     return STATIC_PHASES
@@ -47,6 +58,6 @@ def static_records_list(static_transactions) -> list[PublicRecord]:
 
 @pytest.fixture(scope='module')
 def published_static_records(env2_ipfs, static_records_list, static_files_dir):
-    pairs = load_static_record_pairs(static_records_list, static_files_dir)
+    pairs = load_static_record_pairs(static_records_list, static_store)
     records = env2_ipfs.publish_and_make_records(pairs)
     return records
