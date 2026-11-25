@@ -17,13 +17,13 @@ router = APIRouter(prefix="/ceremony")
 @router.post("/create")
 async def ceremony_create(data: schemas.CeremonyDetails, state=Depends(get_state)):
     # TODO reject if there's already a set of details? or should that update it?
-    rtp_dir = state.node.records_posting_dir
+    s = state.node.store
+    metadata = record.CeremonyDetails()
     obj = eg_ceremony.CeremonyDetails(
         number_of_guardians = data.number_of_guardians,
         quorum = data.quorum,
     )
-    metadata = record.CeremonyDetails()
-    save_record(metadata, obj, rtp_dir)
+    s.save_record_to_posting_dir(metadata, obj)
     return Response(status_code=201)
 
 

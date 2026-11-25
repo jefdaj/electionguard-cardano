@@ -164,22 +164,6 @@ def metadata_to_relpath(metadata: r.PublicRecordMetadata) -> RecordMetadataRelPa
     return relpath
 
 
-# TODO better type for obj?
-# TODO should just need metadata, not a whole record, right?
-# def save_record(metadata: r.PublicRecordMetadata, obj: Any, pub_dir: Path) -> Path:
-#     "Save a PublicRecord in the public records dir and return its path."
-#     fpath = record_path(metadata, pub_dir=pub_dir)
-#     fpath.parent.mkdir(parents=True, exist_ok=True)
-#
-#     # TODO use my fancy_dumps or similar here?
-#     # with open(fpath, 'w') as f:
-#         # json.dump(obj, f)
-#     fpath.write_text( eg.serialize.to_raw(obj) )
-#
-#     LOG.info(f'Saved {metadata} -> {fpath}')
-#     return fpath
-
-
 _FSTR_FIELD = re.compile(r'\{(\w+)\}')
 
 
@@ -608,15 +592,33 @@ class RecordStore:
         assert type(data) == decode_cls
         return data
 
-    def load_verified_record_by_relpath(relpath: Path):
+    def load_verified_record_by_relpath(relpath: RecordMetadataRelPath):
         """Given a relative path, load the corresponding verified record
         object. I mostly envision this being useful for the CLI so users can
         autocomplete the path rather than trying to type out the metdata
         format. It could also be used to load from various key sets.
         """
         # TODO CLI needs to remove the verified dir prefix, then this will re add it?
+        # TODO catch relative paths here?
         LOG_CALL()
         LOG.debug(f'relpath: {relpath}')
         metadata = relpath_to_metadata(relpath)
         LOG.debug(f'metadata: {metadata}')
         return self.load_verified_record_by_metadata(metadata)
+
+
+    def save_record_to_posting_dir(metadata: r.PublicRecordMetadata, obj: Any) -> Path:
+        "Save a new record in the posting dir and return its path."
+        relpath = metadata_to_relpath(metadata)
+        LOG.debug(f'metadata: {metadata}')
+        path = self.records_posting_dir / relpath
+        LOG.debug(f'path: {path}')
+        path.parent.mkdir(parents=True, exist_ok=True)
+        # TODO use my fancy_dumps or similar here?
+        # with open(fpath, 'w') as f:
+            # json.dump(obj, f)
+        txt = eg.serialize.to_raw(obj)
+        LOG.debug(f'raw txt: {txt}') # TODO bad idea?
+        path.write_text(txt)
+        LOG.info(f'Saved {metadata} -> {path}')
+        return path
