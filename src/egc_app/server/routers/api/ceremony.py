@@ -30,7 +30,7 @@ async def ceremony_create(data: schemas.CeremonyDetails, state=Depends(get_state
 @router.get("")
 async def ceremony_show(state=Depends(get_state)):
     rf_dir = state.node.records_verified_dir
-    rec = load_record(CeremonyDetails(), rf_dir)
+    rec = load_record(CeremonyDetails(), rf_dir) # TODO replace with RecordStore call to verified version
     out = schemas.CeremonyDetails(
         number_of_guardians = rec.number_of_guardians,
         quorum = rec.quorum,
