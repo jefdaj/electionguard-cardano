@@ -270,10 +270,10 @@ class IPFSService:
         cid_str = ipfs_cid_to_string(cid)
         try:
             data = await self._run_async(self.ipfs.cat(cid_str), timeout=timeout)
+            del self._pending[cid] # TODO when should this happen exactly?
             async for pin_status in self.ipfs._client.pin.add(cid_str):
                 LOG.debug(f'progress pinning {cid_str}: {pin_status}')
             self.store.cid_data_fetched(cid, data) # success => no longer pending
-            del self._pending[cid]
             LOG.info("fetched %s", cid_str)
             return True
         except asyncio.TimeoutError:
