@@ -143,7 +143,7 @@ class ElectionNode:
 
         self.subscriber = ElectionSubscriber(
             election = self.election,
-            records_verified_dir = self.records_verified_dir,
+            record_store = self.store,
             on_event = on_event,
             on_error = on_error,
             on_channel_event = handler,

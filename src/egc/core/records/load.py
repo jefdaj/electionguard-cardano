@@ -47,7 +47,7 @@ def key_ceremony_round2_complete(store: RecordStore):
     try:
         m = r.CeremonyDetails()
         # details = load_record(m, pub_dir)
-        details = store.load_verified_record_by_metdata(m)
+        details = store.load_verified_record_by_metadata(m)
         LOG.debug(f'details: {details}')
         n = details.number_of_guardians
         LOG.debug(f'n guardians: {n}')

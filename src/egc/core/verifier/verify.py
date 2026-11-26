@@ -1,4 +1,5 @@
 from .utils import freeze_kwargs
+from ..plutus.types import record as r
 from .types import *
 from . import dag # for looking up verify_* functions
 
@@ -85,14 +86,27 @@ class Verifier:
     """Stateful verifier for use in a node."""
     # TODO test just that it can be created and log properly first
 
-    def __init__(self, pubdir, verifier_id):
+    def __init__(self, records_posting_dir, verifier_id):
         # self.log = ???
-        self.pubdir = pubdir
+        self.records_posting_dir = records_posting_dir
         self.verifier_id = verifier_id
         self.results: ResultsCache = {}
 
-    def verify_target_by_name(self, target_name):
+    def verify_record_dict(self, metadata: r.PublicRecordMetadata, data: dict):
+        """Called by RecordStore to verify data from IPFS before saving it to a file.
+        Will fail if the current data is invalid or if it depends on another
+        data file not yet verified. Returns True (verified) or False (definitely rejected),
+        or may throw a dependency error.
+        """
+        # TODO distinguish between the two cases by throwing a specific dep error
+        # TODO treat any return as True and use errors as the other options, Plutus style?
+
+    def verify_target_by_name(self, target_name: str):
+        """Called by Subscriber in response to phase changes.
+        Mainly (only?) used for gather_* (phony) targets.
+        """
         # TODO note that this can't save files
+        # TODO cli option that lists the possible targets
         return verify(self.results, target_name)
 
     # TODO verify_and_save_record
@@ -107,7 +121,7 @@ class Verifier:
         (successes, errors, bools) = simplify_and_partition(self.results)
         return summarize_results_final(
             successes, errors, bools,
-            pubdir=self.pubdir, verifier_id=self.verifier_id,
+            records_posting_dir=self.records_posting_dir, verifier_id=self.verifier_id,
         )
 
 

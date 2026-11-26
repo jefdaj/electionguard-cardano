@@ -30,7 +30,7 @@ async def ceremony_create(data: schemas.CeremonyDetails, state=Depends(get_state
 @router.get("")
 async def ceremony_show(state=Depends(get_state)):
     s = state.node.store
-    rec = s.load_verified_record_by_metdata(CeremonyDetails())
+    rec = s.load_verified_record_by_metadata(CeremonyDetails())
     LOG.debug(f'rec: {rec}')
     out = schemas.CeremonyDetails(
         number_of_guardians = rec.number_of_guardians,

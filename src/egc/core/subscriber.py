@@ -433,7 +433,7 @@ class ElectionSubscriber:
             self,
             # config: ElectionConfig,
             election: ElectionContext,
-            records_verified_dir: Path,
+            record_store: RecordStore,
             on_event = _make_example_callback('on_event'),
             on_error = _make_example_callback('on_error'),
             on_channel_event = _make_example_callback('on_channel_event'),
@@ -446,7 +446,7 @@ class ElectionSubscriber:
         self.election = election
 
         # Needed to determine key ceremony phase.
-        self.records_verified_dir = records_verified_dir
+        self.record_store = record_store
 
         # Client callbacks, which default to printing events.
         self._client_on_event         = on_event
@@ -587,8 +587,8 @@ class ElectionSubscriber:
             round2 = True
         else:
             LOG.debug('During ceremony, have to check fetched files to determine round.')
-            round1 = key_ceremony_round1_complete(self.records_verified_dir)
-            round2 = key_ceremony_round2_complete(self.records_verified_dir)
+            round1 = key_ceremony_round1_complete(self.record_store)
+            round2 = key_ceremony_round2_complete(self.record_store)
 
         ctx = EgcPhaseContext(
             indexed = len(self._checkpoints) > 0,
