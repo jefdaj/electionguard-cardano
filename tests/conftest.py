@@ -26,10 +26,11 @@ def pytest_configure(config):
     logging.getLogger('egc.core.publisher').setLevel(logging.INFO)
     logging.getLogger('egc.core.subscriber').setLevel(logging.INFO)
     logging.getLogger('egc.nodes.admin').setLevel(logging.INFO)
+    logging.getLogger('egc.nodes.ipfs').setLevel(logging.INFO)
 
     # Turn up the logging on sections we're actively debugging though.
     logging.getLogger('egc.core.records').setLevel(logging.DEBUG)
-    logging.getLogger('egc.nodes.ipfs').setLevel(logging.DEBUG)
+    logging.getLogger('egc.core.verifier').setLevel(logging.DEBUG)
 
 
 pytest_plugins = [
