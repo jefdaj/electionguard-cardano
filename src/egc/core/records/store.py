@@ -7,7 +7,7 @@ import shutil
 import tempfile
 import json
 
-from ..plutus import ipfs_cid_to_string
+from ..plutus import IpfsCid, ipfs_cid_to_string
 from ..plutus.types import record as r
 from ..utils import make_log_call
 from .paths import *
@@ -60,6 +60,11 @@ class RecordStore:
         # (These need to be excluded to keep the keys unique)
         self._records_on_chain: dict[RecordMetadataRelPath, r.PublicRecord] = {}
 
+        # For skipping fetch of any records with duplicate CIDs,
+        # so the _records_pending_fetch doesn't accumulate anything.
+        # TODO is this really helpfuL?
+        self._cids_fetched: set[IpfsCid] = set()
+
         # TODO _records_posting? not needed for now
 
         # Records which have been seen on chain, but whose data has not been successfully fetched.
@@ -102,18 +107,22 @@ class RecordStore:
         else:
             LOG.info(f'add {record}')
             self._records_on_chain[key] = record
-            self._records_pending_fetch.add(key)
+            if record.ipfs_cid in self._cids_fetched:
+                LOG.info(f'skip fetching duplicate CID: {record}')
+            else:
+                self._records_pending_fetch.add(key)
 
     def cid_data_fetched(self, cid, data: bytes):
         """Called by IPFSService after a successful fetch. Implies the data
         matches the CID and is ready to be parsed + verified + written to disk."""
         # key = self.key_for_record(cid)
         LOG_CALL()
+        self._cids_fetched.add(cid)
         cid_str = ipfs_cid_to_string(cid)
         # there may be more than one record per cid, so make a list first
         records_fetched = [
             (k, r)
-            for (k, r) in self._records_on_chain.items()
+            for (k, r) in self._records_pending_fetch.items()
             if ipfs_cid_to_string(r.ipfs_cid) == cid_str # TODO use cid equality directly?
         ]
 
