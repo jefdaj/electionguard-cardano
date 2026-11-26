@@ -6,9 +6,11 @@ import threading
 import time
 import shutil
 import traceback
+import json
 
 from aiohttp import ClientConnectorError, ClientConnectorDNSError
 import aioipfs
+from typing import Any
 
 from .plutus  import *
 from .records import *
@@ -229,10 +231,11 @@ class IPFSService:
         LOG_CALL()
         self._loop.call_soon_threadsafe(self._accept, record)
 
-    def publish_and_make_record(self, data: dict, metadata: PublicRecordMetadata) -> PublicRecord:
+    def publish_and_make_record(self, obj, metadata: PublicRecordMetadata) -> PublicRecord:
         "Publish data to IPFS and return a new record, ready to post onchain."
         LOG_CALL()
-        added_file = self._run_sync(self.ipfs.add_json(data))
+        obj_dict = json.loads(eg.serialize.to_raw(obj)) # TODO clean this up or make a util fn
+        added_file = self._run_sync(self.ipfs.add_json(obj_dict))
         cid_str = added_file['Hash']
         LOG.debug(f'cid_str: {cid_str}')
         cid_bytes = coerce_ipfs_cid(cid_str)
@@ -245,13 +248,13 @@ class IPFSService:
 
     def publish_and_make_records(
         self,
-        pairs: list[tuple[dict, PublicRecordMetadata]],
+        pairs: list[tuple[Any, PublicRecordMetadata]],
     ) -> list[PublicRecord]:
         LOG_CALL()
         # TODO how should we handle failures partway through here?
         records = []
-        for (data, metadata) in pairs:
-            record = self.publish_and_make_record(data, metadata)
+        for (obj, metadata) in pairs:
+            record = self.publish_and_make_record(obj, metadata)
             LOG.info(f'published {record}')
             records.append(record)
         return records

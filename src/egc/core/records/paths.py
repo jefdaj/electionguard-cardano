@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from pathlib import Path
+from dataclasses import dataclass, asdict
+from pathlib import PosixPath
 from typing import Any
 
 import electionguard as eg
@@ -23,7 +23,8 @@ LOG_CALL = make_log_call(LOG.debug)
 # Record metadata can be encoded to or decoded from a unique relative path
 # using PUBLIC_RECORD_TYPES below. The path can be used as a hashable key for
 # sets and dicts.
-type RecordMetadataRelPath = Path
+# TODO remove .json?
+type RecordMetadataRelPath = str
 
 
 # TODO remove? not sure cast_at adds anything since you can't trust the sender
@@ -33,6 +34,9 @@ class CastNotice:
 
     # timestamp, which should be in a window after ballot submitted
     cast_at: str
+
+    def to_dict(self) -> dict:
+        return asdict(self)
 
 
 # plutus metadata type : (decode to type, dir relname, basename fmtargs ptn)
@@ -136,13 +140,13 @@ PUBLIC_RECORD_TYPES = {
 }
 
 
-def metadata_to_path(metadata: r.PublicRecordMetadata, rec_dir: Path) -> Path:
+def metadata_to_path(metadata: r.PublicRecordMetadata, rec_dir: PosixPath) -> PosixPath:
     "Find the full path of a record in a records dir by metadata."
     LOG_CALL()
     relpath = metadata_to_relpath(metadata)
-    if not isinstance(rec_dir, Path):
-        rec_dir = Path(rec_dir)
-    path = rec_dir / relpath
+    if not isinstance(rec_dir, PosixPath):
+        rec_dir = PosixPath(rec_dir)
+    path = (rec_dir / relpath).with_suffix('.json')
     LOG.debug(f'path: {path}')
     return path
 
@@ -157,7 +161,7 @@ def metadata_to_relpath(metadata: r.PublicRecordMetadata) -> RecordMetadataRelPa
     m_type = type(metadata)
     LOG.debug(f'm_type: {m_type}')
     (_egtype, dname, fstr) = PUBLIC_RECORD_TYPES[m_type]
-    dname = Path(dname)
+    dname = PosixPath(dname)
     LOG.debug(f'dname: {dname}')
     LOG.debug(f'fstr: {fstr}')
     var_strs = {}
@@ -168,7 +172,7 @@ def metadata_to_relpath(metadata: r.PublicRecordMetadata) -> RecordMetadataRelPa
     LOG.debug(f'var_strs: {var_strs}')
     fname = fstr.format(**var_strs)
     LOG.debug(f'fname: {fname}')
-    relpath = (dname / fname).with_suffix('.json')
+    relpath = str((dname / fname).with_suffix('.json'))
     LOG.debug(f'relpath: {relpath}')
     return relpath
 
@@ -222,12 +226,12 @@ _RELPATH_TO_METADATA = sorted(
 LOG.debug(f'_RELPATH_TO_METADATA: {_RELPATH_TO_METADATA}')
 
 
-def path_to_metadata(path: Path, rec_dir: Path) -> r.PublicRecordMetadata:
+def path_to_metadata(path: PosixPath, rec_dir: PosixPath) -> r.PublicRecordMetadata:
     "Wrapper for when you want metadata from a path that includes the records dir."
     LOG_CALL()
-    LOG.debug(f'abspath: {abspath}')
+    LOG.debug(f'path: {path}')
     LOG.debug(f'rec_dir: {rec_dir}')
-    relpath = Path(abspath).relative_to(Path(rec_dir)).with_suffix('')
+    relpath = PosixPath(path).relative_to(PosixPath(rec_dir))# .with_suffix('.json')
     LOG.debug(f'relpath: {relpath}')
     return relpath_to_metdata(relpath)
 
@@ -236,10 +240,10 @@ def relpath_to_metadata(relpath: RecordMetadataRelPath) -> r.PublicRecordMetadat
     "Inverse of metadata_to_relpath: decode a relative json file path back to metadata."
     # TODO append .json if not given?
     LOG_CALL()
-    if not isinstance(relpath, Path):
-        relpath = Path(relpath)
+    if not isinstance(relpath, PosixPath):
+        relpath = PosixPath(relpath)
     LOG.debug(f'relpath: {relpath}')
-    rel_str = relpath.as_posix()
+    rel_str = relpath.as_posix().with_suffix('.json')
     LOG.debug(f'rel_str: {rel_str}')
     fname = relpath.name  # filename only, folder stripped
     LOG.debug(f'fname: {fname}')
@@ -254,7 +258,7 @@ def relpath_to_metadata(relpath: RecordMetadataRelPath) -> r.PublicRecordMetadat
             LOG.debug(f'{fname} does not match {rx} for type {m_type}')
         if not m:
             raise ValueError(
-                f'Path matches {key!r} but not filename pattern: {abspath}'
+                f'PosixPath matches {key!r} but not filename pattern: {abspath}'
             )
         LOG.debug(f'm.groupdict: {m.groupdict()}')
         return m_type(**m.groupdict())  # mixin coerces/validates
