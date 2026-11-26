@@ -151,13 +151,11 @@ class RecordStore:
 
     def _save_verified_records(self, data, kr_pairs):
         "Multi-record version because a given CID may match more than one."
+        # TODO remove fn in favor of a simple loop?
         LOG_CALL()
         LOG.debug(f'saving {len(kr_pairs)} verified records: {kr_pairs}')
         for (key, record) in kr_pairs:
             self._save_verified_record(data, record)
-            LOG.debug(f'move {key}: _records_pending_fetch -> _records_verified')
-            self._records_verified.add(key)
-            self._records_pending_verify.remove(key)
 
         # This may also remove other now-verified records.
         # It just seems like a reasonable place to trigger it.
@@ -172,15 +170,17 @@ class RecordStore:
         proper file. Returns the save path, although that isn't used so far.
         """
         LOG_CALL()
-        save_path = record_path(
-            record.metadata,
-            pub_dir = self.records_verified_dir
-        )
+        key = self.key_for_record(record)
+        save_path = metadata_to_path(record.metadata, self.records_verified_dir)
         LOG.debug(f'save_path: {save_path}')
         cid_str = ipfs_cid_to_string(record.ipfs_cid)
         LOG.debug(f'cid_str: {cid_str}')
         save_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # It seems to be essential to use the same filesystem here to avoid
+        # "invalid cross-device link".
         fd, tmp_path = tempfile.mkstemp(dir=save_path.parent, suffix=".json.part")
+
         try:
             with os.fdopen(fd, "wb") as f:
                 f.write(data)
@@ -188,6 +188,9 @@ class RecordStore:
                 os.fsync(f.fileno())
             os.replace(tmp_path, save_path)
             LOG.info(f'saved verified {record.metadata} -> {save_path}')
+            LOG.debug(f'move {key}: pending verify -> verified')
+            self._records_verified.add(key)
+            self._records_pending_verify.remove(key)
             return save_path
         finally:
             # Clean up the temp file if anything failed before the replace
@@ -253,7 +256,6 @@ class RecordStore:
         LOG.debug(f'mtype: {mtype}')
         (decode_cls, _, _) = PUBLIC_RECORD_TYPES[mtype]
         LOG.debug(f'decode_cls: {decode_cls}')
-        # path = record_path(metadata, pub_dir)
         path = metadata_to_path(metadata, self.records_verified_dir)
         LOG.debug(f'path: {path}')
         if not path.exists():
@@ -310,8 +312,8 @@ class RecordStore:
         # TODO use my fancy_dumps or similar here?
         # with open(fpath, 'w') as f:
             # json.dump(obj, f)
-        txt = eg.serialize.to_raw(obj)
-        LOG.debug(f'raw txt: {txt}') # TODO bad idea?
+        txt = eg.serialize.to_raw(obj) # TODO helper fn? will this fail on the couple odd ones?
+        LOG.debug(f'raw txt: {txt}')
         path.write_text(txt)
         LOG.info(f'Saved {metadata} -> {path}')
         return path

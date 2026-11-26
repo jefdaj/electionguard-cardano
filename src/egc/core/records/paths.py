@@ -154,26 +154,26 @@ def metadata_to_path(metadata: r.PublicRecordMetadata, rec_dir: PosixPath) -> Po
 def metadata_to_relpath(metadata: r.PublicRecordMetadata) -> RecordMetadataRelPath:
     "Encode record metdata as a relative path."
     LOG_CALL()
-    LOG.debug(f'metadata: {metadata}')
+    # LOG.debug(f'metadata: {metadata}')
     if isinstance(metadata, r.PublicRecord):
         LOG.warning(f'Passed PublicRecord rather than PublicRecordMetadata: {metadata}')
         metadata = metadata.metadata
     m_type = type(metadata)
-    LOG.debug(f'm_type: {m_type}')
+    # LOG.debug(f'm_type: {m_type}')
     (_egtype, dname, fstr) = PUBLIC_RECORD_TYPES[m_type]
     dname = PosixPath(dname)
-    LOG.debug(f'dname: {dname}')
-    LOG.debug(f'fstr: {fstr}')
+    # LOG.debug(f'dname: {dname}')
+    # LOG.debug(f'fstr: {fstr}')
     var_strs = {}
     for (k,v) in vars(metadata).items():
         if isinstance(v, bytes):
             v = v.decode('utf-8')
         var_strs[k] = v
-    LOG.debug(f'var_strs: {var_strs}')
+    # LOG.debug(f'var_strs: {var_strs}')
     fname = fstr.format(**var_strs)
-    LOG.debug(f'fname: {fname}')
+    # LOG.debug(f'fname: {fname}')
     relpath = str((dname / fname).with_suffix('.json'))
-    LOG.debug(f'relpath: {relpath}')
+    # LOG.debug(f'relpath: {relpath}')
     return relpath
 
 
@@ -207,7 +207,7 @@ def _fstr_to_regex(fstr: str) -> re.Pattern:
 def _relpath_to_metadata_key(dname: str, fstr: str) -> str:
     "Unique lookup key: folder + literal filename prefix up to '{'."
     s = f'{dname}/{fstr.split("{", 1)[0]}'
-    LOG.debug(f'_relpath_to_metadata_key: {s}')
+    # LOG.debug(f'_relpath_to_metadata_key: {s}')
     return s
 
 
@@ -229,10 +229,10 @@ LOG.debug(f'_RELPATH_TO_METADATA: {_RELPATH_TO_METADATA}')
 def path_to_metadata(path: PosixPath, rec_dir: PosixPath) -> r.PublicRecordMetadata:
     "Wrapper for when you want metadata from a path that includes the records dir."
     LOG_CALL()
-    LOG.debug(f'path: {path}')
-    LOG.debug(f'rec_dir: {rec_dir}')
+    # LOG.debug(f'path: {path}')
+    # LOG.debug(f'rec_dir: {rec_dir}')
     relpath = PosixPath(path).relative_to(PosixPath(rec_dir))# .with_suffix('.json')
-    LOG.debug(f'relpath: {relpath}')
+    # LOG.debug(f'relpath: {relpath}')
     return relpath_to_metdata(relpath)
 
 
@@ -242,11 +242,11 @@ def relpath_to_metadata(relpath: RecordMetadataRelPath) -> r.PublicRecordMetadat
     LOG_CALL()
     if not isinstance(relpath, PosixPath):
         relpath = PosixPath(relpath)
-    LOG.debug(f'relpath: {relpath}')
+    # LOG.debug(f'relpath: {relpath}')
     rel_str = relpath.as_posix().with_suffix('.json')
-    LOG.debug(f'rel_str: {rel_str}')
+    # LOG.debug(f'rel_str: {rel_str}')
     fname = relpath.name  # filename only, folder stripped
-    LOG.debug(f'fname: {fname}')
+    # LOG.debug(f'fname: {fname}')
 
     for key, m_type, rx in _RELPATH_TO_METADATA:
         if not rel_str.startswith(key):
@@ -260,7 +260,7 @@ def relpath_to_metadata(relpath: RecordMetadataRelPath) -> r.PublicRecordMetadat
             raise ValueError(
                 f'PosixPath matches {key!r} but not filename pattern: {abspath}'
             )
-        LOG.debug(f'm.groupdict: {m.groupdict()}')
+        # LOG.debug(f'm.groupdict: {m.groupdict()}')
         return m_type(**m.groupdict())  # mixin coerces/validates
     raise ValueError(f'No record type matches path: {abspath}')
 
