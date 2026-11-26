@@ -93,6 +93,12 @@ class RecordStore:
         LOG_CALL()
         return self._records_on_chain[key]
 
+    def records_for_cid(self, cid: IpfsCid) -> list[r.PublicRecord]:
+        return sorted([
+            r for (k, r) in self._records_on_chain.items()
+            if r.ipfs_cid == cid
+        ])
+
     def record_seen_on_chain(self, record):
         """Called by Subscriber in response to a record being posted on chain.
         Should only be called once if the event filtering is working properly
@@ -112,25 +118,25 @@ class RecordStore:
             else:
                 self._records_pending_fetch.add(key)
 
-    def cid_data_fetched(self, cid, data: bytes):
+    def cid_data_fetched(self, cid: IpfsCid, data: bytes):
         """Called by IPFSService after a successful fetch. Implies the data
         matches the CID and is ready to be parsed + verified + written to disk."""
         # key = self.key_for_record(cid)
         LOG_CALL()
         self._cids_fetched.add(cid)
         cid_str = ipfs_cid_to_string(cid)
-        # there may be more than one record per cid, so make a list first
-        records_fetched = [
-            (k, r)
-            for (k, r) in self._records_pending_fetch.items()
-            if ipfs_cid_to_string(r.ipfs_cid) == cid_str # TODO use cid equality directly?
-        ]
 
-        # Move from pending fetch -> pending verification first
-        for (key, _) in records_fetched:
-            LOG.debug(f'move {key}: pending fetch -> pending verify')
-            self._records_pending_verify.add(key)
-            self._records_pending_fetch.remove(key)
+        # there may be more than one record per cid, so make a list
+        records_fetched = sorted([
+            (k, r) for (k, r) in self._records_on_chain.items()
+            if k in self._records_pending_fetch and r.ipfs_cid == cid
+        ])
+
+        # Move from pending fetch -> pending verification
+        for (k, _) in records_fetched:
+            LOG.debug(f'move {k}: pending fetch -> pending verify')
+            self._records_pending_verify.add(k)
+            self._records_pending_fetch.remove(k)
 
         # Then attempt to do the verification. Some may have to wait because
         # they have unfetched dependenecies.
@@ -158,13 +164,17 @@ class RecordStore:
         LOG.info(f'{n_verified}/{n} records verified, leaving {n_unverified} unverified: {unverified}')
         return n_unverified
 
-    def _save_verified_records(self, data, kr_pairs):
+    def _save_verified_records(
+            self,
+            data: bytes,
+            kr_pairs: list[tuple[RecordMetadataRelPath, r.PublicRecord]],
+        ):
         "Multi-record version because a given CID may match more than one."
         # TODO remove fn in favor of a simple loop?
         LOG_CALL()
         LOG.debug(f'saving {len(kr_pairs)} verified records: {kr_pairs}')
-        for (key, record) in kr_pairs:
-            self._save_verified_record(data, record)
+        for (k, r) in kr_pairs:
+            self._save_verified_record(data, k, r)
 
         # This may also remove other now-verified records.
         # It just seems like a reasonable place to trigger it.
@@ -174,12 +184,16 @@ class RecordStore:
 
         # TODO also look for pending verifications that can now continue here
 
-    def _save_verified_record(self, data: bytes, record: r.PublicRecord):
+    def _save_verified_record(
+            self,
+            data: bytes,
+            key: RecordMetadataRelPath,
+            record: r.PublicRecord,
+        ):
         """Given a record and bytes matching its CID, write the bytes to the
         proper file. Returns the save path, although that isn't used so far.
         """
         LOG_CALL()
-        key = self.key_for_record(record)
         save_path = metadata_to_path(record.metadata, self.records_verified_dir)
         LOG.debug(f'save_path: {save_path}')
         cid_str = ipfs_cid_to_string(record.ipfs_cid)
