@@ -2,7 +2,7 @@ import asyncio
 from fastapi import APIRouter, Depends, Response
 from egc_app.server.state import get_state
 from egc_app import schemas
-from egc import save_record, EgcManifest
+from egc import EgcManifest
 from egc.core.plutus.types import record
 
 import logging
@@ -19,5 +19,6 @@ async def manifest_create(data: dict, state=Depends(get_state)):
     # TODO reject if there's already a set of details? or should that update it?
     rtp_dir = state.node.records_posting_dir
     metadata = record.Manifest()
-    save_record(metadata, eg_manifest, rtp_dir)
+    s = state.node.store
+    s.save_record_to_posting_dir(metadata, egc_manifest)
     return Response(status_code=201)

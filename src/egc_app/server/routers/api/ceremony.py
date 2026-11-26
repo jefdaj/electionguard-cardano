@@ -2,7 +2,7 @@ import asyncio
 from fastapi import APIRouter, Depends, Response
 from egc_app.server.state import get_state
 from egc_app import schemas
-from egc import save_record, load_record, CeremonyDetails
+from egc import CeremonyDetails
 from egc.core.plutus.types import record
 from electionguard import key_ceremony as eg_ceremony
 
