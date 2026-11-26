@@ -76,7 +76,7 @@ def load_all_guardian_backups(n_guardians: int, store: RecordStore):
             m = r.GuardianBackup(
                 guardian_number = guardian_number,
                 backup_order    = backup_order
-            ),
+            )
             LOG.debug(f'm: {m}')
             # rec = load_record(pub_dir)
             rec = store.load_verified_record_by_metadata(m)
