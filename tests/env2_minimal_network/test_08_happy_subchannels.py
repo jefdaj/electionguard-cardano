@@ -36,12 +36,14 @@ def test_tx0(admin, s0, tx0):
 @pytest.fixture(scope='module')
 def s1(
         s0: ChannelState,
-        static_transactions, static_files_dir,
+        static_transactions,
+        static_store,
         static_phases,
     ) -> ChannelState:
     prev = s0.state
     record_pairs = load_static_record_pairs(
-        static_transactions['admin'][1][1], static_files_dir,
+        static_transactions['admin'][1][1],
+        static_store,
     )
     return AdminChannel(state=replace(
         prev,
@@ -54,11 +56,13 @@ def s1(
 def tx1(
         tx0: Transaction,
         admin: AdminNode,
-        static_transactions, static_files_dir,
+        static_transactions,
+        static_store,
         static_phases,
     ) -> Transaction:
     record_pairs = load_static_record_pairs(
-        static_transactions['admin'][1][1], static_files_dir,
+        static_transactions['admin'][1][1],
+        static_store,
     )
     tx = admin.post_public_records(
         new_record_pairs = record_pairs,
