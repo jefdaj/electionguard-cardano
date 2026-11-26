@@ -7,4 +7,4 @@ pytest_pid="$(ps aux | grep 'bin/pytest' | head -n1 | awk '{print $2}')"
 rm -rf tests/data/env*
 # TODO separate prep for tests script
 # TODO load other images too?
-nix build .#egcDockerImage && docker load < result
+nix build --offline .#egcDockerImage && docker load < result
