@@ -310,7 +310,7 @@ class RecordStore:
         assert type(data) == decode_cls
         return data
 
-    def load_verified_record_by_relpath(relpath: RecordMetadataRelPath):
+    def load_verified_record_by_relpath(self, relpath: RecordMetadataRelPath):
         """Given a relative path, load the corresponding verified record
         object. I mostly envision this being useful for the CLI so users can
         autocomplete the path rather than trying to type out the metdata
@@ -325,7 +325,7 @@ class RecordStore:
         return self.load_verified_record_by_metadata(metadata)
 
 
-    def save_record_to_posting_dir(metadata: r.PublicRecordMetadata, obj: Any) -> Path:
+    def save_record_to_posting_dir(self, metadata: r.PublicRecordMetadata, obj: Any) -> Path:
         "Save a new record in the posting dir and return its path."
         relpath = metadata_to_relpath(metadata)
         LOG.debug(f'metadata: {metadata}')
