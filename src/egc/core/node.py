@@ -287,47 +287,51 @@ class ElectionNode:
 
     ### batching ###
 
-    # TODO underscore this?
-    def batch_list_paths(self) -> list[Path]:
-        pub_dir = self.records_posting_dir
-        paths = sorted(list(pub_dir.rglob('*.json')))
-        return paths
+    def batch_list(self) -> list[tuple[RecordMetadataRelPath, PublicRecordMetadata]]:
+        LOG_CALL()
+        return self.store.list_records_posting()
 
-    # TODO better name?
-    def batch_list(self) -> list[PublicRecordMetadata]:
-        pub_dir = self.records_posting_dir
-        paths = self.batch_list_paths()
-        metas = [path_metadata(p, pub_dir) for p in paths]
-        return metas
+    def batch_add(self, metadata: r.PublicRecordMetadata, obj: Any) -> Path:
+        LOG_CALL()
+        return self.store.save_record_posting(metadata, obj)
 
-    def batch_assemble(self, indexes: list[int], min_size: int, max_size: int) -> list[tuple[dict, PublicRecordMetadata]]:
+    def batch_drop(self, relpath: RecordMetadataRelPath):
+        LOG_CALL()
+        return self.store.drop_record_posting(relpath)
+
+    def batch_assemble(
+            self,
+            indexes: list[int],
+            min_size: int,
+            max_size: int
+        ) -> list[tuple[dict, PublicRecordMetadata]]:
         """This is where the min privacy and max TX size logic will go.
         For now it just needs to load json dicts (untyped) and pair them with
         their metadata.
         """
         LOG.info(f'batch_assemble locals: {locals()}')
-        paths = self.batch_list_paths()
-        LOG.info(f'paths: {paths}')
+        # paths = [p for (p, m) in self.batch_list()]
+        pm_pairs = self.batch_list()
+        LOG.info(f'pm_pairs: {pm_pairs}')
         if indexes:
-            paths = [paths[i] for i in indexes]
-            LOG.info(f'paths matching indexes: {paths}')
-        if len(paths) < min_size:
-            raise Exception(f'Failed to assemble batch. Have {len(paths)} records but min_size is {min_size}.')
-        paths = paths[:max_size] # TODO off by one?
-        assert len(paths) <= max_size
-        LOG.info(f'paths after size cutoff: {paths}')
-        pairs = []
-        pub_dir = self.records_posting_dir
-        for path in paths:
-            LOG.info(f'path: {path}')
-            meta = path_metadata(path, pub_dir)
+            pm_pairs = [pm_pairs[i] for i in indexes]
+            LOG.info(f'pm_pairs matching indexes: {pm_pairs}')
+        if len(pm_pairs) < min_size:
+            raise Exception(f'Failed to assemble batch. Have {len(pm_pairs)} records but min_size is {min_size}.')
+        pm_pairs = pm_pairs[:max_size] # TODO off by one?
+        assert len(pm_pairs) <= max_size
+        LOG.info(f'pm_pairs after size cutoff: {pm_pairs}')
+        dm_pairs = []
+        for (relpath, meta) in pm_pairs:
+            LOG.info(f'relpath: {relpath}')
             LOG.info(f'meta: {meta}')
-            with path.open('r') as f:
-                data = json.load(f)
-            pair = (data, meta)
-            LOG.info(f'pair: {pair}')
-            pairs.append(pair)
-        return pairs
+            # with relpath.open('r') as f:
+            #     data = json.load(f) # TODO util fn?
+            data = self.store.load_record_posting_json(relpath)
+            dm_pair = (data, meta)
+            LOG.info(f'dm_pair: {dm_pair}')
+            dm_pairs.append(dm_pair)
+        return dm_pairs
 
 
     def consolidate_if_needed(self, max_utxos=100):

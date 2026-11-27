@@ -23,7 +23,7 @@ async def ceremony_create(data: schemas.CeremonyDetails, state=Depends(get_state
         number_of_guardians = data.number_of_guardians,
         quorum = data.quorum,
     )
-    s.save_record_to_posting_dir(metadata, obj)
+    s.save_record_posting(metadata, obj)
     return Response(status_code=201)
 
 

@@ -60,6 +60,11 @@ class RecordStore:
         # (These need to be excluded to keep the keys unique)
         self._records_on_chain: dict[RecordMetadataRelPath, r.PublicRecord] = {}
 
+        # Records this node has created but not finished posting on chain yet.
+        # TODO rename something to do with "batch"? Goes with the batch cli commands.
+        # TODO also save the obj in memory here?
+        self._records_posting: dict[RecordMetadataRelPath, r.PublicRecord] = {}
+
         # For skipping fetch of any records with duplicate CIDs,
         # so the _records_pending_fetch doesn't accumulate anything.
         # TODO is this really helpfuL?
@@ -325,9 +330,12 @@ class RecordStore:
         return self.load_verified_record_by_metadata(metadata)
 
 
-    def save_record_to_posting_dir(self, metadata: r.PublicRecordMetadata, obj: Any) -> Path:
+    def save_record_posting(self, metadata: r.PublicRecordMetadata, obj: Any) -> Path:
         "Save a new record in the posting dir and return its path."
+        LOG_CALL()
         relpath = metadata_to_relpath(metadata)
+        if relpath in self._records_posting.keys():
+            raise Exception(f'duplicate posting: {relpath}')
         LOG.debug(f'metadata: {metadata}')
         path = self.records_posting_dir / relpath
         LOG.debug(f'path: {path}')
@@ -338,5 +346,38 @@ class RecordStore:
         txt = eg.serialize.to_raw(obj) # TODO helper fn? will this fail on the couple odd ones?
         LOG.debug(f'raw txt: {txt}')
         path.write_text(txt)
+        self._records_posting[relpath] = metadata
         LOG.info(f'Saved {metadata} -> {path}')
         return path
+
+
+    def list_records_posting(self) -> list[tuple[Path, r.PublicRecordMetadata]]:
+        "List records posting (more or less the current batch?) with abs paths in order."
+        LOG_CALL()
+        pm_pairs = sorted(list(self._records_posting.items()))
+        # pm_pairs = [
+        #     (self.records_posting_dir / p, m)
+        #     for (p, m) in pm_pairs
+        # ]
+        LOG.debug(f'pm_pairs: {pm_pairs}')
+        return pm_pairs
+
+
+    def load_record_posting_json(self, relpath: RecordMetadataRelPath):
+        LOG_CALL()
+        if not relpath in self._records_posting.keys():
+            raise Exception(f'no such record posting: {relpath}')
+        path = self.records_posting_dir / relpath
+        with path.open('r') as f:
+             data = json.load(f) # TODO util fn?
+        return data
+
+
+    def drop_record_posting(self, relpath: RecordMetadataRelPath):
+        LOG_CALL()
+        if not relpath in self._records_posting.keys():
+            raise Exception(f'no such record posting: {relpath}')
+        path = self.records_posting_dir / relpath
+        path.unlink(missing_ok=False)
+        del self._records_posting[relpath]
+        LOG.debug(f'path dropped: {path}')

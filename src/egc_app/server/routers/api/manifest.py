@@ -20,5 +20,5 @@ async def manifest_create(data: dict, state=Depends(get_state)):
     rtp_dir = state.node.records_posting_dir
     metadata = record.Manifest()
     s = state.node.store
-    s.save_record_to_posting_dir(metadata, egc_manifest)
+    s.save_record_posting(metadata, egc_manifest)
     return Response(status_code=201)
