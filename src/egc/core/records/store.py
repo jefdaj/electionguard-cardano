@@ -70,8 +70,6 @@ class RecordStore:
         # TODO is this really helpfuL?
         self._cids_fetched: set[IpfsCid] = set()
 
-        # TODO _records_posting? not needed for now
-
         # Records which have been seen on chain, but whose data has not been successfully fetched.
         # More info about the number of attempts etc should be available from the IPFSService.
         self._records_pending_fetch: set[RecordMetadataRelPath] = set()
