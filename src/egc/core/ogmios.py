@@ -317,11 +317,13 @@ OGMIOS_FATAL_PATTERNS = set({
 
 OGMIOS_RETRY_CODES = set({
     3004,
+    3997, # mempool tx too slow
 })
 
 OGMIOS_RETRY_PATTERNS = set({
     "unknown transaction input", # TODO is this really retryable?
     "missing from utxo set",     # TODO is this really retryable?
+    "MempoolTxTooSlow", # node rejected the TX because it took too long to process, but might accept after finishing other work
 })
 
 # TODO are these really successes? maybe they should have a 3rd "check again, maybe retry" verdict?
